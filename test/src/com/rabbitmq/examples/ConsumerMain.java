@@ -129,7 +129,7 @@ public class ConsumerMain implements Runnable {
         channel.close(200, "Closing channel with no error");
         
         System.out.println("Closing the connection.");
-        _connection.close(200, "Goodbye.");
+        _connection.close();
         
         System.out.println("Leaving ConsumerMain.run().");
     }

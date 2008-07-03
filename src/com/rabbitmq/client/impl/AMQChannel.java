@@ -26,12 +26,13 @@
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingValueOrException;
-import com.rabbitmq.utility.SingleShotLinearTimer;
 
 /**
  * Base class modelling an AMQ channel. Subclasses implement close()
@@ -53,9 +54,9 @@ public abstract class AMQChannel {
 
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
     public RpcContinuation _activeRpc = null;
-
-    /** Indicates whether this channel is in a state to handle further activity. */
-    public volatile boolean _isOpen = true;
+    
+    /** Reason for closing the channel, null if still open */
+    public volatile ShutdownSignalException _cause;
 
     /**
      * Construct a channel on the given connection, with the given channel number.
@@ -117,6 +118,10 @@ public abstract class AMQChannel {
     {
         try {
             return rpc(m);
+        } catch (AlreadyClosedException ace) {
+        	// Do not wrap it since it means that connection/channel
+        	// was closed in some action in the past
+        	throw ace;
         } catch (ShutdownSignalException ex) {
             throw wrap(ex);
         }
@@ -160,21 +165,36 @@ public abstract class AMQChannel {
         transmit(m);
     }
 
-    public synchronized RpcContinuation nextOutstandingRpc() {
+    public synchronized RpcContinuation nextOutstandingRpc()
+    {
         RpcContinuation result = _activeRpc;
         _activeRpc = null;
         return result;
     }
 
-    public boolean isOpen() {
-        return _isOpen;
+    /**
+     * Public API - Indicates whether this channel is in an open state
+     * @return true if channel is open, false otherwise
+     */
+    public boolean isOpen()
+    {
+        return _cause == null;
+    }
+    
+    /**
+     * Public API - Get the reason for closing the channel 
+     * @return object having information about the shutdown, or null if still open
+     */
+    public ShutdownSignalException getCloseReason() 
+    {
+    	return _cause;
     }
 
     public void ensureIsOpen()
-        throws IllegalStateException
+        throws AlreadyClosedException
     {
         if (!isOpen()) {
-            throw new IllegalStateException("Attempt to use closed channel");
+            throw new AlreadyClosedException("Attempt to use closed channel");
         }
     }
 
@@ -211,34 +231,11 @@ public abstract class AMQChannel {
     public AMQCommand quiescingRpc(Method m,
                                    int timeoutMillisec,
                                    final AMQCommand timeoutReply)
-        throws IOException, ShutdownSignalException
+        throws IOException, ShutdownSignalException, TimeoutException
     {
-        SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
+    	TimeoutBlockingRpcContinuation k = new TimeoutBlockingRpcContinuation();
         transmitAndEnqueue(m, k);
-        if (timeoutMillisec != 0) {
-            SingleShotLinearTimer timer = new SingleShotLinearTimer();
-
-            Runnable task = new Runnable() {
-                    public void run() {
-                        // Timed out waiting for reply.
-                        // Simulate a reply.
-                        // TODO: Warn the user somehow??
-                        try {
-                            handleCompleteInboundCommand(timeoutReply);
-                        } catch (IOException ioe) {
-                            // Ignore.
-                        }
-                    }
-                };
-            timer.schedule(task, timeoutMillisec);
-            try {
-                return k.getReply();
-            } finally {
-                timer.cancel();
-            }
-        } else {
-            return k.getReply();
-        }
+        return k.getReply(timeoutMillisec);
     }
 
     /**
@@ -253,7 +250,7 @@ public abstract class AMQChannel {
     @Override public String toString() {
         return "AMQChannel(" + _connection + "," + _channelNumber + ")";
     }
-
+    
     /**
      * Protected API - respond, in the driver thread, to a {@link ShutdownSignalException}.
      * @param signal the signal to handle
@@ -261,7 +258,7 @@ public abstract class AMQChannel {
     public void processShutdownSignal(ShutdownSignalException signal) {
         synchronized (this) {
             ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-            _isOpen = false;
+            _cause = signal;
         }
         RpcContinuation k = nextOutstandingRpc();
         if (k != null) {
@@ -308,5 +305,15 @@ public abstract class AMQChannel {
         public AMQCommand transformReply(AMQCommand command) {
             return command;
         }
+    }
+    
+    public static class TimeoutBlockingRpcContinuation
+        extends SimpleBlockingRpcContinuation
+    {
+    	public AMQCommand getReply(int timeout)
+    	    throws ShutdownSignalException, TimeoutException
+    	{
+    		return _blocker.uninterruptibleGetValue(timeout);
+    	}
     }
 }

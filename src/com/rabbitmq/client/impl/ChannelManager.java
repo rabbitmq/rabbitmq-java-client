@@ -68,7 +68,11 @@ public class ChannelManager {
         }
         for (AMQChannel channel : channels) {
             disconnectChannel(channel.getChannelNumber());
-            channel.processShutdownSignal(signal);
+            try {
+                channel.processShutdownSignal(signal);
+            } catch (ShutdownSignalException sse) {
+            	// Ignore already closed channels
+            }
         }
     }
 

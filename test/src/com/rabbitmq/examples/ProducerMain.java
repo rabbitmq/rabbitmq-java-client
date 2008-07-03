@@ -165,7 +165,7 @@ public class ProducerMain implements Runnable {
 
         _channel.close(200, "Closing ch1 with no error");
         System.out.println("Closing.");
-        _connection.close(200, "Goodbye.");
+        _connection.close();
         System.out.println("Leaving ProducerMain.run().");
     }
 

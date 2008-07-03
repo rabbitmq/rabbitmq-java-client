@@ -433,4 +433,38 @@ public interface Channel {
      * @throws java.io.IOException if an error is encountered
      */
     Tx.RollbackOk txRollback() throws IOException;
+
+    /**
+     * Add shutdown listener to the channel
+     * 
+     * @param listener {@link ShutdownListener} for the channel
+     */
+    void addShutdownListener(ShutdownListener listener);
+    
+    /**
+     * Remove shutdown listener for the channel.
+     * 
+     * @param listener {@link ShutdownListener} to be removed
+     */
+    void removeShutdownListener(ShutdownListener listener);
+    
+    /**
+     * Get connection channel shutdown reason.
+     * Return null if channel is still open.
+     * @see com.rabbitmq.client.ShutdownCause 
+     * @return shutdown reason if channel is closed
+     */
+    ShutdownSignalException getCloseReason();
+    
+    /**
+     * Determine if channel is currently open.
+     * Will return false if we are currently closing or closed.
+     * Checking this method should be only for information,
+     * because of the race conditions - state can change after the call.
+     * Instead just execute and and try to catch AlreadyClosedException
+     * 
+     * @see com.rabbitmq.client.impl.AMQChannel#isOpen()
+     * @return true when channel is open, false otherwise
+     */
+    boolean isOpen();
 }

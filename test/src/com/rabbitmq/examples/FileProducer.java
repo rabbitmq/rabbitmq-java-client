@@ -97,7 +97,7 @@ public class FileProducer {
 		System.out.println(" done.");
 	    }
 
-	    conn.close(200, "");
+	    conn.close();
         } catch (Exception ex) {
             System.err.println("Main thread caught exception: " + ex);
             ex.printStackTrace();

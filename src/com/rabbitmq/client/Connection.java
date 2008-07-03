@@ -121,10 +121,75 @@ public interface Connection { // rename to AMQPConnection later, this is a tempo
     Channel createChannel(int channelNumber) throws IOException;
     
     /**
-     * Close this connection with the given code and message.
-     * @param closeCode code indicating the reason for closing the connection - see AMQP spec for a list of codes
-     * @param closeMessage optional message describing the reason for closing the connection
+     * Close this connection and all its channels.
+     * 
+     * This method will wait infinitely for all the close operations to
+     * complete.
+     * 
      * @throws IOException if an I/O problem is encountered
      */
-    void close(int closeCode, String closeMessage) throws IOException;
+    void close() throws IOException;
+    
+    /**
+     * Close this connection and all its channels
+     * 
+     * This method will wait with the given timeout for all the close
+     * operations to complete. If timeout is reached then socket is forced
+     * to close
+     * @param timeout timeout (in milioseconds) for completing all the close-related operations, use 0 for infinity
+     * @throws IOException if an I/O problem is encountered
+     */
+    void close(int timeout) throws IOException;
+    
+    /**
+     * Abort this connection and all its channels.
+     * 
+     * This method will force the connection to close. It will silently discard
+     * any exceptions enountered in close operations
+     */
+    void abort();
+    
+    /**
+     * Abort this connection and all its channels.
+     * 
+     * This method behaves in a similar way as abort(), with the only difference
+     * that it will wait with a provided timeout for all the close operations to
+     * complete. If timeout is reached socket is forced to close.
+     */
+    void abort(int timeout);
+
+    /**
+     * Add connection shutdown listener.
+     * If the connection is already closed handler is fired immediately
+     * 
+     * @param listener {@link ShutdownListener} to the connection
+     */
+    void addShutdownListener(ShutdownListener listener);
+    
+    /**
+     * Remove shutdown listener for the connection.
+     * 
+     * @param listener {@link ShutdownListener} to be removed
+     */
+    void removeShutdownListener(ShutdownListener listener);
+    
+    /**
+     * Retrieve connection close reason.
+     * 
+     * @see com.rabbitmq.client.ShutdownCause
+     * @return information about the cause of closing the connection, or null if connection is still open
+     */
+    ShutdownSignalException getCloseReason();
+    
+    /**
+     * Determine whether the connection is currently open.
+     * Will return false if we are currently closing.
+     * Checking this method should be only for information,
+     * because of the race conditions - state can change after the call.
+     * Instead just execute and and try to catch AlreadyClosedException
+     * 
+     * @see com.rabbitmq.client.impl.AMQConnection#isOpen()
+     * @return true when connection is open, false otherwise
+     */
+    boolean isOpen();
 }
