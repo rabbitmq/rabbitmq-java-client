@@ -28,16 +28,21 @@ package com.rabbitmq.client.impl;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketException;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.RedirectException;
+import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.Utility;
 
@@ -100,7 +105,11 @@ public class AMQConnection implements Connection {
 
     /** Handler for (otherwise-unhandled) exceptions that crop up in the mainloop. */
     public final ExceptionHandler _exceptionHandler;
-
+    
+    /** List of all shutdown listeners associated with the connection */
+    public List<ShutdownListener> listeners
+            = Collections.synchronizedList(new LinkedList<ShutdownListener>());
+    
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
      * @param channelNumber the number of the channel to disconnect
@@ -109,15 +118,19 @@ public class AMQConnection implements Connection {
         _channelManager.disconnectChannel(channelNumber);
     }
 
+    /**
+     * Public API - Determine whether the connection is open
+     * @return true if haven't yet received shutdown signal, false otherwise
+     */
     public boolean isOpen() {
         return _shutdownCause == null;
     }
 
     public void ensureIsOpen()
-        throws IllegalStateException
+        throws AlreadyClosedException
     {
         if (!isOpen()) {
-            throw new IllegalStateException("Attempt to use closed connection");
+            throw new AlreadyClosedException("Attempt to use closed connection");
         }
     }
 
@@ -576,7 +589,7 @@ public class AMQConnection implements Connection {
             ensureIsOpen(); // invariant: we should never be shut down more than once per instance
             _shutdownCause = new ShutdownSignalException(true,
                                                          initiatedByApplication,
-                                                         reason);
+                                                         reason, this);
         }
         if (cause != null) {
             _shutdownCause.initCause(cause);
@@ -616,6 +629,48 @@ public class AMQConnection implements Connection {
         } finally {
             _running = false;
         }
+        
+        synchronized(listeners) {
+        	for (ShutdownListener l: listeners)
+        		l.service(getCloseReason());
+        }
+    }
+    
+    /**
+     * Public API - Add shutdown listener fired when closing the connection
+     * @see com.rabbitmq.client.Connection#addShutdownListener()
+     */
+    public void addShutdownListener(ShutdownListener listener)
+    {
+    	
+    	boolean closed = false;
+    	synchronized(listeners) {
+    		closed = !isOpen();
+    		listeners.add(listener);
+    	}
+    	if (closed)
+    		listener.service(_shutdownCause);	
+    }
+    
+    /**
+     * Public API - Remove shutdown listener for this connection
+     * Removing only the first found object
+     * @see com.rabbitmq.client.Connection#removeShutdownListener()
+     */
+    public void removeShutdownListener(ShutdownListener listener)
+    {
+    	synchronized(listeners) {
+    		listeners.remove(listener);
+    	}
+    }
+    
+    /**
+     * Public API - Get reason for shutdown, or null if open
+     * @see com.rabbitmq.client.Connection#getShutdownReason()
+     */
+    public ShutdownSignalException getCloseReason()
+    {
+    	return _shutdownCause;
     }
 
     @Override public String toString() {

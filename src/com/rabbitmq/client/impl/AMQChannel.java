@@ -27,8 +27,10 @@ package com.rabbitmq.client.impl;
 
 import java.io.IOException;
 
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingValueOrException;
 import com.rabbitmq.utility.SingleShotLinearTimer;
@@ -53,9 +55,9 @@ public abstract class AMQChannel {
 
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
     public RpcContinuation _activeRpc = null;
-
-    /** Indicates whether this channel is in a state to handle further activity. */
-    public volatile boolean _isOpen = true;
+    
+    /** Reason for closing the channel, null if still open */
+    public volatile ShutdownSignalException _cause;
 
     /**
      * Construct a channel on the given connection, with the given channel number.
@@ -160,21 +162,36 @@ public abstract class AMQChannel {
         transmit(m);
     }
 
-    public synchronized RpcContinuation nextOutstandingRpc() {
+    public synchronized RpcContinuation nextOutstandingRpc()
+    {
         RpcContinuation result = _activeRpc;
         _activeRpc = null;
         return result;
     }
 
-    public boolean isOpen() {
-        return _isOpen;
+    /**
+     * Public API - Indicates whether this channel is in an open state
+     * @return true if channel is open, false otherwise
+     */
+    public boolean isOpen()
+    {
+        return _cause == null;
+    }
+    
+    /**
+     * Public API - Get the reason for closing the channel 
+     * @return object having information about the shutdown, or null if still open
+     */
+    public ShutdownSignalException getCloseReason() 
+    {
+    	return _cause;
     }
 
     public void ensureIsOpen()
-        throws IllegalStateException
+        throws AlreadyClosedException
     {
         if (!isOpen()) {
-            throw new IllegalStateException("Attempt to use closed channel");
+            throw new AlreadyClosedException("Attempt to use closed channel");
         }
     }
 
@@ -261,7 +278,7 @@ public abstract class AMQChannel {
     public void processShutdownSignal(ShutdownSignalException signal) {
         synchronized (this) {
             ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-            _isOpen = false;
+            _cause = signal;
         }
         RpcContinuation k = nextOutstandingRpc();
         if (k != null) {
