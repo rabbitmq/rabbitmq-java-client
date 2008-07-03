@@ -26,8 +26,10 @@
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.rabbitmq.client.Command;
@@ -37,6 +39,7 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ReturnListener;
+import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.UnexpectedMethodError;
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -81,6 +84,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Reference to the currently-active ReturnListener, or null if there is none.
      */
     public volatile ReturnListener returnListener = null;
+    
+    /** Shutdown listeners fired when closing the channel */
+    public final List<ShutdownListener> listeners
+        = new ArrayList<ShutdownListener>();
 
     /**
      * Construct a new channel on the given connection with the given
@@ -224,6 +231,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                              false,
                                                                              command);
                 processShutdownSignal(signal);
+                notifyListeners();
                 return true;
             } else {
                 return false;
@@ -277,8 +285,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (cause != null) {
             signal.initCause(cause);
         }
-        processShutdownSignal(signal);
 
+        processShutdownSignal(signal);
+        
         // Now that we're in quiescing state, send channel.close and
         // wait for the reply. Note that we can't use regular old rpc
         // or exnWrappingRpc here, since _isOpen is false. We use
@@ -298,6 +307,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // our connection so that any further frames inbound on this
         // channel can be caught as the errors they are.
         releaseChannelNumber();
+        notifyListeners();
+    }
+    
+    /**
+     * Private API - notify the listeners attached to this channel
+     * @see com.rabbitmq.client.ShutdownListener
+     */
+    public void notifyListeners()
+    {
+        synchronized(listeners) {
+            for (ShutdownListener l: listeners)
+                l.service(getCloseReason());
+        }
     }
 
     /**
@@ -368,6 +390,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         Basic.Publish publish = new Basic.Publish(ticket, exchange, routingKey,
                                                           mandatory, immediate);
         AMQCommand command = new AMQCommand(publish, useProps, body);
+        ensureIsOpen();
         command.transmit(this);
     }
 
@@ -730,4 +753,42 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     {
 	return (Tx.RollbackOk) exnWrappingRpc(new Tx.Rollback()).getMethod();
     }
+
+
+    /**
+     * Public API - Add shutdown listener on this channel
+     * @see com.rabbitmq.client.Channel#addShutdownListener(ShutdownListener)
+     */
+	public void addShutdownListener(ShutdownListener listener)
+	{
+    	
+    	boolean closed = false;
+    	synchronized(listeners) {
+    		closed = !isOpen();
+    		listeners.add(listener);
+    	}
+    	if (closed)
+    		listener.service(getCloseReason());		
+	}
+    
+    /**
+     * Public API - Remove shutdown listener for this channel
+     * Removing only the first found object
+     * @see com.rabbitmq.client.Channel#removeShutdownListener(ShutdownListener)
+     */   
+    public void removeShutdownListener(ShutdownListener listener)
+    {
+    	synchronized(listeners) {
+    		listeners.remove(listener);
+    	}
+    }
+
+    /**
+     * Public API - Get the shutdown reason object
+     * @see com.rabbitmq.client.Channel#getCloseReason()
+     */
+    public ShutdownSignalException getCloseReason()
+	{
+		return super.getCloseReason();
+	}
 }

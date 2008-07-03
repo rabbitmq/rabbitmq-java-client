@@ -28,7 +28,7 @@ package com.rabbitmq.client;
  * Encapsulates a shutdown condition for a connection to an AMQP broker.
  */
 
-public class ShutdownSignalException extends Exception {
+public class ShutdownSignalException extends RuntimeException {
     /** True if the connection is shut down, or false if this signal refers to a channel */
     private final boolean _hardError;
 
@@ -59,11 +59,13 @@ public class ShutdownSignalException extends Exception {
 
     /** @return true if this signals a connection error, or false if a channel error */
     public boolean isHardError() { return _hardError; }
+    
     /** @return true if this exception was caused by explicit application
      * action; false if it originated with the broker or as a result
      * of detectable non-deliberate application failure
      */
     public boolean isInitiatedByApplication() { return _initiatedByApplication; }
+    
     /** @return the reason object, if any */
     public Object getReason() { return _reason; }
 
