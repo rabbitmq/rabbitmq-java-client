@@ -28,8 +28,6 @@ package com.rabbitmq.client.impl;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import com.rabbitmq.client.AMQP;
@@ -41,7 +39,6 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.RedirectException;
-import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.Utility;
 
@@ -63,7 +60,7 @@ import com.rabbitmq.utility.Utility;
  * int ticket = ch1.accessRequest(realmName);
  * </pre>
  */
-public class AMQConnection implements Connection {
+public class AMQConnection extends ShutdownNotifierComponent implements Connection{
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
 
@@ -92,22 +89,11 @@ public class AMQConnection implements Connection {
     /** Flag controlling the main driver loop's termination */
     public volatile boolean _running = false;
 
-    /**
-     * When this value is null, the connection is in an "open"
-     * state. When non-null, the connection is in "closed" state, and
-     * this value indicates the circumstances of the shutdown.
-     */
-    public volatile ShutdownSignalException _shutdownCause = null;
-
     /** Maximum frame length, or zero if no limit is set */
     public int _frameMax;
 
     /** Handler for (otherwise-unhandled) exceptions that crop up in the mainloop. */
     public final ExceptionHandler _exceptionHandler;
-    
-    /** List of all shutdown listeners associated with the connection */
-    public List<ShutdownListener> listeners
-            = new ArrayList<ShutdownListener>();
     
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
@@ -115,14 +101,6 @@ public class AMQConnection implements Connection {
      */
     public final void disconnectChannel(int channelNumber) {
         _channelManager.disconnectChannel(channelNumber);
-    }
-
-    /**
-     * Public API - Determine whether the connection is open
-     * @return true if haven't yet received shutdown signal, false otherwise
-     */
-    public boolean isOpen() {
-        return _shutdownCause == null;
     }
 
     public void ensureIsOpen()
@@ -628,55 +606,6 @@ public class AMQConnection implements Connection {
             _running = false;
         }
         notifyListeners();
-    }
-    
-    /**
-     * Private API - notify the listeners attached to this connection
-     * @see com.rabbitmq.client.ShutdownListener
-     */
-    public void notifyListeners()
-    {
-        synchronized(listeners) {
-            for (ShutdownListener l: listeners)
-                l.service(getCloseReason());
-        }
-    }
-    
-    /**
-     * Public API - Add shutdown listener fired when closing the connection
-     * @see com.rabbitmq.client.Connection#addShutdownListener()
-     */
-    public void addShutdownListener(ShutdownListener listener)
-    {
-    	
-    	boolean closed = false;
-    	synchronized(listeners) {
-    		closed = !isOpen();
-    		listeners.add(listener);
-    	}
-    	if (closed)
-    		listener.service(_shutdownCause);	
-    }
-    
-    /**
-     * Public API - Remove shutdown listener for this connection
-     * Removing only the first found object
-     * @see com.rabbitmq.client.Connection#removeShutdownListener()
-     */   
-    public void removeShutdownListener(ShutdownListener listener)
-    {
-    	synchronized(listeners) {
-    		listeners.remove(listener);
-    	}
-    }
-    
-    /**
-     * Public API - Get reason for shutdown, or null if open
-     * @see com.rabbitmq.client.Connection#getShutdownReason()
-     */
-    public ShutdownSignalException getCloseReason()
-    {
-    	return _shutdownCause;
     }
 
     @Override public String toString() {

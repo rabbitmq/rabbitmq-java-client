@@ -49,7 +49,7 @@ import java.io.IOException;
  * Current implementations are thread-safe for code at the client API level,
  * and in fact thread-safe internally except for code within RPC calls.
  */
-public interface Connection { // rename to AMQPConnection later, this is a temporary name
+public interface Connection extends ShutdownNotifier { // rename to AMQPConnection later, this is a temporary name
     /**
      * Retrieve the host.
      * @return the hostname of the peer we're connected to.
@@ -127,40 +127,4 @@ public interface Connection { // rename to AMQPConnection later, this is a tempo
      * @throws IOException if an I/O problem is encountered
      */
     void close(int closeCode, String closeMessage) throws IOException;
-    
-    /**
-     * Add connection shutdown listener.
-     * If the connection is already closed handler is fired immediately
-     * 
-     * @param listener {@link ShutdownListener} to the connection
-     */
-    void addShutdownListener(ShutdownListener listener);
-    
-    /**
-     * Remove shutdown listener for the connection.
-     * 
-     * @param listener {@link ShutdownListener} to be removed
-     */
-    void removeShutdownListener(ShutdownListener listener);
-    
-    /**
-     * Retrieve connection close reason.
-     * 
-     * @see com.rabbitmq.client.ShutdownCause
-     * @return information about the cause of closing the connection, or null if connection is still open
-     */
-    ShutdownSignalException getCloseReason();
-    
-    /**
-     * Determine whether the connection is currently open.
-     * Will return false if we are currently closing.
-     * Checking this method should be only for information,
-     * because of the race conditions - state can change after the call.
-     * Instead just execute and try to catch ShutdownSignalException
-     * and IOException
-     * 
-     * @see com.rabbitmq.client.impl.AMQConnection#isOpen()
-     * @return true when connection is open, false otherwise
-     */
-    boolean isOpen();
 }
