@@ -3,6 +3,7 @@ package com.rabbitmq.client;
 /**
  * Interface for components that are shutdown capable and
  * that allow listeners to be added for shutdown signals
+ * 
  * @see ShutdownListener
  * @see ShutdownSignalException
  */

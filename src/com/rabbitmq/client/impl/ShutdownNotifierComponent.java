@@ -28,7 +28,7 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
     		listeners.add(listener);
     	}
     	if (closed)
-    		listener.shutdownInitiated(getCloseReason());	
+    		listener.shutdownCompleted(getCloseReason());	
     }
 
 	public ShutdownSignalException getCloseReason() {
@@ -40,7 +40,7 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
         synchronized(listeners) {
             for (ShutdownListener l: listeners)
             	try {
-                    l.shutdownInitiated(getCloseReason());
+                    l.shutdownCompleted(getCloseReason());
             	} catch (Exception e) {
             		// FIXME: proper logging
             	}
