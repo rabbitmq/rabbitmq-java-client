@@ -42,7 +42,7 @@ import com.rabbitmq.utility.BlockingValueOrException;
  * @see ChannelN
  * @see Connection
  */
-public abstract class AMQChannel {
+public abstract class AMQChannel extends ShutdownNotifierComponent {
     /** The connection this channel is associated with. */
     public final AMQConnection _connection;
 
@@ -54,9 +54,6 @@ public abstract class AMQChannel {
 
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
     public RpcContinuation _activeRpc = null;
-    
-    /** Reason for closing the channel, null if still open */
-    public volatile ShutdownSignalException _cause;
 
     /**
      * Construct a channel on the given connection, with the given channel number.
@@ -172,24 +169,6 @@ public abstract class AMQChannel {
         return result;
     }
 
-    /**
-     * Public API - Indicates whether this channel is in an open state
-     * @return true if channel is open, false otherwise
-     */
-    public boolean isOpen()
-    {
-        return _cause == null;
-    }
-    
-    /**
-     * Public API - Get the reason for closing the channel 
-     * @return object having information about the shutdown, or null if still open
-     */
-    public ShutdownSignalException getCloseReason() 
-    {
-    	return _cause;
-    }
-
     public void ensureIsOpen()
         throws AlreadyClosedException
     {
@@ -250,7 +229,7 @@ public abstract class AMQChannel {
     @Override public String toString() {
         return "AMQChannel(" + _connection + "," + _channelNumber + ")";
     }
-    
+
     /**
      * Protected API - respond, in the driver thread, to a {@link ShutdownSignalException}.
      * @param signal the signal to handle
@@ -258,7 +237,7 @@ public abstract class AMQChannel {
     public void processShutdownSignal(ShutdownSignalException signal) {
         synchronized (this) {
             ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-            _cause = signal;
+            _shutdownCause = signal;
         }
         RpcContinuation k = nextOutstandingRpc();
         if (k != null) {
