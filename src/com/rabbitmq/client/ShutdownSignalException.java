@@ -32,7 +32,7 @@ package com.rabbitmq.client;
  * this exception.
  */
 
-public class ShutdownSignalException extends Exception {
+public class ShutdownSignalException extends RuntimeException {
     /** True if the connection is shut down, or false if this signal refers to a channel */
     private final boolean _hardError;
 

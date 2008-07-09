@@ -26,10 +26,8 @@
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.rabbitmq.client.Command;
@@ -39,7 +37,6 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ReturnListener;
-import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.UnexpectedMethodError;
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -84,10 +81,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Reference to the currently-active ReturnListener, or null if there is none.
      */
     public volatile ReturnListener returnListener = null;
-    
-    /** Shutdown listeners fired when closing the channel */
-    public final List<ShutdownListener> listeners =
-    	Collections.synchronizedList(new ArrayList<ShutdownListener>());
 
     /**
      * Construct a new channel on the given connection with the given
@@ -232,6 +225,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                              command,
                                                                              this);
                 processShutdownSignal(signal);
+                notifyListeners();
                 return true;
             } else {
                 return false;
@@ -286,13 +280,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (cause != null) {
             signal.initCause(cause);
         }
-
         processShutdownSignal(signal);
-        synchronized (listeners) {
-            for (ShutdownListener l: listeners)
-            	l.service(signal);
-        }
-        
+
         // Now that we're in quiescing state, send channel.close and
         // wait for the reply. Note that we can't use regular old rpc
         // or exnWrappingRpc here, since _isOpen is false. We use
@@ -312,6 +301,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // our connection so that any further frames inbound on this
         // channel can be caught as the errors they are.
         releaseChannelNumber();
+        notifyListeners();
     }
 
     /**
@@ -382,6 +372,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         Basic.Publish publish = new Basic.Publish(ticket, exchange, routingKey,
                                                           mandatory, immediate);
         AMQCommand command = new AMQCommand(publish, useProps, body);
+        ensureIsOpen();
         command.transmit(this);
     }
 
@@ -430,10 +421,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
      */
     public Exchange.DeleteOk exchangeDelete(int ticket, String exchange, boolean ifUnused)
-	throws IOException
+        throws IOException
     {
-	return (Exchange.DeleteOk)
-	    exnWrappingRpc(new Exchange.Delete(ticket, exchange, ifUnused, false)).getMethod();
+        return (Exchange.DeleteOk)
+	        exnWrappingRpc(new Exchange.Delete(ticket, exchange, ifUnused, false)).getMethod();
     }
 
     /**
@@ -442,9 +433,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
      */
     public Exchange.DeleteOk exchangeDelete(int ticket, String exchange)
-	throws IOException
+        throws IOException
     {
-	return exchangeDelete(ticket, exchange, false);
+        return exchangeDelete(ticket, exchange, false);
     }
 
     /**
@@ -493,7 +484,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
      */
     public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclare(int ticket)
-	throws IOException
+        throws IOException
     {
         return queueDeclare(ticket, "", false, false, true, true, null);
     }
@@ -504,10 +495,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.DeleteOk
      */
     public Queue.DeleteOk queueDelete(int ticket, String queue, boolean ifUnused, boolean ifEmpty)
-	throws IOException
+        throws IOException
     {
-	return (Queue.DeleteOk)
-	    exnWrappingRpc(new Queue.Delete(ticket, queue, ifUnused, ifEmpty, false)).getMethod();
+        return (Queue.DeleteOk)
+	        exnWrappingRpc(new Queue.Delete(ticket, queue, ifUnused, ifEmpty, false)).getMethod();
     }
 
     /**
@@ -718,9 +709,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Tx.SelectOk
      */
     public Tx.SelectOk txSelect()
-	throws IOException
+	    throws IOException
     {
-	return (Tx.SelectOk) exnWrappingRpc(new Tx.Select()).getMethod();
+        return (Tx.SelectOk) exnWrappingRpc(new Tx.Select()).getMethod();
     }
 
     /**
@@ -729,9 +720,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Tx.CommitOk
      */
     public Tx.CommitOk txCommit()
-	throws IOException
+	    throws IOException
     {
-	return (Tx.CommitOk) exnWrappingRpc(new Tx.Commit()).getMethod();
+        return (Tx.CommitOk) exnWrappingRpc(new Tx.Commit()).getMethod();
     }
 
     /**
@@ -740,47 +731,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Tx.RollbackOk
      */
     public Tx.RollbackOk txRollback()
-	throws IOException
+	    throws IOException
     {
-	return (Tx.RollbackOk) exnWrappingRpc(new Tx.Rollback()).getMethod();
+        return (Tx.RollbackOk) exnWrappingRpc(new Tx.Rollback()).getMethod();
     }
-
-
-    /**
-     * Public API - Add shutdown listener on this channel
-     * @see com.rabbitmq.client.Channel#addShutdownListener(ShutdownListener)
-     */
-	public void addShutdownListener(ShutdownListener listener)
-	{
-    	
-    	boolean closed = false;
-    	synchronized(listeners) {
-    		closed = !isOpen();
-    		listeners.add(listener);
-    	}
-    	if (closed)
-    		listener.service(getCloseReason());		
-	}
-    
-    /**
-     * Public API - Remove shutdown listener for this channel
-     * Removing only the first found object
-     * @see com.rabbitmq.client.Channel#removeShutdownListener(ShutdownListener)
-     */
-    public void removeShutdownListener(ShutdownListener listener)
-    {
-    	synchronized(listeners) {
-    		listeners.remove(listener);
-    	}
-    }
-
-    /**
-     * Public API - Get the shutdown reason object
-     * @see com.rabbitmq.client.Channel#getCloseReason()
-     */
-    @Override
-    public ShutdownSignalException getCloseReason()
-	{
-		return super.getCloseReason();
-	}
 }

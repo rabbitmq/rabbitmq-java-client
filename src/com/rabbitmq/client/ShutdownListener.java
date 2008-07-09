@@ -4,6 +4,6 @@ import java.util.EventListener;
 
 public interface ShutdownListener extends EventListener {
 	
-	public void service(ShutdownSignalException cause);
+	public void shutdownCompleted(ShutdownSignalException cause);
 
 }

@@ -1,19 +1,12 @@
 package com.rabbitmq.client;
 
-public class AlreadyClosedException extends IllegalStateException {
-	
-	public AlreadyClosedException()
+/*
+ * Thrown when application tries to perform an action on connection/channel
+ * which was already closed
+ */
+public class AlreadyClosedException extends ShutdownSignalException {
+	public AlreadyClosedException(String s, Object ref)
 	{
-		super();
-	}
-	
-	public AlreadyClosedException(Throwable e)
-	{
-		super(e);
-	}
-
-	public AlreadyClosedException(String s)
-	{
-		super(s);
+		super(true, true, s, ref);
 	}
 }
