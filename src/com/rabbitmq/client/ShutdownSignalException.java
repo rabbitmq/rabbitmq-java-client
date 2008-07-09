@@ -26,6 +26,10 @@ package com.rabbitmq.client;
 
 /**
  * Encapsulates a shutdown condition for a connection to an AMQP broker.
+ * Depending on HardError when calling
+ * {@link com.rabbitmq.client.ShutdownSignalException#getReference()} we will
+ * either get a reference to the Connection or Channel instance that fired
+ * this exception.
  */
 
 public class ShutdownSignalException extends RuntimeException {
@@ -42,19 +46,25 @@ public class ShutdownSignalException extends RuntimeException {
     /** Possible explanation */
     private final Object _reason;
 
+    /** Either Channel or Connection instance, depending on _hardError */
+    private final Object _ref;
+
     /**
      * Construct a ShutdownSignalException from the arguments.
      * @param hardError the relevant hard error
      * @param initiatedByApplication if the shutdown was client-initiated
      * @param reason Object describing the origin of the exception
+     * @param ref Reference to Connection or Channel that fired the signal
      */
     public ShutdownSignalException(boolean hardError,   
                                    boolean initiatedByApplication,
-                                   Object reason)
+                                   Object reason, Object ref)
     {
         this._hardError = hardError;
         this._initiatedByApplication = initiatedByApplication;
         this._reason = reason;
+        // Depending on hardError what we got is either Connection or Channel reference
+        this._ref = ref;
     }
 
     /** @return true if this signals a connection error, or false if a channel error */
@@ -68,6 +78,9 @@ public class ShutdownSignalException extends RuntimeException {
     
     /** @return the reason object, if any */
     public Object getReason() { return _reason; }
+    
+    /** @return Reference to Connection or Channel object that fired the signal **/
+    public Object getReference() { return _ref; }
 
     public String toString() {
         return super.toString() + " (" +

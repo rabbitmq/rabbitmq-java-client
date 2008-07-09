@@ -190,7 +190,8 @@ public class RpcClient {
             ShutdownSignalException wrapper =
                 new ShutdownSignalException(sig.isHardError(),
                                             sig.isInitiatedByApplication(),
-                                            sig.getReason());
+                                            sig.getReason(),
+                                            sig.getReference());
             wrapper.initCause(sig);
             throw wrapper;
         } else {

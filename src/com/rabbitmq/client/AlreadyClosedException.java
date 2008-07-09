@@ -5,8 +5,8 @@ package com.rabbitmq.client;
  * which was already closed
  */
 public class AlreadyClosedException extends ShutdownSignalException {
-	public AlreadyClosedException(String s)
+	public AlreadyClosedException(String s, Object ref)
 	{
-		super(true, true, s);
+		super(true, true, s, ref);
 	}
 }

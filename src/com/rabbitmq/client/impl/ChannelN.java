@@ -222,7 +222,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 releaseChannelNumber();
                 ShutdownSignalException signal = new ShutdownSignalException(false,
                                                                              false,
-                                                                             command);
+                                                                             command,
+                                                                             this);
                 processShutdownSignal(signal);
                 notifyListeners();
                 return true;
@@ -274,13 +275,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         Channel.Close reason = new Channel.Close(closeCode, closeMessage, 0, 0);
         ShutdownSignalException signal = new ShutdownSignalException(false,
                                                                      initiatedByApplication,
-                                                                     reason);
+                                                                     reason,
+                                                                     this);
         if (cause != null) {
             signal.initCause(cause);
         }
-
         processShutdownSignal(signal);
-        
+
         // Now that we're in quiescing state, send channel.close and
         // wait for the reply. Note that we can't use regular old rpc
         // or exnWrappingRpc here, since _isOpen is false. We use
