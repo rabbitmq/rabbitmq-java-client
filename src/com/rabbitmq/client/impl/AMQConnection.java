@@ -32,6 +32,7 @@ import java.util.Map;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
@@ -59,7 +60,7 @@ import com.rabbitmq.utility.Utility;
  * int ticket = ch1.accessRequest(realmName);
  * </pre>
  */
-public class AMQConnection implements Connection {
+public class AMQConnection extends ShutdownNotifierComponent implements Connection{
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
 
@@ -88,19 +89,12 @@ public class AMQConnection implements Connection {
     /** Flag controlling the main driver loop's termination */
     public volatile boolean _running = false;
 
-    /**
-     * When this value is null, the connection is in an "open"
-     * state. When non-null, the connection is in "closed" state, and
-     * this value indicates the circumstances of the shutdown.
-     */
-    public volatile ShutdownSignalException _shutdownCause = null;
-
     /** Maximum frame length, or zero if no limit is set */
     public int _frameMax;
 
     /** Handler for (otherwise-unhandled) exceptions that crop up in the mainloop. */
     public final ExceptionHandler _exceptionHandler;
-
+    
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
      * @param channelNumber the number of the channel to disconnect
@@ -109,15 +103,11 @@ public class AMQConnection implements Connection {
         _channelManager.disconnectChannel(channelNumber);
     }
 
-    public boolean isOpen() {
-        return _shutdownCause == null;
-    }
-
     public void ensureIsOpen()
-        throws IllegalStateException
+        throws AlreadyClosedException
     {
         if (!isOpen()) {
-            throw new IllegalStateException("Attempt to use closed connection");
+            throw new AlreadyClosedException("Attempt to use closed connection");
         }
     }
 
@@ -340,15 +330,13 @@ public class AMQConnection implements Connection {
             _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
             _frameHandler.sendHeader();
 
-            if (!isOpen()) {
-                // See bug 17389. The MainLoop could have shut down already in
-                // which case we don't want to wait forever for a reply.
-                
-                // There is no race if the MainLoop shuts down after enqueuing
-                // the RPC because if that happens the channel will correctly
-                // pass the exception into RPC, waking it up.
-                throw _shutdownCause;
-            }
+            // See bug 17389. The MainLoop could have shut down already in
+            // which case we don't want to wait forever for a reply.
+            
+            // There is no race if the MainLoop shuts down after enqueuing
+            // the RPC because if that happens the channel will correctly
+            // pass the exception into RPC, waking it up.
+            ensureIsOpen();
 
             AMQP.Connection.Start connStart =
                 (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
@@ -561,6 +549,7 @@ public class AMQConnection implements Connection {
             Utility.emptyStatement();
         }
         shutdown(closeCommand, false, null);
+        notifyListeners();
     }
 
     /**
@@ -616,6 +605,7 @@ public class AMQConnection implements Connection {
         } finally {
             _running = false;
         }
+        notifyListeners();
     }
 
     @Override public String toString() {
