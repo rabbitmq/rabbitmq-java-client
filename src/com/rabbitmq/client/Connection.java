@@ -136,7 +136,8 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * This method will wait with the given timeout for all the close
      * operations to complete. If timeout is reached then socket is forced
      * to close
-     * @param timeout timeout (in milioseconds) for completing all the close-related operations, use 0 for infinity
+     * @param timeout timeout (in milioseconds) for completing all the close-related
+     * operations, use -1 for infinity
      * @throws IOException if an I/O problem is encountered
      */
     void close(int timeout) throws IOException;
@@ -155,6 +156,9 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * This method behaves in a similar way as abort(), with the only difference
      * that it will wait with a provided timeout for all the close operations to
      * complete. If timeout is reached socket is forced to close.
+     * 
+     * @param timeout timeout (in miliseconds) for completing all the close-related
+     * operations, use -1 for infinity
      */
     void abort(int timeout);
 }

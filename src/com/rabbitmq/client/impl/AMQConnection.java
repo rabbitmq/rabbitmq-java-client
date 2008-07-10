@@ -607,7 +607,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void close()
         throws IOException
     {
-    	close(0);
+    	close(-1);
     }
 
     /**
@@ -625,7 +625,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public void abort()
     {
-    	abort(0);
+    	abort(-1);
     }
     
     public void abort(int timeout)

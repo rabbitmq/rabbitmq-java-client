@@ -38,6 +38,8 @@ public class BlockingCell<T> {
     private T _value;
     
     private static final long NANOS_IN_MILLI = 1000 * 1000;
+    
+    private static final long INFINITY = -1;
 
     /** Instantiate a new BlockingCell waiting for a value of the specified type. */
     public BlockingCell() {
@@ -63,14 +65,19 @@ public class BlockingCell<T> {
      * already a value present, there's no need to wait - the existing value is returned.
      * If timeout is reached and value hasn't arrived, TimeoutException is thrown
      * 
-     * @param timeout timeout in miliseconds.Value less than zero effectively means infinity
+     * @param timeout timeout in miliseconds. -1 effectively means infinity
      * @return the waited-for value
      * @throws InterruptedException if this thread is interrupted
      */
     public synchronized T get(long timeout) throws InterruptedException, TimeoutException {
-    	synchronized(this) {
-    		wait(timeout);
-        }
+    	if (timeout < 0 && timeout != INFINITY)
+    		throw new AssertionError("Timeout cannot be less than zero");
+    	
+    	if (timeout != 0) {
+    	    synchronized(this) {
+    		    wait(timeout == INFINITY ? 0 : timeout);
+            }
+    	}
         
         if (!_filled)
         	throw new TimeoutException();
@@ -92,24 +99,18 @@ public class BlockingCell<T> {
         }
     }
     
-    
     /**
      * As get(long timeout), but catches and ignores InterruptedException, retrying until
      * a value appears or until specified timeout is reached. If timeout is reached,
      * TimeoutException it thrown.
      * We also use System.nanoTime() to behave correctly when system clock jumps around.
      *  
-     * @param timeout timeout in miliseconds. 0 effectively means infinity
+     * @param timeout timeout in miliseconds. -1 effectively means infinity
      * @return the waited-for value
      */
     public synchronized T uninterruptibleGet(int timeout) throws TimeoutException {
-        long now = System.nanoTime() / NANOS_IN_MILLI;
+    	long now = System.nanoTime() / NANOS_IN_MILLI;
         long runTime = now + timeout;
-
-        
-        if (timeout < 0) {
-        	throw new AssertionError("Timeout cannot be less than zero");
-        }
         
         do {
         	try {
@@ -119,7 +120,7 @@ public class BlockingCell<T> {
             } catch (InterruptedException e) {
                 // Ignore.
             }
-        } while ((timeout == 0) || ((now = System.nanoTime() / NANOS_IN_MILLI) < runTime));
+        } while ((timeout == INFINITY) || ((now = System.nanoTime() / NANOS_IN_MILLI) < runTime));
         
         throw new TimeoutException();
     }
