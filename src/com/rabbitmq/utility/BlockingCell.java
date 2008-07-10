@@ -95,30 +95,32 @@ public class BlockingCell<T> {
     
     /**
      * As get(long timeout), but catches and ignores InterruptedException, retrying until
-     * a value appears or until timeout original is reached. If timeout is reached,
+     * a value appears or until specified timeout is reached. If timeout is reached,
      * TimeoutException it thrown.
      * We also use System.nanoTime() to behave correctly when system clock jumps around.
      *  
-     * @param timeout timeout in miliseconds. Value less than zero effectively means infinity
+     * @param timeout timeout in miliseconds. 0 effectively means infinity
      * @return the waited-for value
      */
     public synchronized T uninterruptibleGet(int timeout) throws TimeoutException {
-        long runTime = System.nanoTime() / NANOS_IN_MILLI + timeout;
-        long now = 0;
+        long now = System.nanoTime() / NANOS_IN_MILLI;
+        long runTime = now + timeout;
+
         
         if (timeout < 0) {
         	throw new AssertionError("Timeout cannot be less than zero");
         }
-
-        while ((timeout == 0) || ((now = System.nanoTime() / NANOS_IN_MILLI) < runTime)) {
-            try {
+        
+        do {
+        	try {
                 synchronized(this) {
-                    return get(timeout != 0 ? (runTime - now) : 0);
+                    return get(runTime - now);
                 }
             } catch (InterruptedException e) {
                 // Ignore.
             }
-        }
+        } while ((timeout == 0) || ((now = System.nanoTime() / NANOS_IN_MILLI) < runTime));
+        
         throw new TimeoutException();
     }
 

@@ -212,7 +212,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                                    final AMQCommand timeoutReply)
         throws IOException, ShutdownSignalException, TimeoutException
     {
-    	TimeoutBlockingRpcContinuation k = new TimeoutBlockingRpcContinuation();
+    	SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
         transmitAndEnqueue(m, k);
         return k.getReply(timeoutMillisec);
     }
@@ -274,6 +274,12 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         {
             return _blocker.uninterruptibleGetValue();
         }
+        
+        public T getReply(int timeout)
+            throws ShutdownSignalException, TimeoutException
+        {
+            return _blocker.uninterruptibleGetValue(timeout);
+        }
 
         public abstract T transformReply(AMQCommand command);
     }
@@ -284,15 +290,5 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         public AMQCommand transformReply(AMQCommand command) {
             return command;
         }
-    }
-    
-    public static class TimeoutBlockingRpcContinuation
-        extends SimpleBlockingRpcContinuation
-    {
-    	public AMQCommand getReply(int timeout)
-    	    throws ShutdownSignalException, TimeoutException
-    	{
-    		return _blocker.uninterruptibleGetValue(timeout);
-    	}
     }
 }
