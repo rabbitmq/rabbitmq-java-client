@@ -221,7 +221,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 releaseChannelNumber();
                 ShutdownSignalException signal = new ShutdownSignalException(false,
                                                                              false,
-                                                                             command);
+                                                                             command,
+                                                                             this);
                 processShutdownSignal(signal);
                 transmit(new Channel.CloseOk());
                 notifyListeners();
@@ -274,7 +275,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         Channel.Close reason = new Channel.Close(closeCode, closeMessage, 0, 0);
         ShutdownSignalException signal = new ShutdownSignalException(false,
                                                                      initiatedByApplication,
-                                                                     reason);
+                                                                     reason,
+                                                                     this);
         if (cause != null) {
             signal.initCause(cause);
         }

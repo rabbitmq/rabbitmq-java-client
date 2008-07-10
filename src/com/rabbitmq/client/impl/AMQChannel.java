@@ -173,7 +173,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         throws AlreadyClosedException
     {
         if (!isOpen()) {
-            throw new AlreadyClosedException("Attempt to use closed channel");
+            throw new AlreadyClosedException("Attempt to use closed channel", this);
         }
     }
 

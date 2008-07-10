@@ -24,6 +24,7 @@
 //
 
 package com.rabbitmq.client.impl;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketException;
@@ -110,7 +111,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         throws AlreadyClosedException
     {
         if (!isOpen()) {
-            throw new AlreadyClosedException("Attempt to use closed connection");
+            throw new AlreadyClosedException("Attempt to use closed connection", this);
         }
     }
 
@@ -586,7 +587,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 ensureIsOpen(); // invariant: we should never be shut down more than once per instance
                 _shutdownCause = new ShutdownSignalException(true,
                                                              initiatedByApplication,
-                                                             reason);
+                                                             reason, this);
             }
         
             if (cause != null) {
