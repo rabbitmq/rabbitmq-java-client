@@ -53,7 +53,7 @@ public class BrokerTestCase extends TestCase
         throws IOException
     {
         if (connection != null) {
-            connection.close(200, "OK");
+            connection.close();
             connection = null;
         }
     }

@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
@@ -124,7 +125,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @param signal an exception signalling channel shutdown
      */
     public void broadcastShutdownSignal(ShutdownSignalException signal) {
-
         Map<String, Consumer> snapshotConsumers;
         synchronized (_consumers) {
             snapshotConsumers = new HashMap<String, Consumer>(_consumers);
@@ -218,13 +218,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 }
                 return true;
             } else if (method instanceof Channel.Close) {
-                transmit(new Channel.CloseOk());
                 releaseChannelNumber();
                 ShutdownSignalException signal = new ShutdownSignalException(false,
                                                                              false,
                                                                              command,
                                                                              this);
                 processShutdownSignal(signal);
+                transmit(new Channel.CloseOk());
                 notifyListeners();
                 return true;
             } else {
@@ -291,6 +291,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             quiescingRpc(reason,
                          CLOSING_TIMEOUT,
                          new AMQCommand(new Channel.CloseOk()));
+        } catch (TimeoutException ise) {
+        	// FIXME: propagate it to the user
         } catch (ShutdownSignalException sse) {
             // Ignore.
         }

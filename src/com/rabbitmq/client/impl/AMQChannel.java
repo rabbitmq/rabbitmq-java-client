@@ -26,13 +26,13 @@
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingValueOrException;
-import com.rabbitmq.utility.SingleShotLinearTimer;
 
 /**
  * Base class modelling an AMQ channel. Subclasses implement close()
@@ -210,34 +210,11 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public AMQCommand quiescingRpc(Method m,
                                    int timeoutMillisec,
                                    final AMQCommand timeoutReply)
-        throws IOException, ShutdownSignalException
+        throws IOException, ShutdownSignalException, TimeoutException
     {
-        SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
+    	SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
         transmitAndEnqueue(m, k);
-        if (timeoutMillisec != 0) {
-            SingleShotLinearTimer timer = new SingleShotLinearTimer();
-
-            Runnable task = new Runnable() {
-                    public void run() {
-                        // Timed out waiting for reply.
-                        // Simulate a reply.
-                        // TODO: Warn the user somehow??
-                        try {
-                            handleCompleteInboundCommand(timeoutReply);
-                        } catch (IOException ioe) {
-                            // Ignore.
-                        }
-                    }
-                };
-            timer.schedule(task, timeoutMillisec);
-            try {
-                return k.getReply();
-            } finally {
-                timer.cancel();
-            }
-        } else {
-            return k.getReply();
-        }
+        return k.getReply(timeoutMillisec);
     }
 
     /**
@@ -296,6 +273,12 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         public T getReply() throws ShutdownSignalException
         {
             return _blocker.uninterruptibleGetValue();
+        }
+        
+        public T getReply(int timeout)
+            throws ShutdownSignalException, TimeoutException
+        {
+            return _blocker.uninterruptibleGetValue(timeout);
         }
 
         public abstract T transformReply(AMQCommand command);

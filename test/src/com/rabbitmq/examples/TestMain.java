@@ -109,14 +109,14 @@ public class TestMain {
 
         try {
             conn = new TestConnectionFactory(0, 1).newConnection(hostName, portNumber);
-            conn.close(200, "Goodbye");
+            conn.close();
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
 
         //should succeed IF the highest version supported by the
         //server is a version supported by this client
         conn = new TestConnectionFactory(100, 0).newConnection(hostName, portNumber);
-        conn.close(200, "Goodbye");
+        conn.close();
 
         ConnectionParameters params;
         params = new ConnectionParameters();
@@ -124,7 +124,7 @@ public class TestMain {
         params.setPassword("invalid");
         try {
             conn = new ConnectionFactory(params).newConnection(hostName, portNumber);
-            conn.close(200, "Goodbye");
+            conn.close();
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
 
@@ -136,7 +136,7 @@ public class TestMain {
         checkNegotiatedMaxValue("channel-max", 10, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 8192, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 1, conn.getHeartbeat());
-        conn.close(200, "Goodbye");
+        conn.close();
 
         params = new ConnectionParameters();
         params.setRequestedChannelMax(0);
@@ -146,10 +146,10 @@ public class TestMain {
         checkNegotiatedMaxValue("channel-max", 0, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 0, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 0, conn.getHeartbeat());
-        conn.close(200, "Goodbye");
+        conn.close();
 
         conn = new ConnectionFactory().newConnection(hostName, portNumber);
-        conn.close(200, "Goodbye");
+        conn.close();
     }
 
     private static void checkNegotiatedMaxValue(String name,
@@ -170,7 +170,7 @@ public class TestMain {
         conn = new ConnectionFactory().newConnection(hostName, portNumber);
         ch = conn.createChannel();
         ch.accessRequest("/data", true, true, true, true, true);
-        conn.close(200, "Goodbye");
+        conn.close();
         // Test what happens when we provoke an error
         conn = new ConnectionFactory().newConnection(hostName, portNumber);
         ch = conn.createChannel();
@@ -277,7 +277,7 @@ public class TestMain {
         tryRealm();
         log("Closing.");
         try {
-            _connection.close(200, "Goodbye.");
+            _connection.close();
         } catch (IllegalStateException e) {
             // work around bug 15794
         }

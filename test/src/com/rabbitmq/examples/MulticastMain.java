@@ -130,12 +130,12 @@ public class MulticastMain {
 
             for (int i = 0; i < producerCount; i++) {
                 producerThreads[i].join();
-                producerConnections[i].close(200, "ok");
+                producerConnections[i].close();
             }
 
             for (int i = 0; i < consumerCount; i++) {
                 consumerThreads[i].join();
-                consumerConnections[i].close(200, "ok");
+                consumerConnections[i].close();
             }
 
         }

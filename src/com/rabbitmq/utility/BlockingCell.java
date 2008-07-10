@@ -25,6 +25,8 @@
 
 package com.rabbitmq.utility;
 
+import java.util.concurrent.TimeoutException;
+
 /**
  * Simple one-shot IPC mechanism. Essentially a one-place buffer that cannot be emptied once filled.
  */
@@ -34,6 +36,10 @@ public class BlockingCell<T> {
 
     /** Will be null until a value is supplied, and possibly still then. */
     private T _value;
+    
+    private static final long NANOS_IN_MILLI = 1000 * 1000;
+    
+    private static final long INFINITY = -1;
 
     /** Instantiate a new BlockingCell waiting for a value of the specified type. */
     public BlockingCell() {
@@ -53,7 +59,32 @@ public class BlockingCell<T> {
         }
         return _value;
     }
-
+    
+    /**
+     * Wait for a value, and when one arrives, return it (without clearing it). If there's
+     * already a value present, there's no need to wait - the existing value is returned.
+     * If timeout is reached and value hasn't arrived, TimeoutException is thrown
+     * 
+     * @param timeout timeout in miliseconds. -1 effectively means infinity
+     * @return the waited-for value
+     * @throws InterruptedException if this thread is interrupted
+     */
+    public synchronized T get(long timeout) throws InterruptedException, TimeoutException {
+    	if (timeout < 0 && timeout != INFINITY)
+    		throw new AssertionError("Timeout cannot be less than zero");
+    	
+    	if (timeout != 0) {
+    	    synchronized(this) {
+    		    wait(timeout == INFINITY ? 0 : timeout);
+            }
+    	}
+        
+        if (!_filled)
+        	throw new TimeoutException();
+        
+        return _value;
+    }
+    
     /**
      * As get(), but catches and ignores InterruptedException, retrying until a value appears.
      * @return the waited-for value
@@ -66,6 +97,32 @@ public class BlockingCell<T> {
                 // no special handling necessary
             }
         }
+    }
+    
+    /**
+     * As get(long timeout), but catches and ignores InterruptedException, retrying until
+     * a value appears or until specified timeout is reached. If timeout is reached,
+     * TimeoutException it thrown.
+     * We also use System.nanoTime() to behave correctly when system clock jumps around.
+     *  
+     * @param timeout timeout in miliseconds. -1 effectively means infinity
+     * @return the waited-for value
+     */
+    public synchronized T uninterruptibleGet(int timeout) throws TimeoutException {
+    	long now = System.nanoTime() / NANOS_IN_MILLI;
+        long runTime = now + timeout;
+        
+        do {
+        	try {
+                synchronized(this) {
+                    return get(runTime - now);
+                }
+            } catch (InterruptedException e) {
+                // Ignore.
+            }
+        } while ((timeout == INFINITY) || ((now = System.nanoTime() / NANOS_IN_MILLI) < runTime));
+        
+        throw new TimeoutException();
     }
 
     /**
