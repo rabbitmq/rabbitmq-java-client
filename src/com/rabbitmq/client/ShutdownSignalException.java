@@ -56,7 +56,7 @@ public class ShutdownSignalException extends RuntimeException {
      * @param reason Object describing the origin of the exception
      * @param ref Reference to Connection or Channel that fired the signal
      */
-    public ShutdownSignalException(boolean hardError,   
+    public ShutdownSignalException(boolean hardError,
                                    boolean initiatedByApplication,
                                    Object reason, Object ref)
     {
@@ -69,16 +69,16 @@ public class ShutdownSignalException extends RuntimeException {
 
     /** @return true if this signals a connection error, or false if a channel error */
     public boolean isHardError() { return _hardError; }
-    
+
     /** @return true if this exception was caused by explicit application
      * action; false if it originated with the broker or as a result
      * of detectable non-deliberate application failure
      */
     public boolean isInitiatedByApplication() { return _initiatedByApplication; }
-    
+
     /** @return the reason object, if any */
     public Object getReason() { return _reason; }
-    
+
     /** @return Reference to Connection or Channel object that fired the signal **/
     public Object getReference() { return _ref; }
 

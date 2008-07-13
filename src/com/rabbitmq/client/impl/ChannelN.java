@@ -292,7 +292,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                          CLOSING_TIMEOUT,
                          new AMQCommand(new Channel.CloseOk()));
         } catch (TimeoutException ise) {
-        	// FIXME: propagate it to the user
+            // FIXME: propagate it to the user
         } catch (ShutdownSignalException sse) {
             // Ignore.
         }
@@ -426,7 +426,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return (Exchange.DeleteOk)
-	        exnWrappingRpc(new Exchange.Delete(ticket, exchange, ifUnused, false)).getMethod();
+            exnWrappingRpc(new Exchange.Delete(ticket, exchange, ifUnused, false)).getMethod();
     }
 
     /**
@@ -500,7 +500,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return (Queue.DeleteOk)
-	        exnWrappingRpc(new Queue.Delete(ticket, queue, ifUnused, ifEmpty, false)).getMethod();
+            exnWrappingRpc(new Queue.Delete(ticket, queue, ifUnused, ifEmpty, false)).getMethod();
     }
 
     /**
@@ -509,7 +509,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.DeleteOk
      */
     public Queue.DeleteOk queueDelete(int ticket, String queue)
-	throws IOException
+    throws IOException
     {
         return queueDelete(ticket, queue, false, false);
     }
@@ -711,7 +711,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Tx.SelectOk
      */
     public Tx.SelectOk txSelect()
-	    throws IOException
+        throws IOException
     {
         return (Tx.SelectOk) exnWrappingRpc(new Tx.Select()).getMethod();
     }
@@ -722,7 +722,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Tx.CommitOk
      */
     public Tx.CommitOk txCommit()
-	    throws IOException
+        throws IOException
     {
         return (Tx.CommitOk) exnWrappingRpc(new Tx.Commit()).getMethod();
     }
@@ -733,7 +733,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Tx.RollbackOk
      */
     public Tx.RollbackOk txRollback()
-	    throws IOException
+        throws IOException
     {
         return (Tx.RollbackOk) exnWrappingRpc(new Tx.Rollback()).getMethod();
     }

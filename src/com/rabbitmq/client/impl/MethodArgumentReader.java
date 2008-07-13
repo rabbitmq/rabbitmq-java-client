@@ -43,7 +43,7 @@ import com.rabbitmq.client.MalformedFrameException;
 public class MethodArgumentReader
 {
     private static final long INT_MASK = 0xffffffff;
- 
+
     /**
      * Protected API - Cast an int to a long without extending the
      * sign bit of the int out into the high half of the long.
@@ -53,7 +53,7 @@ public class MethodArgumentReader
         long extended = value;
         return extended & INT_MASK;
     }
-    
+
     /** The stream we are reading from. */
     private final DataInputStream in;
     /** If we are reading one or more bits, holds the current packed collection of bits */
@@ -70,7 +70,7 @@ public class MethodArgumentReader
         bits = 0;
         bit = 0x100;
     }
-    
+
     /**
      * Construct a MethodArgumentReader streaming over the given DataInputStream.
      */
@@ -79,16 +79,16 @@ public class MethodArgumentReader
         this.in = in;
         clearBits();
     }
-    
+
     /** Public API - convenience method - reads a short string from a DataInputStream. */
-    public static final String readShortstr(DataInputStream in) 
+    public static final String readShortstr(DataInputStream in)
         throws IOException
     {
         byte [] b = new byte[in.readUnsignedByte()];
         in.readFully(b);
         return new String(b, "utf-8");
     }
-    
+
     /** Public API - reads a short string argument. */
     public final String readShortstr()
         throws IOException
@@ -111,7 +111,7 @@ public class MethodArgumentReader
             throw new UnsupportedOperationException
                 ("Very long strings not currently supported");
     }
-    
+
     /** Public API - reads a long string argument. */
     public final LongString readLongstr()
         throws IOException
@@ -129,7 +129,7 @@ public class MethodArgumentReader
     }
 
     /** Public API - reads an integer argument. */
-    public final int readLong() 
+    public final int readLong()
         throws IOException
     {
         clearBits();
@@ -143,23 +143,23 @@ public class MethodArgumentReader
         clearBits();
         return in.readLong();
     }
-    
+
     /** Public API - reads a bit/boolean argument. */
-    public final boolean readBit() 
+    public final boolean readBit()
         throws IOException
     {
         if (bit > 0x80) {
             bits = in.readUnsignedByte();
             bit = 0x01;
         }
-        
+
         boolean result = (bits&bit) != 0;
         bit = bit << 1;
         return result;
     }
 
     /** Public API - reads a table argument. */
-    public final Map<String, Object> readTable() 
+    public final Map<String, Object> readTable()
         throws IOException
     {
         clearBits();
@@ -204,7 +204,7 @@ public class MethodArgumentReader
                 throw new MalformedFrameException
                     ("Unrecognised type in table");
             }
-            
+
             if(!table.containsKey(name))
                 table.put(name, value);
         }
@@ -213,7 +213,7 @@ public class MethodArgumentReader
     }
 
     /** Public API - reads an octet argument. */
-    public final int readOctet() 
+    public final int readOctet()
         throws IOException
     {
         clearBits();
@@ -221,14 +221,14 @@ public class MethodArgumentReader
     }
 
     /** Public API - convenience method - reads a timestamp argument from the DataInputStream. */
-    public static final Date readTimestamp(DataInputStream in) 
+    public static final Date readTimestamp(DataInputStream in)
         throws IOException
     {
         return new Date(in.readLong()*1000);
     }
 
     /** Public API - reads an timestamp argument. */
-    public final Date readTimestamp() 
+    public final Date readTimestamp()
         throws IOException
     {
         clearBits();

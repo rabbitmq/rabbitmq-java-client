@@ -30,7 +30,7 @@ package com.rabbitmq.client;
  */
 
 public interface ContentHeader {
-    /** 
+    /**
      * Retrieve the class ID (see the spec for a list of allowable IDs).
      * @return class ID of this ContentHeader. Properly an unsigned short, i.e. only the lowest 16 bits are significant
      */

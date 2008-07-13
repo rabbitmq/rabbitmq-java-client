@@ -77,5 +77,5 @@ public class DefaultExceptionHandler implements ExceptionHandler {
             // Man, this clearly isn't our day.
             // Ignore the exception? TODO: Log the nested failure
         }
-    }        
+    }
 }

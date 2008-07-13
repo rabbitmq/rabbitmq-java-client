@@ -51,5 +51,5 @@ public class UnexpectedFrameError extends Error {
 
     public int getExpectedFrameType() {
         return _expectedFrameType;
-    }   
+    }
 }

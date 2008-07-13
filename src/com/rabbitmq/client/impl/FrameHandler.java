@@ -41,7 +41,7 @@ public interface FrameHandler {
 
     /**
      * Set the underlying socket's read timeout in milliseconds, if applicable.
-     * 
+     *
      * @param timeoutMs
      *            The timeout in milliseconds
      */
@@ -49,11 +49,11 @@ public interface FrameHandler {
 
     /**
      * Get the underlying socket's timeout in milliseconds.
-     * 
+     *
      * @return The timeout in milliseconds
      */
     int getTimeout() throws SocketException;
-    
+
     /**
      * Send the initial connection header, thus kickstarting the AMQP
      * protocol version negotiation process and putting the underlying
@@ -64,7 +64,7 @@ public interface FrameHandler {
 
     /**
      * Read a {@link Frame} from the underlying data connection.
-     * 
+     *
      * @return an incoming Frame, or null if there is none
      * @throws IOException if there is a problem accessing the connection
      * @throws SocketTimeoutException if the underlying read times out
@@ -73,7 +73,7 @@ public interface FrameHandler {
 
     /**
      * Write a {@link Frame} to the underlying data connection.
-     * 
+     *
      * @param frame the Frame to transmit
      * @throws IOException if there is a problem accessing the connection
      */

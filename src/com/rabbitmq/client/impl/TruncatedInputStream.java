@@ -76,7 +76,7 @@ public class TruncatedInputStream extends ProxyInputStream {
             if (result > 0)
                 counter += result;
             return result;
-        } 
+        }
             return -1;
     }
 

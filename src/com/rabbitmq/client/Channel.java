@@ -34,7 +34,7 @@ import com.rabbitmq.client.AMQP.Tx;
 
 /**
  * Public API: Interface to an AMQ channel. See the <a href="http://www.amqp.org/">spec</a> for details.
- *  
+ *
  * <p>
  * To open a channel,
  * <pre>
@@ -49,11 +49,11 @@ import com.rabbitmq.client.AMQP.Tx;
  *  <li> close
  * </ul>
  * <p>
- * 
- * While a Channel can be used by multiple threads, it's important to ensure 
+ *
+ * While a Channel can be used by multiple threads, it's important to ensure
  * that only one thread executes a command at once. Concurrent execution of
  * commands will likely cause an UnexpectedFrameError to be thrown.
- * 
+ *
  */
 
 public interface Channel extends ShutdownNotifier{
@@ -77,14 +77,14 @@ public interface Channel extends ShutdownNotifier{
      */
     void close(int closeCode, String closeMessage) throws IOException;
 
-    /** 
+    /**
      * Return the current {@link ReturnListener}.
-     * @return an interface to the current return listener 
+     * @return an interface to the current return listener
      */
     ReturnListener getReturnListener();
 
     /**
-     * Set the current {@link ReturnListener}. 
+     * Set the current {@link ReturnListener}.
      * @param listener the listener to use, or null indicating "don't use one".
      */
     void setReturnListener(ReturnListener listener);
@@ -92,7 +92,7 @@ public interface Channel extends ShutdownNotifier{
     /**
      * Request a non-exclusive access ticket for the specified realm.
      * The access ticket is valid within the current channel and for the lifespan of the channel.
-     * 
+     *
      * @see com.rabbitmq.client.AMQP.Access.Request
      * @param realm the name of the realm
      * @return a valid access ticket
@@ -330,7 +330,7 @@ public interface Channel extends ShutdownNotifier{
      * containing the received message being acknowledged.
      * @see com.rabbitmq.client.AMQP.Basic.Ack
      * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk} or {@link com.rabbitmq.client.AMQP.Basic.Deliver}
-     * @param multiple true if we are acknowledging multiple messages with the same delivery tag 
+     * @param multiple true if we are acknowledging multiple messages with the same delivery tag
      * @throws java.io.IOException if an error is encountered
      */
     void basicAck(long deliveryTag, boolean multiple) throws IOException;

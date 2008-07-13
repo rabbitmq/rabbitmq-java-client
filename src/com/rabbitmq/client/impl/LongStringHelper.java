@@ -44,8 +44,8 @@ public class LongStringHelper
         implements LongString
     {
         byte [] bytes;
-        
-        public ByteArrayLongString(byte[] bytes) 
+
+        public ByteArrayLongString(byte[] bytes)
         {
             this.bytes = bytes;
         }
@@ -56,13 +56,13 @@ public class LongStringHelper
                 LongString other = (LongString)o;
                 return Arrays.equals(this.bytes, other.getBytes());
             }
-            
+
             return false;
         }
-        
+
         @Override public int hashCode()
         {
-           return Arrays.hashCode(this.bytes); 
+           return Arrays.hashCode(this.bytes);
         }
 
         public byte[] getBytes()
@@ -80,7 +80,7 @@ public class LongStringHelper
         {
             return bytes.length;
         }
-        
+
         @Override public String toString()
         {
             try {
@@ -106,7 +106,7 @@ public class LongStringHelper
             throw new Error("utf-8 encoding support required");
         }
     }
-    
+
     /**
      * Converts a binary block to a LongString.
      * @param bytes the data to wrap

@@ -30,7 +30,7 @@ import java.io.IOException;
  * Public API: Interface to an AMQ connection. See the see the <a href="http://www.amqp.org/">spec</a> for details.
  * <p>
  * To connect to a broker, fill in a {@link ConnectionParameters} and use a {@link ConnectionFactory} as follows:
- * 
+ *
  * <pre>
  * ConnectionParameters params = new ConnectionParameters();
  * params.setUsername(userName);
@@ -41,7 +41,7 @@ import java.io.IOException;
  * Connection conn = factory.newConnection(hostName, AMQP.PROTOCOL.PORT);
  *
  * // Then open a channel and retrieve an access ticket:
- * 
+ *
  * Channel channel = conn.createChannel();
  * int ticket = channel.accessRequest(realmName);
  * </pre>
@@ -104,7 +104,7 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * @return an array of addresses for all hosts that came back in the initial {@link com.rabbitmq.client.AMQP.Connection.OpenOk} open-ok method
      */
     Address[] getKnownHosts();
-    
+
     /**
      * Create a new channel, using an internally allocated channel number.
      * @return a new channel descriptor, or null if none is available
@@ -119,20 +119,20 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * @throws IOException if an I/O problem is encountered
      */
     Channel createChannel(int channelNumber) throws IOException;
-    
+
     /**
      * Close this connection and all its channels.
-     * 
+     *
      * This method will wait infinitely for all the close operations to
      * complete.
-     * 
+     *
      * @throws IOException if an I/O problem is encountered
      */
     void close() throws IOException;
-    
+
     /**
      * Close this connection and all its channels
-     * 
+     *
      * This method will wait with the given timeout for all the close
      * operations to complete. If timeout is reached then socket is forced
      * to close
@@ -141,22 +141,22 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * @throws IOException if an I/O problem is encountered
      */
     void close(int timeout) throws IOException;
-    
+
     /**
      * Abort this connection and all its channels.
-     * 
+     *
      * This method will force the connection to close. It will silently discard
      * any exceptions enountered in close operations
      */
     void abort();
-    
+
     /**
      * Abort this connection and all its channels.
-     * 
+     *
      * This method behaves in a similar way as abort(), with the only difference
      * that it will wait with a provided timeout for all the close operations to
      * complete. If timeout is reached socket is forced to close.
-     * 
+     *
      * @param timeout timeout (in miliseconds) for completing all the close-related
      * operations, use -1 for infinity
      */
