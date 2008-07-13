@@ -645,7 +645,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
-        close (closeCode, closeMessage, 0);
+        close(closeCode, closeMessage, 0);
     }
 
     public void close(int closeCode, String closeMessage, int timeout)
