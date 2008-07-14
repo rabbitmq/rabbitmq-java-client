@@ -208,8 +208,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * Not for regular use. Doesn't do the ensureIsOpen() check.
      */
     public AMQCommand quiescingRpc(Method m,
-                                   int timeoutMillisec,
-                                   final AMQCommand timeoutReply)
+                                   int timeoutMillisec)
         throws IOException, ShutdownSignalException, TimeoutException
     {
     	SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();

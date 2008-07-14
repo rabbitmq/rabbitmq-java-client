@@ -680,10 +680,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 new AMQImpl.Connection.Close(closeCode, closeMessage, 0, 0);
             shutdown(reason, initiatedByApplication, cause);
             _channel0.quiescingRpc(reason,
-                                   timeout,
-                                   new AMQCommand(new AMQImpl.Connection.CloseOk()));
-        } catch (TimeoutException ise) {
-        	// FIXME: notify about timeout exception ?
+                                   timeout);
+        } catch (TimeoutException tte) {
+        	if (!abort)
+        		throw new ShutdownSignalException(true, true, tte, this);
         } catch (ShutdownSignalException sse) {
             if (!abort)
                 throw sse;
