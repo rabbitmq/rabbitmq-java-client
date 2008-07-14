@@ -65,8 +65,6 @@ import com.rabbitmq.utility.Utility;
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
     private static final String UNSPECIFIED_OUT_OF_BAND = "";
 
-    public static final int CLOSING_TIMEOUT = 10000; // timeout in milliseconds
-
     /**
      * Map from consumer tag to {@link Consumer} instance.
      *
@@ -288,11 +286,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // quiescingRpc instead. We ignore the result. (It's always
         // close-ok.)
         try {
-            quiescingRpc(reason,
-                         CLOSING_TIMEOUT,
-                         new AMQCommand(new Channel.CloseOk()));
+            quiescingRpc(reason, -1);
         } catch (TimeoutException ise) {
-            // FIXME: propagate it to the user
+            // Will never happen since we wait infinitely
         } catch (ShutdownSignalException sse) {
             // Ignore.
         }
