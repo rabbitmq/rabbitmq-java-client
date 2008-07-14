@@ -585,14 +585,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         try {
             synchronized (this) {
                 ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-                _shutdownCause = new ShutdownSignalException(true,
+                ShutdownSignalException sse = new ShutdownSignalException(true,
                                                              initiatedByApplication,
                                                              reason, this);
+                sse.initCause(cause);
+                _shutdownCause = sse;
             }
 
-            if (cause != null) {
-                _shutdownCause.initCause(cause);
-            }
             _channel0.processShutdownSignal(_shutdownCause);
         } catch (AlreadyClosedException ace) {
             if (initiatedByApplication)
