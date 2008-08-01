@@ -243,6 +243,21 @@
      </antcall>
   </target>
 
+  <target name="maven-bundle" depends="jar,javadoc" description="This creates a bundle to upload to the central maven repo">
+    <mkdir dir="${bundle.out}"/>
+    <copy file="${lib.out}/rabbitmq-client.jar"
+          tofile="${bundle.out}/amqp-client-${impl.version}.jar"/>
+    <jar destfile="${bundle.out}/amqp-client-sources-${impl.version}.jar">
+        <fileset dir="src"/>
+    </jar>
+    <jar destfile="${bundle.out}/amqp-client-javadoc-${impl.version}.jar">
+        <fileset dir="${javadoc.out}"/>
+    </jar>
+    <copy file="pom.xml" tofile="${bundle.out}/amqp-client-${impl.version}.pom"/>
+    <replace file="${bundle.out}/amqp-client-${impl.version}.pom"
+             token="VERSION" value="${impl.version}"/>
+  </target>
+
   <target name="test-jar" depends="test-build">
     <mkdir dir="${lib.out}"/>
       <antcall target="doJarWithTags">
