@@ -37,13 +37,13 @@ import java.io.IOException;
 public interface LongString
 {
     public static final long MAX_LENGTH = 0xffffffffL;
-    
+
     /**
      * Get the length of the content of the long string in bytes
      * @return the length in bytes >= 0 <= MAX_LENGTH
      */
     public long length();
-    
+
     /**
      * Get the content stream.
      * Repeated calls to this function return the same stream,

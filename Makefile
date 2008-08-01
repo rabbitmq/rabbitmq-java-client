@@ -49,7 +49,10 @@ post-dist:
 srcdist: distclean
 	mkdir -p build/$(SRC_ARCHIVE)
 	cp -Rp `ls | grep -v '^\(build\|BUILD.in\)$$'` build/$(SRC_ARCHIVE)
-	cp -r $(AMQP_CODEGEN_DIR) build/$(SRC_ARCHIVE)/codegen
+
+	mkdir -p build/$(SRC_ARCHIVE)/codegen
+	cp -r $(AMQP_CODEGEN_DIR)/* build/$(SRC_ARCHIVE)/codegen/.
+
 	if [ -f BUILD.in ]; then \
 		cp BUILD.in build/$(SRC_ARCHIVE)/BUILD; \
 		elinks -dump -no-references -no-numbering $(WEB_URL)build.html \
