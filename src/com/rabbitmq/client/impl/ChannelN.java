@@ -222,7 +222,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                              command,
                                                                              this);
                 processShutdownSignal(signal);
-                transmit(new Channel.CloseOk());
+                transmit(new Channel.CloseOk(), true);
                 notifyListeners();
                 return true;
             } else {
@@ -286,7 +286,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // quiescingRpc instead. We ignore the result. (It's always
         // close-ok.)
         try {
-            quiescingRpc(reason, -1);
+        	synchronized(_connection) {
+        		_connection.ensureIsOpen();
+                quiescingRpc(reason, -1);
+        	}
         } catch (TimeoutException ise) {
             // Will never happen since we wait infinitely
         } catch (ShutdownSignalException sse) {
@@ -370,8 +373,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         Basic.Publish publish = new Basic.Publish(ticket, exchange, routingKey,
                                                           mandatory, immediate);
         AMQCommand command = new AMQCommand(publish, useProps, body);
-        ensureIsOpen();
-        command.transmit(this);
+        transmit(command);
     }
 
     /**

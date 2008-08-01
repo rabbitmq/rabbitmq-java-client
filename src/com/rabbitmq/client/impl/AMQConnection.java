@@ -554,7 +554,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void handleConnectionClose(Command closeCommand) {
         shutdown(closeCommand, false, null);
         try {
-            _channel0.transmit(new AMQImpl.Connection.CloseOk());
+            _channel0.transmit(new AMQImpl.Connection.CloseOk(), true);
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }

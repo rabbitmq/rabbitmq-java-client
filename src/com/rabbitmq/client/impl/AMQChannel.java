@@ -158,8 +158,23 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public synchronized void transmitAndEnqueue(Method m, RpcContinuation k)
         throws IOException
     {
-        enqueueRpc(k);
-        transmit(m);
+    	synchronized(this) {
+    		ensureIsOpen();
+    	    enqueueRpc(k);
+            transmit(m);
+    	}
+
+    }
+
+    public synchronized void quiescingTransmitAndEnqueue(Method m,
+            RpcContinuation k)
+        throws IOException
+    {
+        synchronized(this) {
+            enqueueRpc(k);
+            transmit(m, true);
+        }
+
     }
 
     public synchronized RpcContinuation nextOutstandingRpc()
@@ -199,20 +214,20 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public synchronized void rpc(Method m, RpcContinuation k)
         throws IOException
     {
-        ensureIsOpen();
         transmitAndEnqueue(m, k);
     }
-
+    
     /**
-     * Just like rpc(Method), but for use during quiescing/close/shutdown.
-     * Not for regular use. Doesn't do the ensureIsOpen() check.
+     * Just like rpc(Method), but used when connection/channel 
+     * is in quiescing/close/shutdown state.
+     * Not for regular use. Doesn't do the ensureIsOpen() channel
      */
     public AMQCommand quiescingRpc(Method m,
                                    int timeoutMillisec)
         throws IOException, ShutdownSignalException, TimeoutException
     {
         SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
-        transmitAndEnqueue(m, k);
+        quiescingTransmitAndEnqueue(m, k);
         return k.getReply(timeoutMillisec);
     }
 
@@ -245,7 +260,33 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     public void transmit(Method m) throws IOException {
-        new AMQCommand(m).transmit(this);
+        transmit(new AMQCommand(m));
+    }
+    
+    /**
+     * Same as transmit(Method), with the only difference
+     * that when closing parameter is true, it doesn't do
+     * ensureIsOpen() on the current channel
+     */
+    public void transmit(Method m, boolean closing) throws IOException {
+    	transmit(new AMQCommand(m), closing);
+    }
+    
+    public void transmit(AMQCommand c) throws IOException {
+    	transmit(c, false);
+    }
+    
+    /**
+     * Same as transmit(AMQCommand), with the only difference
+     * that when closing parameter is true, it doesn't do
+     * ensureIsOpen() on the current channel
+     */
+    public void transmit(AMQCommand c, boolean closing) throws IOException {
+    	synchronized(this) {
+    		if (!closing)
+              ensureIsOpen();
+            c.transmit(this);
+    	}
     }
 
     public AMQConnection getAMQConnection() {
