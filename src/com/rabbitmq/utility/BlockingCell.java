@@ -74,9 +74,7 @@ public class BlockingCell<T> {
     		throw new AssertionError("Timeout cannot be less than zero");
     	
     	if (timeout != 0) {
-    	    synchronized(this) {
-    		    wait(timeout == INFINITY ? 0 : timeout);
-            }
+            wait(timeout == INFINITY ? 0 : timeout);
     	}
         
         if (!_filled)
@@ -114,9 +112,7 @@ public class BlockingCell<T> {
         
         do {
         	try {
-                synchronized(this) {
-                    return get(runTime - now);
-                }
+                return get(runTime - now);
             } catch (InterruptedException e) {
                 // Ignore.
             }

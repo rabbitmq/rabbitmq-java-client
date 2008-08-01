@@ -467,10 +467,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
             // Finally, shut down our underlying data connection.
             _frameHandler.close();
-
-            synchronized(this) {
-                appContinuation.set(null);
-            }
+            
+            appContinuation.set(null);
         }
     }
 
@@ -558,19 +556,28 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
-
-        try {
-            synchronized(this) {
-                appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
-            }
-        } catch (TimeoutException ise) {
-            // Broker didn't close socket on time, force socket close
-            // FIXME: notify about timeout exception?
-            _frameHandler.close();
-        } finally {
-            _running = false;
+        
+        _heartbeat = 0; // Do not try to send heartbeats after clos ok   
+        new SocketCloseWait();
+    }
+    
+    private class SocketCloseWait extends Thread {
+        public SocketCloseWait() {
+        	start();
         }
-        notifyListeners();
+        
+    	@Override public void run() {
+    		try {
+                appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
+            } catch (TimeoutException ise) {
+                // Broker didn't close socket on time, force socket close
+                // FIXME: notify about timeout exception?
+                _frameHandler.close();
+            } finally {
+                _running = false;
+            }
+            notifyListeners();
+    	}
     }
 
     /**
