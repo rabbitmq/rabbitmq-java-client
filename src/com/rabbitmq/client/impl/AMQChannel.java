@@ -167,7 +167,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     public synchronized void quiescingTransmitAndEnqueue(Method m,
-            RpcContinuation k)
+                                                         RpcContinuation k)
         throws IOException
     {
         synchronized(this) {
