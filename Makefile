@@ -9,6 +9,8 @@ WEB_URL=http://stage.rabbitmq.com/
 
 AMQP_CODEGEN_DIR=$(shell fgrep sibling.codegen.dir build.properties | sed -e 's:sibling\.codegen\.dir=::')
 
+MAVEN_RSYNC_DESTINATION=maven@195.224.125.254:/home/maven/rabbitmq-java-client/
+
 all:
 	ant build
 
@@ -63,4 +65,4 @@ srcdist: distclean
 	(cd build; rm -rf $(SRC_ARCHIVE))
 
 deploy-maven-bundle: maven-bundle
-	rsync -r build/bundle/* maven@195.224.125.254:/home/maven/rabbitmq-java-client/
+	rsync -r build/bundle/* $(MAVEN_RSYNC_DESTINATION)
