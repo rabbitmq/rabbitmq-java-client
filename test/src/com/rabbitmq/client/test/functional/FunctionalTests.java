@@ -38,6 +38,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(RequeueOnChannelClose.class);
         suite.addTestSuite(DurableOnTransient.class);
         suite.addTestSuite(NoRequeueOnCancel.class);
+        suite.addTestSuite(QosTests.class);
         return suite;
     }
 }

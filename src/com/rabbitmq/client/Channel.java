@@ -114,6 +114,8 @@ public interface Channel extends ShutdownNotifier{
      */
     int accessRequest(String realm, boolean exclusive, boolean passive, boolean active, boolean write, boolean read) throws IOException;
 
+    void basicQos(int prefetchSize, int prefetchCount, boolean global) throws IOException;
+
     /**
      * Publish a message with both "mandatory" and "immediate" flags set to false
      * @see com.rabbitmq.client.AMQP.Basic.Publish

@@ -342,6 +342,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             .ticket;
     }
 
+    public void basicQos(int prefetchSize, int prefetchCount, boolean global)
+	throws IOException
+    {
+	exnWrappingRpc(new Basic.Qos(prefetchSize, prefetchCount, global));
+    }
+
     /**
      * Public API - Publish a message with both "mandatory" and
      * "immediate" flags set to false
