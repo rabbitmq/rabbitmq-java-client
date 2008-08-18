@@ -563,11 +563,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     
     private class SocketCloseWait extends Thread {
         public SocketCloseWait() {
-        	start();
+            start();
         }
         
-    	@Override public void run() {
-    		try {
+        @Override public void run() {
+            try {
                 appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
             } catch (TimeoutException ise) {
                 // Broker didn't close socket on time, force socket close
@@ -577,7 +577,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 _running = false;
             }
             notifyListeners();
-    	}
+        }
     }
 
     /**
