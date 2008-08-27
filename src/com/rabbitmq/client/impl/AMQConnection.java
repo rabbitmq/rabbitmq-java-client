@@ -41,6 +41,7 @@ import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.AMQChannel.RpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
@@ -97,7 +98,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Handler for (otherwise-unhandled) exceptions that crop up in the mainloop. */
     public final ExceptionHandler _exceptionHandler;
 
-    public BlockingCell<Object> appContinuation = new BlockingCell<Object>();
+    /**
+     * Object used for blocking main application thread when doing all the necessary
+     * connection shutdown operations
+     */
+    public BlockingCell<Object> _appContinuation = new BlockingCell<Object>();
 
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
@@ -441,7 +446,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                     // channel zero that aren't Connection.CloseOk) must
                                     // be discarded.
                                     ChannelN channel = _channelManager.getChannel(frame.channel);
-//                                  FIXME: catch NullPointerException and throw more informative one?
+                                    // FIXME: catch NullPointerException and throw more informative one?
                                     channel.handleFrame(frame);
                                 }
                             }
@@ -463,12 +468,21 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 if (isOpen()) {
                     shutdown(ex, false, ex);
                 }
+            } finally {
+                // Finally, shut down our underlying data connection.
+                _frameHandler.close();
+                
+                // Inform the application thread to continue if the broker
+                // closed the socket unexpectedly, so that it does not wait
+                // infinitely for CloseOk
+                RpcContinuation k;
+                if ((k =_channel0.nextOutstandingRpc()) != null) {
+                    k.handleShutdownSignal(_shutdownCause);
+                }
+                
+                _appContinuation.set(null);
+                notifyListeners();
             }
-
-            // Finally, shut down our underlying data connection.
-            _frameHandler.close();
-            
-            appContinuation.set(null);
         }
     }
 
@@ -556,8 +570,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
-        
-        _heartbeat = 0; // Do not try to send heartbeats after clos ok   
+        _heartbeat = 0; // Do not try to send heartbeats after CloseOk   
         new SocketCloseWait();
     }
     
@@ -568,7 +581,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         
         @Override public void run() {
             try {
-                appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
+                _appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
             } catch (TimeoutException ise) {
                 // Broker didn't close socket on time, force socket close
                 // FIXME: notify about timeout exception?
@@ -576,7 +589,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             } finally {
                 _running = false;
             }
-            notifyListeners();
         }
     }
 
@@ -695,10 +707,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             if (!abort)
                 throw ioe;
         } finally {
-            _running = false;
             _frameHandler.close();
         }
-        notifyListeners();
+
     }
 
     @Override public String toString() {
