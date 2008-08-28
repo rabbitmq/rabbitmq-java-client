@@ -70,14 +70,12 @@ public class BlockingCell<T> {
      * @throws InterruptedException if this thread is interrupted
      */
     public synchronized T get(long timeout) throws InterruptedException, TimeoutException {
-    	if (timeout < 0 && timeout != INFINITY)
-    		throw new AssertionError("Timeout cannot be less than zero");
-    	
-    	if (timeout != 0) {
-    	    synchronized(this) {
-    		    wait(timeout == INFINITY ? 0 : timeout);
-            }
-    	}
+        if (timeout < 0 && timeout != INFINITY)
+            throw new AssertionError("Timeout cannot be less than zero");
+        
+        if (!_filled && timeout != 0) {
+            wait(timeout == INFINITY ? 0 : timeout);
+        }
         
         if (!_filled)
         	throw new TimeoutException();
@@ -109,14 +107,12 @@ public class BlockingCell<T> {
      * @return the waited-for value
      */
     public synchronized T uninterruptibleGet(int timeout) throws TimeoutException {
-    	long now = System.nanoTime() / NANOS_IN_MILLI;
+        long now = System.nanoTime() / NANOS_IN_MILLI;
         long runTime = now + timeout;
         
         do {
-        	try {
-                synchronized(this) {
-                    return get(runTime - now);
-                }
+            try {
+                return get(runTime - now);
             } catch (InterruptedException e) {
                 // Ignore.
             }
