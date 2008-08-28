@@ -463,13 +463,19 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 if (isOpen()) {
                     shutdown(ex, false, ex);
                 }
-            }
-
-            // Finally, shut down our underlying data connection.
-            _frameHandler.close();
-
-            synchronized(this) {
-                appContinuation.set(null);
+            } finally {
+                // Finally, shut down our underlying data connection.
+                _frameHandler.close();
+                
+                // Set shutdown exception for any outstanding rpc,
+                // so that it does not wait infinitely for Connection.CloseOk.
+                // This can only happen when the broker closed the socket
+                // unexpectedly.
+                _channel0.notifyOutstandingRpc(_shutdownCause);
+                
+                synchronized(this) {
+                    appContinuation.set(null);
+                }
             }
         }
     }
