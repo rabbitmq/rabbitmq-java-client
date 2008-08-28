@@ -73,7 +73,7 @@ public class BlockingCell<T> {
         if (timeout < 0 && timeout != INFINITY)
             throw new AssertionError("Timeout cannot be less than zero");
         
-        if (!_filled && timeout != 0) {
+        if (timeout != 0) {
             wait(timeout == INFINITY ? 0 : timeout);
         }
         
