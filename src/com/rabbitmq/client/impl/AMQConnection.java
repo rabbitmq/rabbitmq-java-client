@@ -41,6 +41,7 @@ import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.AMQChannel.RpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
@@ -463,13 +464,21 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 if (isOpen()) {
                     shutdown(ex, false, ex);
                 }
-            }
-
-            // Finally, shut down our underlying data connection.
-            _frameHandler.close();
-
-            synchronized(this) {
-                appContinuation.set(null);
+            } finally {
+                // Finally, shut down our underlying data connection.
+                _frameHandler.close();
+                
+                // Throw an exception in application thread if the broker
+                // closed the socket unexpectedly, so that it does not wait
+                // infinitely for CloseOk
+                RpcContinuation k;
+                if ((k =_channel0.nextOutstandingRpc()) != null) {
+                    k.handleShutdownSignal(_shutdownCause);
+                }
+                
+                synchronized(this) {
+                    appContinuation.set(null);
+                }
             }
         }
     }
