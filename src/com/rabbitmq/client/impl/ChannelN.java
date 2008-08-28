@@ -41,6 +41,7 @@ import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.UnexpectedMethodError;
 import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.impl.AMQChannel.SimpleBlockingRpcContinuation;
 import com.rabbitmq.client.impl.AMQImpl.Access;
 import com.rabbitmq.client.impl.AMQImpl.Basic;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
@@ -222,7 +223,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                              command,
                                                                              this);
                 processShutdownSignal(signal);
-                transmit(new Channel.CloseOk(), true);
+                transmit(new AMQCommand(new Channel.CloseOk()), true);
                 notifyListeners();
                 return true;
             } else {
@@ -278,24 +279,26 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (cause != null) {
             signal.initCause(cause);
         }
-        processShutdownSignal(signal);
-
-        // Now that we're in quiescing state, send channel.close and
-        // wait for the reply. Note that we can't use regular old rpc
-        // or exnWrappingRpc here, since _isOpen is false. We use
-        // quiescingRpc instead. We ignore the result. (It's always
-        // close-ok.)
+        
+        BlockingRpcContinuation<AMQCommand> k = new SimpleBlockingRpcContinuation();
+        // Synchronize the block below to avoid race conditions in case
+        // connnection wants to send Connection-CloseOK
+        synchronized(this) {
+            processShutdownSignal(signal);
+            quiescingRpc(reason, k);
+        }
+        
         try {
-        	synchronized(_connection) {
-        		_connection.ensureIsOpen();
-                quiescingRpc(reason, -1);
-        	}
+            // Now that we're in quiescing state, channel.close was sent and
+            // we wait for the reply. We ignore the result. (It's always
+            // close-ok.)
+            k.getReply(-1);
         } catch (TimeoutException ise) {
             // Will never happen since we wait infinitely
         } catch (ShutdownSignalException sse) {
             // Ignore.
         }
-
+        
         // Now we know everything's been cleaned up and there should
         // be no more surprises arriving on the wire. Release the
         // channel number, and dissociate this ChannelN instance from
@@ -373,7 +376,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         Basic.Publish publish = new Basic.Publish(ticket, exchange, routingKey,
                                                           mandatory, immediate);
         AMQCommand command = new AMQCommand(publish, useProps, body);
-        transmit(command);
+        transmit(command, false);
     }
 
     /**
@@ -576,7 +579,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void basicAck(long deliveryTag, boolean multiple)
         throws IOException
     {
-        transmit(new Basic.Ack(deliveryTag, multiple));
+        transmit(new AMQCommand(new Basic.Ack(deliveryTag, multiple)), false);
     }
 
     /**

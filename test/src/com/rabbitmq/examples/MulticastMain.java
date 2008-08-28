@@ -106,7 +106,6 @@ public class MulticastMain {
                     new Thread(new Consumer(consumer, id,
                                             consumerTxSize, autoAck,
                                             stats, timeLimit));
-                t.setName("Consumer #" + i);
                 consumerThreads[i] = t;
                 t.start();
             }
@@ -125,7 +124,6 @@ public class MulticastMain {
                                             flags, producerTxSize,
                                             1000L * samplingInterval,
                                             rateLimit, minMsgSize, timeLimit));
-                t.setName("producer #" + i);
                 producerThreads[i] = t;
                 t.start();
             }

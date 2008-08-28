@@ -385,9 +385,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                connTune.getHeartbeat());
         setHeartbeat(heartbeat);
 
-        _channel0.transmit(new AMQImpl.Connection.TuneOk(channelMax,
-                                                         frameMax,
-                                                         heartbeat));
+        _channel0.transmit(new AMQCommand(new AMQImpl.Connection.TuneOk(channelMax,
+                                                                        frameMax,
+                                                                        heartbeat)),
+                           false);
 
         Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(params.getVirtualHost(),
                                                                           "",
@@ -554,7 +555,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void handleConnectionClose(Command closeCommand) {
         shutdown(closeCommand, false, null);
         try {
-            _channel0.transmit(new AMQImpl.Connection.CloseOk(), true);
+            _channel0.transmit(new AMQCommand(new AMQImpl.Connection.CloseOk()), true);
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
