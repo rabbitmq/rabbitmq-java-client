@@ -238,6 +238,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             ensureIsOpen(); // invariant: we should never be shut down more than once per instance
             _shutdownCause = signal;
         }
+        notifyOutstandingRpc(signal);
+    }
+    
+    public void notifyOutstandingRpc(ShutdownSignalException signal) {
         RpcContinuation k = nextOutstandingRpc();
         if (k != null) {
             k.handleShutdownSignal(signal);
