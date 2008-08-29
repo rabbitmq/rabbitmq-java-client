@@ -199,7 +199,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public synchronized void quiescingRpc(Method m, RpcContinuation k)
         throws IOException
     {
-    	enqueueRpc(k);
+        enqueueRpc(k);
         quiescingTransmit(m);
     }
 

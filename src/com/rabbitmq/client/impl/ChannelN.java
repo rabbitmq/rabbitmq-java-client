@@ -41,7 +41,6 @@ import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.UnexpectedMethodError;
 import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.impl.AMQChannel.SimpleBlockingRpcContinuation;
 import com.rabbitmq.client.impl.AMQImpl.Access;
 import com.rabbitmq.client.impl.AMQImpl.Basic;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
@@ -222,8 +221,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                              false,
                                                                              command,
                                                                              this);
-                processShutdownSignal(signal);
-                quiescingTransmit(new Channel.CloseOk());
+                synchronized(this) {
+                    processShutdownSignal(signal);
+                    quiescingTransmit(new Channel.CloseOk());
+                }
                 notifyListeners();
                 return true;
             } else {
