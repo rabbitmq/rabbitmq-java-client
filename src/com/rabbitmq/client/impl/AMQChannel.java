@@ -155,13 +155,6 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         _activeRpc = k;
     }
 
-    public synchronized void transmitAndEnqueue(Method m, RpcContinuation k)
-        throws IOException
-    {
-        enqueueRpc(k);
-        transmit(m);
-    }
-
     public synchronized RpcContinuation nextOutstandingRpc()
     {
         RpcContinuation result = _activeRpc;
@@ -200,20 +193,14 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         throws IOException
     {
         ensureIsOpen();
-        transmitAndEnqueue(m, k);
+        quiescingRpc(m, k);
     }
-
-    /**
-     * Just like rpc(Method), but for use during quiescing/close/shutdown.
-     * Not for regular use. Doesn't do the ensureIsOpen() check.
-     */
-    public AMQCommand quiescingRpc(Method m,
-                                   int timeoutMillisec)
-        throws IOException, ShutdownSignalException, TimeoutException
+    
+    public synchronized void quiescingRpc(Method m, RpcContinuation k)
+        throws IOException
     {
-        SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
-        transmitAndEnqueue(m, k);
-        return k.getReply(timeoutMillisec);
+        enqueueRpc(k);
+        quiescingTransmit(m);
     }
 
     /**
@@ -238,14 +225,32 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             ensureIsOpen(); // invariant: we should never be shut down more than once per instance
             _shutdownCause = signal;
         }
+        notifyOutstandingRpc(signal);
+    }
+    
+    public void notifyOutstandingRpc(ShutdownSignalException signal) {
         RpcContinuation k = nextOutstandingRpc();
         if (k != null) {
             k.handleShutdownSignal(signal);
         }
     }
 
-    public void transmit(Method m) throws IOException {
+    public synchronized void transmit(Method m) throws IOException {
+        ensureIsOpen();
+        quiescingTransmit(m);
+    }
+
+    public synchronized void transmit(AMQCommand c) throws IOException {
+        ensureIsOpen();
+        quiescingTransmit(c);
+    }
+
+    public synchronized void quiescingTransmit(Method m) throws IOException {
         new AMQCommand(m).transmit(this);
+    }
+
+    public synchronized void quiescingTransmit(AMQCommand c) throws IOException {
+        c.transmit(this);
     }
 
     public AMQConnection getAMQConnection() {
