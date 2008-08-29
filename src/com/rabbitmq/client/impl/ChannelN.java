@@ -223,7 +223,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                              command,
                                                                              this);
                 processShutdownSignal(signal);
-                transmit(new AMQCommand(new Channel.CloseOk()), true);
+                quiescingTransmit(new Channel.CloseOk());
                 notifyListeners();
                 return true;
             } else {
@@ -373,10 +373,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
         }
-        Basic.Publish publish = new Basic.Publish(ticket, exchange, routingKey,
-                                                          mandatory, immediate);
-        AMQCommand command = new AMQCommand(publish, useProps, body);
-        transmit(command, false);
+        transmit(new AMQCommand(new Basic.Publish(ticket, exchange, routingKey,
+                                                  mandatory, immediate),
+                                useProps, body));
     }
 
     /**
@@ -579,7 +578,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void basicAck(long deliveryTag, boolean multiple)
         throws IOException
     {
-        transmit(new AMQCommand(new Basic.Ack(deliveryTag, multiple)), false);
+        transmit(new Basic.Ack(deliveryTag, multiple));
     }
 
     /**

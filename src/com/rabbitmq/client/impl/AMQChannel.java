@@ -200,7 +200,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         throws IOException
     {
     	enqueueRpc(k);
-        new AMQCommand(m).transmit(this);
+        quiescingTransmit(m);
     }
 
     /**
@@ -231,9 +231,21 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public synchronized void transmit(AMQCommand c, boolean closing) throws IOException {
-        if (!closing)
-            ensureIsOpen();
+    public synchronized void transmit(Method m) throws IOException {
+        ensureIsOpen();
+        quiescingTransmit(m);
+    }
+
+    public synchronized void transmit(AMQCommand c) throws IOException {
+        ensureIsOpen();
+        quiescingTransmit(c);
+    }
+
+    public synchronized void quiescingTransmit(Method m) throws IOException {
+        new AMQCommand(m).transmit(this);
+    }
+
+    public synchronized void quiescingTransmit(AMQCommand c) throws IOException {
         c.transmit(this);
     }
 
