@@ -211,15 +211,6 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * is in quiescing/close/shutdown state.
      * Not for regular use. Doesn't do the ensureIsOpen() channel
      */
-    public AMQCommand quiescingRpc(Method m,
-                                   int timeoutMillisec)
-        throws IOException, ShutdownSignalException, TimeoutException
-    {
-        SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
-        quiescingRpc(m, k);
-        return k.getReply(timeoutMillisec);
-    }
-    
     public void quiescingRpc(Method m, RpcContinuation k)
         throws IOException
     {

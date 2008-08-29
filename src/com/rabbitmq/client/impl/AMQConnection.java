@@ -678,7 +678,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             AMQImpl.Connection.Close reason =
                 new AMQImpl.Connection.Close(closeCode, closeMessage, 0, 0);
             shutdown(reason, initiatedByApplication, cause);
-            _channel0.quiescingRpc(reason, timeout);
+            AMQChannel.SimpleBlockingRpcContinuation k =
+                new AMQChannel.SimpleBlockingRpcContinuation();
+            _channel0.quiescingRpc(reason, k);
+            k.getReply(timeout);
         } catch (TimeoutException tte) {
             if (!abort)
                 throw new ShutdownSignalException(true, true, tte, this);
