@@ -155,17 +155,6 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         _activeRpc = k;
     }
 
-    public synchronized void transmitAndEnqueue(Method m,
-                                                RpcContinuation k,
-                                                boolean closing)
-        throws IOException
-    {
-        if (!closing)
-            ensureIsOpen();
-    	enqueueRpc(k);
-        new AMQCommand(m).transmit(this);
-    }
-
     public synchronized RpcContinuation nextOutstandingRpc()
     {
         RpcContinuation result = _activeRpc;
@@ -203,18 +192,15 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public synchronized void rpc(Method m, RpcContinuation k)
         throws IOException
     {
-        transmitAndEnqueue(m, k, false);
+        ensureIsOpen();
+        quiescingRpc(m, k);
     }
     
-    /**
-     * Just like rpc(Method), but used when connection/channel 
-     * is in quiescing/close/shutdown state.
-     * Not for regular use. Doesn't do the ensureIsOpen() channel
-     */
-    public void quiescingRpc(Method m, RpcContinuation k)
+    public synchronized void quiescingRpc(Method m, RpcContinuation k)
         throws IOException
     {
-        transmitAndEnqueue(m, k, true);
+    	enqueueRpc(k);
+        new AMQCommand(m).transmit(this);
     }
 
     /**
