@@ -10,9 +10,9 @@ import java.util.Random;
  *
  * 1. Start a consumer thread, set up q queues with b bindings and subscribe to them
  * 2. Run a producer thread and send n messages
- * 4. Consumer thread should receive n messages
- * 3. Unsubscribe from all of the queues
- * 3. Delete all of the queues, thus unbinding everything
+ * 3. Consumer thread should receive n messages
+ * 4. Unsubscribe from all of the queues
+ * 5. Delete all of the queues, thus unbinding everything
  *
  */
 public class RoutingRateTest {
@@ -20,16 +20,12 @@ public class RoutingRateTest {
     private String[] bindings, queues;
 
     public static void main(String[] args) throws Exception {
-        strategy1();
-        strategy2();
+        strategy(100,100,1000);
+        //strategy(200,200,1000);
+        //strategy(500,500,1000);
     }
 
-    public static void strategy1() throws Exception {
-
-        int n = 1000;
-        int q = 100;
-        int b = 100;
-
+    private static void strategy(int b, int q, int n) throws Exception {
         RoutingRateTest smallTest = new RoutingRateTest();
         Stats smallStats = smallTest.runTest(b, q, n);
         smallStats.print();
@@ -44,30 +40,6 @@ public class RoutingRateTest {
 
 
         doFinalSummary(smallStats, mediumStats, largeStats);
-
-    }
-
-    public static void strategy2() throws Exception {
-
-        int n = 1000;
-        int q = 200;
-        int b = 200;
-
-        RoutingRateTest smallTest = new RoutingRateTest();
-        Stats smallStats = smallTest.runTest(b, q, n);
-        smallStats.print();
-
-        RoutingRateTest mediumTest = new RoutingRateTest();
-        Stats mediumStats = mediumTest.runTest(b, q, n * 2);
-        mediumStats.print();
-
-        RoutingRateTest largeTest = new RoutingRateTest();
-        Stats largeStats = largeTest.runTest(b, q, n * 10);
-        largeStats.print();
-
-
-        doFinalSummary(smallStats, mediumStats, largeStats);
-
     }
 
     private static void doFinalSummary(Stats smallStats, Stats mediumStats, Stats largeStats) {
@@ -215,7 +187,6 @@ public class RoutingRateTest {
             final long start = System.currentTimeMillis();
 
             int n = count;
-            int y = 0;
             while (n-- > 0) {
                 try {
                     nextDelivery();
@@ -278,7 +249,7 @@ public class RoutingRateTest {
     private void send(Channel channel, String x) throws IOException {
         byte[] payload = (System.nanoTime() + "-").getBytes();
         Random ran = new Random();
-        String b = bindings[ran.nextInt(bindings.length -1 )];
+        String b = bindings[ran.nextInt(bindings.length )];
         String r = b.replace("*", System.currentTimeMillis() + "");
         channel.basicPublish(1, x, r, MessageProperties.MINIMAL_BASIC, payload);
     }
