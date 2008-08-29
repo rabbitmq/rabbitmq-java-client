@@ -560,7 +560,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void handleConnectionClose(Command closeCommand) {
         shutdown(closeCommand, false, null);
         try {
-            _channel0.transmit(new AMQImpl.Connection.CloseOk());
+            _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
@@ -683,7 +683,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             AMQImpl.Connection.Close reason =
                 new AMQImpl.Connection.Close(closeCode, closeMessage, 0, 0);
             shutdown(reason, initiatedByApplication, cause);
-            _channel0.quiescingRpc(reason, timeout);
+            AMQChannel.SimpleBlockingRpcContinuation k =
+                new AMQChannel.SimpleBlockingRpcContinuation();
+            _channel0.quiescingRpc(reason, k);
+            k.getReply(timeout);
         } catch (TimeoutException tte) {
             if (!abort)
                 throw new ShutdownSignalException(true, true, tte, this);
