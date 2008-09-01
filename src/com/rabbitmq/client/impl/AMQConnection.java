@@ -97,7 +97,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Handler for (otherwise-unhandled) exceptions that crop up in the mainloop. */
     public final ExceptionHandler _exceptionHandler;
 
-    public BlockingCell<Object> appContinuation = new BlockingCell<Object>();
+    /**
+     * Object used for blocking main application thread when doing all the necessary
+     * connection shutdown operations
+     */
+    public BlockingCell<Object> _appContinuation = new BlockingCell<Object>();
 
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
@@ -441,7 +445,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                     // channel zero that aren't Connection.CloseOk) must
                                     // be discarded.
                                     ChannelN channel = _channelManager.getChannel(frame.channel);
-//                                  FIXME: catch NullPointerException and throw more informative one?
+                                    // FIXME: catch NullPointerException and throw more informative one?
                                     channel.handleFrame(frame);
                                 }
                             }
@@ -473,9 +477,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 // unexpectedly.
                 _channel0.notifyOutstandingRpc(_shutdownCause);
                 
-                synchronized(this) {
-                    appContinuation.set(null);
-                }
+                _appContinuation.set(null);
+                notifyListeners();
             }
         }
     }
@@ -564,19 +567,26 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
-
-        try {
-            synchronized(this) {
-                appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
-            }
-        } catch (TimeoutException ise) {
-            // Broker didn't close socket on time, force socket close
-            // FIXME: notify about timeout exception?
-            _frameHandler.close();
-        } finally {
-            _running = false;
+        _heartbeat = 0; // Do not try to send heartbeats after CloseOk   
+        new SocketCloseWait();
+    }
+    
+    private class SocketCloseWait extends Thread {
+        public SocketCloseWait() {
+            start();
         }
-        notifyListeners();
+        
+        @Override public void run() {
+            try {
+                _appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
+            } catch (TimeoutException ise) {
+                // Broker didn't close socket on time, force socket close
+                // FIXME: notify about timeout exception?
+                _frameHandler.close();
+            } finally {
+                _running = false;
+            }
+        }
     }
 
     /**
@@ -697,10 +707,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             if (!abort)
                 throw ioe;
         } finally {
-            _running = false;
             _frameHandler.close();
         }
-        notifyListeners();
     }
 
     @Override public String toString() {
