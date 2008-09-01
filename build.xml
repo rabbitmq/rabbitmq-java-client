@@ -236,7 +236,6 @@
 
   <target name="jar" depends="build">
     <mkdir dir="${lib.out}"/>
-	<echo message="Javac out = ${javac.out}"/>
     <antcall target="doJarWithTags">
        <param name="jar.name" value="rabbitmq-client"/>
        <param name="base" value="${javac.out}"/>
@@ -267,7 +266,6 @@
   </target>
 
     <target name="doJarWithTags">
-	<echo message="Javac out = ${basedir}"/>
         <jar destfile="${lib.out}/${jar.name}.jar"
              basedir="${base}">
             <manifest>
