@@ -20,9 +20,7 @@ public class RoutingRateTest {
     private String[] bindings, queues;
 
     public static void main(String[] args) throws Exception {
-        strategy(100,100,1000);
-        //strategy(200,200,1000);
-        //strategy(500,500,1000);
+        strategy(100,100,50);
     }
 
     private static void strategy(int b, int q, int n) throws Exception {
@@ -71,14 +69,9 @@ public class RoutingRateTest {
 
         ProducerThread producerRef = new ProducerThread(con.createChannel(), x, n);
         Thread producer = new Thread(producerRef);
-        ConsumerThread consumerRef = new ConsumerThread(con.createChannel(), producer, n);
-        Thread consumer = new Thread(consumerRef);
+        producer.start();
+        producer.join();
 
-
-        consumer.start();
-        consumer.join();
-
-        stats.consumerRate = consumerRef.rate;
         stats.producerRate = producerRef.rate;
 
         stats.unbindingRate = deleteQueues(channel);
@@ -116,9 +109,9 @@ public class RoutingRateTest {
         int cnt = 0;
         final long start = System.currentTimeMillis();
         long split = start;
-        for (String binding : bindings) {
-            for (String queue : queues) {
-                channel.queueDeclare(1, queue);
+        for (String queue : queues) {
+            channel.queueDeclare(1, queue);
+            for (String binding : bindings) {
                 channel.queueBind(1, queue, x, binding);
                 if ((++cnt % bs) == 0) {
                     long now = System.currentTimeMillis();
@@ -233,16 +226,41 @@ public class RoutingRateTest {
         public void run() {
             final long start = System.currentTimeMillis();
             int n = count;
+
+            doSelect();
+
             while (n-- > 0) {
                 try {
+
                     send(c, x);
+
                 }
                 catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
+
+            doCommit();
+
             final long now = System.currentTimeMillis();
             rate = calculateRate("Producer", count, now, start);
+        }
+
+        private void doCommit() {
+            try {
+                c.txCommit();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private void doSelect() {
+            try {
+                // Who invented checked exceptions?
+                c.txSelect();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -251,7 +269,10 @@ public class RoutingRateTest {
         Random ran = new Random();
         String b = bindings[ran.nextInt(bindings.length )];
         String r = b.replace("*", System.currentTimeMillis() + "");
+
+
         channel.basicPublish(1, x, r, MessageProperties.MINIMAL_BASIC, payload);
+        
     }
 
 }
