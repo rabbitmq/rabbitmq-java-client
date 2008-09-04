@@ -20,24 +20,25 @@ public class RoutingRateTest {
     private String[] bindings, queues;
 
     public static void main(String[] args) throws Exception {
-        strategy(100,100,50);
+        strategy(1000,1000,10000, false);
     }
 
-    private static void strategy(int b, int q, int n) throws Exception {
+    private static void strategy(int b, int q, int n, boolean topic) throws Exception {
         RoutingRateTest smallTest = new RoutingRateTest();
-        Stats smallStats = smallTest.runTest(b, q, n);
+        Stats smallStats = smallTest.runTest(b, q, n, topic);
         smallStats.print();
-
+        /*
         RoutingRateTest mediumTest = new RoutingRateTest();
-        Stats mediumStats = mediumTest.runTest(b, q, n * 2);
+        Stats mediumStats = mediumTest.runTest(b, q, n * 2, topic);
         mediumStats.print();
 
         RoutingRateTest largeTest = new RoutingRateTest();
-        Stats largeStats = largeTest.runTest(b, q, n * 10);
+        Stats largeStats = largeTest.runTest(b, q, n * 10, topic);
         largeStats.print();
 
 
         doFinalSummary(smallStats, mediumStats, largeStats);
+        */
     }
 
     private static void doFinalSummary(Stats smallStats, Stats mediumStats, Stats largeStats) {
@@ -51,9 +52,13 @@ public class RoutingRateTest {
         largeStats.print();
     }
 
-    private Stats runTest(int b, int q, int n) throws Exception {
+    private Stats runTest(int b, int q, int n, boolean topic) throws Exception {
         Stats stats = new Stats(q,b,n);
-        bindings = generate(b, "b.",".*");
+
+        String postfix = (topic) ? ".*" : "";
+        String type = (topic) ? "topic" : "direct";
+
+        bindings = generate(b, "b.", postfix);
         queues = generate(q, "q-", "");
 
         String x = "x-" + System.currentTimeMillis();
@@ -62,12 +67,12 @@ public class RoutingRateTest {
 
         final Connection con = new ConnectionFactory().newConnection("0.0.0.0", 5672);
         Channel channel = con.createChannel();
-        channel.exchangeDeclare(1, x, "topic");
+        channel.exchangeDeclare(1, x, type);
 
         stats.bindingRate = declareAndBindQueues(x, bs, channel);
 
 
-        ProducerThread producerRef = new ProducerThread(con.createChannel(), x, n);
+        ProducerThread producerRef = new ProducerThread(con.createChannel(), x, n, topic);
         Thread producer = new Thread(producerRef);
         producer.start();
         producer.join();
@@ -210,13 +215,15 @@ public class RoutingRateTest {
 
         Channel c;
         String x;
+        boolean topic;
 
-        ProducerThread(Channel c, String x, int messageCount) {
+        ProducerThread(Channel c, String x, int messageCount, boolean t) {
             this.c = c;
             this.x = x;
+            this.topic = t;
             count = messageCount;
             try {
-                c.exchangeDeclare(1, x, "topic");
+                c.exchangeDeclare(1, x, (t) ? "topic" : "direct");
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -232,7 +239,7 @@ public class RoutingRateTest {
             while (n-- > 0) {
                 try {
 
-                    send(c, x);
+                    send(c, x, topic);
 
                 }
                 catch (Exception e) {
@@ -264,11 +271,11 @@ public class RoutingRateTest {
         }
     }
 
-    private void send(Channel channel, String x) throws IOException {
+    private void send(Channel channel, String x, boolean topic) throws IOException {
         byte[] payload = (System.nanoTime() + "-").getBytes();
         Random ran = new Random();
         String b = bindings[ran.nextInt(bindings.length )];
-        String r = b.replace("*", System.currentTimeMillis() + "");
+        String r = (topic) ? b.replace("*", System.currentTimeMillis() + "") : b;
 
 
         channel.basicPublish(1, x, r, MessageProperties.MINIMAL_BASIC, payload);
