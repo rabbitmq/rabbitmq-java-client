@@ -20,14 +20,15 @@ public class RoutingRateTest {
     private String[] bindings, queues;
 
     public static void main(String[] args) throws Exception {
-        strategy(1000,1000,10000, false);
+        strategy(100,100,1000, false);
+        strategy(50,50,1000, true);
     }
 
     private static void strategy(int b, int q, int n, boolean topic) throws Exception {
         RoutingRateTest smallTest = new RoutingRateTest();
         Stats smallStats = smallTest.runTest(b, q, n, topic);
         smallStats.print();
-        /*
+
         RoutingRateTest mediumTest = new RoutingRateTest();
         Stats mediumStats = mediumTest.runTest(b, q, n * 2, topic);
         mediumStats.print();
@@ -38,18 +39,17 @@ public class RoutingRateTest {
 
 
         doFinalSummary(smallStats, mediumStats, largeStats);
-        */
     }
 
-    private static void doFinalSummary(Stats smallStats, Stats mediumStats, Stats largeStats) {
+    private static void doFinalSummary(Stats ... args) {
         System.err.println();
         System.err.println(".......");
         System.err.println("Final Summary......");
         System.err.println();
 
-        smallStats.print();
-        mediumStats.print();
-        largeStats.print();
+        for (Stats s : args) {
+            s.print();
+        }
     }
 
     private Stats runTest(int b, int q, int n, boolean topic) throws Exception {
