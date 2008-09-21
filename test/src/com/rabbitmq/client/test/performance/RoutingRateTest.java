@@ -17,6 +17,10 @@ import java.util.Random;
  */
 public class RoutingRateTest {
 
+
+    long rateLimit = 1000;
+    long interval;
+
     private String[] bindings, queues;
 
     public static void main(String[] args) throws Exception {
@@ -229,16 +233,17 @@ public class RoutingRateTest {
         Channel c;
         String x;
         boolean topic;
+
         long lastStatsTime;
-        long rateLimit;
-        long msgCount;
-        long interval;
+
+
 
         ProducerThread(Channel c, String x, int messageCount, boolean t) {
             this.c = c;
             this.x = x;
             this.topic = t;
             count = messageCount;
+
             try {
                 c.exchangeDeclare(1, x, (t) ? "topic" : "direct");
             } catch (IOException e) {
@@ -248,10 +253,10 @@ public class RoutingRateTest {
         }
 
         public void run() {
-            long start;
+
             int n = count;
 
-            long now = start = lastStatsTime = System.currentTimeMillis();
+            long start = lastStatsTime = System.currentTimeMillis();
 
             doSelect();
 
@@ -259,7 +264,7 @@ public class RoutingRateTest {
                 try {
 
                     send(c, x, topic);
-                    delay(now);
+                    delay(System.currentTimeMillis());
 
                 }
                 catch (Exception e) {
@@ -281,15 +286,14 @@ public class RoutingRateTest {
             //the 200 msgs we have actually sent should have taken us
             //200 * 1000 / 5000 = 40 ms. So we pause for 40ms - 10ms
             long pause = rateLimit == 0 ?
-                0 : (msgCount * 1000L / rateLimit - elapsed);
+                0 : (count * 1000L / rateLimit - elapsed);
             if (pause > 0) {
                 Thread.sleep(pause);
             }
             if (elapsed > interval) {
                 System.out.println("sending rate: " +
-                                   (msgCount * 1000 / elapsed) +
+                                   (count * 1000 / elapsed) +
                                    " msg/s");
-                msgCount = 0;
                 lastStatsTime = now;
             }
         }
