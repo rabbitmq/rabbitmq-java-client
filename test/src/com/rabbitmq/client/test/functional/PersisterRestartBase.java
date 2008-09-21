@@ -82,6 +82,12 @@ public class PersisterRestartBase extends BrokerTestCase
         channel.exchangeDeclare(ticket, x, "topic", true);
     }
 
+    protected void declareDurableDirectExchange(String x)
+        throws IOException
+    {
+        channel.exchangeDeclare(ticket, x, "direct", true);
+    }
+
     protected void declareDurableQueue(String q)
         throws IOException
     {
