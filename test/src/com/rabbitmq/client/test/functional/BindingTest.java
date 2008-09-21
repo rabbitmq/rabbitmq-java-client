@@ -52,6 +52,7 @@ public class BindingTest extends BrokerTestCase {
         response = channel.basicGet(ticket, Q, true);
         assertNull("The second response should be null", response);
 
+        channel.queueDelete(ticket, Q);
     }
 
 

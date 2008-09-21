@@ -20,46 +20,47 @@ public class RoutingRateTest {
     private String[] bindings, queues;
 
     public static void main(String[] args) throws Exception {
-        strategy(100,100,1000, false);
+        //strategy(100,100,1000, false);
         strategy(50,50,1000, true);
     }
 
     private static void strategy(int b, int q, int n, boolean topic) throws Exception {
         RoutingRateTest smallTest = new RoutingRateTest();
-        Stats smallStats = smallTest.runTest(b, q, n, topic);
-        smallStats.print();
+        Parameters smallStats = smallTest.runTest(new Parameters(b, q, n), topic, true);
+        smallStats.printStats();
 
+        /*
         RoutingRateTest mediumTest = new RoutingRateTest();
-        Stats mediumStats = mediumTest.runTest(b, q, n * 2, topic);
-        mediumStats.print();
+        Parameters mediumStats = mediumTest.runTest(new Parameters(b, q, n * 2), topic);
+        mediumStats.printStats();
 
         RoutingRateTest largeTest = new RoutingRateTest();
-        Stats largeStats = largeTest.runTest(b, q, n * 10, topic);
-        largeStats.print();
+        Parameters largeStats = largeTest.runTest(new Parameters(b, q, n * 10), topic);
+        largeStats.printStats();
 
 
         doFinalSummary(smallStats, mediumStats, largeStats);
+        */
     }
 
-    private static void doFinalSummary(Stats ... args) {
+    private static void doFinalSummary(Parameters... args) {
         System.err.println();
         System.err.println(".......");
         System.err.println("Final Summary......");
         System.err.println();
 
-        for (Stats s : args) {
-            s.print();
+        for (Parameters s : args) {
+            s.printStats();
         }
     }
 
-    private Stats runTest(int b, int q, int n, boolean topic) throws Exception {
-        Stats stats = new Stats(q,b,n);
+    private Parameters runTest(Parameters parameters, boolean topic, boolean consumerMeasured) throws Exception {
 
         String postfix = (topic) ? ".*" : "";
         String type = (topic) ? "topic" : "direct";
 
-        bindings = generate(b, "b.", postfix);
-        queues = generate(q, "q-", "");
+        bindings = generate(parameters.b, "b.", postfix);
+        queues = generate(parameters.q, "q-", "");
 
         String x = "x-" + System.currentTimeMillis();
 
@@ -69,35 +70,47 @@ public class RoutingRateTest {
         Channel channel = con.createChannel();
         channel.exchangeDeclare(1, x, type);
 
-        stats.bindingRate = declareAndBindQueues(x, bs, channel);
+        parameters.bindingRate = declareAndBindQueues(x, bs, channel);
 
 
-        ProducerThread producerRef = new ProducerThread(con.createChannel(), x, n, topic);
+        ProducerThread producerRef = new ProducerThread(con.createChannel(), x, parameters.n, topic);
         Thread producer = new Thread(producerRef);
-        producer.start();
-        producer.join();
 
-        stats.producerRate = producerRef.rate;
+        if (consumerMeasured) {
+            ConsumerThread consumerRef = new ConsumerThread(con.createChannel(), producer, parameters.n);
+            Thread consumer = new Thread(consumerRef);
+            consumer.start();
+            consumer.join();
+            parameters.consumerRate = consumerRef.rate;
+        }
 
-        stats.unbindingRate = deleteQueues(channel);
+        else {
+            producer.start();
+            producer.join();
+        }
+
+        parameters.producerRate = producerRef.rate;
+        parameters.unbindingRate = deleteQueues(channel);
 
         channel.close(200, "hasta la vista, baby");
         con.close();
-        return stats;
+
+        return parameters;
     }
 
-    class Stats {
+    static class Parameters {
 
         int q,b,n;
 
-        Stats (int q, int b, int n) {
+        Parameters(int q, int b, int n) {
             this.q = q;
             this.b = b;
             this.n = n;
         }
 
         float consumerRate, producerRate, unbindingRate, bindingRate;
-        void print() {
+
+        void printStats() {
             System.err.println("----------------");
             System.err.println("SUMMARY (q = " + q + ", b = " + b + ", n = " + n + ")");
             System.err.println("Consumer -> " + consumerRate);
@@ -216,6 +229,10 @@ public class RoutingRateTest {
         Channel c;
         String x;
         boolean topic;
+        long lastStatsTime;
+        long rateLimit;
+        long msgCount;
+        long interval;
 
         ProducerThread(Channel c, String x, int messageCount, boolean t) {
             this.c = c;
@@ -231,8 +248,10 @@ public class RoutingRateTest {
         }
 
         public void run() {
-            final long start = System.currentTimeMillis();
+            long start;
             int n = count;
+
+            long now = start = lastStatsTime = System.currentTimeMillis();
 
             doSelect();
 
@@ -240,6 +259,7 @@ public class RoutingRateTest {
                 try {
 
                     send(c, x, topic);
+                    delay(now);
 
                 }
                 catch (Exception e) {
@@ -249,9 +269,31 @@ public class RoutingRateTest {
 
             doCommit();
 
-            final long now = System.currentTimeMillis();
-            rate = calculateRate("Producer", count, now, start);
+            final long nownow = System.currentTimeMillis();
+            rate = calculateRate("Producer", count, nownow, start);
         }
+
+        private void delay(long now) throws InterruptedException {
+
+            long elapsed = now - lastStatsTime;
+            //example: rateLimit is 5000 msg/s,
+            //10 ms have elapsed, we have sent 200 messages
+            //the 200 msgs we have actually sent should have taken us
+            //200 * 1000 / 5000 = 40 ms. So we pause for 40ms - 10ms
+            long pause = rateLimit == 0 ?
+                0 : (msgCount * 1000L / rateLimit - elapsed);
+            if (pause > 0) {
+                Thread.sleep(pause);
+            }
+            if (elapsed > interval) {
+                System.out.println("sending rate: " +
+                                   (msgCount * 1000 / elapsed) +
+                                   " msg/s");
+                msgCount = 0;
+                lastStatsTime = now;
+            }
+        }
+
 
         private void doCommit() {
             try {
