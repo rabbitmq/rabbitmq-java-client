@@ -18,14 +18,14 @@ import java.util.Random;
 public class RoutingRateTest {
 
 
-    long rateLimit = 1000;
-    long interval;
+    final long rateLimit = 1000;
+    final long interval = 50;
 
     private String[] bindings, queues;
 
     public static void main(String[] args) throws Exception {
         //strategy(100,100,1000, false);
-        strategy(50,50,1000, true);
+        strategy(5,5,100, true);
     }
 
     private static void strategy(int b, int q, int n, boolean topic) throws Exception {
@@ -236,7 +236,7 @@ public class RoutingRateTest {
 
         long lastStatsTime;
 
-
+        int n;
 
         ProducerThread(Channel c, String x, int messageCount, boolean t) {
             this.c = c;
@@ -254,7 +254,8 @@ public class RoutingRateTest {
 
         public void run() {
 
-            int n = count;
+
+            n = count;
 
             long start = lastStatsTime = System.currentTimeMillis();
 
@@ -278,21 +279,21 @@ public class RoutingRateTest {
             rate = calculateRate("Producer", count, nownow, start);
         }
 
-        private void delay(long now) throws InterruptedException {
+        private void delay(final long now) throws InterruptedException {
 
-            long elapsed = now - lastStatsTime;
+            final long elapsed = now - lastStatsTime;
             //example: rateLimit is 5000 msg/s,
             //10 ms have elapsed, we have sent 200 messages
             //the 200 msgs we have actually sent should have taken us
             //200 * 1000 / 5000 = 40 ms. So we pause for 40ms - 10ms
-            long pause = rateLimit == 0 ?
-                0 : (count * 1000L / rateLimit - elapsed);
+            final long pause = rateLimit == 0 ?
+                0 : ( (count - n)  * 1000L / rateLimit - elapsed);
             if (pause > 0) {
                 Thread.sleep(pause);
             }
             if (elapsed > interval) {
                 System.out.println("sending rate: " +
-                                   (count * 1000 / elapsed) +
+                                   ( (count - n) * 1000 / elapsed) +
                                    " msg/s");
                 lastStatsTime = now;
             }
