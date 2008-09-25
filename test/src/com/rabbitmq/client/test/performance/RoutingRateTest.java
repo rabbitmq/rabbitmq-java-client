@@ -18,33 +18,49 @@ import java.util.Random;
 public class RoutingRateTest {
 
 
-    final long rateLimit = 1000;
-    final long interval = 50;
+    static int RATE_FACTOR = 400;
+    static int INTERVAL = 50;
+
+    long rateLimit;
+    long interval = 50;
 
     private String[] bindings, queues;
 
     public static void main(String[] args) throws Exception {
-        //strategy(100,100,1000, false);
-        strategy(5,5,100, true);
+
+        for (int i = 0 ; i < 10 ; i++) {
+            strategy((10 - i) * 10, (10 - i ) * 10, 100, false);
+        }
     }
 
     private static void strategy(int b, int q, int n, boolean topic) throws Exception {
-        RoutingRateTest smallTest = new RoutingRateTest();
-        Parameters smallStats = smallTest.runTest(new Parameters(b, q, n), topic, true);
-        smallStats.printStats();
 
-        /*
-        RoutingRateTest mediumTest = new RoutingRateTest();
-        Parameters mediumStats = mediumTest.runTest(new Parameters(b, q, n * 2), topic);
-        mediumStats.printStats();
+        int interval = INTERVAL;
 
-        RoutingRateTest largeTest = new RoutingRateTest();
-        Parameters largeStats = largeTest.runTest(new Parameters(b, q, n * 10), topic);
-        largeStats.printStats();
+        for (int i = 0 ; i < 10 ; i++) {
+
+            int rate = (10 - i) * RATE_FACTOR;
+
+            RoutingRateTest smallTest = new RoutingRateTest();
+            
+            Parameters smallStats = smallTest.runTest(new Parameters(b, q, n, rate, interval), topic, true);
+            smallStats.printStats();
 
 
-        doFinalSummary(smallStats, mediumStats, largeStats);
-        */
+            RoutingRateTest mediumTest = new RoutingRateTest();
+            Parameters mediumStats = mediumTest.runTest(new Parameters(b, q, n * 2, rate, interval), topic, true);
+            //mediumStats.printStats();
+
+            RoutingRateTest largeTest = new RoutingRateTest();
+            Parameters largeStats = largeTest.runTest(new Parameters(b, q, n * 10, rate, interval), topic, true);
+            //largeStats.printStats();
+
+
+            doFinalSummary(smallStats, mediumStats, largeStats);
+        }
+
+
+
     }
 
     private static void doFinalSummary(Parameters... args) {
@@ -59,6 +75,9 @@ public class RoutingRateTest {
     }
 
     private Parameters runTest(Parameters parameters, boolean topic, boolean consumerMeasured) throws Exception {
+
+        rateLimit = parameters.rateLimit;
+        interval = parameters.interval;
 
         String postfix = (topic) ? ".*" : "";
         String type = (topic) ? "topic" : "direct";
@@ -106,10 +125,14 @@ public class RoutingRateTest {
 
         int q,b,n;
 
-        Parameters(int q, int b, int n) {
+        int rateLimit, interval;
+
+        Parameters(int q, int b, int n, int rateLimit, int interval) {
             this.q = q;
             this.b = b;
             this.n = n;
+            this.rateLimit = rateLimit;
+            this.interval = interval;
         }
 
         float consumerRate, producerRate, unbindingRate, bindingRate;
@@ -121,13 +144,15 @@ public class RoutingRateTest {
             System.err.println("Producer -> " + producerRate);
             System.err.println("Creation -> " + bindingRate);
             System.err.println("Nuking -> " + unbindingRate);
+            System.err.println("Rate Limit -> " + rateLimit);
+            System.err.println("Interval -> " + interval);
 
             System.err.println("----------------");
         }
     }
 
     private float declareAndBindQueues(String x, int bs, Channel channel) throws IOException {
-        System.err.println("Creating queues ....... ");
+        //System.err.println("Creating queues ....... ");
         int cnt = 0;
         final long start = System.currentTimeMillis();
         long split = start;
@@ -149,12 +174,12 @@ public class RoutingRateTest {
     private float calculateRate(String who, int size, long now, long then) {
         float diff = (float)(now - then) / 1000;
         float rate = size  / diff;
-        System.err.println(who + " : Rate = " + size  / diff);
+        //System.err.println(who + " : Rate = " + size  / diff);
         return rate;
     }
 
     private float deleteQueues(Channel channel) throws IOException {
-        System.err.println("Deleting queues ....... ");
+        //System.err.println("Deleting queues ....... ");
         long start = System.currentTimeMillis();
         for (String queue : queues) {
             channel.queueDelete(1, queue);
@@ -292,9 +317,9 @@ public class RoutingRateTest {
                 Thread.sleep(pause);
             }
             if (elapsed > interval) {
-                System.out.println("sending rate: " +
-                                   ( (count - n) * 1000 / elapsed) +
-                                   " msg/s");
+//                System.out.println("sending rate: " +
+//                                   ( (count - n) * 1000 / elapsed) +
+//                                   " msg/s");
                 lastStatsTime = now;
             }
         }
