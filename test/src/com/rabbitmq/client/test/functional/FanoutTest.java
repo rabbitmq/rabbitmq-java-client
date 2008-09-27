@@ -41,7 +41,7 @@ public class FanoutTest extends BrokerTestCase {
             queues.add(q);
         }        
 
-        channel.basicPublish(ticket, X, K, MessageProperties.BASIC, payload);
+        channel.basicPublish(ticket, X, System.nanoTime() + "", MessageProperties.BASIC, payload);
 
         for (String q : queues) {
             GetResponse response = channel.basicGet(ticket, q, true);
