@@ -2,7 +2,7 @@ package com.rabbitmq.client.test.performance;
 
 import com.rabbitmq.client.*;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.Random;
 
 /**
@@ -18,13 +18,14 @@ import java.util.Random;
 public class BaseRoutingRateTest {
 
 
-    protected static int RATE_FACTOR = 1000;
+    protected static int RATE_FACTOR = 10000;
     protected static int INTERVAL = 50;
 
     long rateLimit;
     long interval = 50;
 
     protected String[] bindings, queues;
+
 
     public void runStrategy(int b, int q, int n, boolean topic, boolean consumerMeasured, boolean limited) throws Exception {
 
@@ -88,10 +89,11 @@ public class BaseRoutingRateTest {
         Thread producer = new Thread(producerRef);
 
         if (consumerMeasured) {
-            ConsumerThread consumerRef = new ConsumerThread(con.createChannel(), producer, parameters.n);
+            ConsumerThread consumerRef = new ConsumerThread(con.createChannel(), producer, parameters.n, limited);
             Thread consumer = new Thread(consumerRef);
             consumer.start();
             consumer.join();
+            producer.join();
             parameters.consumerRate = consumerRef.rate;
         }
 
@@ -191,10 +193,16 @@ public class BaseRoutingRateTest {
         Thread producer;
         float rate;
 
-        ConsumerThread(Channel channel, Thread t, int messageCount) {
+        boolean latency;
+
+        Channel c;
+
+        ConsumerThread(Channel channel, Thread t, int messageCount, boolean l) {
             super(channel);
             count = messageCount;
             producer = t;
+            latency = l;
+            c = channel;
         }
 
         public void run() {
@@ -215,16 +223,39 @@ public class BaseRoutingRateTest {
             final long start = System.currentTimeMillis();
 
             int n = count;
+            long acc = 0;
             while (n-- > 0) {
                 try {
-                    nextDelivery();
+                    Delivery delivery = nextDelivery();
+                    long now = System.currentTimeMillis();
+                    if (null != delivery) {
+                        ByteArrayInputStream is = new ByteArrayInputStream(delivery.getBody());
+                        DataInputStream d = new DataInputStream(is);
+                        try {
+                            int sequenceNumber = d.readInt();
+                            long then = d.readLong();
+                            acc += (now - then);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
 
+
+
             final long now = System.currentTimeMillis();
-            rate = calculateRate("Consumer", count, now, start);
+            if (latency){
+
+                rate = acc / count;
+
+            }
+            else {
+                rate = calculateRate("Consumer", count, now, start);
+            }
 
             // Unsubscribe to each queue
 
@@ -235,6 +266,12 @@ public class BaseRoutingRateTest {
                     throw new RuntimeException(e);
                 }
             }
+
+            try {
+                c.close(200, "see ya");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -243,11 +280,13 @@ public class BaseRoutingRateTest {
         final int count;
         float rate;
 
-        Channel c;
+        private Channel c;
         String x;
         boolean topic, rateLimited;
 
         long lastStatsTime;
+
+        int sequenceNumber = 0;
 
         int n;
 
@@ -273,7 +312,7 @@ public class BaseRoutingRateTest {
 
             long start = lastStatsTime = System.currentTimeMillis();
 
-            doSelect();
+            if (!rateLimited) doSelect();
 
             while (n-- > 0) {
                 try {
@@ -289,10 +328,16 @@ public class BaseRoutingRateTest {
                 }
             }
 
-            doCommit();
+            if (!rateLimited) doCommit();
+
+            try {
+                c.close(200, "see ya");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
             final long nownow = System.currentTimeMillis();
-            rate = calculateRate("Producer", count, nownow, start);
+            rate = (rateLimited) ? -1 : calculateRate("Producer", count, nownow, start);
         }
 
         private void delay(final long now) throws InterruptedException {
@@ -332,17 +377,26 @@ public class BaseRoutingRateTest {
                 throw new RuntimeException(e);
             }
         }
+
+        private void send(Channel ch, String x, boolean topic) throws IOException {
+            
+            ByteArrayOutputStream acc = new ByteArrayOutputStream();
+            DataOutputStream d = new DataOutputStream(acc);
+            d.writeInt(sequenceNumber++);
+            d.writeLong(System.currentTimeMillis());
+            d.flush();
+            acc.flush();
+            byte[] payload = acc.toByteArray();
+
+            Random ran = new Random();
+            String b = bindings[ran.nextInt(bindings.length)];
+            String r = (topic) ? b.replace("*", System.currentTimeMillis() + "") : b;
+
+            ch.basicPublish(1, x, r, MessageProperties.MINIMAL_BASIC, payload);
+
+        }
     }
 
-    private void send(Channel channel, String x, boolean topic) throws IOException {
-        byte[] payload = (System.nanoTime() + "-").getBytes();
-        Random ran = new Random();
-        String b = bindings[ran.nextInt(bindings.length )];
-        String r = (topic) ? b.replace("*", System.currentTimeMillis() + "") : b;
 
-
-        channel.basicPublish(1, x, r, MessageProperties.MINIMAL_BASIC, payload);
-        
-    }
 
 }
