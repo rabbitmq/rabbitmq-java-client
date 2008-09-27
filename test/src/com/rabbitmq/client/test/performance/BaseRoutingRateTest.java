@@ -15,51 +15,39 @@ import java.util.Random;
  * 5. Delete all of the queues, thus unbinding everything
  *
  */
-public class RoutingRateTest {
+public class BaseRoutingRateTest {
 
 
-    static int RATE_FACTOR = 400;
-    static int INTERVAL = 50;
+    protected static int RATE_FACTOR = 1000;
+    protected static int INTERVAL = 50;
 
     long rateLimit;
     long interval = 50;
 
-    private String[] bindings, queues;
+    protected String[] bindings, queues;
 
-    public static void main(String[] args) throws Exception {
-
-        for (int i = 0 ; i < 10 ; i++) {
-            strategy((10 - i) * 10, (10 - i ) * 10, 100, false);
-        }
-    }
-
-    private static void strategy(int b, int q, int n, boolean topic) throws Exception {
+    public void runStrategy(int b, int q, int n, boolean topic, boolean consumerMeasured, boolean limited) throws Exception {
 
         int interval = INTERVAL;
 
-        for (int i = 0 ; i < 10 ; i++) {
+        int iterations = (limited) ? 10 : 1;
 
-            int rate = (10 - i) * RATE_FACTOR;
+        for (int i = 0 ; i < iterations ; i++) {
 
-            RoutingRateTest smallTest = new RoutingRateTest();
+            int rate = (limited) ? (iterations - i) * RATE_FACTOR : -1;            
+
+            BaseRoutingRateTest smallTest = new BaseRoutingRateTest();
             
-            Parameters smallStats = smallTest.runTest(new Parameters(b, q, n, rate, interval), topic, true);
-            smallStats.printStats();
+            Parameters smallStats = smallTest.runTest(new Parameters(b, q, n, rate, interval), topic, consumerMeasured, limited);
 
+            BaseRoutingRateTest mediumTest = new BaseRoutingRateTest();
+            Parameters mediumStats = mediumTest.runTest(new Parameters(b, q, n * 2, rate, interval), topic, consumerMeasured, limited);
 
-            RoutingRateTest mediumTest = new RoutingRateTest();
-            Parameters mediumStats = mediumTest.runTest(new Parameters(b, q, n * 2, rate, interval), topic, true);
-            //mediumStats.printStats();
-
-            RoutingRateTest largeTest = new RoutingRateTest();
-            Parameters largeStats = largeTest.runTest(new Parameters(b, q, n * 10, rate, interval), topic, true);
-            //largeStats.printStats();
-
+            BaseRoutingRateTest largeTest = new BaseRoutingRateTest();
+            Parameters largeStats = largeTest.runTest(new Parameters(b, q, n * 10, rate, interval), topic, consumerMeasured, limited);
 
             doFinalSummary(smallStats, mediumStats, largeStats);
         }
-
-
 
     }
 
@@ -74,7 +62,7 @@ public class RoutingRateTest {
         }
     }
 
-    private Parameters runTest(Parameters parameters, boolean topic, boolean consumerMeasured) throws Exception {
+    private Parameters runTest(Parameters parameters, boolean topic, boolean consumerMeasured, boolean limited) throws Exception {
 
         rateLimit = parameters.rateLimit;
         interval = parameters.interval;
@@ -96,7 +84,7 @@ public class RoutingRateTest {
         parameters.bindingRate = declareAndBindQueues(x, bs, channel);
 
 
-        ProducerThread producerRef = new ProducerThread(con.createChannel(), x, parameters.n, topic);
+        ProducerThread producerRef = new ProducerThread(con.createChannel(), x, parameters.n, topic, limited);
         Thread producer = new Thread(producerRef);
 
         if (consumerMeasured) {
@@ -257,16 +245,17 @@ public class RoutingRateTest {
 
         Channel c;
         String x;
-        boolean topic;
+        boolean topic, rateLimited;
 
         long lastStatsTime;
 
         int n;
 
-        ProducerThread(Channel c, String x, int messageCount, boolean t) {
+        ProducerThread(Channel c, String x, int messageCount, boolean t, boolean rateLimited) {
             this.c = c;
             this.x = x;
             this.topic = t;
+            this.rateLimited = rateLimited;
             count = messageCount;
 
             try {
@@ -290,7 +279,9 @@ public class RoutingRateTest {
                 try {
 
                     send(c, x, topic);
-                    delay(System.currentTimeMillis());
+                    if (rateLimited) {
+                        delay(System.currentTimeMillis());
+                    }
 
                 }
                 catch (Exception e) {
