@@ -74,6 +74,8 @@ public class SocketFrameHandler implements FrameHandler {
         _host = hostName;
         _port = portNumber;
         _socket = factory.createSocket(_host, _port);
+        //disable Nagle's algorithm, for more consistently low latency
+        _socket.setTcpNoDelay(true);
 
         _inputStream = new DataInputStream(new BufferedInputStream(_socket.getInputStream()));
         _outputStream = new DataOutputStream(new BufferedOutputStream(_socket.getOutputStream()));
