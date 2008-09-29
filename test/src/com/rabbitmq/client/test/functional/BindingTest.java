@@ -53,7 +53,7 @@ public class BindingTest extends BrokerTestCase {
         channel.queueDelete(ticket, Q);
         channel.queueDeclare(ticket, Q, true);
 
-        sendUnroutable();
+        sendUnroutable(X);
 
         channel.queueDelete(ticket, Q);
     }
@@ -76,17 +76,22 @@ public class BindingTest extends BrokerTestCase {
         channel.exchangeDelete(ticket, X);
         channel.exchangeDeclare(ticket, X, "direct");
 
-        sendUnroutable();
+        sendUnroutable(X);
 
         channel.queueDelete(ticket, Q);
     }
 
     public void testExchangeIfUnused() throws Exception {
-        channel.exchangeDeclare(ticket, X, "direct", true);
+
+        // Generate a new exchange name on the stack, not as a member variable
+        // otherwise the other tests will interfere.
+        String x = "X-" + System.currentTimeMillis();
+        
+        channel.exchangeDeclare(ticket, x, "direct", true);
         channel.queueDeclare(ticket, Q, true);
-        channel.queueBind(ticket, Q, X, K);
+        channel.queueBind(ticket, Q, x, K);
         try {
-            channel.exchangeDelete(ticket, X, true);
+            channel.exchangeDelete(ticket, x, true);
         }
         catch (Exception e) {
             // do nothing, this is the correct behaviour
@@ -107,23 +112,24 @@ public class BindingTest extends BrokerTestCase {
         // Generate a new exchange name on the stack, not as a member variable
         // otherwise the other tests will interfere.
         String x = "X-" + System.currentTimeMillis();
+        String q = "Q-" + System.currentTimeMillis();
 
 
         channel.exchangeDeclare(ticket, x, "direct", false, durable, true, null);
-        channel.queueDeclare(ticket, Q, false, durable, false, true, null);
-        channel.queueBind(ticket, Q, x, K);
+        channel.queueDeclare(ticket, q, false, durable, false, true, null);
+        channel.queueBind(ticket, q, x, K);
 
-        String tag = channel.basicConsume(ticket, Q, new QueueingConsumer(channel));
+        String tag = channel.basicConsume(ticket, q, new QueueingConsumer(channel));
 
-        sendUnroutable();
+        sendUnroutable(x);
 
         channel.basicCancel(tag);
 
-        channel.queueDeclare(ticket, Q, false, false, true, true, null);
+        channel.queueDeclare(ticket, q, false, false, true, true, null);
 
         // Because the exchange does not exist, this bind should fail
         try {
-            channel.queueBind(ticket, Q, x, K);
+            channel.queueBind(ticket, q, x, K);
         }
         catch (Exception e) {
             // do nothing, this is the correct behaviour
@@ -134,9 +140,9 @@ public class BindingTest extends BrokerTestCase {
         fail("Queue bind should have failed");
     }
 
-    private void sendUnroutable() throws IOException {
+    private void sendUnroutable(String x) throws IOException {
         // Send it some junk
-        channel.basicPublish(ticket, X, K, MessageProperties.BASIC, payload);
+        channel.basicPublish(ticket, x, K, MessageProperties.BASIC, payload);
 
         GetResponse response = channel.basicGet(ticket, Q, true);
         assertNull("The initial response SHOULD BE null", response);
