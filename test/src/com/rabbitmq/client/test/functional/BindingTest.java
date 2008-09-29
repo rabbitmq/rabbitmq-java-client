@@ -1,7 +1,10 @@
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
+
+import java.io.IOException;
 
 /**
  * This tests whether bindings are created and nuked properly.
@@ -12,7 +15,9 @@ import com.rabbitmq.client.GetResponse;
  *
  */
 public class BindingTest extends BrokerTestCase {
-    
+
+    private boolean shouldClose;
+
     protected static final String Q = "Q-" + System.currentTimeMillis();
     protected static final String X = "X-" + System.currentTimeMillis();
     protected static final String K = "K-" + System.currentTimeMillis();
@@ -20,13 +25,14 @@ public class BindingTest extends BrokerTestCase {
 
     // TODO: This setup code is copy and paste - maybe this should wander up to the super class?
     protected void setUp() throws Exception {
+        shouldClose = true;
         openConnection();
         openChannel();
     }
 
     protected void tearDown() throws Exception {
 
-        closeChannel();
+        if (shouldClose) closeChannel();
         closeConnection();
     }
 
@@ -47,10 +53,7 @@ public class BindingTest extends BrokerTestCase {
         channel.queueDelete(ticket, Q);
         channel.queueDeclare(ticket, Q, true);
 
-        channel.basicPublish(ticket, X, K, MessageProperties.BASIC, payload);
-
-        response = channel.basicGet(ticket, Q, true);
-        assertNull("The second response should be null", response);
+        sendUnroutable();
 
         channel.queueDelete(ticket, Q);
     }
@@ -73,13 +76,60 @@ public class BindingTest extends BrokerTestCase {
         channel.exchangeDelete(ticket, X);
         channel.exchangeDeclare(ticket, X, "direct");
 
-        channel.basicPublish(ticket, X, K, MessageProperties.BASIC, payload);
-
-        response = channel.basicGet(ticket, Q, true);
-        assertNull("The second response should be null", response);
+        sendUnroutable();
 
         channel.queueDelete(ticket, Q);
     }
+
+    public void testExchangeAutoDelete() throws Exception {
+        doAutoDelete(false);
+        // TODO do we need to test auto_delete on durable exchanges?
+    }
+
+    private void doAutoDelete(boolean durable) throws IOException {
+
+        // Generate a new exchange name on the stack, not as a member variable
+        // otherwise the other tests will interfere.
+        String x = "X-" + System.currentTimeMillis();
+
+
+        channel.exchangeDeclare(ticket, x, "direct", false, durable, true, null);
+        channel.queueDeclare(ticket, Q, false, durable, false, true, null);
+        channel.queueBind(ticket, Q, x, K);
+
+        String tag = channel.basicConsume(ticket, Q, new QueueingConsumer(channel));
+
+        sendUnroutable();
+
+        channel.basicCancel(tag);
+
+        channel.queueDeclare(ticket, Q, false, false, true, true, null);
+
+        // Because the exchange does not exist, this bind should fail
+        try {
+            channel.queueBind(ticket, Q, x, K);
+        }
+        catch (Exception e) {
+            // do nothing, this is the correct behaviour
+            shouldClose = false;
+            return;
+        }
+
+        fail("Queue bind should have failed");
+    }
+
+    private void sendUnroutable() throws IOException {
+        // Send it some junk
+        channel.basicPublish(ticket, X, K, MessageProperties.BASIC, payload);
+
+        GetResponse response = channel.basicGet(ticket, Q, true);
+        assertNull("The initial response SHOULD BE null", response);
+    }
+
+
+
+// The tests do not provide any coverage of exchange auto-deletion or explicit
+// exchange deletion with if_unused=true.
 
 
 }
