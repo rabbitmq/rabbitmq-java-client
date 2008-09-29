@@ -81,6 +81,22 @@ public class BindingTest extends BrokerTestCase {
         channel.queueDelete(ticket, Q);
     }
 
+    public void testExchangeIfUnused() throws Exception {
+        channel.exchangeDeclare(ticket, X, "direct", true);
+        channel.queueDeclare(ticket, Q, true);
+        channel.queueBind(ticket, Q, X, K);
+        try {
+            channel.exchangeDelete(ticket, X, true);
+        }
+        catch (Exception e) {
+            // do nothing, this is the correct behaviour
+            shouldClose = false;
+            return;
+        }
+
+        fail("Exchange delete should have failed");
+    }
+
     public void testExchangeAutoDelete() throws Exception {
         doAutoDelete(false);
         // TODO do we need to test auto_delete on durable exchanges?
