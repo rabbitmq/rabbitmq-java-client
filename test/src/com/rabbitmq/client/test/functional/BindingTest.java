@@ -30,7 +30,7 @@ public class BindingTest extends BrokerTestCase {
         closeConnection();
     }
 
-    public void testBindings() throws Exception {
+    public void testQueueDelete() throws Exception {
         // create durable exchange and queue and bind them
         channel.exchangeDeclare(ticket, X, "direct", true);
         channel.queueDeclare(ticket, Q, true);
@@ -46,6 +46,32 @@ public class BindingTest extends BrokerTestCase {
         // TODO: When unbind is implemented, use that instead of deleting and re-creating the queue
         channel.queueDelete(ticket, Q);
         channel.queueDeclare(ticket, Q, true);
+
+        channel.basicPublish(ticket, X, K, MessageProperties.BASIC, payload);
+
+        response = channel.basicGet(ticket, Q, true);
+        assertNull("The second response should be null", response);
+
+        channel.queueDelete(ticket, Q);
+    }
+
+    public void testExchangeDelete() throws Exception {
+        // create durable exchange and queue and bind them
+        channel.exchangeDeclare(ticket, X, "direct", true);
+        channel.queueDeclare(ticket, Q, true);
+        channel.queueBind(ticket, Q, X, K);
+
+        // Send it some junk
+        channel.basicPublish(ticket, X, K, MessageProperties.BASIC, payload);
+
+        GetResponse response = channel.basicGet(ticket, Q, true);
+        assertNotNull("The initial response should not be null", response);
+
+        // Nuke the exchange and repeat this test, this time you expect nothing to get routed
+        // TODO: When unbind is implemented, use that instead of deleting and re-creating the queue
+
+        channel.exchangeDelete(ticket, X);
+        channel.exchangeDeclare(ticket, X, "direct");
 
         channel.basicPublish(ticket, X, K, MessageProperties.BASIC, payload);
 
