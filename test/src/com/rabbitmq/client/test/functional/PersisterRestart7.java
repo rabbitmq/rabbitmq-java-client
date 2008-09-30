@@ -3,7 +3,22 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.GetResponse;
 
 /**
- * Tests whether durable bindings are correctly recovered.
+ *
+ * This tests whether the bindings attached to a durable exchange
+ * are correctly blown away when the exhange is nuked.
+ *
+ * This complements a unit test for testing non-durable exhanges.
+ * In that case, an exchange is deleted and you expect any bindings
+ * hanging to it to be deleted as well. To verify this, the exchange
+ * is deleted and then recreated.
+ *
+ * After the recreation, the old bindings should no longer exist and
+ * hence any messages published to that exchange get routed to /dev/null
+ *
+ * This test exercises the durable variable of that test, so the main
+ * difference is that the broker has to be restarted to verify that
+ * the durable routes have been turfed.
+ *
  */
 public class PersisterRestart7 extends PersisterRestartBase {
 
