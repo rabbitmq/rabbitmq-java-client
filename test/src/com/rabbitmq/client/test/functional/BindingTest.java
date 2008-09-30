@@ -16,12 +16,9 @@ import java.io.IOException;
  */
 public class BindingTest extends BrokerTestCase {
 
-    private boolean shouldClose;
-
-    protected static final String Q = "Q-" + System.currentTimeMillis();
-    protected static final String X = "X-" + System.currentTimeMillis();
-    protected static final String K = "K-" + System.currentTimeMillis();
     protected static final byte[] payload = (""+ System.currentTimeMillis()).getBytes();
+
+    private boolean shouldClose;
 
     // TODO: This setup code is copy and paste - maybe this should wander up to the super class?
     protected void setUp() throws Exception {
@@ -36,59 +33,81 @@ public class BindingTest extends BrokerTestCase {
         closeConnection();
     }
 
+    /**
+     * This tests whether when you delete a queue, that it's bindings are deleted as well.
+     */
     public void testQueueDelete() throws Exception {
+
+        String x = randomString();
+        String q = randomString();
+        String k = randomString();
+
         // create durable exchange and queue and bind them
-        channel.exchangeDeclare(ticket, X, "direct", true);
-        channel.queueDeclare(ticket, Q, true);
-        channel.queueBind(ticket, Q, X, K);
+        channel.exchangeDeclare(ticket, x, "direct", true);
+        channel.queueDeclare(ticket, q, true);
+        channel.queueBind(ticket, q, x, k);
 
         // Send it some junk
-        channel.basicPublish(ticket, X, K, MessageProperties.BASIC, payload);
+        channel.basicPublish(ticket, x, k, MessageProperties.BASIC, payload);
 
-        GetResponse response = channel.basicGet(ticket, Q, true);
+        GetResponse response = channel.basicGet(ticket, q, true);
         assertNotNull("The initial response should not be null", response);
 
         // Nuke the queue and repeat this test, this time you expect nothing to get routed
         // TODO: When unbind is implemented, use that instead of deleting and re-creating the queue
-        channel.queueDelete(ticket, Q);
-        channel.queueDeclare(ticket, Q, true);
+        channel.queueDelete(ticket, q);
+        channel.queueDeclare(ticket, q, true);
 
-        sendUnroutable(X);
+        sendUnroutable(x, k, q);
 
-        channel.queueDelete(ticket, Q);
+        channel.queueDelete(ticket, q);
     }
 
+    /**
+     * This tests whether when you delete an exchange, that any bindings attached to it are deleted as well.
+     */
     public void testExchangeDelete() throws Exception {
+
+        String x = randomString();
+        String q = randomString();
+        String k = randomString();
+
         // create durable exchange and queue and bind them
-        channel.exchangeDeclare(ticket, X, "direct", true);
-        channel.queueDeclare(ticket, Q, true);
-        channel.queueBind(ticket, Q, X, K);
+        channel.exchangeDeclare(ticket, x, "direct", true);
+        channel.queueDeclare(ticket, q, true);
+        channel.queueBind(ticket, q, x, k);
 
         // Send it some junk
-        channel.basicPublish(ticket, X, K, MessageProperties.BASIC, payload);
+        channel.basicPublish(ticket, x, k, MessageProperties.BASIC, payload);
 
-        GetResponse response = channel.basicGet(ticket, Q, true);
+        GetResponse response = channel.basicGet(ticket, q, true);
         assertNotNull("The initial response should not be null", response);
 
         // Nuke the exchange and repeat this test, this time you expect nothing to get routed
 
-        channel.exchangeDelete(ticket, X);
-        channel.exchangeDeclare(ticket, X, "direct");
+        channel.exchangeDelete(ticket, x);
+        channel.exchangeDeclare(ticket, x, "direct");
 
-        sendUnroutable(X);
+        sendUnroutable(x, k, q);
 
-        channel.queueDelete(ticket, Q);
+        channel.queueDelete(ticket, q);
     }
 
+    /**
+     * This tests whether the server checks that an exchange is actually being
+     * used when you try to delete it with the ifunused flag.
+     * To test this, you try to delete an exchange with a queue still bound to it
+     * and expect the delete operation to fail.
+     */
     public void testExchangeIfUnused() throws Exception {
 
-        // Generate a new exchange name on the stack, not as a member variable
-        // otherwise the other tests will interfere.
-        String x = "X-" + System.currentTimeMillis();
+        String x = randomString();
+        String q = randomString();
+        String k = randomString();
         
         channel.exchangeDeclare(ticket, x, "direct", true);
-        channel.queueDeclare(ticket, Q, true);
-        channel.queueBind(ticket, Q, x, K);
+        channel.queueDeclare(ticket, q, true);
+        channel.queueBind(ticket, q, x, k);
         try {
             channel.exchangeDelete(ticket, x, true);
         }
@@ -101,6 +120,21 @@ public class BindingTest extends BrokerTestCase {
         fail("Exchange delete should have failed");
     }
 
+    /**
+     * This tests whether the server checks that an auto_delete exchange
+     * actually deletes the bindings attached to it when it is deleted.
+     *
+     * To test this, you declare and auto_delete exchange and bind an auto_delete queue to it.
+     *
+     * Start a consumer on this queue, send a message, let it get consumed and then cancel the consumer
+     *
+     * The unsubscribe should cause the queue to auto_delete, which in turn should cause
+     * the exchange to auto_delete.
+     *
+     * Then re-declare the queue again and try to rebind it to the same exhange.
+     *
+     * Because the exchange has been auto-deleted, the bind operation should fail.
+     */
     public void testExchangeAutoDelete() throws Exception {
         doAutoDelete(false);
         // TODO do we need to test auto_delete on durable exchanges?
@@ -108,19 +142,18 @@ public class BindingTest extends BrokerTestCase {
 
     private void doAutoDelete(boolean durable) throws IOException {
 
-        // Generate a new exchange name on the stack, not as a member variable
-        // otherwise the other tests will interfere.
-        String x = "X-" + System.currentTimeMillis();
-        String q = "Q-" + System.currentTimeMillis();
+        String x = randomString();
+        String q = randomString();
+        String k = randomString();
 
 
         channel.exchangeDeclare(ticket, x, "direct", false, durable, true, null);
         channel.queueDeclare(ticket, q, false, durable, false, true, null);
-        channel.queueBind(ticket, q, x, K);
+        channel.queueBind(ticket, q, x, k);
 
         String tag = channel.basicConsume(ticket, q, new QueueingConsumer(channel));
 
-        sendUnroutable(x);
+        sendUnroutable(x, k, q);
 
         channel.basicCancel(tag);
 
@@ -128,7 +161,7 @@ public class BindingTest extends BrokerTestCase {
 
         // Because the exchange does not exist, this bind should fail
         try {
-            channel.queueBind(ticket, q, x, K);
+            channel.queueBind(ticket, q, x, k);
         }
         catch (Exception e) {
             // do nothing, this is the correct behaviour
@@ -139,18 +172,16 @@ public class BindingTest extends BrokerTestCase {
         fail("Queue bind should have failed");
     }
 
-    private void sendUnroutable(String x) throws IOException {
+    private void sendUnroutable(String x, String k, String q) throws IOException {
         // Send it some junk
-        channel.basicPublish(ticket, x, K, MessageProperties.BASIC, payload);
+        channel.basicPublish(ticket, x, k, MessageProperties.BASIC, payload);
 
-        GetResponse response = channel.basicGet(ticket, Q, true);
+        GetResponse response = channel.basicGet(ticket, q, true);
         assertNull("The initial response SHOULD BE null", response);
     }
 
-
-
-// The tests do not provide any coverage of exchange auto-deletion or explicit
-// exchange deletion with if_unused=true.
-
+    private String randomString() {
+        return "-" + System.nanoTime();
+    }
 
 }
