@@ -71,7 +71,6 @@ public class BindingTest extends BrokerTestCase {
         assertNotNull("The initial response should not be null", response);
 
         // Nuke the exchange and repeat this test, this time you expect nothing to get routed
-        // TODO: When unbind is implemented, use that instead of deleting and re-creating the queue
 
         channel.exchangeDelete(ticket, X);
         channel.exchangeDeclare(ticket, X, "direct");
