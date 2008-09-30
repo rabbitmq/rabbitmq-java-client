@@ -3,6 +3,7 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
 
@@ -137,10 +138,18 @@ public class BindingTest extends BrokerTestCase {
      */
     public void testExchangeAutoDelete() throws Exception {
         doAutoDelete(false);
-        // TODO do we need to test auto_delete on durable exchanges?
     }
 
-    private void doAutoDelete(boolean durable) throws IOException {
+    /** 
+     * The same thing as testExchangeAutoDelete, but with durable queues.
+     *
+     * Main difference is restarting the broker to make sure that the durable queues are blasted away.
+     */
+    public void testExchangeAutoDeleteDurable() throws Exception {
+        doAutoDelete(true);
+    }
+
+    private void doAutoDelete(boolean durable) throws Exception {
 
         String x = randomString();
         String q = randomString();
@@ -157,7 +166,14 @@ public class BindingTest extends BrokerTestCase {
 
         channel.basicCancel(tag);
 
-        channel.queueDeclare(ticket, q, false, false, true, true, null);
+        if (durable) {
+            Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
+            Host.executeCommand("cd ../rabbitmq-test; make restart-on-node");
+            connection = connectionFactory.newConnection("localhost");
+            openChannel();
+        }
+
+        channel.queueDeclare(ticket, q, false, durable, true, true, null);
 
         // Because the exchange does not exist, this bind should fail
         try {
