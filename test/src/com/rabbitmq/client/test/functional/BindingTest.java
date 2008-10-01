@@ -47,12 +47,8 @@ public class BindingTest extends BrokerTestCase {
         channel.exchangeDeclare(ticket, x, "direct", true);
         channel.queueDeclare(ticket, q, true);
         channel.queueBind(ticket, q, x, k);
+        sendRoutable(x, k, q);
 
-        // Send it some junk
-        channel.basicPublish(ticket, x, k, MessageProperties.BASIC, payload);
-
-        GetResponse response = channel.basicGet(ticket, q, true);
-        assertNotNull("The initial response should not be null", response);
 
         // Nuke the queue and repeat this test, this time you expect nothing to get routed
         // TODO: When unbind is implemented, use that instead of deleting and re-creating the queue
@@ -79,10 +75,7 @@ public class BindingTest extends BrokerTestCase {
         channel.queueBind(ticket, q, x, k);
 
         // Send it some junk
-        channel.basicPublish(ticket, x, k, MessageProperties.BASIC, payload);
-
-        GetResponse response = channel.basicGet(ticket, q, true);
-        assertNotNull("The initial response should not be null", response);
+        sendRoutable(x, k, q);
 
         // Nuke the exchange and repeat this test, this time you expect nothing to get routed
 
@@ -137,7 +130,19 @@ public class BindingTest extends BrokerTestCase {
      * Because the exchange has been auto-deleted, the bind operation should fail.
      */
     public void testExchangeAutoDelete() throws Exception {
-        doAutoDelete(false);
+        doAutoDelete(false, 1);
+    }
+
+    /**
+     *
+     * Runs something similar to testExchangeAutoDelete, but adds different queues with
+     * the same binding to the same exchange.
+     *
+     * The difference should be that the original exchange should not get auto-deleted
+     *
+     */
+    public void testExchangeAutoDeleteManyBindings() throws Exception {
+        doAutoDelete(false, 10);
     }
 
     /** 
@@ -146,25 +151,41 @@ public class BindingTest extends BrokerTestCase {
      * Main difference is restarting the broker to make sure that the durable queues are blasted away.
      */
     public void testExchangeAutoDeleteDurable() throws Exception {
-        doAutoDelete(true);
+        doAutoDelete(true, 1);
     }
 
-    private void doAutoDelete(boolean durable) throws Exception {
+    /**
+     * The same thing as testExchangeAutoDeleteManyBindings, but with durable queues.
+     */
+    public void testExchangeAutoDeleteDurableManyBindings() throws Exception {
+        doAutoDelete(true, 10);
+    }
+
+    private void doAutoDelete(boolean durable, int queues) throws Exception {
+
+        String[] queueNames = null;
 
         String x = randomString();
         String q = randomString();
         String k = randomString();
 
-
         channel.exchangeDeclare(ticket, x, "direct", false, durable, true, null);
         channel.queueDeclare(ticket, q, false, durable, false, true, null);
         channel.queueBind(ticket, q, x, k);
 
-        String tag = channel.basicConsume(ticket, q, new QueueingConsumer(channel));
 
-        sendUnroutable(x, k, q);
+        if (queues > 1) {
+            int j = queues - 1;
+            queueNames = new String[j];
+            for (int i = 0 ; i < j ; i++) {
+                queueNames[i] = randomString();
+                channel.queueDeclare(ticket, queueNames[i], false, durable, false, false, null);
+                channel.queueBind(ticket, queueNames[i], x, k);
+                subscribeSendUnsubscribe(x, queueNames[i], k);
+            }
+        }
 
-        channel.basicCancel(tag);
+        subscribeSendUnsubscribe(x, q, k);
 
         if (durable) {
             Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
@@ -172,12 +193,19 @@ public class BindingTest extends BrokerTestCase {
             connection = connectionFactory.newConnection("localhost");
             openChannel();
         }
+        
+        if (queues > 1) {
+            for (String s : queueNames) {
+                sendRoutable(x, k, s);
+            }
+        }
 
         channel.queueDeclare(ticket, q, false, durable, true, true, null);
 
-        // Because the exchange does not exist, this bind should fail
+        // if (queues == 1): Because the exchange does not exist, this bind should fail
         try {
             channel.queueBind(ticket, q, x, k);
+            sendRoutable(x, k, q);
         }
         catch (Exception e) {
             // do nothing, this is the correct behaviour
@@ -185,15 +213,30 @@ public class BindingTest extends BrokerTestCase {
             return;
         }
 
-        fail("Queue bind should have failed");
+        if (queues == 1) {
+            fail("Queue bind should have failed");
+        }
+
+    }
+
+    private void subscribeSendUnsubscribe(String x, String q, String k) throws IOException {
+        String tag = channel.basicConsume(ticket, q, new QueueingConsumer(channel));
+        sendUnroutable(x, k, q);
+        channel.basicCancel(tag);
     }
 
     private void sendUnroutable(String x, String k, String q) throws IOException {
         // Send it some junk
         channel.basicPublish(ticket, x, k, MessageProperties.BASIC, payload);
-
         GetResponse response = channel.basicGet(ticket, q, true);
         assertNull("The initial response SHOULD BE null", response);
+    }
+
+    private void sendRoutable(String x, String k, String q) throws IOException {
+        // Send it some junk
+        channel.basicPublish(ticket, x, k, MessageProperties.BASIC, payload);
+        GetResponse response = channel.basicGet(ticket, q, true);
+        assertNotNull("The initial response should not be null", response);
     }
 
     private String randomString() {
