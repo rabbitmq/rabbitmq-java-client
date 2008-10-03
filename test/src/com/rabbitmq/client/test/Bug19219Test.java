@@ -26,8 +26,7 @@ package com.rabbitmq.client.test;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.Semaphore;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -38,6 +37,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.ShutdownSignalException;
 
 import com.rabbitmq.client.test.functional.BrokerTestCase;
 
@@ -61,7 +61,10 @@ public class Bug19219Test extends BrokerTestCase {
     */
     private static final int Q_COUNT = 1500;
     private static final int PUB_THREAD_COUNT = 100;
-    private static final int CLOSE_DELAY = 10;
+    private static final int CLOSE_DELAY = 2000;
+
+    private static final Semaphore init = new Semaphore(0);
+    private static final CountDownLatch resume = new CountDownLatch(1);
 
     @Override protected void setUp() throws Exception {
         super.setUp();
@@ -89,19 +92,7 @@ public class Bug19219Test extends BrokerTestCase {
                         new byte[0]);
     }
 
-    /*
-    public void testIt() {
-
-        try {
-            helper();
-        } catch (Exception e) {
-            System.out.println("FAILED!!!\n" + e);
-        }
-    }
-    */
-
-    public void testIt()
-        throws IOException, InterruptedException, BrokenBarrierException {
+    public void testIt() throws IOException, InterruptedException {
 
         final Consumer c = new DefaultConsumer(channel);
 
@@ -116,15 +107,12 @@ public class Bug19219Test extends BrokerTestCase {
 
         //2. send lots of messages in background, to keep the server,
         //and especially the queues, busy
-        final CyclicBarrier barrier = new CyclicBarrier(2);
-        final CountDownLatch latch = new CountDownLatch(1);
         final Runnable r = new Runnable() {
                 public void run() {
                     try {
-                        startPublisher(barrier, latch);
+                        startPublisher();
                     } catch (IOException e) {
                     } catch (InterruptedException e) {
-                    } catch (BrokenBarrierException e) {
                     }
                 }
             };
@@ -133,12 +121,11 @@ public class Bug19219Test extends BrokerTestCase {
             final Thread t = new Thread(r);
             t.start();
             //wait for thread to finish initialisation
-            barrier.await();
-            barrier.reset();
+            init.acquire();
         }
 
         //tell all threads to resume
-        latch.countDown();
+        resume.countDown();
 
         //wait for threads to get into full swing
         Thread.sleep(CLOSE_DELAY);
@@ -147,13 +134,23 @@ public class Bug19219Test extends BrokerTestCase {
         //all the queues in parallel, which in turn will requeue all
         //the messages. The combined workload may result in some
         //notifications timing out.
-        channel.close(AMQP.REPLY_SUCCESS, "bye");
-        channel = null;
+        boolean success = false;
+        try {
+            channel.close(AMQP.REPLY_SUCCESS, "bye");
+            success = true;
+        } catch (ShutdownSignalException e) {
+        } finally {
+            //We deliberately do not perform a clean shutdown of all
+            //the connections. This test is pushing the server really
+            //hard, so we chose the quickest way to end things.
+            channel = null;
+            connection = null;
+
+            assertTrue(success);
+        }
     }
 
-    private void startPublisher(final CyclicBarrier barrier,
-                                final CountDownLatch latch)
-        throws IOException, InterruptedException, BrokenBarrierException {
+    private void startPublisher() throws IOException, InterruptedException {
 
         final Connection conn = connectionFactory.newConnection("localhost");
         final Channel pubCh = conn.createChannel();
@@ -168,14 +165,15 @@ public class Bug19219Test extends BrokerTestCase {
         pubCh.accessRequest("/data");
 
         //signal the main thread
-        barrier.await();
+        init.release();
         //wait for main thread to let us resume
-        latch.await();
+        resume.await();
 
         //publish lots of messages
-        for (;;) {
+        while(true) {
             publish(pubCh, pubTicket);
         }
+
     }
 
 }
