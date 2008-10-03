@@ -380,10 +380,12 @@ public class MulticastMain {
                 throw new RuntimeException(e);
             }
 
-            System.out.println("recving rate avg: " +
-                               (totalMsgCount * 1000 / (now - startTime)) +
-                               " msg/s");
-
+            long elapsed = now - startTime;
+            if (elapsed > 0) {
+                System.out.println("recving rate avg: " +
+                                   (totalMsgCount * 1000 / elapsed) +
+                                   " msg/s");
+            }
         }
 
     }
