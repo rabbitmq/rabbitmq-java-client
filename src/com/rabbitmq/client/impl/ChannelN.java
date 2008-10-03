@@ -296,17 +296,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             k.getReply(-1);
         } catch (TimeoutException ise) {
             // Will never happen since we wait infinitely
-        } catch (ShutdownSignalException sse) {
-            // Ignore.
-        }
+        } finally {
         
-        // Now we know everything's been cleaned up and there should
-        // be no more surprises arriving on the wire. Release the
-        // channel number, and dissociate this ChannelN instance from
-        // our connection so that any further frames inbound on this
-        // channel can be caught as the errors they are.
-        releaseChannelNumber();
-        notifyListeners();
+            // Now we know everything's been cleaned up and there should
+            // be no more surprises arriving on the wire. Release the
+            // channel number, and dissociate this ChannelN instance from
+            // our connection so that any further frames inbound on this
+            // channel can be caught as the errors they are.
+            releaseChannelNumber();
+            notifyListeners();
+        }
     }
 
     /**

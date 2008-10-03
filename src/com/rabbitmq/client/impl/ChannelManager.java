@@ -71,7 +71,8 @@ public class ChannelManager {
             try {
                 channel.processShutdownSignal(signal);
             } catch (ShutdownSignalException sse) {
-                // Ignore already closed channels
+                // Notify channels that are waiting for rpc
+                channel.notifyOutstandingRpc(signal);
             }
         }
     }
