@@ -181,7 +181,7 @@ public class BindingTest extends BrokerTestCase {
                 queueNames[i] = randomString();
                 channel.queueDeclare(ticket, queueNames[i], false, durable, false, false, null);
                 channel.queueBind(ticket, queueNames[i], x, k);
-                subscribeSendUnsubscribe(x, queueNames[i], k);
+                channel.basicConsume(ticket, queueNames[i], true, new QueueingConsumer(channel));
             }
         }
 
@@ -196,9 +196,12 @@ public class BindingTest extends BrokerTestCase {
         
         if (queues > 1) {
             for (String s : queueNames) {
-                sendRoutable(x, k, s);
+                channel.basicConsume(ticket, s, true, new QueueingConsumer(channel));
+                sendUnroutable(x, k, s);
             }
         }
+
+
 
         channel.queueDeclare(ticket, q, false, durable, true, true, null);
 
@@ -216,6 +219,7 @@ public class BindingTest extends BrokerTestCase {
         if (queues == 1) {
             fail("Queue bind should have failed");
         }
+        
 
     }
 
