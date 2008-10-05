@@ -209,9 +209,12 @@ public class BaseRoutingRateTest {
 
             // Subscribe to each queue
 
+            String[] tags = new String[queues.length];
+            int j = 0;
+
             for (String queue : queues) {
                 try {
-                    getChannel().basicConsume(1,queue,this);
+                    tags[j++] = getChannel().basicConsume(1,queue,this);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -259,9 +262,9 @@ public class BaseRoutingRateTest {
 
             // Unsubscribe to each queue
 
-            for (String queue : queues) {
+            for (String tag : tags) {
                 try {
-                    getChannel().basicConsume(1,queue,this);
+                    getChannel().basicCancel(tag);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
