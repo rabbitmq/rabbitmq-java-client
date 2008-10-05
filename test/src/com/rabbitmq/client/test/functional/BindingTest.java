@@ -233,14 +233,14 @@ public class BindingTest extends BrokerTestCase {
         // Send it some junk
         channel.basicPublish(ticket, x, k, MessageProperties.BASIC, payload);
         GetResponse response = channel.basicGet(ticket, q, true);
-        assertNull("The initial response SHOULD BE null", response);
+        assertNull("The response SHOULD BE null", response);
     }
 
     private void sendRoutable(String x, String k, String q) throws IOException {
         // Send it some junk
         channel.basicPublish(ticket, x, k, MessageProperties.BASIC, payload);
         GetResponse response = channel.basicGet(ticket, q, true);
-        assertNotNull("The initial response should not be null", response);
+        assertNotNull("The response should not be null", response);
     }
 
     private String randomString() {
