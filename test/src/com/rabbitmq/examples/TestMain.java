@@ -272,7 +272,7 @@ public class TestMain {
 
         tryTransaction(queueName);
 
-        _ch1.close(200, "Closing ch1 with no error");
+        _ch1.close();
 
         tryRealm();
         log("Closing.");
@@ -575,45 +575,45 @@ public class TestMain {
         ch1.accessRequest("/data");
         ch1.accessRequest("/admin");
 
-        ch1.close(200, "closing channel");
+        ch1.close();
 
         ch1 = createChannel();
         ch2 = createChannel();
         ch1.accessRequest("/data");
         ch2.accessRequest("/data");
-        ch1.close(200, "closing channel");
-        ch2.close(200, "closing channel");
+        ch1.close();
+        ch2.close();
 
         ch1 = createChannel();
         ch2 = createChannel();
         ch1.accessRequest("/data", true, true, true, true, true);
-        ch1.close(200, "closing channel");
+        ch1.close();
         ch2.accessRequest("/data", true, true, true, true, true);
-        ch2.close(200, "closing channel");
+        ch2.close();
 
         ch1 = createChannel();
         ch1.accessRequest("/data");
         ch1.accessRequest("/data");
         // TODO: test that the ticket returned by the first accessRequest() is invalid
-        ch1.close(200, "closing channel");
+        ch1.close();
 
         ch1 = createChannel();
         ch1.accessRequest("/data", true, true, true, true, true);
         ch1.accessRequest("/data", true, true, true, true, true);
         // TODO: test that the ticket returned by the first accessRequest() is invalid
-        ch1.close(200, "closing channel");
+        ch1.close();
 
         ch1 = createChannel();
         ch1.accessRequest("/data");
         ch1.accessRequest("/data", true, true, true, true, true);
         // TODO: test that the ticket returned by the first accessRequest() is invalid
-        ch1.close(200, "closing channel");
+        ch1.close();
 
         ch1 = createChannel();
         ch1.accessRequest("/data", true, true, true, true, true);
         ch1.accessRequest("/data");
         // TODO: test that the ticket returned by the first accessRequest() is invalid
-        ch1.close(200, "closing channel");
+        ch1.close();
 
         // get ordinary ticket on one channel then try to get exclusive
         // ticket on other channel
@@ -628,7 +628,7 @@ public class TestMain {
         } catch (IOException ex) {
             // as expected
         }
-        ch1.close(200, "closing channel");
+        ch1.close();
 
         // vice versa -> soft error
 
@@ -641,7 +641,7 @@ public class TestMain {
         } catch (IOException e) {
             // as expected
         }
-        ch1.close(200, "closing channel");
+        ch1.close();
 
         // access unknown realm -> soft error
 

@@ -632,7 +632,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void close(int timeout)
         throws IOException
     {
-        close(200, "Goodbye", timeout);
+        close(AMQP.REPLY_SUCCESS, "Goodbye", timeout);
     }
 
     /**
@@ -647,7 +647,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     {
 
         try {
-            close(200, "Goodbye", true, null, timeout, true);
+            close(AMQP.REPLY_SUCCESS, "Goodbye", true, null, timeout, true);
         } catch (IOException e) {
             Utility.emptyStatement();
         }

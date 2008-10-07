@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
@@ -248,8 +249,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
+
     /**
-     * Public API - closes this channel with the given code and message
+     * Public API - closes this channel with the default 200 close code
+     * and 'Goodbye' message
+     */
+    public void close()
+        throws IOException
+    {
+        close(AMQP.REPLY_SUCCESS, "Goodbye");
+    }
+    
+    /**
+     * Protected API - closes this channel with the given code and message
      */
     public void close(int closeCode, String closeMessage)
         throws IOException
