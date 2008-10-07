@@ -221,11 +221,14 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * @param signal the signal to handle
      */
     public void processShutdownSignal(ShutdownSignalException signal) {
-        synchronized (this) {
-            ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-            _shutdownCause = signal;
+        try {
+            synchronized (this) {
+                ensureIsOpen(); // invariant: we should never be shut down more than once per instance
+                _shutdownCause = signal;
+            }
+        } finally {
+            notifyOutstandingRpc(signal);
         }
-        notifyOutstandingRpc(signal);
     }
     
     public void notifyOutstandingRpc(ShutdownSignalException signal) {

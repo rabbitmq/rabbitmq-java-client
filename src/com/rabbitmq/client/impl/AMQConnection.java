@@ -457,25 +457,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     }
                 }
             } catch (EOFException ex) {
-                if (isOpen()) {
-                    System.err.println("AMQConnection.mainLoop: connection close");
-                    shutdown(ex, false, ex);
-                }
+                shutdown(ex, false, ex);
             } catch (Throwable ex) {
                 _exceptionHandler.handleUnexpectedConnectionDriverException(AMQConnection.this,
                                                                             ex);
-                if (isOpen()) {
-                    shutdown(ex, false, ex);
-                }
+                shutdown(ex, false, ex);
             } finally {
                 // Finally, shut down our underlying data connection.
                 _frameHandler.close();
-                
-                // Set shutdown exception for any outstanding rpc,
-                // so that it does not wait infinitely for Connection.CloseOk.
-                // This can only happen when the broker closed the socket
-                // unexpectedly.
-                _channel0.notifyOutstandingRpc(_shutdownCause);
                 
                 _appContinuation.set(null);
                 notifyListeners();
@@ -599,22 +588,27 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                          boolean initiatedByApplication,
                          Throwable cause)
     {
+        
+        ShutdownSignalException sse = new ShutdownSignalException(true,initiatedByApplication,
+                                                                  reason, this);
+        sse.initCause(cause);
         try {
             synchronized (this) {
                 ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-                ShutdownSignalException sse = new ShutdownSignalException(true,
-                                                             initiatedByApplication,
-                                                             reason, this);
-                sse.initCause(cause);
                 _shutdownCause = sse;
             }
-
-            _channel0.processShutdownSignal(_shutdownCause);
         } catch (AlreadyClosedException ace) {
             if (initiatedByApplication)
                 throw ace;
+        } finally {
+            try {
+                _channel0.processShutdownSignal(sse);
+            } catch (AlreadyClosedException ace) {
+                if (initiatedByApplication)
+                    throw ace;
+            }
         }
-        _channelManager.handleSignal(_shutdownCause);
+        _channelManager.handleSignal(sse);
     }
 
     /**
