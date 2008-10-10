@@ -38,6 +38,7 @@ public class PersisterRestartTests extends TestCase {
         suite.addTestSuite(PersisterRestart5.class);
         suite.addTestSuite(PersisterRestart6.class);
         suite.addTestSuite(PersisterRestart7.class);
+        suite.addTestSuite(PersisterRestart8.class);
         return suite;
     }
 
