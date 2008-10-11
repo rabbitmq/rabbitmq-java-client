@@ -121,7 +121,8 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     Channel createChannel(int channelNumber) throws IOException;
 
     /**
-     * Close this connection and all its channels.
+     * Close this connection and all its channels
+     * with the default close code and message.
      *
      * This method will wait infinitely for all the close operations to
      * complete.
@@ -129,26 +130,80 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * @throws IOException if an I/O problem is encountered
      */
     void close() throws IOException;
+    
+    /**
+     * Close this connection and all its channels.
+     *
+     * This method will wait infinitely for all the close operations to
+     * complete.
+     *
+     * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
+     * @param closeMessage a message indicating the reason for closing the connection
+     * @throws IOException if an I/O problem is encountered
+     */
+    void close(int closeCode, String closeMessage) throws IOException;
 
     /**
      * Close this connection and all its channels
+     * with the default close code and message.
      *
      * This method will wait with the given timeout for all the close
      * operations to complete. If timeout is reached then socket is forced
-     * to close
-     * @param timeout timeout (in milioseconds) for completing all the close-related
+     * to close.
+     * 
+     * @param timeout timeout (in milliseconds) for completing all the close-related
      * operations, use -1 for infinity
      * @throws IOException if an I/O problem is encountered
      */
     void close(int timeout) throws IOException;
+    
+    /**
+     * Close this connection and all its channels.
+     *
+     * This method will wait with the given timeout for all the close
+     * operations to complete. If timeout is reached then socket is forced
+     * to close.
+     * 
+     * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
+     * @param closeMessage a message indicating the reason for closing the connection
+     * @param timeout timeout (in milliseconds) for completing all the close-related
+     * operations, use -1 for infinity
+     * @throws IOException if an I/O problem is encountered
+     */
+    void close(int closeCode, String closeMessage, int timeout) throws IOException;
 
+    /**
+     * Abort this connection and all its channels
+     * with the default code and message.
+     *
+     * This method will force the connection to close. It will silently discard
+     * any exceptions encountered in close operations.
+     */
+    void abort();
+    
     /**
      * Abort this connection and all its channels.
      *
      * This method will force the connection to close. It will silently discard
-     * any exceptions enountered in close operations
+     * any exceptions encountered in close operations.
+     * 
+     * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
+     * @param closeMessage a message indicating the reason for closing the connection
      */
-    void abort();
+    void abort(int closeCode, String closeMessage);
+    
+    /**
+     * Abort this connection and all its channels
+     * with the default close code and message.
+     *
+     * This method behaves in a similar way as abort(), with the only difference
+     * that it will wait with a provided timeout for all the close operations to
+     * complete. If timeout is reached socket is forced to close.
+     *
+     * @param timeout timeout (in milliseconds) for completing all the close-related
+     * operations, use -1 for infinity
+     */
+    void abort(int timeout);
 
     /**
      * Abort this connection and all its channels.
@@ -157,8 +212,10 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * that it will wait with a provided timeout for all the close operations to
      * complete. If timeout is reached socket is forced to close.
      *
-     * @param timeout timeout (in miliseconds) for completing all the close-related
+     * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
+     * @param closeMessage a message indicating the reason for closing the connection
+     * @param timeout timeout (in milliseconds) for completing all the close-related
      * operations, use -1 for infinity
      */
-    void abort(int timeout);
+    void abort(int closeCode, String closeMessage, int timeout);
 }

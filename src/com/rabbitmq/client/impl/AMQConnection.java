@@ -617,7 +617,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Public API - Close this connection and all its channels
+     * Public API - Close this connection and all its channels.
      */
     public void close()
         throws IOException
@@ -627,48 +627,73 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /**
      * Public API - Close this connection and all its channels
-     * with a given timeout
+     * with a given timeout.
      */
     public void close(int timeout)
         throws IOException
     {
         close(AMQP.REPLY_SUCCESS, "Goodbye", timeout);
     }
-
+    
     /**
-     * Public API - Abort this connection and all its channels
-     */
-    public void abort()
-    {
-        abort(-1);
-    }
-
-    public void abort(int timeout)
-    {
-
-        try {
-            close(AMQP.REPLY_SUCCESS, "Goodbye", true, null, timeout, true);
-        } catch (IOException e) {
-            Utility.emptyStatement();
-        }
-    }
-
-    /**
-     * Protected API - Close this connection with the given code and message.
-     * See the comments in ChannelN.close() - we're very similar.
+     * Public API - Close this connection and all its channels
+     * with a given close code and message.
      */
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
-        close(closeCode, closeMessage, 0);
+        close(closeCode, closeMessage, -1);
     }
 
+    /**
+     * Public API - Close this connection and all its channels
+     * with a given close code, message and timeout.
+     */
     public void close(int closeCode, String closeMessage, int timeout)
         throws IOException
     {
         close(closeCode, closeMessage, true, null, timeout, false);
     }
 
+    /**
+     * Public API - Abort this connection and all its channels.
+     */
+    public void abort()
+    {
+        abort(-1);
+    }
+
+    /**
+     * Public API - Abort this connection and all its channels
+     * with a given close code and message.
+     */
+    public void abort(int closeCode, String closeMessage)
+    {
+       abort(closeCode, closeMessage, -1);
+    }
+
+    /**
+     * Public API - Abort this connection and all its channels
+     * with a given timeout.
+     */
+    public void abort(int timeout)
+    {
+        abort(AMQP.REPLY_SUCCESS, "Goodbye", timeout);
+    }
+    
+    /**
+     * Public API - Abort this connection and all its channels
+     * with a given close code, message and timeout.
+     */
+    public void abort(int closeCode, String closeMessage, int timeout)
+    {
+        try {
+            close(closeCode, closeMessage, true, null, timeout, true);
+        } catch (IOException e) {
+            Utility.emptyStatement();
+        }
+    }
+    
     public void close(int closeCode,
                       String closeMessage,
                       boolean initiatedByApplication,

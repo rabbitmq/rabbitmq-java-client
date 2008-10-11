@@ -251,8 +251,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
 
     /**
-     * Public API - closes this channel with the default 200 close code
-     * and 'Goodbye' message
+     * Public API - Close this channel with the default close code and message.
      */
     public void close()
         throws IOException
@@ -261,7 +260,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
     
     /**
-     * Protected API - closes this channel with the given code and message
+     * Public API - Close this channel.
      */
     public void close(int closeCode, String closeMessage)
         throws IOException
@@ -270,9 +269,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /**
-     * Protected API - close channel with code and message, indicating
+     * Protected API - Close channel with code and message, indicating
      * the source of the closure and a causing exception (null if
-     * none)
+     * none).
      */
     public void close(int closeCode,
                       String closeMessage,
