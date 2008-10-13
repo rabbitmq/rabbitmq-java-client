@@ -47,5 +47,9 @@ public class FanoutTest extends BrokerTestCase {
             GetResponse response = channel.basicGet(ticket, q, true);
             assertNotNull("The response should not be null", response);
         }
+
+        for (String q : queues) {
+            channel.queueDelete(ticket, q);
+        }
     }
 }

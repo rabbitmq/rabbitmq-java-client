@@ -28,6 +28,7 @@ public class PersisterRestart6 extends PersisterRestartBase {
         assertDelivered(Q, N);
 
         deleteQueue(Q);
+        deleteExchange(X);
     }
 
     /**
@@ -67,6 +68,7 @@ public class PersisterRestart6 extends PersisterRestartBase {
         assertNull("The initial response SHOULD BE null", response);
 
         deleteQueue(Q);
+        deleteExchange(X);
     }
 
 
