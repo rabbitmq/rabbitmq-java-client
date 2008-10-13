@@ -17,15 +17,15 @@ public class PersisterRestart6 extends PersisterRestartBase {
     public void testDurableBindingRecovery() throws Exception {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q, X, K);
-        basicPublishPersistent(X,K);
-        assertDelivered(Q,1);
-
-        for (int i = 0; i < N; i++){
-            basicPublishPersistent(X,K);
-        }
+        basicPublishPersistent(X, K);
+        assertDelivered(Q, 1);
 
         forceSnapshot();
         restart();
+
+        for (int i = 0; i < N; i++){
+            basicPublishVolatile(X, K);
+        }
 
         assertDelivered(Q, N);
 
