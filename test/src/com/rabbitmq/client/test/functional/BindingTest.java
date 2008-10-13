@@ -35,7 +35,7 @@ public class BindingTest extends BrokerTestCase {
     }
 
     /**
-     * This tests whether when you delete a queue, that it's bindings are deleted as well.
+     * This tests whether when you delete a queue, that its bindings are deleted as well.
      */
     public void testQueueDelete() throws Exception {
 
