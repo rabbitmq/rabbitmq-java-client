@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project default="build">
+<project name="RabbitMQ Java client" default="build">
 
   <property file="build.properties"/>
   <property file="config.properties"/>
