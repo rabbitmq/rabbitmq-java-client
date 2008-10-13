@@ -17,8 +17,6 @@ public class PersisterRestart6 extends PersisterRestartBase {
     public void testDurableBindingRecovery() throws Exception {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q, X, K);
-        basicPublishPersistent(X, K);
-        assertDelivered(Q, 1);
 
         forceSnapshot();
         restart();
@@ -53,8 +51,6 @@ public class PersisterRestart6 extends PersisterRestartBase {
     public void testDurableBindingsDeletion() throws Exception {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q, X, K);
-        basicPublishPersistent(X,K);
-        assertDelivered(Q,1);
 
         deleteExchange(X);
 
@@ -64,7 +60,7 @@ public class PersisterRestart6 extends PersisterRestartBase {
         declareDurableTopicExchange(X);
 
         for (int i = 0; i < N; i++){
-            basicPublishPersistent(X,K);
+            basicPublishVolatile(X, K);
         }
 
         GetResponse response = channel.basicGet(ticket, Q, true);
