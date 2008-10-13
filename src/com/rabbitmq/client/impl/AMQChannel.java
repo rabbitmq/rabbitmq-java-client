@@ -215,20 +215,38 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     @Override public String toString() {
         return "AMQChannel(" + _connection + "," + _channelNumber + ")";
     }
-
+    
     /**
      * Protected API - respond, in the driver thread, to a {@link ShutdownSignalException}.
      * @param signal the signal to handle
+     * @param ignoreClosed the flag indicating whether to ignore the AlreadyClosedException
+     *                     thrown when the channel is already closed
+     * @param notifyRpc the flag indicating whether any remaining rpc continuation should be
+     *                  notified with the given signal
      */
-    public void processShutdownSignal(ShutdownSignalException signal) {
+    public void processShutdownSignal(ShutdownSignalException signal, boolean ignoreClosed, boolean notifyRpc) {
         try {
             synchronized (this) {
                 ensureIsOpen(); // invariant: we should never be shut down more than once per instance
                 _shutdownCause = signal;
             }
+        } catch (AlreadyClosedException ace) {
+            if (!ignoreClosed)
+                throw ace;
         } finally {
-            notifyOutstandingRpc(signal);
+            if (notifyRpc)
+                notifyOutstandingRpc(signal);
         }
+    }
+    
+    /**
+     * Protected API - respond, in the driver thread, to a {@link ShutdownSignalException}.
+     * The method behaves in the same way as processShutdownSignal(ShutdownSignalException, boolean, boolean)
+     * with the only difference that any continuing rpc is always notified of the shutdown signal.
+     * @param signal the signal to handle
+     */
+    public void processShutdownSignal(ShutdownSignalException signal, boolean ignoreClosed) {
+        processShutdownSignal(signal, ignoreClosed, true);
     }
     
     public void notifyOutstandingRpc(ShutdownSignalException signal) {
