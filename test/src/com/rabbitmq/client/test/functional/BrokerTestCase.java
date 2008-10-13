@@ -32,6 +32,7 @@ import junit.framework.TestCase;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.tools.Host;
 
 public class BrokerTestCase extends TestCase
 {
@@ -74,4 +75,17 @@ public class BrokerTestCase extends TestCase
         }
     }
 
+    protected void restart()
+        throws Exception
+    {
+        tearDown();
+        Host.executeCommand("cd ../rabbitmq-test; make restart-on-node");
+        setUp();
+    }
+
+    protected void forceSnapshot()
+        throws IOException, InterruptedException
+    {
+        Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
+    }
 }

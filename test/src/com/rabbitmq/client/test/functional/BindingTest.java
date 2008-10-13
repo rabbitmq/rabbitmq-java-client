@@ -165,8 +165,8 @@ public class BindingTest extends BrokerTestCase {
         subscribeSendUnsubscribe(t);
 
         if (durable) {
-            Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
-            Host.executeCommand("cd ../rabbitmq-test; make restart-on-node");
+            forceSnapshot();
+            restart();
             connection = connectionFactory.newConnection("localhost");
             openChannel();
         }
