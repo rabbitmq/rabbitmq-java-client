@@ -19,18 +19,6 @@ public class FanoutTest extends BrokerTestCase {
 
     protected static final byte[] payload = (""+ System.currentTimeMillis()).getBytes();
 
-    // TODO: This setup code is copy and paste - maybe this should wander up to the super class?
-    protected void setUp() throws IOException {
-        openConnection();
-        openChannel();
-    }
-
-    protected void tearDown() throws IOException {
-
-        closeChannel();
-        closeConnection();
-    }
-
     public void testFanout() throws Exception {
 
         List<String> queues = new ArrayList<String>();

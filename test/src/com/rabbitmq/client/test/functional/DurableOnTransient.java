@@ -36,20 +36,6 @@ public class DurableOnTransient extends BrokerTestCase
     protected static final String Q = "DurableQueue";
     protected static final String X = "TransientExchange";
 
-    protected void setUp()
-        throws IOException
-    {
-        openConnection();
-        openChannel();
-    }
-
-    protected void tearDown()
-        throws IOException
-    {
-        closeChannel();
-        closeConnection();
-    }
-
     private GetResponse basicGet()
         throws IOException
     {

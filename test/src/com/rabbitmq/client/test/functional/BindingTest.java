@@ -19,26 +19,6 @@ public class BindingTest extends BrokerTestCase {
 
     protected static final byte[] payload = (""+ System.currentTimeMillis()).getBytes();
 
-    // TODO: This setup code is copy and paste - maybe this should wander up to the super class?
-    protected void setUp() throws IOException {
-        openConnection();
-        openChannel();
-    }
-
-    protected void tearDown() throws IOException {
-
-        closeChannel();
-        closeConnection();
-    }
-
-    protected void restart()
-        throws IOException
-    {
-        tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-on-node");
-        setUp();
-    }
-
     /**
      * This tests whether when you delete a queue, that its bindings are deleted as well.
      */

@@ -75,10 +75,29 @@ public class BrokerTestCase extends TestCase
         }
     }
 
-    protected void forceSnapshot()
+    public void restart()
+        throws IOException
+    {
+        tearDown();
+        Host.executeCommand("cd ../rabbitmq-test; make restart-on-node");
+        setUp();
+    }
+
+    public void forceSnapshot()
         throws IOException, InterruptedException
     {
         Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
+    }
+
+    protected void setUp() throws IOException {
+        openConnection();
+        openChannel();
+    }
+
+    protected void tearDown() throws IOException {
+
+        closeChannel();
+        closeConnection();
     }
 
 }

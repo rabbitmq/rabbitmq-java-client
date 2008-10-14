@@ -36,8 +36,7 @@ public class NoRequeueOnCancel extends BrokerTestCase
     protected void setUp()
         throws IOException
     {
-        openConnection();
-        openChannel();
+        super.setUp();
         channel.queueDeclare(ticket, Q);
     }
 
@@ -45,8 +44,7 @@ public class NoRequeueOnCancel extends BrokerTestCase
         throws IOException
     {
         channel.queueDelete(ticket, Q);
-        closeChannel();
-        closeConnection();
+        super.tearDown();
     }
 
     public void testNoRequeueOnCancel()

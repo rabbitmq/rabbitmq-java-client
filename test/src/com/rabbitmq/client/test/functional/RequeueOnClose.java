@@ -38,6 +38,10 @@ public abstract class RequeueOnClose
     public static final int GRATUITOUS_DELAY = 100;
     public static final int MESSAGE_COUNT = 2000;
 
+    protected void setUp() throws IOException {}
+
+    protected void tearDown() throws IOException {}
+    
     protected abstract void open() throws IOException;
 
     protected abstract void close() throws IOException;

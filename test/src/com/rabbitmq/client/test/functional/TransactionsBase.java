@@ -41,8 +41,7 @@ public abstract class TransactionsBase
     protected void setUp()
         throws IOException
     {
-        openConnection();
-        openChannel();
+        super.setUp();
         channel.queueDeclare(ticket, Q);
         closeChannel();
     }
@@ -52,8 +51,7 @@ public abstract class TransactionsBase
     {
         openChannel();
         channel.queueDelete(ticket, Q);
-        closeChannel();
-        closeConnection();
+        super.tearDown();
     }
 
     protected abstract BasicProperties getMessageProperties();

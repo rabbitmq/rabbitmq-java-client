@@ -39,8 +39,7 @@ public class Routing extends BrokerTestCase
     protected void setUp()
         throws IOException
     {
-        openConnection();
-        openChannel();
+        super.setUp();
         channel.exchangeDeclare(ticket, E, "direct");
         channel.queueDeclare(ticket, Q1);
         channel.queueDeclare(ticket, Q2);
@@ -52,8 +51,7 @@ public class Routing extends BrokerTestCase
         channel.queueDelete(ticket, Q1);
         channel.queueDelete(ticket, Q2);
         channel.exchangeDelete(ticket, E);
-        closeChannel();
-        closeConnection();
+        super.tearDown();
     }
 
     private void bind(String queue, String routingKey)
