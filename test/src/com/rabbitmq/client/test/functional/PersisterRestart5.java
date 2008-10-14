@@ -43,7 +43,7 @@ public class PersisterRestart5 extends PersisterRestartBase
     }
 
     public void testRestart()
-        throws Exception
+        throws IOException, InterruptedException
     {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q1, X, "foo.*");

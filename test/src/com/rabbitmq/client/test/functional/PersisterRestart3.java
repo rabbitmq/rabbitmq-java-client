@@ -41,7 +41,7 @@ public class PersisterRestart3 extends PersisterRestartBase
     }
 
     public void testRestart()
-        throws Exception
+        throws IOException, InterruptedException
     {
         declareDurableQueue(Q1);
         declareDurableQueue(Q2);

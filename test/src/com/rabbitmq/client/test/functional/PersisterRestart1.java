@@ -87,7 +87,7 @@ public class PersisterRestart1 extends PersisterRestartBase
     }
 
     public void testRestart()
-        throws Exception
+        throws IOException, InterruptedException
     {
         declareDurableQueue(Q);
         exercisePersister();
