@@ -202,7 +202,7 @@
     </java>
   </target>
 
-  <target name="test-suite" depends="test, test-persister-restart, test-binding-restart, test-functional, test-main-silent"/>
+  <target name="test-suite" depends="test, test-persister-restart, test-functional, test-main-silent"/>
     
   <target name="test" depends="test-build">
     <junit printSummary="withOutAndErr" haltOnFailure="no" fork="yes">
@@ -231,16 +231,6 @@
       <formatter type="xml"/>
       <test todir="${build.out}"
         name="com.rabbitmq.client.test.functional.PersisterRestartTests"/>
-    </junit>
-  </target>
-
-  <target name="test-binding-restart" depends="test-build">
-    <junit printSummary="withOutAndErr" haltOnFailure="no" fork="yes">
-      <classpath refid="test.classpath"/>
-      <formatter type="plain"/>
-      <formatter type="xml"/>
-      <test todir="${build.out}"
-        name="com.rabbitmq.client.test.functional.BindingRestartTests"/>
     </junit>
   </target>
 
