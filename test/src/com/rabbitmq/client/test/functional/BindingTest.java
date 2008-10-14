@@ -170,10 +170,7 @@ public class BindingTest extends BrokerTestCase {
         subscribeSendUnsubscribe(binding);
 
         if (durable) {
-            forceSnapshot();
             restart();
-            connection = connectionFactory.newConnection("localhost");
-            openChannel();
         }
         
         if (queues > 1) {
