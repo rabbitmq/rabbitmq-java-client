@@ -25,6 +25,8 @@
 
 package com.rabbitmq.client.test.functional;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.io.IOException;
 
 import com.rabbitmq.client.GetResponse;
@@ -116,5 +118,28 @@ public class Routing extends BrokerTestCase
         channel.basicPublish(ticket, "amq.topic", "x.x", null, "x.x".getBytes());
         checkGet(Q1, true);
         checkGet(Q1, false);
+    }
+
+    public void testFanoutRouting() throws Exception {
+
+        List<String> queues = new ArrayList<String>();
+
+        for (int i = 0; i < 2; i++) {
+            String q = "Q-" + System.nanoTime();
+            channel.queueDeclare(ticket, q);
+            channel.queueBind(ticket, q, "amq.fanout", "");
+            queues.add(q);
+        }        
+
+        channel.basicPublish(ticket, "amq.fanout", System.nanoTime() + "",
+                             null, "fanout".getBytes());
+
+        for (String q : queues) {
+            checkGet(q, true);
+        }
+
+        for (String q : queues) {
+            channel.queueDelete(ticket, q);
+        }
     }
 }
