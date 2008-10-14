@@ -15,7 +15,7 @@ import java.io.IOException;
  * TODO: Adjust this test when Queue.Unbind is implemented in the server
  *
  */
-public class BindingTest extends PersisterRestartBase {
+public class BindingLifecycle extends PersisterRestartBase {
 
     protected static final byte[] payload = (""+ System.currentTimeMillis()).getBytes();
 

@@ -32,13 +32,13 @@ public class FunctionalTests extends TestCase {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("functional");
         suite.addTestSuite(Routing.class);
+        suite.addTestSuite(BindingLifecycle.class);
         suite.addTestSuite(Transactions.class);
         suite.addTestSuite(PersistentTransactions.class);
         suite.addTestSuite(RequeueOnConnectionClose.class);
         suite.addTestSuite(RequeueOnChannelClose.class);
         suite.addTestSuite(DurableOnTransient.class);
         suite.addTestSuite(NoRequeueOnCancel.class);
-        suite.addTestSuite(BindingTest.class);
         suite.addTestSuite(FanoutTest.class);
         return suite;
     }
