@@ -27,7 +27,7 @@ public class BindingLifecycle extends PersisterRestartBase {
     /**
      *   Tests whether durable bindings are correctly recovered.
      */
-    public void testDurableBindingRecovery() throws Exception {
+    public void testDurableBindingRecovery() throws IOException {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q, X, K);
 
@@ -60,7 +60,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * main difference is that the broker has to be restarted to
      * verify that the durable routes have been turfed.
      */
-    public void testDurableBindingsDeletion() throws Exception {
+    public void testDurableBindingsDeletion() throws IOException {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q, X, K);
 
@@ -89,7 +89,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * The idea is to create a durable queue, nuke the server and then
      * publish a message to it using the queue name as a routing key
      */
-    public void testDefaultBindingRecovery() throws Exception {
+    public void testDefaultBindingRecovery() throws IOException {
         declareDurableQueue(Q);
 
         restart();
@@ -106,7 +106,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * This tests whether when you delete a queue, that its bindings
      * are deleted as well.
      */
-    public void testQueueDelete() throws Exception {
+    public void testQueueDelete() throws IOException {
 
         boolean durable = true;
         Binding binding = setupExchangeAndRouteMessage(durable);
@@ -128,7 +128,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * This tests whether when you delete an exchange, that any
      * bindings attached to it are deleted as well.
      */
-    public void testExchangeDelete() throws Exception {
+    public void testExchangeDelete() throws IOException {
 
         boolean durable = true;
         Binding binding = setupExchangeAndRouteMessage(durable);
@@ -152,7 +152,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * To test this, you try to delete an exchange with a queue still
      * bound to it and expect the delete operation to fail.
      */
-    public void testExchangeIfUnused() throws Exception {
+    public void testExchangeIfUnused() throws IOException {
 
         boolean durable = true;
         Binding binding = setupExchangeBindings(durable);
@@ -188,7 +188,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * Because the exchange has been auto-deleted, the bind operation
      * should fail.
      */
-    public void testExchangeAutoDelete() throws Exception {
+    public void testExchangeAutoDelete() throws IOException {
         doAutoDelete(false, 1);
     }
 
@@ -199,7 +199,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * The difference should be that the original exchange should not
      * get auto-deleted
      */
-    public void testExchangeAutoDeleteManyBindings() throws Exception {
+    public void testExchangeAutoDeleteManyBindings() throws IOException {
         doAutoDelete(false, 10);
     }
 
@@ -210,7 +210,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * Main difference is restarting the broker to make sure that the
      * durable queues are blasted away.
      */
-    public void testExchangeAutoDeleteDurable() throws Exception {
+    public void testExchangeAutoDeleteDurable() throws IOException {
         doAutoDelete(true, 1);
     }
 
@@ -218,11 +218,11 @@ public class BindingLifecycle extends PersisterRestartBase {
      * The same thing as testExchangeAutoDeleteManyBindings, but with
      * durable queues.
      */
-    public void testExchangeAutoDeleteDurableManyBindings() throws Exception {
+    public void testExchangeAutoDeleteDurableManyBindings() throws IOException {
         doAutoDelete(true, 10);
     }
 
-    private void doAutoDelete(boolean durable, int queues) throws Exception {
+    private void doAutoDelete(boolean durable, int queues) throws IOException {
 
         String[] queueNames = null;
 
@@ -333,7 +333,7 @@ public class BindingLifecycle extends PersisterRestartBase {
     }
 
     private void createQueueAndBindToExchange(Binding binding, boolean durable)
-        throws Exception {
+        throws IOException {
 
         channel.exchangeDeclare(ticket, binding.x, "direct", durable);
         channel.queueDeclare(ticket, binding.q, durable);
@@ -348,7 +348,7 @@ public class BindingLifecycle extends PersisterRestartBase {
     }
 
     private Binding setupExchangeBindings(boolean durable)
-        throws Exception {
+        throws IOException {
 
         Binding binding = Binding.randomBinding();
         createQueueAndBindToExchange(binding, durable);
@@ -356,7 +356,7 @@ public class BindingLifecycle extends PersisterRestartBase {
     }
 
     private Binding setupExchangeAndRouteMessage(boolean durable)
-        throws Exception {
+        throws IOException {
 
         Binding binding = setupExchangeBindings(durable);
         sendRoutable(binding);
