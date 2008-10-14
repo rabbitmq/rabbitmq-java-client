@@ -27,7 +27,7 @@ public class BindingTest extends BrokerTestCase {
 
     protected void tearDown() throws IOException {
 
-        if (null != channel) closeChannel();
+        closeChannel();
         closeConnection();
     }
 

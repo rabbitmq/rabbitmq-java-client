@@ -1,9 +1,20 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.GetResponse;
+import junit.framework.TestSuite;
 
 
-public class PersisterRestart6 extends PersisterRestartBase {
+/**
+ * These test cases verify the durability of bindings accross
+ * broker restarts in various scenarios.
+ */
+public class BindingRestartTests extends PersisterRestartBase {
+
+    public static TestSuite suite() {
+        TestSuite suite = new TestSuite("binding-restarts");
+        suite.addTestSuite(BindingRestartTests.class);
+        return suite;
+    }
 
     private static final int N = 1;
 
@@ -18,7 +29,6 @@ public class PersisterRestart6 extends PersisterRestartBase {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q, X, K);
 
-        forceSnapshot();
         restart();
 
         for (int i = 0; i < N; i++){
@@ -55,7 +65,6 @@ public class PersisterRestart6 extends PersisterRestartBase {
 
         deleteExchange(X);
 
-        forceSnapshot();
         restart();
 
         declareDurableTopicExchange(X);
@@ -81,7 +90,6 @@ public class PersisterRestart6 extends PersisterRestartBase {
     public void testDefaultBindingRecovery() throws Exception {
         declareDurableQueue(Q);
 
-        forceSnapshot();
         restart();
 
         basicPublishVolatile("", Q);
