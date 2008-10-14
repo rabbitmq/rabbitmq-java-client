@@ -5,6 +5,7 @@ import com.rabbitmq.client.GetResponse;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.io.IOException;
 
 /**
  * Functional test to verify fanout behaviour
@@ -19,12 +20,12 @@ public class FanoutTest extends BrokerTestCase {
     protected static final byte[] payload = (""+ System.currentTimeMillis()).getBytes();
 
     // TODO: This setup code is copy and paste - maybe this should wander up to the super class?
-    protected void setUp() throws Exception {
+    protected void setUp() throws IOException {
         openConnection();
         openChannel();
     }
 
-    protected void tearDown() throws Exception {
+    protected void tearDown() throws IOException {
 
         closeChannel();
         closeConnection();

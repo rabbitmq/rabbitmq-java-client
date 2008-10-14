@@ -22,16 +22,24 @@ public class BindingTest extends BrokerTestCase {
     private boolean shouldClose;
 
     // TODO: This setup code is copy and paste - maybe this should wander up to the super class?
-    protected void setUp() throws Exception {
+    protected void setUp() throws IOException {
         shouldClose = true;
         openConnection();
         openChannel();
     }
 
-    protected void tearDown() throws Exception {
+    protected void tearDown() throws IOException {
 
         if (shouldClose) closeChannel();
         closeConnection();
+    }
+
+    protected void restart()
+        throws IOException
+    {
+        tearDown();
+        Host.executeCommand("cd ../rabbitmq-test; make restart-on-node");
+        setUp();
     }
 
     /**
