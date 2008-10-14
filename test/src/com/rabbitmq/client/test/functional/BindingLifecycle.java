@@ -252,10 +252,7 @@ public class BindingLifecycle extends PersisterRestartBase {
         subscribeSendUnsubscribe(binding);
 
         if (durable) {
-            forceSnapshot();
             restart();
-            connection = connectionFactory.newConnection("localhost");
-            openChannel();
         }
         
         if (queues > 1) {
