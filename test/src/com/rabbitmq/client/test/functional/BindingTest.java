@@ -19,18 +19,15 @@ public class BindingTest extends BrokerTestCase {
 
     protected static final byte[] payload = (""+ System.currentTimeMillis()).getBytes();
 
-    private boolean shouldClose;
-
     // TODO: This setup code is copy and paste - maybe this should wander up to the super class?
     protected void setUp() throws IOException {
-        shouldClose = true;
         openConnection();
         openChannel();
     }
 
     protected void tearDown() throws IOException {
 
-        if (shouldClose) closeChannel();
+        if (null != channel) closeChannel();
         closeConnection();
     }
 
@@ -48,16 +45,16 @@ public class BindingTest extends BrokerTestCase {
     public void testQueueDelete() throws Exception {
 
         boolean durable = true;
-        Tuple<String, String, String> t = setupExchangeAndRouteMessage(durable);
+        Binding binding = setupExchangeAndRouteMessage(durable);
 
         // Nuke the queue and repeat this test, this time you expect nothing to get routed
         // TODO: When unbind is implemented, use that instead of deleting and re-creating the queue
-        channel.queueDelete(ticket, t.q);
-        channel.queueDeclare(ticket, t.q, durable);
+        channel.queueDelete(ticket, binding.q);
+        channel.queueDeclare(ticket, binding.q, durable);
 
-        sendUnroutable(t);
+        sendUnroutable(binding);
 
-        deleteExchangeAndQueue(t);
+        deleteExchangeAndQueue(binding);
     }
 
     /**
@@ -66,16 +63,16 @@ public class BindingTest extends BrokerTestCase {
     public void testExchangeDelete() throws Exception {
 
         boolean durable = true;
-        Tuple<String, String, String> t = setupExchangeAndRouteMessage(durable);
+        Binding binding = setupExchangeAndRouteMessage(durable);
 
         // Nuke the exchange and repeat this test, this time you expect nothing to get routed
 
-        channel.exchangeDelete(ticket, t.x);
-        channel.exchangeDeclare(ticket, t.x, "direct");
+        channel.exchangeDelete(ticket, binding.x);
+        channel.exchangeDeclare(ticket, binding.x, "direct");
 
-        sendUnroutable(t);
+        sendUnroutable(binding);
 
-        deleteExchangeAndQueue(t);
+        deleteExchangeAndQueue(binding);
     }
 
     /**
@@ -87,14 +84,14 @@ public class BindingTest extends BrokerTestCase {
     public void testExchangeIfUnused() throws Exception {
 
         boolean durable = true;
-        Tuple<String, String, String> t = setupExchangeBindings(durable);
+        Binding binding = setupExchangeBindings(durable);
 
         try {
-            channel.exchangeDelete(ticket, t.x, true);
+            channel.exchangeDelete(ticket, binding.x, true);
         }
         catch (Exception e) {
             // do nothing, this is the correct behaviour
-            shouldClose = false;
+            channel = null;
             return;
         }
 
@@ -152,11 +149,11 @@ public class BindingTest extends BrokerTestCase {
 
         String[] queueNames = null;
 
-        Tuple<String, String, String> t = randomTuple();
+        Binding binding = Binding.randomBinding();
 
-        channel.exchangeDeclare(ticket, t.x, "direct", false, durable, true, null);
-        channel.queueDeclare(ticket, t.q, false, durable, false, true, null);
-        channel.queueBind(ticket, t.q, t.x, t.k);
+        channel.exchangeDeclare(ticket, binding.x, "direct", false, durable, true, null);
+        channel.queueDeclare(ticket, binding.q, false, durable, false, true, null);
+        channel.queueBind(ticket, binding.q, binding.x, binding.k);
 
 
         if (queues > 1) {
@@ -165,12 +162,12 @@ public class BindingTest extends BrokerTestCase {
             for (int i = 0 ; i < j ; i++) {
                 queueNames[i] = randomString();
                 channel.queueDeclare(ticket, queueNames[i], false, durable, false, false, null);
-                channel.queueBind(ticket, queueNames[i], t.x, t.k);
+                channel.queueBind(ticket, queueNames[i], binding.x, binding.k);
                 channel.basicConsume(ticket, queueNames[i], true, new QueueingConsumer(channel));
             }
         }
 
-        subscribeSendUnsubscribe(t);
+        subscribeSendUnsubscribe(binding);
 
         if (durable) {
             forceSnapshot();
@@ -182,27 +179,26 @@ public class BindingTest extends BrokerTestCase {
         if (queues > 1) {
             for (String s : queueNames) {
                 channel.basicConsume(ticket, s, true, new QueueingConsumer(channel));
-                Tuple<String, String, String> tmp
-                    = new Tuple<String, String, String>(t.x, s, t.k);
+                Binding tmp = new Binding(binding.x, s, binding.k);
                 sendUnroutable(tmp);
             }
         }
 
-        channel.queueDeclare(ticket, t.q, false, durable, true, true, null);
+        channel.queueDeclare(ticket, binding.q, false, durable, true, true, null);
 
         // if (queues == 1): Because the exchange does not exist, this bind should fail
         try {
-            channel.queueBind(ticket, t.q, t.x, t.k);
-            sendRoutable(t);
+            channel.queueBind(ticket, binding.q, binding.x, binding.k);
+            sendRoutable(binding);
         }
         catch (Exception e) {
             // do nothing, this is the correct behaviour
-            shouldClose = false;
+            channel = null;
             return;
         }
         
         if (queues == 1) {
-            deleteExchangeAndQueue(t);
+            deleteExchangeAndQueue(binding);
             fail("Queue bind should have failed");
         }
 
@@ -216,67 +212,65 @@ public class BindingTest extends BrokerTestCase {
 
     }
 
-    private void subscribeSendUnsubscribe(Tuple<String, String, String> t) throws IOException {
-        String tag = channel.basicConsume(ticket, t.q, new QueueingConsumer(channel));
-        sendUnroutable(t);
+    private void subscribeSendUnsubscribe(Binding binding) throws IOException {
+        String tag = channel.basicConsume(ticket, binding.q, new QueueingConsumer(channel));
+        sendUnroutable(binding);
         channel.basicCancel(tag);
     }
 
-    private void sendUnroutable(Tuple<String, String, String> t) throws IOException {
+    private void sendUnroutable(Binding binding) throws IOException {
         // Send it some junk
-        channel.basicPublish(ticket, t.x, t.k, MessageProperties.BASIC, payload);
-        GetResponse response = channel.basicGet(ticket, t.q, true);
+        channel.basicPublish(ticket, binding.x, binding.k, MessageProperties.BASIC, payload);
+        GetResponse response = channel.basicGet(ticket, binding.q, true);
         assertNull("The response SHOULD BE null", response);
     }
 
-    private void sendRoutable(Tuple<String, String, String> t) throws IOException {
+    private void sendRoutable(Binding binding) throws IOException {
         // Send it some junk
-        channel.basicPublish(ticket, t.x, t.k, MessageProperties.BASIC, payload);
-        GetResponse response = channel.basicGet(ticket, t.q, true);
+        channel.basicPublish(ticket, binding.x, binding.k, MessageProperties.BASIC, payload);
+        GetResponse response = channel.basicGet(ticket, binding.q, true);
         assertNotNull("The response should not be null", response);
     }
 
-    private String randomString() {
+    private static String randomString() {
         return "-" + System.nanoTime();
     }
 
-    private class Tuple<X, Q, K> {
+    private static class Binding {
 
-        X x;
-        Q q;
-        K k;
+        String x, q, k;
 
-        Tuple(X x, Q q, K k) {
+        static Binding randomBinding() {
+            return new Binding(randomString(), randomString(), randomString());
+        }
+
+        private Binding(String x, String q, String k) {
             this.x = x;
             this.q = q;
             this.k = k;
         }
     }
 
-    private Tuple<String, String, String> randomTuple() {
-        return new Tuple<String, String, String>(randomString(), randomString(), randomString());
+    private void createQueueAndBindToExchange(Binding binding, boolean durable) throws Exception {
+        channel.exchangeDeclare(ticket, binding.x, "direct", durable);
+        channel.queueDeclare(ticket, binding.q, durable);
+        channel.queueBind(ticket, binding.q, binding.x, binding.k);
     }
 
-    private void createQueueAndBindToExchange(Tuple<String, String, String> t, boolean durable) throws Exception {
-        channel.exchangeDeclare(ticket, t.x, "direct", durable);
-        channel.queueDeclare(ticket, t.q, durable);
-        channel.queueBind(ticket, t.q, t.x, t.k);
+    private void deleteExchangeAndQueue(Binding binding) throws IOException {
+        channel.queueDelete(ticket, binding.q);
+        channel.exchangeDelete(ticket, binding.x);
     }
 
-    private void deleteExchangeAndQueue(Tuple<String, String, String> t) throws IOException {
-        channel.queueDelete(ticket, t.q);
-        channel.exchangeDelete(ticket, t.x);
+    private Binding setupExchangeBindings(boolean durable) throws Exception {
+        Binding binding = Binding.randomBinding();
+        createQueueAndBindToExchange(binding, durable);
+        return binding;
     }
 
-    private Tuple<String, String, String> setupExchangeBindings(boolean durable) throws Exception {
-        Tuple<String, String, String> t = randomTuple();
-        createQueueAndBindToExchange(t, durable);
-        return t;
-    }
-
-    private Tuple<String, String, String> setupExchangeAndRouteMessage(boolean durable) throws Exception {
-        Tuple<String, String, String> t = setupExchangeBindings(durable);
-        sendRoutable(t);
-        return t;
+    private Binding setupExchangeAndRouteMessage(boolean durable) throws Exception {
+        Binding binding = setupExchangeBindings(durable);
+        sendRoutable(binding);
+        return binding;
     }
 }
