@@ -89,13 +89,16 @@ public class BrokerTestCase extends TestCase
         Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
     }
 
-    protected void setUp() throws IOException {
+    protected void setUp()
+        throws IOException
+    {
         openConnection();
         openChannel();
     }
 
-    protected void tearDown() throws IOException {
-
+    protected void tearDown()
+        throws IOException
+    {
         closeChannel();
         closeConnection();
     }
