@@ -32,7 +32,17 @@ public class CreationDeletionRateTest {
 
         Options options = getOptions();
         CommandLineParser parser = new GnuParser();
-        CommandLine cmd = parser.parse(options, args);
+        CommandLine cmd = null;
+
+        try {
+            cmd = parser.parse(options, args);
+        }
+        catch (ParseException e) {
+            System.err.println("Parsing failed. Reason: " + e.getMessage());
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("CreationDeletionRateTest", options);
+            return;
+        }
 
         final String host = cmd.getOptionValue("h", "0.0.0.0");
         final int port = Integer.parseInt(cmd.getOptionValue("p", "5672"));
