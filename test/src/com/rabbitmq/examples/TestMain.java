@@ -486,6 +486,7 @@ public class TestMain {
         drain(1, mq, true);
 
         _ch1.queueDelete(_ticket, mq);
+        _ch1.exchangeDelete(_ticket, mx);
 
         log("Completed basic.return testing.");
     }

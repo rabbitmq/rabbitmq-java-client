@@ -150,7 +150,7 @@ public class ProducerMain implements Runnable {
         _channel.queueDeclare(_ticket, queueName, shouldPersist());
 
         String exchangeName = "test completion";
-        _channel.exchangeDeclare(_ticket, exchangeName, "fanout");
+        _channel.exchangeDeclare(_ticket, exchangeName, "fanout", false, false, true, null);
 
         if (shouldCommit()) {
             _channel.txSelect();
