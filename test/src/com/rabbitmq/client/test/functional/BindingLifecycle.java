@@ -141,7 +141,7 @@ public class BindingLifecycle extends PersisterRestartBase {
 
         sendUnroutable(binding);
 
-        deleteExchangeAndQueue(binding);
+        channel.queueDelete(ticket, binding.q);
     }
 
     /**
@@ -162,7 +162,8 @@ public class BindingLifecycle extends PersisterRestartBase {
         }
         catch (Exception e) {
             // do nothing, this is the correct behaviour
-            channel = null;
+            openChannel();
+            deleteExchangeAndQueue(binding);
             return;
         }
 
