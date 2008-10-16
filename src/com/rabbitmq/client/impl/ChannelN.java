@@ -215,6 +215,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     }
                 }
                 return true;
+            } else if (method instanceof Channel.Flow) {
+                Channel.Flow channelFlow = (Channel.Flow) method;
+                synchronized(this) {
+                    _blockContent = !channelFlow.active;
+                    transmit(new Channel.FlowOk(channelFlow.active));
+                    notifyAll();
+                }
+                return true;
             } else if (method instanceof Channel.Close) {
                 releaseChannelNumber();
                 ShutdownSignalException signal = new ShutdownSignalException(false,

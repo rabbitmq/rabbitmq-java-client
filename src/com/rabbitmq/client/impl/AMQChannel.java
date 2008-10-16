@@ -55,6 +55,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
     public RpcContinuation _activeRpc = null;
 
+    /** Whether transmission of content-bearing methods should be blocked
+     */
+    public boolean _blockContent = false;
+
     /**
      * Construct a channel on the given connection, with the given channel number.
      * @param connection the underlying connection for this channel
@@ -246,10 +250,17 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     public synchronized void quiescingTransmit(Method m) throws IOException {
-        new AMQCommand(m).transmit(this);
+        quiescingTransmit(new AMQCommand(m));
     }
 
     public synchronized void quiescingTransmit(AMQCommand c) throws IOException {
+        if (c.getMethod().hasContent()) {
+            while (_blockContent) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {}
+            }
+        }
         c.transmit(this);
     }
 
