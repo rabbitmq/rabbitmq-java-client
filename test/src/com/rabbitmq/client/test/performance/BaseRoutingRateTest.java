@@ -9,37 +9,39 @@ import java.text.DecimalFormat;
 import org.apache.commons.cli.*;
 
 /**
- * This class contains two types of tests - one for measuring routing throughput and
- * on for measuring latency.
+ * This class contains two types of tests - one for measuring routing
+ * throughput and on for measuring latency.
  *
  * Each test should be timed for different values for q, b and n.
  *
- * In both test cases, a pool of random queue names and binding keys is created.
+ * In both test cases, a pool of random queue names and binding keys
+ * is created.
  *
- * Each queue is bound to with each binding to the default exchange, hence producing
- * b * q routes.
+ * Each queue is bound to with each binding to the default exchange,
+ * hence producing b * q routes.
  *
  * The throughput test has 4 phases:
  *
- * 0. Declare all of the queues in the pool and bind each one to each routing key in the pool of keys;
+ * 0. Declare all of the queues in the pool and bind each one to each
+ *    routing key in the pool of keys;
  * 1. Start a producer thread;
- * 2. Start a transaction, send n messages and the commit this;
+ * 2. Start a transaction, send n messages and then commit this;
  * 3. Delete all of the queues, thus unbinding everything
  *
  * The latency test has 6 phases:
  *
- * 0. Declare all of the queues in the pool and bind each one to each routing key in the pool of keys;
- * 1. Start a consumer thread, set up q queues with b bindings and subscribe to them;
+ * 0. Declare all of the queues in the pool and bind each one to each
+ *    routing key in the pool of keys;
+ * 1. Start a consumer thread, and subscribe to all q queues
  * 2. Run a producer thread and send n messages;
  * 3. Consumer thread should receive n messages;
  * 4. Unsubscribe from all of the queues;
  * 5. Delete all of the queues, thus unbinding everything;
  *
- * If you want to find out how to calibrate this test, add --help as a command line argument
- * to see what options are available.
+ * If you want to find out how to calibrate this test, add --help as a
+ * command line argument to see what options are available.
  *
  * Your mileage may vary :-) 
- *
  */
 public class BaseRoutingRateTest {
 
@@ -143,24 +145,27 @@ public class BaseRoutingRateTest {
     /**
      * This runs the main test based on the parameters passed in:
      *
-     *  1. Create a pool of random queue names and a pool of random binding keys;
+     *  1. Create a pool of random queue names and a pool of random
+     *     binding keys;
      *  2. Connect to the broker and start a channel;
      *  3. Iterate through the pool of queues and declare them;
-     *  4. Iterate through the bindings by binding each queue with b separate bindings
+     *  4. Iterate through the bindings by binding each queue with b
+     *     separate bindings
      *     to the default exchange;
      *  5. Start a producer thread, tell it to send n messages;
      *  6. Start a consumer consumer and tell it to receive n messages;
-     *  7. Wait for both the producer and consumer to finish, then print the results;
+     *  7. Wait for both the producer and consumer to finish, then
+     *     print the results;
      *  8. Close the channel and connection.
      *
      * The various parameters have these effects:
      *
-     * - If the topic flag is set, then perform topic routing - this means that the routing
-     *   key will end with a wilcard;
+     * - If the topic flag is set, then perform topic routing - this
+     *   means that the routing key will end with a wilcard;
      * - If the latency flag is not set, then just start a producer;
-     * - If the latency flag is set, then have the consumer thread start the producer
-     *   thread after it has subscribed itself to all of the queues.
-     *
+     * - If the latency flag is set, then have the consumer thread
+     *   start the producer thread after it has subscribed itself to
+     *   all * of the queues.
      */
     private Parameters runTest(Parameters parameters) throws Exception {
 
@@ -253,9 +258,10 @@ public class BaseRoutingRateTest {
 
 
         /**
-         * This increases the value of the number of messages by the factor that you pass in.
-         * This creates a copy of the original object reference, so this is effectively
-         * a non-destructive assignment.
+         * This increases the value of the number of messages by the
+         * factor that you pass in.
+         * This creates a copy of the original object reference, so
+         * this is effectively a non-destructive assignment.
          */
         Parameters magnify(int factor) {
             Parameters copy = copy();
@@ -264,8 +270,10 @@ public class BaseRoutingRateTest {
         }
 
         /**
-         * This amplifies the rate limit by the factor that you pass in.
-         * This is useful for loops that pass in a new factor on each iteration.
+         * This amplifies the rate limit by the factor that you pass
+         * in.
+         * This is useful for loops that pass in a new factor on each
+         * iteration.
          */
         Parameters amplify(int factor) {
             Parameters copy = copy();
@@ -274,7 +282,8 @@ public class BaseRoutingRateTest {
         }
 
         /**
-         * Convenience method to clone this instance, swallows a checked exception :-)
+         * Convenience method to clone this instance, swallows a
+         * checked exception :-)
          */
         Parameters copy() {
             try {
@@ -310,7 +319,8 @@ public class BaseRoutingRateTest {
 
     /**
      * This declares and queues defined in the pool of random queue names.
-     * Then it runs through the pool of random bindings and binds them to the default exchange.
+     * Then it runs through the pool of random bindings and binds them
+     * to the default exchange.
      */
     private float declareAndBindQueues(Channel channel, String x) throws IOException {
         final long start = System.currentTimeMillis();
@@ -354,18 +364,18 @@ public class BaseRoutingRateTest {
     /**
      * This consumer thread is used only when testing for latency.
      *
-     * This thread subscribes to all of the queues defined in the random pool
-     * of queue names.
+     * This thread subscribes to all of the queues defined in the
+     * random pool of queue names.
      *
-     * After it has done that it spawns a producer thread in order to start
-     * sending messages to the exchange.
+     * After it has done that it spawns a producer thread in order to
+     * start sending messages to the exchange.
      *
-     * This thread will exit when it has drained n messages in total from all
-     * of the queues.
+     * This thread will exit when it has drained n messages in total
+     * from all of the queues.
      *
-     * The rate calculations it makes are based on the assumption the sender and
-     * itself are running in the same address space and hence there can be no
-     * clock drift.
+     * The rate calculations it makes are based on the assumption the
+     * sender and itself are running in the same address space and
+     * hence there can be no clock drift.
      */
     class ConsumerThread extends QueueingConsumer implements Runnable {
 
@@ -463,18 +473,20 @@ public class BaseRoutingRateTest {
     }
 
     /**
-     * The producer thread has two modes of operation, depending on whether
-     * latency or throughput is being measured.
+     * The producer thread has two modes of operation, depending on
+     * whether latency or throughput is being measured.
      *
-     * If throughput is being measured, then the producer will batch each message
-     * then it sends into a transaction. This is ensure that the actual time spent
-     * in the routing pipeline is measured rather than just the time it took to put
-     * the message onto the wire. The rate measurement is simply the time it took
-     * to start a TX, send n messages and receive the commit acknowldegement from the
-     * broker.
+     * If throughput is being  measured, then the producer will  batch
+     * each message then it sends  into a transaction. This is  ensure
+     * that the actual time spent  in the routing pipeline is measured
+     * rather than just the time  it took to put  the message onto the
+     * wire. The rate measurement is simply  the time it took to start
+     * a TX,  send n messages and  receive  the commit acknowldegement
+     * from the broker.
      *
-     * If latency is the subject of investigation, no transactions are started, rather
-     * the onus of measurment is on the consumer thread not on the producer.
+     * If latency is the subject of investigation, no transactions are
+     * started, rather the onus of measurment is on the consumer
+     * thread not on the producer.
      */
     class ProducerThread implements Runnable {
 
@@ -495,7 +507,8 @@ public class BaseRoutingRateTest {
 
         public void run() {
 
-            // Squirrel away the starting value for the number of messages to send
+            // Squirrel away the starting value for the number of
+            // messages to send
             n = params.n;
 
             long start = lastStatsTime = System.currentTimeMillis();
@@ -575,10 +588,11 @@ public class BaseRoutingRateTest {
          * Sends a timestamp with a randomly selected element from
          * the pool of random routing keys.
          *
-         * If sending to a topic exchange, then change the * wildcard to some
-         * random concrete value, so that the broker has to match on this structured
-         * key (I guess this could be used to test topic route caching if we ever
-         * decided to implement this).
+         * If sending to a topic exchange, then change the * wildcard
+         * to some random concrete value, so that the broker has to
+         * match on this structured key (I guess this could be used to
+         * test topic route caching if we ever decided to implement
+         * this).
          */
         private void send(Channel ch, boolean topic) {
             try {
