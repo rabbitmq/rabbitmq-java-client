@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
@@ -248,9 +249,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    /**
-     * Public API - closes this channel with the given code and message
-     */
+    public void close()
+        throws IOException
+    {
+        close(AMQP.REPLY_SUCCESS, "OK");
+    }
+    
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
@@ -258,9 +262,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /**
-     * Protected API - close channel with code and message, indicating
+     * Protected API - Close channel with code and message, indicating
      * the source of the closure and a causing exception (null if
-     * none)
+     * none).
      */
     public void close(int closeCode,
                       String closeMessage,
