@@ -62,7 +62,7 @@ import com.rabbitmq.utility.Utility;
  * int ticket = ch1.accessRequest(realmName);
  * </pre>
  */
-public class AMQConnection extends ShutdownNotifierComponent implements Connection{
+public class AMQConnection extends ShutdownNotifierComponent implements Connection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
 
@@ -617,75 +617,45 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _channelManager.handleSignal(_shutdownCause);
     }
 
-    /**
-     * Public API - Close this connection and all its channels.
-     */
     public void close()
         throws IOException
     {
         close(-1);
     }
 
-    /**
-     * Public API - Close this connection and all its channels
-     * with a given timeout.
-     */
     public void close(int timeout)
         throws IOException
     {
-        close(AMQP.REPLY_SUCCESS, "Goodbye", timeout);
+        close(AMQP.REPLY_SUCCESS, "OK", timeout);
     }
-    
-    /**
-     * Public API - Close this connection and all its channels
-     * with a given close code and message.
-     */
+
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
         close(closeCode, closeMessage, -1);
     }
 
-    /**
-     * Public API - Close this connection and all its channels
-     * with a given close code, message and timeout.
-     */
     public void close(int closeCode, String closeMessage, int timeout)
         throws IOException
     {
         close(closeCode, closeMessage, true, null, timeout, false);
     }
 
-    /**
-     * Public API - Abort this connection and all its channels.
-     */
     public void abort()
     {
         abort(-1);
     }
 
-    /**
-     * Public API - Abort this connection and all its channels
-     * with a given close code and message.
-     */
     public void abort(int closeCode, String closeMessage)
     {
        abort(closeCode, closeMessage, -1);
     }
 
-    /**
-     * Public API - Abort this connection and all its channels
-     * with a given timeout.
-     */
     public void abort(int timeout)
     {
-        abort(AMQP.REPLY_SUCCESS, "Goodbye", timeout);
+        abort(AMQP.REPLY_SUCCESS, "OK", timeout);
     }
-    
-    /**
-     * Public API - Abort this connection and all its channels
-     * with a given close code, message and timeout.
-     */
+
     public void abort(int closeCode, String closeMessage, int timeout)
     {
         try {
@@ -705,7 +675,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Protected API - Close this connection with the given code, message and source.
+     * Protected API - Close this connection with the given code, message, source
+     * and timeout value for all the close operations to complete.
+     * Specifies if any encountered exceptions should be ignored.
      */
     public void close(int closeCode,
                       String closeMessage,

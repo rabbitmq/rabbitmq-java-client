@@ -249,19 +249,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-
-    /**
-     * Public API - Close this channel with the default close code and message.
-     */
     public void close()
         throws IOException
     {
-        close(AMQP.REPLY_SUCCESS, "Goodbye");
+        close(AMQP.REPLY_SUCCESS, "OK");
     }
     
-    /**
-     * Public API - Close this channel.
-     */
     public void close(int closeCode, String closeMessage)
         throws IOException
     {

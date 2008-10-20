@@ -122,10 +122,10 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
 
     /**
      * Close this connection and all its channels
-     * with the default close code and message.
+     * with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
+     * and message 'OK'.
      *
-     * This method will wait infinitely for all the close operations to
-     * complete.
+     * Waits for all the close operations to complete.
      *
      * @throws IOException if an I/O problem is encountered
      */
@@ -134,8 +134,7 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     /**
      * Close this connection and all its channels.
      *
-     * This method will wait infinitely for all the close operations to
-     * complete.
+     * Waits for all the close operations to complete.
      *
      * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
      * @param closeMessage a message indicating the reason for closing the connection
@@ -145,11 +144,12 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
 
     /**
      * Close this connection and all its channels
-     * with the default close code and message.
-     *
-     * This method will wait with the given timeout for all the close
-     * operations to complete. If timeout is reached then socket is forced
-     * to close.
+     * with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
+     * and message 'OK'.
+     * 
+     * This method behaves in a similar way as {@link #close()}, with the only difference
+     * that it waits with a provided timeout for all the close operations to
+     * complete. When timeout is reached the socket is forced to close.
      * 
      * @param timeout timeout (in milliseconds) for completing all the close-related
      * operations, use -1 for infinity
@@ -160,9 +160,8 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     /**
      * Close this connection and all its channels.
      *
-     * This method will wait with the given timeout for all the close
-     * operations to complete. If timeout is reached then socket is forced
-     * to close.
+     * Waits with the given timeout for all the close operations to complete.
+     * When timeout is reached the socket is forced to close.
      * 
      * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
      * @param closeMessage a message indicating the reason for closing the connection
@@ -174,18 +173,19 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
 
     /**
      * Abort this connection and all its channels
-     * with the default code and message.
+     * with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
+     * and message 'OK'.
      *
-     * This method will force the connection to close. It will silently discard
-     * any exceptions encountered in close operations.
+     * Forces the connection to close.
+     * Any encountered exceptions in the close operations are silently discarded.
      */
     void abort();
     
     /**
      * Abort this connection and all its channels.
      *
-     * This method will force the connection to close. It will silently discard
-     * any exceptions encountered in close operations.
+     * Forces the connection to close and waits for all the close operations to complete.
+     * Any encountered exceptions in the close operations are silently discarded.
      * 
      * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
      * @param closeMessage a message indicating the reason for closing the connection
@@ -194,11 +194,12 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     
     /**
      * Abort this connection and all its channels
-     * with the default close code and message.
+     * with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
+     * and message 'OK'.
      *
-     * This method behaves in a similar way as abort(), with the only difference
-     * that it will wait with a provided timeout for all the close operations to
-     * complete. If timeout is reached socket is forced to close.
+     * This method behaves in a similar way as {@link #abort()}, with the only difference
+     * that it waits with a provided timeout for all the close operations to
+     * complete. When timeout is reached the socket is forced to close.
      *
      * @param timeout timeout (in milliseconds) for completing all the close-related
      * operations, use -1 for infinity
@@ -208,9 +209,10 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     /**
      * Abort this connection and all its channels.
      *
-     * This method behaves in a similar way as abort(), with the only difference
-     * that it will wait with a provided timeout for all the close operations to
-     * complete. If timeout is reached socket is forced to close.
+     * Forces the connection to close and waits with the given timeout
+     * for all the close operations to complete. When timeout is reached
+     * the socket is forced to close.
+     * Any encountered exceptions in the close operations are silently discarded.
      *
      * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
      * @param closeMessage a message indicating the reason for closing the connection

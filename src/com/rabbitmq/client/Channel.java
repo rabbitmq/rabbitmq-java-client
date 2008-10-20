@@ -70,7 +70,8 @@ public interface Channel extends ShutdownNotifier{
     Connection getConnection();
 
     /**
-     * Close this channel with the default close code and message.
+     * Close this channel with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
+     * and message 'OK'.
      * 
      * @throws java.io.IOException if an error is encountered
      */
