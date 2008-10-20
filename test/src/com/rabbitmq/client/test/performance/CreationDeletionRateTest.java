@@ -79,7 +79,7 @@ public class CreationDeletionRateTest {
 
         printStats("Deletion", b, q, split, stop);
 
-        channel.close(200, "foo");
+        channel.close();
         con.close();
     }
 

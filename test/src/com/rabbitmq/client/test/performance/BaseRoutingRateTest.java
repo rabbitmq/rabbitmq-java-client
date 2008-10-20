@@ -196,7 +196,7 @@ public class BaseRoutingRateTest {
         parameters.dashboard.producerRate = producerRef.rate;
         parameters.dashboard.unbindingRate = deleteQueues(channel);
 
-        channel.close(200, "hasta la vista, baby");
+        channel.close();
         con.close();
 
         return parameters;
@@ -455,7 +455,7 @@ public class BaseRoutingRateTest {
             }
 
             try {
-                c.close(200, "see ya");
+                c.close();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -510,7 +510,7 @@ public class BaseRoutingRateTest {
             doCommit();
 
             try {
-                c.close(200, "see ya");
+                c.close();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
