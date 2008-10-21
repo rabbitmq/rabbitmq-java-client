@@ -282,7 +282,7 @@ public class Roundtrip {
         public void disconnect()
             throws IOException {
 
-            connection.close(200, "ok");
+            connection.close();
         }
 
     }
