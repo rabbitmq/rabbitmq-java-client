@@ -65,12 +65,12 @@ public class MethodArgumentWriter
         bitAccumulator = 0;
         bitMask = 1;
     }
-    
+
     /**
      * Private API - called when we may be transitioning from encoding
      * a group of bits to encoding a non-bit value.
      */
-    private final void bitflush() 
+    private final void bitflush()
         throws IOException
     {
         if (needBitFlush) {
@@ -78,7 +78,7 @@ public class MethodArgumentWriter
             resetBitAccumulator();
         }
     }
-    
+
     /** Public API - encodes a short string argument. */
     public final void writeShortstr(String str)
         throws IOException
@@ -107,7 +107,7 @@ public class MethodArgumentWriter
         writeLong(bytes.length);
         out.write(bytes);
     }
-    
+
     /** Public API - encodes a short integer argument. */
     public final void writeShort(int s)
         throws IOException
@@ -129,7 +129,7 @@ public class MethodArgumentWriter
     }
 
     /** Public API - encodes a long integer argument. */
-    public final void writeLonglong(long ll) 
+    public final void writeLonglong(long ll)
         throws IOException
     {
         bitflush();
@@ -137,7 +137,7 @@ public class MethodArgumentWriter
     }
 
     /** Public API - encodes a boolean/bit argument. */
-    public void writeBit(boolean b) 
+    public void writeBit(boolean b)
         throws IOException
     {
         if (bitMask > 0x80) {
@@ -207,13 +207,13 @@ public class MethodArgumentWriter
     }
 
     /** Public API - encodes an octet argument from an int. */
-    public final void writeOctet(int octet) 
+    public final void writeOctet(int octet)
         throws IOException
     {
         bitflush();
         out.writeByte(octet);
     }
-    
+
     /** Public API - encodes an octet argument from a byte. */
     public final void writeOctet(byte octet)
         throws IOException
@@ -223,7 +223,7 @@ public class MethodArgumentWriter
     }
 
     /** Public API - encodes a timestamp argument. */
-    public final void writeTimestamp(Date timestamp) 
+    public final void writeTimestamp(Date timestamp)
         throws IOException
     {
         // AMQP uses POSIX time_t which is in seconds since the epoch began
@@ -234,7 +234,7 @@ public class MethodArgumentWriter
      * Public API - call this to ensure all accumulated argument
      * values are correctly written to the output stream.
      */
-    public void flush() 
+    public void flush()
         throws IOException
     {
         bitflush();

@@ -33,7 +33,7 @@ import java.util.Set;
 
 import com.rabbitmq.client.ShutdownSignalException;
 
-/** 
+/**
  * Manages a set of channels, indexed by channel number.
  */
 
@@ -68,7 +68,12 @@ public class ChannelManager {
         }
         for (AMQChannel channel : channels) {
             disconnectChannel(channel.getChannelNumber());
-            channel.processShutdownSignal(signal);
+            try {
+                channel.processShutdownSignal(signal);
+            } catch (ShutdownSignalException sse) {
+                // Notify channels that are waiting for rpc
+                channel.notifyOutstandingRpc(signal);
+            }
         }
     }
 

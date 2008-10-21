@@ -27,51 +27,46 @@ package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 
-import junit.framework.TestCase;
+import com.rabbitmq.client.QueueingConsumer;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-
-public class BrokerTestCase extends TestCase
+public class NoRequeueOnCancel extends BrokerTestCase
 {
-    public ConnectionFactory connectionFactory = new ConnectionFactory();
+    protected final String Q = "NoRequeueOnCancel";
 
-    public Connection connection;
-    public Channel channel;
-    public int ticket;
-
-    public void openConnection()
+    protected void setUp()
         throws IOException
     {
-        if (connection == null) {
-            connection = connectionFactory.newConnection("localhost");
-        }
+        openConnection();
+        openChannel();
+        channel.queueDeclare(ticket, Q);
     }
 
-    public void closeConnection()
+    protected void tearDown()
         throws IOException
     {
-        if (connection != null) {
-            connection.close();
-            connection = null;
-        }
+        channel.queueDelete(ticket, Q);
+        closeChannel();
+        closeConnection();
     }
 
-    public void openChannel()
-        throws IOException
+    public void testNoRequeueOnCancel()
+        throws IOException, InterruptedException
     {
-        channel = connection.createChannel();
-        ticket = channel.accessRequest("/data");
-    }
+        channel.basicPublish(ticket, "", Q, null, "1".getBytes());
 
-    public void closeChannel()
-        throws IOException
-    {
-        if (channel != null) {
-            channel.close();
-            channel = null;
-        }
-    }
+        QueueingConsumer c;
+        QueueingConsumer.Delivery d;
 
+        c = new QueueingConsumer(channel);
+        String consumerTag = channel.basicConsume(ticket, Q, false, c);
+        d = c.nextDelivery();
+        channel.basicCancel(consumerTag);
+
+        assertNull(channel.basicGet(ticket, Q, true));
+
+        closeChannel();
+        openChannel();
+
+        assertNotNull(channel.basicGet(ticket, Q, true));
+    }
 }

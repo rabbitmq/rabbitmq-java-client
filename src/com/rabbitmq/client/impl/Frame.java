@@ -100,7 +100,7 @@ public class Frame {
     /**
      * Protected API - Factory method to instantiate a Frame by reading an
      * AMQP-wire-protocol frame from the given input stream.
-     * 
+     *
      * @return a new Frame if we read a frame successfully, otherwise null
      */
     public static Frame readFrom(DataInputStream is) throws IOException {
@@ -146,7 +146,7 @@ public class Frame {
      * stream. If the next three bytes are 'M', 'Q' and 'P', then it's
      * likely the broker is trying to tell us we are speaking the wrong AMQP
      * protocol version.
-     * 
+     *
      * @throws MalformedFrameException
      *                 if an AMQP protocol version mismatch is detected
      * @throws MalformedFrameException
@@ -199,7 +199,7 @@ public class Frame {
      */
     public byte[] getPayload() {
         byte[] bytes;
-        
+
         if (payload == null) {
             // This is a Frame we've constructed ourselves. For some reason (e.g.
             // testing), we're acting as if we received it even though it
@@ -208,7 +208,7 @@ public class Frame {
         } else {
             bytes = payload;
         }
-        
+
         return bytes;
     }
 
@@ -216,7 +216,7 @@ public class Frame {
      * Public API - retrieves a new DataInputStream streaming over the payload
      */
     public DataInputStream getInputStream() {
-        return new DataInputStream(new ByteArrayInputStream(getPayload()));            
+        return new DataInputStream(new ByteArrayInputStream(getPayload()));
     }
 
     /**
@@ -287,7 +287,7 @@ public class Frame {
                 throw new IllegalArgumentException("invalid value in table");
             }
         }
-        
+
         return acc;
     }
 

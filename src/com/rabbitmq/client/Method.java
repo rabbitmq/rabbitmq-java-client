@@ -43,7 +43,7 @@ public interface Method {
     int protocolMethodId(); /* properly an unsigned short */
 
     /**
-     * Retrieve the method name  
+     * Retrieve the method name
      * @return the AMQP protocol method name of this Method
      */
     String protocolMethodName();

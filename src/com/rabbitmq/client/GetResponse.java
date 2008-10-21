@@ -28,7 +28,7 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 
 /**
  * Encapsulates the response from a {@link Channel#basicGet} message-retrieval method call
- * - essentially a static bean "holder" with message response data. 
+ * - essentially a static bean "holder" with message response data.
  */
 public class GetResponse {
     private final Envelope envelope;
@@ -44,11 +44,11 @@ public class GetResponse {
      * @param messageCount the number of messages in the response
      */
     public GetResponse(Envelope envelope, BasicProperties props, byte[] body, int messageCount)
-    { 
-        this.envelope = envelope; 
-        this.props = props; 
-        this.body = body; 
-        this.messageCount = messageCount; 
+    {
+        this.envelope = envelope;
+        this.props = props;
+        this.body = body;
+        this.messageCount = messageCount;
     }
 
     /**

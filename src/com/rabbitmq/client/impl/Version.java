@@ -63,7 +63,7 @@ public class Version {
     /**
      * Retrieve a String representation of the version in the standard
      * AMQP version format of <major>-<minor>
-     * 
+     *
      * @return a <code>String</code> representation of the version
      * @see Object#toString()
      */

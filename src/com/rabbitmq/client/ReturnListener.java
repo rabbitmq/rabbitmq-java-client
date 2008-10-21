@@ -34,11 +34,11 @@ import java.io.IOException;
  * @see Channel#basicPublish
  */
 public interface ReturnListener {
-    void handleBasicReturn(int replyCode, 
-            String replyText, 
-            String exchange, 
-            String routingKey, 
-            AMQP.BasicProperties properties, 
-            byte[] body) 
-    throws IOException;
+    void handleBasicReturn(int replyCode,
+            String replyText,
+            String exchange,
+            String routingKey,
+            AMQP.BasicProperties properties,
+            byte[] body)
+        throws IOException;
 }

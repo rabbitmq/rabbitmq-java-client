@@ -49,8 +49,8 @@ public class SimpleProducer {
                 ch.queueDeclare(ticket, routingKey);
             }
             ch.basicPublish(ticket, exchange, routingKey, null, message.getBytes());
-            ch.close(200, "Closing the channel");
-            conn.close(200, "Closing the connection");
+            ch.close();
+            conn.close();
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
             e.printStackTrace();

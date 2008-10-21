@@ -59,7 +59,7 @@ public class ConnectionParameters {
     /** Default value for desired heartbeat interval; zero for none */
     public static final int DEFAULT_HEARTBEAT = 3;
 
-    /** 
+    /**
      * Default value for suppressAccessRequest flag. Retrieved from
      * system property
      * "com.rabbitmq.client.ConnectionParameters.suppressAccessRequest"
@@ -112,7 +112,7 @@ public class ConnectionParameters {
     public void setPassword(String password) {
         _password = password;
     }
-    
+
     /**
      * Retrieve the virtual host.
      * @return the virtual host to use when connecting to the broker
@@ -188,7 +188,7 @@ public class ConnectionParameters {
 
     /**
      * Enable or disable the suppression of sending "access.request"
-     * methods. 
+     * methods.
      * @param suppressAccessRequest true of "access.request" methods are suppressed, false otherwise.
      */
     public void setSuppressAccessRequest(boolean suppressAccessRequest) {

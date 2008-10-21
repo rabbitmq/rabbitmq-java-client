@@ -30,7 +30,7 @@ import java.io.IOException;
  * Public API: Interface to an AMQ connection. See the see the <a href="http://www.amqp.org/">spec</a> for details.
  * <p>
  * To connect to a broker, fill in a {@link ConnectionParameters} and use a {@link ConnectionFactory} as follows:
- * 
+ *
  * <pre>
  * ConnectionParameters params = new ConnectionParameters();
  * params.setUsername(userName);
@@ -41,7 +41,7 @@ import java.io.IOException;
  * Connection conn = factory.newConnection(hostName, AMQP.PROTOCOL.PORT);
  *
  * // Then open a channel and retrieve an access ticket:
- * 
+ *
  * Channel channel = conn.createChannel();
  * int ticket = channel.accessRequest(realmName);
  * </pre>
@@ -49,7 +49,7 @@ import java.io.IOException;
  * Current implementations are thread-safe for code at the client API level,
  * and in fact thread-safe internally except for code within RPC calls.
  */
-public interface Connection { // rename to AMQPConnection later, this is a temporary name
+public interface Connection extends ShutdownNotifier { // rename to AMQPConnection later, this is a temporary name
     /**
      * Retrieve the host.
      * @return the hostname of the peer we're connected to.
@@ -104,7 +104,7 @@ public interface Connection { // rename to AMQPConnection later, this is a tempo
      * @return an array of addresses for all hosts that came back in the initial {@link com.rabbitmq.client.AMQP.Connection.OpenOk} open-ok method
      */
     Address[] getKnownHosts();
-    
+
     /**
      * Create a new channel, using an internally allocated channel number.
      * @return a new channel descriptor, or null if none is available
@@ -119,12 +119,105 @@ public interface Connection { // rename to AMQPConnection later, this is a tempo
      * @throws IOException if an I/O problem is encountered
      */
     Channel createChannel(int channelNumber) throws IOException;
+
+    /**
+     * Close this connection and all its channels
+     * with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
+     * and message 'OK'.
+     *
+     * Waits for all the close operations to complete.
+     *
+     * @throws IOException if an I/O problem is encountered
+     */
+    void close() throws IOException;
     
     /**
-     * Close this connection with the given code and message.
-     * @param closeCode code indicating the reason for closing the connection - see AMQP spec for a list of codes
-     * @param closeMessage optional message describing the reason for closing the connection
+     * Close this connection and all its channels.
+     *
+     * Waits for all the close operations to complete.
+     *
+     * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
+     * @param closeMessage a message indicating the reason for closing the connection
      * @throws IOException if an I/O problem is encountered
      */
     void close(int closeCode, String closeMessage) throws IOException;
+
+    /**
+     * Close this connection and all its channels
+     * with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
+     * and message 'OK'.
+     * 
+     * This method behaves in a similar way as {@link #close()}, with the only difference
+     * that it waits with a provided timeout for all the close operations to
+     * complete. When timeout is reached the socket is forced to close.
+     * 
+     * @param timeout timeout (in milliseconds) for completing all the close-related
+     * operations, use -1 for infinity
+     * @throws IOException if an I/O problem is encountered
+     */
+    void close(int timeout) throws IOException;
+    
+    /**
+     * Close this connection and all its channels.
+     *
+     * Waits with the given timeout for all the close operations to complete.
+     * When timeout is reached the socket is forced to close.
+     * 
+     * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
+     * @param closeMessage a message indicating the reason for closing the connection
+     * @param timeout timeout (in milliseconds) for completing all the close-related
+     * operations, use -1 for infinity
+     * @throws IOException if an I/O problem is encountered
+     */
+    void close(int closeCode, String closeMessage, int timeout) throws IOException;
+
+    /**
+     * Abort this connection and all its channels
+     * with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
+     * and message 'OK'.
+     *
+     * Forces the connection to close.
+     * Any encountered exceptions in the close operations are silently discarded.
+     */
+    void abort();
+    
+    /**
+     * Abort this connection and all its channels.
+     *
+     * Forces the connection to close and waits for all the close operations to complete.
+     * Any encountered exceptions in the close operations are silently discarded.
+     * 
+     * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
+     * @param closeMessage a message indicating the reason for closing the connection
+     */
+    void abort(int closeCode, String closeMessage);
+    
+    /**
+     * Abort this connection and all its channels
+     * with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
+     * and message 'OK'.
+     *
+     * This method behaves in a similar way as {@link #abort()}, with the only difference
+     * that it waits with a provided timeout for all the close operations to
+     * complete. When timeout is reached the socket is forced to close.
+     *
+     * @param timeout timeout (in milliseconds) for completing all the close-related
+     * operations, use -1 for infinity
+     */
+    void abort(int timeout);
+
+    /**
+     * Abort this connection and all its channels.
+     *
+     * Forces the connection to close and waits with the given timeout
+     * for all the close operations to complete. When timeout is reached
+     * the socket is forced to close.
+     * Any encountered exceptions in the close operations are silently discarded.
+     *
+     * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
+     * @param closeMessage a message indicating the reason for closing the connection
+     * @param timeout timeout (in milliseconds) for completing all the close-related
+     * operations, use -1 for infinity
+     */
+    void abort(int closeCode, String closeMessage, int timeout);
 }

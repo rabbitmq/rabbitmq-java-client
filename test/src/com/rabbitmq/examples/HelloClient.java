@@ -44,7 +44,7 @@ public class HelloClient {
             RpcClient service = new RpcClient(ch, ticket, "", "Hello");
 
             System.out.println(service.stringCall(request));
-            conn.close(200, "OK");
+            conn.close();
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
             e.printStackTrace();

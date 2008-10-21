@@ -29,7 +29,9 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
@@ -63,8 +65,6 @@ import com.rabbitmq.utility.Utility;
  */
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
     private static final String UNSPECIFIED_OUT_OF_BAND = "";
-
-    public static final int CLOSING_TIMEOUT = 10000; // timeout in milliseconds
 
     /**
      * Map from consumer tag to {@link Consumer} instance.
@@ -124,7 +124,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @param signal an exception signalling channel shutdown
      */
     public void broadcastShutdownSignal(ShutdownSignalException signal) {
-
         Map<String, Consumer> snapshotConsumers;
         synchronized (_consumers) {
             snapshotConsumers = new HashMap<String, Consumer>(_consumers);
@@ -218,12 +217,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 }
                 return true;
             } else if (method instanceof Channel.Close) {
-                transmit(new Channel.CloseOk());
                 releaseChannelNumber();
                 ShutdownSignalException signal = new ShutdownSignalException(false,
                                                                              false,
-                                                                             command);
-                processShutdownSignal(signal);
+                                                                             command,
+                                                                             this);
+                synchronized(this) {
+                    processShutdownSignal(signal);
+                    quiescingTransmit(new Channel.CloseOk());
+                }
+                notifyListeners();
                 return true;
             } else {
                 return false;
@@ -246,9 +249,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    /**
-     * Public API - closes this channel with the given code and message
-     */
+    public void close()
+        throws IOException
+    {
+        close(AMQP.REPLY_SUCCESS, "OK");
+    }
+    
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
@@ -256,9 +262,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /**
-     * Protected API - close channel with code and message, indicating
+     * Protected API - Close channel with code and message, indicating
      * the source of the closure and a causing exception (null if
-     * none)
+     * none).
      */
     public void close(int closeCode,
                       String closeMessage,
@@ -273,31 +279,37 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         Channel.Close reason = new Channel.Close(closeCode, closeMessage, 0, 0);
         ShutdownSignalException signal = new ShutdownSignalException(false,
                                                                      initiatedByApplication,
-                                                                     reason);
+                                                                     reason,
+                                                                     this);
         if (cause != null) {
             signal.initCause(cause);
         }
-        processShutdownSignal(signal);
-
-        // Now that we're in quiescing state, send channel.close and
-        // wait for the reply. Note that we can't use regular old rpc
-        // or exnWrappingRpc here, since _isOpen is false. We use
-        // quiescingRpc instead. We ignore the result. (It's always
-        // close-ok.)
-        try {
-            quiescingRpc(reason,
-                         CLOSING_TIMEOUT,
-                         new AMQCommand(new Channel.CloseOk()));
-        } catch (ShutdownSignalException sse) {
-            // Ignore.
+        
+        BlockingRpcContinuation<AMQCommand> k = new SimpleBlockingRpcContinuation();
+        // Synchronize the block below to avoid race conditions in case
+        // connnection wants to send Connection-CloseOK
+        synchronized(this) {
+            processShutdownSignal(signal);
+            quiescingRpc(reason, k);
         }
-
-        // Now we know everything's been cleaned up and there should
-        // be no more surprises arriving on the wire. Release the
-        // channel number, and dissociate this ChannelN instance from
-        // our connection so that any further frames inbound on this
-        // channel can be caught as the errors they are.
-        releaseChannelNumber();
+        
+        try {
+            // Now that we're in quiescing state, channel.close was sent and
+            // we wait for the reply. We ignore the result. (It's always
+            // close-ok.)
+            k.getReply(-1);
+        } catch (TimeoutException ise) {
+            // Will never happen since we wait infinitely
+        } finally {
+        
+            // Now we know everything's been cleaned up and there should
+            // be no more surprises arriving on the wire. Release the
+            // channel number, and dissociate this ChannelN instance from
+            // our connection so that any further frames inbound on this
+            // channel can be caught as the errors they are.
+            releaseChannelNumber();
+            notifyListeners();
+        }
     }
 
     /**
@@ -365,10 +377,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
         }
-        Basic.Publish publish = new Basic.Publish(ticket, exchange, routingKey,
-                                                          mandatory, immediate);
-        AMQCommand command = new AMQCommand(publish, useProps, body);
-        command.transmit(this);
+        transmit(new AMQCommand(new Basic.Publish(ticket, exchange, routingKey,
+                                                  mandatory, immediate),
+                                useProps, body));
     }
 
     /**
@@ -416,10 +427,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
      */
     public Exchange.DeleteOk exchangeDelete(int ticket, String exchange, boolean ifUnused)
-	throws IOException
+        throws IOException
     {
-	return (Exchange.DeleteOk)
-	    exnWrappingRpc(new Exchange.Delete(ticket, exchange, ifUnused, false)).getMethod();
+        return (Exchange.DeleteOk)
+            exnWrappingRpc(new Exchange.Delete(ticket, exchange, ifUnused, false)).getMethod();
     }
 
     /**
@@ -428,9 +439,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
      */
     public Exchange.DeleteOk exchangeDelete(int ticket, String exchange)
-	throws IOException
+        throws IOException
     {
-	return exchangeDelete(ticket, exchange, false);
+        return exchangeDelete(ticket, exchange, false);
     }
 
     /**
@@ -479,7 +490,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
      */
     public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclare(int ticket)
-	throws IOException
+        throws IOException
     {
         return queueDeclare(ticket, "", false, false, true, true, null);
     }
@@ -490,10 +501,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.DeleteOk
      */
     public Queue.DeleteOk queueDelete(int ticket, String queue, boolean ifUnused, boolean ifEmpty)
-	throws IOException
+        throws IOException
     {
-	return (Queue.DeleteOk)
-	    exnWrappingRpc(new Queue.Delete(ticket, queue, ifUnused, ifEmpty, false)).getMethod();
+        return (Queue.DeleteOk)
+            exnWrappingRpc(new Queue.Delete(ticket, queue, ifUnused, ifEmpty, false)).getMethod();
     }
 
     /**
@@ -502,7 +513,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.DeleteOk
      */
     public Queue.DeleteOk queueDelete(int ticket, String queue)
-	throws IOException
+    throws IOException
     {
         return queueDelete(ticket, queue, false, false);
     }
@@ -704,9 +715,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Tx.SelectOk
      */
     public Tx.SelectOk txSelect()
-	throws IOException
+        throws IOException
     {
-	return (Tx.SelectOk) exnWrappingRpc(new Tx.Select()).getMethod();
+        return (Tx.SelectOk) exnWrappingRpc(new Tx.Select()).getMethod();
     }
 
     /**
@@ -715,9 +726,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Tx.CommitOk
      */
     public Tx.CommitOk txCommit()
-	throws IOException
+        throws IOException
     {
-	return (Tx.CommitOk) exnWrappingRpc(new Tx.Commit()).getMethod();
+        return (Tx.CommitOk) exnWrappingRpc(new Tx.Commit()).getMethod();
     }
 
     /**
@@ -726,8 +737,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Tx.RollbackOk
      */
     public Tx.RollbackOk txRollback()
-	throws IOException
+        throws IOException
     {
-	return (Tx.RollbackOk) exnWrappingRpc(new Tx.Rollback()).getMethod();
+        return (Tx.RollbackOk) exnWrappingRpc(new Tx.Rollback()).getMethod();
     }
 }

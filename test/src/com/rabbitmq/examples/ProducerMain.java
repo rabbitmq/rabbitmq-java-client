@@ -163,9 +163,9 @@ public class ProducerMain implements Runnable {
                 _channel.txCommit();
         }
 
-        _channel.close(200, "Closing ch1 with no error");
+        _channel.close();
         System.out.println("Closing.");
-        _connection.close(200, "Goodbye.");
+        _connection.close();
         System.out.println("Leaving ProducerMain.run().");
     }
 

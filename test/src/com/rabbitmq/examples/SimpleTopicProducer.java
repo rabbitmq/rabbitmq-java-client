@@ -66,8 +66,8 @@ public class SimpleTopicProducer {
 
             System.out.println("Sending to exchange " + exchange + ", topic " + topic);
             ch.basicPublish(ticket, exchange, topic, null, message.getBytes());
-            ch.close(200, "Closing the channel");
-            conn.close(200, "Closing the connection");
+            ch.close();
+            conn.close();
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
             e.printStackTrace();

@@ -37,7 +37,7 @@ import javax.net.SocketFactory;
 import com.rabbitmq.client.AMQP;
 
 /**
- * A socket-based frame handler. 
+ * A socket-based frame handler.
  */
 
 public class SocketFrameHandler implements FrameHandler {
@@ -58,7 +58,7 @@ public class SocketFrameHandler implements FrameHandler {
 
     // Note, we use each of these to synchronize on to make sure we don't try to use them
     // twice simultaneously.
-    
+
     /**
      * Instantiate a SocketFrameHandler.
      * @param factory the socket factory to use to build our Socket - may be SSLSocketFactory etc
@@ -74,6 +74,8 @@ public class SocketFrameHandler implements FrameHandler {
         _host = hostName;
         _port = portNumber;
         _socket = factory.createSocket(_host, _port);
+        //disable Nagle's algorithm, for more consistently low latency
+        _socket.setTcpNoDelay(true);
 
         _inputStream = new DataInputStream(new BufferedInputStream(_socket.getInputStream()));
         _outputStream = new DataOutputStream(new BufferedOutputStream(_socket.getOutputStream()));
@@ -98,7 +100,7 @@ public class SocketFrameHandler implements FrameHandler {
     {
         return _socket.getSoTimeout();
     }
-    
+
     /**
      * Write a connection header to the underlying socket, containing
      * the specified version information, kickstarting the AMQP

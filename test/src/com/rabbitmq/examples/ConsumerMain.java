@@ -126,10 +126,10 @@ public class ConsumerMain implements Runnable {
         channel.queueDelete(ticket, completionQueue);
         
         System.out.println("Closing the channel.");
-        channel.close(200, "Closing channel with no error");
+        channel.close();
         
         System.out.println("Closing the connection.");
-        _connection.close(200, "Goodbye.");
+        _connection.close();
         
         System.out.println("Leaving ConsumerMain.run().");
     }

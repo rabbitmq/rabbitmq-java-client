@@ -53,7 +53,7 @@ public class HelloJsonClient {
             numbers.add(3);
             System.out.println("1 + 2 + 3 = " + service.sum(numbers));
 
-            conn.close(200, "OK");
+            conn.close();
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
             e.printStackTrace();

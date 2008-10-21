@@ -29,9 +29,11 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
@@ -39,33 +41,34 @@ import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
 /**
  * Concrete class representing and managing an AMQP connection to a broker.
  * <p>
  * To connect to a broker,
- * 
+ *
  * <pre>
  * AMQConnection conn = new AMQConnection(hostName, portNumber);
  * conn.open(userName, portNumber, virtualHost);
  * </pre>
- * 
+ *
  * Then open a channel and retrieve an access ticket:
- * 
+ *
  * <pre>
  * ChannelN ch1 = conn.createChannel(1);
  * ch1.open(&quot;&quot;);
  * int ticket = ch1.accessRequest(realmName);
  * </pre>
  */
-public class AMQConnection implements Connection {
+public class AMQConnection extends ShutdownNotifierComponent implements Connection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
 
     /** Timeout used while waiting for a connection.close-ok (milliseconds) */
     public static final int CONNECTION_CLOSING_TIMEOUT = 10000;
-    
+
     private static final Version clientVersion =
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
 
@@ -88,18 +91,17 @@ public class AMQConnection implements Connection {
     /** Flag controlling the main driver loop's termination */
     public volatile boolean _running = false;
 
-    /**
-     * When this value is null, the connection is in an "open"
-     * state. When non-null, the connection is in "closed" state, and
-     * this value indicates the circumstances of the shutdown.
-     */
-    public volatile ShutdownSignalException _shutdownCause = null;
-
     /** Maximum frame length, or zero if no limit is set */
     public int _frameMax;
 
     /** Handler for (otherwise-unhandled) exceptions that crop up in the mainloop. */
     public final ExceptionHandler _exceptionHandler;
+
+    /**
+     * Object used for blocking main application thread when doing all the necessary
+     * connection shutdown operations
+     */
+    public BlockingCell<Object> _appContinuation = new BlockingCell<Object>();
 
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
@@ -109,15 +111,11 @@ public class AMQConnection implements Connection {
         _channelManager.disconnectChannel(channelNumber);
     }
 
-    public boolean isOpen() {
-        return _shutdownCause == null;
-    }
-
     public void ensureIsOpen()
-        throws IllegalStateException
+        throws AlreadyClosedException
     {
         if (!isOpen()) {
-            throw new IllegalStateException("Attempt to use closed connection");
+            throw new AlreadyClosedException("Attempt to use closed connection", this);
         }
     }
 
@@ -268,12 +266,12 @@ public class AMQConnection implements Connection {
     /**
      * Public API - creates a new channel using the specified channel number.
      */
-    
+
     public Channel createChannel(int channelNumber) throws IOException {
         ensureIsOpen();
         return _channelManager.createChannel(this, channelNumber);
     }
-    
+
     /**
      * Public API - creates a new channel using an internally allocated channel number.
      */
@@ -340,19 +338,17 @@ public class AMQConnection implements Connection {
             _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
             _frameHandler.sendHeader();
 
-            if (!isOpen()) {
-                // See bug 17389. The MainLoop could have shut down already in
-                // which case we don't want to wait forever for a reply.
-                
-                // There is no race if the MainLoop shuts down after enqueuing
-                // the RPC because if that happens the channel will correctly
-                // pass the exception into RPC, waking it up.
-                throw _shutdownCause;
-            }
+            // See bug 17389. The MainLoop could have shut down already in
+            // which case we don't want to wait forever for a reply.
+
+            // There is no race if the MainLoop shuts down after enqueuing
+            // the RPC because if that happens the channel will correctly
+            // pass the exception into RPC, waking it up.
+            ensureIsOpen();
 
             AMQP.Connection.Start connStart =
                 (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
-            
+
             Version serverVersion =
                 new Version(connStart.getVersionMajor(),
                             connStart.getVersionMinor());
@@ -449,7 +445,8 @@ public class AMQConnection implements Connection {
                                     // channel zero that aren't Connection.CloseOk) must
                                     // be discarded.
                                     ChannelN channel = _channelManager.getChannel(frame.channel);
-                                    channel.handleFrame(frame); // Should check for null here?
+                                    // FIXME: catch NullPointerException and throw more informative one?
+                                    channel.handleFrame(frame);
                                 }
                             }
                         }
@@ -470,10 +467,19 @@ public class AMQConnection implements Connection {
                 if (isOpen()) {
                     shutdown(ex, false, ex);
                 }
+            } finally {
+                // Finally, shut down our underlying data connection.
+                _frameHandler.close();
+                
+                // Set shutdown exception for any outstanding rpc,
+                // so that it does not wait infinitely for Connection.CloseOk.
+                // This can only happen when the broker closed the socket
+                // unexpectedly.
+                _channel0.notifyOutstandingRpc(_shutdownCause);
+                
+                _appContinuation.set(null);
+                notifyListeners();
             }
-
-            // Finally, shut down our underlying data connection.
-            _frameHandler.close();
         }
     }
 
@@ -500,7 +506,7 @@ public class AMQConnection implements Connection {
      * Private API - Called when a frame-read operation times out. Checks to
      * see if too many heartbeats have been missed, and if so, throws
      * MissedHeartbeatException.
-     * 
+     *
      * @throws MissedHeartbeatException
      *                 if too many silent timeouts have gone by
      */
@@ -534,33 +540,54 @@ public class AMQConnection implements Connection {
         // See the detailed comments in ChannelN.processAsync.
 
         Method method = c.getMethod();
-        if (isOpen()) {
-            // Normal command.
-            if (method instanceof AMQP.Connection.Close) {
-                handleConnectionClose(c);
-                return true;
-            } else {
-                return false;
-            }
+        
+        if (method instanceof AMQP.Connection.Close) {
+            handleConnectionClose(c);
+            return true;
         } else {
-            // Quiescing.
-            if (method instanceof AMQP.Connection.CloseOk) {
-                // It's our final "RPC".
+            if (isOpen()) {
+                // Normal command.
                 return false;
             } else {
-                // Ignore all others.
-                return true;
+                // Quiescing.
+                if (method instanceof AMQP.Connection.CloseOk) {
+                    // It's our final "RPC".
+                    return false;
+                } else {
+                    // Ignore all others.
+                    return true;
+                }
             }
         }
     }
 
     public void handleConnectionClose(Command closeCommand) {
+        shutdown(closeCommand, false, null);
         try {
-            _channel0.transmit(new AMQImpl.Connection.CloseOk());
+            _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
-        shutdown(closeCommand, false, null);
+        _heartbeat = 0; // Do not try to send heartbeats after CloseOk   
+        new SocketCloseWait();
+    }
+    
+    private class SocketCloseWait extends Thread {
+        public SocketCloseWait() {
+            start();
+        }
+        
+        @Override public void run() {
+            try {
+                _appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
+            } catch (TimeoutException ise) {
+                // Broker didn't close socket on time, force socket close
+                // FIXME: notify about timeout exception?
+                _frameHandler.close();
+            } finally {
+                _running = false;
+            }
+        }
     }
 
     /**
@@ -572,49 +599,113 @@ public class AMQConnection implements Connection {
                          boolean initiatedByApplication,
                          Throwable cause)
     {
-        synchronized (this) {
-            ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-            _shutdownCause = new ShutdownSignalException(true,
-                                                         initiatedByApplication,
-                                                         reason);
+        try {
+            synchronized (this) {
+                ensureIsOpen(); // invariant: we should never be shut down more than once per instance
+                ShutdownSignalException sse = new ShutdownSignalException(true,
+                                                             initiatedByApplication,
+                                                             reason, this);
+                sse.initCause(cause);
+                _shutdownCause = sse;
+            }
+
+            _channel0.processShutdownSignal(_shutdownCause);
+        } catch (AlreadyClosedException ace) {
+            if (initiatedByApplication)
+                throw ace;
         }
-        if (cause != null) {
-            _shutdownCause.initCause(cause);
-        }
-        _channel0.processShutdownSignal(_shutdownCause);
         _channelManager.handleSignal(_shutdownCause);
     }
 
-    /**
-     * Public API - Close this connection with the given code and message.
-     * See the comments in ChannelN.close() - we're very similar.
-     */
+    public void close()
+        throws IOException
+    {
+        close(-1);
+    }
+
+    public void close(int timeout)
+        throws IOException
+    {
+        close(AMQP.REPLY_SUCCESS, "OK", timeout);
+    }
+
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
-        close(closeCode, closeMessage, true, null);
+        close(closeCode, closeMessage, -1);
     }
 
-    /**
-     * Protected API - Close this connection with the given code, message and source.
-     */
+    public void close(int closeCode, String closeMessage, int timeout)
+        throws IOException
+    {
+        close(closeCode, closeMessage, true, null, timeout, false);
+    }
+
+    public void abort()
+    {
+        abort(-1);
+    }
+
+    public void abort(int closeCode, String closeMessage)
+    {
+       abort(closeCode, closeMessage, -1);
+    }
+
+    public void abort(int timeout)
+    {
+        abort(AMQP.REPLY_SUCCESS, "OK", timeout);
+    }
+
+    public void abort(int closeCode, String closeMessage, int timeout)
+    {
+        try {
+            close(closeCode, closeMessage, true, null, timeout, true);
+        } catch (IOException e) {
+            Utility.emptyStatement();
+        }
+    }
+    
     public void close(int closeCode,
                       String closeMessage,
                       boolean initiatedByApplication,
                       Throwable cause)
         throws IOException
     {
+        close(closeCode, closeMessage, initiatedByApplication, cause, 0, false);
+    }
+
+    /**
+     * Protected API - Close this connection with the given code, message, source
+     * and timeout value for all the close operations to complete.
+     * Specifies if any encountered exceptions should be ignored.
+     */
+    public void close(int closeCode,
+                      String closeMessage,
+                      boolean initiatedByApplication,
+                      Throwable cause,
+                      int timeout,
+                      boolean abort)
+        throws IOException
+    {
         try {
             AMQImpl.Connection.Close reason =
                 new AMQImpl.Connection.Close(closeCode, closeMessage, 0, 0);
             shutdown(reason, initiatedByApplication, cause);
-            _channel0.quiescingRpc(reason,
-                                   CONNECTION_CLOSING_TIMEOUT,
-                                   new AMQCommand(new AMQImpl.Connection.CloseOk()));
+            AMQChannel.SimpleBlockingRpcContinuation k =
+                new AMQChannel.SimpleBlockingRpcContinuation();
+            _channel0.quiescingRpc(reason, k);
+            k.getReply(timeout);
+        } catch (TimeoutException tte) {
+            if (!abort)
+                throw new ShutdownSignalException(true, true, tte, this);
         } catch (ShutdownSignalException sse) {
-            // Ignore.
+            if (!abort)
+                throw sse;
+        } catch (IOException ioe) {
+            if (!abort)
+                throw ioe;
         } finally {
-            _running = false;
+            _frameHandler.close();
         }
     }
 
