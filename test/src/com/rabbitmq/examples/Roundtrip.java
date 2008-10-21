@@ -319,7 +319,7 @@ public class Roundtrip {
             long ssum = 0;
             for (int i = 0; i < ss; i++) {
                 sum += ssamples[i];
-                ssum += ssamples[i] * samples[i];
+                ssum += ssamples[i] * ssamples[i];
             }
 
             mean = sum / ss;
