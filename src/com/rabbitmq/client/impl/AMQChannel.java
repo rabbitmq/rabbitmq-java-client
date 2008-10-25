@@ -224,7 +224,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * @param notifyRpc the flag indicating whether any remaining rpc continuation should be
      *                  notified with the given signal
      */
-    public void processShutdownSignal(ShutdownSignalException signal, boolean ignoreClosed, boolean notifyRpc) {
+    public void processShutdownSignal(ShutdownSignalException signal,
+                                      boolean ignoreClosed,
+                                      boolean notifyRpc) {
         try {
             synchronized (this) {
                 if (!ignoreClosed)
@@ -236,16 +238,6 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             if (notifyRpc)
                 notifyOutstandingRpc(signal);
         }
-    }
-    
-    /**
-     * Protected API - respond, in the driver thread, to a {@link ShutdownSignalException}.
-     * The method behaves in the same way as processShutdownSignal(ShutdownSignalException, boolean, boolean)
-     * with the only difference that any continuing rpc is always notified of the shutdown signal.
-     * @param signal the signal to handle
-     */
-    public void processShutdownSignal(ShutdownSignalException signal, boolean ignoreClosed) {
-        processShutdownSignal(signal, ignoreClosed, true);
     }
     
     public void notifyOutstandingRpc(ShutdownSignalException signal) {

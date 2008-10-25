@@ -68,7 +68,7 @@ public class ChannelManager {
         }
         for (AMQChannel channel : channels) {
             disconnectChannel(channel.getChannelNumber());
-            channel.processShutdownSignal(signal, true);
+            channel.processShutdownSignal(signal, true, true);
         }
     }
 
