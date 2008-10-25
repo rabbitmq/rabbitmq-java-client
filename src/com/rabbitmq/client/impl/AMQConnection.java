@@ -103,6 +103,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public BlockingCell<Object> _appContinuation = new BlockingCell<Object>();
 
+    /** Flag indicating whether the client received Connection.Close message from the broker */
+    public boolean _brokerInitiatedShutdown = false;
+    
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
      * @param channelNumber the number of the channel to disconnect
@@ -191,6 +194,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _missedHeartbeats = 0;
         _heartbeat = 0;
         _exceptionHandler = exceptionHandler;
+        _brokerInitiatedShutdown = false;
 
         new MainLoop(); // start the main loop going
 
@@ -457,26 +461,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     }
                 }
             } catch (EOFException ex) {
-                if (isOpen()) {
-                    System.err.println("AMQConnection.mainLoop: connection close");
-                    shutdown(ex, false, ex);
-                }
+                if (!_brokerInitiatedShutdown)
+                    shutdown(ex, false, ex, true);
             } catch (Throwable ex) {
                 _exceptionHandler.handleUnexpectedConnectionDriverException(AMQConnection.this,
                                                                             ex);
-                if (isOpen()) {
-                    shutdown(ex, false, ex);
-                }
+                shutdown(ex, false, ex, true);
             } finally {
                 // Finally, shut down our underlying data connection.
                 _frameHandler.close();
-                
-                // Set shutdown exception for any outstanding rpc,
-                // so that it does not wait infinitely for Connection.CloseOk.
-                // This can only happen when the broker closed the socket
-                // unexpectedly.
-                _channel0.notifyOutstandingRpc(_shutdownCause);
-                
                 _appContinuation.set(null);
                 notifyListeners();
             }
@@ -562,18 +555,22 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     public void handleConnectionClose(Command closeCommand) {
-        shutdown(closeCommand, false, null);
+        ShutdownSignalException sse = shutdown(closeCommand, false, null, false);
         try {
             _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
-        _heartbeat = 0; // Do not try to send heartbeats after CloseOk   
-        new SocketCloseWait();
+        _heartbeat = 0; // Do not try to send heartbeats after CloseOk
+        _brokerInitiatedShutdown = true;
+        new SocketCloseWait(sse);
     }
     
     private class SocketCloseWait extends Thread {
-        public SocketCloseWait() {
+        private ShutdownSignalException cause;
+        
+        public SocketCloseWait(ShutdownSignalException sse) {
+            cause = sse;
             start();
         }
         
@@ -586,6 +583,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 _frameHandler.close();
             } finally {
                 _running = false;
+                _channel0.notifyOutstandingRpc(cause);
             }
         }
     }
@@ -594,27 +592,26 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Protected API - causes all attached channels to terminate with
      * a ShutdownSignal built from the argument, and stops this
      * connection from accepting further work from the application.
+     * 
+     * @return a shutdown signal built using the given arguments
      */
-    public void shutdown(Object reason,
+    public ShutdownSignalException shutdown(Object reason,
                          boolean initiatedByApplication,
-                         Throwable cause)
+                         Throwable cause,
+                         boolean notifyRpc)
     {
-        try {
-            synchronized (this) {
-                ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-                ShutdownSignalException sse = new ShutdownSignalException(true,
-                                                             initiatedByApplication,
-                                                             reason, this);
-                sse.initCause(cause);
-                _shutdownCause = sse;
-            }
-
-            _channel0.processShutdownSignal(_shutdownCause);
-        } catch (AlreadyClosedException ace) {
+        ShutdownSignalException sse = new ShutdownSignalException(true,initiatedByApplication,
+                                                                  reason, this);
+        sse.initCause(cause);
+        synchronized (this) {
             if (initiatedByApplication)
-                throw ace;
+                ensureIsOpen(); // invariant: we should never be shut down more than once per instance
+            if (isOpen())
+                _shutdownCause = sse;
         }
-        _channelManager.handleSignal(_shutdownCause);
+        _channel0.processShutdownSignal(sse, !initiatedByApplication, notifyRpc);
+        _channelManager.handleSignal(sse);
+        return sse;
     }
 
     public void close()
@@ -690,7 +687,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         try {
             AMQImpl.Connection.Close reason =
                 new AMQImpl.Connection.Close(closeCode, closeMessage, 0, 0);
-            shutdown(reason, initiatedByApplication, cause);
+            shutdown(reason, initiatedByApplication, cause, true);
             AMQChannel.SimpleBlockingRpcContinuation k =
                 new AMQChannel.SimpleBlockingRpcContinuation();
             _channel0.quiescingRpc(reason, k);

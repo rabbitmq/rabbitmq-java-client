@@ -146,8 +146,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * Protected API - overridden to broadcast the signal to all
      * consumers before calling the superclass's method.
      */
-    @Override public void processShutdownSignal(ShutdownSignalException signal) {
-        super.processShutdownSignal(signal);
+    @Override public void processShutdownSignal(ShutdownSignalException signal,
+                                                boolean ignoreClosed,
+                                                boolean notifyRpc)
+    {
+        super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
         broadcastShutdownSignal(signal);
     }
 
@@ -223,7 +226,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                              command,
                                                                              this);
                 synchronized(this) {
-                    processShutdownSignal(signal);
+                    processShutdownSignal(signal, true, true);
                     quiescingTransmit(new Channel.CloseOk());
                 }
                 notifyListeners();
@@ -289,7 +292,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // Synchronize the block below to avoid race conditions in case
         // connnection wants to send Connection-CloseOK
         synchronized(this) {
-            processShutdownSignal(signal);
+            processShutdownSignal(signal, !initiatedByApplication, true);
             quiescingRpc(reason, k);
         }
         
