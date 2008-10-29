@@ -1,17 +1,12 @@
 package com.rabbitmq.client.test.performance;
 
-import org.apache.commons.cli.*;
+import com.rabbitmq.client.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
 
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.AMQP;
-
-import java.util.Map;
-import java.util.HashMap;
-import java.util.TreeMap;
-import java.util.Stack;
+import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.Stack;
 
 /**
  * This tests the scalability of the routing tables in two aspects:
@@ -67,8 +62,8 @@ public class ScalabilityTest {
 
         public void analyse(int level) {
             System.out.println("--------------------");
-            System.out.println("| LEVEL = " + level);
-            System.out.println("--------------------");
+            System.out.println("| Create/Delete");
+            System.out.println("| Level = " + level);
             printOutwardStats();
             System.out.println("| ..................");
             printInwardStats();
@@ -91,11 +86,6 @@ public class ScalabilityTest {
                 float rate = wallclock  / (float)  amount / 1000;
                 printAverage(amount, rate);
             }
-        }
-
-        private void printAverage(int amount, float rate) {
-            String rateString = new DecimalFormat("0.00").format(rate);
-            System.out.println("| " + amount + " -> " + rateString + " us/op");
         }
 
     }
@@ -133,6 +123,8 @@ public class ScalabilityTest {
 
             Measurements measurements = new Measurements(params, x_limit);
 
+            System.out.println("---------------------------------");
+            System.out.println("| Routing, n = " + params.n + ", level = " + level);
 
             // go out
             for (int j = 0; j < x_limit; j++) {
@@ -148,7 +140,9 @@ public class ScalabilityTest {
                 }
 
                 measurements.addDataPoint(j);
+                timeRouting(channel, j);
             }
+
 
             // flip the egg timer and start to go back
             measurements.flipEggTimer();
@@ -177,6 +171,57 @@ public class ScalabilityTest {
         con.close();
     }
 
+    private void timeRouting(Channel channel, int level) throws IOException, InterruptedException {
+        // route some messages
+        boolean mandatory = true;
+        boolean immdediate = true;
+        ReturnHandler returnHandler = new ReturnHandler(params);
+        channel.setReturnListener(returnHandler);
+
+        for (int n = 0; n < params.n; n ++) {
+            String key = randomString();
+            channel.basicPublish(1, "amq.direct", key, mandatory, immdediate,
+                                 MessageProperties.MINIMAL_BASIC, null);
+        }
+
+        // wait for the returns to come back
+        int backoff = 10;
+        int steps = 0;
+        while (returnHandler.returns > 0) {
+            Thread.sleep(backoff * steps++);
+        }
+        returnHandler.printStats(level);
+    }
+
+    static class ReturnHandler implements ReturnListener {
+
+        int returns;
+        long start, finish;
+        Parameters params;
+
+        ReturnHandler(Parameters p) {
+            params = p;
+            returns = p.n;
+            start = System.nanoTime();
+        }
+
+        void printStats(int level) {
+            long wallclock = finish - start;
+            float rate = wallclock  / (float) params.n / 1000;
+            // TODO Not quite sure whether printAverage(n, rate) would be more correct
+            printAverage(pow(params.b, level), rate);
+        }
+
+        public void handleBasicReturn(int replyCode, String replyText,
+                                      String exchange, String routingKey,
+                                      AMQP.BasicProperties properties, byte[] body) throws IOException {
+            returns--;
+            if (returns == 0) {
+                finish = System.nanoTime();
+            }
+        }
+    }
+
     private static Parameters setupCLI(String [] args) {
         CLIHelper helper = CLIHelper.defaultHelper();
 
@@ -197,7 +242,7 @@ public class ScalabilityTest {
         params.b =  CLIHelper.getOptionValue(cmd, "b", 10);
 
         params.x =  CLIHelper.getOptionValue(cmd, "x", 4);
-        params.y =  CLIHelper.getOptionValue(cmd, "x", 4);
+        params.y =  CLIHelper.getOptionValue(cmd, "y", 4);
 
         return params;
     }
@@ -210,6 +255,11 @@ public class ScalabilityTest {
         int tmp = 1;
         for( int i = 0; i < y; i++ ) tmp *= x;
         return tmp;
+    }
+
+    static void printAverage(int amount, float rate) {
+        String rateString = new DecimalFormat("0.00").format(rate);
+        System.out.println("| " + amount + " -> " + rateString + " us/op");
     }
 
 }
