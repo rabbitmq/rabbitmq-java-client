@@ -26,7 +26,7 @@ public class ScalabilityTest {
         int x, y;
 
         int combinedLimit() {
-            return x * y / 2;
+            return x + y / 2;
         }
     }
 
@@ -128,7 +128,7 @@ public class ScalabilityTest {
             // go out
             for (int j = 0; j < params.x; j++) {
 
-                if (i * j > params.combinedLimit()) break loop;
+                if (i + j > params.combinedLimit()) break loop;
 
                 final int amplitude = pow(params.b, j);
 
