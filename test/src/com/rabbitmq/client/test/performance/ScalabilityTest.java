@@ -26,7 +26,7 @@ public class ScalabilityTest {
         int x, y;
 
         int combinedLimit() {
-            return x + y / 2;
+            return (x + y) / 2;
         }
     }
 
