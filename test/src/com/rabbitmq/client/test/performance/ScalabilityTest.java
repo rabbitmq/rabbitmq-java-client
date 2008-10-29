@@ -53,7 +53,7 @@ public class ScalabilityTest {
             long now = System.nanoTime();
             long split = now - start;
             if (flipped) {
-                backNine[i] = split;
+                backNine[i + 1] = split;
             }
             else {
                 frontNine[i] = split; 
@@ -71,12 +71,16 @@ public class ScalabilityTest {
 
         private void printInwardStats() {
             final int total = pow(params.b, backNine.length);
-            for (int i = backNine.length - 1; i > -1; i --) {
+            for (int i = backNine.length - 1; i > 0; i --) {
                 final int amount = pow(params.b, i);
                 final long wallclock = backNine[i];
                 float rate = wallclock  / (float)  (total - amount) / 1000;
-                printAverage(amount, rate);
+                printAverage(pow(params.b, i - 1), rate);
             }
+
+            float rate = backNine[0]  / (float) total / 1000;
+            printAverage(0, rate);            
+
         }
 
         private void printOutwardStats() {
@@ -149,13 +153,15 @@ public class ScalabilityTest {
 
 
             // go back
-            int max_exp = x_limit - 1;
+            int max_exp = x_limit - 2;
             int mark = pow(params.b, max_exp);
             while(true) {
                 channel.queueDelete(1, queues.pop());
                 if (queues.size() == mark) {
                     measurements.addDataPoint(max_exp);
                     if (mark == 1) {
+                        channel.queueDelete(1, queues.pop());
+                        measurements.addDataPoint(-1);                        
                         break;
                     }
                     else {
