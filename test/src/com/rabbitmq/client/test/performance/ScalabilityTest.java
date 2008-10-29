@@ -10,6 +10,7 @@ import com.rabbitmq.client.AMQP;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.TreeMap;
+import java.util.Stack;
 import java.text.DecimalFormat;
 
 /**
@@ -37,36 +38,30 @@ public class ScalabilityTest {
     private static class Measurements {
 
         Parameters params;
-
-        Map<Integer, Long> forwardResults = new TreeMap<Integer, Long>();
-        TreeMap<Integer, Long> backwardResults = new TreeMap<Integer, Long>();
-
-        int current = 1;
+        long[] frontNine, backNine;
+        boolean flipped = false;
         long start;
-        int total;
 
-        public Measurements(Parameters p) {
-            params = p;
-            total = pow(params.b, params.x);
-            reset();
-        }
-
-        public void reset() {
+        public Measurements(Parameters p, final int magnitude) {
             start = System.nanoTime();
-            current--;
+            params = p;
+            frontNine = new long[magnitude];
+            backNine = new long[magnitude];
         }
 
-        public void addDataPoint(final int i, boolean forward) {
-            final int j = i + 1;
-            if (j == pow(params.b, current)) {
-                long now = System.nanoTime();
-                if (forward) {
-                    forwardResults.put(j, now - start);
-                    current++;
-                } else {
-                    backwardResults.put(current, now - start);
-                    current--;
-                }
+        public void flipEggTimer() {
+            flipped = true;
+            start = System.nanoTime();
+        }
+
+        public void addDataPoint(final int i) {
+            long now = System.nanoTime();
+            long split = now - start;
+            if (flipped) {
+                backNine[i] = split;
+            }
+            else {
+                frontNine[i] = split; 
             }
         }
 
@@ -74,33 +69,35 @@ public class ScalabilityTest {
             System.out.println("--------------------");
             System.out.println("| LEVEL = " + level);
             System.out.println("--------------------");
-            for (Map.Entry<Integer, Long> entry : forwardResults.entrySet()) {
-                final int amount = entry.getKey();
-                final long wallclock = entry.getValue();
-                float rate = wallclock  / (float)  amount / 1000;
-                String rateString = new DecimalFormat("0.00").format(rate);
-                System.out.println("| " + amount + " -> " + rateString + " us/op");
-            }
-
-            for (Map.Entry<Integer, Long> entry : backwardResults.entrySet()) {
-                final long wallclock = entry.getValue();
-                Integer higherkey = backwardResults.higherKey(entry.getKey());
-                if (null != higherkey) {
-                    long exp = entry.getKey();
-                    long amount = (params.b - 1) * pow(params.b, (int) exp);
-                    Long higherValue = backwardResults.get(higherkey);
-                    final long diff = wallclock - higherValue;
-                    float rate = diff / (float)  amount / 1000;
-                    String rateString = new DecimalFormat("0.00").format(rate);
-                    System.out.println("| " + amount + " -> " + rateString + " us/op");
-                }
-                else {
-                    System.out.println("| " + 1 + " -> " + wallclock / 1000 + " us/op");
-                }
-
-            }
-
+            printOutwardStats();
+            System.out.println("| ..................");
+            printInwardStats();
         }
+
+        private void printInwardStats() {
+            final int total = pow(params.b, backNine.length);
+            for (int i = backNine.length - 1; i > -1; i --) {
+                final int amount = pow(params.b, i);
+                final long wallclock = backNine[i];
+                float rate = wallclock  / (float)  (total - amount) / 1000;
+                printAverage(amount, rate);
+            }
+        }
+
+        private void printOutwardStats() {
+            for (int i = 0; i < frontNine.length; i ++) {
+                final int amount = pow(params.b, i);
+                final long wallclock = frontNine[i];
+                float rate = wallclock  / (float)  amount / 1000;
+                printAverage(amount, rate);
+            }
+        }
+
+        private void printAverage(int amount, float rate) {
+            String rateString = new DecimalFormat("0.00").format(rate);
+            System.out.println("| " + amount + " -> " + rateString + " us/op");
+        }
+
     }
 
     private Parameters params;
@@ -124,34 +121,56 @@ public class ScalabilityTest {
 
         // This use of min triangulates the search space so that you
         // if you have max x exponent of 6 and and max y of 6,
-        // you don't try to compute 36 points 
-        int x_space = pow(params.b, Math.min(params.x, params.combinedLimit()));
+        // you don't try to compute 36 points
 
-        for (int i = 0; i < params.y; i++) {
+        final int x_limit = Math.min(params.x, params.combinedLimit());
+        final int y_limit = Math.min(params.y, params.combinedLimit());
+
+        for (int i = 0; i < y_limit; i++) {
 
             final int level = pow(params.b, i);
-            String[] queues = new String[x_space];
+            Stack<String> queues = new Stack<String>();
 
-            Measurements measurements = new Measurements(params);
+            Measurements measurements = new Measurements(params, x_limit);
 
-            for (int j = 0; j < x_space; j++) {
 
-                AMQP.Queue.DeclareOk ok = channel.queueDeclare(1);
-                queues[j] = ok.getQueue();
-                for (int k = 0; k < level  ; k++) {
-                    channel.queueBind(1, ok.getQueue(), "amq.direct", randomString());
+            // go out
+            for (int j = 0; j < x_limit; j++) {
+
+                final int amplitude = pow(params.b, j);
+
+                for (int l = 0; l < amplitude; l++) {
+                    AMQP.Queue.DeclareOk ok = channel.queueDeclare(1);
+                    queues.push(ok.getQueue());
+                    for (int k = 0; k < level  ; k++) {
+                        channel.queueBind(1, ok.getQueue(), "amq.direct", randomString());
+                    }
                 }
-                measurements.addDataPoint(j, true);
+
+                measurements.addDataPoint(j);
             }
 
-            measurements.reset();
-            for (int j = x_space - 1; j > -1; j--) {
-                channel.queueDelete(1, queues[j]);
-                measurements.addDataPoint(j, false);
+            // flip the egg timer and start to go back
+            measurements.flipEggTimer();
+
+
+            // go back
+            int max_exp = x_limit - 1;
+            int mark = pow(params.b, max_exp);
+            while(true) {
+                channel.queueDelete(1, queues.pop());
+                if (queues.size() == mark) {
+                    measurements.addDataPoint(max_exp);
+                    if (mark == 1) {
+                        break;
+                    }
+                    else {
+                        mark = pow(params.b, --max_exp);
+                    }
+                }
             }
 
             measurements.analyse(level);
-
         }
 
         channel.close();
@@ -177,8 +196,8 @@ public class ScalabilityTest {
         params.n =  CLIHelper.getOptionValue(cmd, "n", 100);
         params.b =  CLIHelper.getOptionValue(cmd, "b", 10);
 
-        params.x =  CLIHelper.getOptionValue(cmd, "x", 3);
-        params.y =  CLIHelper.getOptionValue(cmd, "x", 3);
+        params.x =  CLIHelper.getOptionValue(cmd, "x", 4);
+        params.y =  CLIHelper.getOptionValue(cmd, "x", 4);
 
         return params;
     }
