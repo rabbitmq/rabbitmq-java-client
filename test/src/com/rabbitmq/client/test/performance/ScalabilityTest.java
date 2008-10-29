@@ -70,17 +70,15 @@ public class ScalabilityTest {
         }
 
         private void printInwardStats() {
-            for (int i = 0; i < backNine.length - 1; i++) {
+            long[] tmp = new long[backNine.length + 1];
+            System.arraycopy(backNine, 0, tmp, 0, backNine.length);
+
+            for (int i = 0; i < tmp.length - 1; i++) {
                 final int amount = pow(params.b, i);
-                final long wallclock = backNine[0] - backNine[i + 1];
+                final long wallclock = tmp[0] - tmp[i + 1];
                 float rate = wallclock / (float) amount / 1000;
                 printAverage(amount, rate);
             }
-            final int amount = pow(params.b, backNine.length - 1);
-            final float wallclock = backNine[0];
-            final float rate = wallclock / (float) amount / 1000;
-            printAverage(amount, rate);
-
         }
 
         private void printOutwardStats() {
