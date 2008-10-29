@@ -7,6 +7,7 @@ import org.apache.commons.cli.Option;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Stack;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * This tests the scalability of the routing tables in two aspects:
@@ -181,6 +182,8 @@ public class ScalabilityTest {
         ReturnHandler returnHandler = new ReturnHandler(params);
         channel.setReturnListener(returnHandler);
 
+        final long start = System.nanoTime();
+
         for (int n = 0; n < params.n; n ++) {
             String key = randomString();
             channel.basicPublish(1, "amq.direct", key, mandatory, immdediate,
@@ -188,40 +191,30 @@ public class ScalabilityTest {
         }
 
         // wait for the returns to come back
-        int backoff = 10;
-        int steps = 0;
-        while (returnHandler.returns > 0) {
-            Thread.sleep(backoff * steps++);
-        }
-        returnHandler.printStats(level);
+        returnHandler.latch.await();
+
+        // Compute the roundtrip time
+
+        final long finish = System.nanoTime();
+
+        final long wallclock = finish - start;
+        float rate = wallclock  / (float) params.n / 1000;
+        // TODO Not quite sure whether printAverage(n, rate) would be more correct
+        printAverage(pow(params.b, level), rate);
     }
 
     static class ReturnHandler implements ReturnListener {
 
-        int returns;
-        long start, finish;
-        Parameters params;
+        CountDownLatch latch;
 
         ReturnHandler(Parameters p) {
-            params = p;
-            returns = p.n;
-            start = System.nanoTime();
-        }
-
-        void printStats(int level) {
-            long wallclock = finish - start;
-            float rate = wallclock  / (float) params.n / 1000;
-            // TODO Not quite sure whether printAverage(n, rate) would be more correct
-            printAverage(pow(params.b, level), rate);
+            latch = new CountDownLatch(p.n);
         }
 
         public void handleBasicReturn(int replyCode, String replyText,
                                       String exchange, String routingKey,
                                       AMQP.BasicProperties properties, byte[] body) throws IOException {
-            returns--;
-            if (returns == 0) {
-                finish = System.nanoTime();
-            }
+            latch.countDown();
         }
     }
 
