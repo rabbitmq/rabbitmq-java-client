@@ -26,7 +26,7 @@ public class ScalabilityTest {
         int x, y;
 
         int combinedLimit() {
-            return (x + y);
+            return x * y / 2;
         }
     }
 
@@ -117,21 +117,20 @@ public class ScalabilityTest {
         // if you have max x exponent of 6 and and max y of 6,
         // you don't try to compute 36 points
 
-        final int x_limit = Math.min(params.x, params.combinedLimit());
-        final int y_limit = Math.min(params.y, params.combinedLimit());
-
-        for (int i = 0; i < y_limit; i++) {
+        loop: for (int i = 0; i < params.y; i++) {
 
             final int level = pow(params.b, i);
             Stack<String> queues = new Stack<String>();
 
-            Measurements measurements = new Measurements(params, x_limit);
+            Measurements measurements = new Measurements(params, params.x);
 
             System.out.println("---------------------------------");
             System.out.println("| Routing, n = " + params.n + ", level = " + level);
 
             // go out
-            for (int j = 0; j < x_limit; j++) {
+            for (int j = 0; j < params.x; j++) {
+
+                if (i * j > params.combinedLimit()) break loop;
 
                 final int amplitude = pow(params.b, j);
 
@@ -153,7 +152,7 @@ public class ScalabilityTest {
 
 
             // go back
-            int max_exp = x_limit - 2;
+            int max_exp = params.x - 2;
             int mark = pow(params.b, max_exp);
             while(true) {
                 channel.queueDelete(1, queues.pop());
