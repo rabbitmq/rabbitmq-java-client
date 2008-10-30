@@ -62,7 +62,7 @@ import com.rabbitmq.utility.Utility;
  * int ticket = ch1.accessRequest(realmName);
  * </pre>
  */
-public class AMQConnection extends ShutdownNotifierComponent implements Connection{
+public class AMQConnection extends ShutdownNotifierComponent implements Connection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
 
@@ -97,8 +97,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Handler for (otherwise-unhandled) exceptions that crop up in the mainloop. */
     public final ExceptionHandler _exceptionHandler;
 
-    public BlockingCell<Object> appContinuation = new BlockingCell<Object>();
+    /**
+     * Object used for blocking main application thread when doing all the necessary
+     * connection shutdown operations
+     */
+    public BlockingCell<Object> _appContinuation = new BlockingCell<Object>();
 
+    /** Flag indicating whether the client received Connection.Close message from the broker */
+    public boolean _brokerInitiatedShutdown = false;
+    
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
      * @param channelNumber the number of the channel to disconnect
@@ -187,6 +194,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _missedHeartbeats = 0;
         _heartbeat = 0;
         _exceptionHandler = exceptionHandler;
+        _brokerInitiatedShutdown = false;
 
         new MainLoop(); // start the main loop going
 
@@ -441,7 +449,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                     // channel zero that aren't Connection.CloseOk) must
                                     // be discarded.
                                     ChannelN channel = _channelManager.getChannel(frame.channel);
-//                                  FIXME: catch NullPointerException and throw more informative one?
+                                    // FIXME: catch NullPointerException and throw more informative one?
                                     channel.handleFrame(frame);
                                 }
                             }
@@ -453,23 +461,17 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     }
                 }
             } catch (EOFException ex) {
-                if (isOpen()) {
-                    System.err.println("AMQConnection.mainLoop: connection close");
-                    shutdown(ex, false, ex);
-                }
+                if (!_brokerInitiatedShutdown)
+                    shutdown(ex, false, ex, true);
             } catch (Throwable ex) {
                 _exceptionHandler.handleUnexpectedConnectionDriverException(AMQConnection.this,
                                                                             ex);
-                if (isOpen()) {
-                    shutdown(ex, false, ex);
-                }
-            }
-
-            // Finally, shut down our underlying data connection.
-            _frameHandler.close();
-
-            synchronized(this) {
-                appContinuation.set(null);
+                shutdown(ex, false, ex, true);
+            } finally {
+                // Finally, shut down our underlying data connection.
+                _frameHandler.close();
+                _appContinuation.set(null);
+                notifyListeners();
             }
         }
     }
@@ -531,120 +533,103 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         // See the detailed comments in ChannelN.processAsync.
 
         Method method = c.getMethod();
-        if (isOpen()) {
-            // Normal command.
-            if (method instanceof AMQP.Connection.Close) {
-                handleConnectionClose(c);
-                return true;
-            } else {
-                return false;
-            }
+        
+        if (method instanceof AMQP.Connection.Close) {
+            handleConnectionClose(c);
+            return true;
         } else {
-            // Quiescing.
-            if (method instanceof AMQP.Connection.CloseOk) {
-                // It's our final "RPC".
+            if (isOpen()) {
+                // Normal command.
                 return false;
             } else {
-                // Ignore all others.
-                return true;
+                // Quiescing.
+                if (method instanceof AMQP.Connection.CloseOk) {
+                    // It's our final "RPC".
+                    return false;
+                } else {
+                    // Ignore all others.
+                    return true;
+                }
             }
         }
     }
 
     public void handleConnectionClose(Command closeCommand) {
-        shutdown(closeCommand, false, null);
+        ShutdownSignalException sse = shutdown(closeCommand, false, null, false);
         try {
-            _channel0.transmit(new AMQImpl.Connection.CloseOk());
+            _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
-
-        try {
-            synchronized(this) {
-                appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
-            }
-        } catch (TimeoutException ise) {
-            // Broker didn't close socket on time, force socket close
-            // FIXME: notify about timeout exception?
-            _frameHandler.close();
-        } finally {
-            _running = false;
+        _heartbeat = 0; // Do not try to send heartbeats after CloseOk
+        _brokerInitiatedShutdown = true;
+        new SocketCloseWait(sse);
+    }
+    
+    private class SocketCloseWait extends Thread {
+        private ShutdownSignalException cause;
+        
+        public SocketCloseWait(ShutdownSignalException sse) {
+            cause = sse;
+            start();
         }
-        notifyListeners();
+        
+        @Override public void run() {
+            try {
+                _appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
+            } catch (TimeoutException ise) {
+                // Broker didn't close socket on time, force socket close
+                // FIXME: notify about timeout exception?
+                _frameHandler.close();
+            } finally {
+                _running = false;
+                _channel0.notifyOutstandingRpc(cause);
+            }
+        }
     }
 
     /**
      * Protected API - causes all attached channels to terminate with
      * a ShutdownSignal built from the argument, and stops this
      * connection from accepting further work from the application.
+     * 
+     * @return a shutdown signal built using the given arguments
      */
-    public void shutdown(Object reason,
+    public ShutdownSignalException shutdown(Object reason,
                          boolean initiatedByApplication,
-                         Throwable cause)
+                         Throwable cause,
+                         boolean notifyRpc)
     {
-        try {
-            synchronized (this) {
-                ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-                ShutdownSignalException sse = new ShutdownSignalException(true,
-                                                             initiatedByApplication,
-                                                             reason, this);
-                sse.initCause(cause);
-                _shutdownCause = sse;
-            }
-
-            _channel0.processShutdownSignal(_shutdownCause);
-        } catch (AlreadyClosedException ace) {
+        ShutdownSignalException sse = new ShutdownSignalException(true,initiatedByApplication,
+                                                                  reason, this);
+        sse.initCause(cause);
+        synchronized (this) {
             if (initiatedByApplication)
-                throw ace;
+                ensureIsOpen(); // invariant: we should never be shut down more than once per instance
+            if (isOpen())
+                _shutdownCause = sse;
         }
-        _channelManager.handleSignal(_shutdownCause);
+        _channel0.processShutdownSignal(sse, !initiatedByApplication, notifyRpc);
+        _channelManager.handleSignal(sse);
+        return sse;
     }
 
-    /**
-     * Public API - Close this connection and all its channels
-     */
     public void close()
         throws IOException
     {
         close(-1);
     }
 
-    /**
-     * Public API - Close this connection and all its channels
-     * with a given timeout
-     */
     public void close(int timeout)
         throws IOException
     {
-        close(200, "Goodbye", timeout);
+        close(AMQP.REPLY_SUCCESS, "OK", timeout);
     }
 
-    /**
-     * Public API - Abort this connection and all its channels
-     */
-    public void abort()
-    {
-        abort(-1);
-    }
-
-    public void abort(int timeout)
-    {
-
-        try {
-            close(200, "Goodbye", true, null, timeout, true);
-        } catch (IOException e) {
-            Utility.emptyStatement();
-        }
-    }
-
-    /**
-     * Protected API - Close this connection with the given code and message.
-     * See the comments in ChannelN.close() - we're very similar.
-     */
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
-        close(closeCode, closeMessage, 0);
+        close(closeCode, closeMessage, -1);
     }
 
     public void close(int closeCode, String closeMessage, int timeout)
@@ -653,6 +638,30 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         close(closeCode, closeMessage, true, null, timeout, false);
     }
 
+    public void abort()
+    {
+        abort(-1);
+    }
+
+    public void abort(int closeCode, String closeMessage)
+    {
+       abort(closeCode, closeMessage, -1);
+    }
+
+    public void abort(int timeout)
+    {
+        abort(AMQP.REPLY_SUCCESS, "OK", timeout);
+    }
+
+    public void abort(int closeCode, String closeMessage, int timeout)
+    {
+        try {
+            close(closeCode, closeMessage, true, null, timeout, true);
+        } catch (IOException e) {
+            Utility.emptyStatement();
+        }
+    }
+    
     public void close(int closeCode,
                       String closeMessage,
                       boolean initiatedByApplication,
@@ -663,7 +672,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Protected API - Close this connection with the given code, message and source.
+     * Protected API - Close this connection with the given code, message, source
+     * and timeout value for all the close operations to complete.
+     * Specifies if any encountered exceptions should be ignored.
      */
     public void close(int closeCode,
                       String closeMessage,
@@ -676,8 +687,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         try {
             AMQImpl.Connection.Close reason =
                 new AMQImpl.Connection.Close(closeCode, closeMessage, 0, 0);
-            shutdown(reason, initiatedByApplication, cause);
-            _channel0.quiescingRpc(reason, timeout);
+            shutdown(reason, initiatedByApplication, cause, true);
+            AMQChannel.SimpleBlockingRpcContinuation k =
+                new AMQChannel.SimpleBlockingRpcContinuation();
+            _channel0.quiescingRpc(reason, k);
+            k.getReply(timeout);
         } catch (TimeoutException tte) {
             if (!abort)
                 throw new ShutdownSignalException(true, true, tte, this);
@@ -688,10 +702,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             if (!abort)
                 throw ioe;
         } finally {
-            _running = false;
             _frameHandler.close();
         }
-        notifyListeners();
     }
 
     @Override public String toString() {

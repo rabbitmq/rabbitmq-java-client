@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
@@ -145,8 +146,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * Protected API - overridden to broadcast the signal to all
      * consumers before calling the superclass's method.
      */
-    @Override public void processShutdownSignal(ShutdownSignalException signal) {
-        super.processShutdownSignal(signal);
+    @Override public void processShutdownSignal(ShutdownSignalException signal,
+                                                boolean ignoreClosed,
+                                                boolean notifyRpc)
+    {
+        super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
         broadcastShutdownSignal(signal);
     }
 
@@ -221,8 +225,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                              false,
                                                                              command,
                                                                              this);
-                processShutdownSignal(signal);
-                transmit(new Channel.CloseOk());
+                synchronized(this) {
+                    processShutdownSignal(signal, true, true);
+                    quiescingTransmit(new Channel.CloseOk());
+                }
                 notifyListeners();
                 return true;
             } else {
@@ -246,9 +252,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    /**
-     * Public API - closes this channel with the given code and message
-     */
+    public void close()
+        throws IOException
+    {
+        close(AMQP.REPLY_SUCCESS, "OK");
+    }
+    
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
@@ -256,9 +265,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /**
-     * Protected API - close channel with code and message, indicating
+     * Protected API - Close channel with code and message, indicating
      * the source of the closure and a causing exception (null if
-     * none)
+     * none).
      */
     public void close(int closeCode,
                       String closeMessage,
@@ -278,28 +287,32 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (cause != null) {
             signal.initCause(cause);
         }
-        processShutdownSignal(signal);
-
-        // Now that we're in quiescing state, send channel.close and
-        // wait for the reply. Note that we can't use regular old rpc
-        // or exnWrappingRpc here, since _isOpen is false. We use
-        // quiescingRpc instead. We ignore the result. (It's always
-        // close-ok.)
+        
+        BlockingRpcContinuation<AMQCommand> k = new SimpleBlockingRpcContinuation();
+        // Synchronize the block below to avoid race conditions in case
+        // connnection wants to send Connection-CloseOK
+        synchronized(this) {
+            processShutdownSignal(signal, !initiatedByApplication, true);
+            quiescingRpc(reason, k);
+        }
+        
         try {
-            quiescingRpc(reason, -1);
+            // Now that we're in quiescing state, channel.close was sent and
+            // we wait for the reply. We ignore the result. (It's always
+            // close-ok.)
+            k.getReply(-1);
         } catch (TimeoutException ise) {
             // Will never happen since we wait infinitely
-        } catch (ShutdownSignalException sse) {
-            // Ignore.
+        } finally {
+        
+            // Now we know everything's been cleaned up and there should
+            // be no more surprises arriving on the wire. Release the
+            // channel number, and dissociate this ChannelN instance from
+            // our connection so that any further frames inbound on this
+            // channel can be caught as the errors they are.
+            releaseChannelNumber();
+            notifyListeners();
         }
-
-        // Now we know everything's been cleaned up and there should
-        // be no more surprises arriving on the wire. Release the
-        // channel number, and dissociate this ChannelN instance from
-        // our connection so that any further frames inbound on this
-        // channel can be caught as the errors they are.
-        releaseChannelNumber();
-        notifyListeners();
     }
 
     /**
@@ -367,11 +380,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
         }
-        Basic.Publish publish = new Basic.Publish(ticket, exchange, routingKey,
-                                                          mandatory, immediate);
-        AMQCommand command = new AMQCommand(publish, useProps, body);
-        ensureIsOpen();
-        command.transmit(this);
+        transmit(new AMQCommand(new Basic.Publish(ticket, exchange, routingKey,
+                                                  mandatory, immediate),
+                                useProps, body));
     }
 
     /**
