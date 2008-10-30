@@ -306,6 +306,19 @@ public interface Channel extends ShutdownNotifier{
     Queue.BindOk queueBind(int ticket, String queue, String exchange, String routingKey) throws IOException;
 
     /**
+     * Uninds a queue from an exchange, with no extra arguments.
+     * @see com.rabbitmq.client.AMQP.Queue.Unbind
+     * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
+     * @param ticket an access ticket for the appropriate realm
+     * @param queue the name of the queue
+     * @param exchange the name of the exchange
+     * @param routingKey the routine key to use for the binding
+     * @return an unbinding-confirm method if the binding was successfully deleted
+     * @throws java.io.IOException if an error is encountered
+     */
+    Queue.UnbindOk queueUnbind(int ticket, String queue, String exchange, String routingKey) throws IOException;
+
+    /**
      * Bind a queue to an exchange.
      * @see com.rabbitmq.client.AMQP.Queue.Bind
      * @see com.rabbitmq.client.AMQP.Queue.BindOk
@@ -318,6 +331,20 @@ public interface Channel extends ShutdownNotifier{
      * @throws java.io.IOException if an error is encountered
      */
     Queue.BindOk queueBind(int ticket, String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
+
+    /**
+     * Unbind a queue from an exchange.
+     * @see com.rabbitmq.client.AMQP.Queue.Unbind
+     * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
+     * @param ticket an access ticket for the appropriate realm
+     * @param queue the name of the queue
+     * @param exchange the name of the exchange
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
+     * @return an unbinding-confirm method if the binding was successfully deleted
+     * @throws java.io.IOException if an error is encountered
+     */
+    Queue.UnbindOk queueUnbind(int ticket, String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
 
     /**
      * Retrieve a message from a queue using {@link com.rabbitmq.client.AMQP.Basic.Get}
