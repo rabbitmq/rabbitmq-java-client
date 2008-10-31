@@ -12,12 +12,11 @@ import java.util.concurrent.CountDownLatch;
 /**
  * This tests the scalability of the routing tables in two aspects:
  *
- * 1. The rate of creation and deletion for a fixed level of bindings per queue
- *    accross varying amounts of queues;
- * 2. The rate of publishing n messages to an exchange with a fixed amount of bindings
- *    per queue accross varying amounts of queues.
+ * 1. The rate of creation and deletion for a fixed level of bindings
+ * per queue accross varying amounts of queues;
  *
- *
+ * 2. The rate of publishing n messages to an exchange with a fixed
+ * amount of bindings per queue accross varying amounts of queues.
  */
 public class ScalabilityTest {
 
@@ -34,15 +33,15 @@ public class ScalabilityTest {
     private static class Measurements {
 
         Parameters params;
-        long[] frontNine, backNine;
+        long[] creationTimes, deletionTimes;
         boolean flipped = false;
         long start;
 
         public Measurements(Parameters p, final int magnitude) {
             start = System.nanoTime();
             params = p;
-            frontNine = new long[magnitude];
-            backNine = new long[magnitude];
+            creationTimes = new long[magnitude];
+            deletionTimes = new long[magnitude];
         }
 
         public void flipEggTimer() {
@@ -54,10 +53,10 @@ public class ScalabilityTest {
             long now = System.nanoTime();
             long split = now - start;
             if (flipped) {
-                backNine[i + 1] = split;
+                deletionTimes[i + 1] = split;
             }
             else {
-                frontNine[i] = split; 
+                creationTimes[i] = split; 
             }
         }
 
@@ -71,8 +70,8 @@ public class ScalabilityTest {
         }
 
         private void printInwardStats() {
-            long[] tmp = new long[backNine.length + 1];
-            System.arraycopy(backNine, 0, tmp, 0, backNine.length);
+            long[] tmp = new long[deletionTimes.length + 1];
+            System.arraycopy(deletionTimes, 0, tmp, 0, deletionTimes.length);
 
             for (int i = 0; i < tmp.length - 1; i++) {
                 final int amount = pow(params.b, i);
@@ -83,9 +82,9 @@ public class ScalabilityTest {
         }
 
         private void printOutwardStats() {
-            for (int i = 0; i < frontNine.length; i ++) {
+            for (int i = 0; i < creationTimes.length; i ++) {
                 final int amount = pow(params.b, i);
-                final long wallclock = frontNine[i];
+                final long wallclock = creationTimes[i];
                 float rate = wallclock  / (float)  amount / 1000;
                 printAverage(amount, rate);
             }
@@ -112,10 +111,6 @@ public class ScalabilityTest {
         Connection con = new ConnectionFactory().newConnection(params.host, params.port);
         Channel channel = con.createChannel();
 
-        // This use of min triangulates the search space so that you
-        // if you have max x exponent of 6 and and max y of 6,
-        // you don't try to compute 36 points
-
         loop: for (int i = 0; i < params.y; i++) {
 
             final int level = pow(params.b, i);
@@ -126,7 +121,7 @@ public class ScalabilityTest {
             System.out.println("---------------------------------");
             System.out.println("| Routing, n = " + params.n + ", level = " + level);
 
-            // go out
+            // create queues & bindings, time routing
             for (int j = 0; j < params.x; j++) {
 
                 if (i + j > params.combinedLimit()) break loop;
@@ -142,15 +137,13 @@ public class ScalabilityTest {
                 }
 
                 measurements.addDataPoint(j);
+
                 timeRouting(channel, j);
             }
 
-
-            // flip the egg timer and start to go back
             measurements.flipEggTimer();
 
-
-            // go back
+            // delete queues & bindings
             int max_exp = params.x - 2;
             int mark = pow(params.b, max_exp);
             while(true) {
@@ -199,7 +192,6 @@ public class ScalabilityTest {
 
         final long wallclock = finish - start;
         float rate = wallclock  / (float) params.n / 1000;
-        // TODO Not quite sure whether printAverage(n, rate) would be more correct
         printAverage(pow(params.b, level), rate);
     }
 
@@ -221,12 +213,10 @@ public class ScalabilityTest {
     private static Parameters setupCLI(String [] args) {
         CLIHelper helper = CLIHelper.defaultHelper();
 
-        helper.addOption(new Option("n", "messages",       true, "number of messages to send"));
-        helper.addOption(new Option("r", "routing",       false,
-                "whether a routing test should be run instead of a creation test"));
-        helper.addOption(new Option("b", "base",          true, "ace of base"));
-        helper.addOption(new Option("x", "b-max-exp",       true, "b maximum exponents"));
-        helper.addOption(new Option("y", "q-max-exp",       true, "q maximum exponents"));
+        helper.addOption(new Option("n", "messages",  true, "number of messages to send"));
+        helper.addOption(new Option("b", "base",      true, "base for exponential scaling"));
+        helper.addOption(new Option("x", "b-max-exp", true, "maximum per-queue binding count exponent"));
+        helper.addOption(new Option("y", "q-max-exp", true, "maximum queue count exponent"));
 
         CommandLine cmd = helper.parseCommandLine(args);
         if (null == cmd) return null;
