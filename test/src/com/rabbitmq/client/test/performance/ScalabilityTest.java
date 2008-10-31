@@ -100,20 +100,19 @@ public class ScalabilityTest {
         Connection con = new ConnectionFactory().newConnection(params.host, params.port);
         Channel channel = con.createChannel();
 
-        loop: for (int i = 0; i < params.y; i++) {
+        for (int i = 0; i < params.y; i++) {
 
             final int level = pow(params.b, i);
             Stack<String> queues = new Stack<String>();
 
-            Measurements measurements = new Measurements(params, params.x);
+            int limit = Math.min(params.x, params.combinedLimit() - i);
+            Measurements measurements = new Measurements(params, limit);
 
             System.out.println("---------------------------------");
             System.out.println("| Routing, n = " + params.n + ", level = " + level);
 
             // create queues & bindings, time routing
-            for (int j = 0; j < params.x; j++) {
-
-                if (i + j > params.combinedLimit()) break loop;
+            for (int j = 0; j < limit; j++) {
 
                 final int amplitude = pow(params.b, j);
 
@@ -133,20 +132,14 @@ public class ScalabilityTest {
             measurements.flipEggTimer();
 
             // delete queues & bindings
-            int max_exp = params.x - 2;
-            int mark = pow(params.b, max_exp);
-            while(true) {
+            int max_exp = limit - 2;
+            int mark = (max_exp == -1) ? 0 : pow(params.b, max_exp);
+            while(queues.size() > 0) {
                 channel.queueDelete(1, queues.pop());
                 if (queues.size() == mark) {
                     measurements.addDataPoint(max_exp);
-                    if (mark == 1) {
-                        channel.queueDelete(1, queues.pop());
-                        measurements.addDataPoint(-1);                        
-                        break;
-                    }
-                    else {
-                        mark = pow(params.b, --max_exp);
-                    }
+                    max_exp--;
+                    mark = (max_exp == -1) ? 0 : pow(params.b, max_exp);
                 }
             }
 
