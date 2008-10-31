@@ -118,11 +118,12 @@ public class ScalabilityTest {
             System.out.println("| Routing, n = " + params.n + ", level = " + level);
 
             // create queues & bindings, time routing
+            int l = 0;
             for (int j = 0; j < limit; j++) {
 
                 final int amplitude = pow(params.b, j);
 
-                for (int l = 0; l < amplitude; l++) {
+                for (; l < amplitude; l++) {
                     AMQP.Queue.DeclareOk ok = channel.queueDeclare(1);
                     queues.push(ok.getQueue());
                     for (int k = 0; k < level  ; k++) {
