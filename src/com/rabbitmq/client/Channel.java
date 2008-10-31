@@ -199,19 +199,6 @@ public interface Channel extends ShutdownNotifier{
     Exchange.DeclareOk exchangeDeclare(int ticket, String exchange, String type, boolean durable) throws IOException;
 
     /**
-     * Actively declare a non-exclusive, non-autodelete queue
-     * The name of the new queue is held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk} result.
-     * @see com.rabbitmq.client.AMQP.Queue.Declare
-     * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
-     * @param ticket an access ticket for the appropriate realm
-     * @param queue the name of the queue
-     * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
-     * @return a declaration-confirm method to indicate the exchange was successfully declared
-     * @throws java.io.IOException if an error is encountered
-     */
-    Queue.DeclareOk queueDeclare(int ticket, String queue, boolean durable) throws IOException;
-
-    /**
      * Declare an exchange, via an interface that allows the complete set of arguments
      * The name of the new queue is held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk} result.
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
@@ -250,6 +237,19 @@ public interface Channel extends ShutdownNotifier{
      * @throws java.io.IOException if an error is encountered
      */
     Queue.DeclareOk queueDeclare(int ticket, String queue) throws IOException;
+    
+    /**
+     * Actively declare a non-exclusive, non-autodelete queue
+     * The name of the new queue is held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk} result.
+     * @see com.rabbitmq.client.AMQP.Queue.Declare
+     * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
+     * @param ticket an access ticket for the appropriate realm
+     * @param queue the name of the queue
+     * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
+     * @return a declaration-confirm method to indicate the exchange was successfully declared
+     * @throws java.io.IOException if an error is encountered
+     */
+    Queue.DeclareOk queueDeclare(int ticket, String queue, boolean durable) throws IOException;
 
     /**
      * Declare a queue
@@ -306,19 +306,6 @@ public interface Channel extends ShutdownNotifier{
     Queue.BindOk queueBind(int ticket, String queue, String exchange, String routingKey) throws IOException;
 
     /**
-     * Uninds a queue from an exchange, with no extra arguments.
-     * @see com.rabbitmq.client.AMQP.Queue.Unbind
-     * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
-     * @param ticket an access ticket for the appropriate realm
-     * @param queue the name of the queue
-     * @param exchange the name of the exchange
-     * @param routingKey the routine key to use for the binding
-     * @return an unbinding-confirm method if the binding was successfully deleted
-     * @throws java.io.IOException if an error is encountered
-     */
-    Queue.UnbindOk queueUnbind(int ticket, String queue, String exchange, String routingKey) throws IOException;
-
-    /**
      * Bind a queue to an exchange.
      * @see com.rabbitmq.client.AMQP.Queue.Bind
      * @see com.rabbitmq.client.AMQP.Queue.BindOk
@@ -331,6 +318,19 @@ public interface Channel extends ShutdownNotifier{
      * @throws java.io.IOException if an error is encountered
      */
     Queue.BindOk queueBind(int ticket, String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
+    
+    /**
+     * Uninds a queue from an exchange, with no extra arguments.
+     * @see com.rabbitmq.client.AMQP.Queue.Unbind
+     * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
+     * @param ticket an access ticket for the appropriate realm
+     * @param queue the name of the queue
+     * @param exchange the name of the exchange
+     * @param routingKey the routine key to use for the binding
+     * @return an unbinding-confirm method if the binding was successfully deleted
+     * @throws java.io.IOException if an error is encountered
+     */
+    Queue.UnbindOk queueUnbind(int ticket, String queue, String exchange, String routingKey) throws IOException;
 
     /**
      * Unbind a queue from an exchange.
