@@ -132,7 +132,7 @@ public class Routing extends BrokerTestCase
         channel.basicPublish(ticket, x, routingKey, null, "foobar".getBytes());
         checkGet(queue, true);
 
-        channel.queueUnbind(ticket, queue, x, routingKey);
+        channel.queueUnbind(queue, x, routingKey);
 
         channel.basicPublish(ticket, x, routingKey, null, "foobar".getBytes());
         checkGet(queue, false);
