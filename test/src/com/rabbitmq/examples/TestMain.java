@@ -458,7 +458,7 @@ public class TestMain {
         log("About to try mandatory/immediate publications");
 
         String mx = "mandatoryTestExchange";
-        _ch1.exchangeDeclare(_ticket, mx, "fanout");
+        _ch1.exchangeDeclare(_ticket, mx, "fanout", false, false, true, null);
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(_ticket, mx, "", true, false, null, "one".getBytes());
