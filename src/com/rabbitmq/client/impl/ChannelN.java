@@ -536,6 +536,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /**
+     * Public API - Bind a queue to an exchange, with no extra arguments.
+     * @see com.rabbitmq.client.AMQP.Queue.Bind
+     * @see com.rabbitmq.client.AMQP.Queue.BindOk
+     */
+    public Queue.BindOk queueBind(int ticket, String queue, String exchange, String routingKey)
+        throws IOException
+    {
+        return queueBind(ticket, queue, exchange, routingKey, null);
+    }
+
+    /**
      * Public API - Unbind a queue from an exchange.
      * @see com.rabbitmq.client.AMQP.Queue.Unbind
      * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
@@ -547,17 +558,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return (Queue.UnbindOk)
             exnWrappingRpc(new Queue.Unbind(queue, exchange, routingKey,
                                             arguments, false)).getMethod();
-    }
-
-    /**
-     * Public API - Bind a queue to an exchange, with no extra arguments.
-     * @see com.rabbitmq.client.AMQP.Queue.Bind
-     * @see com.rabbitmq.client.AMQP.Queue.BindOk
-     */
-    public Queue.BindOk queueBind(int ticket, String queue, String exchange, String routingKey)
-        throws IOException
-    {
-        return queueBind(ticket, queue, exchange, routingKey, null);
     }
 
     /**
