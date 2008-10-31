@@ -41,7 +41,7 @@ public class ScalabilityTest {
             start = System.nanoTime();
             params = p;
             creationTimes = new long[magnitude];
-            deletionTimes = new long[magnitude];
+            deletionTimes = new long[magnitude + 1];
         }
 
         public void flipEggTimer() {
@@ -64,30 +64,19 @@ public class ScalabilityTest {
             System.out.println("--------------------");
             System.out.println("| Create/Delete");
             System.out.println("| Level = " + level);
-            printOutwardStats();
-            System.out.println("| ..................");
-            printInwardStats();
-        }
-
-        private void printInwardStats() {
-            long[] tmp = new long[deletionTimes.length + 1];
-            System.arraycopy(deletionTimes, 0, tmp, 0, deletionTimes.length);
-
-            for (int i = 0; i < tmp.length - 1; i++) {
-                final int amount = pow(params.b, i);
-                final long wallclock = tmp[0] - tmp[i + 1];
-                float rate = wallclock / (float) amount / 1000;
-                printAverage(amount, rate);
-            }
-        }
-
-        private void printOutwardStats() {
             for (int i = 0; i < creationTimes.length; i ++) {
-                final int amount = pow(params.b, i);
-                final long wallclock = creationTimes[i];
-                float rate = wallclock  / (float)  amount / 1000;
-                printAverage(amount, rate);
+                printStats(i, creationTimes[i]);
             }
+            System.out.println("| ..................");
+            for (int i = 0; i < deletionTimes.length - 1; i++) {
+                printStats(i, deletionTimes[0] - deletionTimes[i + 1]);
+            }
+        }
+
+        private void printStats(int i, long wallclock) {
+            final int amount = pow(params.b, i);
+            final float rate = wallclock  / (float)  amount / 1000;
+            printAverage(amount, rate);
         }
 
     }
