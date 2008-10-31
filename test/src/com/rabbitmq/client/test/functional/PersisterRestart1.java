@@ -50,7 +50,7 @@ public class PersisterRestart1 extends PersisterRestartBase
         throws IOException
     {
         if (channel2 != null) {
-            channel2.close(200, "OK");
+            channel2.close();
             channel2 = null;
         }
         super.tearDown();

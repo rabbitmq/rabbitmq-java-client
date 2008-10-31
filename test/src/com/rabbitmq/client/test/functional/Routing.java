@@ -25,9 +25,10 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
+
+import java.io.IOException;
 
 public class Routing extends BrokerTestCase
 {
@@ -118,5 +119,24 @@ public class Routing extends BrokerTestCase
         channel.basicPublish(ticket, "amq.topic", "x.x", null, "x.x".getBytes());
         checkGet(Q1, true);
         checkGet(Q1, false);
+    }
+
+    public void testUnbind() throws Exception {
+        AMQP.Queue.DeclareOk ok = channel.queueDeclare(ticket);
+        String queue = ok.getQueue();
+
+        String routingKey = "quay";
+        String x = "amq.direct";
+
+        channel.queueBind(ticket, queue, x, routingKey);
+        channel.basicPublish(ticket, x, routingKey, null, "foobar".getBytes());
+        checkGet(queue, true);
+
+        channel.queueUnbind(ticket, queue, x, routingKey);
+
+        channel.basicPublish(ticket, x, routingKey, null, "foobar".getBytes());
+        checkGet(queue, false);
+
+        channel.queueDelete(ticket, queue);
     }
 }

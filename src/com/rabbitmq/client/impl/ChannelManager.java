@@ -68,12 +68,7 @@ public class ChannelManager {
         }
         for (AMQChannel channel : channels) {
             disconnectChannel(channel.getChannelNumber());
-            try {
-                channel.processShutdownSignal(signal);
-            } catch (ShutdownSignalException sse) {
-                // Notify channels that are waiting for rpc
-                channel.notifyOutstandingRpc(signal);
-            }
+            channel.processShutdownSignal(signal, true, true);
         }
     }
 
