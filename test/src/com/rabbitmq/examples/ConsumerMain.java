@@ -108,7 +108,7 @@ public class ConsumerMain implements Runnable {
         channel.queueDeclare(ticket, queueName);
 
         String exchangeName = "test completion";
-        channel.exchangeDeclare(ticket, exchangeName, "fanout");
+        channel.exchangeDeclare(ticket, exchangeName, "fanout", false, false, true, null);
 
         String completionQueue = channel.queueDeclare(ticket).getQueue();
         channel.queueBind(ticket, completionQueue, exchangeName, "");
@@ -126,7 +126,7 @@ public class ConsumerMain implements Runnable {
         channel.queueDelete(ticket, completionQueue);
         
         System.out.println("Closing the channel.");
-        channel.close(200, "Closing channel with no error");
+        channel.close();
         
         System.out.println("Closing the connection.");
         _connection.close();

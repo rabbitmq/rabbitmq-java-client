@@ -28,17 +28,14 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 
-import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ShutdownSignalException;
-
 import com.rabbitmq.client.test.functional.BrokerTestCase;
 
 /**
@@ -136,7 +133,7 @@ public class Bug19219Test extends BrokerTestCase {
         //notifications timing out.
         boolean success = false;
         try {
-            channel.close(AMQP.REPLY_SUCCESS, "bye");
+            channel.close();
             success = true;
         } catch (ShutdownSignalException e) {
         } finally {

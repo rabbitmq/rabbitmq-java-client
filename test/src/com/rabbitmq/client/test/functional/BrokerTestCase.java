@@ -69,7 +69,7 @@ public class BrokerTestCase extends TestCase
         throws IOException
     {
         if (channel != null) {
-            channel.close(200, "OK");
+            channel.close();
             channel = null;
         }
     }

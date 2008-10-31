@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
@@ -145,8 +146,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * Protected API - overridden to broadcast the signal to all
      * consumers before calling the superclass's method.
      */
-    @Override public void processShutdownSignal(ShutdownSignalException signal) {
-        super.processShutdownSignal(signal);
+    @Override public void processShutdownSignal(ShutdownSignalException signal,
+                                                boolean ignoreClosed,
+                                                boolean notifyRpc)
+    {
+        super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
         broadcastShutdownSignal(signal);
     }
 
@@ -230,7 +234,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                              command,
                                                                              this);
                 synchronized(this) {
-                    processShutdownSignal(signal);
+                    processShutdownSignal(signal, true, true);
                     quiescingTransmit(new Channel.CloseOk());
                 }
                 notifyListeners();
@@ -256,9 +260,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    /**
-     * Public API - closes this channel with the given code and message
-     */
+    public void close()
+        throws IOException
+    {
+        close(AMQP.REPLY_SUCCESS, "OK");
+    }
+    
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
@@ -266,9 +273,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /**
-     * Protected API - close channel with code and message, indicating
+     * Protected API - Close channel with code and message, indicating
      * the source of the closure and a causing exception (null if
-     * none)
+     * none).
      */
     public void close(int closeCode,
                       String closeMessage,
@@ -293,7 +300,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // Synchronize the block below to avoid race conditions in case
         // connnection wants to send Connection-CloseOK
         synchronized(this) {
-            processShutdownSignal(signal);
+            processShutdownSignal(signal, !initiatedByApplication, true);
             quiescingRpc(reason, k);
         }
         
@@ -537,6 +544,20 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /**
+     * Public API - Unbind a queue from an exchange.
+     * @see com.rabbitmq.client.AMQP.Queue.Unbind
+     * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
+     */
+    public Queue.UnbindOk queueUnbind(int ticket, String queue, String exchange,
+                                  String routingKey, Map<String, Object> arguments)
+        throws IOException
+    {
+        return (Queue.UnbindOk)
+            exnWrappingRpc(new Queue.Unbind(ticket, queue, exchange, routingKey,
+                                          arguments)).getMethod();
+    }
+
+    /**
      * Public API - Bind a queue to an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Queue.Bind
      * @see com.rabbitmq.client.AMQP.Queue.BindOk
@@ -545,6 +566,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return queueBind(ticket, queue, exchange, routingKey, null);
+    }
+
+    /**
+     * Public API - Unbind a queue from an exchange, with no extra arguments.
+     * @see com.rabbitmq.client.AMQP.Queue.Unbind
+     * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
+     */
+    public Queue.UnbindOk queueUnbind(int ticket, String queue, String exchange, String routingKey)
+        throws IOException
+    {
+        return queueUnbind(ticket, queue, exchange, routingKey, null);
     }
 
     /**
