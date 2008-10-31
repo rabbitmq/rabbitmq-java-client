@@ -239,7 +239,7 @@
   <target name="test-suite" depends="test, test-persister-restart, test-functional, test-main-silent"/>
     
   <target name="test" depends="test-build">
-    <junit printSummary="withOutAndErr" haltOnFailure="no" fork="yes">
+    <junit printSummary="withOutAndErr" haltOnFailure="yes" fork="yes">
       <classpath refid="test.classpath"/>
 
       <formatter type="plain"/>
@@ -249,7 +249,7 @@
   </target>
 
   <target name="test-functional" depends="test-build">
-    <junit printSummary="withOutAndErr" haltOnFailure="no" fork="yes">
+    <junit printSummary="withOutAndErr" haltOnFailure="yes" fork="yes">
       <classpath refid="test.classpath"/>
 
       <formatter type="plain"/>
