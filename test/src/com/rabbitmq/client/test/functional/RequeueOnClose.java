@@ -42,6 +42,21 @@ public abstract class RequeueOnClose
 
     protected abstract void close() throws IOException;
 
+    protected void setUp()
+        throws IOException
+    {
+        // Override to disable the default behaviour from BrokerTestCase.
+    }
+
+    protected void tearDown()
+        throws IOException
+    {
+        // Override to disable the default behaviour from BrokerTestCase.
+    }
+
+    protected void createResources() throws IOException {}
+    protected void releaseResources() throws IOException {}
+
     public void injectMessage()
         throws IOException
     {

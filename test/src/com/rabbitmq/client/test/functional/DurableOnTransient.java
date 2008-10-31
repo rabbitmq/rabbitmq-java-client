@@ -32,23 +32,8 @@ import com.rabbitmq.client.MessageProperties;
 
 public class DurableOnTransient extends BrokerTestCase
 {
-
     protected static final String Q = "DurableQueue";
     protected static final String X = "TransientExchange";
-
-    protected void setUp()
-        throws IOException
-    {
-        openConnection();
-        openChannel();
-    }
-
-    protected void tearDown()
-        throws IOException
-    {
-        closeChannel();
-        closeConnection();
-    }
 
     private GetResponse basicGet()
         throws IOException
@@ -64,30 +49,26 @@ public class DurableOnTransient extends BrokerTestCase
                              "persistent message".getBytes());
     }
 
-    public void testBind()
-        throws IOException, Exception
-    {
-      boolean B = false;
+    protected void createResources() throws IOException {
         // Transient exchange
         channel.exchangeDeclare(ticket, X, "direct", false);
         // durable queue
         channel.queueDeclare(ticket, Q, true);
-        // The following should raise an exception
-        try {
-            channel.queueBind(ticket, Q, X, "");
-        } catch (IOException ee) {
-            // Channel and connection have been closed.  We need to
-            // delete the queue below and therefore need to reconnect.
-            super.connection=null;
-            setUp();
-            // Say that the expected behaviour is Ok
-            B = true; 
-        }
-        channel.queueDelete(ticket, Q);
-        channel.exchangeDelete(ticket, X);
-
-        assertTrue(B);
-
     }
 
+    protected void releaseResources() throws IOException {
+        channel.queueDelete(ticket, Q);
+        channel.exchangeDelete(ticket, X);
+    }
+
+    public void testBind()
+        throws IOException
+    {
+        try {
+            channel.queueBind(ticket, Q, X, "");
+            fail("Expected exception from queueBind");
+        } catch (IOException ee) {
+            // Pass!
+        }
+    }
 }

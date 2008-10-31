@@ -33,20 +33,12 @@ public class NoRequeueOnCancel extends BrokerTestCase
 {
     protected final String Q = "NoRequeueOnCancel";
 
-    protected void setUp()
-        throws IOException
-    {
-        openConnection();
-        openChannel();
+    protected void createResources() throws IOException {
         channel.queueDeclare(ticket, Q);
     }
 
-    protected void tearDown()
-        throws IOException
-    {
+    protected void releaseResources() throws IOException {
         channel.queueDelete(ticket, Q);
-        closeChannel();
-        closeConnection();
     }
 
     public void testNoRequeueOnCancel()
