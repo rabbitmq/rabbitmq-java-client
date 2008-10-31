@@ -6,7 +6,7 @@ import org.apache.commons.cli.Option;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.util.Stack;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -103,6 +103,12 @@ public class ScalabilityTest {
         for (int i = 0; i < params.y; i++) {
 
             final int level = pow(params.b, i);
+
+            String[] routingKeys =  new String[level];
+            for (int p = 0; p < level; p++) {
+                routingKeys[p] = UUID.randomUUID().toString();
+            }
+
             Stack<String> queues = new Stack<String>();
 
             int limit = Math.min(params.x, params.combinedLimit() - i);
@@ -120,13 +126,13 @@ public class ScalabilityTest {
                     AMQP.Queue.DeclareOk ok = channel.queueDeclare(1);
                     queues.push(ok.getQueue());
                     for (int k = 0; k < level  ; k++) {
-                        channel.queueBind(1, ok.getQueue(), "amq.direct", randomString());
+                        channel.queueBind(1, ok.getQueue(), "amq.direct", routingKeys[k]);
                     }
                 }
 
                 measurements.addDataPoint(j);
 
-                timeRouting(channel, j);
+                timeRouting(channel, j, routingKeys);
             }
 
             measurements.flipEggTimer();
@@ -150,7 +156,7 @@ public class ScalabilityTest {
         con.close();
     }
 
-    private void timeRouting(Channel channel, int level) throws IOException, InterruptedException {
+    private void timeRouting(Channel channel, int level, String[] routingKeys) throws IOException, InterruptedException {
         // route some messages
         boolean mandatory = true;
         boolean immdediate = true;
@@ -159,8 +165,11 @@ public class ScalabilityTest {
 
         final long start = System.nanoTime();
 
+        Random r = new Random();
+        int size = routingKeys.length;
+
         for (int n = 0; n < params.n; n ++) {
-            String key = randomString();
+            String key = routingKeys[r.nextInt(size)];
             channel.basicPublish(1, "amq.direct", key, mandatory, immdediate,
                                  MessageProperties.MINIMAL_BASIC, null);
         }
@@ -213,10 +222,6 @@ public class ScalabilityTest {
         params.y =  CLIHelper.getOptionValue(cmd, "y", 4);
 
         return params;
-    }
-
-    private String randomString() {
-        return System.currentTimeMillis() + "";
     }
 
     static int pow(int x, int y) {
