@@ -84,6 +84,7 @@ public class DurableOnTransient extends BrokerTestCase
             B = true; 
         }
         channel.queueDelete(ticket, Q);
+        channel.exchangeDelete(ticket, X);
 
         assertTrue(B);
 
