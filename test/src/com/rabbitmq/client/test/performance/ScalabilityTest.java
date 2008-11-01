@@ -151,8 +151,14 @@ public class ScalabilityTest {
         // route some messages
         boolean mandatory = true;
         boolean immdediate = true;
-        ReturnHandler returnHandler = new ReturnHandler(params);
-        channel.setReturnListener(returnHandler);
+        final CountDownLatch latch = new CountDownLatch(params.n);
+        channel.setReturnListener(new ReturnListener() {
+                public void handleBasicReturn(int replyCode, String replyText,
+                                              String exchange, String routingKey,
+                                              AMQP.BasicProperties properties, byte[] body) throws IOException {
+                    latch.countDown();
+                }
+            });
 
         final long start = System.nanoTime();
 
@@ -166,7 +172,7 @@ public class ScalabilityTest {
         }
 
         // wait for the returns to come back
-        returnHandler.latch.await();
+        latch.await();
 
         // Compute the roundtrip time
 
@@ -175,21 +181,6 @@ public class ScalabilityTest {
         final long wallclock = finish - start;
         float rate = wallclock  / (float) params.n / 1000;
         printAverage(pow(params.b, level), rate);
-    }
-
-    static class ReturnHandler implements ReturnListener {
-
-        CountDownLatch latch;
-
-        ReturnHandler(Parameters p) {
-            latch = new CountDownLatch(p.n);
-        }
-
-        public void handleBasicReturn(int replyCode, String replyText,
-                                      String exchange, String routingKey,
-                                      AMQP.BasicProperties properties, byte[] body) throws IOException {
-            latch.countDown();
-        }
     }
 
     private static Parameters setupCLI(String [] args) {
