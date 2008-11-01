@@ -32,45 +32,33 @@ public class ScalabilityTest {
 
     private static class Measurements {
 
-        Parameters params;
-        long[] creationTimes, deletionTimes;
-        boolean flipped = false;
-        long start;
+        private long[] times;
+        private long start;
 
-        public Measurements(Parameters p, final int magnitude) {
-            start = System.nanoTime();
-            params = p;
-            creationTimes = new long[magnitude];
-            deletionTimes = new long[magnitude + 1];
-        }
-
-        public void flipEggTimer() {
-            flipped = true;
+        public Measurements(final int magnitude) {
+            times = new long[magnitude];
             start = System.nanoTime();
         }
 
         public void addDataPoint(final int i) {
-            long now = System.nanoTime();
-            (flipped ? deletionTimes : creationTimes)[i] = now - start;
+            times[i] = System.nanoTime() - start;
         }
 
-        public void analyse(int level) {
-            System.out.println("--------------------");
-            System.out.println("| Create/Delete");
-            System.out.println("| Level = " + level);
-            for (int i = 0; i < creationTimes.length; i ++) {
-                printStats(i, creationTimes[i]);
-            }
-            System.out.println("| ..................");
-            for (int i = 0; i < deletionTimes.length - 1; i++) {
-                printStats(i, deletionTimes[0] - deletionTimes[i + 1]);
+        public void analyse(int base) {
+            for (int i = 0; i < times.length; i ++) {
+                final int amount = pow(base, i);
+                final float rate = times[i]  / (float)  amount / 1000;
+                printAverage(amount, rate);
             }
         }
 
-        private void printStats(int i, long wallclock) {
-            final int amount = pow(params.b, i);
-            final float rate = wallclock  / (float)  amount / 1000;
-            printAverage(amount, rate);
+        public void adjust() {
+            long totalTime = times[0];
+            int i;
+            for (i = 0; i < times.length - 1; i++) {
+                times[i] = totalTime - times[i + 1];
+            }
+            times[i] = totalTime;
         }
 
     }
@@ -106,14 +94,16 @@ public class ScalabilityTest {
             Stack<String> queues = new Stack<String>();
 
             int limit = Math.min(params.x, params.combinedLimit() - i);
-            Measurements measurements = new Measurements(params, limit);
 
             System.out.println("---------------------------------");
-            System.out.println("| Routing, n = " + params.n + ", level = " + level);
+            System.out.println("| bindings = " + level + ", messages = " + params.n);
 
+            System.out.println("| Routing");
+            Measurements measurements;
             int l = 0;
 
             // create queues & bindings, time routing
+            measurements = new Measurements(limit);
             for (int j = 0; j < limit; j++) {
 
                 final int amplitude = pow(params.b, j);
@@ -131,9 +121,11 @@ public class ScalabilityTest {
                 timeRouting(channel, j, routingKeys);
             }
 
-            measurements.flipEggTimer();
+            System.out.println("| Creating");
+            measurements.analyse(params.b);
 
             // delete queues & bindings
+            measurements = new Measurements(limit);
             for (int j = limit - 1; j >= 0; j--) {
 
                 final int amplitude = (j == 0) ? 0 : pow(params.b, j - 1);
@@ -145,7 +137,10 @@ public class ScalabilityTest {
                 measurements.addDataPoint(j);
             }
 
-            measurements.analyse(level);
+            System.out.println("| Deleting");
+            measurements.adjust();
+            measurements.analyse(params.b);
+
         }
 
         channel.close();
