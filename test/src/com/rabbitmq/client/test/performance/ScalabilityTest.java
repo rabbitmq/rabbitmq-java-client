@@ -51,13 +51,7 @@ public class ScalabilityTest {
 
         public void addDataPoint(final int i) {
             long now = System.nanoTime();
-            long split = now - start;
-            if (flipped) {
-                deletionTimes[i + 1] = split;
-            }
-            else {
-                creationTimes[i] = split; 
-            }
+            (flipped ? deletionTimes : creationTimes)[i] = now - start;
         }
 
         public void analyse(int level) {
@@ -117,8 +111,9 @@ public class ScalabilityTest {
             System.out.println("---------------------------------");
             System.out.println("| Routing, n = " + params.n + ", level = " + level);
 
-            // create queues & bindings, time routing
             int l = 0;
+
+            // create queues & bindings, time routing
             for (int j = 0; j < limit; j++) {
 
                 final int amplitude = pow(params.b, j);
@@ -139,15 +134,15 @@ public class ScalabilityTest {
             measurements.flipEggTimer();
 
             // delete queues & bindings
-            int max_exp = limit - 2;
-            int mark = (max_exp == -1) ? 0 : pow(params.b, max_exp);
-            while(queues.size() > 0) {
-                channel.queueDelete(1, queues.pop());
-                if (queues.size() == mark) {
-                    measurements.addDataPoint(max_exp);
-                    max_exp--;
-                    mark = (max_exp == -1) ? 0 : pow(params.b, max_exp);
+            for (int j = limit - 1; j >= 0; j--) {
+
+                final int amplitude = (j == 0) ? 0 : pow(params.b, j - 1);
+
+                for (; l > amplitude; l--) {
+                    channel.queueDelete(1, queues.pop());
                 }
+
+                measurements.addDataPoint(j);
             }
 
             measurements.analyse(level);
