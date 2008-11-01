@@ -172,6 +172,22 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // incoming commands except for a close-ok.
 
         Method method = command.getMethod();
+
+        if (method instanceof Channel.Close) {
+            // Channel should always respond to Channel.Close
+            // from the server
+            releaseChannelNumber();
+            ShutdownSignalException signal = new ShutdownSignalException(false,
+                                                                         false,
+                                                                         command,
+                                                                         this);
+            synchronized(this) {
+                processShutdownSignal(signal, true, true);
+                quiescingTransmit(new Channel.CloseOk());
+            }
+            notifyListeners();
+            return true;
+        }
         if (isOpen()) {
             // We're in normal running mode.
 
@@ -218,18 +234,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                                         ex);
                     }
                 }
-                return true;
-            } else if (method instanceof Channel.Close) {
-                releaseChannelNumber();
-                ShutdownSignalException signal = new ShutdownSignalException(false,
-                                                                             false,
-                                                                             command,
-                                                                             this);
-                synchronized(this) {
-                    processShutdownSignal(signal, true, true);
-                    quiescingTransmit(new Channel.CloseOk());
-                }
-                notifyListeners();
                 return true;
             } else {
                 return false;
