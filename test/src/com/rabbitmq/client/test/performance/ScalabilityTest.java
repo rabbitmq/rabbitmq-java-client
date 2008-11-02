@@ -26,12 +26,9 @@ public class ScalabilityTest {
     private static class Parameters {
         String host;
         int port, n, b;
-        int x, y;
+        int x, y, c;
         String filePrefix;
 
-        int combinedLimit() {
-            return (x + y) / 2;
-        }
     }
 
     private abstract static class Measurements {
@@ -201,7 +198,7 @@ public class ScalabilityTest {
 
             Stack<String> queues = new Stack<String>();
 
-            int limit = Math.min(params.x, params.combinedLimit() - i);
+            int limit = Math.min(params.x, params.c - i);
 
             System.out.println("---------------------------------");
             System.out.println("| bindings = " + level + ", messages = " + params.n);
@@ -304,6 +301,7 @@ public class ScalabilityTest {
         helper.addOption(new Option("b", "base",      true, "base for exponential scaling"));
         helper.addOption(new Option("x", "b-max-exp", true, "maximum per-queue binding count exponent"));
         helper.addOption(new Option("y", "q-max-exp", true, "maximum queue count exponent"));
+        helper.addOption(new Option("c", "c-max-exp", true, "combined maximum exponent"));
         helper.addOption(new Option("f", "file",      true, "result files prefix; defaults to no file output"));
 
         CommandLine cmd = helper.parseCommandLine(args);
@@ -317,6 +315,7 @@ public class ScalabilityTest {
 
         params.x =  CLIHelper.getOptionValue(cmd, "x", 4);
         params.y =  CLIHelper.getOptionValue(cmd, "y", 4);
+        params.c =  CLIHelper.getOptionValue(cmd, "c", Math.max(params.x, params.y));
 
         params.filePrefix = cmd.getOptionValue("f", null);
 
