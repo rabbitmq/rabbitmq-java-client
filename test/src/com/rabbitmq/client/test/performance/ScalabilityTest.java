@@ -30,9 +30,9 @@ public class ScalabilityTest {
         }
     }
 
-    private static class Measurements {
+    private abstract static class Measurements {
 
-        private long[] times;
+        protected long[] times;
         private long start;
 
         public Measurements(final int magnitude) {
@@ -44,21 +44,48 @@ public class ScalabilityTest {
             times[i] = System.nanoTime() - start;
         }
 
-        public void analyse(int base) {
-            for (int i = 0; i < times.length; i ++) {
+        abstract public float[] analyse(final int base);
+
+        protected static float[] calcOpTimes(final int base, final long[] t) {
+            float[] r = new float[t.length];
+            for (int i = 0; i < t.length; i ++) {
                 final int amount = pow(base, i);
-                final float rate = times[i]  / (float)  amount / 1000;
-                printAverage(amount, rate);
+                r[i] = t[i]  / (float)  amount / 1000;
             }
+
+            return r;
         }
 
-        public void adjust() {
-            long totalTime = times[0];
+    }
+
+    private static class CreationMeasurements extends Measurements {
+
+        public CreationMeasurements(final int magnitude) {
+            super(magnitude);
+        }
+
+        public float[] analyse(final int base) {
+            return calcOpTimes(base, times);
+        }
+
+    }
+
+    private static class DeletionMeasurements extends Measurements {
+
+        public DeletionMeasurements(final int magnitude) {
+            super(magnitude);
+        }
+
+        public float[] analyse(final int base) {
+            final long tmp[] = new long[times.length];
+            final long totalTime = times[0];
             int i;
             for (i = 0; i < times.length - 1; i++) {
-                times[i] = totalTime - times[i + 1];
+                tmp[i] = totalTime - times[i + 1];
             }
-            times[i] = totalTime;
+            tmp[i] = totalTime;
+
+            return calcOpTimes(base, tmp);
         }
 
     }
@@ -99,11 +126,11 @@ public class ScalabilityTest {
             System.out.println("| bindings = " + level + ", messages = " + params.n);
 
             System.out.println("| Routing");
-            Measurements measurements;
+
             int l = 0;
 
             // create queues & bindings, time routing
-            measurements = new Measurements(limit);
+            Measurements creation = new CreationMeasurements(limit);
             for (int j = 0; j < limit; j++) {
 
                 final int amplitude = pow(params.b, j);
@@ -116,16 +143,18 @@ public class ScalabilityTest {
                     }
                 }
 
-                measurements.addDataPoint(j);
+                creation.addDataPoint(j);
 
-                timeRouting(channel, j, routingKeys);
+                float routingTime = timeRouting(channel, j, routingKeys);
+                printAverage(pow(params.b, j), routingTime);
             }
 
+            float[] creationTimes = creation.analyse(params.b);
             System.out.println("| Creating");
-            measurements.analyse(params.b);
+            printTimes(params.b, creationTimes);
 
             // delete queues & bindings
-            measurements = new Measurements(limit);
+            Measurements deletion = new DeletionMeasurements(limit);
             for (int j = limit - 1; j >= 0; j--) {
 
                 final int amplitude = (j == 0) ? 0 : pow(params.b, j - 1);
@@ -134,21 +163,21 @@ public class ScalabilityTest {
                     channel.queueDelete(1, queues.pop());
                 }
 
-                measurements.addDataPoint(j);
+                deletion.addDataPoint(j);
             }
 
+            float[] deletionTimes = deletion.analyse(params.b);
             System.out.println("| Deleting");
-            measurements.adjust();
-            measurements.analyse(params.b);
-
+            printTimes(params.b, deletionTimes);
         }
 
         channel.close();
         con.close();
     }
 
-    private void timeRouting(Channel channel, int level, String[] routingKeys) throws IOException, InterruptedException {
-        // route some messages
+    private float timeRouting(Channel channel, int level, String[] routingKeys)
+        throws IOException, InterruptedException {
+
         boolean mandatory = true;
         boolean immdediate = true;
         final CountDownLatch latch = new CountDownLatch(params.n);
@@ -162,9 +191,9 @@ public class ScalabilityTest {
 
         final long start = System.nanoTime();
 
+        // route some messages
         Random r = new Random();
         int size = routingKeys.length;
-
         for (int n = 0; n < params.n; n ++) {
             String key = routingKeys[r.nextInt(size)];
             channel.basicPublish(1, "amq.direct", key, mandatory, immdediate,
@@ -175,12 +204,9 @@ public class ScalabilityTest {
         latch.await();
 
         // Compute the roundtrip time
-
         final long finish = System.nanoTime();
-
         final long wallclock = finish - start;
-        float rate = wallclock  / (float) params.n / 1000;
-        printAverage(pow(params.b, level), rate);
+        return wallclock  / (float) params.n / 1000;
     }
 
     private static Parameters setupCLI(String [] args) {
@@ -210,6 +236,13 @@ public class ScalabilityTest {
         int tmp = 1;
         for( int i = 0; i < y; i++ ) tmp *= x;
         return tmp;
+    }
+
+    static void printTimes(int base, float[] times) {
+        for (int i = 0; i < times.length; i ++) {
+            final int x = pow(base, i);
+            printAverage(x, times[i]);
+        }
     }
 
     static void printAverage(int amount, float rate) {
