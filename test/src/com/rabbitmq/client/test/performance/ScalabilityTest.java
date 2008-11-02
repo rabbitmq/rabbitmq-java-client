@@ -25,8 +25,9 @@ public class ScalabilityTest {
 
     private static class Parameters {
         String host;
-        int port, n, b;
-        int x, y, c;
+        int port;
+        int messageCount;
+        int base, maxQueueExp, maxBindingExp, maxExp;
         String filePrefix;
 
     }
@@ -36,8 +37,8 @@ public class ScalabilityTest {
         protected long[] times;
         private long start;
 
-        public Measurements(final int magnitude) {
-            times = new long[magnitude];
+        public Measurements(final int count) {
+            times = new long[count];
             start = System.nanoTime();
         }
 
@@ -61,8 +62,8 @@ public class ScalabilityTest {
 
     private static class CreationMeasurements extends Measurements {
 
-        public CreationMeasurements(final int magnitude) {
-            super(magnitude);
+        public CreationMeasurements(final int count) {
+            super(count);
         }
 
         public float[] analyse(final int base) {
@@ -73,8 +74,8 @@ public class ScalabilityTest {
 
     private static class DeletionMeasurements extends Measurements {
 
-        public DeletionMeasurements(final int magnitude) {
-            super(magnitude);
+        public DeletionMeasurements(final int count) {
+            super(count);
         }
 
         public float[] analyse(final int base) {
@@ -92,8 +93,6 @@ public class ScalabilityTest {
     }
 
     private static class Results {
-
-        private static NumberFormat format = new DecimalFormat("0.00");
 
         float[][] creationTimes;
         float[][] deletionTimes;
@@ -130,10 +129,10 @@ public class ScalabilityTest {
 
         private static void print(final PrintStream s, final int base,
                                   final float[][] times) {
-            for (int i = 0; i < times.length; i++) {
-                s.println("# level " + pow(base, i));
-                for (int j = 0; j < times[i].length; j++) {
-                    s.println(pow(base, j) + " " + format.format(times[i][j]));
+            for (int y = 0; y < times.length; y++) {
+                s.println("# level " + pow(base, y));
+                for (int x = 0; x < times[y].length; x++) {
+                    s.println(pow(base, x) + " " + format.format(times[y][x]));
                 }
                 s.println();
                 s.println();
@@ -164,6 +163,8 @@ public class ScalabilityTest {
         }
     }
 
+    private static NumberFormat format = new DecimalFormat("0.00");
+
     private final Parameters params;
 
     public ScalabilityTest(Parameters p) {
@@ -171,13 +172,13 @@ public class ScalabilityTest {
     }
 
     public static void main(String[] args) throws Exception {
-        Parameters params = setupCLI(args);
+        Parameters params = parseArgs(args);
         if (params == null) return;
 
         ScalabilityTest test = new ScalabilityTest(params);
         Results r = test.run();
         if (params.filePrefix != null)
-            r.print(params.b, params.filePrefix);
+            r.print(params.base, params.filePrefix);
     }
 
 
@@ -185,73 +186,73 @@ public class ScalabilityTest {
         Connection con = new ConnectionFactory().newConnection(params.host, params.port);
         Channel channel = con.createChannel();
 
-        Results r = new Results(params.y);
+        Results r = new Results(params.maxBindingExp);
 
-        for (int i = 0; i < params.y; i++) {
+        for (int y = 0; y < params.maxBindingExp; y++) {
 
-            final int level = pow(params.b, i);
+            final int maxBindings = pow(params.base, y);
 
-            String[] routingKeys =  new String[level];
-            for (int p = 0; p < level; p++) {
-                routingKeys[p] = UUID.randomUUID().toString();
+            String[] routingKeys =  new String[maxBindings];
+            for (int b = 0; b < maxBindings; b++) {
+                routingKeys[b] = UUID.randomUUID().toString();
             }
 
             Stack<String> queues = new Stack<String>();
 
-            int limit = Math.min(params.x, params.c - i);
+            int maxQueueExp = Math.min(params.maxQueueExp, params.maxExp - y);
 
             System.out.println("---------------------------------");
-            System.out.println("| bindings = " + level + ", messages = " + params.n);
+            System.out.println("| bindings = " + maxBindings + ", messages = " + params.messageCount);
 
             System.out.println("| Routing");
 
-            int l = 0;
+            int q = 0;
 
             // create queues & bindings, time routing
-            Measurements creation = new CreationMeasurements(limit);
-            float routingTimes[] = new float[limit];
-            for (int j = 0; j < limit; j++) {
+            Measurements creation = new CreationMeasurements(maxQueueExp);
+            float routingTimes[] = new float[maxQueueExp];
+            for (int x = 0; x < maxQueueExp; x++) {
 
-                final int amplitude = pow(params.b, j);
+                final int maxQueues = pow(params.base, x);
 
-                for (; l < amplitude; l++) {
+                for (; q < maxQueues; q++) {
                     AMQP.Queue.DeclareOk ok = channel.queueDeclare(1);
                     queues.push(ok.getQueue());
-                    for (int k = 0; k < level  ; k++) {
-                        channel.queueBind(1, ok.getQueue(), "amq.direct", routingKeys[k]);
+                    for (int b = 0; b < maxBindings; b++) {
+                        channel.queueBind(1, ok.getQueue(), "amq.direct", routingKeys[b]);
                     }
                 }
 
-                creation.addDataPoint(j);
+                creation.addDataPoint(x);
 
                 float routingTime = timeRouting(channel, routingKeys);
-                routingTimes[j] = routingTime;
-                printAverage(pow(params.b, j), routingTime);
+                routingTimes[x] = routingTime;
+                printTime(params.base, x, routingTime);
             }
 
-            r.routingTimes[i] = routingTimes;
-            float[] creationTimes = creation.analyse(params.b);
-            r.creationTimes[i] = creationTimes;
+            r.routingTimes[y] = routingTimes;
+            float[] creationTimes = creation.analyse(params.base);
+            r.creationTimes[y] = creationTimes;
             System.out.println("| Creating");
-            printTimes(params.b, creationTimes);
+            printTimes(params.base, creationTimes);
 
             // delete queues & bindings
-            Measurements deletion = new DeletionMeasurements(limit);
-            for (int j = limit - 1; j >= 0; j--) {
+            Measurements deletion = new DeletionMeasurements(maxQueueExp);
+            for (int x = maxQueueExp - 1; x >= 0; x--) {
 
-                final int amplitude = (j == 0) ? 0 : pow(params.b, j - 1);
+                final int maxQueues = (x == 0) ? 0 : pow(params.base, x - 1);
 
-                for (; l > amplitude; l--) {
+                for (; q > maxQueues; q--) {
                     channel.queueDelete(1, queues.pop());
                 }
 
-                deletion.addDataPoint(j);
+                deletion.addDataPoint(x);
             }
 
-            float[] deletionTimes = deletion.analyse(params.b);
-            r.deletionTimes[i] = deletionTimes;
+            float[] deletionTimes = deletion.analyse(params.base);
+            r.deletionTimes[y] = deletionTimes;
             System.out.println("| Deleting");
-            printTimes(params.b, deletionTimes);
+            printTimes(params.base, deletionTimes);
         }
 
         channel.close();
@@ -265,7 +266,7 @@ public class ScalabilityTest {
 
         boolean mandatory = true;
         boolean immdediate = true;
-        final CountDownLatch latch = new CountDownLatch(params.n);
+        final CountDownLatch latch = new CountDownLatch(params.messageCount);
         channel.setReturnListener(new ReturnListener() {
                 public void handleBasicReturn(int replyCode, String replyText,
                                               String exchange, String routingKey,
@@ -279,7 +280,7 @@ public class ScalabilityTest {
         // route some messages
         Random r = new Random();
         int size = routingKeys.length;
-        for (int n = 0; n < params.n; n ++) {
+        for (int n = 0; n < params.messageCount; n ++) {
             String key = routingKeys[r.nextInt(size)];
             channel.basicPublish(1, "amq.direct", key, mandatory, immdediate,
                                  MessageProperties.MINIMAL_BASIC, null);
@@ -291,16 +292,16 @@ public class ScalabilityTest {
         // Compute the roundtrip time
         final long finish = System.nanoTime();
         final long wallclock = finish - start;
-        return wallclock  / (float) params.n / 1000;
+        return wallclock  / (float) params.messageCount / 1000;
     }
 
-    private static Parameters setupCLI(String [] args) {
+    private static Parameters parseArgs(String [] args) {
         CLIHelper helper = CLIHelper.defaultHelper();
 
         helper.addOption(new Option("n", "messages",  true, "number of messages to send"));
         helper.addOption(new Option("b", "base",      true, "base for exponential scaling"));
-        helper.addOption(new Option("x", "b-max-exp", true, "maximum per-queue binding count exponent"));
-        helper.addOption(new Option("y", "q-max-exp", true, "maximum queue count exponent"));
+        helper.addOption(new Option("x", "q-max-exp", true, "maximum queue count exponent"));
+        helper.addOption(new Option("y", "b-max-exp", true, "maximum per-queue binding count exponent"));
         helper.addOption(new Option("c", "c-max-exp", true, "combined maximum exponent"));
         helper.addOption(new Option("f", "file",      true, "result files prefix; defaults to no file output"));
 
@@ -308,36 +309,33 @@ public class ScalabilityTest {
         if (null == cmd) return null;
 
         Parameters params = new Parameters();
-        params.host =  cmd.getOptionValue("h", "0.0.0.0");
-        params.port =  CLIHelper.getOptionValue(cmd, "p", 5672);
-        params.n =  CLIHelper.getOptionValue(cmd, "n", 100);
-        params.b =  CLIHelper.getOptionValue(cmd, "b", 10);
-
-        params.x =  CLIHelper.getOptionValue(cmd, "x", 4);
-        params.y =  CLIHelper.getOptionValue(cmd, "y", 4);
-        params.c =  CLIHelper.getOptionValue(cmd, "c", Math.max(params.x, params.y));
-
-        params.filePrefix = cmd.getOptionValue("f", null);
+        params.host          = cmd.getOptionValue("h", "0.0.0.0");
+        params.port          = CLIHelper.getOptionValue(cmd, "p", 5672);
+        params.messageCount  = CLIHelper.getOptionValue(cmd, "n", 100);
+        params.base          = CLIHelper.getOptionValue(cmd, "b", 10);
+        params.maxQueueExp   = CLIHelper.getOptionValue(cmd, "x", 4);
+        params.maxBindingExp = CLIHelper.getOptionValue(cmd, "y", 4);
+        params.maxExp        = CLIHelper.getOptionValue(cmd, "c", Math.max(params.maxQueueExp, params.maxBindingExp));
+        params.filePrefix    = cmd.getOptionValue("f", null);
 
         return params;
     }
 
-    static int pow(int x, int y) {
-        int tmp = 1;
-        for( int i = 0; i < y; i++ ) tmp *= x;
-        return tmp;
+    private static int pow(int x, int y) {
+        int r = 1;
+        for( int i = 0; i < y; i++ ) r *= x;
+        return r;
     }
 
-    static void printTimes(int base, float[] times) {
+    private static void printTimes(int base, float[] times) {
         for (int i = 0; i < times.length; i ++) {
-            final int x = pow(base, i);
-            printAverage(x, times[i]);
+            printTime(base, i, times[i]);
         }
     }
 
-    static void printAverage(int amount, float rate) {
-        String rateString = new DecimalFormat("0.00").format(rate);
-        System.out.println("| " + amount + " -> " + rateString + " us/op");
+    private static void printTime(int base, int exp, float v) {
+        System.out.println("| " + pow(base, exp) +
+                           " -> " + format.format(v) + " us/op");
     }
 
 }
