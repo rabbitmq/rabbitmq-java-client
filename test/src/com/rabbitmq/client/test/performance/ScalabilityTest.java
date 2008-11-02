@@ -5,7 +5,10 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.FileOutputStream;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
@@ -24,6 +27,7 @@ public class ScalabilityTest {
         String host;
         int port, n, b;
         int x, y;
+        String filePrefix;
 
         int combinedLimit() {
             return (x + y) / 2;
@@ -90,7 +94,80 @@ public class ScalabilityTest {
 
     }
 
-    private Parameters params;
+    private static class Results {
+
+        private static NumberFormat format = new DecimalFormat("0.00");
+
+        float[][] creationTimes;
+        float[][] deletionTimes;
+        float[][] routingTimes;
+
+        public Results(final int y) {
+            creationTimes = new float[y][];
+            deletionTimes = new float[y][];
+            routingTimes = new float[y][];
+        }
+
+        public void print(final int base, final String prefix)
+            throws IOException {
+
+            PrintStream s;
+            s = open(prefix, "creation");
+            print(s, base, creationTimes);
+            s.close();
+            s = open(prefix, "deletion");
+            print(s, base, deletionTimes);
+            s.close(); 
+            s = open(prefix, "routing");
+            print(s, base, transpose(routingTimes));
+            s.close();
+        }
+
+        private static PrintStream open(final String prefix,
+                                        final String suffix)
+            throws IOException {
+
+            return new PrintStream(new FileOutputStream(prefix + suffix +
+                                                        ".dat"));
+        }
+
+        private static void print(final PrintStream s, final int base,
+                                  final float[][] times) {
+            for (int i = 0; i < times.length; i++) {
+                s.println("# level " + pow(base, i));
+                for (int j = 0; j < times[i].length; j++) {
+                    s.println(pow(base, j) + " " + format.format(times[i][j]));
+                }
+                s.println();
+                s.println();
+            }
+        }
+
+        private float[][] transpose(float[][] m) {
+            Vector<Vector<Float>> tmp = new Vector<Vector<Float>>();
+            for (int i = 0; i < m[0].length; i++) {
+                tmp.addElement(new Vector<Float>());
+            }
+            for (int i = 0; i < m.length; i++) {
+                for (int j = 0; j < m[i].length; j++) {
+                    Vector<Float> v = tmp.get(j);
+                    v.addElement(m[i][j]);
+                }
+            }
+            float[][] r = new float[tmp.size()][];
+            for (int i = 0; i < tmp.size(); i++) {
+                Vector<Float> v = tmp.get(i);
+                float[] vr = new float[v.size()];
+                for (int j = 0; j < v.size(); j++) {
+                    vr[j] = v.get(j);
+                }
+                r[i] = vr;
+            }
+            return r;
+        }
+    }
+
+    private final Parameters params;
 
     public ScalabilityTest(Parameters p) {
         params = p;
@@ -101,13 +178,17 @@ public class ScalabilityTest {
         if (params == null) return;
 
         ScalabilityTest test = new ScalabilityTest(params);
-        test.run();
+        Results r = test.run();
+        if (params.filePrefix != null)
+            r.print(params.b, params.filePrefix);
     }
 
 
-    public void run() throws Exception{
+    public Results run() throws Exception{
         Connection con = new ConnectionFactory().newConnection(params.host, params.port);
         Channel channel = con.createChannel();
+
+        Results r = new Results(params.y);
 
         for (int i = 0; i < params.y; i++) {
 
@@ -131,6 +212,7 @@ public class ScalabilityTest {
 
             // create queues & bindings, time routing
             Measurements creation = new CreationMeasurements(limit);
+            float routingTimes[] = new float[limit];
             for (int j = 0; j < limit; j++) {
 
                 final int amplitude = pow(params.b, j);
@@ -145,11 +227,14 @@ public class ScalabilityTest {
 
                 creation.addDataPoint(j);
 
-                float routingTime = timeRouting(channel, j, routingKeys);
+                float routingTime = timeRouting(channel, routingKeys);
+                routingTimes[j] = routingTime;
                 printAverage(pow(params.b, j), routingTime);
             }
 
+            r.routingTimes[i] = routingTimes;
             float[] creationTimes = creation.analyse(params.b);
+            r.creationTimes[i] = creationTimes;
             System.out.println("| Creating");
             printTimes(params.b, creationTimes);
 
@@ -167,15 +252,18 @@ public class ScalabilityTest {
             }
 
             float[] deletionTimes = deletion.analyse(params.b);
+            r.deletionTimes[i] = deletionTimes;
             System.out.println("| Deleting");
             printTimes(params.b, deletionTimes);
         }
 
         channel.close();
         con.close();
+
+        return r;
     }
 
-    private float timeRouting(Channel channel, int level, String[] routingKeys)
+    private float timeRouting(Channel channel, String[] routingKeys)
         throws IOException, InterruptedException {
 
         boolean mandatory = true;
@@ -216,6 +304,7 @@ public class ScalabilityTest {
         helper.addOption(new Option("b", "base",      true, "base for exponential scaling"));
         helper.addOption(new Option("x", "b-max-exp", true, "maximum per-queue binding count exponent"));
         helper.addOption(new Option("y", "q-max-exp", true, "maximum queue count exponent"));
+        helper.addOption(new Option("f", "file",      true, "result files prefix; defaults to no file output"));
 
         CommandLine cmd = helper.parseCommandLine(args);
         if (null == cmd) return null;
@@ -228,6 +317,8 @@ public class ScalabilityTest {
 
         params.x =  CLIHelper.getOptionValue(cmd, "x", 4);
         params.y =  CLIHelper.getOptionValue(cmd, "y", 4);
+
+        params.filePrefix = cmd.getOptionValue("f", null);
 
         return params;
     }
