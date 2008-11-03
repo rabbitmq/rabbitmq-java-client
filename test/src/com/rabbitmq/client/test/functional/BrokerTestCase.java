@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -40,6 +41,48 @@ public class BrokerTestCase extends TestCase
     public Connection connection;
     public Channel channel;
     public int ticket;
+
+    protected void setUp()
+        throws IOException
+    {
+        openConnection();
+        openChannel();
+
+        createResources();
+    }
+
+    protected void tearDown()
+        throws IOException
+    {
+        closeChannel();
+        closeConnection();
+
+        openConnection();
+        openChannel();
+        releaseResources();
+        closeChannel();
+        closeConnection();
+    }
+
+    /**
+     * Should create any AMQP resources needed by the test. Will be
+     * called by BrokerTestCase's implementation of setUp, after the
+     * connection and channel have been opened.
+     */
+    protected void createResources()
+        throws IOException
+    {}
+
+    /**
+     * Should destroy any AMQP resources that were created by the
+     * test. Will be called by BrokerTestCase's implementation of
+     * tearDown, after the connection and channel have been closed and
+     * reopened specifically for this method. After this method
+     * completes, the connection and channel will be closed again.
+     */
+    protected void releaseResources()
+        throws IOException
+    {}
 
     public void openConnection()
         throws IOException
@@ -53,7 +96,7 @@ public class BrokerTestCase extends TestCase
         throws IOException
     {
         if (connection != null) {
-            connection.close();
+            connection.abort();
             connection = null;
         }
     }
@@ -69,7 +112,12 @@ public class BrokerTestCase extends TestCase
         throws IOException
     {
         if (channel != null) {
-            channel.close();
+            try {
+                channel.close();
+            } catch (AlreadyClosedException ace) {
+                // The API is broken so we have to catch this here.
+                // See bug 19676.
+            }
             channel = null;
         }
     }
