@@ -34,7 +34,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
-public abstract class BrokerTestCase extends TestCase
+public class BrokerTestCase extends TestCase
 {
     public ConnectionFactory connectionFactory = new ConnectionFactory();
 
@@ -69,8 +69,9 @@ public abstract class BrokerTestCase extends TestCase
      * called by BrokerTestCase's implementation of setUp, after the
      * connection and channel have been opened.
      */
-    protected abstract void createResources()
-        throws IOException;
+    protected void createResources()
+        throws IOException
+    {}
 
     /**
      * Should destroy any AMQP resources that were created by the
@@ -79,8 +80,9 @@ public abstract class BrokerTestCase extends TestCase
      * reopened specifically for this method. After this method
      * completes, the connection and channel will be closed again.
      */
-    protected abstract void releaseResources()
-        throws IOException;
+    protected void releaseResources()
+        throws IOException
+    {}
 
     public void openConnection()
         throws IOException

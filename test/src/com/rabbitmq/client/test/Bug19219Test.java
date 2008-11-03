@@ -63,9 +63,6 @@ public class Bug19219Test extends BrokerTestCase {
     private static final Semaphore init = new Semaphore(0);
     private static final CountDownLatch resume = new CountDownLatch(1);
 
-    protected void createResources() throws IOException {}
-    protected void releaseResources() throws IOException {}
-
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("Bug19219");
         suite.addTestSuite(Bug19219Test.class);
