@@ -146,8 +146,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * Protected API - overridden to broadcast the signal to all
      * consumers before calling the superclass's method.
      */
-    @Override public void processShutdownSignal(ShutdownSignalException signal) {
-        super.processShutdownSignal(signal);
+    @Override public void processShutdownSignal(ShutdownSignalException signal,
+                                                boolean ignoreClosed,
+                                                boolean notifyRpc)
+    {
+        super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
         broadcastShutdownSignal(signal);
     }
 
@@ -169,6 +172,22 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // incoming commands except for a close-ok.
 
         Method method = command.getMethod();
+
+        if (method instanceof Channel.Close) {
+            // Channel should always respond to Channel.Close
+            // from the server
+            releaseChannelNumber();
+            ShutdownSignalException signal = new ShutdownSignalException(false,
+                                                                         false,
+                                                                         command,
+                                                                         this);
+            synchronized(this) {
+                processShutdownSignal(signal, true, true);
+                quiescingTransmit(new Channel.CloseOk());
+            }
+            notifyListeners();
+            return true;
+        }
         if (isOpen()) {
             // We're in normal running mode.
 
@@ -215,18 +234,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                                         ex);
                     }
                 }
-                return true;
-            } else if (method instanceof Channel.Close) {
-                releaseChannelNumber();
-                ShutdownSignalException signal = new ShutdownSignalException(false,
-                                                                             false,
-                                                                             command,
-                                                                             this);
-                synchronized(this) {
-                    processShutdownSignal(signal);
-                    quiescingTransmit(new Channel.CloseOk());
-                }
-                notifyListeners();
                 return true;
             } else {
                 return false;
@@ -289,7 +296,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // Synchronize the block below to avoid race conditions in case
         // connnection wants to send Connection-CloseOK
         synchronized(this) {
-            processShutdownSignal(signal);
+            processShutdownSignal(signal, !initiatedByApplication, true);
             quiescingRpc(reason, k);
         }
         
@@ -533,6 +540,20 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /**
+     * Public API - Unbind a queue from an exchange.
+     * @see com.rabbitmq.client.AMQP.Queue.Unbind
+     * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
+     */
+    public Queue.UnbindOk queueUnbind(int ticket, String queue, String exchange,
+                                  String routingKey, Map<String, Object> arguments)
+        throws IOException
+    {
+        return (Queue.UnbindOk)
+            exnWrappingRpc(new Queue.Unbind(ticket, queue, exchange, routingKey,
+                                          arguments)).getMethod();
+    }
+
+    /**
      * Public API - Bind a queue to an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Queue.Bind
      * @see com.rabbitmq.client.AMQP.Queue.BindOk
@@ -541,6 +562,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return queueBind(ticket, queue, exchange, routingKey, null);
+    }
+
+    /**
+     * Public API - Unbind a queue from an exchange, with no extra arguments.
+     * @see com.rabbitmq.client.AMQP.Queue.Unbind
+     * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
+     */
+    public Queue.UnbindOk queueUnbind(int ticket, String queue, String exchange, String routingKey)
+        throws IOException
+    {
+        return queueUnbind(ticket, queue, exchange, routingKey, null);
     }
 
     /**

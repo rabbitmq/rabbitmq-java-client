@@ -458,7 +458,7 @@ public class TestMain {
         log("About to try mandatory/immediate publications");
 
         String mx = "mandatoryTestExchange";
-        _ch1.exchangeDeclare(_ticket, mx, "fanout");
+        _ch1.exchangeDeclare(_ticket, mx, "fanout", false, false, true, null);
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(_ticket, mx, "", true, false, null, "one".getBytes());
@@ -474,7 +474,7 @@ public class TestMain {
         doBasicReturn(returnCell, 313);
 
         String mq = "mandatoryTestQueue";
-        _ch1.queueDeclare(_ticket, mq);
+        _ch1.queueDeclare(_ticket, mq, false, false, false, true, null);
         _ch1.queueBind(_ticket, mq, mx, "");
 
         returnCell = new BlockingCell<Object>();
@@ -484,9 +484,6 @@ public class TestMain {
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(_ticket, mx, "", true, false, null, "five".getBytes());
         drain(1, mq, true);
-
-        _ch1.queueDelete(_ticket, mq);
-        _ch1.exchangeDelete(_ticket, mx);
 
         log("Completed basic.return testing.");
     }

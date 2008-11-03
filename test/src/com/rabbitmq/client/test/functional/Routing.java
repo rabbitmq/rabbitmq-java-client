@@ -25,11 +25,12 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.AMQP;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
-import java.io.IOException;
-
-import com.rabbitmq.client.GetResponse;
 
 public class Routing extends BrokerTestCase
 {
@@ -73,7 +74,7 @@ public class Routing extends BrokerTestCase
     private void checkGet(String queue, boolean messageExpected)
         throws IOException
     {
-        GetResponse r = channel.basicGet(ticket, queue, true);
+        GetResponse  r = channel.basicGet(ticket, queue, true);
         if (messageExpected) {
             assertNotNull(r);
         } else {
@@ -129,7 +130,7 @@ public class Routing extends BrokerTestCase
             channel.queueDeclare(ticket, q);
             channel.queueBind(ticket, q, "amq.fanout", "");
             queues.add(q);
-        }        
+        }
 
         channel.basicPublish(ticket, "amq.fanout", System.nanoTime() + "",
                              null, "fanout".getBytes());
@@ -141,5 +142,23 @@ public class Routing extends BrokerTestCase
         for (String q : queues) {
             channel.queueDelete(ticket, q);
         }
+    }
+
+    public void testUnbind() throws Exception {
+        AMQP.Queue.DeclareOk ok = channel.queueDeclare(ticket);
+        String queue = ok.getQueue();
+        String routingKey = "quay";
+        String x = "amq.direct";
+
+        channel.queueBind(ticket, queue, x, routingKey);
+        channel.basicPublish(ticket, x, routingKey, null, "foobar".getBytes());
+        checkGet(queue, true);
+
+        channel.queueUnbind(ticket, queue, x, routingKey);
+
+        channel.basicPublish(ticket, x, routingKey, null, "foobar".getBytes());
+        checkGet(queue, false);
+
+        channel.queueDelete(ticket, queue);
     }
 }
