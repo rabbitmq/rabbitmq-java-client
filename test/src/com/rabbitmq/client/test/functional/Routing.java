@@ -39,22 +39,16 @@ public class Routing extends BrokerTestCase
     protected final String Q1 = "foo";
     protected final String Q2 = "bar";
 
-    protected void setUp()
-        throws IOException
-    {
-        super.setUp();
+    protected void createResources() throws IOException {
         channel.exchangeDeclare(ticket, E, "direct");
         channel.queueDeclare(ticket, Q1);
         channel.queueDeclare(ticket, Q2);
     }
 
-    protected void tearDown()
-        throws IOException
-    {
+    protected void releaseResources() throws IOException {
         channel.queueDelete(ticket, Q1);
         channel.queueDelete(ticket, Q2);
         channel.exchangeDelete(ticket, E);
-        super.tearDown();
     }
 
     private void bind(String queue, String routingKey)

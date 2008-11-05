@@ -42,31 +42,18 @@ public abstract class TransactionsBase
         throws IOException
     {
         super.setUp();
-        channel.queueDeclare(ticket, Q);
         closeChannel();
     }
 
-    protected void tearDown()
-        throws IOException
-    {
-        openChannel();
+    protected void createResources() throws IOException {
+        channel.queueDeclare(ticket, Q);
+    }
+
+    protected void releaseResources() throws IOException {
         channel.queueDelete(ticket, Q);
-        super.tearDown();
     }
 
     protected abstract BasicProperties getMessageProperties();
-
-    private void channelOpen()
-        throws IOException
-    {
-        openChannel();
-    }
-
-    private void channelClose()
-        throws IOException
-    {
-        closeChannel();
-    }
 
     private void txSelect()
         throws IOException
@@ -125,14 +112,14 @@ public abstract class TransactionsBase
     public void testCommitPublish()
         throws IOException
     {
-        channelOpen();
+        openChannel();
         txSelect();
         basicPublish();
         assertNull(basicGet());
         txCommit();
         assertNotNull(basicGet());
         txCommit();
-        channelClose();
+        closeChannel();
     }
 
     /*
@@ -141,12 +128,12 @@ public abstract class TransactionsBase
     public void testRollbackPublish()
         throws IOException
     {
-        channelOpen();
+        openChannel();
         txSelect();
         basicPublish();
         txRollback();
         assertNull(basicGet());
-        channelClose();
+        closeChannel();
     }
 
     /*
@@ -155,13 +142,13 @@ public abstract class TransactionsBase
     public void testRollbackPublishOnClose()
         throws IOException
     {
-        channelOpen();
+        openChannel();
         txSelect();
         basicPublish();
-        channelClose();
-        channelOpen();
+        closeChannel();
+        openChannel();
         assertNull(basicGet());
-        channelClose();
+        closeChannel();
     }
 
     /*
@@ -170,20 +157,20 @@ public abstract class TransactionsBase
     public void testRequeueOnClose()
         throws IOException
     {
-        channelOpen();
+        openChannel();
         basicPublish();
         basicPublish();
         txSelect();
         basicGet();
         basicAck();
         basicGet();
-        channelClose();
-        channelOpen();
+        closeChannel();
+        openChannel();
         assertNotNull(basicGet());
         basicAck();
         assertNotNull(basicGet());
         basicAck();
-        channelClose();
+        closeChannel();
     }
 
     /*
@@ -193,7 +180,7 @@ public abstract class TransactionsBase
     public void testCommitAcks()
         throws IOException
     {
-        channelOpen();
+        openChannel();
         basicPublish();
         basicPublish();
         txSelect();
@@ -202,12 +189,12 @@ public abstract class TransactionsBase
         basicGet();
         txCommit();
         assertNull(basicGet());
-        channelClose();
-        channelOpen();
+        closeChannel();
+        openChannel();
         assertNotNull(basicGet());
         basicAck();
         assertNull(basicGet());
-        channelClose();
+        closeChannel();
     }
 
     /*
@@ -217,7 +204,7 @@ public abstract class TransactionsBase
     public void testRollbackAcksAndReAck()
         throws IOException
     {
-        channelOpen();
+        openChannel();
         basicPublish();
         txSelect();
         basicGet();
@@ -225,11 +212,11 @@ public abstract class TransactionsBase
         txRollback();
         basicAck();
         txRollback();
-        channelClose();
-        channelOpen();
+        closeChannel();
+        openChannel();
         assertNotNull(basicGet());
         basicAck();
-        channelClose();
+        closeChannel();
     }
 
     /*
@@ -238,7 +225,7 @@ public abstract class TransactionsBase
     public void testDuplicateAck()
         throws IOException
     {
-        channelOpen();
+        openChannel();
         basicPublish();
         txSelect();
         basicGet();
@@ -254,7 +241,7 @@ public abstract class TransactionsBase
     public void testUnknownTagAck()
         throws IOException
     {
-        channelOpen();
+        openChannel();
         basicPublish();
         txSelect();
         basicGet();
@@ -274,7 +261,7 @@ public abstract class TransactionsBase
     public void testNoRequeueOnRollback()
         throws IOException
     {
-        channelOpen();
+        openChannel();
         basicPublish();
         basicPublish();
         txSelect();
@@ -283,7 +270,7 @@ public abstract class TransactionsBase
         basicGet();
         txRollback();
         assertNull(basicGet());
-        channelClose();
+        closeChannel();
     }
 
     /*
@@ -292,14 +279,14 @@ public abstract class TransactionsBase
     public void testAutoAck()
         throws IOException
     {
-        channelOpen();
+        openChannel();
         basicPublish();
         txSelect();
         basicGet(true);
-        channelClose();
-        channelOpen();
+        closeChannel();
+        openChannel();
         assertNull(basicGet());
-        channelClose();
+        closeChannel();
     }
 
     /*
@@ -308,7 +295,7 @@ public abstract class TransactionsBase
     public void testAckAll()
         throws IOException
     {
-        channelOpen();
+        openChannel();
         basicPublish();
         basicPublish();
         txSelect();
@@ -316,10 +303,10 @@ public abstract class TransactionsBase
         basicGet();
         basicAck(0L, true);
         txCommit();
-        channelClose();
-        channelOpen();
+        closeChannel();
+        openChannel();
         assertNull(basicGet());
-        channelClose();
+        closeChannel();
     }
 
 }

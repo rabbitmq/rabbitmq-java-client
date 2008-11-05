@@ -48,6 +48,20 @@ public class PersisterRestartBase extends BrokerTestCase
     // rabbit_persister.erl
     protected final int PERSISTER_SNAPSHOT_THRESHOLD = 500;
 
+    protected void restart()
+        throws IOException
+    {
+        tearDown();
+        Host.executeCommand("cd ../rabbitmq-test; make restart-on-node");
+        setUp();
+    }
+
+    protected void forceSnapshot()
+        throws IOException, InterruptedException
+    {
+        Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
+    }
+
     protected void declareDurableTopicExchange(String x)
         throws IOException
     {
