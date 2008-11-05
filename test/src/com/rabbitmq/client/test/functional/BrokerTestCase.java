@@ -33,7 +33,6 @@ import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.tools.Host;
 
 public class BrokerTestCase extends TestCase
 {
@@ -122,4 +121,5 @@ public class BrokerTestCase extends TestCase
             channel = null;
         }
     }
+
 }

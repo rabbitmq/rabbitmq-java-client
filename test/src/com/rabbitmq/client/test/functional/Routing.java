@@ -25,8 +25,8 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.GetResponse;
 
 import java.io.IOException;
 import java.util.List;
@@ -68,7 +68,7 @@ public class Routing extends BrokerTestCase
     private void checkGet(String queue, boolean messageExpected)
         throws IOException
     {
-        GetResponse  r = channel.basicGet(ticket, queue, true);
+        GetResponse r = channel.basicGet(ticket, queue, true);
         if (messageExpected) {
             assertNotNull(r);
         } else {
@@ -141,6 +141,7 @@ public class Routing extends BrokerTestCase
     public void testUnbind() throws Exception {
         AMQP.Queue.DeclareOk ok = channel.queueDeclare(ticket);
         String queue = ok.getQueue();
+
         String routingKey = "quay";
         String x = "amq.direct";
 
