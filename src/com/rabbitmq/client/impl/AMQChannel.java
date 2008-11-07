@@ -236,11 +236,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                     ensureIsOpen(); // invariant: we should never be shut down more than once per instance
                 if (isOpen())
                     _shutdownCause = signal;
-
-                synchronized(this) {
-                    _blockContent = false;
-                    notifyAll();
-                }
+                
+                notifyAll();
             }
         } finally {
             if (notifyRpc)
