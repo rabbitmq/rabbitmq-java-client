@@ -55,6 +55,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
     public RpcContinuation _activeRpc = null;
 
+    /** Whether transmission of content-bearing methods should be blocked */
+    public boolean _blockContent = false;
+
     /**
      * Construct a channel on the given connection, with the given channel number.
      * @param connection the underlying connection for this channel
@@ -233,6 +236,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                     ensureIsOpen(); // invariant: we should never be shut down more than once per instance
                 if (isOpen())
                     _shutdownCause = signal;
+                
+                notifyAll();
             }
         } finally {
             if (notifyRpc)
@@ -248,8 +253,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     public synchronized void transmit(Method m) throws IOException {
-        ensureIsOpen();
-        quiescingTransmit(m);
+        transmit(new AMQCommand(m));
     }
 
     public synchronized void transmit(AMQCommand c) throws IOException {
@@ -258,10 +262,22 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     public synchronized void quiescingTransmit(Method m) throws IOException {
-        new AMQCommand(m).transmit(this);
+        quiescingTransmit(new AMQCommand(m));
     }
 
     public synchronized void quiescingTransmit(AMQCommand c) throws IOException {
+        if (c.getMethod().hasContent()) {
+            while (_blockContent) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {}
+                
+                // This is to catch a situation when the thread wakes up during
+                // shutdown. Currently, no command that has content is allowed
+                // to send anything in a closing state.
+                ensureIsOpen();
+            }
+        }
         c.transmit(this);
     }
 
