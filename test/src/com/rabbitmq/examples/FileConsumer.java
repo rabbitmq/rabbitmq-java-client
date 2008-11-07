@@ -76,12 +76,11 @@ public class FileConsumer {
             Connection conn = connFactory.newConnection(hostName, portNumber);
 
             final Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
             String queueName =
 		(requestedQueueName.equals("")
-		 ? ch.queueDeclare(ticket)
-		 : ch.queueDeclare(ticket, requestedQueueName)).getQueue();
+		 ? ch.queueDeclare()
+		 : ch.queueDeclare(requestedQueueName)).getQueue();
 
 	    if (exchange != null || routingKey != null) {
 		if (exchange == null) {
@@ -92,12 +91,12 @@ public class FileConsumer {
 		    System.err.println("Please supply routing key pattern to bind to (-k)");
 		    System.exit(2);
 		}
-		ch.exchangeDeclare(ticket, exchange, exchangeType);
-		ch.queueBind(ticket, queueName, exchange, routingKey);
+		ch.exchangeDeclare(exchange, exchangeType);
+		ch.queueBind(queueName, exchange, routingKey);
 	    }
 
             QueueingConsumer consumer = new QueueingConsumer(ch);
-            ch.basicConsume(ticket, queueName, consumer);
+            ch.basicConsume(queueName, consumer);
             while (true) {
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
 		Map<String, Object> headers = delivery.getProperties().headers;

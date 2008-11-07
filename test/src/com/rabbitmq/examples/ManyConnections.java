@@ -64,13 +64,12 @@ public class ManyConnections {
 
 		for (int j = 0; j < channelPerConnectionCount; j++) {
 		    final Channel ch = conn.createChannel();
-		    final int ticket = ch.accessRequest("/data");
 
 		    final int threadNumber = i * channelPerConnectionCount + j;
 		    System.out.println("Starting "+threadNumber+" "+ch+" thread...");
 		    new Thread(new Runnable() {
 			    public void run() {
-				runChannel(threadNumber, conn, ch, ticket);
+				runChannel(threadNumber, conn, ch);
 			    }
 			}).start();
 		}
@@ -85,22 +84,20 @@ public class ManyConnections {
 
     public static void runChannel(int threadNumber,
 				  Connection conn,
-				  Channel ch,
-				  int ticket)
-    {
+				  Channel ch){
 	try {
 	    int delayLen = (int) (1000 / rate);
 	    long startTime = System.currentTimeMillis();
 
 	    int msgCount = 0;
 	    String queueName = "ManyConnections";
-	    ch.queueDeclare(ticket, queueName);
+	    ch.queueDeclare(queueName);
 
 	    QueueingConsumer consumer = new QueueingConsumer(ch);
-	    ch.basicConsume(ticket, queueName, true, consumer);
+	    ch.basicConsume(queueName, true, consumer);
 	    while (true) {
 		String toSend = threadNumber + "/" + msgCount++;
-		ch.basicPublish(ticket, "", queueName, null, toSend.getBytes());
+		ch.basicPublish("", queueName, null, toSend.getBytes());
 		Thread.sleep(delayLen);
 
 		QueueingConsumer.Delivery delivery = consumer.nextDelivery();

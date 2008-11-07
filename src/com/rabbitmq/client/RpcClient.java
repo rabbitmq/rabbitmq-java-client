@@ -49,8 +49,6 @@ import com.rabbitmq.utility.BlockingCell;
 public class RpcClient {
     /** Channel we are communicating on */
     private final Channel _channel;
-    /** Access ticket this RpcClient uses */
-    private final int _ticket;
     /** Exchange to send requests to */
     private final String _exchange;
     /** Routing key to use for requests */
@@ -67,21 +65,18 @@ public class RpcClient {
     private DefaultConsumer _consumer;
 
     /**
-     * Construct a new RpcClient that will communicate on the given
-     * channel, using the given ticket for permission, sending
+     * Construct a new RpcClient that will communicate on the given channel, sending
      * requests to the given exchange with the given routing key.
      * <p>
      * Causes the creation of a temporary private autodelete queue.
      * @param channel the channel to use for communication
-     * @param ticket the access ticket for the appropriate realm
      * @param exchange the exchange to connect to
      * @param routingKey the routing key
      * @throws IOException if an error is encountered
      * @see #setupReplyQueue
      */
-    public RpcClient(Channel channel, int ticket, String exchange, String routingKey) throws IOException {
+    public RpcClient(Channel channel, String exchange, String routingKey) throws IOException {
         _channel = channel;
-        _ticket = ticket;
         _exchange = exchange;
         _routingKey = routingKey;
         _correlationId = 0;
@@ -118,7 +113,7 @@ public class RpcClient {
      * @return the name of the reply queue
      */
     private String setupReplyQueue() throws IOException {
-        return _channel.queueDeclare(_ticket, "", false, false, true, true, null).getQueue();
+        return _channel.queueDeclare("", false, false, true, true, null).getQueue();
     }
 
     /**
@@ -153,14 +148,14 @@ public class RpcClient {
                 }
             }
         };
-        _channel.basicConsume(_ticket, _replyQueue, true, consumer);
+        _channel.basicConsume(_replyQueue, true, consumer);
         return consumer;
     }
 
     public void publish(AMQP.BasicProperties props, byte[] message)
         throws IOException
     {
-        _channel.basicPublish(_ticket, _exchange, _routingKey, props, message);
+        _channel.basicPublish(_exchange, _routingKey, props, message);
     }
 
     public byte[] primitiveCall(AMQP.BasicProperties props, byte[] message)
@@ -277,14 +272,6 @@ public class RpcClient {
      */
     public Channel getChannel() {
         return _channel;
-    }
-
-    /**
-     * Retrieve the access ticket.
-     * @return the access ticket for the appropriate realm
-     */
-    public int getTicket() {
-        return _ticket;
     }
 
     /**

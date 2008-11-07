@@ -56,16 +56,15 @@ public class SimpleTopicProducer {
             Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
 
             Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
             if (exchange == null) {
                 exchange = "amq.topic";
             } else {
-                ch.exchangeDeclare(ticket, exchange, "topic");
+                ch.exchangeDeclare(exchange, "topic");
             }
 
             System.out.println("Sending to exchange " + exchange + ", topic " + topic);
-            ch.basicPublish(ticket, exchange, topic, null, message.getBytes());
+            ch.basicPublish(exchange, topic, null, message.getBytes());
             ch.close();
             conn.close();
         } catch (Exception e) {

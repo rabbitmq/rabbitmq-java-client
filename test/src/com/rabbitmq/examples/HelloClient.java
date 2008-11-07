@@ -40,8 +40,7 @@ public class HelloClient {
 
             Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
             Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
-            RpcClient service = new RpcClient(ch, ticket, "", "Hello");
+            RpcClient service = new RpcClient(ch, "", "Hello");
 
             System.out.println(service.stringCall(request));
             conn.close();

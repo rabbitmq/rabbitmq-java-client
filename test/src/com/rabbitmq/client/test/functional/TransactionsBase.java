@@ -46,11 +46,11 @@ public abstract class TransactionsBase
     }
 
     protected void createResources() throws IOException {
-        channel.queueDeclare(ticket, Q);
+        channel.queueDeclare(Q);
     }
 
     protected void releaseResources() throws IOException {
-        channel.queueDelete(ticket, Q);
+        channel.queueDelete(Q);
     }
 
     protected abstract BasicProperties getMessageProperties();
@@ -76,14 +76,14 @@ public abstract class TransactionsBase
     private void basicPublish()
         throws IOException
     {
-        channel.basicPublish(ticket, "", Q, getMessageProperties(),
+        channel.basicPublish("", Q, getMessageProperties(),
                              "Tx message".getBytes());
     }
 
     private GetResponse basicGet(boolean noAck)
         throws IOException
     {
-        GetResponse r = channel.basicGet(ticket, Q, noAck);
+        GetResponse r = channel.basicGet(Q, noAck);
         latestTag = (r == null) ? 0L : r.getEnvelope().getDeliveryTag();
         return r;
     }

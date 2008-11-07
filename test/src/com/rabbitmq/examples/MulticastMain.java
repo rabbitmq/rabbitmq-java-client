@@ -95,13 +95,12 @@ public class MulticastMain {
                 consumerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (consumerTxSize > 0) channel.txSelect();
-                int ticket = channel.accessRequest("/data");
-                channel.exchangeDeclare(ticket, exchangeName, exchangeType);
-                Queue.DeclareOk res = channel.queueDeclare(ticket);
+                channel.exchangeDeclare(exchangeName, exchangeType);
+                Queue.DeclareOk res = channel.queueDeclare();
                 String queueName = res.getQueue();
                 QueueingConsumer consumer = new QueueingConsumer(channel);
-                channel.basicConsume(ticket, queueName, autoAck, consumer);
-                channel.queueBind(ticket, queueName, exchangeName, id);
+                channel.basicConsume(queueName, autoAck, consumer);
+                channel.queueBind(queueName, exchangeName, id);
                 Thread t = 
                     new Thread(new Consumer(consumer, id,
                                             consumerTxSize, autoAck,
@@ -117,10 +116,9 @@ public class MulticastMain {
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
-                int ticket = channel.accessRequest("/data");
-                channel.exchangeDeclare(ticket, exchangeName, exchangeType);
+                channel.exchangeDeclare(exchangeName, exchangeType);
                 Thread t = 
-                    new Thread(new Producer(channel, ticket, exchangeName, id,
+                    new Thread(new Producer(channel, exchangeName, id,
                                             flags, producerTxSize,
                                             1000L * samplingInterval,
                                             rateLimit, minMsgSize, timeLimit));
@@ -200,7 +198,6 @@ public class MulticastMain {
         private long    interval;
         private int     rateLimit;
         private long    timeLimit;
-        private int     ticket;
 
         private byte[]  message;
 
@@ -208,13 +205,12 @@ public class MulticastMain {
         private long    lastStatsTime;
         private int     msgCount;
 
-        public Producer(Channel channel, int ticket, String exchangeName, String id,
+        public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
                         long interval, int rateLimit, int minMsgSize, int timeLimit)
             throws IOException {
 
             this.channel      = channel;
-            this.ticket       = ticket;
             this.exchangeName = exchangeName;
             this.id           = id;
             this.mandatory    = flags.contains("mandatory");
@@ -261,7 +257,7 @@ public class MulticastMain {
         private void publish(byte[] msg)
             throws IOException {
 
-            channel.basicPublish(ticket, exchangeName, id,
+            channel.basicPublish(exchangeName, id,
                                  mandatory, immediate,
                                  persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
                                  msg);

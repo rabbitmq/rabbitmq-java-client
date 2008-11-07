@@ -66,7 +66,6 @@ public class FileProducer {
             Connection conn = connFactory.newConnection(hostName, portNumber);
 
             final Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
 	    if (exchange == null) {
 		System.err.println("Please supply exchange name to send to (-e)");
@@ -76,7 +75,7 @@ public class FileProducer {
 		System.err.println("Please supply routing key to send to (-k)");
 		System.exit(2);
 	    }
-	    ch.exchangeDeclare(ticket, exchange, exchangeType);
+	    ch.exchangeDeclare(exchange, exchangeType);
 
 	    for (String filename : cmd.getArgs()) {
 		System.out.print("Sending " + filename + "...");
@@ -93,7 +92,7 @@ public class FileProducer {
 							    null, null, null, null,
 							    null, null, null, null,
 							    null, null);
-		ch.basicPublish(ticket, exchange, routingKey, props, body);
+		ch.basicPublish(exchange, routingKey, props, body);
 		System.out.println(" done.");
 	    }
 

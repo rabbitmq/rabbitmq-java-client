@@ -64,12 +64,11 @@ public class SpammyTopicProducer {
             Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
 
             Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
             if (exchange == null) {
                 exchange = "amq.topic";
             } else {
-                ch.exchangeDeclare(ticket, exchange, "topic");
+                ch.exchangeDeclare(exchange, "topic");
             }
 
             System.out.println("Sending to exchange " + exchange + ", prefix: " + topicPrefix);
@@ -79,7 +78,7 @@ public class SpammyTopicProducer {
             long startTime = System.currentTimeMillis();
             long nextSummaryTime = startTime;
             while (true) {
-                ch.basicPublish(ticket, exchange, topicPrefix + newSuffix(), null, message.getBytes());
+                ch.basicPublish(exchange, topicPrefix + newSuffix(), null, message.getBytes());
                 thisTimeCount++;
                 allTimeCount++;
                 long now = System.currentTimeMillis();

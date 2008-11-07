@@ -36,14 +36,12 @@ public class PersisterRestart1 extends PersisterRestartBase
     private static final String Q = "Restart";
 
     private Channel channel2;
-    private int ticket2;
 
     protected void setUp()
         throws IOException
     {
         super.setUp();
         channel2 = connection.createChannel();
-        ticket2 = channel.accessRequest("/data");
     }
 
     protected void tearDown()
@@ -67,8 +65,8 @@ public class PersisterRestart1 extends PersisterRestartBase
         throws IOException
     {
         GetResponse r;
-        assertNotNull(r = channel2.basicGet(ticket2, Q, false));
-        assertNotNull(r = channel2.basicGet(ticket2, Q, false));
+        assertNotNull(r = channel2.basicGet(Q, false));
+        assertNotNull(r = channel2.basicGet(Q, false));
         channel2.basicAck(r.getEnvelope().getDeliveryTag(), false);
     }
 

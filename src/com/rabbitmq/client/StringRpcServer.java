@@ -32,11 +32,11 @@ import java.io.UnsupportedEncodingException;
  * Subclass of RpcServer which accepts UTF-8 string requests.
  */
 public class StringRpcServer extends RpcServer {
-    public StringRpcServer(Channel channel, int ticket) throws IOException
-    { super(channel, ticket); }
+    public StringRpcServer(Channel channel) throws IOException
+    { super(channel); }
 
-    public StringRpcServer(Channel channel, int ticket, String queueName) throws IOException
-    { super(channel, ticket, queueName); }
+    public StringRpcServer(Channel channel, String queueName) throws IOException
+    { super(channel, queueName); }
 
     /**
      * Overridden to do UTF-8 processing, and delegate to

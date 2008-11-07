@@ -34,31 +34,31 @@ public class NoRequeueOnCancel extends BrokerTestCase
     protected final String Q = "NoRequeueOnCancel";
 
     protected void createResources() throws IOException {
-        channel.queueDeclare(ticket, Q);
+        channel.queueDeclare(Q);
     }
 
     protected void releaseResources() throws IOException {
-        channel.queueDelete(ticket, Q);
+        channel.queueDelete(Q);
     }
 
     public void testNoRequeueOnCancel()
         throws IOException, InterruptedException
     {
-        channel.basicPublish(ticket, "", Q, null, "1".getBytes());
+        channel.basicPublish("", Q, null, "1".getBytes());
 
         QueueingConsumer c;
         QueueingConsumer.Delivery d;
 
         c = new QueueingConsumer(channel);
-        String consumerTag = channel.basicConsume(ticket, Q, false, c);
+        String consumerTag = channel.basicConsume(Q, false, c);
         d = c.nextDelivery();
         channel.basicCancel(consumerTag);
 
-        assertNull(channel.basicGet(ticket, Q, true));
+        assertNull(channel.basicGet(Q, true));
 
         closeChannel();
         openChannel();
 
-        assertNotNull(channel.basicGet(ticket, Q, true));
+        assertNotNull(channel.basicGet(Q, true));
     }
 }

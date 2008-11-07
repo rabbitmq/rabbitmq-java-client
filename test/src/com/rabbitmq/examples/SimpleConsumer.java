@@ -42,12 +42,11 @@ public class SimpleConsumer {
             Connection conn = connFactory.newConnection(hostName, portNumber);
 
             final Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
-            ch.queueDeclare(ticket, queueName);
+            ch.queueDeclare(queueName);
 
             QueueingConsumer consumer = new QueueingConsumer(ch);
-            ch.basicConsume(ticket, queueName, consumer);
+            ch.basicConsume(queueName, consumer);
             while (true) {
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 System.out.println("Message: " + new String(delivery.getBody()));

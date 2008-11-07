@@ -73,10 +73,10 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * to RpcClient's constructor. The service description record is
      * retrieved from the server during construction.
      */
-    public JsonRpcClient(Channel channel, int ticket, String exchange, String routingKey)
+    public JsonRpcClient(Channel channel, String exchange, String routingKey)
         throws IOException, JsonRpcException
     {
-	super(channel, ticket, exchange, routingKey);
+	super(channel, exchange, routingKey);
 	retrieveServiceDescription();
     }
 

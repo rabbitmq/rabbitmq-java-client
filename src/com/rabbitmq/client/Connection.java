@@ -40,10 +40,9 @@ import java.io.IOException;
  * ConnectionFactory factory = new ConnectionFactory(params);
  * Connection conn = factory.newConnection(hostName, AMQP.PROTOCOL.PORT);
  *
- * // Then open a channel and retrieve an access ticket:
+ * // Then open a channel:
  *
  * Channel channel = conn.createChannel();
- * int ticket = channel.accessRequest(realmName);
  * </pre>
  *
  * Current implementations are thread-safe for code at the client API level,
