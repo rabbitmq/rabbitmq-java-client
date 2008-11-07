@@ -236,7 +236,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                     ensureIsOpen(); // invariant: we should never be shut down more than once per instance
                 if (isOpen())
                     _shutdownCause = signal;
-                setBlockContent(true);
+                
+                notifyAll();
             }
         } finally {
             if (notifyRpc)
@@ -257,14 +258,6 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
 
     public synchronized void transmit(AMQCommand c) throws IOException {
         ensureIsOpen();
-        if (c.getMethod().hasContent()) {
-            while (_blockContent) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {}
-                ensureIsOpen();
-            }
-        }
         quiescingTransmit(c);
     }
 
@@ -273,12 +266,19 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     public synchronized void quiescingTransmit(AMQCommand c) throws IOException {
+        if (c.getMethod().hasContent()) {
+            while (_blockContent) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {}
+                
+                // This is to catch a situation when the thread wakes up during
+                // shutdown. Currently, no command that has content is allowed
+                // to send anything in a closing state.
+                ensureIsOpen();
+            }
+        }
         c.transmit(this);
-    }
-    
-    public synchronized void setBlockContent(boolean active) {
-        _blockContent = !active;
-        notifyAll();
     }
 
     public AMQConnection getAMQConnection() {
