@@ -169,27 +169,33 @@ public class AMQCommand implements Command {
      * @param channel the channel on which to transmit the command
      * @throws IOException if an error is encountered
      */
-    public void transmit(AMQChannel channel) throws IOException {
+    public void transmit(AMQChannel channel) {
         int channelNumber = channel.getChannelNumber();
         AMQConnection connection = channel.getAMQConnection();
 
-        connection.writeFrame(_method.toFrame(channelNumber));
+        try {
 
-        if (this._method.hasContent()) {
-            byte[] body = getContentBody();
+            connection.writeFrame(_method.toFrame(channelNumber));
 
-            connection.writeFrame(_contentHeader.toFrame(channelNumber, body.length));
+            if (this._method.hasContent()) {
+                byte[] body = getContentBody();
 
-            int frameMax = connection.getFrameMax();
-            int bodyPayloadMax = (frameMax == 0) ? body.length : frameMax - EMPTY_CONTENT_BODY_FRAME_SIZE;
+                connection.writeFrame(_contentHeader.toFrame(channelNumber, body.length));
 
-            for (int offset = 0; offset < body.length; offset += bodyPayloadMax) {
-                int remaining = body.length - offset;
+                int frameMax = connection.getFrameMax();
+                int bodyPayloadMax = (frameMax == 0) ? body.length : frameMax - EMPTY_CONTENT_BODY_FRAME_SIZE;
 
-                int fragmentLength = (remaining < bodyPayloadMax) ? remaining : bodyPayloadMax;
-                Frame frame = Frame.fromBodyFragment(channelNumber, body, offset, fragmentLength);
-                connection.writeFrame(frame);
+                for (int offset = 0; offset < body.length; offset += bodyPayloadMax) {
+                    int remaining = body.length - offset;
+
+                    int fragmentLength = (remaining < bodyPayloadMax) ? remaining : bodyPayloadMax;
+                    Frame frame = Frame.fromBodyFragment(channelNumber, body, offset, fragmentLength);
+                    connection.writeFrame(frame);
+                }
             }
+        }
+        catch (IOException io) {
+            throw new RuntimeException(io);
         }
     }
 

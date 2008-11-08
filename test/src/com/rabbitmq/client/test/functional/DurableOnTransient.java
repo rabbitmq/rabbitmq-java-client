@@ -61,14 +61,13 @@ public class DurableOnTransient extends BrokerTestCase
         channel.exchangeDelete(X);
     }
 
-    public void testBind()
-        throws IOException
-    {
+    public void testBind() {
         try {
             channel.queueBind(Q, X, "");
             fail("Expected exception from queueBind");
-        } catch (IOException ee) {
-            // Pass!
         }
+        catch (Throwable t) {
+            // as expected
+        }        
     }
 }

@@ -99,10 +99,11 @@ public class AMQConnectionTest extends TestCase {
         try {
             new AMQConnection(_params, false, _mockFrameHandler, handler);
             fail("Connection should have thrown exception");
-        } catch(IOException signal) {
-           // As expected 
         } catch(RedirectException e) {
             fail("Unexpected redirect");
+
+        } catch(Throwable t) {
+            // As expected
         }
         assertEquals(1, _mockFrameHandler.countHeadersSent());
         // _connection.close(0, CLOSE_MESSAGE);

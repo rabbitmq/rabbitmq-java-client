@@ -93,10 +93,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * This is only called from AMQConnection.
      * @throws java.io.IOException if any problem is encountered
      */
-    public void open() throws IOException {
+    public void open() {
         // wait for the Channel.OpenOk response, then ignore it
         Channel.OpenOk openOk =
-            (Channel.OpenOk) exnWrappingRpc(new Channel.Open(UNSPECIFIED_OUT_OF_BAND)).getMethod();
+            (Channel.OpenOk) rpc(new Channel.Open(UNSPECIFIED_OUT_OF_BAND)).getMethod();
         Utility.use(openOk);
     }
 
@@ -258,15 +258,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    public void close()
-        throws IOException
-    {
+    public void close() {
         close(AMQP.REPLY_SUCCESS, "OK");
     }
     
-    public void close(int closeCode, String closeMessage)
-        throws IOException
-    {
+    public void close(int closeCode, String closeMessage) {
         close(closeCode, closeMessage, true, null);
     }
 
@@ -278,9 +274,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void close(int closeCode,
                       String closeMessage,
                       boolean initiatedByApplication,
-                      Throwable cause)
-        throws IOException
-    {
+                      Throwable cause) {
         // First, notify all our dependents that we are shutting down.
         // This clears _isOpen, so no further work from the
         // application side will be accepted, and any inbound commands
@@ -327,9 +321,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Basic.Publish
      */
     public void basicPublish(String exchange, String routingKey,
-                             BasicProperties props, byte[] body)
-        throws IOException
-    {
+                             BasicProperties props, byte[] body) {
         basicPublish(exchange, routingKey, false, false, props, body);
     }
 
@@ -339,9 +331,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public void basicPublish(String exchange, String routingKey,
                              boolean mandatory, boolean immediate,
-                             BasicProperties props, byte[] body)
-        throws IOException
-    {
+                             BasicProperties props, byte[] body) {
         BasicProperties useProps = props;
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
@@ -358,11 +348,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
                                               boolean passive, boolean durable,
-                                              boolean autoDelete, Map<String, Object> arguments)
-        throws IOException
-    {
+                                              boolean autoDelete, Map<String, Object> arguments) {
         return (Exchange.DeclareOk)
-            exnWrappingRpc(new Exchange.Declare(TICKET, exchange, type,
+            rpc(new Exchange.Declare(TICKET, exchange, type,
                                                 passive, durable, autoDelete,
                                                 false, false, arguments)).getMethod();
     }
@@ -373,9 +361,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
      */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
-                                              boolean durable)
-        throws IOException
-    {
+                                              boolean durable) {
         return exchangeDeclare(exchange, type, false, durable, false, null);
     }
 
@@ -384,9 +370,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
      */
-    public Exchange.DeclareOk exchangeDeclare(String exchange, String type)
-        throws IOException
-    {
+    public Exchange.DeclareOk exchangeDeclare(String exchange, String type) {
         return exchangeDeclare(exchange, type, false, false, false, null);
     }
 
@@ -395,11 +379,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Exchange.Delete
      * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
      */
-    public Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused)
-        throws IOException
-    {
+    public Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) {
         return (Exchange.DeleteOk)
-            exnWrappingRpc(new Exchange.Delete(TICKET, exchange, ifUnused, false)).getMethod();
+            rpc(new Exchange.Delete(TICKET, exchange, ifUnused, false)).getMethod();
     }
 
     /**
@@ -407,9 +389,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Exchange.Delete
      * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
      */
-    public Exchange.DeleteOk exchangeDelete(String exchange)
-        throws IOException
-    {
+    public Exchange.DeleteOk exchangeDelete(String exchange) {
         return exchangeDelete(exchange, false);
     }
 
@@ -420,11 +400,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public Queue.DeclareOk queueDeclare(String queue, boolean passive,
                                         boolean durable, boolean exclusive,
-                                        boolean autoDelete, Map<String, Object> arguments)
-        throws IOException
-    {
+                                        boolean autoDelete, Map<String, Object> arguments) {
         return (Queue.DeclareOk)
-            exnWrappingRpc(new Queue.Declare(TICKET, queue, passive, durable,
+            rpc(new Queue.Declare(TICKET, queue, passive, durable,
                                              exclusive, autoDelete, false, arguments)).getMethod();
     }
 
@@ -433,9 +411,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.Declare
      * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
      */
-    public Queue.DeclareOk queueDeclare(String queue, boolean durable)
-        throws IOException
-    {
+    public Queue.DeclareOk queueDeclare(String queue, boolean durable) {
         return queueDeclare(queue, false, durable, false, false, null);
     }
 
@@ -444,9 +420,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.Declare
      * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
      */
-    public Queue.DeclareOk queueDeclare(String queue)
-        throws IOException
-    {
+    public Queue.DeclareOk queueDeclare(String queue) {
         return queueDeclare(queue, false, false, false, false, null);
     }
 
@@ -458,9 +432,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.Declare
      * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
      */
-    public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclare()
-        throws IOException
-    {
+    public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclare() {
         return queueDeclare("", false, false, true, true, null);
     }
 
@@ -469,11 +441,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.Delete
      * @see com.rabbitmq.client.AMQP.Queue.DeleteOk
      */
-    public Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty)
-        throws IOException
-    {
+    public Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty) {
         return (Queue.DeleteOk)
-            exnWrappingRpc(new Queue.Delete(TICKET, queue, ifUnused, ifEmpty, false)).getMethod();
+            rpc(new Queue.Delete(TICKET, queue, ifUnused, ifEmpty, false)).getMethod();
     }
 
     /**
@@ -481,9 +451,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.Delete
      * @see com.rabbitmq.client.AMQP.Queue.DeleteOk
      */
-    public Queue.DeleteOk queueDelete(String queue)
-    throws IOException
-    {
+    public Queue.DeleteOk queueDelete(String queue) {
         return queueDelete(queue, false, false);
     }
 
@@ -493,11 +461,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.BindOk
      */
     public Queue.BindOk queueBind(String queue, String exchange,
-                                  String routingKey, Map<String, Object> arguments)
-        throws IOException
-    {
+                                  String routingKey, Map<String, Object> arguments) {
         return (Queue.BindOk)
-            exnWrappingRpc(new Queue.Bind(TICKET, queue, exchange, routingKey,
+            rpc(new Queue.Bind(TICKET, queue, exchange, routingKey,
                                           false, arguments)).getMethod();
     }
 
@@ -506,9 +472,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.Bind
      * @see com.rabbitmq.client.AMQP.Queue.BindOk
      */
-    public Queue.BindOk queueBind(String queue, String exchange, String routingKey)
-        throws IOException
-    {
+    public Queue.BindOk queueBind(String queue, String exchange, String routingKey) {
 
         return queueBind(queue, exchange, routingKey, null);
     }
@@ -519,11 +483,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
      */
     public Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey,
-                                      Map<String, Object> arguments)
-        throws IOException
-    {
+                                      Map<String, Object> arguments) {
         return (Queue.UnbindOk)
-            exnWrappingRpc(new Queue.Unbind(TICKET, queue, exchange, routingKey,
+            rpc(new Queue.Unbind(TICKET, queue, exchange, routingKey,
                                             arguments)).getMethod();
     }
 
@@ -532,9 +494,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Queue.Unbind
      * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
      */
-    public Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey)
-        throws IOException
-    {
+    public Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey) {
         return queueUnbind(queue, exchange, routingKey, null);
     }
 
@@ -544,10 +504,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Basic.GetOk
      * @see com.rabbitmq.client.AMQP.Basic.GetEmpty
      */
-    public GetResponse basicGet(String queue, boolean noAck)
-        throws IOException
-    {
-        AMQCommand replyCommand = exnWrappingRpc(new Basic.Get(TICKET, queue, noAck));
+    public GetResponse basicGet(String queue, boolean noAck) {
+        AMQCommand replyCommand = rpc(new Basic.Get(TICKET, queue, noAck));
         Method method = replyCommand.getMethod();
 
         if (method instanceof Basic.GetOk) {
@@ -574,9 +532,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * containing the received message being acknowledged.
      * @see com.rabbitmq.client.AMQP.Basic.Ack
      */
-    public void basicAck(long deliveryTag, boolean multiple)
-        throws IOException
-    {
+    public void basicAck(long deliveryTag, boolean multiple) {
         transmit(new Basic.Ack(deliveryTag, multiple));
     }
 
@@ -586,12 +542,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @return the consumerTag generated by the server
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see #basicAck
+     * @see com.rabbitmq.client.Channel#basicAck
      * @see com.rabbitmq.client.Channel#basicConsume(String,boolean, String,boolean,boolean,com.rabbitmq.client.Consumer)
      */
-    public String basicConsume(String queue, Consumer callback)
-        throws IOException
-    {
+    public String basicConsume(String queue, Consumer callback) {
         return basicConsume(queue, false, callback);
     }
 
@@ -602,9 +556,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see com.rabbitmq.client.Channel#basicConsume(String,boolean, String,boolean,boolean,com.rabbitmq.client.Consumer)
      */
-    public String basicConsume(String queue, boolean noAck, Consumer callback)
-        throws IOException
-    {
+    public String basicConsume(String queue, boolean noAck, Consumer callback) {
         return basicConsume(queue, noAck, "", callback);
     }
 
@@ -616,9 +568,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.Channel#basicConsume(String,boolean, String,boolean,boolean,com.rabbitmq.client.Consumer)
      */
     public String basicConsume(String queue, boolean noAck, String consumerTag,
-                               Consumer callback)
-        throws IOException
-    {
+                               Consumer callback) {
         return basicConsume(queue, noAck, consumerTag, false, false, callback);
     }
 
@@ -631,9 +581,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public String basicConsume(String queue, boolean noAck, String consumerTag,
                                boolean noLocal, boolean exclusive,
-                               final Consumer callback)
-        throws IOException
-    {
+                               final Consumer callback) {
         BlockingRpcContinuation<String> k = new BlockingRpcContinuation<String>() {
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).consumerTag;
@@ -657,12 +605,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                               noLocal, noAck, exclusive,
                               false),
             k);
+        
+        return k.getReply();
 
-        try {
-            return k.getReply();
-        } catch(ShutdownSignalException ex) {
-            throw wrap(ex);
-        }
     }
 
     /**
@@ -671,9 +616,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Basic.Cancel
      * @see com.rabbitmq.client.AMQP.Basic.CancelOk
      */
-    public void basicCancel(final String consumerTag)
-        throws IOException
-    {
+    public void basicCancel(final String consumerTag) {
         BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>() {
             public Consumer transformReply(AMQCommand replyCommand) {
                 Basic.CancelOk dummy = (Basic.CancelOk) replyCommand.getMethod();
@@ -695,13 +638,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         };
 
         rpc(new Basic.Cancel(consumerTag, false), k);
-
-        try {
-            Consumer callback = k.getReply();
-            Utility.use(callback);
-        } catch(ShutdownSignalException ex) {
-            throw wrap(ex);
-        }
+        Consumer callback = k.getReply();
+        Utility.use(callback);
     }
 
     /**
@@ -709,10 +647,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Tx.Select
      * @see com.rabbitmq.client.AMQP.Tx.SelectOk
      */
-    public Tx.SelectOk txSelect()
-        throws IOException
-    {
-        return (Tx.SelectOk) exnWrappingRpc(new Tx.Select()).getMethod();
+    public Tx.SelectOk txSelect() {
+        return (Tx.SelectOk) rpc(new Tx.Select()).getMethod();
     }
 
     /**
@@ -720,10 +656,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Tx.Commit
      * @see com.rabbitmq.client.AMQP.Tx.CommitOk
      */
-    public Tx.CommitOk txCommit()
-        throws IOException
-    {
-        return (Tx.CommitOk) exnWrappingRpc(new Tx.Commit()).getMethod();
+    public Tx.CommitOk txCommit() {
+        return (Tx.CommitOk) rpc(new Tx.Commit()).getMethod();
     }
 
     /**
@@ -731,9 +665,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see com.rabbitmq.client.AMQP.Tx.Rollback
      * @see com.rabbitmq.client.AMQP.Tx.RollbackOk
      */
-    public Tx.RollbackOk txRollback()
-        throws IOException
-    {
-        return (Tx.RollbackOk) exnWrappingRpc(new Tx.Rollback()).getMethod();
+    public Tx.RollbackOk txRollback() {
+        return (Tx.RollbackOk) rpc(new Tx.Rollback()).getMethod();
     }
 }

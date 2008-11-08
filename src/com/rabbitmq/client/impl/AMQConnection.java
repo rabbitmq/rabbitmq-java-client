@@ -268,7 +268,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Public API - creates a new channel using the specified channel number.
      */
 
-    public Channel createChannel(int channelNumber) throws IOException {
+    public Channel createChannel(int channelNumber) {
         ensureIsOpen();
         return _channelManager.createChannel(this, channelNumber);
     }
@@ -276,7 +276,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * Public API - creates a new channel using an internally allocated channel number.
      */
-    public Channel createChannel() throws IOException {
+    public Channel createChannel() {
         ensureIsOpen();
         return _channelManager.createChannel(this);
     }
@@ -325,44 +325,42 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public Address[] open(final ConnectionParameters params, boolean insist)
         throws RedirectException, IOException
     {
-        try {
-            AMQChannel.SimpleBlockingRpcContinuation connStartBlocker =
+
+        AMQChannel.SimpleBlockingRpcContinuation connStartBlocker =
                 new AMQChannel.SimpleBlockingRpcContinuation();
-            // We enqueue an RPC continuation here without sending an RPC
-            // request, since the protocol specifies that after sending
-            // the version negotiation header, the client (connection
-            // initiator) is to wait for a connection.start method to
-            // arrive.
-            _channel0.enqueueRpc(connStartBlocker);
-            // The following two lines are akin to AMQChannel's
-            // transmit() method for this pseudo-RPC.
-            _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
-            _frameHandler.sendHeader();
+        // We enqueue an RPC continuation here without sending an RPC
+        // request, since the protocol specifies that after sending
+        // the version negotiation header, the client (connection
+        // initiator) is to wait for a connection.start method to
+        // arrive.
+        _channel0.enqueueRpc(connStartBlocker);
+        // The following two lines are akin to AMQChannel's
+        // transmit() method for this pseudo-RPC.
+        _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
+        _frameHandler.sendHeader();
 
-            // See bug 17389. The MainLoop could have shut down already in
-            // which case we don't want to wait forever for a reply.
+        // See bug 17389. The MainLoop could have shut down already in
+        // which case we don't want to wait forever for a reply.
 
-            // There is no race if the MainLoop shuts down after enqueuing
-            // the RPC because if that happens the channel will correctly
-            // pass the exception into RPC, waking it up.
-            ensureIsOpen();
+        // There is no race if the MainLoop shuts down after enqueuing
+        // the RPC because if that happens the channel will correctly
+        // pass the exception into RPC, waking it up.
+        ensureIsOpen();
 
-            AMQP.Connection.Start connStart =
+        AMQP.Connection.Start connStart =
                 (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
 
-            Version serverVersion =
+        Version serverVersion =
                 new Version(connStart.getVersionMajor(),
-                            connStart.getVersionMinor());
+                        connStart.getVersionMinor());
 
-            if (!Version.checkVersion(clientVersion, serverVersion)) {
-                _frameHandler.close(); //this will cause mainLoop to terminate
-                //TODO: throw a more specific exception
-                throw new IOException("protocol version mismatch: expected " +
-                                      clientVersion + ", got " + serverVersion);
-            }
-        } catch (ShutdownSignalException sse) {
-            throw AMQChannel.wrap(sse);
+        if (!Version.checkVersion(clientVersion, serverVersion)) {
+            _frameHandler.close(); //this will cause mainLoop to terminate
+            //TODO: throw a more specific exception
+            throw new IOException("protocol version mismatch: expected " +
+                    clientVersion + ", got " + serverVersion);
         }
+
 
         LongString saslResponse = LongStringHelper.asLongString("\0" + params.getUserName() +
                                                                 "\0" + params.getPassword());
@@ -373,7 +371,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                            "en_US");
 
         AMQP.Connection.Tune connTune =
-            (AMQP.Connection.Tune) _channel0.exnWrappingRpc(startOk).getMethod();
+            (AMQP.Connection.Tune) _channel0.rpc(startOk).getMethod();
 
         int channelMax =
             negotiatedMaxValue(getParameters().getRequestedChannelMax(),
@@ -394,7 +392,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                                          frameMax,
                                                          heartbeat));
 
-        Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(params.getVirtualHost(),
+        Method res = _channel0.rpc(new AMQImpl.Connection.Open(params.getVirtualHost(),
                                                                           "",
                                                                           insist)).getMethod();
         if (res instanceof AMQP.Connection.Redirect) {
@@ -555,7 +553,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ShutdownSignalException sse = shutdown(closeCommand, false, null, false);
         try {
             _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
-        } catch (IOException ioe) {
+        } catch (Throwable t) {
             Utility.emptyStatement();
         }
         _heartbeat = 0; // Do not try to send heartbeats after CloseOk
@@ -611,27 +609,19 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return sse;
     }
 
-    public void close()
-        throws IOException
-    {
+    public void close() {
         close(-1);
     }
 
-    public void close(int timeout)
-        throws IOException
-    {
+    public void close(int timeout) {
         close(AMQP.REPLY_SUCCESS, "OK", timeout);
     }
 
-    public void close(int closeCode, String closeMessage)
-        throws IOException
-    {
+    public void close(int closeCode, String closeMessage) {
         close(closeCode, closeMessage, -1);
     }
 
-    public void close(int closeCode, String closeMessage, int timeout)
-        throws IOException
-    {
+    public void close(int closeCode, String closeMessage, int timeout) {
         close(closeCode, closeMessage, true, null, timeout, false);
     }
 
@@ -654,7 +644,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     {
         try {
             close(closeCode, closeMessage, true, null, timeout, true);
-        } catch (IOException e) {
+        } catch (Exception e) {
             Utility.emptyStatement();
         }
     }
@@ -678,9 +668,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                       boolean initiatedByApplication,
                       Throwable cause,
                       int timeout,
-                      boolean abort)
-        throws IOException
-    {
+                      boolean abort) {
         try {
             AMQImpl.Connection.Close reason =
                 new AMQImpl.Connection.Close(closeCode, closeMessage, 0, 0);
@@ -695,9 +683,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (ShutdownSignalException sse) {
             if (!abort)
                 throw sse;
-        } catch (IOException ioe) {
+        } catch (Throwable t) {
             if (!abort)
-                throw ioe;
+                throw new RuntimeException(t);
         } finally {
             _frameHandler.close();
         }

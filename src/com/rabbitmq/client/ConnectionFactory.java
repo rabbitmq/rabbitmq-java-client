@@ -130,8 +130,7 @@ public class ConnectionFactory {
      */
     public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
-    protected FrameHandler createFrameHandler(Address addr)
-        throws IOException {
+    protected FrameHandler createFrameHandler(Address addr) {
 
         String hostName = addr.getHost();
         int portNumber = addr.getPort();
@@ -142,9 +141,9 @@ public class ConnectionFactory {
     private Connection newConnection(Address[] addrs,
                                      int maxRedirects,
                                      Map<Address,Integer> redirectAttempts)
-        throws IOException
+
     {
-        IOException lastException = null;
+        Exception lastException = null;
 
         for (Address addr : addrs) {
             Address[] lastKnownAddresses = new Address[0];
@@ -169,7 +168,7 @@ public class ConnectionFactory {
                         }
                     }
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 lastException = e;
                 if (lastKnownAddresses.length > 0) {
                     // If there aren't any, don't bother trying, since
@@ -180,7 +179,7 @@ public class ConnectionFactory {
                         return newConnection(lastKnownAddresses,
                                              maxRedirects,
                                              redirectAttempts);
-                    } catch (IOException e1) {
+                    } catch (Exception e1) {
                         lastException = e1;
                     }
                 }
@@ -188,9 +187,9 @@ public class ConnectionFactory {
         }
 
         if (lastException == null) {
-            throw new IOException("failed to connect");
+            throw new RuntimeException("failed to connect");
         } else {
-            throw lastException;
+            throw new RuntimeException(lastException);
         }
     }
 
@@ -199,11 +198,8 @@ public class ConnectionFactory {
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @param maxRedirects the maximum allowable number of redirects
      * @return an interface to the connection
-     * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(Address[] addrs, int maxRedirects)
-        throws IOException
-    {
+    public Connection newConnection(Address[] addrs, int maxRedirects) {
         return newConnection(addrs,
                              maxRedirects,
                              new HashMap<Address,Integer>());
@@ -213,11 +209,8 @@ public class ConnectionFactory {
      * Create a new broker connection (no redirects allowed)
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @return an interface to the connection
-     * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(Address[] addrs)
-        throws IOException
-    {
+    public Connection newConnection(Address[] addrs) {
         return newConnection(addrs, 0);
     }
 
@@ -226,9 +219,8 @@ public class ConnectionFactory {
      * @param hostName the host to connect to
      * @param portNumber the port number to use
      * @return an interface to the connection
-     * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(String hostName, int portNumber) throws IOException {
+    public Connection newConnection(String hostName, int portNumber) {
         return newConnection(new Address[] {
                                  new Address(hostName, portNumber)
                              });
@@ -238,9 +230,8 @@ public class ConnectionFactory {
      * Create a new broker connection, using the default AMQP port
      * @param hostName the host to connect to
      * @return an interface to the connection
-     * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(String hostName) throws IOException {
+    public Connection newConnection(String hostName) {
         return newConnection(hostName, -1);
     }
 }

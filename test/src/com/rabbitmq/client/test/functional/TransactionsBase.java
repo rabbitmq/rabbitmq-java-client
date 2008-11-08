@@ -250,7 +250,7 @@ public abstract class TransactionsBase
         try {
             txCommit();
             fail("expected exception");
-        } catch (IOException e) {}
+        } catch (Exception e) {}
         connection = null;
         openConnection();
     }

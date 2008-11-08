@@ -99,40 +99,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     /**
-     * Placeholder until we address bug 15786 (implementing a proper exception hierarchy).
-     * In the meantime, this at least won't throw away any information from the wrapped exception.
-     * @param ex the exception to wrap
-     * @return the wrapped exception
-     */
-    public static IOException wrap(ShutdownSignalException ex) {
-        IOException ioe = new IOException();
-        ioe.initCause(ex);
-        return ioe;
-    }
-
-    /**
-     * Placeholder until we address bug 15786 (implementing a proper exception hierarchy).
-     */
-    public AMQCommand exnWrappingRpc(Method m)
-        throws IOException
-    {
-        try {
-            return rpc(m);
-        } catch (AlreadyClosedException ace) {
-            // Do not wrap it since it means that connection/channel
-            // was closed in some action in the past
-            throw ace;
-        } catch (ShutdownSignalException ex) {
-            throw wrap(ex);
-        }
-    }
-
-    /**
      * Private API - handle a command which has been assembled
      * @throws IOException if there's any problem
      *
      * @param command the incoming command
-     * @throws IOException
      */
     public void handleCompleteInboundCommand(AMQCommand command) throws IOException {
         // First, offer the command to the asynchronous-command
@@ -178,9 +148,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * next inbound Command from the broker: only for use from
      * non-connection-MainLoop threads!
      */
-    public AMQCommand rpc(Method m)
-        throws IOException, ShutdownSignalException
-    {
+    public AMQCommand rpc(Method m) {
         SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
         rpc(m, k);
         // At this point, the request method has been sent, and we
@@ -192,16 +160,12 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         return k.getReply();
     }
 
-    public synchronized void rpc(Method m, RpcContinuation k)
-        throws IOException
-    {
+    public synchronized void rpc(Method m, RpcContinuation k) {
         ensureIsOpen();
         quiescingRpc(m, k);
     }
     
-    public synchronized void quiescingRpc(Method m, RpcContinuation k)
-        throws IOException
-    {
+    public synchronized void quiescingRpc(Method m, RpcContinuation k) {
         enqueueRpc(k);
         quiescingTransmit(m);
     }
@@ -252,20 +216,20 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public synchronized void transmit(Method m) throws IOException {
+    public synchronized void transmit(Method m) {
         transmit(new AMQCommand(m));
     }
 
-    public synchronized void transmit(AMQCommand c) throws IOException {
+    public synchronized void transmit(AMQCommand c) {
         ensureIsOpen();
         quiescingTransmit(c);
     }
 
-    public synchronized void quiescingTransmit(Method m) throws IOException {
+    public synchronized void quiescingTransmit(Method m) {
         quiescingTransmit(new AMQCommand(m));
     }
 
-    public synchronized void quiescingTransmit(AMQCommand c) throws IOException {
+    public synchronized void quiescingTransmit(AMQCommand c) {
         if (c.getMethod().hasContent()) {
             while (_blockContent) {
                 try {

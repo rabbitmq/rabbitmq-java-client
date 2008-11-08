@@ -107,17 +107,15 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     /**
      * Create a new channel, using an internally allocated channel number.
      * @return a new channel descriptor, or null if none is available
-     * @throws IOException if an I/O problem is encountered
      */
-    Channel createChannel() throws IOException;
+    Channel createChannel();
 
     /**
      * Create a new channel, using the specified channel number if possible.
      * @param channelNumber the channel number to allocate
      * @return a new channel descriptor, or null if this channel number is already in use
-     * @throws IOException if an I/O problem is encountered
      */
-    Channel createChannel(int channelNumber) throws IOException;
+    Channel createChannel(int channelNumber);
 
     /**
      * Close this connection and all its channels
@@ -126,9 +124,8 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      *
      * Waits for all the close operations to complete.
      *
-     * @throws IOException if an I/O problem is encountered
      */
-    void close() throws IOException;
+    void close();
     
     /**
      * Close this connection and all its channels.
@@ -137,9 +134,8 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      *
      * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
      * @param closeMessage a message indicating the reason for closing the connection
-     * @throws IOException if an I/O problem is encountered
      */
-    void close(int closeCode, String closeMessage) throws IOException;
+    void close(int closeCode, String closeMessage);
 
     /**
      * Close this connection and all its channels
@@ -152,9 +148,8 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * 
      * @param timeout timeout (in milliseconds) for completing all the close-related
      * operations, use -1 for infinity
-     * @throws IOException if an I/O problem is encountered
      */
-    void close(int timeout) throws IOException;
+    void close(int timeout);
     
     /**
      * Close this connection and all its channels.
@@ -166,9 +161,8 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * @param closeMessage a message indicating the reason for closing the connection
      * @param timeout timeout (in milliseconds) for completing all the close-related
      * operations, use -1 for infinity
-     * @throws IOException if an I/O problem is encountered
      */
-    void close(int closeCode, String closeMessage, int timeout) throws IOException;
+    void close(int closeCode, String closeMessage, int timeout);
 
     /**
      * Abort this connection and all its channels

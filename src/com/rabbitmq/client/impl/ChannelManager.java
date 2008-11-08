@@ -72,7 +72,7 @@ public class ChannelManager {
         }
     }
 
-    public synchronized ChannelN createChannel(AMQConnection connection) throws IOException {
+    public synchronized ChannelN createChannel(AMQConnection connection) {
         int channelNumber = allocateChannelNumber(getChannelMax());
         if (channelNumber == -1) {
             return null;
@@ -80,7 +80,7 @@ public class ChannelManager {
         return createChannel(connection, channelNumber);
     }
 
-    public synchronized ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
+    public synchronized ChannelN createChannel(AMQConnection connection, int channelNumber) {
         ChannelN ch = new ChannelN(connection, channelNumber);
         if (_channelMap.containsKey(channelNumber)) {
             return null; // That number's already allocated! Can't do it

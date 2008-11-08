@@ -64,21 +64,26 @@ public class SocketFrameHandler implements FrameHandler {
      * @param factory the socket factory to use to build our Socket - may be SSLSocketFactory etc
      * @param hostName the host name
      * @param portNumber the port number
-     * @throws IOException if there is a problem accessing the connection
+     * @throws java.io.IOException if there is a problem buffering the input or output stream
+     * @throws java.net.UnknownHostException If the host is not known
+     * @throws java.net.SocketException If the Nagle flag cannot be set
      */
     public SocketFrameHandler(SocketFactory factory,
                               String hostName,
-                              int portNumber)
-        throws IOException
-    {
-        _host = hostName;
-        _port = portNumber;
-        _socket = factory.createSocket(_host, _port);
-        //disable Nagle's algorithm, for more consistently low latency
-        _socket.setTcpNoDelay(true);
+                              int portNumber) {
+        try {
+            _host = hostName;
+            _port = portNumber;
+            _socket = factory.createSocket(_host, _port);
+            //disable Nagle's algorithm, for more consistently low latency
+            _socket.setTcpNoDelay(true);
 
-        _inputStream = new DataInputStream(new BufferedInputStream(_socket.getInputStream()));
-        _outputStream = new DataOutputStream(new BufferedOutputStream(_socket.getOutputStream()));
+            _inputStream = new DataInputStream(new BufferedInputStream(_socket.getInputStream()));
+            _outputStream = new DataOutputStream(new BufferedOutputStream(_socket.getOutputStream()));
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public String getHost() {
