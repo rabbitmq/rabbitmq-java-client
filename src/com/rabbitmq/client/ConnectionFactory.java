@@ -24,19 +24,17 @@
 //
 package com.rabbitmq.client;
 
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.SocketFrameHandler;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.SocketFrameHandler;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
@@ -159,7 +157,8 @@ public class ConnectionFactory {
                     } catch (RedirectException e) {
                         if (!allowRedirects) {
                             //this should never happen with a well-behaved server
-                            throw new IOException("server ignored 'insist'");
+                            // TODO See 15786 -  come up with a better exception for this
+                            throw new RuntimeException("server ignored 'insist'");
                         } else {
                             redirectAttempts.put(addr, redirectCount+1);
                             lastKnownAddresses = e.getKnownAddresses();
@@ -174,7 +173,7 @@ public class ConnectionFactory {
                     // If there aren't any, don't bother trying, since
                     // a recursive call with empty lastKnownAddresses
                     // will cause our lastException to be stomped on
-                    // by an uninformative IOException. See bug 16273.
+                    // by an uninformative IOException. See bug 16273. And 15786.
                     try {
                         return newConnection(lastKnownAddresses,
                                              maxRedirects,

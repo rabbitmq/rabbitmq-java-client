@@ -25,8 +25,6 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 
@@ -35,28 +33,24 @@ public class DurableOnTransient extends BrokerTestCase
     protected static final String Q = "DurableQueue";
     protected static final String X = "TransientExchange";
 
-    private GetResponse basicGet()
-        throws IOException
-    {
+    private GetResponse basicGet() {
         return channel.basicGet(Q, true);
     }
 
-    private void basicPublish()
-        throws IOException
-    {
+    private void basicPublish() {
         channel.basicPublish(X, "",
                              MessageProperties.PERSISTENT_TEXT_PLAIN,
                              "persistent message".getBytes());
     }
 
-    protected void createResources() throws IOException {
+    protected void createResources() {
         // Transient exchange
         channel.exchangeDeclare(X, "direct", false);
         // durable queue
         channel.queueDeclare(Q, true);
     }
 
-    protected void releaseResources() throws IOException {
+    protected void releaseResources() {
         channel.queueDelete(Q);
         channel.exchangeDelete(X);
     }

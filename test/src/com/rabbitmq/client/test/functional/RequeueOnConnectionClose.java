@@ -25,19 +25,15 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-
 public class RequeueOnConnectionClose extends RequeueOnClose
 {
 
-    protected void open() throws IOException
-    {
+    protected void open() {
         openConnection();
         openChannel();
     }
 
-    protected void close() throws IOException
-    {
+    protected void close() {
         closeConnection();
     }
 

@@ -262,7 +262,7 @@ public class ScalabilityTest {
     }
 
     private float timeRouting(Channel channel, String[] routingKeys)
-        throws IOException, InterruptedException {
+            throws InterruptedException {
 
         boolean mandatory = true;
         boolean immdediate = true;
@@ -270,7 +270,7 @@ public class ScalabilityTest {
         channel.setReturnListener(new ReturnListener() {
                 public void handleBasicReturn(int replyCode, String replyText,
                                               String exchange, String routingKey,
-                                              AMQP.BasicProperties properties, byte[] body) throws IOException {
+                                              AMQP.BasicProperties properties, byte[] body) {
                     latch.countDown();
                 }
             });

@@ -71,7 +71,7 @@ public class Host {
         }
         int ev = pr.exitValue();
         if (ev != 0) {
-            throw new IOException("unexpected command exit value: " + ev +
+            throw new RuntimeException("unexpected command exit value: " + ev +
                                   "\nstdout:\n" + stdout +
                                   "\nstderr:\n" + stderr + "\n");
         }

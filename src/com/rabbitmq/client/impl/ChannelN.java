@@ -32,7 +32,6 @@ import com.rabbitmq.client.impl.AMQImpl.*;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
 import com.rabbitmq.utility.Utility;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -91,7 +90,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /**
      * Package method: open the channel.
      * This is only called from AMQConnection.
-     * @throws java.io.IOException if any problem is encountered
      */
     public void open() {
         // wait for the Channel.OpenOk response, then ignore it
@@ -156,7 +154,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * Protected API - Filters the inbound command stream, processing
      * Basic.Deliver, Basic.Return and Channel.Close specially.
      */
-    @Override public boolean processAsync(Command command) throws IOException
+    @Override public boolean processAsync(Command command)
     {
         // If we are isOpen(), then we process commands normally.
         //

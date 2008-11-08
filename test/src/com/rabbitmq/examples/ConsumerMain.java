@@ -235,9 +235,7 @@ public class ConsumerMain implements Runnable {
         @Override public void handleDelivery(String consumerTag,
                                              Envelope envelope,
                                              AMQP.BasicProperties properties,
-                                             byte[] body)
-            throws IOException
-        {
+                                             byte[] body) {
             if ("completion".equals(consumerTag)) {
                 System.out.println("Got completion message.");
                 finish();
@@ -250,9 +248,17 @@ public class ConsumerMain implements Runnable {
 
             long now = System.currentTimeMillis();
             DataInputStream d = new DataInputStream(new ByteArrayInputStream(body));
-            int messagesRemaining = d.readInt();
-            long msgStartTime = d.readLong();
 
+            int messagesRemaining = 0;
+            long msgStartTime = 0;
+            try {
+                messagesRemaining = d.readInt();
+                msgStartTime = d.readLong();
+
+            }
+            catch(Exception e) {
+
+            }
             _mostRecentTime = System.currentTimeMillis();
 
             if (_deltas == null) {
@@ -280,7 +286,7 @@ public class ConsumerMain implements Runnable {
             }
         }
 
-        public void finish() throws IOException {
+        public void finish() {
             if (!_noAck)
                 getChannel().basicAck(0, true);
             _blocker.setIfUnset(new Object());

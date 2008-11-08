@@ -41,11 +41,14 @@ import com.rabbitmq.client.impl.MethodArgumentWriter;
  * requests and replies.
  */
 public class MapRpcServer extends RpcServer {
-    public MapRpcServer(Channel channel) throws IOException
-    { super(channel); }
 
-    public MapRpcServer(Channel channel, String queueName) throws IOException
-    { super(channel, queueName); }
+    public MapRpcServer(Channel channel) {
+        super(channel);
+    }
+
+    public MapRpcServer(Channel channel, String queueName) {
+        super(channel, queueName);
+    }
 
     /**
      * Overridden to delegate to handleMapCall.

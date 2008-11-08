@@ -25,17 +25,16 @@
 
 package com.rabbitmq.tools.jsonrpc;
 
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.StringRpcServer;
 import com.rabbitmq.tools.json.JSONReader;
 import com.rabbitmq.tools.json.JSONWriter;
+
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * JSON-RPC Server class.
@@ -64,13 +63,10 @@ public class JsonRpcServer extends StringRpcServer {
      * @param channel AMQP channel to use
      * @param interfaceClass Java interface that this server is exposing to the world
      * @param interfaceInstance Java instance (of interfaceClass) that is being exposed
-     * @throws IOException if something goes wrong during an AMQP operation
      */
     public JsonRpcServer(Channel channel,
                          Class interfaceClass,
-                         Object interfaceInstance)
-        throws IOException
-    {
+                         Object interfaceInstance) {
 	super(channel);
         init(interfaceClass, interfaceInstance);
     }
@@ -91,15 +87,12 @@ public class JsonRpcServer extends StringRpcServer {
      * @param queueName AMQP queue name to listen for requests on
      * @param interfaceClass Java interface that this server is exposing to the world
      * @param interfaceInstance Java instance (of interfaceClass) that is being exposed
-     * @throws IOException if something goes wrong during an AMQP operation
      */
     public JsonRpcServer(Channel channel,
                          String queueName,
                          Class interfaceClass,
-                         Object interfaceInstance)
-        throws IOException
-    {
-	super(channel, queueName);
+                         Object interfaceInstance) {
+	    super(channel, queueName);
         init(interfaceClass, interfaceInstance);
     }
 

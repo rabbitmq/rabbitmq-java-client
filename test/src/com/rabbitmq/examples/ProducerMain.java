@@ -172,7 +172,7 @@ public class ProducerMain implements Runnable {
         System.out.println("Leaving ProducerMain.run().");
     }
 
-    public void primeServer(String queueName) throws IOException {
+    public void primeServer(String queueName) {
         System.out.println("Priming server...");
         for (int i = 0; i < 2000; i++) {
             _channel.basicPublish("", queueName, MessageProperties.MINIMAL_BASIC, new byte[0]);

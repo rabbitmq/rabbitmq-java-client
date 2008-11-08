@@ -29,6 +29,7 @@ import java.io.IOException;
 
 /**
  * Encapsulates a frame format error at the wire level.
+ * TODO See bug 15786
  */
 public class MalformedFrameException extends IOException {
     /** Standard serialization ID. */

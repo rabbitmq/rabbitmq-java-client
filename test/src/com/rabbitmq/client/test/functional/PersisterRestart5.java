@@ -25,8 +25,6 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-
 public class PersisterRestart5 extends PersisterRestartBase
 {
 
@@ -35,15 +33,13 @@ public class PersisterRestart5 extends PersisterRestartBase
     private static final String X = "Exchange5";
 
 
-    protected void exercisePersister() 
-      throws IOException
-    {
+    protected void exercisePersister() {
         basicPublishPersistent(X, "foo.foo");
         basicPublishVolatile(X, "foo.qux");
     }
 
     public void testRestart()
-        throws IOException, InterruptedException
+            throws InterruptedException
     {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q1, X, "foo.*");

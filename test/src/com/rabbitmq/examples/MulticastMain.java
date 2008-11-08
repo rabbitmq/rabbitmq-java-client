@@ -242,8 +242,6 @@ public class MulticastMain {
                     now = System.currentTimeMillis();
                 }
 
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             } catch (InterruptedException e) {
                 throw new RuntimeException (e);
             }
@@ -254,9 +252,7 @@ public class MulticastMain {
 
         }
 
-        private void publish(byte[] msg)
-            throws IOException {
-
+        private void publish(byte[] msg) {
             channel.basicPublish(exchangeName, id,
                                  mandatory, immediate,
                                  persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
@@ -285,16 +281,19 @@ public class MulticastMain {
             }
         }
 
-        private byte[] createMessage(int sequenceNumber)
-            throws IOException {
+        private byte[] createMessage(int sequenceNumber) {
 
             ByteArrayOutputStream acc = new ByteArrayOutputStream();
             DataOutputStream d = new DataOutputStream(acc);
-            long nano = System.nanoTime();
-            d.writeInt(sequenceNumber);
-            d.writeLong(nano);
-            d.flush();
-            acc.flush();
+            long nano = System.nanoTime();            
+            try {
+                d.writeInt(sequenceNumber);
+                d.writeLong(nano);
+                d.flush();
+                acc.flush();
+            } catch (IOException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
             byte[] m = acc.toByteArray();
             if (m.length <= message.length) {
                 System.arraycopy(m, 0, message, 0, m.length);

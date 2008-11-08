@@ -25,8 +25,6 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -38,39 +36,31 @@ public abstract class RequeueOnClose
     public static final int GRATUITOUS_DELAY = 100;
     public static final int MESSAGE_COUNT = 2000;
 
-    protected abstract void open() throws IOException;
+    protected abstract void open();
 
-    protected abstract void close() throws IOException;
+    protected abstract void close();
 
-    protected void setUp()
-        throws IOException
-    {
+    protected void setUp() {
         // Override to disable the default behaviour from BrokerTestCase.
     }
 
-    protected void tearDown()
-        throws IOException
-    {
+    protected void tearDown() {
         // Override to disable the default behaviour from BrokerTestCase.
     }
 
-    public void injectMessage()
-        throws IOException
-    {
+    public void injectMessage() {
         channel.queueDeclare(Q);
         channel.queueDelete(Q);
         channel.queueDeclare(Q);
         channel.basicPublish("", Q, null, "RequeueOnClose message".getBytes());
     }
 
-    public GetResponse getMessage()
-        throws IOException
-    {
+    public GetResponse getMessage() {
         return channel.basicGet(Q, false);
     }
 
     public void publishAndGet(int count, boolean doAck)
-        throws IOException, InterruptedException
+            throws InterruptedException
     {
         openConnection();
         for (int repeat = 0; repeat < count; repeat++) {
@@ -93,19 +83,19 @@ public abstract class RequeueOnClose
     }
 
     public void testNormal()
-        throws IOException, InterruptedException
+            throws InterruptedException
     {
         publishAndGet(3, true);
     }
 
     public void testRequeueing()
-        throws IOException, InterruptedException
+            throws InterruptedException
     {
         publishAndGet(3, false);
     }
 
     public void testRequeueingConsumer()
-        throws IOException, InterruptedException, ShutdownSignalException
+            throws InterruptedException, ShutdownSignalException
     {
         openConnection();
         open();
@@ -122,7 +112,7 @@ public abstract class RequeueOnClose
     }
 
     public void publishLotsAndGet()
-        throws IOException, InterruptedException, ShutdownSignalException
+            throws InterruptedException, ShutdownSignalException
     {
         openConnection();
         open();
@@ -149,7 +139,7 @@ public abstract class RequeueOnClose
     }
 
     public void testRequeueInFlight()
-        throws IOException, InterruptedException, ShutdownSignalException
+            throws InterruptedException, ShutdownSignalException
     {
         for (int i = 0; i < 5; i++) {
             publishLotsAndGet();

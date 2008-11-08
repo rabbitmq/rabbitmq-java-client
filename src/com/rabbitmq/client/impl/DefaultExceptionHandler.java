@@ -24,8 +24,6 @@
 //
 package com.rabbitmq.client.impl;
 
-import java.io.IOException;
-
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -51,7 +49,7 @@ public class DefaultExceptionHandler implements ExceptionHandler {
                                                             "Internal error in ReturnListener",
                                                             false,
                                                             exception);
-        } catch (IOException ioe) {
+        } catch (Exception e) {
             // Man, this clearly isn't our day.
             // Ignore the exception? TODO: Log the nested failure
         }
@@ -73,7 +71,7 @@ public class DefaultExceptionHandler implements ExceptionHandler {
                                                               consumerTag,
                                                             false,
                                                             exception);
-        } catch (IOException ioe) {
+        } catch (Exception e) {
             // Man, this clearly isn't our day.
             // Ignore the exception? TODO: Log the nested failure
         }

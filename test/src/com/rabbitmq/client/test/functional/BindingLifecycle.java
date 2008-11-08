@@ -3,8 +3,6 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 
-import java.io.IOException;
-
 /**
  * This tests whether bindings are created and nuked properly.
  *
@@ -25,7 +23,7 @@ public class BindingLifecycle extends PersisterRestartBase {
     /**
      *   Tests whether durable bindings are correctly recovered.
      */
-    public void testDurableBindingRecovery() throws IOException {
+    public void testDurableBindingRecovery() {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q, X, K);
 
@@ -58,7 +56,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * main difference is that the broker has to be restarted to
      * verify that the durable routes have been turfed.
      */
-    public void testDurableBindingsDeletion() throws IOException {
+    public void testDurableBindingsDeletion() {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q, X, K);
 
@@ -87,7 +85,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * The idea is to create a durable queue, nuke the server and then
      * publish a message to it using the queue name as a routing key
      */
-    public void testDefaultBindingRecovery() throws IOException {
+    public void testDefaultBindingRecovery() {
         declareDurableQueue(Q);
 
         restart();
@@ -104,7 +102,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * This tests whether when you delete a queue, that its bindings
      * are deleted as well.
      */
-    public void testQueueDelete() throws IOException {
+    public void testQueueDelete() {
 
         boolean durable = true;
         Binding binding = setupExchangeAndRouteMessage(durable);
@@ -126,7 +124,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * This tests whether when you delete an exchange, that any
      * bindings attached to it are deleted as well.
      */
-    public void testExchangeDelete() throws IOException {
+    public void testExchangeDelete() {
 
         boolean durable = true;
         Binding binding = setupExchangeAndRouteMessage(durable);
@@ -150,7 +148,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * To test this, you try to delete an exchange with a queue still
      * bound to it and expect the delete operation to fail.
      */
-    public void testExchangeIfUnused() throws IOException {
+    public void testExchangeIfUnused() {
 
         boolean durable = true;
         Binding binding = setupExchangeBindings(durable);
@@ -187,7 +185,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * Because the exchange has been auto-deleted, the bind operation
      * should fail.
      */
-    public void testExchangeAutoDelete() throws IOException {
+    public void testExchangeAutoDelete() {
         doAutoDelete(false, 1);
     }
 
@@ -198,7 +196,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * The difference should be that the original exchange should not
      * get auto-deleted
      */
-    public void testExchangeAutoDeleteManyBindings() throws IOException {
+    public void testExchangeAutoDeleteManyBindings() {
         doAutoDelete(false, 10);
     }
 
@@ -209,7 +207,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * Main difference is restarting the broker to make sure that the
      * durable queues are blasted away.
      */
-    public void testExchangeAutoDeleteDurable() throws IOException {
+    public void testExchangeAutoDeleteDurable() {
         doAutoDelete(true, 1);
     }
 
@@ -217,11 +215,11 @@ public class BindingLifecycle extends PersisterRestartBase {
      * The same thing as testExchangeAutoDeleteManyBindings, but with
      * durable queues.
      */
-    public void testExchangeAutoDeleteDurableManyBindings() throws IOException {
+    public void testExchangeAutoDeleteDurableManyBindings() {
         doAutoDelete(true, 10);
     }
 
-    private void doAutoDelete(boolean durable, int queues) throws IOException {
+    private void doAutoDelete(boolean durable, int queues) {
 
         String[] queueNames = null;
 
@@ -293,20 +291,20 @@ public class BindingLifecycle extends PersisterRestartBase {
 
     }
 
-    private void subscribeSendUnsubscribe(Binding binding) throws IOException {
+    private void subscribeSendUnsubscribe(Binding binding) {
         String tag = channel.basicConsume(binding.q,
                                           new QueueingConsumer(channel));
         sendUnroutable(binding);
         channel.basicCancel(tag);
     }
 
-    private void sendUnroutable(Binding binding) throws IOException {
+    private void sendUnroutable(Binding binding) {
         channel.basicPublish(binding.x, binding.k, null, payload);
         GetResponse response = channel.basicGet(binding.q, true);
         assertNull("The response SHOULD BE null", response);
     }
 
-    private void sendRoutable(Binding binding) throws IOException {
+    private void sendRoutable(Binding binding) {
         channel.basicPublish(binding.x, binding.k, null, payload);
         GetResponse response = channel.basicGet(binding.q, true);
         assertNotNull("The response should not be null", response);
@@ -331,31 +329,27 @@ public class BindingLifecycle extends PersisterRestartBase {
         }
     }
 
-    private void createQueueAndBindToExchange(Binding binding, boolean durable)
-        throws IOException {
+    private void createQueueAndBindToExchange(Binding binding, boolean durable) {
 
         channel.exchangeDeclare(binding.x, "direct", durable);
         channel.queueDeclare(binding.q, durable);
         channel.queueBind(binding.q, binding.x, binding.k);
     }
 
-    private void deleteExchangeAndQueue(Binding binding)
-        throws IOException {
+    private void deleteExchangeAndQueue(Binding binding) {
 
         channel.queueDelete(binding.q);
         channel.exchangeDelete(binding.x);
     }
 
-    private Binding setupExchangeBindings(boolean durable)
-        throws IOException {
+    private Binding setupExchangeBindings(boolean durable) {
 
         Binding binding = Binding.randomBinding();
         createQueueAndBindToExchange(binding, durable);
         return binding;
     }
 
-    private Binding setupExchangeAndRouteMessage(boolean durable)
-        throws IOException {
+    private Binding setupExchangeAndRouteMessage(boolean durable) {
 
         Binding binding = setupExchangeBindings(durable);
         sendRoutable(binding);

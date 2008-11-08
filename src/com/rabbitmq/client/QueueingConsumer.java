@@ -25,13 +25,12 @@
 
 package com.rabbitmq.client;
 
-import java.io.IOException;
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.utility.ValueOrException;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-
-import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.utility.ValueOrException;
 
 /**
  * Convenience class: an implementation of {@link Consumer} with straightforward blocking semantics
@@ -58,9 +57,7 @@ public class QueueingConsumer extends DefaultConsumer {
     @Override public void handleDelivery(String consumerTag,
                                Envelope envelope,
                                AMQP.BasicProperties properties,
-                               byte[] body)
-        throws IOException
-    {
+                               byte[] body) {
         this._queue.add(ValueOrException. <Delivery, ShutdownSignalException> makeValue
                         (new Delivery(envelope, properties, body)));
     }

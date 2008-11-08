@@ -24,14 +24,9 @@
 //
 package com.rabbitmq.client.impl;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import com.rabbitmq.client.ShutdownSignalException;
+
+import java.util.*;
 
 /**
  * Manages a set of channels, indexed by channel number.

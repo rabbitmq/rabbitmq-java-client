@@ -25,23 +25,19 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-
 public class PersisterRestart3 extends PersisterRestartBase
 {
 
     private static final String Q1 = "Restart3One";
     private static final String Q2 = "Restart3Two";
 
-    protected void exercisePersister(String q) 
-      throws IOException
-    {
+    protected void exercisePersister(String q) {
         basicPublishPersistent(q);
         basicPublishVolatile(q);
     }
 
     public void testRestart()
-        throws IOException, InterruptedException
+            throws InterruptedException
     {
         declareDurableQueue(Q1);
         declareDurableQueue(Q2);

@@ -30,6 +30,7 @@ import java.io.IOException;
 /**
  * Thrown when the protocol handlers detect an unknown class number or
  * method number.
+ * TODO See bug 15786
  */
 public class UnknownClassOrMethodId extends IOException {
     private static final long serialVersionUID = 1L;

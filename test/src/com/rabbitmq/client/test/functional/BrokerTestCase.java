@@ -25,8 +25,6 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-
 import junit.framework.TestCase;
 
 import com.rabbitmq.client.AlreadyClosedException;
@@ -41,18 +39,14 @@ public class BrokerTestCase extends TestCase
     public Connection connection;
     public Channel channel;
 
-    protected void setUp()
-        throws IOException
-    {
+    protected void setUp() {
         openConnection();
         openChannel();
 
         createResources();
     }
 
-    protected void tearDown()
-        throws IOException
-    {
+    protected void tearDown() {
         closeChannel();
         closeConnection();
 
@@ -68,9 +62,7 @@ public class BrokerTestCase extends TestCase
      * called by BrokerTestCase's implementation of setUp, after the
      * connection and channel have been opened.
      */
-    protected void createResources()
-        throws IOException
-    {}
+    protected void createResources() {}
 
     /**
      * Should destroy any AMQP resources that were created by the
@@ -79,36 +71,26 @@ public class BrokerTestCase extends TestCase
      * reopened specifically for this method. After this method
      * completes, the connection and channel will be closed again.
      */
-    protected void releaseResources()
-        throws IOException
-    {}
+    protected void releaseResources() {}
 
-    public void openConnection()
-        throws IOException
-    {
+    public void openConnection() {
         if (connection == null) {
             connection = connectionFactory.newConnection("localhost");
         }
     }
 
-    public void closeConnection()
-        throws IOException
-    {
+    public void closeConnection() {
         if (connection != null) {
             connection.abort();
             connection = null;
         }
     }
 
-    public void openChannel()
-        throws IOException
-    {
+    public void openChannel() {
         channel = connection.createChannel();
     }
 
-    public void closeChannel()
-        throws IOException
-    {
+    public void closeChannel() {
         if (channel != null) {
             try {
                 channel.close();

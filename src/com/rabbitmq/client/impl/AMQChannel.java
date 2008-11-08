@@ -100,11 +100,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
 
     /**
      * Private API - handle a command which has been assembled
-     * @throws IOException if there's any problem
      *
      * @param command the incoming command
      */
-    public void handleCompleteInboundCommand(AMQCommand command) throws IOException {
+    public void handleCompleteInboundCommand(AMQCommand command) {
         // First, offer the command to the asynchronous-command
         // handling mechanism, which gets to act as a filter on the
         // incoming command stream.  If processAsync() returns true,
@@ -177,7 +176,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * @param command the command to handle asynchronously
      * @return true if we handled the command; otherwise the caller should consider it "unhandled"
      */
-    public abstract boolean processAsync(Command command) throws IOException;
+    public abstract boolean processAsync(Command command);
 
     @Override public String toString() {
         return "AMQChannel(" + _connection + "," + _channelNumber + ")";

@@ -161,7 +161,7 @@ public class TestMain {
         }
     }
 
-    public static void runConnectionShutdownTests(String hostName, int portNumber) throws IOException {
+    public static void runConnectionShutdownTests(String hostName, int portNumber) {
         Connection conn;
         Channel ch;
         // Test what happens when a connection is shut down w/o first
@@ -182,7 +182,7 @@ public class TestMain {
         ((SocketFrameHandler)((AMQConnection)conn)._frameHandler).close();
     }
 
-    public static void runProducerConsumerTest(String hostName, int portNumber, int commitEvery) throws IOException {
+    public static void runProducerConsumerTest(String hostName, int portNumber, int commitEvery) {
         Connection connp = new ConnectionFactory().newConnection(hostName, portNumber);
         ProducerMain p = new ProducerMain(connp, 2000, 10000, false, commitEvery, true);
         new Thread(p).start();
@@ -214,7 +214,7 @@ public class TestMain {
         _silent = silent;
     }
 
-    public Channel createChannel() throws IOException {
+    public Channel createChannel() {
         return _connection.createChannel();
     }
 
@@ -223,14 +223,14 @@ public class TestMain {
             System.out.println(s);
     }
 
-    public void run() throws IOException {
+    public void run() {
         final int batchSize = 5;
 
         _ch1 = createChannel();
 
         _ch1.setReturnListener(new ReturnListener() {
-            public void handleBasicReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body)
-                    throws IOException {
+            public void handleBasicReturn(int replyCode, String replyText, String exchange, String routingKey,
+                                          AMQP.BasicProperties properties, byte[] body) {
                 Method method = new AMQImpl.Basic.Return(replyCode, replyText, exchange, routingKey);
                 log("Handling return with body " + new String(body));
                 returnCell.set(new Object[] { method, properties, body });
@@ -274,7 +274,7 @@ public class TestMain {
         log("Leaving TestMain.run().");
     }
 
-    public class UnexpectedSuccessException extends IOException {
+    public class UnexpectedSuccessException {
         /**
          * Default version UID for serializable class
          */
@@ -323,7 +323,8 @@ public class TestMain {
             _counter = 0;
         }
 
-        @Override public void handleDelivery(String consumer_Tag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+        @Override public void handleDelivery(String consumer_Tag, Envelope envelope, AMQP.BasicProperties properties,
+                                             byte[] body) {
             log("Async message (" + _counter + "," + (_noAck ? "noack" : "ack") + "): " + new String(body));
             _counter++;
             if (_counter == _batchSize) {
@@ -336,7 +337,7 @@ public class TestMain {
         }
     }
 
-    public void sendLotsOfTrivialMessages(int batchSize, String routingKey) throws IOException {
+    public void sendLotsOfTrivialMessages(int batchSize, String routingKey) {
         for (int i = 0; i < batchSize; i++) {
             String messageText = "(" + _messageId + ") On the third tone, the time will be " + new java.util.Date();
             _messageId++;
@@ -363,7 +364,7 @@ public class TestMain {
         }
     }
 
-    public int drain(int batchSize, String queueName, boolean noAck) throws IOException {
+    public int drain(int batchSize, String queueName, boolean noAck) {
         long latestTag = 0;
         boolean notEmpty = true;
         int remaining = batchSize;
@@ -391,15 +392,15 @@ public class TestMain {
         return count;
     }
 
-    public void publish1(String x, String routingKey, String body) throws IOException {
+    public void publish1(String x, String routingKey, String body) {
         _ch1.basicPublish(x, routingKey, MessageProperties.TEXT_PLAIN, body.getBytes());
     }
 
-    public void publish2(String x, String routingKey, String body) throws IOException {
+    public void publish2(String x, String routingKey, String body) {
         _ch1.basicPublish(x, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, body.getBytes());
     }
 
-    public void tryTopics() throws IOException {
+    public void tryTopics() {
         String q1 = "tryTopicsQueue1";
         String q2 = "tryTopicsQueue2";
         String q3 = "tryTopicsQueue3";
@@ -444,7 +445,7 @@ public class TestMain {
         }
     }
 
-    public void tryBasicReturn() throws IOException {
+    public void tryBasicReturn() {
         log("About to try mandatory/immediate publications");
 
         String mx = "mandatoryTestExchange";
@@ -488,7 +489,7 @@ public class TestMain {
         }
     }
 
-    public void tryTransaction(String queueName) throws IOException {
+    public void tryTransaction(String queueName) {
 
         GetResponse c;
 

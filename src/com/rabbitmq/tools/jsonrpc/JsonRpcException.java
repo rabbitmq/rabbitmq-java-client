@@ -31,6 +31,7 @@ import com.rabbitmq.tools.json.JSONWriter;
 
 /**
  * Thrown when a JSON-RPC service indicates an error occurred during a call.
+ * TODO See bug 15786
  */
 public class JsonRpcException extends Exception {
     /**

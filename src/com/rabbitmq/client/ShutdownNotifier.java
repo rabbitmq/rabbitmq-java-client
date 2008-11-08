@@ -41,7 +41,6 @@ public interface ShutdownNotifier {
      * Checking this method should be only for information,
      * because of the race conditions - state can change after the call.
      * Instead just execute and try to catch ShutdownSignalException
-     * and IOException
      *
      * @return true when component is open, false otherwise
      */

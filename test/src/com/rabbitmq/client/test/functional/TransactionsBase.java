@@ -25,8 +25,6 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.AMQP.BasicProperties;
 
@@ -38,80 +36,60 @@ public abstract class TransactionsBase
 
     protected long latestTag = 0L;
 
-    protected void setUp()
-        throws IOException
-    {
+    protected void setUp() {
         super.setUp();
         closeChannel();
     }
 
-    protected void createResources() throws IOException {
+    protected void createResources() {
         channel.queueDeclare(Q);
     }
 
-    protected void releaseResources() throws IOException {
+    protected void releaseResources() {
         channel.queueDelete(Q);
     }
 
     protected abstract BasicProperties getMessageProperties();
 
-    private void txSelect()
-        throws IOException
-    {
+    private void txSelect() {
         channel.txSelect();
     }
 
-    private void txCommit()
-        throws IOException
-    {
+    private void txCommit() {
         channel.txCommit();
     }
 
-    private void txRollback()
-        throws IOException
-    {
+    private void txRollback() {
         channel.txRollback();
     }
 
-    private void basicPublish()
-        throws IOException
-    {
+    private void basicPublish() {
         channel.basicPublish("", Q, getMessageProperties(),
                              "Tx message".getBytes());
     }
 
-    private GetResponse basicGet(boolean noAck)
-        throws IOException
-    {
+    private GetResponse basicGet(boolean noAck) {
         GetResponse r = channel.basicGet(Q, noAck);
         latestTag = (r == null) ? 0L : r.getEnvelope().getDeliveryTag();
         return r;
     }
 
-    private GetResponse basicGet()
-        throws IOException
-    {
+    private GetResponse basicGet() {
         return basicGet(false);
     }
 
-    private void basicAck(long tag, boolean multiple)
-        throws IOException
-    {
+    private void basicAck(long tag, boolean multiple) {
         channel.basicAck(tag, multiple);
     }
 
-    private void basicAck()
-        throws IOException
-    {
+    private void basicAck() {
         basicAck(latestTag, false);
     }
 
     /*
       publishes are embargoed until commit
      */
-    public void testCommitPublish()
-        throws IOException
-    {
+    public void testCommitPublish() {
         openChannel();
         txSelect();
         basicPublish();
@@ -125,9 +103,7 @@ public abstract class TransactionsBase
     /*
       rollback rolls back publishes
     */
-    public void testRollbackPublish()
-        throws IOException
-    {
+    public void testRollbackPublish() {
         openChannel();
         txSelect();
         basicPublish();
@@ -139,9 +115,7 @@ public abstract class TransactionsBase
     /*
       closing a channel rolls back publishes
     */
-    public void testRollbackPublishOnClose()
-        throws IOException
-    {
+    public void testRollbackPublishOnClose() {
         openChannel();
         txSelect();
         basicPublish();
@@ -154,9 +128,7 @@ public abstract class TransactionsBase
     /*
       closing a channel requeues both ack'ed and un-ack'ed messages
     */
-    public void testRequeueOnClose()
-        throws IOException
-    {
+    public void testRequeueOnClose() {
         openChannel();
         basicPublish();
         basicPublish();
@@ -177,9 +149,7 @@ public abstract class TransactionsBase
       messages with committed acks are not requeued on channel close,
       messages that weren't ack'ed are requeued on close, but not before then.
     */
-    public void testCommitAcks()
-        throws IOException
-    {
+    public void testCommitAcks() {
         openChannel();
         basicPublish();
         basicPublish();
@@ -201,9 +171,7 @@ public abstract class TransactionsBase
       rollback rolls back acks
       and a rolled back ack can be re-issued
     */
-    public void testRollbackAcksAndReAck()
-        throws IOException
-    {
+    public void testRollbackAcksAndReAck() {
         openChannel();
         basicPublish();
         txSelect();
@@ -222,9 +190,7 @@ public abstract class TransactionsBase
     /*
       it is legal to ack the same message twice
     */
-    public void testDuplicateAck()
-        throws IOException
-    {
+    public void testDuplicateAck() {
         openChannel();
         basicPublish();
         txSelect();
@@ -238,9 +204,7 @@ public abstract class TransactionsBase
     /*
       it is illegal to ack with an unknown delivery tag
     */
-    public void testUnknownTagAck()
-        throws IOException
-    {
+    public void testUnknownTagAck() {
         openChannel();
         basicPublish();
         txSelect();
@@ -258,9 +222,7 @@ public abstract class TransactionsBase
     /*
       rollback does not requeue delivered ack'ed or un-ack'ed messages
     */
-    public void testNoRequeueOnRollback()
-        throws IOException
-    {
+    public void testNoRequeueOnRollback() {
         openChannel();
         basicPublish();
         basicPublish();
@@ -276,9 +238,7 @@ public abstract class TransactionsBase
     /*
       auto-acks are not part of tx
     */
-    public void testAutoAck()
-        throws IOException
-    {
+    public void testAutoAck() {
         openChannel();
         basicPublish();
         txSelect();
@@ -292,9 +252,7 @@ public abstract class TransactionsBase
     /*
       "ack all", once committed, acks all delivered messages
     */
-    public void testAckAll()
-        throws IOException
-    {
+    public void testAckAll() {
         openChannel();
         basicPublish();
         basicPublish();

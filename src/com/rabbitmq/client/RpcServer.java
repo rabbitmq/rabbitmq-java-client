@@ -25,8 +25,6 @@
 
 package com.rabbitmq.client;
 
-import java.io.IOException;
-
 /**
  * Class which manages a request queue for a simple RPC-style service.
  * The class is agnostic about the format of RPC arguments / return values.
@@ -46,9 +44,7 @@ public class RpcServer {
      * Creates an RpcServer listening on a temporary exclusive
      * autodelete queue.
      */
-    public RpcServer(Channel channel)
-        throws IOException
-    {
+    public RpcServer(Channel channel) {
         this(channel, null);
     }
 
@@ -57,9 +53,7 @@ public class RpcServer {
      * temporary exclusive autodelete queue to use; otherwise expects
      * the queue to have already been declared.
      */
-    public RpcServer(Channel channel, String queueName)
-        throws IOException
-    {
+    public RpcServer(Channel channel, String queueName) {
         _channel = channel;
         if (queueName == null || queueName.equals("")) {
             _queueName = _channel.queueDeclare().getQueue();
@@ -72,11 +66,8 @@ public class RpcServer {
     /**
      * Public API - cancels the consumer, thus deleting the queue, if
      * it was a temporary queue, and marks the RpcServer as closed.
-     * @throws IOException if an error is encountered
      */
-    public void close()
-        throws IOException
-    {
+    public void close() {
         if (_consumer != null) {
             _channel.basicCancel(_consumer.getConsumerTag());
             _consumer = null;
@@ -86,12 +77,9 @@ public class RpcServer {
 
     /**
      * Registers a consumer on the reply queue.
-     * @throws IOException if an error is encountered
      * @return the newly created and registered consumer
      */
-    protected QueueingConsumer setupConsumer()
-        throws IOException
-    {
+    protected QueueingConsumer setupConsumer() {
         QueueingConsumer consumer = new QueueingConsumer(_channel);
         _channel.basicConsume(_queueName, consumer);
         return consumer;
@@ -110,9 +98,7 @@ public class RpcServer {
      *
      * @return the exception that signalled the Channel shutdown, or null for orderly shutdown
      */
-    public ShutdownSignalException mainloop()
-        throws IOException
-    {
+    public ShutdownSignalException mainloop() {
         try {
             while (_mainloopRunning) {
                 QueueingConsumer.Delivery request;
@@ -145,9 +131,7 @@ public class RpcServer {
     /**
      * Private API - Process a single request. Called from mainloop().
      */
-    public void processRequest(QueueingConsumer.Delivery request)
-        throws IOException
-    {
+    public void processRequest(QueueingConsumer.Delivery request) {
         AMQP.BasicProperties requestProperties = request.getProperties();
         if (requestProperties.correlationId != null && requestProperties.replyTo != null)
         {

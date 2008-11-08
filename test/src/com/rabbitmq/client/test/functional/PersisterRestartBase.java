@@ -25,7 +25,6 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
@@ -48,98 +47,81 @@ public class PersisterRestartBase extends BrokerTestCase
     // rabbit_persister.erl
     protected final int PERSISTER_SNAPSHOT_THRESHOLD = 500;
 
-    protected void restart()
-        throws IOException
-    {
+    protected void restart() {
+
         tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-on-node");
+        try {
+            Host.executeCommand("cd ../rabbitmq-test; make restart-on-node");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         setUp();
     }
 
     protected void forceSnapshot()
-        throws IOException, InterruptedException
+        throws InterruptedException
     {
-        Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
+        try {
+            Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    protected void declareDurableTopicExchange(String x)
-        throws IOException
-    {
+    protected void declareDurableTopicExchange(String x) {
         channel.exchangeDeclare(x, "topic", true);
     }
 
-    protected void declareDurableDirectExchange(String x)
-        throws IOException
-    {
+    protected void declareDurableDirectExchange(String x) {
         channel.exchangeDeclare(x, "direct", true);
     }
 
-    protected void declareDurableQueue(String q)
-        throws IOException
-    {
+    protected void declareDurableQueue(String q) {
         channel.queueDeclare(q, true);
     }
 
-    protected void declareAndBindDurableQueue(String q, String x, String r)
-        throws IOException
-    {
+    protected void declareAndBindDurableQueue(String q, String x, String r) {
         channel.queueDeclare(q, true);
         channel.queueBind(q, x, r);
     }
 
-    protected void deleteQueue(String q)
-        throws IOException
-    {
+    protected void deleteQueue(String q) {
         channel.queueDelete(q);
     }
 
-    protected void deleteExchange(String x)
-        throws IOException
-    {
+    protected void deleteExchange(String x) {
         channel.exchangeDelete(x);
     }
 
-    protected GetResponse basicGet(String q)
-        throws IOException
-    {
+    protected GetResponse basicGet(String q) {
         return channel.basicGet(q, true);
     }
 
-    protected void basicPublishPersistent(String q)
-        throws IOException
-    {
+    protected void basicPublishPersistent(String q) {
         channel.basicPublish("", q,
                              MessageProperties.PERSISTENT_TEXT_PLAIN,
                              "persistent message".getBytes());
     }
 
-    protected void basicPublishVolatile(String q)
-        throws IOException
-    {
+    protected void basicPublishVolatile(String q) {
         channel.basicPublish("", q,
                              MessageProperties.TEXT_PLAIN,
                              "not persistent message".getBytes());
     }
 
-    protected void basicPublishPersistent(String x, String routingKey)
-        throws IOException
-    {
+    protected void basicPublishPersistent(String x, String routingKey) {
         channel.basicPublish(x, routingKey,
                              MessageProperties.PERSISTENT_TEXT_PLAIN,
                              "persistent message".getBytes());
     }
 
-    protected void basicPublishVolatile(String x, String routingKey)
-        throws IOException
-    {
+    protected void basicPublishVolatile(String x, String routingKey) {
         channel.basicPublish(x, routingKey,
                              MessageProperties.TEXT_PLAIN,
                              "not persistent message".getBytes());
     }
 
-    protected void assertDelivered(String q, int count, boolean redelivered)
-        throws IOException
-    {
+    protected void assertDelivered(String q, int count, boolean redelivered) {
         GetResponse r;
         for (int i = 0; i < count; i++) {
             r = basicGet(q);
@@ -149,9 +131,7 @@ public class PersisterRestartBase extends BrokerTestCase
         assertNull(basicGet(q));
     }
 
-    protected void assertDelivered(String q, int count)
-        throws IOException
-    {
+    protected void assertDelivered(String q, int count) {
         assertDelivered(q, count, false);
     }
 

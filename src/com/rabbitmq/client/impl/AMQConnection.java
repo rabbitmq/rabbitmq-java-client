@@ -74,7 +74,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /** The special channel 0 */
     public final AMQChannel _channel0 = new AMQChannel(this, 0) {
-            @Override public boolean processAsync(Command c) throws IOException {
+            @Override public boolean processAsync(Command c) {
                 return _connection.processControlCommand(c);
             }
         };
@@ -160,11 +160,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @param insist true if broker redirects are disallowed
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      * @throws RedirectException if the server is redirecting us to a different host/port
-     * @throws java.io.IOException if an error is encountered
      */
     public AMQConnection(ConnectionParameters params,
                          boolean insist,
-                         FrameHandler frameHandler) throws RedirectException, IOException {
+                         FrameHandler frameHandler) throws RedirectException {
         this(params, insist, frameHandler, new DefaultExceptionHandler());
     }
 
@@ -175,13 +174,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      * @param exceptionHandler interface to an object that will handle any special exceptions encountered while using this connection
      * @throws RedirectException if the server is redirecting us to a different host/port
-     * @throws java.io.IOException if an error is encountered
      */
     public AMQConnection(ConnectionParameters params,
                          boolean insist,
                          FrameHandler frameHandler,
                          ExceptionHandler exceptionHandler)
-        throws RedirectException, IOException
+        throws RedirectException
     {
         checkPreconditions();
         _params = params;
@@ -320,10 +318,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @return the known hosts that came back in the connection.open-ok
      * @throws RedirectException if the server asks us to redirect to
      *                           a different host/port.
-     * @throws java.io.IOException if any other I/O error occurs
+     * @throws java.net.SocketException If the socket timeout cannot be set
+     * @throws java.io.IOException if the header cannot be sent
      */
     public Address[] open(final ConnectionParameters params, boolean insist)
-        throws RedirectException, IOException
+        throws RedirectException
     {
 
         AMQChannel.SimpleBlockingRpcContinuation connStartBlocker =
@@ -336,8 +335,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _channel0.enqueueRpc(connStartBlocker);
         // The following two lines are akin to AMQChannel's
         // transmit() method for this pseudo-RPC.
-        _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
-        _frameHandler.sendHeader();
+        try {
+            _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
+            _frameHandler.sendHeader();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         // See bug 17389. The MainLoop could have shut down already in
         // which case we don't want to wait forever for a reply.
@@ -356,8 +360,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         if (!Version.checkVersion(clientVersion, serverVersion)) {
             _frameHandler.close(); //this will cause mainLoop to terminate
-            //TODO: throw a more specific exception
-            throw new IOException("protocol version mismatch: expected " +
+            //TODO: throw a more specific exception see 15786
+            throw new RuntimeException("protocol version mismatch: expected " +
                     clientVersion + ", got " + serverVersion);
         }
 
@@ -519,9 +523,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * Handles incoming control commands on channel zero.
      */
-    public boolean processControlCommand(Command c)
-        throws IOException
-    {
+    public boolean processControlCommand(Command c) {
         // Similar trick to ChannelN.processAsync used here, except
         // we're interested in whole-connection quiescing.
 
@@ -652,9 +654,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void close(int closeCode,
                       String closeMessage,
                       boolean initiatedByApplication,
-                      Throwable cause)
-        throws IOException
-    {
+                      Throwable cause) {
         close(closeCode, closeMessage, initiatedByApplication, cause, 0, false);
     }
 

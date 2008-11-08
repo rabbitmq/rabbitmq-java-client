@@ -25,18 +25,17 @@
 
 package com.rabbitmq.tools.jsonrpc;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.RpcClient;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.tools.json.JSONReader;
 import com.rabbitmq.tools.json.JSONWriter;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
 	  <a
@@ -74,7 +73,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * retrieved from the server during construction.
      */
     public JsonRpcClient(Channel channel, String exchange, String routingKey)
-        throws IOException, JsonRpcException
+        throws JsonRpcException
     {
 	super(channel, exchange, routingKey);
 	retrieveServiceDescription();
@@ -106,7 +105,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * @throws JsonRpcException if the reply object contained an exception
      */
     public Object call(String method, Object[] params)
-	throws IOException, JsonRpcException
+	throws JsonRpcException
     {
 	HashMap<String, Object> request = new HashMap<String, Object>();
 	request.put("id", null);
@@ -118,7 +117,8 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
         try {
             replyStr = this.stringCall(requestStr);
         } catch(ShutdownSignalException ex) {
-            throw new IOException(ex.getMessage()); // wrap, re-throw
+            // TODO See 15786
+            throw new RuntimeException(ex.getMessage()); // wrap, re-throw
         }
         
         //System.out.println(requestStr + " --->\n---> " + replyStr);
@@ -186,7 +186,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * @see #coerce
      */
     public Object call(String[] args)
-	throws NumberFormatException, IOException, JsonRpcException
+	throws NumberFormatException, JsonRpcException
     {
 	if (args.length == 0) {
 	    throw new IllegalArgumentException("First string argument must be method name");
@@ -219,7 +219,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * in this object.
      */
     public void retrieveServiceDescription()
-	throws IOException, JsonRpcException
+	throws JsonRpcException
     {
 	Map<String, Object> rawServiceDescription = (Map) call("system.describe", null);
 	//System.out.println(new JSONWriter().write(rawServiceDescription));

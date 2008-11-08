@@ -25,24 +25,22 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-
 import com.rabbitmq.client.QueueingConsumer;
 
 public class NoRequeueOnCancel extends BrokerTestCase
 {
     protected final String Q = "NoRequeueOnCancel";
 
-    protected void createResources() throws IOException {
+    protected void createResources() {
         channel.queueDeclare(Q);
     }
 
-    protected void releaseResources() throws IOException {
+    protected void releaseResources() {
         channel.queueDelete(Q);
     }
 
     public void testNoRequeueOnCancel()
-        throws IOException, InterruptedException
+            throws InterruptedException
     {
         channel.basicPublish("", Q, null, "1".getBytes());
 

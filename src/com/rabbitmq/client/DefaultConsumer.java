@@ -25,8 +25,6 @@
 
 package com.rabbitmq.client;
 
-import java.io.IOException;
-
 /**
  * Convenience class providing a default implementation of {@link Consumer}.
  * We anticipate that most Consumer implementations will subclass this class.
@@ -74,10 +72,8 @@ public class DefaultConsumer implements Consumer {
     public void handleDelivery(String consumerTag,
                                Envelope envelope,
                                AMQP.BasicProperties properties,
-                               byte[] body)
-        throws IOException
-    {
-            // no work to do
+                               byte[] body) {
+        // no work to do
     }
 
     /**

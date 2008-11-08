@@ -69,14 +69,13 @@ public class Bug19219Test extends BrokerTestCase {
         return suite;
     }
 
-    private static void publish(final Channel ch)
-        throws IOException {
+    private static void publish(final Channel ch) {
         ch.basicPublish("amq.fanout", "",
                         MessageProperties.PERSISTENT_TEXT_PLAIN,
                         new byte[0]);
     }
 
-    public void testIt() throws IOException, InterruptedException {
+    public void testIt() throws InterruptedException {
 
         final Consumer c = new DefaultConsumer(channel);
 
@@ -95,7 +94,6 @@ public class Bug19219Test extends BrokerTestCase {
                 public void run() {
                     try {
                         startPublisher();
-                    } catch (IOException e) {
                     } catch (InterruptedException e) {
                     }
                 }
@@ -134,7 +132,7 @@ public class Bug19219Test extends BrokerTestCase {
         }
     }
 
-    private void startPublisher() throws IOException, InterruptedException {
+    private void startPublisher() throws InterruptedException {
 
         final Connection conn = connectionFactory.newConnection("localhost");
         final Channel pubCh = conn.createChannel();

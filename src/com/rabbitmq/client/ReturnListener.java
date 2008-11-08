@@ -25,8 +25,6 @@
 
 package com.rabbitmq.client;
 
-import java.io.IOException;
-
 /**
  * Implement this interface in order to be notified of failed
  * deliveries when basicPublish is called with "mandatory" or
@@ -39,6 +37,5 @@ public interface ReturnListener {
             String exchange,
             String routingKey,
             AMQP.BasicProperties properties,
-            byte[] body)
-        throws IOException;
+            byte[] body);
 }
