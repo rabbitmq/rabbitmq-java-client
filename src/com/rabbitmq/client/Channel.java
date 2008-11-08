@@ -279,7 +279,7 @@ public interface Channel extends ShutdownNotifier{
     Queue.BindOk queueBind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
     
     /**
-     * Uninds a queue from an exchange, with no extra arguments.
+     * Unbinds a queue from an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Queue.Unbind
      * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
      * @param queue the name of the queue
