@@ -29,7 +29,6 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 
-import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -112,12 +111,7 @@ public class BrokerTestCase extends TestCase
         throws IOException
     {
         if (channel != null) {
-            try {
-                channel.close();
-            } catch (AlreadyClosedException ace) {
-                // The API is broken so we have to catch this here.
-                // See bug 19676.
-            }
+            channel.abort();
             channel = null;
         }
     }

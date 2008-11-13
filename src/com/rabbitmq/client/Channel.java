@@ -85,6 +85,23 @@ public interface Channel extends ShutdownNotifier{
      * @throws java.io.IOException if an error is encountered
      */
     void close(int closeCode, String closeMessage) throws IOException;
+    
+    /**
+     * Abort this channel with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
+     * and message 'OK'.
+     * 
+     * Forces the channel to close and waits for the close operation to complete.
+     * Any encountered exceptions in the close operation are silently discarded.
+     */
+    void abort() throws IOException;
+    
+    /**
+     * Abort this channel.
+     * 
+     * Forces the channel to close and waits for the close operation to complete.
+     * Any encountered exceptions in the close operation are silently discarded.
+     */    
+    void abort(int closeCode, String closeMessage) throws IOException;
 
     /**
      * Return the current {@link ReturnListener}.

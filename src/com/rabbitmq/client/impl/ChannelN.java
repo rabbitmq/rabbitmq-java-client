@@ -273,7 +273,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
-        close(closeCode, closeMessage, true, null);
+        close(closeCode, closeMessage, true, null, false);
+    }
+    
+    public void abort()
+        throws IOException
+    {
+        abort(AMQP.REPLY_SUCCESS, "OK");
+    }
+    
+    public void abort(int closeCode, String closeMessage)
+        throws IOException
+    {
+        close(closeCode, closeMessage, true, null, true);
     }
 
     /**
@@ -284,7 +296,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void close(int closeCode,
                       String closeMessage,
                       boolean initiatedByApplication,
-                      Throwable cause)
+                      Throwable cause,
+                      boolean abort)
         throws IOException
     {
         // First, notify all our dependents that we are shutting down.
@@ -301,29 +314,38 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
         
         BlockingRpcContinuation<AMQCommand> k = new SimpleBlockingRpcContinuation();
-        // Synchronize the block below to avoid race conditions in case
-        // connnection wants to send Connection-CloseOK
-        synchronized(this) {
-            processShutdownSignal(signal, !initiatedByApplication, true);
-            quiescingRpc(reason, k);
-        }
-        
+        boolean notify = false;
         try {
+            // Synchronize the block below to avoid race conditions in case
+            // connnection wants to send Connection-CloseOK
+            synchronized(this) {
+                processShutdownSignal(signal, !initiatedByApplication, true);
+                quiescingRpc(reason, k);
+            }
+            
             // Now that we're in quiescing state, channel.close was sent and
             // we wait for the reply. We ignore the result. (It's always
             // close-ok.)
+            notify = true;
             k.getReply(-1);
         } catch (TimeoutException ise) {
             // Will never happen since we wait infinitely
+        } catch (ShutdownSignalException sse) {
+            if (!abort)
+                throw sse;
+        } catch (IOException ioe) {
+            if (!abort)
+                throw ioe;
         } finally {
-        
-            // Now we know everything's been cleaned up and there should
-            // be no more surprises arriving on the wire. Release the
-            // channel number, and dissociate this ChannelN instance from
-            // our connection so that any further frames inbound on this
-            // channel can be caught as the errors they are.
-            releaseChannelNumber();
-            notifyListeners();
+            if (abort || notify) {
+                // Now we know everything's been cleaned up and there should
+                // be no more surprises arriving on the wire. Release the
+                // channel number, and dissociate this ChannelN instance from
+                // our connection so that any further frames inbound on this
+                // channel can be caught as the errors they are.
+                releaseChannelNumber();
+                notifyListeners();
+            }
         }
     }
 
