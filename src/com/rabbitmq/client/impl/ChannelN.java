@@ -25,11 +25,22 @@
 
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.*;
 import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.impl.AMQImpl.*;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.ReturnListener;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.UnexpectedMethodError;
+import com.rabbitmq.client.impl.AMQImpl.Basic;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
+import com.rabbitmq.client.impl.AMQImpl.Exchange;
+import com.rabbitmq.client.impl.AMQImpl.Queue;
+import com.rabbitmq.client.impl.AMQImpl.Tx;
 import com.rabbitmq.utility.Utility;
 
 import java.io.IOException;
