@@ -47,10 +47,9 @@ public class SendString {
 
             Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
             Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
-            ch.exchangeDeclare(ticket, exchange, exchangeType);
-            ch.basicPublish(ticket, exchange, routingKey, null, message.getBytes());
+            ch.exchangeDeclare(exchange, exchangeType);
+            ch.basicPublish(exchange, routingKey, null, message.getBytes());
             ch.close();
             conn.close();
         } catch (Exception e) {

@@ -34,8 +34,6 @@ import java.io.IOException;
 public class RpcServer {
     /** Channel we are communicating on */
     protected final Channel _channel;
-    /** Access ticket this RpcServer uses */
-    protected final int _ticket;
     /** Queue to receive requests from */
     protected final String _queueName;
     /** Boolean controlling the exit from the mainloop. */
@@ -48,10 +46,10 @@ public class RpcServer {
      * Creates an RpcServer listening on a temporary exclusive
      * autodelete queue.
      */
-    public RpcServer(Channel channel, int ticket)
+    public RpcServer(Channel channel)
         throws IOException
     {
-        this(channel, ticket, null);
+        this(channel, null);
     }
 
     /**
@@ -59,13 +57,12 @@ public class RpcServer {
      * temporary exclusive autodelete queue to use; otherwise expects
      * the queue to have already been declared.
      */
-    public RpcServer(Channel channel, int ticket, String queueName)
+    public RpcServer(Channel channel, String queueName)
         throws IOException
     {
         _channel = channel;
-        _ticket = ticket;
         if (queueName == null || queueName.equals("")) {
-            _queueName = _channel.queueDeclare(_ticket).getQueue();
+            _queueName = _channel.queueDeclare().getQueue();
         } else {
             _queueName = queueName;
         }
@@ -96,7 +93,7 @@ public class RpcServer {
         throws IOException
     {
         QueueingConsumer consumer = new QueueingConsumer(_channel);
-        _channel.basicConsume(_ticket, _queueName, consumer);
+        _channel.basicConsume(_queueName, consumer);
         return consumer;
     }
 
@@ -157,7 +154,7 @@ public class RpcServer {
             AMQP.BasicProperties replyProperties = new AMQP.BasicProperties();
             byte[] replyBody = handleCall(request, replyProperties);
             replyProperties.correlationId = requestProperties.correlationId;
-            _channel.basicPublish(_ticket, "", requestProperties.replyTo,
+            _channel.basicPublish("", requestProperties.replyTo,
                                   replyProperties, replyBody);
         } else {
             handleCast(request);
@@ -232,14 +229,6 @@ public class RpcServer {
      */
     public Channel getChannel() {
         return _channel;
-    }
-
-    /**
-     * Retrieve the access ticket.
-     * @return the access ticket for the appropriate realm
-     */
-    public int getTicket() {
-        return _ticket;
     }
 
     /**

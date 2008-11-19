@@ -1,9 +1,7 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
 
@@ -74,7 +72,7 @@ public class BindingLifecycle extends PersisterRestartBase {
             basicPublishVolatile(X, K);
         }
 
-        GetResponse response = channel.basicGet(ticket, Q, true);
+        GetResponse response = channel.basicGet(Q, true);
         assertNull("The initial response SHOULD BE null", response);
 
         deleteQueue(Q);
@@ -96,7 +94,7 @@ public class BindingLifecycle extends PersisterRestartBase {
 
         basicPublishVolatile("", Q);
 
-        GetResponse response = channel.basicGet(ticket, Q, true);
+        GetResponse response = channel.basicGet(Q, true);
         assertNotNull("The initial response SHOULD NOT be null", response);
 
         deleteQueue(Q);
@@ -116,8 +114,8 @@ public class BindingLifecycle extends PersisterRestartBase {
         //
         // TODO: When unbind is implemented, use that instead of
         // deleting and re-creating the queue
-        channel.queueDelete(ticket, binding.q);
-        channel.queueDeclare(ticket, binding.q, durable);
+        channel.queueDelete(binding.q);
+        channel.queueDeclare(binding.q, durable);
 
         sendUnroutable(binding);
 
@@ -136,12 +134,12 @@ public class BindingLifecycle extends PersisterRestartBase {
         // Nuke the exchange and repeat this test, this time you
         // expect nothing to get routed
 
-        channel.exchangeDelete(ticket, binding.x);
-        channel.exchangeDeclare(ticket, binding.x, "direct");
+        channel.exchangeDelete(binding.x);
+        channel.exchangeDeclare(binding.x, "direct");
 
         sendUnroutable(binding);
 
-        channel.queueDelete(ticket, binding.q);
+        channel.queueDelete(binding.q);
     }
 
     /**
@@ -158,7 +156,7 @@ public class BindingLifecycle extends PersisterRestartBase {
         Binding binding = setupExchangeBindings(durable);
 
         try {
-            channel.exchangeDelete(ticket, binding.x, true);
+            channel.exchangeDelete(binding.x, true);
         }
         catch (Exception e) {
             // do nothing, this is the correct behaviour
@@ -229,11 +227,11 @@ public class BindingLifecycle extends PersisterRestartBase {
 
         Binding binding = Binding.randomBinding();
 
-        channel.exchangeDeclare(ticket, binding.x, "direct",
+        channel.exchangeDeclare(binding.x, "direct",
                                 false, durable, true, null);
-        channel.queueDeclare(ticket, binding.q,
+        channel.queueDeclare(binding.q,
                              false, durable, false, true, null);
-        channel.queueBind(ticket, binding.q, binding.x, binding.k);
+        channel.queueBind(binding.q, binding.x, binding.k);
 
 
         if (queues > 1) {
@@ -241,11 +239,11 @@ public class BindingLifecycle extends PersisterRestartBase {
             queueNames = new String[j];
             for (int i = 0 ; i < j ; i++) {
                 queueNames[i] = randomString();
-                channel.queueDeclare(ticket, queueNames[i],
+                channel.queueDeclare(queueNames[i],
                                      false, durable, false, false, null);
-                channel.queueBind(ticket, queueNames[i],
+                channel.queueBind(queueNames[i],
                                   binding.x, binding.k);
-                channel.basicConsume(ticket, queueNames[i], true,
+                channel.basicConsume(queueNames[i], true,
                                      new QueueingConsumer(channel));
             }
         }
@@ -258,20 +256,20 @@ public class BindingLifecycle extends PersisterRestartBase {
         
         if (queues > 1) {
             for (String s : queueNames) {
-                channel.basicConsume(ticket, s, true,
+                channel.basicConsume(s, true,
                                      new QueueingConsumer(channel));
                 Binding tmp = new Binding(binding.x, s, binding.k);
                 sendUnroutable(tmp);
             }
         }
 
-        channel.queueDeclare(ticket, binding.q,
+        channel.queueDeclare(binding.q,
                              false, durable, true, true, null);
 
         // if (queues == 1): Because the exchange does not exist, this
         // bind should fail
         try {
-            channel.queueBind(ticket, binding.q, binding.x, binding.k);
+            channel.queueBind(binding.q, binding.x, binding.k);
             sendRoutable(binding);
         }
         catch (Exception e) {
@@ -289,28 +287,28 @@ public class BindingLifecycle extends PersisterRestartBase {
         // Do some cleanup
         if (queues > 1) {
             for (String q : queueNames) {
-                channel.queueDelete(ticket, q);
+                channel.queueDelete(q);
             }
         }
 
     }
 
     private void subscribeSendUnsubscribe(Binding binding) throws IOException {
-        String tag = channel.basicConsume(ticket, binding.q,
+        String tag = channel.basicConsume(binding.q,
                                           new QueueingConsumer(channel));
         sendUnroutable(binding);
         channel.basicCancel(tag);
     }
 
     private void sendUnroutable(Binding binding) throws IOException {
-        channel.basicPublish(ticket, binding.x, binding.k, null, payload);
-        GetResponse response = channel.basicGet(ticket, binding.q, true);
+        channel.basicPublish(binding.x, binding.k, null, payload);
+        GetResponse response = channel.basicGet(binding.q, true);
         assertNull("The response SHOULD BE null", response);
     }
 
     private void sendRoutable(Binding binding) throws IOException {
-        channel.basicPublish(ticket, binding.x, binding.k, null, payload);
-        GetResponse response = channel.basicGet(ticket, binding.q, true);
+        channel.basicPublish(binding.x, binding.k, null, payload);
+        GetResponse response = channel.basicGet(binding.q, true);
         assertNotNull("The response should not be null", response);
     }
 
@@ -336,16 +334,16 @@ public class BindingLifecycle extends PersisterRestartBase {
     private void createQueueAndBindToExchange(Binding binding, boolean durable)
         throws IOException {
 
-        channel.exchangeDeclare(ticket, binding.x, "direct", durable);
-        channel.queueDeclare(ticket, binding.q, durable);
-        channel.queueBind(ticket, binding.q, binding.x, binding.k);
+        channel.exchangeDeclare(binding.x, "direct", durable);
+        channel.queueDeclare(binding.q, durable);
+        channel.queueBind(binding.q, binding.x, binding.k);
     }
 
     private void deleteExchangeAndQueue(Binding binding)
         throws IOException {
 
-        channel.queueDelete(ticket, binding.q);
-        channel.exchangeDelete(ticket, binding.x);
+        channel.queueDelete(binding.q);
+        channel.exchangeDelete(binding.x);
     }
 
     private Binding setupExchangeBindings(boolean durable)

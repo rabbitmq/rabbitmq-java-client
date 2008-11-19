@@ -54,12 +54,9 @@ import com.rabbitmq.utility.Utility;
  * conn.open(userName, portNumber, virtualHost);
  * </pre>
  *
- * Then open a channel and retrieve an access ticket:
- *
  * <pre>
  * ChannelN ch1 = conn.createChannel(1);
  * ch1.open(&quot;&quot;);
- * int ticket = ch1.accessRequest(realmName);
  * </pre>
  */
 public class AMQConnection extends ShutdownNotifierComponent implements Connection {

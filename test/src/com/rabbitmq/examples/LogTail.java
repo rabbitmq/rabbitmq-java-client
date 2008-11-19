@@ -41,13 +41,12 @@ public class LogTail {
             Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
 
             Channel ch1 = conn.createChannel();
-            int ticket = ch1.accessRequest("/admin");
 
-            String queueName = ch1.queueDeclare(ticket).getQueue();
-            ch1.queueBind(ticket, queueName, exchange, "#");
+            String queueName = ch1.queueDeclare().getQueue();
+            ch1.queueBind(queueName, exchange, "#");
 
             QueueingConsumer consumer = new QueueingConsumer(ch1);
-            ch1.basicConsume(ticket, queueName, true, consumer);
+            ch1.basicConsume(queueName, true, consumer);
             while (true) {
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 String routingKey = delivery.getEnvelope().getRoutingKey();

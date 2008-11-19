@@ -43,12 +43,11 @@ public class SimpleProducer {
             Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
 
             Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
             if (exchange.equals("")) {
-                ch.queueDeclare(ticket, routingKey);
+                ch.queueDeclare(routingKey);
             }
-            ch.basicPublish(ticket, exchange, routingKey, null, message.getBytes());
+            ch.basicPublish(exchange, routingKey, null, message.getBytes());
             ch.close();
             conn.close();
         } catch (Exception e) {

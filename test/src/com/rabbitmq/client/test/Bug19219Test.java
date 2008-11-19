@@ -69,10 +69,9 @@ public class Bug19219Test extends BrokerTestCase {
         return suite;
     }
 
-    private static void publish(final Channel ch,
-                                final int ticket)
+    private static void publish(final Channel ch)
         throws IOException {
-        ch.basicPublish(ticket, "amq.fanout", "",
+        ch.basicPublish("amq.fanout", "",
                         MessageProperties.PERSISTENT_TEXT_PLAIN,
                         new byte[0]);
     }
@@ -85,9 +84,9 @@ public class Bug19219Test extends BrokerTestCase {
         //amq.fanout exchange, and set up a non-auto-ack consumer for
         //each.
         for (int i = 0; i < Q_COUNT; i++) {
-            String qName = channel.queueDeclare(ticket).getQueue();
-            channel.queueBind(ticket, qName, "amq.fanout", "");
-            channel.basicConsume(ticket, qName, false, c);
+            String qName = channel.queueDeclare().getQueue();
+            channel.queueBind(qName, "amq.fanout", "");
+            channel.basicConsume(qName, false, c);
         }
 
         //2. send lots of messages in background, to keep the server,
@@ -139,15 +138,14 @@ public class Bug19219Test extends BrokerTestCase {
 
         final Connection conn = connectionFactory.newConnection("localhost");
         final Channel pubCh = conn.createChannel();
-        final int pubTicket = pubCh.accessRequest("/data");
 
         //This forces the initialisation of the guid generation, which
         //is an interaction with the persister and not something we
         //want to see delay things.
-        publish(pubCh, pubTicket);
+        publish(pubCh);
 
         //a synchronous request, to make sure the publish is done
-        pubCh.accessRequest("/data");
+        pubCh.queueDeclare();
 
         //signal the main thread
         init.release();
@@ -156,7 +154,7 @@ public class Bug19219Test extends BrokerTestCase {
 
         //publish lots of messages
         while(true) {
-            publish(pubCh, pubTicket);
+            publish(pubCh);
         }
 
     }

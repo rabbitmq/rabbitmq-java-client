@@ -40,10 +40,9 @@ public class HelloServer {
             ConnectionFactory connFactory = new ConnectionFactory();
             Connection conn = connFactory.newConnection(hostName, portNumber);
             final Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
-            ch.queueDeclare(ticket, "Hello");
-            StringRpcServer server = new StringRpcServer(ch, ticket, "Hello") {
+            ch.queueDeclare("Hello");
+            StringRpcServer server = new StringRpcServer(ch, "Hello") {
                     public String handleStringCall(String request) {
                         System.out.println("Got request: " + request);
                         return "Hello, " + request + "!";

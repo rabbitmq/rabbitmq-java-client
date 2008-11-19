@@ -216,10 +216,10 @@ public class ScalabilityTest {
                 final int maxQueues = pow(params.base, x);
 
                 for (; q < maxQueues; q++) {
-                    AMQP.Queue.DeclareOk ok = channel.queueDeclare(1);
+                    AMQP.Queue.DeclareOk ok = channel.queueDeclare();
                     queues.push(ok.getQueue());
                     for (int b = 0; b < maxBindings; b++) {
-                        channel.queueBind(1, ok.getQueue(), "amq.direct", routingKeys[b]);
+                        channel.queueBind(ok.getQueue(), "amq.direct", routingKeys[b]);
                     }
                 }
 
@@ -243,7 +243,7 @@ public class ScalabilityTest {
                 final int maxQueues = (x == 0) ? 0 : pow(params.base, x - 1);
 
                 for (; q > maxQueues; q--) {
-                    channel.queueDelete(1, queues.pop());
+                    channel.queueDelete(queues.pop());
                 }
 
                 deletion.addDataPoint(x);
@@ -282,7 +282,7 @@ public class ScalabilityTest {
         int size = routingKeys.length;
         for (int n = 0; n < params.messageCount; n ++) {
             String key = routingKeys[r.nextInt(size)];
-            channel.basicPublish(1, "amq.direct", key, mandatory, immdediate,
+            channel.basicPublish("amq.direct", key, mandatory, immdediate,
                                  MessageProperties.MINIMAL_BASIC, null);
         }
 

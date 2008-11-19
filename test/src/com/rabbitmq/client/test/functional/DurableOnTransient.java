@@ -38,34 +38,34 @@ public class DurableOnTransient extends BrokerTestCase
     private GetResponse basicGet()
         throws IOException
     {
-        return channel.basicGet(ticket, Q, true);
+        return channel.basicGet(Q, true);
     }
 
     private void basicPublish()
         throws IOException
     {
-        channel.basicPublish(ticket, X, "",
+        channel.basicPublish(X, "",
                              MessageProperties.PERSISTENT_TEXT_PLAIN,
                              "persistent message".getBytes());
     }
 
     protected void createResources() throws IOException {
         // Transient exchange
-        channel.exchangeDeclare(ticket, X, "direct", false);
+        channel.exchangeDeclare(X, "direct", false);
         // durable queue
-        channel.queueDeclare(ticket, Q, true);
+        channel.queueDeclare(Q, true);
     }
 
     protected void releaseResources() throws IOException {
-        channel.queueDelete(ticket, Q);
-        channel.exchangeDelete(ticket, X);
+        channel.queueDelete(Q);
+        channel.exchangeDelete(X);
     }
 
     public void testBind()
         throws IOException
     {
         try {
-            channel.queueBind(ticket, Q, X, "");
+            channel.queueBind(Q, X, "");
             fail("Expected exception from queueBind");
         } catch (IOException ee) {
             // Pass!

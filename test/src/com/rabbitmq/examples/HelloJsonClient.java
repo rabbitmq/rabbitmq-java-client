@@ -40,8 +40,7 @@ public class HelloJsonClient {
 
             Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
             Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
-            JsonRpcClient client = new JsonRpcClient(ch, ticket, "", "Hello");
+            JsonRpcClient client = new JsonRpcClient(ch, "", "Hello");
             HelloJsonService service =
                 (HelloJsonService) client.createProxy(HelloJsonService.class);
 

@@ -105,8 +105,6 @@ public class ProducerMain implements Runnable {
 
     public Channel _channel;
 
-    public int _ticket;
-
     public int _rateLimit;
 
     public int _messageCount;
@@ -144,10 +142,9 @@ public class ProducerMain implements Runnable {
 
     private void runIt() throws IOException {
         _channel = _connection.createChannel();
-        _ticket = _channel.accessRequest("/data");
 
         String queueName = "test queue";
-        _channel.queueDeclare(_ticket, queueName, shouldPersist());
+        _channel.queueDeclare(queueName, shouldPersist());
         
         if (shouldCommit()) {
             _channel.txSelect();
@@ -163,8 +160,8 @@ public class ProducerMain implements Runnable {
             // Ideally you would use a global lock around both critical sections,
             // but thread safety has gone out of fashion these days.
             String exchangeName = "test completion";
-            _channel.exchangeDeclare(_ticket, exchangeName, "fanout", false, false, true, null);
-            _channel.basicPublish(_ticket, exchangeName, "", MessageProperties.BASIC, new byte[0]);
+            _channel.exchangeDeclare(exchangeName, "fanout", false, false, true, null);
+            _channel.basicPublish(exchangeName, "", MessageProperties.BASIC, new byte[0]);
             if (shouldCommit())
                 _channel.txCommit();
         }
@@ -178,7 +175,7 @@ public class ProducerMain implements Runnable {
     public void primeServer(String queueName) throws IOException {
         System.out.println("Priming server...");
         for (int i = 0; i < 2000; i++) {
-            _channel.basicPublish(_ticket, "", queueName, MessageProperties.MINIMAL_BASIC, new byte[0]);
+            _channel.basicPublish("", queueName, MessageProperties.MINIMAL_BASIC, new byte[0]);
         }
         sleep(500);
         System.out.println("...starting.");
@@ -208,7 +205,7 @@ public class ProducerMain implements Runnable {
             acc.flush();
             byte[] message0 = acc.toByteArray();
             System.arraycopy(message0, 0, message, 0, message0.length);
-            _channel.basicPublish(_ticket, "", queueName, shouldPersist() ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
+            _channel.basicPublish("", queueName, shouldPersist() ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
                     message);
             sent++;
             if (shouldCommit()) {

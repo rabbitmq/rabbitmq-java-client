@@ -102,28 +102,27 @@ public class ConsumerMain implements Runnable {
 
     private void runIt() throws IOException {
         Channel channel = _connection.createChannel();
-        int ticket = channel.accessRequest("/data");
 
         String queueName = "test queue";
-        channel.queueDeclare(ticket, queueName);
+        channel.queueDeclare(queueName);
 
         String exchangeName = "test completion";
-        channel.exchangeDeclare(ticket, exchangeName, "fanout", false, false, true, null);
+        channel.exchangeDeclare(exchangeName, "fanout", false, false, true, null);
 
-        String completionQueue = channel.queueDeclare(ticket).getQueue();
-        channel.queueBind(ticket, completionQueue, exchangeName, "");
+        String completionQueue = channel.queueDeclare().getQueue();
+        channel.queueBind(completionQueue, exchangeName, "");
 
-        LatencyExperimentConsumer callback = new LatencyExperimentConsumer(ticket, channel, queueName);
+        LatencyExperimentConsumer callback = new LatencyExperimentConsumer(channel, queueName);
         
-        channel.basicConsume(ticket, queueName, true, callback);
-        channel.basicConsume(ticket, completionQueue, true, "completion", callback);
+        channel.basicConsume(queueName, true, callback);
+        channel.basicConsume(completionQueue, true, "completion", callback);
         callback.report(_writeStats);
        
         System.out.println("Deleting test queue.");
-        channel.queueDelete(ticket, queueName);
+        channel.queueDelete(queueName);
 
         System.out.println("Deleting completion queue.");
-        channel.queueDelete(ticket, completionQueue);
+        channel.queueDelete(completionQueue);
         
         System.out.println("Closing the channel.");
         channel.close();
@@ -135,7 +134,6 @@ public class ConsumerMain implements Runnable {
     }
 
     public static class LatencyExperimentConsumer extends DefaultConsumer {
-        public final int _ticket;
 
         public final String _queueName;
 
@@ -157,9 +155,8 @@ public class ConsumerMain implements Runnable {
 
         public boolean _noAck = true;
 
-        public LatencyExperimentConsumer(int ticket, Channel ch, String queueName) {
+        public LatencyExperimentConsumer(Channel ch, String queueName) {
             super(ch);
-            _ticket = ticket;
             _queueName = queueName;
             _received = 0;
             _previousReceived = 0;

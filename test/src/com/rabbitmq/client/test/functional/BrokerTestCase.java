@@ -40,7 +40,6 @@ public class BrokerTestCase extends TestCase
 
     public Connection connection;
     public Channel channel;
-    public int ticket;
 
     protected void setUp()
         throws IOException
@@ -105,7 +104,6 @@ public class BrokerTestCase extends TestCase
         throws IOException
     {
         channel = connection.createChannel();
-        ticket = channel.accessRequest("/data");
     }
 
     public void closeChannel()

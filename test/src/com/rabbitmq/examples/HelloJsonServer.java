@@ -40,11 +40,10 @@ public class HelloJsonServer {
             ConnectionFactory connFactory = new ConnectionFactory();
             Connection conn = connFactory.newConnection(hostName, portNumber);
             final Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
-            ch.queueDeclare(ticket, "Hello");
+            ch.queueDeclare("Hello");
             JsonRpcServer server =
-                new JsonRpcServer(ch, ticket, "Hello", HelloJsonService.class,
+                new JsonRpcServer(ch, "Hello", HelloJsonService.class,
                                   new HelloJsonService() {
                                       public String greeting(String name) {
                                           return "Hello, "+name+", from JSON-RPC over AMQP!";

@@ -65,50 +65,50 @@ public class PersisterRestartBase extends BrokerTestCase
     protected void declareDurableTopicExchange(String x)
         throws IOException
     {
-        channel.exchangeDeclare(ticket, x, "topic", true);
+        channel.exchangeDeclare(x, "topic", true);
     }
 
     protected void declareDurableDirectExchange(String x)
         throws IOException
     {
-        channel.exchangeDeclare(ticket, x, "direct", true);
+        channel.exchangeDeclare(x, "direct", true);
     }
 
     protected void declareDurableQueue(String q)
         throws IOException
     {
-        channel.queueDeclare(ticket, q, true);
+        channel.queueDeclare(q, true);
     }
 
     protected void declareAndBindDurableQueue(String q, String x, String r)
         throws IOException
     {
-        channel.queueDeclare(ticket, q, true);
-        channel.queueBind(ticket, q, x, r);
+        channel.queueDeclare(q, true);
+        channel.queueBind(q, x, r);
     }
 
     protected void deleteQueue(String q)
         throws IOException
     {
-        channel.queueDelete(ticket, q);
+        channel.queueDelete(q);
     }
 
     protected void deleteExchange(String x)
         throws IOException
     {
-        channel.exchangeDelete(ticket, x);
+        channel.exchangeDelete(x);
     }
 
     protected GetResponse basicGet(String q)
         throws IOException
     {
-        return channel.basicGet(ticket, q, true);
+        return channel.basicGet(q, true);
     }
 
     protected void basicPublishPersistent(String q)
         throws IOException
     {
-        channel.basicPublish(ticket, "", q,
+        channel.basicPublish("", q,
                              MessageProperties.PERSISTENT_TEXT_PLAIN,
                              "persistent message".getBytes());
     }
@@ -116,7 +116,7 @@ public class PersisterRestartBase extends BrokerTestCase
     protected void basicPublishVolatile(String q)
         throws IOException
     {
-        channel.basicPublish(ticket, "", q,
+        channel.basicPublish("", q,
                              MessageProperties.TEXT_PLAIN,
                              "not persistent message".getBytes());
     }
@@ -124,7 +124,7 @@ public class PersisterRestartBase extends BrokerTestCase
     protected void basicPublishPersistent(String x, String routingKey)
         throws IOException
     {
-        channel.basicPublish(ticket, x, routingKey,
+        channel.basicPublish(x, routingKey,
                              MessageProperties.PERSISTENT_TEXT_PLAIN,
                              "persistent message".getBytes());
     }
@@ -132,7 +132,7 @@ public class PersisterRestartBase extends BrokerTestCase
     protected void basicPublishVolatile(String x, String routingKey)
         throws IOException
     {
-        channel.basicPublish(ticket, x, routingKey,
+        channel.basicPublish(x, routingKey,
                              MessageProperties.TEXT_PLAIN,
                              "not persistent message".getBytes());
     }

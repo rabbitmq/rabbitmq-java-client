@@ -59,22 +59,12 @@ public class ConnectionParameters {
     /** Default value for desired heartbeat interval; zero for none */
     public static final int DEFAULT_HEARTBEAT = 3;
 
-    /**
-     * Default value for suppressAccessRequest flag. Retrieved from
-     * system property
-     * "com.rabbitmq.client.ConnectionParameters.suppressAccessRequest"
-     * and defaulting to true.
-     */
-    public static final boolean DEFAULT_SUPPRESS_ACCESS_REQUEST =
-        safeGetProperty("com.rabbitmq.client.ConnectionParameters.suppressAccessRequest", new Boolean(false).toString()).equals("true");
-
     private String _userName = DEFAULT_USER;
     private String _password = DEFAULT_PASS;
     private String _virtualHost = DEFAULT_VHOST;
     private int _requestedChannelMax = DEFAULT_CHANNEL_MAX;
     private int _requestedFrameMax = DEFAULT_FRAME_MAX;
     private int _requestedHeartbeat = DEFAULT_HEARTBEAT;
-    private boolean _suppressAccessRequest = DEFAULT_SUPPRESS_ACCESS_REQUEST;
 
     /**
      * Instantiate a set of parameters with all values set to the defaults
@@ -177,21 +167,4 @@ public class ConnectionParameters {
         _requestedChannelMax = requestedChannelMax;
     }
 
-    /**
-     * Retrieve the setting for the suppression of sending
-     * "access.request" methods.
-     * @return true of "access.request" methods are suppressed, false otherwise.
-     */
-    public boolean getSuppressAccessRequest() {
-        return _suppressAccessRequest;
-    }
-
-    /**
-     * Enable or disable the suppression of sending "access.request"
-     * methods.
-     * @param suppressAccessRequest true of "access.request" methods are suppressed, false otherwise.
-     */
-    public void setSuppressAccessRequest(boolean suppressAccessRequest) {
-        _suppressAccessRequest = suppressAccessRequest;
-    }
 }

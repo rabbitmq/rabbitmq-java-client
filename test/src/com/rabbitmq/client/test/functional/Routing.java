@@ -40,27 +40,27 @@ public class Routing extends BrokerTestCase
     protected final String Q2 = "bar";
 
     protected void createResources() throws IOException {
-        channel.exchangeDeclare(ticket, E, "direct");
-        channel.queueDeclare(ticket, Q1);
-        channel.queueDeclare(ticket, Q2);
+        channel.exchangeDeclare(E, "direct");
+        channel.queueDeclare(Q1);
+        channel.queueDeclare(Q2);
     }
 
     protected void releaseResources() throws IOException {
-        channel.queueDelete(ticket, Q1);
-        channel.queueDelete(ticket, Q2);
-        channel.exchangeDelete(ticket, E);
+        channel.queueDelete(Q1);
+        channel.queueDelete(Q2);
+        channel.exchangeDelete(E);
     }
 
     private void bind(String queue, String routingKey)
         throws IOException
     {
-        channel.queueBind(ticket, queue, E, routingKey);
+        channel.queueBind(queue, E, routingKey);
     }
 
     private void check(String routingKey, boolean expectQ1, boolean expectQ2)
         throws IOException
     {
-        channel.basicPublish(ticket, E, routingKey, null, "mrdq".getBytes());
+        channel.basicPublish(E, routingKey, null, "mrdq".getBytes());
         checkGet(Q1, expectQ1);
         checkGet(Q2, expectQ2);
     }
@@ -68,7 +68,7 @@ public class Routing extends BrokerTestCase
     private void checkGet(String queue, boolean messageExpected)
         throws IOException
     {
-        GetResponse r = channel.basicGet(ticket, queue, true);
+        GetResponse r = channel.basicGet(queue, true);
         if (messageExpected) {
             assertNotNull(r);
         } else {
@@ -102,15 +102,15 @@ public class Routing extends BrokerTestCase
     public void testDoubleBinding()
         throws IOException
     {
-        channel.queueBind(ticket, Q1, "amq.topic", "x.#");
-        channel.queueBind(ticket, Q1, "amq.topic", "#.x");
-        channel.basicPublish(ticket, "amq.topic", "x.y", null, "x.y".getBytes());
+        channel.queueBind(Q1, "amq.topic", "x.#");
+        channel.queueBind(Q1, "amq.topic", "#.x");
+        channel.basicPublish("amq.topic", "x.y", null, "x.y".getBytes());
         checkGet(Q1, true);
         checkGet(Q1, false);
-        channel.basicPublish(ticket, "amq.topic", "y.x", null, "y.x".getBytes());
+        channel.basicPublish("amq.topic", "y.x", null, "y.x".getBytes());
         checkGet(Q1, true);
         checkGet(Q1, false);
-        channel.basicPublish(ticket, "amq.topic", "x.x", null, "x.x".getBytes());
+        channel.basicPublish("amq.topic", "x.x", null, "x.x".getBytes());
         checkGet(Q1, true);
         checkGet(Q1, false);
     }
@@ -121,12 +121,12 @@ public class Routing extends BrokerTestCase
 
         for (int i = 0; i < 2; i++) {
             String q = "Q-" + System.nanoTime();
-            channel.queueDeclare(ticket, q);
-            channel.queueBind(ticket, q, "amq.fanout", "");
+            channel.queueDeclare(q);
+            channel.queueBind(q, "amq.fanout", "");
             queues.add(q);
         }
 
-        channel.basicPublish(ticket, "amq.fanout", System.nanoTime() + "",
+        channel.basicPublish("amq.fanout", System.nanoTime() + "",
                              null, "fanout".getBytes());
 
         for (String q : queues) {
@@ -134,26 +134,26 @@ public class Routing extends BrokerTestCase
         }
 
         for (String q : queues) {
-            channel.queueDelete(ticket, q);
+            channel.queueDelete(q);
         }
     }
 
     public void testUnbind() throws Exception {
-        AMQP.Queue.DeclareOk ok = channel.queueDeclare(ticket);
+        AMQP.Queue.DeclareOk ok = channel.queueDeclare();
         String queue = ok.getQueue();
 
         String routingKey = "quay";
         String x = "amq.direct";
 
-        channel.queueBind(ticket, queue, x, routingKey);
-        channel.basicPublish(ticket, x, routingKey, null, "foobar".getBytes());
+        channel.queueBind(queue, x, routingKey);
+        channel.basicPublish(x, routingKey, null, "foobar".getBytes());
         checkGet(queue, true);
 
-        channel.queueUnbind(ticket, queue, x, routingKey);
+        channel.queueUnbind(queue, x, routingKey);
 
-        channel.basicPublish(ticket, x, routingKey, null, "foobar".getBytes());
+        channel.basicPublish(x, routingKey, null, "foobar".getBytes());
         checkGet(queue, false);
 
-        channel.queueDelete(ticket, queue);
+        channel.queueDelete(queue);
     }
 }
