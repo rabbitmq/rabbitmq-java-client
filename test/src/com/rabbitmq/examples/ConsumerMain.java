@@ -294,7 +294,7 @@ public class ConsumerMain implements Runnable {
             double intervalRate = countOverInterval / ((now - _previousReportTime) / 1000.0);
             _previousReceived = _received;
             _previousReportTime = now;
-            System.err.println((now - _startTime) + " ms: Received " + _received + " - " + countOverInterval + " since last report (" + (int) intervalRate
+            System.out.println((now - _startTime) + " ms: Received " + _received + " - " + countOverInterval + " since last report (" + (int) intervalRate
                     + " Hz)");
         }
     }

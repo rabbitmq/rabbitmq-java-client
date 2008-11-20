@@ -236,6 +236,6 @@ public class ProducerMain implements Runnable {
     public void summariseProgress(long startTime, long now, int sent, long previousReportTime, int previousSent) {
         int countOverInterval = sent - previousSent;
         double intervalRate = countOverInterval / ((now - previousReportTime) / 1000.0);
-        System.err.println((now - startTime) + " ms: Sent " + sent + " - " + countOverInterval + " since last report (" + (int) intervalRate + " Hz)");
+        System.out.println((now - startTime) + " ms: Sent " + sent + " - " + countOverInterval + " since last report (" + (int) intervalRate + " Hz)");
     }
 }
