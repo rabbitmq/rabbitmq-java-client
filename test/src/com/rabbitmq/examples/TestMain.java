@@ -476,6 +476,7 @@ public class TestMain {
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, false, null, "five".getBytes());
         drain(1, mq, true);
+        _ch1.queueDelete(mq, true, true);
 
         log("Completed basic.return testing.");
     }
