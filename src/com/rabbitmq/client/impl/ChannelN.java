@@ -192,7 +192,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                          false,
                                                                          command,
                                                                          this);
-            synchronized(this) {
+            synchronized (_channelMutex) {
                 processShutdownSignal(signal, true, true);
                 quiescingTransmit(new Channel.CloseOk());
             }
@@ -248,10 +248,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return true;
             } else if (method instanceof Channel.Flow) {
                 Channel.Flow channelFlow = (Channel.Flow) method;
-                synchronized(this) {
+                synchronized (_channelMutex) {
                     _blockContent = !channelFlow.active;
                     transmit(new Channel.FlowOk(channelFlow.active));
-                    notifyAll();
+                    _channelMutex.notifyAll();
                 }
                 return true;
             } else {
@@ -329,7 +329,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         try {
             // Synchronize the block below to avoid race conditions in case
             // connnection wants to send Connection-CloseOK
-            synchronized(this) {
+            synchronized (_channelMutex) {
                 processShutdownSignal(signal, !initiatedByApplication, true);
                 quiescingRpc(reason, k);
             }
