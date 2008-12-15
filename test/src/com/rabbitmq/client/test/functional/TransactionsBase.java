@@ -33,6 +33,7 @@ package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.AMQP.BasicProperties;
 
@@ -256,7 +257,9 @@ public abstract class TransactionsBase
         try {
             txCommit();
             fail("expected exception");
-        } catch (IOException e) {}
+        }
+        catch (IOException e) {}
+        catch (AlreadyClosedException e) {}
         connection = null;
         openConnection();
     }
