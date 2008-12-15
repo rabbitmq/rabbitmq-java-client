@@ -49,6 +49,13 @@ import com.rabbitmq.utility.BlockingValueOrException;
  * @see Connection
  */
 public abstract class AMQChannel extends ShutdownNotifierComponent {
+    /**
+     * Private; used instead of synchronizing on the channel itself,
+     * so that clients can themselves use the channel to synchronize
+     * on.
+     */
+    public final Object _channelMutex = new Object();
+
     /** The connection this channel is associated with. */
     public final AMQConnection _connection;
 
@@ -156,19 +163,23 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public synchronized void enqueueRpc(RpcContinuation k)
+    public void enqueueRpc(RpcContinuation k)
     {
-        if (_activeRpc != null) {
-            throw new IllegalStateException("cannot execute more than one synchronous AMQP command at a time");
+        synchronized (_channelMutex) {
+            if (_activeRpc != null) {
+                throw new IllegalStateException("cannot execute more than one synchronous AMQP command at a time");
+            }
+            _activeRpc = k;
         }
-        _activeRpc = k;
     }
 
-    public synchronized RpcContinuation nextOutstandingRpc()
+    public RpcContinuation nextOutstandingRpc()
     {
-        RpcContinuation result = _activeRpc;
-        _activeRpc = null;
-        return result;
+        synchronized (_channelMutex) {
+            RpcContinuation result = _activeRpc;
+            _activeRpc = null;
+            return result;
+        }
     }
 
     public void ensureIsOpen()
@@ -198,18 +209,22 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         return k.getReply();
     }
 
-    public synchronized void rpc(Method m, RpcContinuation k)
+    public void rpc(Method m, RpcContinuation k)
         throws IOException
     {
-        ensureIsOpen();
-        quiescingRpc(m, k);
+        synchronized (_channelMutex) {
+            ensureIsOpen();
+            quiescingRpc(m, k);
+        }
     }
     
-    public synchronized void quiescingRpc(Method m, RpcContinuation k)
+    public void quiescingRpc(Method m, RpcContinuation k)
         throws IOException
     {
-        enqueueRpc(k);
-        quiescingTransmit(m);
+        synchronized (_channelMutex) {
+            enqueueRpc(k);
+            quiescingTransmit(m);
+        }
     }
 
     /**
@@ -237,13 +252,13 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                                       boolean ignoreClosed,
                                       boolean notifyRpc) {
         try {
-            synchronized (this) {
+            synchronized (_channelMutex) {
                 if (!ignoreClosed)
                     ensureIsOpen(); // invariant: we should never be shut down more than once per instance
                 if (isOpen())
                     _shutdownCause = signal;
                 
-                notifyAll();
+                _channelMutex.notifyAll();
             }
         } finally {
             if (notifyRpc)
@@ -258,33 +273,41 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public synchronized void transmit(Method m) throws IOException {
-        transmit(new AMQCommand(m));
-    }
-
-    public synchronized void transmit(AMQCommand c) throws IOException {
-        ensureIsOpen();
-        quiescingTransmit(c);
-    }
-
-    public synchronized void quiescingTransmit(Method m) throws IOException {
-        quiescingTransmit(new AMQCommand(m));
-    }
-
-    public synchronized void quiescingTransmit(AMQCommand c) throws IOException {
-        if (c.getMethod().hasContent()) {
-            while (_blockContent) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {}
-                
-                // This is to catch a situation when the thread wakes up during
-                // shutdown. Currently, no command that has content is allowed
-                // to send anything in a closing state.
-                ensureIsOpen();
-            }
+    public void transmit(Method m) throws IOException {
+        synchronized (_channelMutex) {
+            transmit(new AMQCommand(m));
         }
-        c.transmit(this);
+    }
+
+    public void transmit(AMQCommand c) throws IOException {
+        synchronized (_channelMutex) {
+            ensureIsOpen();
+            quiescingTransmit(c);
+        }
+    }
+
+    public void quiescingTransmit(Method m) throws IOException {
+        synchronized (_channelMutex) {
+            quiescingTransmit(new AMQCommand(m));
+        }
+    }
+
+    public void quiescingTransmit(AMQCommand c) throws IOException {
+        synchronized (_channelMutex) {
+            if (c.getMethod().hasContent()) {
+                while (_blockContent) {
+                    try {
+                        _channelMutex.wait();
+                    } catch (InterruptedException e) {}
+
+                    // This is to catch a situation when the thread wakes up during
+                    // shutdown. Currently, no command that has content is allowed
+                    // to send anything in a closing state.
+                    ensureIsOpen();
+                }
+            }
+            c.transmit(this);
+        }
     }
 
     public AMQConnection getAMQConnection() {
