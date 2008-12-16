@@ -170,7 +170,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public AMQConnection(ConnectionParameters params,
                          boolean insist,
-                         FrameHandler frameHandler) throws RedirectException, IOException {
+                         FrameHandler frameHandler)
+        throws RedirectException, InterruptedException, IOException
+    {
         this(params, insist, frameHandler, new DefaultExceptionHandler());
     }
 
@@ -187,7 +189,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                          boolean insist,
                          FrameHandler frameHandler,
                          ExceptionHandler exceptionHandler)
-        throws RedirectException, IOException
+        throws RedirectException, InterruptedException, IOException
     {
         checkPreconditions();
         _params = params;
@@ -329,7 +331,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @throws java.io.IOException if any other I/O error occurs
      */
     public Address[] open(final ConnectionParameters params, boolean insist)
-        throws RedirectException, IOException
+        throws RedirectException, InterruptedException, IOException
     {
         try {
             AMQChannel.SimpleBlockingRpcContinuation connStartBlocker =
@@ -579,7 +581,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         
         @Override public void run() {
             try {
-                _appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
+                _appContinuation.get(CONNECTION_CLOSING_TIMEOUT);
+            } catch (InterruptedException ie) {
+                // Our thread was interrupted. Treat this as a
+                // timeout, and force the socket closed, just like the
+                // next stanza.
+                _frameHandler.close();
             } catch (TimeoutException ise) {
                 // Broker didn't close socket on time, force socket close
                 // FIXME: notify about timeout exception?
@@ -695,6 +702,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 new AMQChannel.SimpleBlockingRpcContinuation();
             _channel0.quiescingRpc(reason, k);
             k.getReply(timeout);
+        } catch (InterruptedException ie) {
+            if (!abort)
+                throw new ShutdownSignalException(true, true, ie, this);
         } catch (TimeoutException tte) {
             if (!abort)
                 throw new ShutdownSignalException(true, true, tte, this);

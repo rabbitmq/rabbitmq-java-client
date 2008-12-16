@@ -165,7 +165,7 @@ public class RpcClient {
     }
 
     public byte[] primitiveCall(AMQP.BasicProperties props, byte[] message)
-        throws IOException, ShutdownSignalException
+        throws IOException, InterruptedException, ShutdownSignalException
     {
         checkConsumer();
         BlockingCell<Object> k = new BlockingCell<Object>();
@@ -185,7 +185,7 @@ public class RpcClient {
             _continuationMap.put(replyId, k);
         }
         publish(props, message);
-        Object reply = k.uninterruptibleGet();
+        Object reply = k.get();
         if (reply instanceof ShutdownSignalException) {
             ShutdownSignalException sig = (ShutdownSignalException) reply;
             ShutdownSignalException wrapper =
@@ -208,7 +208,7 @@ public class RpcClient {
      * @throws IOException if an error is encountered
      */
     public byte[] primitiveCall(byte[] message)
-        throws IOException, ShutdownSignalException {
+        throws IOException, InterruptedException, ShutdownSignalException {
         return primitiveCall(null, message);
     }
 
@@ -220,7 +220,7 @@ public class RpcClient {
      * @throws IOException if an error is encountered
      */
     public String stringCall(String message)
-        throws IOException, ShutdownSignalException
+        throws IOException, InterruptedException, ShutdownSignalException
     {
         return new String(primitiveCall(message.getBytes()));
     }
@@ -238,7 +238,7 @@ public class RpcClient {
      * @throws IOException if an error is encountered
      */
     public Map<String, Object> mapCall(Map<String, Object> message)
-        throws IOException, ShutdownSignalException
+        throws IOException, InterruptedException, ShutdownSignalException
     {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         MethodArgumentWriter writer = new MethodArgumentWriter(new DataOutputStream(buffer));
@@ -263,7 +263,7 @@ public class RpcClient {
      * @throws IOException if an error is encountered
      */
     public Map<String, Object> mapCall(Object[] keyValuePairs)
-        throws IOException, ShutdownSignalException
+        throws IOException, InterruptedException, ShutdownSignalException
     {
         Map<String, Object> message = new HashMap<String, Object>();
         for (int i = 0; i < keyValuePairs.length; i += 2) {

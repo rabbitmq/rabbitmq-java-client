@@ -117,7 +117,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * @param ex the exception to wrap
      * @return the wrapped exception
      */
-    public static IOException wrap(ShutdownSignalException ex) {
+    public static IOException wrap(Exception ex) {
         IOException ioe = new IOException();
         ioe.initCause(ex);
         return ioe;
@@ -135,6 +135,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             // Do not wrap it since it means that connection/channel
             // was closed in some action in the past
             throw ace;
+        } catch (InterruptedException ex) {
+            throw wrap(ex);
         } catch (ShutdownSignalException ex) {
             throw wrap(ex);
         }
@@ -196,7 +198,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * non-connection-MainLoop threads!
      */
     public AMQCommand rpc(Method m)
-        throws IOException, ShutdownSignalException
+        throws IOException, InterruptedException, ShutdownSignalException
     {
         SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
         rpc(m, k);
@@ -331,15 +333,15 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             _blocker.setException(signal);
         }
 
-        public T getReply() throws ShutdownSignalException
+        public T getReply() throws ShutdownSignalException, InterruptedException
         {
-            return _blocker.uninterruptibleGetValue();
+            return _blocker.getValue();
         }
 
         public T getReply(int timeout)
-            throws ShutdownSignalException, TimeoutException
+            throws ShutdownSignalException, InterruptedException, TimeoutException
         {
-            return _blocker.uninterruptibleGetValue(timeout);
+            return _blocker.getValue(timeout);
         }
 
         public abstract T transformReply(AMQCommand command);

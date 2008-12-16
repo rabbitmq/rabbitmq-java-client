@@ -155,6 +155,7 @@ public class ConnectionFactory {
         for (Address addr : addrs) {
             Address[] lastKnownAddresses = new Address[0];
             try {
+                boolean wasInterrupted = false;
                 while(true) {
                     FrameHandler frameHandler = createFrameHandler(addr);
                     Integer redirectCount = redirectAttempts.get(addr);
@@ -163,6 +164,15 @@ public class ConnectionFactory {
                     boolean allowRedirects = redirectCount < maxRedirects;
                     try {
                         return new AMQConnection(_params, !allowRedirects, frameHandler);
+                    } catch (InterruptedException ie) {
+                        // Transient (?) problem opening; retry.
+                        if (wasInterrupted) {
+                            // Maybe it's less transient than we thought. Move on.
+                            throw new IOException("interrupted while connecting to server");
+                        } else {
+                            wasInterrupted = true;
+                            continue;
+                        }
                     } catch (RedirectException e) {
                         if (!allowRedirects) {
                             //this should never happen with a well-behaved server

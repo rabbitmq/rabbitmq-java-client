@@ -43,11 +43,11 @@ public class BlockingValueOrException<V, E extends Throwable>
         super.set(ValueOrException.<V, E>makeException(e));
     }
 
-    public V uninterruptibleGetValue() throws E {
-        return uninterruptibleGet().getValue();
+    public V getValue() throws E, InterruptedException {
+        return get().getValue();
     }
-    
-    public V uninterruptibleGetValue(int timeout) throws E, TimeoutException {
-    	return uninterruptibleGet(timeout).getValue();
+
+    public V getValue(int timeout) throws E, InterruptedException, TimeoutException {
+    	return get(timeout).getValue();
     }
 }

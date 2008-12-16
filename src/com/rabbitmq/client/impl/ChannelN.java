@@ -339,6 +339,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             // close-ok.)
             notify = true;
             k.getReply(-1);
+        } catch (InterruptedException ie) {
+            if (!abort)
+                throw new ShutdownSignalException(false, true, ie, this);
         } catch (TimeoutException ise) {
             // Will never happen since we wait infinitely
         } catch (ShutdownSignalException sse) {
@@ -699,7 +702,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
         try {
             return k.getReply();
-        } catch(ShutdownSignalException ex) {
+        } catch (InterruptedException ex) {
+            throw wrap(ex);
+        } catch (ShutdownSignalException ex) {
             throw wrap(ex);
         }
     }
@@ -738,7 +743,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         try {
             Consumer callback = k.getReply();
             Utility.use(callback);
-        } catch(ShutdownSignalException ex) {
+        } catch (InterruptedException ex) {
+            throw wrap(ex);
+        } catch (ShutdownSignalException ex) {
             throw wrap(ex);
         }
     }

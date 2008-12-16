@@ -90,44 +90,6 @@ public class BlockingCell<T> {
     }
     
     /**
-     * As get(), but catches and ignores InterruptedException, retrying until a value appears.
-     * @return the waited-for value
-     */
-    public synchronized T uninterruptibleGet() {
-        while (true) {
-            try {
-                return get();
-            } catch (InterruptedException ex) {
-                // no special handling necessary
-            }
-        }
-    }
-    
-    /**
-     * As get(long timeout), but catches and ignores InterruptedException, retrying until
-     * a value appears or until specified timeout is reached. If timeout is reached,
-     * TimeoutException it thrown.
-     * We also use System.nanoTime() to behave correctly when system clock jumps around.
-     *  
-     * @param timeout timeout in miliseconds. -1 effectively means infinity
-     * @return the waited-for value
-     */
-    public synchronized T uninterruptibleGet(int timeout) throws TimeoutException {
-        long now = System.nanoTime() / NANOS_IN_MILLI;
-        long runTime = now + timeout;
-        
-        do {
-            try {
-                return get(runTime - now);
-            } catch (InterruptedException e) {
-                // Ignore.
-            }
-        } while ((timeout == INFINITY) || ((now = System.nanoTime() / NANOS_IN_MILLI) < runTime));
-        
-        throw new TimeoutException();
-    }
-
-    /**
      * Store a value in this BlockingCell, throwing AssertionError if the cell already has a value.
      * @param newValue the new value to store
      */

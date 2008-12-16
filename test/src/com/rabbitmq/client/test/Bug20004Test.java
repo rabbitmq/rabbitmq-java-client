@@ -78,7 +78,7 @@ public class Bug20004Test extends BrokerTestCase {
             } catch (InterruptedException ie) {}
         }
 
-        declaringThread.stop(); // see bug 20012.
+        declaringThread.interrupt();
 
         if (!completed) {
             fail("Deadlock detected. Probably.");

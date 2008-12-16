@@ -171,7 +171,13 @@ public class ConsumerMain implements Runnable {
         }
 
         public void report(boolean writeStats) throws IOException {
-            Object sentinel = _blocker.uninterruptibleGet();
+            Object sentinel = null;
+            try {
+                sentinel = _blocker.get();
+            } catch (InterruptedException ie) {
+                System.out.println("Interrupted while waiting for sentinel in consumer.");
+                System.exit(1);
+            }
             if (sentinel instanceof ShutdownSignalException) {
                 System.out.println("Aborted with shutdown signal in consumer.");
                 System.exit(1);

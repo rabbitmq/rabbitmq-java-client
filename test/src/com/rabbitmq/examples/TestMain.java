@@ -231,7 +231,7 @@ public class TestMain {
             System.out.println(s);
     }
 
-    public void run() throws IOException {
+    public void run() throws IOException, InterruptedException {
         final int batchSize = 5;
 
         _ch1 = createChannel();
@@ -257,8 +257,8 @@ public class TestMain {
         sendLotsOfTrivialMessages(batchSize, queueName);
         sendLotsOfTrivialMessages(batchSize, queueName);
 
-        k1.uninterruptibleGet();
-        k2.uninterruptibleGet();
+        k1.get();
+        k2.get();
         _ch1.basicCancel(cTag1);
         _ch1.basicCancel(cTag2);
 
@@ -440,8 +440,8 @@ public class TestMain {
         // ch1.exchangeDelete(x);
     }
 
-    public void doBasicReturn(BlockingCell cell, int expectedCode) {
-        Object[] a = (Object[]) cell.uninterruptibleGet();
+    public void doBasicReturn(BlockingCell cell, int expectedCode) throws InterruptedException {
+        Object[] a = (Object[]) cell.get();
         AMQImpl.Basic.Return method = (AMQImpl.Basic.Return) a[0];
         log("Returned: " + method);
         log(" - props: " + a[1]);
@@ -452,7 +452,7 @@ public class TestMain {
         }
     }
 
-    public void tryBasicReturn() throws IOException {
+    public void tryBasicReturn() throws IOException, InterruptedException {
         log("About to try mandatory/immediate publications");
 
         String mx = "mandatoryTestExchange";
@@ -497,7 +497,7 @@ public class TestMain {
         }
     }
 
-    public void tryTransaction(String queueName) throws IOException {
+    public void tryTransaction(String queueName) throws IOException, InterruptedException {
 
         GetResponse c;
 

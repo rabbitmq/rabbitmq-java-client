@@ -105,6 +105,8 @@ public class AMQConnectionTest extends TestCase {
         try {
             new AMQConnection(_params, false, _mockFrameHandler, handler);
             fail("Connection should have thrown exception");
+        } catch(InterruptedException ie) {
+            fail("Unexpectedly interrupted");
         } catch(IOException signal) {
            // As expected 
         } catch(RedirectException e) {

@@ -132,10 +132,12 @@ public class Tracer implements Runnable {
             DirectionHandler outHandler = new DirectionHandler(w, false, ois, ios);
             new Thread(inHandler).start();
             new Thread(outHandler).start();
-            Object result = w.uninterruptibleGet();
+            Object result = w.get();
             if (result instanceof Exception) {
                 ((Exception) result).printStackTrace();
             }
+        } catch (InterruptedException ie) {
+            ie.printStackTrace();
         } catch (EOFException eofe) {
             eofe.printStackTrace();
         } catch (IOException ioe) {

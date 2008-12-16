@@ -80,7 +80,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * retrieved from the server during construction.
      */
     public JsonRpcClient(Channel channel, String exchange, String routingKey)
-        throws IOException, JsonRpcException
+        throws IOException, InterruptedException, JsonRpcException
     {
 	super(channel, exchange, routingKey);
 	retrieveServiceDescription();
@@ -112,7 +112,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * @throws JsonRpcException if the reply object contained an exception
      */
     public Object call(String method, Object[] params)
-	throws IOException, JsonRpcException
+	throws IOException, InterruptedException, JsonRpcException
     {
 	HashMap<String, Object> request = new HashMap<String, Object>();
 	request.put("id", null);
@@ -123,7 +123,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
 	String replyStr;
         try {
             replyStr = this.stringCall(requestStr);
-        } catch(ShutdownSignalException ex) {
+        } catch (ShutdownSignalException ex) {
             throw new IOException(ex.getMessage()); // wrap, re-throw
         }
         
@@ -192,7 +192,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * @see #coerce
      */
     public Object call(String[] args)
-	throws NumberFormatException, IOException, JsonRpcException
+	throws NumberFormatException, IOException, InterruptedException, JsonRpcException
     {
 	if (args.length == 0) {
 	    throw new IllegalArgumentException("First string argument must be method name");
@@ -225,7 +225,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * in this object.
      */
     public void retrieveServiceDescription()
-	throws IOException, JsonRpcException
+	throws IOException, InterruptedException, JsonRpcException
     {
 	Map<String, Object> rawServiceDescription = (Map) call("system.describe", null);
 	//System.out.println(new JSONWriter().write(rawServiceDescription));
