@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -169,21 +175,18 @@ public class TestMain {
         // closing the channels.
         conn = new ConnectionFactory().newConnection(hostName, portNumber);
         ch = conn.createChannel();
-        ch.accessRequest("/data", true, true, true, true, true);
         conn.close();
         // Test what happens when we provoke an error
         conn = new ConnectionFactory().newConnection(hostName, portNumber);
         ch = conn.createChannel();
-        int ticket = ch.accessRequest("/data", true, true, true, true, true);
         try {
-            ch.exchangeDeclare(ticket, "mumble", "invalid");
+            ch.exchangeDeclare("mumble", "invalid");
             throw new RuntimeException("expected shutdown");
         } catch (IOException e) {
         }
         // Test what happens when we just kill the connection
         conn = new ConnectionFactory().newConnection(hostName, portNumber);
         ch = conn.createChannel();
-        ch.accessRequest("/data", true, true, true, true, true);
         ((SocketFrameHandler)((AMQConnection)conn)._frameHandler).close();
     }
 
@@ -207,8 +210,6 @@ public class TestMain {
     public Connection _connection;
 
     public Channel _ch1;
-
-    public int _ticket;
 
     public int _messageId = 0;
 
@@ -235,8 +236,6 @@ public class TestMain {
 
         _ch1 = createChannel();
 
-        _ticket = _ch1.accessRequest("/data");
-
         _ch1.setReturnListener(new ReturnListener() {
             public void handleBasicReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body)
                     throws IOException {
@@ -246,15 +245,15 @@ public class TestMain {
             }
         });
 
-        String queueName =_ch1.queueDeclare(_ticket).getQueue();
+        String queueName =_ch1.queueDeclare().getQueue();
 
         sendLotsOfTrivialMessages(batchSize, queueName);
         expect(batchSize, drain(batchSize, queueName, false));
 
         BlockingCell<Object> k1 = new BlockingCell<Object>();
         BlockingCell<Object> k2 = new BlockingCell<Object>();
-        String cTag1 = _ch1.basicConsume(_ticket, queueName, true, new BatchedTracingConsumer(true, k1, batchSize, _ch1));
-        String cTag2 = _ch1.basicConsume(_ticket, queueName, false, new BatchedTracingConsumer(false, k2, batchSize, _ch1));
+        String cTag1 = _ch1.basicConsume(queueName, true, new BatchedTracingConsumer(true, k1, batchSize, _ch1));
+        String cTag2 = _ch1.basicConsume(queueName, false, new BatchedTracingConsumer(false, k2, batchSize, _ch1));
         sendLotsOfTrivialMessages(batchSize, queueName);
         sendLotsOfTrivialMessages(batchSize, queueName);
 
@@ -266,15 +265,14 @@ public class TestMain {
         tryTopics();
         tryBasicReturn();
 
-        queueName =_ch1.queueDeclare(_ticket).getQueue();
+        queueName =_ch1.queueDeclare().getQueue();
         sendLotsOfTrivialMessages(batchSize, queueName);
         expect(batchSize, drain(batchSize, queueName, true));
 
         tryTransaction(queueName);
 
-        _ch1.close(200, "Closing ch1 with no error");
+        _ch1.close();
 
-        tryRealm();
         log("Closing.");
         try {
             _connection.close();
@@ -381,7 +379,7 @@ public class TestMain {
 
         while (notEmpty && (remaining > 0)) {
             for (int i = 0; (i < 2) && (remaining > 0); i++) {
-                GetResponse c = _ch1.basicGet(_ticket, queueName, noAck);
+                GetResponse c = _ch1.basicGet(queueName, noAck);
                 if (c == null) {
                     notEmpty = false;
                 } else {
@@ -402,11 +400,11 @@ public class TestMain {
     }
 
     public void publish1(String x, String routingKey, String body) throws IOException {
-        _ch1.basicPublish(_ticket, x, routingKey, MessageProperties.TEXT_PLAIN, body.getBytes());
+        _ch1.basicPublish(x, routingKey, MessageProperties.TEXT_PLAIN, body.getBytes());
     }
 
     public void publish2(String x, String routingKey, String body) throws IOException {
-        _ch1.basicPublish(_ticket, x, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, body.getBytes());
+        _ch1.basicPublish(x, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, body.getBytes());
     }
 
     public void tryTopics() throws IOException {
@@ -414,13 +412,13 @@ public class TestMain {
         String q2 = "tryTopicsQueue2";
         String q3 = "tryTopicsQueue3";
         String x = "tryTopicsExch";
-        _ch1.queueDeclare(_ticket, q1);
-        _ch1.queueDeclare(_ticket, q2);
-        _ch1.queueDeclare(_ticket, q3);
-        _ch1.exchangeDeclare(_ticket, x, "topic", false, false, true, null);
-        _ch1.queueBind(_ticket, q1, x, "test.#");
-        _ch1.queueBind(_ticket, q2, x, "test.test");
-        _ch1.queueBind(_ticket, q3, x, "*.test.#");
+        _ch1.queueDeclare(q1);
+        _ch1.queueDeclare(q2);
+        _ch1.queueDeclare(q3);
+        _ch1.exchangeDeclare(x, "topic", false, false, true, null);
+        _ch1.queueBind(q1, x, "test.#");
+        _ch1.queueBind(q2, x, "test.test");
+        _ch1.queueBind(q3, x, "*.test.#");
 
         log("About to publish to topic queues");
         publish1(x, "", "A"); // no binding matches
@@ -435,11 +433,11 @@ public class TestMain {
         log("About to drain q3");
         expect(2, drain(10, q3, true));
 
-        _ch1.queueDelete(_ticket, q3, true, true);
-        _ch1.queueDelete(_ticket, q2, true, true);
-        _ch1.queueDelete(_ticket, q1, true, true);
+        _ch1.queueDelete(q3, true, true);
+        _ch1.queueDelete(q2, true, true);
+        _ch1.queueDelete(q1, true, true);
         // We created the exchange auto_delete - it should be gone by this point.
-        // ch1.exchangeDelete(_ticket, x);
+        // ch1.exchangeDelete(x);
     }
 
     public void doBasicReturn(BlockingCell cell, int expectedCode) {
@@ -458,34 +456,33 @@ public class TestMain {
         log("About to try mandatory/immediate publications");
 
         String mx = "mandatoryTestExchange";
-        _ch1.exchangeDeclare(_ticket, mx, "fanout");
+        _ch1.exchangeDeclare(mx, "fanout", false, false, true, null);
 
         returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(_ticket, mx, "", true, false, null, "one".getBytes());
+        _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());
         // %%% FIXME: 312 and 313 should be replaced with symbolic constants when we move to >=0-9
         doBasicReturn(returnCell, 312);
 
         returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(_ticket, mx, "", true, true, null, "two".getBytes());
+        _ch1.basicPublish(mx, "", true, true, null, "two".getBytes());
         doBasicReturn(returnCell, 312);
 
         returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(this._ticket, mx, "", false, true, null, "three".getBytes());
+        _ch1.basicPublish(mx, "", false, true, null, "three".getBytes());
         doBasicReturn(returnCell, 313);
 
         String mq = "mandatoryTestQueue";
-        _ch1.queueDeclare(_ticket, mq);
-        _ch1.queueBind(_ticket, mq, mx, "");
+        _ch1.queueDeclare(mq, false, false, false, true, null);
+        _ch1.queueBind(mq, mx, "");
 
         returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(_ticket, mx, "", true, true, null, "four".getBytes());
+        _ch1.basicPublish(mx, "", true, true, null, "four".getBytes());
         doBasicReturn(returnCell, 313);
 
         returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(_ticket, mx, "", true, false, null, "five".getBytes());
+        _ch1.basicPublish(mx, "", true, false, null, "five".getBytes());
         drain(1, mq, true);
-
-        _ch1.queueDelete(_ticket, mq);
+        _ch1.queueDelete(mq, true, true);
 
         log("Completed basic.return testing.");
     }
@@ -508,12 +505,12 @@ public class TestMain {
 
         //test basicReturn handling in tx context
         returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(_ticket, "", queueName, false, false, null, "normal".getBytes());
-        _ch1.basicPublish(_ticket, "", queueName, true, false, null, "mandatory".getBytes());
-        _ch1.basicPublish(_ticket, "", "bogus", true, false, null, "mandatory".getBytes());
+        _ch1.basicPublish("", queueName, false, false, null, "normal".getBytes());
+        _ch1.basicPublish("", queueName, true, false, null, "mandatory".getBytes());
+        _ch1.basicPublish("", "bogus", true, false, null, "mandatory".getBytes());
         doBasicReturn(returnCell, 312);
         returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(_ticket, "", "bogus", false, true, null, "immediate".getBytes());
+        _ch1.basicPublish("", "bogus", false, true, null, "immediate".getBytes());
         doBasicReturn(returnCell, 313);
         returnCell = new BlockingCell<Object>();
         _ch1.txCommit();
@@ -525,11 +522,11 @@ public class TestMain {
           delivered messages
 
         String x = "txtest";
-        _ch1.exchangeDeclare(this._ticket, x, "direct", true);
-        String requestQueue = _ch1.queueDeclare(this._ticket, "", true).getQueue();
-        String replyQueue = _ch1.queueDeclare(this._ticket, "", true).getQueue();
-        _ch1.queueBind(this._ticket, requestQueue, x, requestQueue);
-        _ch1.queueBind(this._ticket, replyQueue, x, replyQueue);
+        _ch1.exchangeDeclare(x, "direct", true);
+        String requestQueue = _ch1.queueDeclare("", true).getQueue();
+        String replyQueue = _ch1.queueDeclare("", true).getQueue();
+        _ch1.queueBind(requestQueue, x, requestQueue);
+        _ch1.queueBind(replyQueue, x, replyQueue);
         publish2(x, requestQueue, "Request");
         _ch1.txCommit();
 
@@ -559,106 +556,13 @@ public class TestMain {
         expect(1, drain(10, replyQueue, false));
         _ch1.txCommit();
 
-        _ch1.queueDelete(this._ticket, requestQueue);
-        _ch1.queueDelete(this._ticket, replyQueue);
+        _ch1.queueDelete(requestQueue);
+        _ch1.queueDelete(replyQueue);
 
         */
     }
 
-    public void tryRealm() throws IOException {
-        Channel ch1;
-        Channel ch2;
-        // Note: we don't use the "ticket" integer values returned by accessRequest().
 
-        ch1 = createChannel();
-        
-        ch1.accessRequest("/data");
-        ch1.accessRequest("/admin");
-
-        ch1.close(200, "closing channel");
-
-        ch1 = createChannel();
-        ch2 = createChannel();
-        ch1.accessRequest("/data");
-        ch2.accessRequest("/data");
-        ch1.close(200, "closing channel");
-        ch2.close(200, "closing channel");
-
-        ch1 = createChannel();
-        ch2 = createChannel();
-        ch1.accessRequest("/data", true, true, true, true, true);
-        ch1.close(200, "closing channel");
-        ch2.accessRequest("/data", true, true, true, true, true);
-        ch2.close(200, "closing channel");
-
-        ch1 = createChannel();
-        ch1.accessRequest("/data");
-        ch1.accessRequest("/data");
-        // TODO: test that the ticket returned by the first accessRequest() is invalid
-        ch1.close(200, "closing channel");
-
-        ch1 = createChannel();
-        ch1.accessRequest("/data", true, true, true, true, true);
-        ch1.accessRequest("/data", true, true, true, true, true);
-        // TODO: test that the ticket returned by the first accessRequest() is invalid
-        ch1.close(200, "closing channel");
-
-        ch1 = createChannel();
-        ch1.accessRequest("/data");
-        ch1.accessRequest("/data", true, true, true, true, true);
-        // TODO: test that the ticket returned by the first accessRequest() is invalid
-        ch1.close(200, "closing channel");
-
-        ch1 = createChannel();
-        ch1.accessRequest("/data", true, true, true, true, true);
-        ch1.accessRequest("/data");
-        // TODO: test that the ticket returned by the first accessRequest() is invalid
-        ch1.close(200, "closing channel");
-
-        // get ordinary ticket on one channel then try to get exclusive
-        // ticket on other channel
-        // -> soft error
-
-        ch1 = createChannel();
-        ch2 = createChannel();
-        ch1.accessRequest("/data");
-        try {
-            ch2.accessRequest("/data", true, true, true, true, true);
-            throw new UnexpectedSuccessException();
-        } catch (IOException ex) {
-            // as expected
-        }
-        ch1.close(200, "closing channel");
-
-        // vice versa -> soft error
-
-        ch1 = createChannel();
-        ch2 = createChannel();
-        ch1.accessRequest("/data", true, true, true, true, true);
-        try {
-            ch2.accessRequest("/data");
-            throw new UnexpectedSuccessException();
-        } catch (IOException e) {
-            // as expected
-        }
-        ch1.close(200, "closing channel");
-
-        // access unknown realm -> soft error
-
-        Channel ch = createChannel();
-
-        try {
-            ch.accessRequest("/unknown");
-            throw new UnexpectedSuccessException();
-        } catch (IOException e) {
-            // as expected
-        }
-
-        // access forbidden realm
-        // TODO: implement
-        // Access a realm to which user does not have access.
-        // this is slightly tricky because first we'd somehow have to create a suitable user and or realm.
-    }
 
     // utility: tell what Java compiler version a class was compiled with
     public static String getCompilerVersion(Class clazz) throws IOException {

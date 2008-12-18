@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -47,11 +53,10 @@ public class SendString {
 
             Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
             Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
-            ch.exchangeDeclare(ticket, exchange, exchangeType);
-            ch.basicPublish(ticket, exchange, routingKey, null, message.getBytes());
-            ch.close(200, "Closing the channel");
+            ch.exchangeDeclare(exchange, exchangeType);
+            ch.basicPublish(exchange, routingKey, null, message.getBytes());
+            ch.close();
             conn.close();
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);

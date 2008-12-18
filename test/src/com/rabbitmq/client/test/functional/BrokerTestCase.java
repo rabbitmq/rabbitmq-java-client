@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -43,7 +49,48 @@ public class BrokerTestCase extends TestCase
 
     public Connection connection;
     public Channel channel;
-    public int ticket;
+
+    protected void setUp()
+        throws IOException
+    {
+        openConnection();
+        openChannel();
+
+        createResources();
+    }
+
+    protected void tearDown()
+        throws IOException
+    {
+        closeChannel();
+        closeConnection();
+
+        openConnection();
+        openChannel();
+        releaseResources();
+        closeChannel();
+        closeConnection();
+    }
+
+    /**
+     * Should create any AMQP resources needed by the test. Will be
+     * called by BrokerTestCase's implementation of setUp, after the
+     * connection and channel have been opened.
+     */
+    protected void createResources()
+        throws IOException
+    {}
+
+    /**
+     * Should destroy any AMQP resources that were created by the
+     * test. Will be called by BrokerTestCase's implementation of
+     * tearDown, after the connection and channel have been closed and
+     * reopened specifically for this method. After this method
+     * completes, the connection and channel will be closed again.
+     */
+    protected void releaseResources()
+        throws IOException
+    {}
 
     public void openConnection()
         throws IOException
@@ -57,7 +104,7 @@ public class BrokerTestCase extends TestCase
         throws IOException
     {
         if (connection != null) {
-            connection.close();
+            connection.abort();
             connection = null;
         }
     }
@@ -66,14 +113,13 @@ public class BrokerTestCase extends TestCase
         throws IOException
     {
         channel = connection.createChannel();
-        ticket = channel.accessRequest("/data");
     }
 
     public void closeChannel()
         throws IOException
     {
         if (channel != null) {
-            channel.close(200, "OK");
+            channel.abort();
             channel = null;
         }
     }

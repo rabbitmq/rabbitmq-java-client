@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -41,14 +47,14 @@ public class QosTests extends BrokerTestCase
     {
         openConnection();
         openChannel();
-        channel.queueDeclare(ticket, Q);
+        channel.queueDeclare(Q);
     }
 
     protected void tearDown()
         throws IOException
     {
 	if (channel != null) {
-	    channel.queueDelete(ticket, Q);
+	    channel.queueDelete(Q);
 	}
         closeChannel();
         closeConnection();
@@ -58,7 +64,7 @@ public class QosTests extends BrokerTestCase
 	throws IOException
     {
 	for (int i = 0; i < n; i++) {
-	    channel.basicPublish(ticket, "", Q, null, Integer.toString(n).getBytes());
+	    channel.basicPublish("", Q, null, Integer.toString(n).getBytes());
 	}
     }
 
@@ -70,7 +76,7 @@ public class QosTests extends BrokerTestCase
 	    QueueingConsumer.Delivery d;
 
 	    c = new QueueingConsumer(channel);
-	    String consumerTag = channel.basicConsume(ticket, Q, false, c);
+	    String consumerTag = channel.basicConsume(Q, false, c);
 
 	    Thread.sleep(500);
 

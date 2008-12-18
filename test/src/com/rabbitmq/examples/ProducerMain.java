@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -105,8 +111,6 @@ public class ProducerMain implements Runnable {
 
     public Channel _channel;
 
-    public int _ticket;
-
     public int _rateLimit;
 
     public int _messageCount;
@@ -144,26 +148,31 @@ public class ProducerMain implements Runnable {
 
     private void runIt() throws IOException {
         _channel = _connection.createChannel();
-        _ticket = _channel.accessRequest("/data");
 
         String queueName = "test queue";
-        _channel.queueDeclare(_ticket, queueName, shouldPersist());
-
-        String exchangeName = "test completion";
-        _channel.exchangeDeclare(_ticket, exchangeName, "fanout");
-
+        _channel.queueDeclare(queueName, shouldPersist());
+        
         if (shouldCommit()) {
             _channel.txSelect();
         }
         sendBatch(queueName);
 
         if (_sendCompletion) {
-            _channel.basicPublish(_ticket, exchangeName, "", MessageProperties.BASIC, new byte[0]);
+            // Declaring this exchange as auto-delete is a bit dodgy because of a
+            // race condition with the consumer declaring the same exchange to be
+            // auto-delete and hence pulling the rug out from underneath the producer's
+            // feet.
+            // Hence we're delaying a possible re-declaration until as late as possible.
+            // Ideally you would use a global lock around both critical sections,
+            // but thread safety has gone out of fashion these days.
+            String exchangeName = "test completion";
+            _channel.exchangeDeclare(exchangeName, "fanout", false, false, true, null);
+            _channel.basicPublish(exchangeName, "", MessageProperties.BASIC, new byte[0]);
             if (shouldCommit())
                 _channel.txCommit();
         }
 
-        _channel.close(200, "Closing ch1 with no error");
+        _channel.close();
         System.out.println("Closing.");
         _connection.close();
         System.out.println("Leaving ProducerMain.run().");
@@ -172,7 +181,7 @@ public class ProducerMain implements Runnable {
     public void primeServer(String queueName) throws IOException {
         System.out.println("Priming server...");
         for (int i = 0; i < 2000; i++) {
-            _channel.basicPublish(_ticket, "", queueName, MessageProperties.MINIMAL_BASIC, new byte[0]);
+            _channel.basicPublish("", queueName, MessageProperties.MINIMAL_BASIC, new byte[0]);
         }
         sleep(500);
         System.out.println("...starting.");
@@ -202,7 +211,7 @@ public class ProducerMain implements Runnable {
             acc.flush();
             byte[] message0 = acc.toByteArray();
             System.arraycopy(message0, 0, message, 0, message0.length);
-            _channel.basicPublish(_ticket, "", queueName, shouldPersist() ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
+            _channel.basicPublish("", queueName, shouldPersist() ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
                     message);
             sent++;
             if (shouldCommit()) {
@@ -236,6 +245,6 @@ public class ProducerMain implements Runnable {
     public void summariseProgress(long startTime, long now, int sent, long previousReportTime, int previousSent) {
         int countOverInterval = sent - previousSent;
         double intervalRate = countOverInterval / ((now - previousReportTime) / 1000.0);
-        System.err.println((now - startTime) + " ms: Sent " + sent + " - " + countOverInterval + " since last report (" + (int) intervalRate + " Hz)");
+        System.out.println((now - startTime) + " ms: Sent " + sent + " - " + countOverInterval + " since last report (" + (int) intervalRate + " Hz)");
     }
 }

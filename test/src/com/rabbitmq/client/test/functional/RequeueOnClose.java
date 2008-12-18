@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -42,19 +48,31 @@ public abstract class RequeueOnClose
 
     protected abstract void close() throws IOException;
 
+    protected void setUp()
+        throws IOException
+    {
+        // Override to disable the default behaviour from BrokerTestCase.
+    }
+
+    protected void tearDown()
+        throws IOException
+    {
+        // Override to disable the default behaviour from BrokerTestCase.
+    }
+
     public void injectMessage()
         throws IOException
     {
-        channel.queueDeclare(ticket, Q);
-        channel.queueDelete(ticket, Q);
-        channel.queueDeclare(ticket, Q);
-        channel.basicPublish(ticket, "", Q, null, "RequeueOnClose message".getBytes());
+        channel.queueDeclare(Q);
+        channel.queueDelete(Q);
+        channel.queueDeclare(Q);
+        channel.basicPublish("", Q, null, "RequeueOnClose message".getBytes());
     }
 
     public GetResponse getMessage()
         throws IOException
     {
-        return channel.basicGet(ticket, Q, false);
+        return channel.basicGet(Q, false);
     }
 
     public void publishAndGet(int count, boolean doAck)
@@ -99,7 +117,7 @@ public abstract class RequeueOnClose
         open();
         injectMessage();
         QueueingConsumer c = new QueueingConsumer(channel);
-        channel.basicConsume(ticket, Q, c);
+        channel.basicConsume(Q, c);
         c.nextDelivery();
         close();
         Thread.sleep(GRATUITOUS_DELAY);
@@ -114,24 +132,24 @@ public abstract class RequeueOnClose
     {
         openConnection();
         open();
-        channel.queueDeclare(ticket, Q);
-        channel.queueDelete(ticket, Q);
-        channel.queueDeclare(ticket, Q);
+        channel.queueDeclare(Q);
+        channel.queueDelete(Q);
+        channel.queueDeclare(Q);
         for (int i = 0; i < MESSAGE_COUNT; i++) {
-            channel.basicPublish(ticket, "", Q, null, "in flight message".getBytes());
+            channel.basicPublish("", Q, null, "in flight message".getBytes());
         }
         QueueingConsumer c = new QueueingConsumer(channel);
-        channel.basicConsume(ticket, Q, c);
+        channel.basicConsume(Q, c);
         c.nextDelivery();
         close();
         open();
         for (int i = 0; i < MESSAGE_COUNT; i++) {
-            GetResponse r = channel.basicGet(ticket, Q, true);
+            GetResponse r = channel.basicGet(Q, true);
             assertNotNull("only got " + i + " out of " + MESSAGE_COUNT +
                           " messages", r);
         }
-        assertNull(channel.basicGet(ticket, Q, true));
-        channel.queueDelete(ticket, Q);
+        assertNull(channel.basicGet(Q, true));
+        channel.queueDelete(Q);
         close();
         closeConnection();
     }

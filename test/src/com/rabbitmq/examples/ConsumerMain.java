@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -102,31 +108,30 @@ public class ConsumerMain implements Runnable {
 
     private void runIt() throws IOException {
         Channel channel = _connection.createChannel();
-        int ticket = channel.accessRequest("/data");
 
         String queueName = "test queue";
-        channel.queueDeclare(ticket, queueName);
+        channel.queueDeclare(queueName);
 
         String exchangeName = "test completion";
-        channel.exchangeDeclare(ticket, exchangeName, "fanout");
+        channel.exchangeDeclare(exchangeName, "fanout", false, false, true, null);
 
-        String completionQueue = channel.queueDeclare(ticket).getQueue();
-        channel.queueBind(ticket, completionQueue, exchangeName, "");
+        String completionQueue = channel.queueDeclare().getQueue();
+        channel.queueBind(completionQueue, exchangeName, "");
 
-        LatencyExperimentConsumer callback = new LatencyExperimentConsumer(ticket, channel, queueName);
+        LatencyExperimentConsumer callback = new LatencyExperimentConsumer(channel, queueName);
         
-        channel.basicConsume(ticket, queueName, true, callback);
-        channel.basicConsume(ticket, completionQueue, true, "completion", callback);
+        channel.basicConsume(queueName, true, callback);
+        channel.basicConsume(completionQueue, true, "completion", callback);
         callback.report(_writeStats);
        
         System.out.println("Deleting test queue.");
-        channel.queueDelete(ticket, queueName);
+        channel.queueDelete(queueName);
 
         System.out.println("Deleting completion queue.");
-        channel.queueDelete(ticket, completionQueue);
+        channel.queueDelete(completionQueue);
         
         System.out.println("Closing the channel.");
-        channel.close(200, "Closing channel with no error");
+        channel.close();
         
         System.out.println("Closing the connection.");
         _connection.close();
@@ -135,7 +140,6 @@ public class ConsumerMain implements Runnable {
     }
 
     public static class LatencyExperimentConsumer extends DefaultConsumer {
-        public final int _ticket;
 
         public final String _queueName;
 
@@ -157,9 +161,8 @@ public class ConsumerMain implements Runnable {
 
         public boolean _noAck = true;
 
-        public LatencyExperimentConsumer(int ticket, Channel ch, String queueName) {
+        public LatencyExperimentConsumer(Channel ch, String queueName) {
             super(ch);
-            _ticket = ticket;
             _queueName = queueName;
             _received = 0;
             _previousReceived = 0;
@@ -294,7 +297,7 @@ public class ConsumerMain implements Runnable {
             double intervalRate = countOverInterval / ((now - _previousReportTime) / 1000.0);
             _previousReceived = _received;
             _previousReportTime = now;
-            System.err.println((now - _startTime) + " ms: Received " + _received + " - " + countOverInterval + " since last report (" + (int) intervalRate
+            System.out.println((now - _startTime) + " ms: Received " + _received + " - " + countOverInterval + " since last report (" + (int) intervalRate
                     + " Hz)");
         }
     }

@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -43,6 +49,13 @@ import com.rabbitmq.utility.BlockingValueOrException;
  * @see Connection
  */
 public abstract class AMQChannel extends ShutdownNotifierComponent {
+    /**
+     * Private; used instead of synchronizing on the channel itself,
+     * so that clients can themselves use the channel to synchronize
+     * on.
+     */
+    public final Object _channelMutex = new Object();
+
     /** The connection this channel is associated with. */
     public final AMQConnection _connection;
 
@@ -54,6 +67,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
 
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
     public RpcContinuation _activeRpc = null;
+
+    /** Whether transmission of content-bearing methods should be blocked */
+    public boolean _blockContent = false;
 
     /**
      * Construct a channel on the given connection, with the given channel number.
@@ -147,26 +163,23 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public synchronized void enqueueRpc(RpcContinuation k)
+    public void enqueueRpc(RpcContinuation k)
     {
-        if (_activeRpc != null) {
-            throw new IllegalStateException("cannot execute more than one synchronous AMQP command at a time");
+        synchronized (_channelMutex) {
+            if (_activeRpc != null) {
+                throw new IllegalStateException("cannot execute more than one synchronous AMQP command at a time");
+            }
+            _activeRpc = k;
         }
-        _activeRpc = k;
     }
 
-    public synchronized void transmitAndEnqueue(Method m, RpcContinuation k)
-        throws IOException
+    public RpcContinuation nextOutstandingRpc()
     {
-        enqueueRpc(k);
-        transmit(m);
-    }
-
-    public synchronized RpcContinuation nextOutstandingRpc()
-    {
-        RpcContinuation result = _activeRpc;
-        _activeRpc = null;
-        return result;
+        synchronized (_channelMutex) {
+            RpcContinuation result = _activeRpc;
+            _activeRpc = null;
+            return result;
+        }
     }
 
     public void ensureIsOpen()
@@ -196,24 +209,22 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         return k.getReply();
     }
 
-    public synchronized void rpc(Method m, RpcContinuation k)
+    public void rpc(Method m, RpcContinuation k)
         throws IOException
     {
-        ensureIsOpen();
-        transmitAndEnqueue(m, k);
+        synchronized (_channelMutex) {
+            ensureIsOpen();
+            quiescingRpc(m, k);
+        }
     }
-
-    /**
-     * Just like rpc(Method), but for use during quiescing/close/shutdown.
-     * Not for regular use. Doesn't do the ensureIsOpen() check.
-     */
-    public AMQCommand quiescingRpc(Method m,
-                                   int timeoutMillisec)
-        throws IOException, ShutdownSignalException, TimeoutException
+    
+    public void quiescingRpc(Method m, RpcContinuation k)
+        throws IOException
     {
-        SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
-        transmitAndEnqueue(m, k);
-        return k.getReply(timeoutMillisec);
+        synchronized (_channelMutex) {
+            enqueueRpc(k);
+            quiescingTransmit(m);
+        }
     }
 
     /**
@@ -228,16 +239,34 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     @Override public String toString() {
         return "AMQChannel(" + _connection + "," + _channelNumber + ")";
     }
-
+    
     /**
      * Protected API - respond, in the driver thread, to a {@link ShutdownSignalException}.
      * @param signal the signal to handle
+     * @param ignoreClosed the flag indicating whether to ignore the AlreadyClosedException
+     *                     thrown when the channel is already closed
+     * @param notifyRpc the flag indicating whether any remaining rpc continuation should be
+     *                  notified with the given signal
      */
-    public void processShutdownSignal(ShutdownSignalException signal) {
-        synchronized (this) {
-            ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-            _shutdownCause = signal;
+    public void processShutdownSignal(ShutdownSignalException signal,
+                                      boolean ignoreClosed,
+                                      boolean notifyRpc) {
+        try {
+            synchronized (_channelMutex) {
+                if (!ignoreClosed)
+                    ensureIsOpen(); // invariant: we should never be shut down more than once per instance
+                if (isOpen())
+                    _shutdownCause = signal;
+                
+                _channelMutex.notifyAll();
+            }
+        } finally {
+            if (notifyRpc)
+                notifyOutstandingRpc(signal);
         }
+    }
+    
+    public void notifyOutstandingRpc(ShutdownSignalException signal) {
         RpcContinuation k = nextOutstandingRpc();
         if (k != null) {
             k.handleShutdownSignal(signal);
@@ -245,7 +274,40 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     public void transmit(Method m) throws IOException {
-        new AMQCommand(m).transmit(this);
+        synchronized (_channelMutex) {
+            transmit(new AMQCommand(m));
+        }
+    }
+
+    public void transmit(AMQCommand c) throws IOException {
+        synchronized (_channelMutex) {
+            ensureIsOpen();
+            quiescingTransmit(c);
+        }
+    }
+
+    public void quiescingTransmit(Method m) throws IOException {
+        synchronized (_channelMutex) {
+            quiescingTransmit(new AMQCommand(m));
+        }
+    }
+
+    public void quiescingTransmit(AMQCommand c) throws IOException {
+        synchronized (_channelMutex) {
+            if (c.getMethod().hasContent()) {
+                while (_blockContent) {
+                    try {
+                        _channelMutex.wait();
+                    } catch (InterruptedException e) {}
+
+                    // This is to catch a situation when the thread wakes up during
+                    // shutdown. Currently, no command that has content is allowed
+                    // to send anything in a closing state.
+                    ensureIsOpen();
+                }
+            }
+            c.transmit(this);
+        }
     }
 
     public AMQConnection getAMQConnection() {

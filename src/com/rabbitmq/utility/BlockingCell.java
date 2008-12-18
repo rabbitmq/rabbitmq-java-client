@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -70,17 +76,15 @@ public class BlockingCell<T> {
      * @throws InterruptedException if this thread is interrupted
      */
     public synchronized T get(long timeout) throws InterruptedException, TimeoutException {
-    	if (timeout < 0 && timeout != INFINITY)
-    		throw new AssertionError("Timeout cannot be less than zero");
-    	
-    	if (timeout != 0) {
-    	    synchronized(this) {
-    		    wait(timeout == INFINITY ? 0 : timeout);
-            }
-    	}
+        if (timeout < 0 && timeout != INFINITY)
+            throw new AssertionError("Timeout cannot be less than zero");
+        
+        if (!_filled && timeout != 0) {
+            wait(timeout == INFINITY ? 0 : timeout);
+        }
         
         if (!_filled)
-        	throw new TimeoutException();
+            throw new TimeoutException();
         
         return _value;
     }
@@ -109,14 +113,12 @@ public class BlockingCell<T> {
      * @return the waited-for value
      */
     public synchronized T uninterruptibleGet(int timeout) throws TimeoutException {
-    	long now = System.nanoTime() / NANOS_IN_MILLI;
+        long now = System.nanoTime() / NANOS_IN_MILLI;
         long runTime = now + timeout;
         
         do {
-        	try {
-                synchronized(this) {
-                    return get(runTime - now);
-                }
+            try {
+                return get(runTime - now);
             } catch (InterruptedException e) {
                 // Ignore.
             }

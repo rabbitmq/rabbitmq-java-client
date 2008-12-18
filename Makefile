@@ -57,7 +57,7 @@ srcdist: distclean
 
 	if [ -f BUILD.in ]; then \
 		cp BUILD.in build/$(SRC_ARCHIVE)/BUILD; \
-		elinks -dump -no-references -no-numbering $(WEB_URL)build.html \
+		elinks -dump -no-references -no-numbering $(WEB_URL)build-java-client.html \
 			>> build/$(SRC_ARCHIVE)/BUILD; \
 	fi
 	(cd build; tar -zcf $(SRC_ARCHIVE).tar.gz $(SRC_ARCHIVE))

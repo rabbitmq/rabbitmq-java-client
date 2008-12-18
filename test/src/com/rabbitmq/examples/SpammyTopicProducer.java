@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -64,12 +70,11 @@ public class SpammyTopicProducer {
             Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
 
             Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
             if (exchange == null) {
                 exchange = "amq.topic";
             } else {
-                ch.exchangeDeclare(ticket, exchange, "topic");
+                ch.exchangeDeclare(exchange, "topic");
             }
 
             System.out.println("Sending to exchange " + exchange + ", prefix: " + topicPrefix);
@@ -79,7 +84,7 @@ public class SpammyTopicProducer {
             long startTime = System.currentTimeMillis();
             long nextSummaryTime = startTime;
             while (true) {
-                ch.basicPublish(ticket, exchange, topicPrefix + newSuffix(), null, message.getBytes());
+                ch.basicPublish(exchange, topicPrefix + newSuffix(), null, message.getBytes());
                 thisTimeCount++;
                 allTimeCount++;
                 long now = System.currentTimeMillis();
@@ -92,8 +97,8 @@ public class SpammyTopicProducer {
                 }
             }
 
-            //ch.close(200, "Closing the channel");
-            //conn.close(200, "Closing the connection");
+            //ch.close();
+            //conn.close();
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
             e.printStackTrace();

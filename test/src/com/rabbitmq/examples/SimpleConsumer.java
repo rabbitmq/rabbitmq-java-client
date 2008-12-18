@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -42,12 +48,11 @@ public class SimpleConsumer {
             Connection conn = connFactory.newConnection(hostName, portNumber);
 
             final Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
-            ch.queueDeclare(ticket, queueName);
+            ch.queueDeclare(queueName);
 
             QueueingConsumer consumer = new QueueingConsumer(ch);
-            ch.basicConsume(ticket, queueName, consumer);
+            ch.basicConsume(queueName, consumer);
             while (true) {
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 System.out.println("Message: " + new String(delivery.getBody()));

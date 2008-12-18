@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -59,21 +65,19 @@ public class JsonRpcServer extends StringRpcServer {
 
     /**
      * Construct a server that talks to the outside world using the
-     * given channel and ticket, and constructs a fresh temporary
+     * given channel, and constructs a fresh temporary
      * queue. Use getQueueName() to discover the created queue name.
      * @param channel AMQP channel to use
-     * @param ticket AMQP ticket to use
      * @param interfaceClass Java interface that this server is exposing to the world
      * @param interfaceInstance Java instance (of interfaceClass) that is being exposed
      * @throws IOException if something goes wrong during an AMQP operation
      */
     public JsonRpcServer(Channel channel,
-                         int ticket,
                          Class interfaceClass,
                          Object interfaceInstance)
         throws IOException
     {
-	super(channel, ticket);
+	super(channel);
         init(interfaceClass, interfaceInstance);
     }
 
@@ -86,24 +90,22 @@ public class JsonRpcServer extends StringRpcServer {
 
     /**
      * Construct a server that talks to the outside world using the
-     * given channel, ticket and queue name. Our superclass,
+     * given channel and queue name. Our superclass,
      * RpcServer, expects the queue to exist at the time of
      * construction.
      * @param channel AMQP channel to use
-     * @param ticket AMQP ticket to use
      * @param queueName AMQP queue name to listen for requests on
      * @param interfaceClass Java interface that this server is exposing to the world
      * @param interfaceInstance Java instance (of interfaceClass) that is being exposed
      * @throws IOException if something goes wrong during an AMQP operation
      */
     public JsonRpcServer(Channel channel,
-                         int ticket,
                          String queueName,
                          Class interfaceClass,
                          Object interfaceInstance)
         throws IOException
     {
-	super(channel, ticket, queueName);
+	super(channel, queueName);
         init(interfaceClass, interfaceInstance);
     }
 

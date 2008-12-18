@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -25,9 +31,12 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
 
 public class Routing extends BrokerTestCase
 {
@@ -36,36 +45,28 @@ public class Routing extends BrokerTestCase
     protected final String Q1 = "foo";
     protected final String Q2 = "bar";
 
-    protected void setUp()
-        throws IOException
-    {
-        openConnection();
-        openChannel();
-        channel.exchangeDeclare(ticket, E, "direct");
-        channel.queueDeclare(ticket, Q1);
-        channel.queueDeclare(ticket, Q2);
+    protected void createResources() throws IOException {
+        channel.exchangeDeclare(E, "direct");
+        channel.queueDeclare(Q1);
+        channel.queueDeclare(Q2);
     }
 
-    protected void tearDown()
-        throws IOException
-    {
-        channel.queueDelete(ticket, Q1);
-        channel.queueDelete(ticket, Q2);
-        channel.exchangeDelete(ticket, E);
-        closeChannel();
-        closeConnection();
+    protected void releaseResources() throws IOException {
+        channel.queueDelete(Q1);
+        channel.queueDelete(Q2);
+        channel.exchangeDelete(E);
     }
 
     private void bind(String queue, String routingKey)
         throws IOException
     {
-        channel.queueBind(ticket, queue, E, routingKey);
+        channel.queueBind(queue, E, routingKey);
     }
 
     private void check(String routingKey, boolean expectQ1, boolean expectQ2)
         throws IOException
     {
-        channel.basicPublish(ticket, E, routingKey, null, "mrdq".getBytes());
+        channel.basicPublish(E, routingKey, null, "mrdq".getBytes());
         checkGet(Q1, expectQ1);
         checkGet(Q2, expectQ2);
     }
@@ -73,7 +74,7 @@ public class Routing extends BrokerTestCase
     private void checkGet(String queue, boolean messageExpected)
         throws IOException
     {
-        GetResponse r = channel.basicGet(ticket, queue, true);
+        GetResponse r = channel.basicGet(queue, true);
         if (messageExpected) {
             assertNotNull(r);
         } else {
@@ -107,16 +108,58 @@ public class Routing extends BrokerTestCase
     public void testDoubleBinding()
         throws IOException
     {
-        channel.queueBind(ticket, Q1, "amq.topic", "x.#");
-        channel.queueBind(ticket, Q1, "amq.topic", "#.x");
-        channel.basicPublish(ticket, "amq.topic", "x.y", null, "x.y".getBytes());
+        channel.queueBind(Q1, "amq.topic", "x.#");
+        channel.queueBind(Q1, "amq.topic", "#.x");
+        channel.basicPublish("amq.topic", "x.y", null, "x.y".getBytes());
         checkGet(Q1, true);
         checkGet(Q1, false);
-        channel.basicPublish(ticket, "amq.topic", "y.x", null, "y.x".getBytes());
+        channel.basicPublish("amq.topic", "y.x", null, "y.x".getBytes());
         checkGet(Q1, true);
         checkGet(Q1, false);
-        channel.basicPublish(ticket, "amq.topic", "x.x", null, "x.x".getBytes());
+        channel.basicPublish("amq.topic", "x.x", null, "x.x".getBytes());
         checkGet(Q1, true);
         checkGet(Q1, false);
+    }
+
+    public void testFanoutRouting() throws Exception {
+
+        List<String> queues = new ArrayList<String>();
+
+        for (int i = 0; i < 2; i++) {
+            String q = "Q-" + System.nanoTime();
+            channel.queueDeclare(q);
+            channel.queueBind(q, "amq.fanout", "");
+            queues.add(q);
+        }
+
+        channel.basicPublish("amq.fanout", System.nanoTime() + "",
+                             null, "fanout".getBytes());
+
+        for (String q : queues) {
+            checkGet(q, true);
+        }
+
+        for (String q : queues) {
+            channel.queueDelete(q);
+        }
+    }
+
+    public void testUnbind() throws Exception {
+        AMQP.Queue.DeclareOk ok = channel.queueDeclare();
+        String queue = ok.getQueue();
+
+        String routingKey = "quay";
+        String x = "amq.direct";
+
+        channel.queueBind(queue, x, routingKey);
+        channel.basicPublish(x, routingKey, null, "foobar".getBytes());
+        checkGet(queue, true);
+
+        channel.queueUnbind(queue, x, routingKey);
+
+        channel.basicPublish(x, routingKey, null, "foobar".getBytes());
+        checkGet(queue, false);
+
+        channel.queueDelete(queue);
     }
 }

@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -32,61 +38,43 @@ import com.rabbitmq.client.MessageProperties;
 
 public class DurableOnTransient extends BrokerTestCase
 {
-
     protected static final String Q = "DurableQueue";
     protected static final String X = "TransientExchange";
-
-    protected void setUp()
-        throws IOException
-    {
-        openConnection();
-        openChannel();
-    }
-
-    protected void tearDown()
-        throws IOException
-    {
-        closeChannel();
-        closeConnection();
-    }
 
     private GetResponse basicGet()
         throws IOException
     {
-        return channel.basicGet(ticket, Q, true);
+        return channel.basicGet(Q, true);
     }
 
     private void basicPublish()
         throws IOException
     {
-        channel.basicPublish(ticket, X, "",
+        channel.basicPublish(X, "",
                              MessageProperties.PERSISTENT_TEXT_PLAIN,
                              "persistent message".getBytes());
     }
 
-    public void testBind()
-        throws IOException, Exception
-    {
-      boolean B = false;
+    protected void createResources() throws IOException {
         // Transient exchange
-        channel.exchangeDeclare(ticket, X, "direct", false);
+        channel.exchangeDeclare(X, "direct", false);
         // durable queue
-        channel.queueDeclare(ticket, Q, true);
-        // The following should raise an exception
-        try {
-            channel.queueBind(ticket, Q, X, "");
-        } catch (IOException ee) {
-            // Channel and connection have been closed.  We need to
-            // delete the queue below and therefore need to reconnect.
-            super.connection=null;
-            setUp();
-            // Say that the expected behaviour is Ok
-            B = true; 
-        }
-        channel.queueDelete(ticket, Q);
-
-        assertTrue(B);
-
+        channel.queueDeclare(Q, true);
     }
 
+    protected void releaseResources() throws IOException {
+        channel.queueDelete(Q);
+        channel.exchangeDelete(X);
+    }
+
+    public void testBind()
+        throws IOException
+    {
+        try {
+            channel.queueBind(Q, X, "");
+            fail("Expected exception from queueBind");
+        } catch (IOException ee) {
+            // Pass!
+        }
+    }
 }

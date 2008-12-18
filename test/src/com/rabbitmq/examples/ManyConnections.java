@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -28,6 +34,7 @@ package com.rabbitmq.examples;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
 
@@ -35,6 +42,7 @@ public class ManyConnections {
     public static double rate;
     public static int connectionCount;
     public static int channelPerConnectionCount;
+    public static int heartbeatInterval;
 
     public static int totalCount() {
 	return connectionCount * channelPerConnectionCount;
@@ -42,29 +50,32 @@ public class ManyConnections {
 
     public static void main(String[] args) {
         try {
-	    if (args.length < 3) {
-		System.err.println("Usage: ManyConnections hostName connCount chanPerConnCount [rate [port]]");
+	    if (args.length < 4) {
+		System.err.println("Usage: ManyConnections hostName connCount chanPerConnCount heartbeatInterval [rate [port]]");
 		System.exit(2);
 	    }
 
             String hostName = args[0];
 	    connectionCount = Integer.parseInt(args[1]);
 	    channelPerConnectionCount = Integer.parseInt(args[2]);
-	    rate = (args.length > 3) ? Double.parseDouble(args[3]) : 1.0;
-            int portNumber = (args.length > 4) ? Integer.parseInt(args[4]) : AMQP.PROTOCOL.PORT;
+            heartbeatInterval = Integer.parseInt(args[3]);
+	    rate = (args.length > 4) ? Double.parseDouble(args[4]) : 1.0;
+            int portNumber = (args.length > 5) ? Integer.parseInt(args[5]) : AMQP.PROTOCOL.PORT;
 
+            ConnectionParameters params = new ConnectionParameters();
+            params.setRequestedHeartbeat(heartbeatInterval);
 	    for (int i = 0; i < connectionCount; i++) {
-		final Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+                System.out.println("Starting connection "+i);
+		final Connection conn = new ConnectionFactory(params).newConnection(hostName, portNumber);
 
 		for (int j = 0; j < channelPerConnectionCount; j++) {
 		    final Channel ch = conn.createChannel();
-		    final int ticket = ch.accessRequest("/data");
 
 		    final int threadNumber = i * channelPerConnectionCount + j;
 		    System.out.println("Starting "+threadNumber+" "+ch+" thread...");
 		    new Thread(new Runnable() {
 			    public void run() {
-				runChannel(threadNumber, conn, ch, ticket);
+				runChannel(threadNumber, conn, ch);
 			    }
 			}).start();
 		}
@@ -79,22 +90,20 @@ public class ManyConnections {
 
     public static void runChannel(int threadNumber,
 				  Connection conn,
-				  Channel ch,
-				  int ticket)
-    {
+				  Channel ch){
 	try {
 	    int delayLen = (int) (1000 / rate);
 	    long startTime = System.currentTimeMillis();
 
 	    int msgCount = 0;
 	    String queueName = "ManyConnections";
-	    ch.queueDeclare(ticket, queueName);
+	    ch.queueDeclare(queueName);
 
 	    QueueingConsumer consumer = new QueueingConsumer(ch);
-	    ch.basicConsume(ticket, queueName, true, consumer);
+	    ch.basicConsume(queueName, true, consumer);
 	    while (true) {
 		String toSend = threadNumber + "/" + msgCount++;
-		ch.basicPublish(ticket, "", queueName, null, toSend.getBytes());
+		ch.basicPublish("", queueName, null, toSend.getBytes());
 		Thread.sleep(delayLen);
 
 		QueueingConsumer.Delivery delivery = consumer.nextDelivery();

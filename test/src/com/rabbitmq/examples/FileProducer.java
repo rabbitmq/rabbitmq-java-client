@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -66,7 +72,6 @@ public class FileProducer {
             Connection conn = connFactory.newConnection(hostName, portNumber);
 
             final Channel ch = conn.createChannel();
-            int ticket = ch.accessRequest("/data");
 
 	    if (exchange == null) {
 		System.err.println("Please supply exchange name to send to (-e)");
@@ -76,7 +81,7 @@ public class FileProducer {
 		System.err.println("Please supply routing key to send to (-k)");
 		System.exit(2);
 	    }
-	    ch.exchangeDeclare(ticket, exchange, exchangeType);
+	    ch.exchangeDeclare(exchange, exchangeType);
 
 	    for (String filename : cmd.getArgs()) {
 		System.out.print("Sending " + filename + "...");
@@ -93,7 +98,7 @@ public class FileProducer {
 							    null, null, null, null,
 							    null, null, null, null,
 							    null, null);
-		ch.basicPublish(ticket, exchange, routingKey, props, body);
+		ch.basicPublish(exchange, routingKey, props, body);
 		System.out.println(" done.");
 	    }
 
