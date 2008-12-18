@@ -35,6 +35,7 @@ import java.io.IOException;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
 
 import com.rabbitmq.client.AMQP;
@@ -104,38 +105,52 @@ public class QosTests extends BrokerTestCase
     public void testMessageLimit1()
 	throws IOException
     {
-	runLimitTests(1, false);
+	runLimitTests(1, false, false);
     }
 
     public void testMessageLimit2()
 	throws IOException
     {
-	runLimitTests(2, false);
+	runLimitTests(2, false, false);
     }
 
     public void testMessageLimitMultiAck()
 	throws IOException
     {
-	runLimitTests(2, true);
+	runLimitTests(2, true, false);
     }
 
-    protected void runLimitTests(int limit, boolean multiAck)
+    public void testMessageLimitTxAck()
+	throws IOException
+    {
+	runLimitTests(2, false, true);
+    }
+
+    protected void runLimitTests(int limit,
+                                 boolean multiAck,
+                                 boolean txMode)
         throws IOException
     {
         try {
-            runLimitTestsHelper(limit, multiAck);
+            runLimitTestsHelper(limit, multiAck, txMode);
         } catch (InterruptedException e) {
             fail("interrupted");
         }
     }
 
-    protected void runLimitTestsHelper(int limit, boolean multiAck)
+    protected void runLimitTestsHelper(int limit,
+                                       boolean multiAck,
+                                       boolean txMode)
         throws IOException, InterruptedException
     {
 
         // We attempt to drain 'limit' messages twice, do one
         // basic.get, and need one message to spare -> 2*limit + 1 + 1
         QueueingConsumer c = publishLimitAndConsume(2*limit + 1 + 1, limit);
+
+        if (txMode) {
+            channel.txSelect();
+        }
 
         //is limit enforced?
         drain(c, limit);
@@ -146,17 +161,13 @@ public class QosTests extends BrokerTestCase
 
         //are acks handled correctly?
         //and does the basic.get above have no effect on limiting?
-        if (multiAck) {
-            for (int i = 0; i < limit - 1; i++) {
-                c.nextDelivery();
-            }
-            channel.basicAck(c.nextDelivery().getEnvelope().getDeliveryTag(),
-                             true);
-        } else {
-            for (int i = 0; i < limit; i++) {
-                channel.basicAck(c.nextDelivery().getEnvelope().getDeliveryTag(),
-                                 false);
-            }
+        Delivery last = ack(c, multiAck);
+        if (txMode) {
+            drain(c, 0);
+            channel.txRollback();
+            drain(c, 0);
+            channel.basicAck(last.getEnvelope().getDeliveryTag(), true);
+            channel.txCommit();
         }
         drain(c, limit);
 
@@ -165,7 +176,25 @@ public class QosTests extends BrokerTestCase
             c.nextDelivery();
         }
         channel.basicAck(r.getEnvelope().getDeliveryTag(), false);
+        if (txMode) {
+            channel.txCommit();
+        }
         drain(c, 0);
+    }
+
+    protected Delivery ack(QueueingConsumer c, boolean multiAck)
+        throws IOException, InterruptedException
+    {
+        Delivery last = null;
+        if (multiAck) {
+            for (Delivery tmp = null; (tmp = c.nextDelivery(0)) != null; last = tmp);
+            channel.basicAck(last.getEnvelope().getDeliveryTag(), true);
+        } else {
+            for (Delivery tmp = null; (tmp = c.nextDelivery(0)) != null; last = tmp) {
+                channel.basicAck(tmp.getEnvelope().getDeliveryTag(), false);
+            }
+        }
+        return last;
     }
 
     protected QueueingConsumer publishLimitAndConsume(int messages, int limit)
