@@ -166,7 +166,7 @@ public class QosTests extends BrokerTestCase
             drain(c, 0);
             channel.txRollback();
             drain(c, 0);
-            channel.basicAck(last.getEnvelope().getDeliveryTag(), true);
+            ackDelivery(last, true);
             channel.txCommit();
         }
         drain(c, limit);
@@ -188,10 +188,10 @@ public class QosTests extends BrokerTestCase
         Delivery last = null;
         if (multiAck) {
             for (Delivery tmp = null; (tmp = c.nextDelivery(0)) != null; last = tmp);
-            channel.basicAck(last.getEnvelope().getDeliveryTag(), true);
+            ackDelivery(last, true);
         } else {
             for (Delivery tmp = null; (tmp = c.nextDelivery(0)) != null; last = tmp) {
-                channel.basicAck(tmp.getEnvelope().getDeliveryTag(), false);
+                ackDelivery(tmp, false);
             }
         }
         return last;
@@ -205,6 +205,12 @@ public class QosTests extends BrokerTestCase
         QueueingConsumer c = new QueueingConsumer(channel);
         channel.basicConsume(Q, false, c);
         return c;
+    }
+
+    protected void ackDelivery(Delivery d, boolean multiple)
+        throws IOException
+    {
+        channel.basicAck(d.getEnvelope().getDeliveryTag(), multiple);
     }
 
 }
