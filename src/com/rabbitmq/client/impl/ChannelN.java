@@ -366,6 +366,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 	exnWrappingRpc(new Basic.Qos(prefetchSize, prefetchCount, global));
     }
 
+    public void basicQos(int prefetchCount)
+	throws IOException
+    {
+	basicQos(0, prefetchCount, false);
+    }
+
     /**
      * Public API - Publish a message with both "mandatory" and
      * "immediate" flags set to false

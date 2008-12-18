@@ -111,7 +111,7 @@ public class QosTests extends BrokerTestCase
         throws IOException
     {
 	fill(messages);
-        channel.basicQos(0, limit, false);
+        channel.basicQos(limit);
         QueueingConsumer c = new QueueingConsumer(channel);
         channel.basicConsume(Q, false, c);
         return c;
