@@ -68,25 +68,18 @@ public class QosTests extends BrokerTestCase
 	}
     }
 
-    public int drain()
+    /**
+     * receive n messages - check that we receive no fewer and cannot
+     * receive more
+     **/
+    public void drain(QueueingConsumer c, int n)
 	throws IOException
     {
 	try {
-	    QueueingConsumer c;
-	    QueueingConsumer.Delivery d;
-
-	    c = new QueueingConsumer(channel);
-	    String consumerTag = channel.basicConsume(Q, false, c);
-
-	    Thread.sleep(500);
-
-	    channel.basicCancel(consumerTag);
-
-	    int count = 0;
-	    while (c.nextDelivery(0) != null) { count++; }
-	    return count;
+            Thread.sleep(500);
+            assertEquals(n, c.getQueue().size());
 	} catch (InterruptedException ie) {
-	    return -1;
+	    fail("interrupted");
 	}
     }
 
@@ -103,17 +96,25 @@ public class QosTests extends BrokerTestCase
     public void testMessageLimit0()
 	throws IOException
     {
-	channel.basicQos(0, 0, false);
-	fill(3);
-	assertEquals(3, drain());
+	QueueingConsumer c = publishLimitAndConsume(3, 0);
+        drain(c, 3);
     }
 
     public void testMessageLimit1()
 	throws IOException
     {
-	channel.basicQos(0, 1, false);
-	fill(3);
-	assertEquals(1, drain());
-	assertEquals(2, drain());
+	QueueingConsumer c = publishLimitAndConsume(3, 1);
+        drain(c, 1);
     }
+
+    protected QueueingConsumer publishLimitAndConsume(int messages, int limit)
+        throws IOException
+    {
+	fill(messages);
+        channel.basicQos(0, limit, false);
+        QueueingConsumer c = new QueueingConsumer(channel);
+        channel.basicConsume(Q, false, c);
+        return c;
+    }
+
 }
