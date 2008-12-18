@@ -33,6 +33,7 @@ package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 
+import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 
@@ -93,18 +94,78 @@ public class QosTests extends BrokerTestCase
 	}
     }
 
-    public void testMessageLimit0()
+    public void testMessageLimitUnlimited()
 	throws IOException
     {
-	QueueingConsumer c = publishLimitAndConsume(3, 0);
-        drain(c, 3);
+	QueueingConsumer c = publishLimitAndConsume(2, 0);
+        drain(c, 2);
     }
 
     public void testMessageLimit1()
 	throws IOException
     {
-	QueueingConsumer c = publishLimitAndConsume(3, 1);
-        drain(c, 1);
+	runLimitTests(1, false);
+    }
+
+    public void testMessageLimit2()
+	throws IOException
+    {
+	runLimitTests(2, false);
+    }
+
+    public void testMessageLimitMultiAck()
+	throws IOException
+    {
+	runLimitTests(2, true);
+    }
+
+    protected void runLimitTests(int limit, boolean multiAck)
+        throws IOException
+    {
+        try {
+            runLimitTestsHelper(limit, multiAck);
+        } catch (InterruptedException e) {
+            fail("interrupted");
+        }
+    }
+
+    protected void runLimitTestsHelper(int limit, boolean multiAck)
+        throws IOException, InterruptedException
+    {
+
+        // We attempt to drain 'limit' messages twice, do one
+        // basic.get, and need one message to spare -> 2*limit + 1 + 1
+        QueueingConsumer c = publishLimitAndConsume(2*limit + 1 + 1, limit);
+
+        //is limit enforced?
+        drain(c, limit);
+
+        //is basic.get not limited?
+        GetResponse r = channel.basicGet(Q, false);
+        assertNotNull(r);
+
+        //are acks handled correctly?
+        //and does the basic.get above have no effect on limiting?
+        if (multiAck) {
+            for (int i = 0; i < limit - 1; i++) {
+                c.nextDelivery();
+            }
+            channel.basicAck(c.nextDelivery().getEnvelope().getDeliveryTag(),
+                             true);
+        } else {
+            for (int i = 0; i < limit; i++) {
+                channel.basicAck(c.nextDelivery().getEnvelope().getDeliveryTag(),
+                                 false);
+            }
+        }
+        drain(c, limit);
+
+        //do acks for basic.gets have no effect on limiting?
+        for (int i = 0; i < limit; i++) {
+            c.nextDelivery();
+        }
+        channel.basicAck(r.getEnvelope().getDeliveryTag(), false);
+        drain(c, 0);
     }
 
     protected QueueingConsumer publishLimitAndConsume(int messages, int limit)
