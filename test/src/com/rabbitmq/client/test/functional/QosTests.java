@@ -46,8 +46,6 @@ import com.rabbitmq.client.AMQP;
 public class QosTests extends BrokerTestCase
 {
 
-    protected final String Q = "QosTests";
-
     protected void setUp()
         throws IOException
     {
@@ -99,7 +97,8 @@ public class QosTests extends BrokerTestCase
     public void testMessageLimitUnlimited()
 	throws IOException
     {
-	QueueingConsumer c = configure(0, 1, 2);
+        QueueingConsumer c = new QueueingConsumer(channel);
+	configure(c, 0, 1, 2);
         drain(c, 2);
     }
 
@@ -140,9 +139,13 @@ public class QosTests extends BrokerTestCase
         throws IOException, InterruptedException
     {
 
+        QueueingConsumer c = new QueueingConsumer(channel);
+
         // We attempt to drain 'limit' messages twice, do one
-        // basic.get, and need one message to spare -> 2*limit + 1 + 1
-        QueueingConsumer c = configure(limit, queueCount, 2*limit + 1 + 1);
+        // basic.get per queue, and need one message to spare
+        //-> 2*limit + 1*queueCount + 1
+        List<String> queues = configure(c, limit, queueCount,
+                                        2*limit + 1*queueCount + 1);
 
         if (txMode) {
             channel.txSelect();
@@ -152,8 +155,12 @@ public class QosTests extends BrokerTestCase
         drain(c, limit);
 
         //is basic.get not limited?
-        GetResponse r = channel.basicGet(Q, false);
-        assertNotNull(r);
+        List<Long> tags = new ArrayList<Long>();
+        for (String q : queues) {
+            GetResponse r = channel.basicGet(q, false);
+            assertNotNull(r);
+            tags.add(r.getEnvelope().getDeliveryTag());
+        }
 
         //are acks handled correctly?
         //and does the basic.get above have no effect on limiting?
@@ -171,7 +178,9 @@ public class QosTests extends BrokerTestCase
         for (int i = 0; i < limit; i++) {
             c.nextDelivery();
         }
-        channel.basicAck(r.getEnvelope().getDeliveryTag(), false);
+        for (long t  : tags) {
+            channel.basicAck(t, false);
+        }
         if (txMode) {
             channel.txCommit();
         }
@@ -193,25 +202,20 @@ public class QosTests extends BrokerTestCase
         return last;
     }
 
-    protected QueueingConsumer configure(int limit,
-                                         int queueCount,
-                                         int messages)
+    protected List<String> configure(QueueingConsumer c,
+                                     int limit,
+                                     int queueCount,
+                                     int messages)
         throws IOException
     {
         channel.basicQos(limit);
 
-        QueueingConsumer c = new QueueingConsumer(channel);
-
-        //we always declare/bind/consume-from a queue with name Q, so
-        //we can perform tests that operate on a specific queue
-        channel.queueDeclare(Q, false, false, true, true, null);
-        channel.queueBind(Q, "amq.fanout", "");
-        channel.basicConsume(Q, false, c);
-
-        //declare/bind/consume-from remaining queues
-        for (int i = 1; i < queueCount; i++) {
+        //declare/bind/consume-from queues
+        List <String> queues = new ArrayList<String>();
+        for (int i = 0; i < queueCount; i++) {
             AMQP.Queue.DeclareOk ok = channel.queueDeclare();
             String queue = ok.getQueue();
+            queues.add(queue);
             channel.queueBind(queue, "amq.fanout", "");
             channel.basicConsume(queue, false, c);
         }
@@ -219,7 +223,7 @@ public class QosTests extends BrokerTestCase
         //publish
         fill(messages);
 
-        return c;
+        return queues;
     }
 
     protected void ackDelivery(Delivery d, boolean multiple)
