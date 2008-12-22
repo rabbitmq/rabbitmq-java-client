@@ -46,7 +46,7 @@ import com.rabbitmq.client.AMQP;
 public class QosTests extends BrokerTestCase
 {
 
-    protected final String Q = "QuesTests";
+    protected final String Q = "QosTests";
 
     protected void setUp()
         throws IOException
