@@ -99,7 +99,7 @@ public class QosTests extends BrokerTestCase
     public void testMessageLimitUnlimited()
 	throws IOException
     {
-	QueueingConsumer c = publishLimitAndConsume(2, 0, 1);
+	QueueingConsumer c = configure(0, 1, 2);
         drain(c, 2);
     }
 
@@ -142,9 +142,7 @@ public class QosTests extends BrokerTestCase
 
         // We attempt to drain 'limit' messages twice, do one
         // basic.get, and need one message to spare -> 2*limit + 1 + 1
-        QueueingConsumer c = publishLimitAndConsume(2*limit + 1 + 1,
-                                                    limit,
-                                                    queueCount);
+        QueueingConsumer c = configure(limit, queueCount, 2*limit + 1 + 1);
 
         if (txMode) {
             channel.txSelect();
@@ -195,37 +193,32 @@ public class QosTests extends BrokerTestCase
         return last;
     }
 
-    protected QueueingConsumer publishLimitAndConsume(int messages,
-                                                      int limit,
-                                                      int queueCount)
+    protected QueueingConsumer configure(int limit,
+                                         int queueCount,
+                                         int messages)
         throws IOException
     {
-        //we always declare a queue with name Q, so we can perform
-        //tests that operate on a specific queue
+        channel.basicQos(limit);
+
+        QueueingConsumer c = new QueueingConsumer(channel);
+
+        //we always declare/bind/consume-from a queue with name Q, so
+        //we can perform tests that operate on a specific queue
         channel.queueDeclare(Q, false, false, true, true, null);
         channel.queueBind(Q, "amq.fanout", "");
+        channel.basicConsume(Q, false, c);
 
-        //declare & bind remaining queues
-        List<String> queues = new ArrayList<String>();
+        //declare/bind/consume-from remaining queues
         for (int i = 1; i < queueCount; i++) {
             AMQP.Queue.DeclareOk ok = channel.queueDeclare();
             String queue = ok.getQueue();
             channel.queueBind(queue, "amq.fanout", "");
-            queues.add(queue);
+            channel.basicConsume(queue, false, c);
         }
 
         //publish
-	fill(messages);
+        fill(messages);
 
-        //limit
-        channel.basicQos(limit);
-
-        //consume
-        QueueingConsumer c = new QueueingConsumer(channel);
-        channel.basicConsume(Q, false, c);
-        for (String q : queues) {
-            channel.basicConsume(q, false, c);
-        }
         return c;
     }
 
