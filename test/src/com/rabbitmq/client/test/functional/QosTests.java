@@ -33,6 +33,8 @@ package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
@@ -43,22 +45,19 @@ import com.rabbitmq.client.AMQP;
 
 public class QosTests extends BrokerTestCase
 {
-    protected final String Q = "QosTests";
+
+    protected final String Q = "QuesTests";
 
     protected void setUp()
         throws IOException
     {
         openConnection();
         openChannel();
-        channel.queueDeclare(Q);
     }
 
     protected void tearDown()
         throws IOException
     {
-	if (channel != null) {
-	    channel.queueDelete(Q);
-	}
         closeChannel();
         closeConnection();
     }
@@ -67,7 +66,8 @@ public class QosTests extends BrokerTestCase
 	throws IOException
     {
 	for (int i = 0; i < n; i++) {
-	    channel.basicPublish("", Q, null, Integer.toString(n).getBytes());
+	    channel.basicPublish("amq.fanout", "", null,
+                                 Integer.toString(n).getBytes());
 	}
     }
 
@@ -99,23 +99,22 @@ public class QosTests extends BrokerTestCase
     public void testMessageLimitUnlimited()
 	throws IOException
     {
-	QueueingConsumer c = publishLimitAndConsume(2, 0);
+	QueueingConsumer c = publishLimitAndConsume(2, 0, 1);
         drain(c, 2);
     }
 
     public void testPermutations()
         throws IOException
     {
-        channel.queueDelete(Q);
         closeChannel();
         for (int limit : Arrays.asList(1, 2)) {
             for (boolean multiAck : Arrays.asList(false, true)) {
                 for (boolean txMode : Arrays.asList(true, false)) {
-                    openChannel();
-                    channel.queueDeclare(Q);
-                    runLimitTests(limit, multiAck, txMode);
-                    channel.queueDelete(Q);
-                    closeChannel();
+                    for (int queueCount : Arrays.asList(1, 2)) {
+                        openChannel();
+                        runLimitTests(limit, multiAck, txMode, queueCount);
+                        closeChannel();
+                    }
                 }
             }
         }
@@ -123,11 +122,12 @@ public class QosTests extends BrokerTestCase
 
     protected void runLimitTests(int limit,
                                  boolean multiAck,
-                                 boolean txMode)
+                                 boolean txMode,
+                                 int queueCount)
         throws IOException
     {
         try {
-            runLimitTestsHelper(limit, multiAck, txMode);
+            runLimitTestsHelper(limit, multiAck, txMode, queueCount);
         } catch (InterruptedException e) {
             fail("interrupted");
         }
@@ -135,13 +135,16 @@ public class QosTests extends BrokerTestCase
 
     protected void runLimitTestsHelper(int limit,
                                        boolean multiAck,
-                                       boolean txMode)
+                                       boolean txMode,
+                                       int queueCount)
         throws IOException, InterruptedException
     {
 
         // We attempt to drain 'limit' messages twice, do one
         // basic.get, and need one message to spare -> 2*limit + 1 + 1
-        QueueingConsumer c = publishLimitAndConsume(2*limit + 1 + 1, limit);
+        QueueingConsumer c = publishLimitAndConsume(2*limit + 1 + 1,
+                                                    limit,
+                                                    queueCount);
 
         if (txMode) {
             channel.txSelect();
@@ -192,13 +195,37 @@ public class QosTests extends BrokerTestCase
         return last;
     }
 
-    protected QueueingConsumer publishLimitAndConsume(int messages, int limit)
+    protected QueueingConsumer publishLimitAndConsume(int messages,
+                                                      int limit,
+                                                      int queueCount)
         throws IOException
     {
+        //we always declare a queue with name Q, so we can perform
+        //tests that operate on a specific queue
+        channel.queueDeclare(Q, false, false, true, true, null);
+        channel.queueBind(Q, "amq.fanout", "");
+
+        //declare & bind remaining queues
+        List<String> queues = new ArrayList<String>();
+        for (int i = 1; i < queueCount; i++) {
+            AMQP.Queue.DeclareOk ok = channel.queueDeclare();
+            String queue = ok.getQueue();
+            channel.queueBind(queue, "amq.fanout", "");
+            queues.add(queue);
+        }
+
+        //publish
 	fill(messages);
+
+        //limit
         channel.basicQos(limit);
+
+        //consume
         QueueingConsumer c = new QueueingConsumer(channel);
         channel.basicConsume(Q, false, c);
+        for (String q : queues) {
+            channel.basicConsume(q, false, c);
+        }
         return c;
     }
 
