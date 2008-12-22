@@ -32,6 +32,7 @@
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
@@ -102,28 +103,22 @@ public class QosTests extends BrokerTestCase
         drain(c, 2);
     }
 
-    public void testMessageLimit1()
-	throws IOException
+    public void testPermutations()
+        throws IOException
     {
-	runLimitTests(1, false, false);
-    }
-
-    public void testMessageLimit2()
-	throws IOException
-    {
-	runLimitTests(2, false, false);
-    }
-
-    public void testMessageLimitMultiAck()
-	throws IOException
-    {
-	runLimitTests(2, true, false);
-    }
-
-    public void testMessageLimitTxAck()
-	throws IOException
-    {
-	runLimitTests(2, false, true);
+        channel.queueDelete(Q);
+        closeChannel();
+        for (int limit : Arrays.asList(1, 2)) {
+            for (boolean multiAck : Arrays.asList(false, true)) {
+                for (boolean txMode : Arrays.asList(true, false)) {
+                    openChannel();
+                    channel.queueDeclare(Q);
+                    runLimitTests(limit, multiAck, txMode);
+                    channel.queueDelete(Q);
+                    closeChannel();
+                }
+            }
+        }
     }
 
     protected void runLimitTests(int limit,
