@@ -77,7 +77,7 @@ public class QosTests extends BrokerTestCase
 	throws IOException
     {
 	try {
-            Thread.sleep(100);
+            Thread.sleep(n * 10 + 50);
             assertEquals(n, c.getQueue().size());
 	} catch (InterruptedException ie) {
 	    fail("interrupted");
