@@ -159,6 +159,19 @@ public class QosTests extends BrokerTestCase
             
     }
 
+    public void testSetLimitAfterConsume()
+        throws IOException
+    {
+        QueueingConsumer c = new QueueingConsumer(channel);
+        String queue = declareBindConsume(c);
+        channel.basicQos(1);
+        fill(2);
+        //We actually only guarantee that the limit takes effect
+        //*eventually*, so this can in fact fail. It's pretty unlikely
+        //though.
+        drain(c, 1);
+    }
+
     protected void runLimitTests(int limit,
                                  boolean multiAck,
                                  boolean txMode,
@@ -249,17 +262,23 @@ public class QosTests extends BrokerTestCase
         //declare/bind/consume-from queues
         List <String> queues = new ArrayList<String>();
         for (int i = 0; i < queueCount; i++) {
-            AMQP.Queue.DeclareOk ok = channel.queueDeclare();
-            String queue = ok.getQueue();
-            queues.add(queue);
-            channel.queueBind(queue, "amq.fanout", "");
-            channel.basicConsume(queue, false, c);
+            queues.add(declareBindConsume(c));
         }
 
         //publish
         fill(messages);
 
         return queues;
+    }
+
+    protected String declareBindConsume(QueueingConsumer c)
+        throws IOException
+    {
+        AMQP.Queue.DeclareOk ok = channel.queueDeclare();
+        String queue = ok.getQueue();
+        channel.queueBind(queue, "amq.fanout", "");
+        channel.basicConsume(queue, false, c);
+        return queue;
     }
 
     protected void ackDelivery(Delivery d, boolean multiple)
