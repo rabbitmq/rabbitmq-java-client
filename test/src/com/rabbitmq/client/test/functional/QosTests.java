@@ -119,6 +119,35 @@ public class QosTests extends BrokerTestCase
         }
     }
 
+    public void testFairness()
+        throws IOException, InterruptedException
+    {
+        QueueingConsumer c = new QueueingConsumer(channel);
+        final int queueCount = 3;
+        final int messageCount = 10;
+        List<String> queues = configure(c, 1, queueCount, messageCount);
+
+        for (int i = 0; i < messageCount - 1; i++) {
+            drain(c, 1);
+            ack(c, false);
+        }
+
+        //Perfect fairness would result in every queue having
+        //messageCount * (1 - 1 / queueCount) messages left. Perfect
+        //unfairness would result  in one queue having no messages
+        //left and the other queues having messageCount messages left.
+        //
+        //We simply check that every queue has had *some* message(s)
+        //consumed from it. That ensures that no queue is "left
+        //behind" - a notion of fairness somewhat short of perfect but
+        //probably good enough.
+        for (String q : queues) {
+            AMQP.Queue.DeclareOk ok = channel.queueDeclare(q, true, false, true, true, null);
+            assertTrue(ok.getMessageCount() < messageCount);
+        }
+            
+    }
+
     protected void runLimitTests(int limit,
                                  boolean multiAck,
                                  boolean txMode,
