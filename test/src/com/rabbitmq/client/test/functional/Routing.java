@@ -144,6 +144,26 @@ public class Routing extends BrokerTestCase
         }
     }
 
+    public void testTopicRouting() throws Exception {
+
+        List<String> queues = new ArrayList<String>();
+
+        //100+ queues is the trigger point for bug20046
+        for (int i = 0; i < 100; i++) {
+            channel.queueDeclare();
+            AMQP.Queue.DeclareOk ok = channel.queueDeclare();
+            String q = ok.getQueue();
+            channel.queueBind(q, "amq.topic", "#");
+            queues.add(q);
+        }
+
+        channel.basicPublish("amq.topic", "", null, "topic".getBytes());
+
+        for (String q : queues) {
+            checkGet(q, true);
+        }
+    }
+
     public void testUnbind() throws Exception {
         AMQP.Queue.DeclareOk ok = channel.queueDeclare();
         String queue = ok.getQueue();
