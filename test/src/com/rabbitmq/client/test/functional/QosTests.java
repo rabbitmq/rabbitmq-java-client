@@ -33,8 +33,10 @@ package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
@@ -73,15 +75,24 @@ public class QosTests extends BrokerTestCase
      * receive n messages - check that we receive no fewer and cannot
      * receive more
      **/
-    public void drain(QueueingConsumer c, int n)
+    public Queue<Delivery> drain(QueueingConsumer c, int n)
 	throws IOException
     {
+        Queue<Delivery> res = new LinkedList<Delivery>();
 	try {
-            Thread.sleep(n * 10 + 50);
-            assertEquals(n, c.getQueue().size());
+            long start = System.currentTimeMillis();
+            for (int i = 0; i < n; i++) {
+                Delivery d = c.nextDelivery(1000);
+                assertNotNull(d);
+                res.offer(d);
+            }
+            long finish = System.currentTimeMillis();
+            Thread.sleep( (n == 0 ? 0 : (finish - start) / n) + 10 );
+            assertNull(c.nextDelivery(0));
 	} catch (InterruptedException ie) {
 	    fail("interrupted");
 	}
+        return res;
     }
 
     public void testMessageLimitGlobalFails()
@@ -128,8 +139,8 @@ public class QosTests extends BrokerTestCase
         List<String> queues = configure(c, 1, queueCount, messageCount);
 
         for (int i = 0; i < messageCount - 1; i++) {
-            drain(c, 1);
-            ack(c, false);
+            Queue<Delivery> d = drain(c, 1);
+            ack(d, false);
         }
 
         //Perfect fairness would result in every queue having
@@ -181,7 +192,7 @@ public class QosTests extends BrokerTestCase
         }
 
         //is limit enforced?
-        drain(c, limit);
+        Queue<Delivery> d = drain(c, limit);
 
         //is basic.get not limited?
         List<Long> tags = new ArrayList<Long>();
@@ -193,7 +204,7 @@ public class QosTests extends BrokerTestCase
 
         //are acks handled correctly?
         //and does the basic.get above have no effect on limiting?
-        Delivery last = ack(c, multiAck);
+        Delivery last = ack(d, multiAck);
         if (txMode) {
             drain(c, 0);
             channel.txRollback();
@@ -204,9 +215,6 @@ public class QosTests extends BrokerTestCase
         drain(c, limit);
 
         //do acks for basic.gets have no effect on limiting?
-        for (int i = 0; i < limit; i++) {
-            c.nextDelivery();
-        }
         for (long t  : tags) {
             channel.basicAck(t, false);
         }
@@ -216,18 +224,17 @@ public class QosTests extends BrokerTestCase
         drain(c, 0);
     }
 
-    protected Delivery ack(QueueingConsumer c, boolean multiAck)
+    protected Delivery ack(Queue<Delivery> d, boolean multiAck)
         throws IOException, InterruptedException
     {
         Delivery last = null;
-        if (multiAck) {
-            for (Delivery tmp = null; (tmp = c.nextDelivery(0)) != null; last = tmp);
-            ackDelivery(last, true);
-        } else {
-            for (Delivery tmp = null; (tmp = c.nextDelivery(0)) != null; last = tmp) {
-                ackDelivery(tmp, false);
-            }
+
+        for (Delivery tmp : d) {
+            if (!multiAck) ackDelivery(tmp, false);
+            last = tmp;
         }
+        if (multiAck) ackDelivery(last, true);
+
         return last;
     }
 
