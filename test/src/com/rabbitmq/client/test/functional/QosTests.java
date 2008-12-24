@@ -131,7 +131,7 @@ public class QosTests extends BrokerTestCase
     }
 
     public void testFairness()
-        throws IOException, InterruptedException
+        throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
         final int queueCount = 3;
@@ -163,7 +163,7 @@ public class QosTests extends BrokerTestCase
         throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
-        String queue = declareBindConsume(c);
+        declareBindConsume(c);
         channel.basicQos(1);
         fill(2);
         //We actually only guarantee that the limit takes effect
@@ -177,19 +177,6 @@ public class QosTests extends BrokerTestCase
                                  boolean txMode,
                                  int queueCount)
         throws IOException
-    {
-        try {
-            runLimitTestsHelper(limit, multiAck, txMode, queueCount);
-        } catch (InterruptedException e) {
-            fail("interrupted");
-        }
-    }
-
-    protected void runLimitTestsHelper(int limit,
-                                       boolean multiAck,
-                                       boolean txMode,
-                                       int queueCount)
-        throws IOException, InterruptedException
     {
 
         QueueingConsumer c = new QueueingConsumer(channel);
@@ -238,7 +225,7 @@ public class QosTests extends BrokerTestCase
     }
 
     protected Delivery ack(Queue<Delivery> d, boolean multiAck)
-        throws IOException, InterruptedException
+        throws IOException
     {
         Delivery last = null;
 
