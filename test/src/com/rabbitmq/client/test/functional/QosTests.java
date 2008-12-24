@@ -165,10 +165,12 @@ public class QosTests extends BrokerTestCase
         QueueingConsumer c = new QueueingConsumer(channel);
         declareBindConsume(c);
         channel.basicQos(1);
-        fill(2);
+        fill(3);
         //We actually only guarantee that the limit takes effect
         //*eventually*, so this can in fact fail. It's pretty unlikely
         //though.
+        Queue<Delivery> d = drain(c, 1);
+        ack(d, true);
         drain(c, 1);
     }
 
