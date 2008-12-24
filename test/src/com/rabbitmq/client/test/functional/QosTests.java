@@ -67,7 +67,7 @@ public class QosTests extends BrokerTestCase
     {
 	for (int i = 0; i < n; i++) {
 	    channel.basicPublish("amq.fanout", "", null,
-                                 Integer.toString(n).getBytes());
+                                 Integer.toString(i).getBytes());
 	}
     }
 
