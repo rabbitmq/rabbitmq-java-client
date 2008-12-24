@@ -159,6 +159,28 @@ public class QosTests extends BrokerTestCase
             
     }
 
+    public void testConsumerLifecycle()
+        throws IOException
+    {
+        channel.basicQos(1);
+        QueueingConsumer c = new QueueingConsumer(channel);
+        String queue = "qosTest";
+        channel.queueDeclare(queue, false);
+        channel.queueBind(queue, "amq.fanout", "");
+        fill(3);
+        String tag;
+        for (int i = 0; i < 2; i++) {
+            tag = channel.basicConsume(queue, false, c);
+            Queue<Delivery> d = drain(c, 1);
+            channel.basicCancel(tag);
+            drain(c, 0);
+            ack(d, true);
+            drain(c, 0);
+        }
+        channel.queueDelete(queue);
+    }
+
+
     public void testSetLimitAfterConsume()
         throws IOException
     {
