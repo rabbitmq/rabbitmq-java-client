@@ -176,10 +176,7 @@ public class QosTests extends BrokerTestCase
         throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
-        channel.basicQos(1);
-        declareBindConsume(c);
-        fill(3);
-        drain(c, 1);
+        configure(c, 1, 3);
         channel.basicQos(2);
         drain(c, 1);
     }
@@ -188,14 +185,20 @@ public class QosTests extends BrokerTestCase
         throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
-        channel.basicQos(2);
-        declareBindConsume(c);
-        fill(4);
-        Queue<Delivery> d = drain(c, 2);
+        Queue<Delivery> d = configure(c, 2, 4);
         channel.basicQos(1);
         drain(c, 0);
         ack(d, true);
         drain(c, 1);
+    }
+
+    public void testLimitedToUnlimited()
+        throws IOException
+    {
+        QueueingConsumer c = new QueueingConsumer(channel);
+        configure(c, 1, 3);
+        channel.basicQos(0);
+        drain(c, 2);
     }
 
     protected void runLimitTests(int limit,
@@ -282,6 +285,17 @@ public class QosTests extends BrokerTestCase
         fill(messages);
 
         return queues;
+    }
+
+    protected Queue<Delivery> configure(QueueingConsumer c,
+                                        int limit,
+                                        int messages)
+        throws IOException
+    {
+        channel.basicQos(limit);
+        declareBindConsume(c);
+        fill(messages);
+        return drain(c, limit);
     }
 
     protected String declareBindConsume(QueueingConsumer c)
