@@ -114,6 +114,16 @@ public class QosTests extends BrokerTestCase
         drain(c, 2);
     }
 
+    public void testNoAckUnlimited()
+        throws IOException
+    {
+        QueueingConsumer c = new QueueingConsumer(channel);
+        declareBindConsume(channel, c, true);
+        channel.basicQos(1);
+        fill(2);
+        drain(c, 2);
+    }
+
     public void testPermutations()
         throws IOException
     {
@@ -232,8 +242,8 @@ public class QosTests extends BrokerTestCase
         Channel ch2 = connection.createChannel();
         QueueingConsumer c1 = new QueueingConsumer(ch1);
         QueueingConsumer c2 = new QueueingConsumer(ch2);
-        String q1 = declareBindConsume(ch1, c1);
-        String q2 = declareBindConsume(ch2, c2);
+        String q1 = declareBindConsume(ch1, c1, false);
+        String q2 = declareBindConsume(ch2, c2, false);
         ch1.basicConsume(q2, false, c1);
         ch2.basicConsume(q1, false, c2);
         ch1.basicQos(1);
@@ -349,16 +359,18 @@ public class QosTests extends BrokerTestCase
     protected String declareBindConsume(QueueingConsumer c)
         throws IOException
     {
-        return declareBindConsume(channel, c);
+        return declareBindConsume(channel, c, false);
     }
 
-    protected String declareBindConsume(Channel ch, QueueingConsumer c)
+    protected String declareBindConsume(Channel ch,
+                                        QueueingConsumer c,
+                                        boolean noAck)
         throws IOException
     {
         AMQP.Queue.DeclareOk ok = ch.queueDeclare();
         String queue = ok.getQueue();
         ch.queueBind(queue, "amq.fanout", "");
-        ch.basicConsume(queue, false, c);
+        ch.basicConsume(queue, noAck, c);
         return queue;
     }
 
