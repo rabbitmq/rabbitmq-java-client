@@ -38,6 +38,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
@@ -180,7 +181,6 @@ public class QosTests extends BrokerTestCase
         channel.queueDelete(queue);
     }
 
-
     public void testSetLimitAfterConsume()
         throws IOException
     {
@@ -223,6 +223,30 @@ public class QosTests extends BrokerTestCase
         configure(c, 1, 3);
         channel.basicQos(0);
         drain(c, 2);
+    }
+
+    public void testLimitingMultipleChannels()
+        throws IOException
+    {
+        Channel ch1 = connection.createChannel();
+        Channel ch2 = connection.createChannel();
+        QueueingConsumer c1 = new QueueingConsumer(ch1);
+        QueueingConsumer c2 = new QueueingConsumer(ch2);
+        String q1 = declareBindConsume(ch1, c1);
+        String q2 = declareBindConsume(ch2, c2);
+        ch1.basicConsume(q2, false, c1);
+        ch2.basicConsume(q1, false, c2);
+        ch1.basicQos(1);
+        ch2.basicQos(1);
+        fill(5);
+        Queue<Delivery> d1 = drain(c1, 1);
+        Queue<Delivery> d2 = drain(c2, 1);
+        ackDelivery(ch1, d1.remove(), true);
+        ackDelivery(ch2, d2.remove(), true);
+        drain(c1, 1);
+        drain(c2, 1);
+        ch1.close();
+        ch2.close();
     }
 
     protected void runLimitTests(int limit,
@@ -325,17 +349,29 @@ public class QosTests extends BrokerTestCase
     protected String declareBindConsume(QueueingConsumer c)
         throws IOException
     {
-        AMQP.Queue.DeclareOk ok = channel.queueDeclare();
+        return declareBindConsume(channel, c);
+    }
+
+    protected String declareBindConsume(Channel ch, QueueingConsumer c)
+        throws IOException
+    {
+        AMQP.Queue.DeclareOk ok = ch.queueDeclare();
         String queue = ok.getQueue();
-        channel.queueBind(queue, "amq.fanout", "");
-        channel.basicConsume(queue, false, c);
+        ch.queueBind(queue, "amq.fanout", "");
+        ch.basicConsume(queue, false, c);
         return queue;
     }
 
     protected void ackDelivery(Delivery d, boolean multiple)
         throws IOException
     {
-        channel.basicAck(d.getEnvelope().getDeliveryTag(), multiple);
+        ackDelivery(channel, d, multiple);
+    }
+
+    protected void ackDelivery(Channel ch, Delivery d, boolean multiple)
+        throws IOException
+    {
+        ch.basicAck(d.getEnvelope().getDeliveryTag(), multiple);
     }
 
 }
