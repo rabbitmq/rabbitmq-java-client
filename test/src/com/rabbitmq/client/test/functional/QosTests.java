@@ -106,6 +106,16 @@ public class QosTests extends BrokerTestCase
 	}
     }
 
+    public void testMessageLimitPrefetchSizeFails()
+	throws IOException
+    {
+	try {
+	    channel.basicQos(1000, 0, false);
+	} catch (IOException ioe) {
+	    checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
+	}
+    }
+
     public void testMessageLimitUnlimited()
 	throws IOException
     {
