@@ -44,7 +44,7 @@
   <target name="amqp-generate" depends="amqp-generate-check"
     unless="amqp.generate.notRequired" description="generate AMQP.java and AMQImpl.java from AMQP spec">
     <mkdir dir="${src.generated}/com/rabbitmq/client/"/>
-    <exec dir="." executable="python"
+    <exec dir="." executable="${python.bin}"
           output="${src.generated}/com/rabbitmq/client/AMQP.java"
     	  errorproperty="amqp.generate.error1"
           resultproperty="amqp.generate.result1">
@@ -60,7 +60,7 @@
         </condition>
     </fail>
     <mkdir dir="${src.generated}/com/rabbitmq/client/impl"/>
-    <exec dir="." executable="python"
+    <exec dir="." executable="${python.bin}"
           output="${src.generated}/com/rabbitmq/client/impl/AMQImpl.java"
           errorproperty="amqp.generate.error2"
           resultproperty="amqp.generate.result2">
