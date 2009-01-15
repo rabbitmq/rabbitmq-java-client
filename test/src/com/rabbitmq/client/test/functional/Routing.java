@@ -177,6 +177,8 @@ public class Routing extends BrokerTestCase
 
 	AMQP.BasicProperties props = new AMQP.BasicProperties();
 
+	channel.basicPublish("amq.match", "", null, "0".getBytes());
+
 	props.headers = new Hashtable<String, Object>();
 	props.headers.put("h1", "12345");
 	channel.basicPublish("amq.match", "", props, "1".getBytes());
