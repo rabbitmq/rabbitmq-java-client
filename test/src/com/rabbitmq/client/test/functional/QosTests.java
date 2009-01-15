@@ -64,12 +64,12 @@ public class QosTests extends BrokerTestCase
     }
 
     public void fill(int n)
-	throws IOException
+        throws IOException
     {
-	for (int i = 0; i < n; i++) {
-	    channel.basicPublish("amq.fanout", "", null,
+        for (int i = 0; i < n; i++) {
+            channel.basicPublish("amq.fanout", "", null,
                                  Integer.toString(i).getBytes());
-	}
+        }
     }
 
     /**
@@ -77,10 +77,10 @@ public class QosTests extends BrokerTestCase
      * receive more
      **/
     public Queue<Delivery> drain(QueueingConsumer c, int n)
-	throws IOException
+        throws IOException
     {
         Queue<Delivery> res = new LinkedList<Delivery>();
-	try {
+        try {
             long start = System.currentTimeMillis();
             for (int i = 0; i < n; i++) {
                 Delivery d = c.nextDelivery(1000);
@@ -90,37 +90,37 @@ public class QosTests extends BrokerTestCase
             long finish = System.currentTimeMillis();
             Thread.sleep( (n == 0 ? 0 : (finish - start) / n) + 10 );
             assertNull(c.nextDelivery(0));
-	} catch (InterruptedException ie) {
-	    fail("interrupted");
-	}
+        } catch (InterruptedException ie) {
+            fail("interrupted");
+        }
         return res;
     }
 
     public void testMessageLimitGlobalFails()
-	throws IOException
+        throws IOException
     {
-	try {
-	    channel.basicQos(0, 1, true);
-	} catch (IOException ioe) {
-	    checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
-	}
+        try {
+            channel.basicQos(0, 1, true);
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
+        }
     }
 
     public void testMessageLimitPrefetchSizeFails()
-	throws IOException
+        throws IOException
     {
-	try {
-	    channel.basicQos(1000, 0, false);
-	} catch (IOException ioe) {
-	    checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
-	}
+        try {
+            channel.basicQos(1000, 0, false);
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
+        }
     }
 
     public void testMessageLimitUnlimited()
-	throws IOException
+        throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
-	configure(c, 0, 1, 2);
+        configure(c, 0, 1, 2);
         drain(c, 2);
     }
 
