@@ -37,6 +37,7 @@ import com.rabbitmq.client.GetResponse;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Hashtable;
 
 public class Routing extends BrokerTestCase
 {
@@ -162,6 +163,58 @@ public class Routing extends BrokerTestCase
         for (String q : queues) {
             checkGet(q, true);
         }
+    }
+
+    public void testHeadersRouting() throws Exception {
+	Hashtable<String, Object> spec = new Hashtable<String, Object>();
+	spec.put("h1", "12345");
+	spec.put("h2", "bar");
+	// See bug 20154: no current way to add a "Void"-typed spec pattern.
+	spec.put("x-match", "all");
+	channel.queueBind(Q1, "amq.match", "", spec);
+	spec.put("x-match", "any");
+	channel.queueBind(Q2, "amq.match", "", spec);
+
+	AMQP.BasicProperties props = new AMQP.BasicProperties();
+
+	channel.basicPublish("amq.match", "", null, "0".getBytes());
+	channel.basicPublish("amq.match", "", props, "0b".getBytes());
+
+	props.headers = new Hashtable<String, Object>();
+	props.headers.put("h1", "12345");
+	channel.basicPublish("amq.match", "", props, "1".getBytes());
+
+	props.headers = new Hashtable<String, Object>();
+	props.headers.put("h1", 12345);
+	channel.basicPublish("amq.match", "", props, "1b".getBytes());
+
+	props.headers = new Hashtable<String, Object>();
+	props.headers.put("h2", "bar");
+	channel.basicPublish("amq.match", "", props, "2".getBytes());
+
+	props.headers = new Hashtable<String, Object>();
+	props.headers.put("h1", "12345");
+	props.headers.put("h2", "bar");
+	channel.basicPublish("amq.match", "", props, "3".getBytes());
+
+	props.headers = new Hashtable<String, Object>();
+	props.headers.put("h1", "12345");
+	props.headers.put("h2", "quux");
+	channel.basicPublish("amq.match", "", props, "4".getBytes());
+
+	props.headers = new Hashtable<String, Object>();
+	props.headers.put("h1", "zot");
+	props.headers.put("h2", "quux");
+	channel.basicPublish("amq.match", "", props, "5".getBytes());
+
+	checkGet(Q1, true); // 3
+	checkGet(Q1, false);
+
+	checkGet(Q2, true); // 1
+	checkGet(Q2, true); // 2
+	checkGet(Q2, true); // 3
+	checkGet(Q2, true); // 4
+	checkGet(Q2, false);
     }
 
     public void testUnbind() throws Exception {
