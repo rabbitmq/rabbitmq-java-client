@@ -44,13 +44,13 @@
   <target name="amqp-generate" depends="amqp-generate-check"
     unless="amqp.generate.notRequired" description="generate AMQP.java and AMQImpl.java from AMQP spec">
     <mkdir dir="${src.generated}/com/rabbitmq/client/"/>
-    <exec dir="." executable="python"
-          output="${src.generated}/com/rabbitmq/client/AMQP.java"
+    <exec dir="." executable="${python.bin}"
     	  errorproperty="amqp.generate.error1"
           resultproperty="amqp.generate.result1">
       <arg line="codegen.py"/>
       <arg line="header"/>
       <arg line="${AMQP_SPEC_JSON_PATH}"/>
+      <arg line="${src.generated}/com/rabbitmq/client/AMQP.java"/>
     </exec>
   	<fail message="Generation of AMQP.java failed with message:${line.separator}${amqp.generate.error1}">
         <condition>
@@ -60,13 +60,13 @@
         </condition>
     </fail>
     <mkdir dir="${src.generated}/com/rabbitmq/client/impl"/>
-    <exec dir="." executable="python"
-          output="${src.generated}/com/rabbitmq/client/impl/AMQImpl.java"
+    <exec dir="." executable="${python.bin}"
           errorproperty="amqp.generate.error2"
           resultproperty="amqp.generate.result2">
       <arg line="codegen.py"/>
       <arg line="body"/>
       <arg line="${AMQP_SPEC_JSON_PATH}"/>
+      <arg line="${src.generated}/com/rabbitmq/client/impl/AMQImpl.java"/>
     </exec>
   	<fail message="Generation of AMQPImpl.java failed with message:${line.separator}${amqp.generate.error2}">
         <condition>
