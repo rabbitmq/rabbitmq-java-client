@@ -167,7 +167,7 @@ public class Routing extends BrokerTestCase
 
     public void testHeadersRouting() throws Exception {
 	Hashtable<String, Object> spec = new Hashtable<String, Object>();
-	spec.put("h1", "foo");
+	spec.put("h1", "12345");
 	spec.put("h2", "bar");
 	// See bug 20154: no current way to add a "Void"-typed spec pattern.
 	spec.put("x-match", "all");
@@ -178,20 +178,24 @@ public class Routing extends BrokerTestCase
 	AMQP.BasicProperties props = new AMQP.BasicProperties();
 
 	props.headers = new Hashtable<String, Object>();
-	props.headers.put("h1", "foo");
+	props.headers.put("h1", "12345");
 	channel.basicPublish("amq.match", "", props, "1".getBytes());
+
+	props.headers = new Hashtable<String, Object>();
+	props.headers.put("h1", 12345);
+	channel.basicPublish("amq.match", "", props, "1b".getBytes());
 
 	props.headers = new Hashtable<String, Object>();
 	props.headers.put("h2", "bar");
 	channel.basicPublish("amq.match", "", props, "2".getBytes());
 
 	props.headers = new Hashtable<String, Object>();
-	props.headers.put("h1", "foo");
+	props.headers.put("h1", "12345");
 	props.headers.put("h2", "bar");
 	channel.basicPublish("amq.match", "", props, "3".getBytes());
 
 	props.headers = new Hashtable<String, Object>();
-	props.headers.put("h1", "foo");
+	props.headers.put("h1", "12345");
 	props.headers.put("h2", "quux");
 	channel.basicPublish("amq.match", "", props, "4".getBytes());
 
