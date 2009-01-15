@@ -50,15 +50,15 @@ post-dist:
 
 srcdist: distclean
 	mkdir -p build/$(SRC_ARCHIVE)
-	cp -Rp `ls | grep -v '^\(build\|BUILD.in\)$$'` build/$(SRC_ARCHIVE)
+	cp -Rp `ls | grep -v '^\(build\|README.in\)$$'` build/$(SRC_ARCHIVE)
 
 	mkdir -p build/$(SRC_ARCHIVE)/codegen
 	cp -r $(AMQP_CODEGEN_DIR)/* build/$(SRC_ARCHIVE)/codegen/.
 
-	if [ -f BUILD.in ]; then \
-		cp BUILD.in build/$(SRC_ARCHIVE)/BUILD; \
+	if [ -f README.in ]; then \
+		cp README.in build/$(SRC_ARCHIVE)/README; \
 		elinks -dump -no-references -no-numbering $(WEB_URL)build-java-client.html \
-			>> build/$(SRC_ARCHIVE)/BUILD; \
+			>> build/$(SRC_ARCHIVE)/README; \
 	fi
 	(cd build; tar -zcf $(SRC_ARCHIVE).tar.gz $(SRC_ARCHIVE))
 	(cd build; zip -r $(SRC_ARCHIVE).zip $(SRC_ARCHIVE))
