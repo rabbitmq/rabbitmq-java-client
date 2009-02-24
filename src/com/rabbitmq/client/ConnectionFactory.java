@@ -132,6 +132,17 @@ public class ConnectionFactory {
     }
 
     /**
+     * Convenience method for setting up an SSL socket factory.
+     * Pass in an initialized SSLContext.
+     *
+     * @param context An initialized SSLContext
+     */
+    public void useSslProtocol(SSLContext context)
+    {
+        setSocketFactory(context.getSocketFactory());
+    }
+
+    /**
      * The default SSL protocol (currently "SSLv3").
      */
     public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
