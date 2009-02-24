@@ -80,7 +80,7 @@ public class Bug19356Test extends BrokerTestCase {
         channel.queueDeclare("Bug19356Test");
         channel.basicPublish("", "Bug19356Test", null, "SSL".getBytes());
 
-        GetResponse chResponse = channel.basicGet("rabbitmq-java-test", false);
+        GetResponse chResponse = channel.basicGet("Bug19356Test", false);
         assertTrue(chResponse != null);
 
         AMQP.BasicProperties props = chResponse.getProps();
