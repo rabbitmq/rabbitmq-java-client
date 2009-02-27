@@ -83,7 +83,6 @@ public class Bug19356Test extends BrokerTestCase {
         GetResponse chResponse = channel.basicGet("Bug19356Test", false);
         assertTrue(chResponse != null);
 
-        AMQP.BasicProperties props = chResponse.getProps();
         byte[] body = chResponse.getBody();
         assertEquals("SSL", new String(body));
     }
