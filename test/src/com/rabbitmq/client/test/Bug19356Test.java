@@ -77,7 +77,7 @@ public class Bug19356Test extends BrokerTestCase {
     public void testBug19356()
         throws IOException
     {
-        channel.queueDeclare("Bug19356Test");
+        channel.queueDeclare("Bug19356Test", false, false, true, true, null);
         channel.basicPublish("", "Bug19356Test", null, "SSL".getBytes());
 
         GetResponse chResponse = channel.basicGet("Bug19356Test", false);
