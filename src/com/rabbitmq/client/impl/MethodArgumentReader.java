@@ -103,19 +103,30 @@ public class MethodArgumentReader
         return readShortstr(this.in);
     }
 
-    /** Public API - convenience method - reads a long string argument from a DataInputStream. */
-    public static final LongString readLongstr(final DataInputStream in)
+    /** Public API - convenience method - reads a 32-bit-length-prefix
+     * byte vector from a DataInputStream.
+     */
+    public static final byte[] readBytes(final DataInputStream in)
         throws IOException
     {
         final long contentLength = unsignedExtend(in.readInt());
         if(contentLength < Integer.MAX_VALUE) {
             final byte [] buffer = new byte[(int)contentLength];
             in.readFully(buffer);
-
-            return LongStringHelper.asLongString(buffer);
-        }
+            return buffer;
+        } else {
             throw new UnsupportedOperationException
-                ("Very long strings not currently supported");
+                ("Very long byte vectors and strings not currently supported");
+        }
+    }
+
+    /** Public API - convenience method - reads a long string argument
+     * from a DataInputStream.
+     */
+    public static final LongString readLongstr(final DataInputStream in)
+        throws IOException
+    {
+        return LongStringHelper.asLongString(readBytes(in));
     }
 
     /** Public API - reads a long string argument. */
@@ -205,6 +216,30 @@ public class MethodArgumentReader
                 break;
             case 'F':
                 value = readTable(tableIn);
+                break;
+            case 'b':
+                value = tableIn.readByte();
+                break;
+            case 'd':
+                value = tableIn.readDouble();
+                break;
+            case 'f':
+                value = tableIn.readFloat();
+                break;
+            case 'l':
+                value = tableIn.readLong();
+                break;
+            case 's':
+                value = tableIn.readShort();
+                break;
+            case 't':
+                value = tableIn.readBoolean();
+                break;
+            case 'x':
+                value = readBytes(tableIn);
+                break;
+            case 'V':
+                value = null;
                 break;
             default:
                 throw new MalformedFrameException

@@ -203,6 +203,38 @@ public class MethodArgumentWriter
                     // (not even a little respect)
                     writeTable((Map<String, Object>) value);
                 }
+                else if (value instanceof Byte) {
+                    writeOctet('b');
+                    out.writeByte((Byte)value);
+                }
+                else if(value instanceof Double) {
+                    writeOctet('d');
+                    out.writeDouble((Double)value);
+                }
+                else if(value instanceof Float) {
+                    writeOctet('f');
+                    out.writeFloat((Float)value);
+                }
+                else if(value instanceof Long) {
+                    writeOctet('l');
+                    out.writeLong((Long)value);
+                }
+                else if(value instanceof Short) {
+                    writeOctet('s');
+                    out.writeShort((Short)value);
+                }
+                else if(value instanceof Boolean) {
+                    writeOctet('t');
+                    out.writeBoolean((Boolean)value);
+                }
+                else if(value instanceof byte[]) {
+                    writeOctet('x');
+                    writeLong(((byte[])value).length);
+                    out.write((byte[])value);
+                }
+                else if(value == null) {
+                    writeOctet('V');
+                }
                 else {
                     throw new IllegalArgumentException
                         ("Invalid value type: " + value.getClass().getName()
