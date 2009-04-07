@@ -128,7 +128,7 @@ public class ConnectionFactory {
     {
         SSLContext c = SSLContext.getInstance(protocol);
         c.init(null, new TrustManager[] { trustManager }, null);
-        setSocketFactory(c.getSocketFactory());
+        useSslProtocol(c);
     }
 
     /**
