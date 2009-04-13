@@ -158,18 +158,12 @@ public class ProducerMain implements Runnable {
         sendBatch(queueName);
 
         if (_sendCompletion) {
-            // Declaring this exchange as auto-delete is a bit dodgy because of a
-            // race condition with the consumer declaring the same exchange to be
-            // auto-delete and hence pulling the rug out from underneath the producer's
-            // feet.
-            // Hence we're delaying a possible re-declaration until as late as possible.
-            // Ideally you would use a global lock around both critical sections,
-            // but thread safety has gone out of fashion these days.
             String exchangeName = "test completion";
-            _channel.exchangeDeclare(exchangeName, "fanout", false, false, true, null);
+            _channel.exchangeDeclare(exchangeName, "fanout", false, false, null);
             _channel.basicPublish(exchangeName, "", MessageProperties.BASIC, new byte[0]);
             if (shouldCommit())
                 _channel.txCommit();
+            _channel.exchangeDelete(exchangeName);
         }
 
         _channel.close();

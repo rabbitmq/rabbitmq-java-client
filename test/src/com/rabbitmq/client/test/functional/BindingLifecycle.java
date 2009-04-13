@@ -103,6 +103,7 @@ public class BindingLifecycle extends PersisterRestartBase {
             basicPublishVolatile(X, K);
         }
 
+	sleep(50);
         GetResponse response = channel.basicGet(Q, true);
         assertNull("The initial response SHOULD BE null", response);
 
@@ -125,6 +126,7 @@ public class BindingLifecycle extends PersisterRestartBase {
 
         basicPublishVolatile("", Q);
 
+	sleep(50);
         GetResponse response = channel.basicGet(Q, true);
         assertNotNull("The initial response SHOULD NOT be null", response);
 
@@ -253,17 +255,15 @@ public class BindingLifecycle extends PersisterRestartBase {
     }
 
     private void doAutoDelete(boolean durable, int queues) throws IOException {
-
         String[] queueNames = null;
 
         Binding binding = Binding.randomBinding();
 
         channel.exchangeDeclare(binding.x, "direct",
-                                false, durable, true, null);
+                                false, durable, null);
         channel.queueDeclare(binding.q,
                              false, durable, false, true, null);
         channel.queueBind(binding.q, binding.x, binding.k);
-
 
         if (queues > 1) {
             int j = queues - 1;
@@ -280,6 +280,9 @@ public class BindingLifecycle extends PersisterRestartBase {
         }
 
         subscribeSendUnsubscribe(binding);
+	if (queues == 1) {
+	    channel.exchangeDelete(binding.x); // we no longer have auto-delete
+	}
 
         if (durable) {
             restart();
@@ -321,7 +324,6 @@ public class BindingLifecycle extends PersisterRestartBase {
                 channel.queueDelete(q);
             }
         }
-
     }
 
     private void subscribeSendUnsubscribe(Binding binding) throws IOException {
@@ -331,14 +333,23 @@ public class BindingLifecycle extends PersisterRestartBase {
         channel.basicCancel(tag);
     }
 
+    private void sleep(int ms) {
+	try {
+	    Thread.sleep(ms);
+	} catch (InterruptedException ie) {
+	}
+    }
+
     private void sendUnroutable(Binding binding) throws IOException {
         channel.basicPublish(binding.x, binding.k, null, payload);
+	sleep(50);
         GetResponse response = channel.basicGet(binding.q, true);
         assertNull("The response SHOULD BE null", response);
     }
 
     private void sendRoutable(Binding binding) throws IOException {
         channel.basicPublish(binding.x, binding.k, null, payload);
+	sleep(50);
         GetResponse response = channel.basicGet(binding.q, true);
         assertNotNull("The response should not be null", response);
     }

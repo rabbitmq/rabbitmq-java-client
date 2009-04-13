@@ -113,7 +113,7 @@ public class ConsumerMain implements Runnable {
         channel.queueDeclare(queueName);
 
         String exchangeName = "test completion";
-        channel.exchangeDeclare(exchangeName, "fanout", false, false, true, null);
+        channel.exchangeDeclare(exchangeName, "fanout", false, false, null);
 
         String completionQueue = channel.queueDeclare().getQueue();
         channel.queueBind(completionQueue, exchangeName, "");
@@ -129,6 +129,9 @@ public class ConsumerMain implements Runnable {
 
         System.out.println("Deleting completion queue.");
         channel.queueDelete(completionQueue);
+
+        System.out.println("Deleting completion exchange.");
+        channel.exchangeDelete(completionQueue);
         
         System.out.println("Closing the channel.");
         channel.close();

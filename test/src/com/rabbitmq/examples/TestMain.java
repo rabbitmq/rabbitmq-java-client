@@ -415,7 +415,7 @@ public class TestMain {
         _ch1.queueDeclare(q1);
         _ch1.queueDeclare(q2);
         _ch1.queueDeclare(q3);
-        _ch1.exchangeDeclare(x, "topic", false, false, true, null);
+        _ch1.exchangeDeclare(x, "topic", false, false, null);
         _ch1.queueBind(q1, x, "test.#");
         _ch1.queueBind(q2, x, "test.test");
         _ch1.queueBind(q3, x, "*.test.#");
@@ -436,8 +436,7 @@ public class TestMain {
         _ch1.queueDelete(q3, true, true);
         _ch1.queueDelete(q2, true, true);
         _ch1.queueDelete(q1, true, true);
-        // We created the exchange auto_delete - it should be gone by this point.
-        // ch1.exchangeDelete(x);
+        _ch1.exchangeDelete(x);
     }
 
     public void doBasicReturn(BlockingCell cell, int expectedCode) {
@@ -456,7 +455,7 @@ public class TestMain {
         log("About to try mandatory/immediate publications");
 
         String mx = "mandatoryTestExchange";
-        _ch1.exchangeDeclare(mx, "fanout", false, false, true, null);
+        _ch1.exchangeDeclare(mx, "fanout", false, false, null);
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());
@@ -484,6 +483,7 @@ public class TestMain {
         drain(1, mq, true);
         _ch1.queueDelete(mq, true, true);
 
+	_ch1.exchangeDelete(mx);
         log("Completed basic.return testing.");
     }
 

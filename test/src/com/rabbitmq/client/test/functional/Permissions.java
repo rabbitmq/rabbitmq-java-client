@@ -146,7 +146,7 @@ public class Permissions extends BrokerTestCase
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                    channel.exchangeDeclare(name, "direct", true, false, false, null);
+                    channel.exchangeDeclare(name, "direct", true, false, null);
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
