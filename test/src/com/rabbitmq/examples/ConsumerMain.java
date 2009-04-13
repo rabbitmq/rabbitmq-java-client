@@ -206,9 +206,9 @@ public class ConsumerMain implements Runnable {
             System.out.println("Max latency, milliseconds: " + maxL);
 
             if (writeStats) {
-                PrintStream o = new PrintStream(new FileOutputStream("simple-latency-experiment.dat"));
+                PrintStream o = new PrintStream(new FileOutputStream("simple-latency-experiment.csv"));
                 for (int i = 0; i < messageCount; i++) {
-                    o.println(i + " " + _deltas[i]);
+                    o.println(i + "," + _deltas[i]);
                 }
                 o.close();
 
@@ -219,9 +219,9 @@ public class ConsumerMain implements Runnable {
                     }
                 }
 
-                o = new PrintStream(new FileOutputStream("simple-latency-bins.dat"));
+                o = new PrintStream(new FileOutputStream("simple-latency-bins.csv"));
                 for (int i = 0; i < bins.length; i++) {
-                    o.println(i + " " + bins[i]);
+                    o.println(i + "," + bins[i]);
                 }
                 o.close();
             }
