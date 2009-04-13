@@ -145,51 +145,23 @@ public class ConnectionFactory {
         return new SocketFrameHandler(_factory, hostName, portNumber);
     }
 
-    private Connection newConnection(Address[] addrs,
-                                     int maxRedirects,
-                                     Map<Address,Integer> redirectAttempts)
+    /**
+     * Create a new broker connection
+     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newConnection(Address[] addrs)
         throws IOException
     {
         IOException lastException = null;
 
         for (Address addr : addrs) {
-            Address[] lastKnownAddresses = new Address[0];
             try {
-                while(true) {
-                    FrameHandler frameHandler = createFrameHandler(addr);
-                    Integer redirectCount = redirectAttempts.get(addr);
-                    if (redirectCount == null)
-                        redirectCount = 0;
-                    boolean allowRedirects = redirectCount < maxRedirects;
-                    try {
-                        return new AMQConnection(_params, !allowRedirects, frameHandler);
-                    } catch (RedirectException e) {
-                        if (!allowRedirects) {
-                            //this should never happen with a well-behaved server
-                            throw new IOException("server ignored 'insist'");
-                        } else {
-                            redirectAttempts.put(addr, redirectCount+1);
-                            lastKnownAddresses = e.getKnownAddresses();
-                            addr = e.getAddress();
-                            //TODO: we may want to log redirection attempts.
-                        }
-                    }
-                }
+		FrameHandler frameHandler = createFrameHandler(addr);
+		return new AMQConnection(_params, frameHandler);
             } catch (IOException e) {
                 lastException = e;
-                if (lastKnownAddresses.length > 0) {
-                    // If there aren't any, don't bother trying, since
-                    // a recursive call with empty lastKnownAddresses
-                    // will cause our lastException to be stomped on
-                    // by an uninformative IOException. See bug 16273.
-                    try {
-                        return newConnection(lastKnownAddresses,
-                                             maxRedirects,
-                                             redirectAttempts);
-                    } catch (IOException e1) {
-                        lastException = e1;
-                    }
-                }
             }
         }
 
@@ -198,33 +170,6 @@ public class ConnectionFactory {
         } else {
             throw lastException;
         }
-    }
-
-    /**
-     * Create a new broker connection
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @param maxRedirects the maximum allowable number of redirects
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection(Address[] addrs, int maxRedirects)
-        throws IOException
-    {
-        return newConnection(addrs,
-                             maxRedirects,
-                             new HashMap<Address,Integer>());
-    }
-
-    /**
-     * Create a new broker connection (no redirects allowed)
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection(Address[] addrs)
-        throws IOException
-    {
-        return newConnection(addrs, 0);
     }
 
     /**

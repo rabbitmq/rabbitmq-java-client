@@ -105,12 +105,6 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     int getHeartbeat();
 
     /**
-     * Retrieve the known hosts.
-     * @return an array of addresses for all hosts that came back in the initial {@link com.rabbitmq.client.AMQP.Connection.OpenOk} open-ok method
-     */
-    Address[] getKnownHosts();
-
-    /**
      * Create a new channel, using an internally allocated channel number.
      * @return a new channel descriptor, or null if none is available
      * @throws IOException if an I/O problem is encountered

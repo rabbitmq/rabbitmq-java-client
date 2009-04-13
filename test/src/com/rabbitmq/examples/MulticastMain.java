@@ -83,7 +83,6 @@ public class MulticastMain {
             boolean autoAck      = cmd.hasOption('a');
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
-            int maxRedirects     = intArg(cmd, 'd', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
             List flags           = lstArg(cmd, 'f');
 
@@ -98,7 +97,7 @@ public class MulticastMain {
             Connection[] consumerConnections = new Connection[consumerCount];
             for (int i = 0; i < consumerCount; i++) {
                 System.out.println("starting consumer #" + i);
-                Connection conn = new ConnectionFactory(params).newConnection(addresses, maxRedirects);
+                Connection conn = new ConnectionFactory(params).newConnection(addresses);
                 consumerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (consumerTxSize > 0) channel.txSelect();
@@ -120,7 +119,7 @@ public class MulticastMain {
             Connection[] producerConnections = new Connection[producerCount];
             for (int i = 0; i < producerCount; i++) {
                 System.out.println("starting producer #" + i);
-                Connection conn = new ConnectionFactory(params).newConnection(addresses, maxRedirects);
+                Connection conn = new ConnectionFactory(params).newConnection(addresses);
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();

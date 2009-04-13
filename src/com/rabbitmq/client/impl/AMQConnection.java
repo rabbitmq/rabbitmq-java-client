@@ -45,7 +45,6 @@ import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.MissedHeartbeatException;
-import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
@@ -141,9 +140,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public int _heartbeat;
 
-    /** Hosts retrieved from the connection.open-ok */
-    public Address[] _knownHosts;
-
     public String getHost() {
         return _frameHandler.getHost();
     }
@@ -156,38 +152,29 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _params;
     }
 
-    public Address[] getKnownHosts() {
-        return _knownHosts;
-    }
-
     /**
      * Construct a new connection to a broker.
      * @param params the initialization parameters for a connection
-     * @param insist true if broker redirects are disallowed
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
-     * @throws RedirectException if the server is redirecting us to a different host/port
      * @throws java.io.IOException if an error is encountered
      */
-    public AMQConnection(ConnectionParameters params,
-                         boolean insist,
-                         FrameHandler frameHandler) throws RedirectException, IOException {
-        this(params, insist, frameHandler, new DefaultExceptionHandler());
+    public AMQConnection(ConnectionParameters params, FrameHandler frameHandler)
+	throws IOException
+    {
+        this(params, frameHandler, new DefaultExceptionHandler());
     }
 
     /**
      * Construct a new connection to a broker.
      * @param params the initialization parameters for a connection
-     * @param insist true if broker redirects are disallowed
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      * @param exceptionHandler interface to an object that will handle any special exceptions encountered while using this connection
-     * @throws RedirectException if the server is redirecting us to a different host/port
      * @throws java.io.IOException if an error is encountered
      */
     public AMQConnection(ConnectionParameters params,
-                         boolean insist,
                          FrameHandler frameHandler,
                          ExceptionHandler exceptionHandler)
-        throws RedirectException, IOException
+        throws IOException
     {
         checkPreconditions();
         _params = params;
@@ -201,7 +188,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         new MainLoop(); // start the main loop going
 
-        _knownHosts = open(_params, insist);
+	open(params);
     }
 
     /**
@@ -323,13 +310,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * calls Connection.Open and waits for the OpenOk. Sets heartbeat
      * and frame max values after tuning has taken place.
      * @param params the construction parameters for a Connection
-     * @return the known hosts that came back in the connection.open-ok
-     * @throws RedirectException if the server asks us to redirect to
-     *                           a different host/port.
      * @throws java.io.IOException if any other I/O error occurs
      */
-    public Address[] open(final ConnectionParameters params, boolean insist)
-        throws RedirectException, IOException
+    public void open(final ConnectionParameters params)
+        throws IOException
     {
         try {
             AMQChannel.SimpleBlockingRpcContinuation connStartBlocker =
@@ -402,15 +386,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(params.getVirtualHost(),
                                                                           "",
-                                                                          insist)).getMethod();
-        if (res instanceof AMQP.Connection.Redirect) {
-            AMQP.Connection.Redirect redirect = (AMQP.Connection.Redirect) res;
-            throw new RedirectException(Address.parseAddress(redirect.getHost()),
-                                        Address.parseAddresses(redirect.getKnownHosts()));
-        } else {
-            AMQP.Connection.OpenOk openOk = (AMQP.Connection.OpenOk) res;
-            return Address.parseAddresses(openOk.getKnownHosts());
-        }
+                                                                          true)).getMethod();
+	AMQP.Connection.OpenOk openOk = (AMQP.Connection.OpenOk) res;
     }
 
     private static int negotiatedMaxValue(int clientValue, int serverValue) {

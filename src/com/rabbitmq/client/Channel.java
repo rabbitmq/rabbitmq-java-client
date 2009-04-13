@@ -435,7 +435,7 @@ public interface Channel extends ShutdownNotifier{
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      */
-    String basicConsume(String queue, boolean noAck, String consumerTag, boolean noLocal, boolean exclusive, Consumer callback) throws IOException;
+    String basicConsume(String queue, boolean noAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> filter, Consumer callback) throws IOException;
 
     /**
      * Cancel a consumer. Calls the consumer's {@link Consumer#handleCancelOk}
