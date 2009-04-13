@@ -85,7 +85,7 @@ public class ProducerMain implements Runnable {
             int portNumber = optArg("portNumber", args, 1, AMQP.PROTOCOL.PORT);
             int rateLimit = optArg("rateLimit", args, 2, SEND_RATE);
             int messageCount = optArg("messageCount", args, 3, LATENCY_MESSAGE_COUNT);
-            boolean sendCompletion = optArg("sendCompletion", args, 4, false);
+            boolean sendCompletion = optArg("sendCompletion", args, 4, true);
             int commitEvery = optArg("commitEvery", args, 5, -1);
             boolean sendLatencyInfo = optArg("sendLatencyInfo", args, 6, true);
             final Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
@@ -159,7 +159,7 @@ public class ProducerMain implements Runnable {
 
         if (_sendCompletion) {
             String exchangeName = "test completion";
-            _channel.exchangeDeclare(exchangeName, "fanout", false, false, null);
+            _channel.exchangeDeclare(exchangeName, "fanout", true, false, null);
             _channel.basicPublish(exchangeName, "", MessageProperties.BASIC, new byte[0]);
             if (shouldCommit())
                 _channel.txCommit();
