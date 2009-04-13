@@ -232,7 +232,7 @@ public interface Channel extends ShutdownNotifier{
      * @return a declaration-confirm method to indicate the exchange was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
-    Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean passive, boolean durable, boolean autoDelete,
+    Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean passive, boolean durable,
                                        Map<String, Object> arguments) throws IOException;
 
     /**

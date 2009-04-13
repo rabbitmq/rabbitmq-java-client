@@ -413,17 +413,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
                                               boolean passive, boolean durable,
-                                              boolean autoDelete, Map<String, Object> arguments)
+                                              Map<String, Object> arguments)
         throws IOException
     {
         return (Exchange.DeclareOk)
             exnWrappingRpc(new Exchange.Declare(TICKET, exchange, type,
-                                                passive, durable, autoDelete,
+                                                passive, durable, false,
                                                 false, false, arguments)).getMethod();
     }
 
     /**
-     * Public API - Actively declare a non-autodelete exchange with no extra arguments
+     * Public API - Actively declare an exchange with no extra arguments
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
      */
@@ -431,18 +431,18 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                               boolean durable)
         throws IOException
     {
-        return exchangeDeclare(exchange, type, false, durable, false, null);
+        return exchangeDeclare(exchange, type, false, durable, null);
     }
 
     /**
-     * Public API - Actively declare a non-autodelete, non-durable exchange with no extra arguments
+     * Public API - Actively declare a non-durable exchange with no extra arguments
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
      */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type)
         throws IOException
     {
-        return exchangeDeclare(exchange, type, false, false, false, null);
+        return exchangeDeclare(exchange, type, false, false, null);
     }
 
     /**
