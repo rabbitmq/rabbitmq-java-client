@@ -459,16 +459,15 @@ public class TestMain {
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());
-        // %%% FIXME: 312 and 313 should be replaced with symbolic constants when we move to >=0-9
-        doBasicReturn(returnCell, 312);
+        doBasicReturn(returnCell, AMQP.NO_ROUTE);
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, true, null, "two".getBytes());
-        doBasicReturn(returnCell, 312);
+        doBasicReturn(returnCell, AMQP.NO_ROUTE);
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", false, true, null, "three".getBytes());
-        doBasicReturn(returnCell, 313);
+        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
 
         String mq = "mandatoryTestQueue";
         _ch1.queueDeclare(mq, false, false, false, true, null);
@@ -476,7 +475,7 @@ public class TestMain {
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, true, null, "four".getBytes());
-        doBasicReturn(returnCell, 313);
+        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, false, null, "five".getBytes());
@@ -508,10 +507,10 @@ public class TestMain {
         _ch1.basicPublish("", queueName, false, false, null, "normal".getBytes());
         _ch1.basicPublish("", queueName, true, false, null, "mandatory".getBytes());
         _ch1.basicPublish("", "bogus", true, false, null, "mandatory".getBytes());
-        doBasicReturn(returnCell, 312);
+        doBasicReturn(returnCell, AMQP.NO_ROUTE);
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish("", "bogus", false, true, null, "immediate".getBytes());
-        doBasicReturn(returnCell, 313);
+        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
         returnCell = new BlockingCell<Object>();
         _ch1.txCommit();
         expect(2, drain(10, queueName, false));
