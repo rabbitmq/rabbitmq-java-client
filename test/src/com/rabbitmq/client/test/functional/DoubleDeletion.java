@@ -31,23 +31,40 @@
 
 package com.rabbitmq.client.test.functional;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ShutdownSignalException;
+import java.io.IOException;
 
-public class FunctionalTests extends TestCase {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("functional");
-        suite.addTestSuite(DoubleDeletion.class);
-        suite.addTestSuite(Routing.class);
-        suite.addTestSuite(BindingLifecycle.class);
-        suite.addTestSuite(Transactions.class);
-        suite.addTestSuite(PersistentTransactions.class);
-        suite.addTestSuite(RequeueOnConnectionClose.class);
-        suite.addTestSuite(RequeueOnChannelClose.class);
-        suite.addTestSuite(DurableOnTransient.class);
-        suite.addTestSuite(NoRequeueOnCancel.class);
-        suite.addTestSuite(QosTests.class);
-        suite.addTestSuite(Permissions.class);
-        return suite;
+public class DoubleDeletion extends BrokerTestCase
+{
+    protected static final String Q = "DoubleDeletionQueue";
+    protected static final String X = "DoubleDeletionExchange";
+
+    public void testDoubleDeletionQueue()
+        throws IOException
+    {
+        channel.queueDeclare(Q);
+	channel.queueDelete(Q);
+        try {
+            channel.queueDelete(Q);
+            fail("Expected exception from double deletion of queue");
+        } catch (IOException ee) {
+	    checkShutdownSignal(AMQP.NOT_FOUND, ee);
+            // Pass!
+        }
+    }
+
+    public void testDoubleDeletionExchange()
+        throws IOException
+    {
+        channel.exchangeDeclare(X, "direct");
+	channel.exchangeDelete(X);
+        try {
+            channel.exchangeDelete(X);
+            fail("Expected exception from double deletion of exchange");
+        } catch (IOException ee) {
+	    checkShutdownSignal(AMQP.NOT_FOUND, ee);
+            // Pass!
+        }
     }
 }
