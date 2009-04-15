@@ -112,7 +112,7 @@ public class BindingLifecycle extends PersisterRestartBase {
 
 
     /**
-     * This tests whether the default bindings for persistent queues
+     * This tests whether the default bindings for durable queues
      * are recovered properly.
      *
      * The idea is to create a durable queue, nuke the server and then
