@@ -31,6 +31,8 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 
@@ -52,6 +54,29 @@ public class BindingLifecycle extends PersisterRestartBase {
     protected static final String Q = "Q-" + System.currentTimeMillis();
     protected static final String X = "X-" + System.currentTimeMillis();
     protected static final String K = "K-" + System.currentTimeMillis();
+
+    /**
+     * Create a durable queue on secondary node, if possible, falling
+     * back on the primary node if necessary.
+     */
+    @Override protected void declareDurableQueue(String q)
+        throws IOException
+    {
+        Connection connection;
+        try {
+            connection = connectionFactory.newConnection("localhost", 5673);
+        } catch (IOException e) {
+            super.declareDurableQueue(q);
+            return;
+        }
+
+        Channel channel = connection.createChannel();
+
+        channel.queueDeclare(q, true);
+
+        channel.abort();
+        connection.abort();
+    }
 
     /**
      *   Tests whether durable bindings are correctly recovered.
@@ -113,7 +138,7 @@ public class BindingLifecycle extends PersisterRestartBase {
 
 
     /**
-     * This tests whether the default bindings for persistent queues
+     * This tests whether the default bindings for durable queues
      * are recovered properly.
      *
      * The idea is to create a durable queue, nuke the server and then
