@@ -36,8 +36,12 @@ import java.io.IOException;
 import junit.framework.TestCase;
 
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ShutdownSignalException;
+
+import com.rabbitmq.client.AMQP;
 
 public class BrokerTestCase extends TestCase
 {
@@ -120,4 +124,17 @@ public class BrokerTestCase extends TestCase
         }
     }
 
+    public void checkShutdownSignal(int expectedCode, IOException ioe) {
+        ShutdownSignalException sse = (ShutdownSignalException) ioe.getCause();
+        Command closeCommand = (Command) sse.getReason();
+        channel = null;
+        if (sse.isHardError()) {
+            connection = null;
+            AMQP.Connection.Close closeMethod = (AMQP.Connection.Close) closeCommand.getMethod();
+            assertEquals(expectedCode, closeMethod.getReplyCode());
+        } else {
+            AMQP.Channel.Close closeMethod = (AMQP.Channel.Close) closeCommand.getMethod();
+            assertEquals(expectedCode, closeMethod.getReplyCode());
+        }
+    }
 }

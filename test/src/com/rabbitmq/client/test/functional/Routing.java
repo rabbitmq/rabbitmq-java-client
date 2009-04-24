@@ -165,21 +165,42 @@ public class Routing extends BrokerTestCase
     }
 
     public void testUnbind() throws Exception {
-        AMQP.Queue.DeclareOk ok = channel.queueDeclare();
-        String queue = ok.getQueue();
 
-        String routingKey = "quay";
         String x = "amq.direct";
+        String q = "testUnbind";
+        String routingKey = "quay";
 
-        channel.queueBind(queue, x, routingKey);
+        AMQP.Queue.DeclareOk ok = channel.queueDeclare(q);
+        channel.queueBind(q, x, routingKey);
         channel.basicPublish(x, routingKey, null, "foobar".getBytes());
-        checkGet(queue, true);
+        checkGet(q, true);
 
-        channel.queueUnbind(queue, x, routingKey);
+        String[][] tests = new String[][] {
+            new String[] {"unknown_queue", x, routingKey},
+            new String[] {q, "unknown_exchange", routingKey},
+            new String[] {"unknown_queue", "unknown_exchange", routingKey},
+            // see bug 20633
+            // new String[] {q, x, "unknown_rk"},
+            new String[] {"unknown_queue", "unknown_exchange", "unknown_rk"}
+        };
+
+        for (int i = 0; i < tests.length; i++) {
+
+            String[] test = tests[i];
+            try {
+                channel.queueUnbind(test[0], test[1], test[2]);
+                fail("expected not_found in test " + i);
+            } catch (IOException ee) {
+                checkShutdownSignal(AMQP.NOT_FOUND, ee);
+                openChannel();
+            }
+        }
+
+        channel.queueUnbind(q, x, routingKey);
 
         channel.basicPublish(x, routingKey, null, "foobar".getBytes());
-        checkGet(queue, false);
+        checkGet(q, false);
 
-        channel.queueDelete(queue);
+        channel.queueDelete(q);
     }
 }
