@@ -74,8 +74,6 @@ public class Tables extends BrokerTestCase
         channel.basicPublish("", q, props, "".getBytes());
         BasicProperties rProps = channel.basicGet(q, true).getProps();
         assertMapsEqual(props.headers, rProps.headers);
-        //        assertEquals(props.headers, rProps.headers);
-
     }
 
     private static void assertMapsEqual(Map<String, Object> a,

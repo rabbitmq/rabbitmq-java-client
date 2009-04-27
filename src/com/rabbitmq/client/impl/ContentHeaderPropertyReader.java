@@ -71,7 +71,7 @@ public class ContentHeaderPropertyReader {
             // FIXME: Proper exception class!
             throw new IOException("Attempted to read flag word when none advertised");
         }
-        flagWord = in.readShort(); //FIXME: should this be read as a signedShort?
+        flagWord = in.readShort();
         bitCount = 0;
     }
 
