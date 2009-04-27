@@ -59,6 +59,7 @@ public class MethodArgumentWriter
     public MethodArgumentWriter(DataOutputStream out)
     {
         this.out = new ValueWriter(out);
+        resetBitAccumulator();
     }
 
     /** Private API - called to reset the bit group variables. */
