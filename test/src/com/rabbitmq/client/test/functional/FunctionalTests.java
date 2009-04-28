@@ -48,6 +48,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(NoRequeueOnCancel.class);
         suite.addTestSuite(QosTests.class);
         suite.addTestSuite(Permissions.class);
+        suite.addTestSuite(UnroutableMessageExchange.class);
         return suite;
     }
 }
