@@ -28,15 +28,15 @@
 //
 //   Contributor(s): ______________________________________.
 //
-package com.rabbitmq.client.test;
+package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 
-import com.rabbitmq.client.test.functional.BrokerTestCase;
-
 /**
  * Test for bug 20004 - deadlock through internal synchronization on
- * the channel object.
+ * the channel object. This is more properly a unit test, but since it
+ * requires a connection to a broker, it's grouped with the functional
+ * tests.
  */
 public class Bug20004Test extends BrokerTestCase {
     public Exception caughtException = null;
