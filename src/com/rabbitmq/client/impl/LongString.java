@@ -36,7 +36,7 @@ import java.io.IOException;
 
 /**
  * An object providing access to a LongString.
- * This might be implemeted to read directly from connection
+ * This might be implemented to read directly from connection
  * socket, depending on the size of the content to be read -
  * long strings may contain up to 4Gb of content.
  */
