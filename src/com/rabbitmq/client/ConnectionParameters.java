@@ -54,7 +54,7 @@ public class ConnectionParameters {
     /** Default virtual host */
     public static final String DEFAULT_VHOST = "/";
 
-    /** Default value for the desired maximum number of channels; zero for
+    /** Default value for the desired maximum channel number; zero for
      * unlimited */
     public static final int DEFAULT_CHANNEL_MAX = 0;
 
@@ -126,8 +126,8 @@ public class ConnectionParameters {
     }
 
     /**
-     * Retrieve the requested maximum number of channels
-     * @return the initially requested maximum number of channels; zero for unlimited
+     * Retrieve the requested maximum channel number
+     * @return the initially requested maximum channel number; zero for unlimited
      */
     public int getRequestedChannelMax() {
         return _requestedChannelMax;
@@ -166,8 +166,8 @@ public class ConnectionParameters {
     }
 
     /**
-     * Set the requested maximum number of channels
-     * @param requestedChannelMax initially requested maximum number of channels; zero for unlimited
+     * Set the requested maximum channel number
+     * @param requestedChannelMax initially requested maximum channel number; zero for unlimited
      */
     public void setRequestedChannelMax(int requestedChannelMax) {
         _requestedChannelMax = requestedChannelMax;
