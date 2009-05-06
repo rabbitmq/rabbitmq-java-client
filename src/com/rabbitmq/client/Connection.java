@@ -75,12 +75,13 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     ConnectionParameters getParameters();
 
     /**
-     * Get the negotiated maximum number of channels allowed.
+     * Get the negotiated maximum channel number. Usable channel
+     * numbers range from 1 to this number, inclusive.
      *
      * Note that this is the <i>current</i> setting, as opposed to the <i>initially-requested</i>
      * setting available from {@link #getParameters()}.{@link ConnectionParameters#getRequestedChannelMax()}.
      *
-     * @return the maximum number of simultaneously-open channels permitted for this connection.
+     * @return the maximum channel number permitted for this connection.
      */
     int getChannelMax();
 
