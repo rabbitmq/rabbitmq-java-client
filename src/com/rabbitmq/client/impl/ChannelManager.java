@@ -47,7 +47,7 @@ public class ChannelManager {
     /** Mapping from channel number to AMQChannel instance */
     private final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
 
-    /** Maximum number of channels available on this connection. */
+    /** Maximum channel number available on this connection. */
     public int _channelMax = 0;
 
     public synchronized int getChannelMax() {
@@ -101,7 +101,7 @@ public class ChannelManager {
             maxChannels = Integer.MAX_VALUE;
         }
         int channelNumber = -1;
-        for (int candidate = 1; candidate < maxChannels; candidate++) {
+        for (int candidate = 1; candidate <= maxChannels; candidate++) {
             if (!_channelMap.containsKey(candidate)) {
                 channelNumber = candidate;
                 break;
