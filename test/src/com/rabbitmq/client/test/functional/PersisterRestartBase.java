@@ -58,7 +58,7 @@ public class PersisterRestartBase extends BrokerTestCase
         throws IOException
     {
         tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-on-node");
+        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
         setUp();
     }
 

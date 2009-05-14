@@ -36,10 +36,17 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 
+import com.rabbitmq.tools.Host;
+
 import java.io.IOException;
 
 /**
  * This tests whether bindings are created and nuked properly.
+ *
+ * The tests attempt to declare durable queues on a secondary node, if
+ * present, and that node is restarted as part of the tests while the
+ * primary node is still running. That way we exercise any node-down
+ * handler code in the server.
  *
  * TODO: Adjust this test when Queue.Unbind is implemented in the
  * server
@@ -55,27 +62,56 @@ public class BindingLifecycle extends PersisterRestartBase {
     protected static final String X = "X-" + System.currentTimeMillis();
     protected static final String K = "K-" + System.currentTimeMillis();
 
-    /**
-     * Create a durable queue on secondary node, if possible, falling
-     * back on the primary node if necessary.
-     */
-    @Override protected void declareDurableQueue(String q)
-        throws IOException
-    {
-        Connection connection;
-        try {
-            connection = connectionFactory.newConnection("localhost", 5673);
-        } catch (IOException e) {
-            super.declareDurableQueue(q);
-            return;
+    public Connection secondaryConnection;
+    public Channel secondaryChannel;
+
+    @Override public void openConnection() throws IOException {
+        super.openConnection();
+        if (secondaryConnection == null) {
+            try {
+                secondaryConnection = connectionFactory.newConnection("localhost", 5673);
+            } catch (IOException e) {
+                // just use a single node
+            }
         }
+    }
 
-        Channel channel = connection.createChannel();
+    @Override public void closeConnection() throws IOException {
+        if (secondaryConnection != null) {
+            secondaryConnection.abort();
+            secondaryConnection = null;
+        }
+        super.closeConnection();
+    }
 
-        channel.queueDeclare(q, true);
+    @Override public void openChannel() throws IOException {
+        if (secondaryConnection != null) {
+            secondaryChannel = secondaryConnection.createChannel();
+        }
+        super.openChannel();
+    }
 
-        channel.abort();
-        connection.abort();
+    @Override public void closeChannel() throws IOException {
+        if (secondaryChannel != null) {
+            secondaryChannel.abort();
+            secondaryChannel = null;
+        }
+        super.closeChannel();
+    }
+
+    @Override protected void restart() throws IOException {
+        if (secondaryConnection != null) {
+            secondaryConnection.abort();
+            secondaryConnection = null;
+            secondaryChannel = null;
+            Host.executeCommand("cd ../rabbitmq-test; make restart-secondary-node");
+        }
+        super.restart();
+    }
+
+    @Override protected void declareDurableQueue(String q) throws IOException {
+        (secondaryChannel == null ? channel : secondaryChannel).
+            queueDeclare(q, true);
     }
 
     /**
