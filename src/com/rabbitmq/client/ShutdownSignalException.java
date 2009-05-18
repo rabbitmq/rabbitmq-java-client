@@ -66,6 +66,10 @@ public class ShutdownSignalException extends RuntimeException {
                                    boolean initiatedByApplication,
                                    Object reason, Object ref)
     {
+        super((initiatedByApplication
+               ? ("clean " + (hardError ? "connection" : "channel") + " shutdown")
+               : ((hardError ? "connection" : "channel") + " error"))
+              + "; reason: " + reason);
         this._hardError = hardError;
         this._initiatedByApplication = initiatedByApplication;
         this._reason = reason;
@@ -88,13 +92,6 @@ public class ShutdownSignalException extends RuntimeException {
     /** @return Reference to Connection or Channel object that fired the signal **/
     public Object getReference() { return _ref; }
 
-    public String toString() {
-        return super.toString() + " (" +
-            (_initiatedByApplication
-                    ? ("clean " + (_hardError ? "connection" : "channel") + " shutdown")
-             : ((_hardError ? "connection" : "channel") + " error"))
-            + "; reason: " + _reason + ")";
-    }
 }
 
 
