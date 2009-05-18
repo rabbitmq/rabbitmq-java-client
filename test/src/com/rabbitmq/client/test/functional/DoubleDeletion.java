@@ -29,42 +29,42 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.impl;
+package com.rabbitmq.client.test.functional;
 
-import java.io.DataInputStream;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ShutdownSignalException;
 import java.io.IOException;
 
-/**
- * An object providing access to a LongString.
- * This might be implemented to read directly from connection
- * socket, depending on the size of the content to be read -
- * long strings may contain up to 4Gb of content.
- */
-public interface LongString
+public class DoubleDeletion extends BrokerTestCase
 {
-    public static final long MAX_LENGTH = 0xffffffffL;
+    protected static final String Q = "DoubleDeletionQueue";
+    protected static final String X = "DoubleDeletionExchange";
 
-    /**
-     * Get the length of the content of the long string in bytes
-     * @return the length in bytes >= 0 <= MAX_LENGTH
-     */
-    public long length();
+    public void testDoubleDeletionQueue()
+        throws IOException
+    {
+        channel.queueDeclare(Q);
+	channel.queueDelete(Q);
+        try {
+            channel.queueDelete(Q);
+            fail("Expected exception from double deletion of queue");
+        } catch (IOException ee) {
+	    checkShutdownSignal(AMQP.NOT_FOUND, ee);
+            // Pass!
+        }
+    }
 
-    /**
-     * Get the content stream.
-     * Repeated calls to this function return the same stream,
-     * which may not support rewind.
-     * @return An input stream the reads the content
-     * @throws IOException if an error is encountered
-     */
-    public DataInputStream getStream() throws IOException;
-
-    /**
-     * Get the content as a byte array.
-     * Repeated calls to this function return the same array.
-     * This function will fail if getContentLength() > Integer.MAX_VALUE
-     * throwing an IllegalStateException.
-     * @return the content as an array
-     */
-    public byte [] getBytes();
+    public void testDoubleDeletionExchange()
+        throws IOException
+    {
+        channel.exchangeDeclare(X, "direct");
+	channel.exchangeDelete(X);
+        try {
+            channel.exchangeDelete(X);
+            fail("Expected exception from double deletion of exchange");
+        } catch (IOException ee) {
+	    checkShutdownSignal(AMQP.NOT_FOUND, ee);
+            // Pass!
+        }
+    }
 }

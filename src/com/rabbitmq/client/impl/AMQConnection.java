@@ -219,7 +219,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Protected API - set the max <b>number</b> of channels available
+     * Protected API - set the max channel <b>number</b>
      */
     public void setChannelMax(int value) {
         _channelManager.setChannelMax(value);
