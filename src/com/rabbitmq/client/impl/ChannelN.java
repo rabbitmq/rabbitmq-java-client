@@ -279,24 +279,28 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
+    /** Public API - {@inheritDoc} */
     public void close()
         throws IOException
     {
         close(AMQP.REPLY_SUCCESS, "OK");
     }
     
+    /** Public API - {@inheritDoc} */
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
         close(closeCode, closeMessage, true, null, false);
     }
     
+    /** Public API - {@inheritDoc} */
     public void abort()
         throws IOException
     {
         abort(AMQP.REPLY_SUCCESS, "OK");
     }
     
+    /** Public API - {@inheritDoc} */
     public void abort(int closeCode, String closeMessage)
         throws IOException
     {
@@ -364,23 +368,21 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }    
 
+    /** Public API - {@inheritDoc} */
     public void basicQos(int prefetchSize, int prefetchCount, boolean global)
 	throws IOException
     {
 	exnWrappingRpc(new Basic.Qos(prefetchSize, prefetchCount, global));
     }
 
+    /** Public API - {@inheritDoc} */
     public void basicQos(int prefetchCount)
 	throws IOException
     {
 	basicQos(0, prefetchCount, false);
     }
 
-    /**
-     * Public API - Publish a message with both "mandatory" and
-     * "immediate" flags set to false
-     * @see com.rabbitmq.client.AMQP.Basic.Publish
-     */
+    /** Public API - {@inheritDoc} */
     public void basicPublish(String exchange, String routingKey,
                              BasicProperties props, byte[] body)
         throws IOException
@@ -388,10 +390,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         basicPublish(exchange, routingKey, false, false, props, body);
     }
 
-    /**
-     * Public API - Publish a message
-     * @see com.rabbitmq.client.AMQP.Basic.Publish
-     */
+    /** Public API - {@inheritDoc} */
     public void basicPublish(String exchange, String routingKey,
                              boolean mandatory, boolean immediate,
                              BasicProperties props, byte[] body)
@@ -406,11 +405,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                 useProps, body));
     }
 
-    /**
-     * Public API - Declare an exchange
-     * @see com.rabbitmq.client.AMQP.Exchange.Declare
-     * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
-     */
+    /** Public API - {@inheritDoc} */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
                                               boolean passive, boolean durable,
                                               boolean autoDelete, Map<String, Object> arguments)
@@ -422,11 +417,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                 false, false, arguments)).getMethod();
     }
 
-    /**
-     * Public API - Actively declare a non-autodelete exchange with no extra arguments
-     * @see com.rabbitmq.client.AMQP.Exchange.Declare
-     * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
-     */
+    /** Public API - {@inheritDoc} */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
                                               boolean durable)
         throws IOException
@@ -434,22 +425,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return exchangeDeclare(exchange, type, false, durable, false, null);
     }
 
-    /**
-     * Public API - Actively declare a non-autodelete, non-durable exchange with no extra arguments
-     * @see com.rabbitmq.client.AMQP.Exchange.Declare
-     * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
-     */
+    /** Public API - {@inheritDoc} */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type)
         throws IOException
     {
         return exchangeDeclare(exchange, type, false, false, false, null);
     }
 
-    /**
-     * Public API - Delete an exchange
-     * @see com.rabbitmq.client.AMQP.Exchange.Delete
-     * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
-     */
+    /** Public API - {@inheritDoc} */
     public Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused)
         throws IOException
     {
@@ -457,22 +440,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             exnWrappingRpc(new Exchange.Delete(TICKET, exchange, ifUnused, false)).getMethod();
     }
 
-    /**
-     * Public API - Delete an exchange, without regard for whether it is in use or not
-     * @see com.rabbitmq.client.AMQP.Exchange.Delete
-     * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
-     */
+    /** Public API - {@inheritDoc} */
     public Exchange.DeleteOk exchangeDelete(String exchange)
         throws IOException
     {
         return exchangeDelete(exchange, false);
     }
 
-    /**
-     * Public API - Declare a queue
-     * @see com.rabbitmq.client.AMQP.Queue.Declare
-     * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
-     */
+    /** Public API - {@inheritDoc} */
     public Queue.DeclareOk queueDeclare(String queue, boolean passive,
                                         boolean durable, boolean exclusive,
                                         boolean autoDelete, Map<String, Object> arguments)
@@ -483,70 +458,43 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                              exclusive, autoDelete, false, arguments)).getMethod();
     }
 
-    /**
-     * Public API - Actively declare a non-exclusive, non-autodelete queue
-     * @see com.rabbitmq.client.AMQP.Queue.Declare
-     * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
-     */
+    /** Public API - {@inheritDoc} */
     public Queue.DeclareOk queueDeclare(String queue, boolean durable)
         throws IOException
     {
         return queueDeclare(queue, false, durable, false, false, null);
     }
 
-    /**
-     * Public API - Actively declare a non-exclusive, non-autodelete, non-durable queue
-     * @see com.rabbitmq.client.AMQP.Queue.Declare
-     * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
-     */
+    /** Public API - {@inheritDoc} */
     public Queue.DeclareOk queueDeclare(String queue)
         throws IOException
     {
         return queueDeclare(queue, false, false, false, false, null);
     }
 
-    /**
-     * Public API - Actively declare a server-named exclusive,
-     * autodelete, non-durable queue. The name of the new queue is
-     * held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk}
-     * result.
-     * @see com.rabbitmq.client.AMQP.Queue.Declare
-     * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
-     */
+    /** Public API - {@inheritDoc} */
     public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclare()
         throws IOException
     {
         return queueDeclare("", false, false, true, true, null);
     }
 
-    /**
-     * Public API - Delete a queue
-     * @see com.rabbitmq.client.AMQP.Queue.Delete
-     * @see com.rabbitmq.client.AMQP.Queue.DeleteOk
-     */
+    /** Public API - {@inheritDoc} */
     public Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty)
         throws IOException
     {
         return (Queue.DeleteOk)
             exnWrappingRpc(new Queue.Delete(TICKET, queue, ifUnused, ifEmpty, false)).getMethod();
     }
-
-    /**
-     * Public API - Delete a queue, without regard for whether it is in use or has messages on it
-     * @see com.rabbitmq.client.AMQP.Queue.Delete
-     * @see com.rabbitmq.client.AMQP.Queue.DeleteOk
-     */
+    
+    /** Public API - {@inheritDoc} */
     public Queue.DeleteOk queueDelete(String queue)
-    throws IOException
+        throws IOException
     {
         return queueDelete(queue, false, false);
     }
 
-    /**
-     * Public API - Bind a queue to an exchange.
-     * @see com.rabbitmq.client.AMQP.Queue.Bind
-     * @see com.rabbitmq.client.AMQP.Queue.BindOk
-     */
+    /** Public API - {@inheritDoc} */
     public Queue.BindOk queueBind(String queue, String exchange,
                                   String routingKey, Map<String, Object> arguments)
         throws IOException
@@ -556,11 +504,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                           false, arguments)).getMethod();
     }
 
-    /**
-     * Public API - Bind a queue to an exchange, with no extra arguments.
-     * @see com.rabbitmq.client.AMQP.Queue.Bind
-     * @see com.rabbitmq.client.AMQP.Queue.BindOk
-     */
+    /** Public API - {@inheritDoc} */
     public Queue.BindOk queueBind(String queue, String exchange, String routingKey)
         throws IOException
     {
@@ -568,11 +512,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return queueBind(queue, exchange, routingKey, null);
     }
 
-    /**
-     * Public API - Unbind a queue from an exchange.
-     * @see com.rabbitmq.client.AMQP.Queue.Unbind
-     * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
-     */
+    /** Public API - {@inheritDoc} */
     public Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey,
                                       Map<String, Object> arguments)
         throws IOException
@@ -582,23 +522,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                             arguments)).getMethod();
     }
 
-    /**
-     * Public API - Unbind a queue from an exchange, with no extra arguments.
-     * @see com.rabbitmq.client.AMQP.Queue.Unbind
-     * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
-     */
+    /** Public API - {@inheritDoc} */
     public Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey)
         throws IOException
     {
         return queueUnbind(queue, exchange, routingKey, null);
     }
 
-    /**
-     * Public API - Retrieve a message from a queue using {@link com.rabbitmq.client.AMQP.Basic.Get}
-     * @see com.rabbitmq.client.AMQP.Basic.Get
-     * @see com.rabbitmq.client.AMQP.Basic.GetOk
-     * @see com.rabbitmq.client.AMQP.Basic.GetEmpty
-     */
+    /** Public API - {@inheritDoc} */
     public GetResponse basicGet(String queue, boolean noAck)
         throws IOException
     {
@@ -622,54 +553,28 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    /**
-     * Public API - Acknowledge one or several received
-     * messages. Supply the deliveryTag from the {@link com.rabbitmq.client.AMQP.Basic.GetOk}
-     * or {@link com.rabbitmq.client.AMQP.Basic.Deliver} method
-     * containing the received message being acknowledged.
-     * @see com.rabbitmq.client.AMQP.Basic.Ack
-     */
+    /** Public API - {@inheritDoc} */
     public void basicAck(long deliveryTag, boolean multiple)
         throws IOException
     {
         transmit(new Basic.Ack(deliveryTag, multiple));
     }
 
-    /**
-     * Public API - Start a non-nolocal, non-exclusive consumer, with
-     * explicit acknowledgements required and a server-generated consumerTag.
-     * @return the consumerTag generated by the server
-     * @see com.rabbitmq.client.AMQP.Basic.Consume
-     * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see #basicAck
-     * @see com.rabbitmq.client.Channel#basicConsume(String,boolean, String,boolean,boolean,com.rabbitmq.client.Consumer)
-     */
+    /** Public API - {@inheritDoc} */
     public String basicConsume(String queue, Consumer callback)
         throws IOException
     {
         return basicConsume(queue, false, callback);
     }
 
-    /**
-     * Public API - Start a non-nolocal, non-exclusive consumer, with a server-generated consumerTag.
-     * @return the consumerTag generated by the server
-     * @see com.rabbitmq.client.AMQP.Basic.Consume
-     * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see com.rabbitmq.client.Channel#basicConsume(String,boolean, String,boolean,boolean,com.rabbitmq.client.Consumer)
-     */
+    /** Public API - {@inheritDoc} */
     public String basicConsume(String queue, boolean noAck, Consumer callback)
         throws IOException
     {
         return basicConsume(queue, noAck, "", callback);
     }
 
-    /**
-     * Public API - Start a non-nolocal, non-exclusive consumer.
-     * @return the consumerTag associated with the new consumer
-     * @see com.rabbitmq.client.AMQP.Basic.Consume
-     * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see com.rabbitmq.client.Channel#basicConsume(String,boolean, String,boolean,boolean,com.rabbitmq.client.Consumer)
-     */
+    /** Public API - {@inheritDoc} */
     public String basicConsume(String queue, boolean noAck, String consumerTag,
                                Consumer callback)
         throws IOException
@@ -677,13 +582,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return basicConsume(queue, noAck, consumerTag, false, false, callback);
     }
 
-    /**
-     * Public API - Start a consumer. Calls the consumer's {@link Consumer#handleConsumeOk}
-     * method before returning.
-     * @see com.rabbitmq.client.AMQP.Basic.Consume
-     * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @return the consumerTag associated with the new consumer
-     */
+    /** Public API - {@inheritDoc} */
     public String basicConsume(String queue, boolean noAck, String consumerTag,
                                boolean noLocal, boolean exclusive,
                                final Consumer callback)
@@ -720,12 +619,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    /**
-     * Public API - Cancel a consumer. Calls the consumer's {@link Consumer#handleCancelOk}
-     * method before returning.
-     * @see com.rabbitmq.client.AMQP.Basic.Cancel
-     * @see com.rabbitmq.client.AMQP.Basic.CancelOk
-     */
+    /** Public API - {@inheritDoc} */
     public void basicCancel(final String consumerTag)
         throws IOException
     {
@@ -759,33 +653,21 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    /**
-     * Public API - Enables TX mode on this channel.
-     * @see com.rabbitmq.client.AMQP.Tx.Select
-     * @see com.rabbitmq.client.AMQP.Tx.SelectOk
-     */
+    /** Public API - {@inheritDoc} */
     public Tx.SelectOk txSelect()
         throws IOException
     {
         return (Tx.SelectOk) exnWrappingRpc(new Tx.Select()).getMethod();
     }
 
-    /**
-     * Public API - Commits a TX transaction on this channel.
-     * @see com.rabbitmq.client.AMQP.Tx.Commit
-     * @see com.rabbitmq.client.AMQP.Tx.CommitOk
-     */
+    /** Public API - {@inheritDoc} */
     public Tx.CommitOk txCommit()
         throws IOException
     {
         return (Tx.CommitOk) exnWrappingRpc(new Tx.Commit()).getMethod();
     }
 
-    /**
-     * Public API - Rolls back a TX transaction on this channel.
-     * @see com.rabbitmq.client.AMQP.Tx.Rollback
-     * @see com.rabbitmq.client.AMQP.Tx.RollbackOk
-     */
+    /** Public API - {@inheritDoc} */
     public Tx.RollbackOk txRollback()
         throws IOException
     {
