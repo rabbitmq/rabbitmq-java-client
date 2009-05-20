@@ -56,7 +56,7 @@ public class UnroutableMessageExchange extends BrokerTestCase
         return expected;
     }
 
-    protected void setUp() throws IOException {
+    @Override protected void setUp() throws IOException {
         super.setUp();
         channel.setReturnListener(new ReturnListener() {
                 public void handleBasicReturn(int replyCode,
@@ -69,6 +69,18 @@ public class UnroutableMessageExchange extends BrokerTestCase
                     gotReturn.set(true);
                 }
             });
+    }
+
+    @Override protected void createResources() throws IOException {
+        for (String q : resources) {
+            channel.queueDeclare(q);
+        }
+    }
+
+    @Override protected void releaseResources() throws IOException {
+        for (String q : resources) {
+            channel.queueDelete(q);
+        }
     }
 
     protected void setupRouting(String x, String ume) throws IOException {
@@ -122,10 +134,6 @@ public class UnroutableMessageExchange extends BrokerTestCase
 
     public void testUme() throws IOException {
 
-        for (String q : resources) {
-            channel.queueDeclare(q, false, false, true, false, null);
-        }
-
         //check various cases of missing UMEs - we expect to see some
         //warnings in the server logs
 
@@ -167,11 +175,22 @@ public class UnroutableMessageExchange extends BrokerTestCase
         }
 
         //cleanup
-        for (String r : resources) {
-            channel.exchangeDelete(r);
-            channel.queueDelete(r);
+        for (String e : resources) {
+            channel.exchangeDelete(e);
         }
 
+    }
+
+    public void testCycleBreaking() throws IOException {
+        setupRouting("x", "u");
+        setupRouting("u", "v");
+        setupRouting("v", "x");
+
+        check("z", false);
+
+        for (String e : resources) {
+            channel.exchangeDelete(e);
+        }
     }
 
 }
