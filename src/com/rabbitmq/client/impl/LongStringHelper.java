@@ -71,17 +71,20 @@ public class LongStringHelper
            return Arrays.hashCode(this.bytes);
         }
 
+        /** {@inheritDoc} */
         public byte[] getBytes()
         {
             return bytes;
         }
 
+        /** {@inheritDoc} */
         public DataInputStream getStream()
             throws IOException
         {
             return new DataInputStream(new ByteArrayInputStream(bytes));
         }
 
+        /** {@inheritDoc} */
         public long length()
         {
             return bytes.length;
