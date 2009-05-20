@@ -148,15 +148,9 @@ public class UnroutableMessageExchange extends BrokerTestCase
             //ordinary
             check(k, false);
             //mandatory
-            check(k, true, false, !k.equals("x"));
+            check(k, true, false, k.equals("z"));
             //immediate
-            check(k, false, true, k.equals("x") ? unrouted : expected(k), true);
-            /*            
-            if (k.equals("x"))
-                check(k, false, true, unrouted, true);
-            else
-                check(k, false, true, true);
-            */
+            check(k, false, true, unrouted, true);
         }
 
         //tx
