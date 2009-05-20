@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Map;
 import java.util.HashMap;
 
-public class UnroutableMessageExchange extends BrokerTestCase
+public class AlternateExchange extends BrokerTestCase
 {
 
     static private String[] resources = new String[]{"x","u","v"};
@@ -83,9 +83,9 @@ public class UnroutableMessageExchange extends BrokerTestCase
         }
     }
 
-    protected void setupRouting(String x, String ume) throws IOException {
+    protected void setupRouting(String x, String ae) throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
-        if (ume != null) args.put("ume", ume);
+        if (ae != null) args.put("alternate-exchange", ae);
         channel.exchangeDeclare(x, "direct", false, false, false, args);
         channel.queueBind(x, x, x);
     }
@@ -93,7 +93,7 @@ public class UnroutableMessageExchange extends BrokerTestCase
     protected void publish(String key, boolean mandatory, boolean immediate)
         throws IOException {
         channel.basicPublish("x", key, mandatory, immediate, null,
-                             "ume-test".getBytes());
+                             "ae-test".getBytes());
     }
 
     protected void publish(String key) throws IOException {
@@ -132,9 +132,9 @@ public class UnroutableMessageExchange extends BrokerTestCase
         check(key, false, false, ret);
     }
 
-    public void testUme() throws IOException {
+    public void testAe() throws IOException {
 
-        //check various cases of missing UMEs - we expect to see some
+        //check various cases of missing AEs - we expect to see some
         //warnings in the server logs
 
         boolean unrouted[] = new boolean[] {false, false, false};
@@ -151,7 +151,7 @@ public class UnroutableMessageExchange extends BrokerTestCase
         check("v", false);           //no warning
         check("z", unrouted, false); //no warning
 
-        //routing with UMEs in place
+        //routing with AEs in place
         for (String k : keys) {
             //ordinary
             check(k, false);

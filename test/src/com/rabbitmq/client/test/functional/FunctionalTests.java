@@ -49,7 +49,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(Bug20004Test.class);
         suite.addTestSuite(QosTests.class);
         suite.addTestSuite(Permissions.class);
-        suite.addTestSuite(UnroutableMessageExchange.class);
+        suite.addTestSuite(AlternateExchange.class);
         return suite;
     }
 }
