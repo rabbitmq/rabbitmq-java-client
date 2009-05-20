@@ -140,14 +140,17 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public int _heartbeat;
 
+    /** {@inheritDoc} */
     public String getHost() {
         return _frameHandler.getHost();
     }
 
+    /** {@inheritDoc} */
     public int getPort() {
         return _frameHandler.getPort();
     }
 
+    /** {@inheritDoc} */
     public ConnectionParameters getParameters() {
         return _params;
     }
@@ -198,9 +201,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         AMQCommand.checkEmptyContentBodyFrameSize();
     }
 
-    /**
-     * @see com.rabbitmq.client.Connection#getChannelMax()
-     */
+    /** {@inheritDoc} */
     public int getChannelMax() {
         return _channelManager.getChannelMax();
     }
@@ -212,9 +213,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _channelManager.setChannelMax(value);
     }
 
-    /**
-     * @see com.rabbitmq.client.Connection#getFrameMax()
-     */
+    /** {@inheritDoc} */
     public int getFrameMax() {
         return _frameMax;
     }
@@ -227,9 +226,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _frameMax = value;
     }
 
-    /**
-     * @see com.rabbitmq.client.Connection#getHeartbeat()
-     */
+    /** {@inheritDoc} */
     public int getHeartbeat() {
         return _heartbeat;
     }
@@ -257,18 +254,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _exceptionHandler;
     }
 
-    /**
-     * Public API - creates a new channel using the specified channel number.
-     */
-
+    /** Public API - {@inheritDoc} */
     public Channel createChannel(int channelNumber) throws IOException {
         ensureIsOpen();
         return _channelManager.createChannel(this, channelNumber);
     }
 
-    /**
-     * Public API - creates a new channel using an internally allocated channel number.
-     */
+    /** Public API - {@inheritDoc} */
     public Channel createChannel() throws IOException {
         ensureIsOpen();
         return _channelManager.createChannel(this);
@@ -594,45 +586,53 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return sse;
     }
 
+    /** Public API - {@inheritDoc} */
     public void close()
         throws IOException
     {
         close(-1);
     }
 
+    /** Public API - {@inheritDoc} */
     public void close(int timeout)
         throws IOException
     {
         close(AMQP.REPLY_SUCCESS, "OK", timeout);
     }
 
+    /** Public API - {@inheritDoc} */
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
         close(closeCode, closeMessage, -1);
     }
 
+    /** Public API - {@inheritDoc} */
     public void close(int closeCode, String closeMessage, int timeout)
         throws IOException
     {
         close(closeCode, closeMessage, true, null, timeout, false);
     }
 
+    /** Public API - {@inheritDoc} */
     public void abort()
     {
         abort(-1);
     }
 
+    /** Public API - {@inheritDoc} */
     public void abort(int closeCode, String closeMessage)
     {
        abort(closeCode, closeMessage, -1);
     }
 
+    /** Public API - {@inheritDoc} */
     public void abort(int timeout)
     {
         abort(AMQP.REPLY_SUCCESS, "OK", timeout);
     }
 
+    /** Public API - {@inheritDoc} */
     public void abort(int closeCode, String closeMessage, int timeout)
     {
         try {
@@ -641,7 +641,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             Utility.emptyStatement();
         }
     }
-    
+
+    /** 
+     * Protected API - Delegates to {@link
+     * #close(int,String,boolean,Throwable,int,boolean) the
+     * six-argument close method}, passing 0 for the timeout, and
+     * false for the abort flag.
+     */
     public void close(int closeCode,
                       String closeMessage,
                       boolean initiatedByApplication,
