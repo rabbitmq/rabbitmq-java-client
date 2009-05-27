@@ -36,10 +36,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
-
-import com.rabbitmq.client.MalformedFrameException;
 
 /**
  * Parses AMQP wire-protocol {@link Method} arguments from a
@@ -48,20 +45,8 @@ import com.rabbitmq.client.MalformedFrameException;
  */
 public class MethodArgumentReader
 {
-    private static final long INT_MASK = 0xffffffff;
-
-    /**
-     * Protected API - Cast an int to a long without extending the
-     * sign bit of the int out into the high half of the long.
-     */
-    protected static long unsignedExtend(int value)
-    {
-        long extended = value;
-        return extended & INT_MASK;
-    }
-
     /** The stream we are reading from. */
-    private final DataInputStream in;
+    private final ValueReader in;
     /** If we are reading one or more bits, holds the current packed collection of bits */
     private int bits;
     /** If we are reading one or more bits, keeps track of which bit position we are reading from */
@@ -82,17 +67,8 @@ public class MethodArgumentReader
      */
     public MethodArgumentReader(DataInputStream in)
     {
-        this.in = in;
+        this.in = new ValueReader(in);
         clearBits();
-    }
-
-    /** Public API - convenience method - reads a short string from a DataInputStream. */
-    public static final String readShortstr(DataInputStream in)
-        throws IOException
-    {
-        byte [] b = new byte[in.readUnsignedByte()];
-        in.readFully(b);
-        return new String(b, "utf-8");
     }
 
     /** Public API - reads a short string argument. */
@@ -100,22 +76,7 @@ public class MethodArgumentReader
         throws IOException
     {
         clearBits();
-        return readShortstr(this.in);
-    }
-
-    /** Public API - convenience method - reads a long string argument from a DataInputStream. */
-    public static final LongString readLongstr(final DataInputStream in)
-        throws IOException
-    {
-        final long contentLength = unsignedExtend(in.readInt());
-        if(contentLength < Integer.MAX_VALUE) {
-            final byte [] buffer = new byte[(int)contentLength];
-            in.readFully(buffer);
-
-            return LongStringHelper.asLongString(buffer);
-        }
-            throw new UnsupportedOperationException
-                ("Very long strings not currently supported");
+        return in.readShortstr();
     }
 
     /** Public API - reads a long string argument. */
@@ -123,7 +84,7 @@ public class MethodArgumentReader
         throws IOException
     {
         clearBits();
-        return readLongstr(this.in);
+        return in.readLongstr();
     }
 
     /** Public API - reads a short integer argument. */
@@ -131,7 +92,7 @@ public class MethodArgumentReader
         throws IOException
     {
         clearBits();
-        return in.readUnsignedShort();
+        return in.readShort();
     }
 
     /** Public API - reads an integer argument. */
@@ -139,7 +100,7 @@ public class MethodArgumentReader
         throws IOException
     {
         clearBits();
-        return in.readInt();
+        return in.readLong();
     }
 
     /** Public API - reads a long integer argument. */
@@ -147,7 +108,7 @@ public class MethodArgumentReader
         throws IOException
     {
         clearBits();
-        return in.readLong();
+        return in.readLonglong();
     }
 
     /** Public API - reads a bit/boolean argument. */
@@ -155,7 +116,7 @@ public class MethodArgumentReader
         throws IOException
     {
         if (bit > 0x80) {
-            bits = in.readUnsignedByte();
+            bits = in.readOctet();
             bit = 0x01;
         }
 
@@ -169,53 +130,7 @@ public class MethodArgumentReader
         throws IOException
     {
         clearBits();
-        return readTable(this.in);
-    }
-
-    /**
-     * Public API - reads a table argument from a given stream. Also
-     * called by {@link ContentHeaderPropertyReader}.
-     */
-    public static final Map<String, Object> readTable(DataInputStream in)
-        throws IOException
-    {
-        Map<String, Object> table = new HashMap<String, Object>();
-        long tableLength = unsignedExtend(in.readInt());
-
-        DataInputStream tableIn = new DataInputStream
-            (new TruncatedInputStream(in, tableLength));
-        Object value = null;
-        while(tableIn.available() > 0) {
-            String name = readShortstr(tableIn);
-            switch(tableIn.readUnsignedByte()) {
-            case 'S':
-                value = readLongstr(tableIn);
-                break;
-            case 'I':
-                value = tableIn.readInt();
-                break;
-            case 'D':
-                int scale = tableIn.readUnsignedByte();
-                byte [] unscaled = new byte[4];
-                tableIn.readFully(unscaled);
-                value = new BigDecimal(new BigInteger(unscaled), scale);
-                break;
-            case 'T':
-                value = readTimestamp(tableIn);
-                break;
-            case 'F':
-                value = readTable(tableIn);
-                break;
-            default:
-                throw new MalformedFrameException
-                    ("Unrecognised type in table");
-            }
-
-            if(!table.containsKey(name))
-                table.put(name, value);
-        }
-
-        return table;
+        return in.readTable();
     }
 
     /** Public API - reads an octet argument. */
@@ -223,14 +138,7 @@ public class MethodArgumentReader
         throws IOException
     {
         clearBits();
-        return in.readUnsignedByte();
-    }
-
-    /** Public API - convenience method - reads a timestamp argument from the DataInputStream. */
-    public static final Date readTimestamp(DataInputStream in)
-        throws IOException
-    {
-        return new Date(in.readLong()*1000);
+        return in.readOctet();
     }
 
     /** Public API - reads an timestamp argument. */
@@ -238,6 +146,6 @@ public class MethodArgumentReader
         throws IOException
     {
         clearBits();
-        return readTimestamp(this.in);
+        return in.readTimestamp();
     }
 }
