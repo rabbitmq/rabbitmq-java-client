@@ -225,26 +225,25 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testUmeConfiguration()
+    public void testAltExchConfiguration()
         throws IOException
     {
         runTest(false, false, false,
-                createUmeConfigTest("configure-me"));
+                createAltExchConfigTest("configure-me"));
         runTest(false, false, false,
-                createUmeConfigTest("configure-and-write-me"));
+                createAltExchConfigTest("configure-and-write-me"));
         runTest(false, true, false,
-                createUmeConfigTest("configure-and-read-me"));
+                createAltExchConfigTest("configure-and-read-me"));
     }
 
-    protected WithName createUmeConfigTest(final String exchange)
+    protected WithName createAltExchConfigTest(final String exchange)
         throws IOException
     {
         return new WithName() {
-            public void with(String ume) throws IOException {
+            public void with(String ae) throws IOException {
                 Map<String, Object> args = new HashMap<String, Object>();
-                args.put("ume", ume);
-                channel.exchangeDeclare(exchange, "direct",
-                                        false, false, false, args);
+                args.put("alternate-exchange", ae);
+                channel.exchangeDeclare(exchange, "direct", false, false, false, args);
                 channel.exchangeDelete(exchange);
             }};
     }
