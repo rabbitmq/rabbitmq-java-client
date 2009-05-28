@@ -46,8 +46,20 @@ public class AlternateExchange extends BrokerTestCase
     static private String[] resources = new String[]{"x","u","v"};
     static private String[] keys      = new String[]{"x","u","v","z"};
 
+    static private boolean unrouted[] = new boolean[] {false, false, false};
+
     private AtomicBoolean gotReturn = new AtomicBoolean();
 
+    /**
+     * Determine which of the queues in our test configuration we
+     * expect a message with routing key <code>key</code> to get
+     * delivered to: the queue (if any) named <code>key</code>.
+     *
+     * @param key the routing key of the message
+     * @return an array of booleans that when zipped with {@link
+     *         #resources} indicates whether the messages is expected to be
+     *         routed to the respective queue
+     */
     private static boolean[] expected(String key) {
         boolean[] expected = new boolean[resources.length];
         for (int i = 0; i < resources.length; i++) {
@@ -83,11 +95,33 @@ public class AlternateExchange extends BrokerTestCase
         }
     }
 
-    protected void setupRouting(String x, String ae) throws IOException {
+    /**
+     * Declare an direct exchange <code>name</code> with an
+     * alternate-exchange <code>ae</code> and bind the queue
+     * <code>name</code> to it with a binding key of
+     * <code>name</code>.
+     *
+     * @param name the name of the exchange to be created, and queue
+     *        to be bound
+     * @param ae the name of the alternate-exchage
+     */
+    protected void setupRouting(String name, String ae) throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         if (ae != null) args.put("alternate-exchange", ae);
-        channel.exchangeDeclare(x, "direct", false, false, false, args);
-        channel.queueBind(x, x, x);
+        channel.exchangeDeclare(name, "direct", false, false, false, args);
+        channel.queueBind(name, name, name);
+    }
+
+    protected void setupRouting() throws IOException {
+        setupRouting("x", "u");
+        setupRouting("u", "v");
+        setupRouting("v", "x");
+    }
+
+    protected void cleanup() throws IOException {
+        for (String e : resources) {
+            channel.exchangeDelete(e);
+        }
     }
 
     protected void publish(String key, boolean mandatory, boolean immediate)
@@ -100,6 +134,15 @@ public class AlternateExchange extends BrokerTestCase
         publish(key, false, false);
     }
 
+    /**
+     * Perform an auto-acking 'basic.get' on each of the queues named
+     * in {@link #resources} and check whether a message can be
+     * retrieved when expected.
+     *
+     * @param expected an array of booleans that is zipped with {@link
+     *        #resources} and indicates whether a messages is expected
+     *        to be retrievable from the respective queue
+     */
     protected void checkGet(boolean[] expected) throws IOException {
         for (int i = 0; i < resources.length; i++) {
             String q = resources[i];
@@ -108,6 +151,24 @@ public class AlternateExchange extends BrokerTestCase
         }
     }
 
+    /**
+     * Test whether a message is routed as expected.
+     *
+     * We publish a message to exchange 'x' with a routing key of
+     * <code>key</code>, check whether the message (actually, any
+     * message) can be retrieved from the queues named in {@link
+     * #resources} when expected, and whether a 'basic.return' is
+     * received when expected.
+     *
+     * @param key the routing key of the message to be sent
+     * @param mandatory whether the message should be marked as 'mandatory'
+     * @param immediate whether the message should be marked as 'immediate'
+     * @param expected indicates which queues we expect the message to
+     *        get routed to
+     * @param ret whether a 'basic.return' is expected
+     *
+     * @see #checkGet(boolean[])
+     */
     protected void check(String key, boolean mandatory, boolean immediate,
                          boolean[] expected, boolean ret)
         throws IOException {
@@ -132,13 +193,11 @@ public class AlternateExchange extends BrokerTestCase
         check(key, false, false, ret);
     }
 
-    public void testAe() throws IOException {
-
-        //check various cases of missing AEs - we expect to see some
-        //warnings in the server logs
-
-        boolean unrouted[] = new boolean[] {false, false, false};
-
+    /**
+     * check various cases of missing AEs - we expect to see some
+     * warnings in the server logs
+     */
+    public void testMissing() throws IOException {
         setupRouting("x", "u");
         check("x", false);           //no warning
         check("u", unrouted, false); //warning
@@ -151,7 +210,12 @@ public class AlternateExchange extends BrokerTestCase
         check("v", false);           //no warning
         check("z", unrouted, false); //no warning
 
-        //routing with AEs in place
+        cleanup();
+    }
+
+    public void testAe() throws IOException {
+        setupRouting();
+
         for (String k : keys) {
             //ordinary
             check(k, false);
@@ -174,23 +238,13 @@ public class AlternateExchange extends BrokerTestCase
             checkGet(expected(k));
         }
 
-        //cleanup
-        for (String e : resources) {
-            channel.exchangeDelete(e);
-        }
-
+        cleanup();
     }
 
     public void testCycleBreaking() throws IOException {
-        setupRouting("x", "u");
-        setupRouting("u", "v");
-        setupRouting("v", "x");
-
+        setupRouting();
         check("z", false);
-
-        for (String e : resources) {
-            channel.exchangeDelete(e);
-        }
+        cleanup();
     }
 
 }
