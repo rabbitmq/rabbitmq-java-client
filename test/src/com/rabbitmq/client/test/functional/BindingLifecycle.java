@@ -48,8 +48,6 @@ import java.io.IOException;
  * primary node is still running. That way we exercise any node-down
  * handler code in the server.
  *
- * TODO: Adjust this test when Queue.Unbind is implemented in the
- * server
  */
 public class BindingLifecycle extends PersisterRestartBase {
 
@@ -203,9 +201,7 @@ public class BindingLifecycle extends PersisterRestartBase {
 
         // Nuke the queue and repeat this test, this time you expect
         // nothing to get routed.
-        //
-        // TODO: When unbind is implemented, use that instead of
-        // deleting and re-creating the queue
+
         channel.queueDelete(binding.q);
         channel.queueDeclare(binding.q, durable);
 
