@@ -325,8 +325,7 @@ public class BindingLifecycle extends PersisterRestartBase {
             new Binding("unknown_queue", b.x, b.k),
             new Binding(b.q, "unknown_exchange", b.k),
             new Binding("unknown_unknown", "exchange_queue", b.k),
-            // see bug 20633
-            // new Binding(b.q, b.x, "unknown_rk"),
+            new Binding(b.q, b.x, "unknown_rk"),
             new Binding("unknown_queue", "unknown_exchange", "unknown_rk")
         };
 
