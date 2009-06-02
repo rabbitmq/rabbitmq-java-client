@@ -31,6 +31,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
@@ -307,6 +308,46 @@ public class BindingLifecycle extends PersisterRestartBase {
      */
     public void testExchangeAutoDeleteDurableManyBindings() throws IOException {
         doAutoDelete(true, 10);
+    }
+
+    /**
+     * Test the behaviour of queue.unbind
+     */
+    public void testUnbind() throws Exception {
+
+        Binding b = new Binding(channel.queueDeclare().getQueue(),
+                                "amq.direct",
+                                "quay");
+
+        // failure cases
+
+        Binding[] tests = new Binding[] {
+            new Binding("unknown_queue", b.x, b.k),
+            new Binding(b.q, "unknown_exchange", b.k),
+            new Binding("unknown_unknown", "exchange_queue", b.k),
+            // see bug 20633
+            // new Binding(b.q, b.x, "unknown_rk"),
+            new Binding("unknown_queue", "unknown_exchange", "unknown_rk")
+        };
+
+        for (int i = 0; i < tests.length; i++) {
+
+            Binding test = tests[i];
+            try {
+                channel.queueUnbind(test.q, test.x, test.k);
+                fail("expected not_found in test " + i);
+            } catch (IOException ee) {
+                checkShutdownSignal(AMQP.NOT_FOUND, ee);
+                openChannel();
+            }
+        }
+
+        // success case
+
+        channel.queueBind(b.q, b.x, b.k);
+        sendRoutable(b);
+        channel.queueUnbind(b.q, b.x, b.k);
+        sendUnroutable(b);
     }
 
     private void doAutoDelete(boolean durable, int queues) throws IOException {
