@@ -350,7 +350,7 @@ public class BindingLifecycle extends PersisterRestartBase {
             for (String s : queueNames) {
                 channel.basicConsume(s, true,
                                      new QueueingConsumer(channel));
-                Binding tmp = new Binding(binding.x, s, binding.k);
+                Binding tmp = new Binding(s, binding.x, binding.k);
                 sendUnroutable(tmp);
             }
         }
@@ -410,15 +410,15 @@ public class BindingLifecycle extends PersisterRestartBase {
 
     private static class Binding {
 
-        String x, q, k;
+        String q, x, k;
 
         static Binding randomBinding() {
             return new Binding(randomString(), randomString(), randomString());
         }
 
-        private Binding(String x, String q, String k) {
-            this.x = x;
+        private Binding(String q, String x, String k) {
             this.q = q;
+            this.x = x;
             this.k = k;
         }
     }
