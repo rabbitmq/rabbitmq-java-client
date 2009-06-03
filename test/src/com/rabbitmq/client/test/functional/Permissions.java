@@ -243,7 +243,7 @@ public class Permissions extends BrokerTestCase
             public void with(String ae) throws IOException {
                 Map<String, Object> args = new HashMap<String, Object>();
                 args.put("alternate-exchange", ae);
-                channel.exchangeDeclare(exchange, "direct", false, false, false, args);
+                channel.exchangeDeclare(exchange, "direct", false, false, args);
                 channel.exchangeDelete(exchange);
             }};
     }
