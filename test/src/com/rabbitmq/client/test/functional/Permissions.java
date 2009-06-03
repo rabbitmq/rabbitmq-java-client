@@ -32,6 +32,8 @@
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -221,6 +223,29 @@ public class Permissions extends BrokerTestCase
                 public void with(String name) throws IOException {
                     ((AMQChannel)channel).exnWrappingRpc(new AMQImpl.Queue.Purge(0, name, false));
                 }});
+    }
+
+    public void testAltExchConfiguration()
+        throws IOException
+    {
+        runTest(false, false, false,
+                createAltExchConfigTest("configure-me"));
+        runTest(false, false, false,
+                createAltExchConfigTest("configure-and-write-me"));
+        runTest(false, true, false,
+                createAltExchConfigTest("configure-and-read-me"));
+    }
+
+    protected WithName createAltExchConfigTest(final String exchange)
+        throws IOException
+    {
+        return new WithName() {
+            public void with(String ae) throws IOException {
+                Map<String, Object> args = new HashMap<String, Object>();
+                args.put("alternate-exchange", ae);
+                channel.exchangeDeclare(exchange, "direct", false, false, false, args);
+                channel.exchangeDelete(exchange);
+            }};
     }
 
     protected void runConfigureTest(WithName test)
