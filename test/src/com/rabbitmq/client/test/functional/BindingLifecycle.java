@@ -31,6 +31,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
@@ -48,8 +49,6 @@ import java.io.IOException;
  * primary node is still running. That way we exercise any node-down
  * handler code in the server.
  *
- * TODO: Adjust this test when Queue.Unbind is implemented in the
- * server
  */
 public class BindingLifecycle extends PersisterRestartBase {
 
@@ -203,9 +202,7 @@ public class BindingLifecycle extends PersisterRestartBase {
 
         // Nuke the queue and repeat this test, this time you expect
         // nothing to get routed.
-        //
-        // TODO: When unbind is implemented, use that instead of
-        // deleting and re-creating the queue
+
         channel.queueDelete(binding.q);
         channel.queueDeclare(binding.q, durable);
 
@@ -313,6 +310,45 @@ public class BindingLifecycle extends PersisterRestartBase {
         doAutoDelete(true, 10);
     }
 
+    /**
+     * Test the behaviour of queue.unbind
+     */
+    public void testUnbind() throws Exception {
+
+        Binding b = new Binding(channel.queueDeclare().getQueue(),
+                                "amq.direct",
+                                "quay");
+
+        // failure cases
+
+        Binding[] tests = new Binding[] {
+            new Binding("unknown_queue", b.x, b.k),
+            new Binding(b.q, "unknown_exchange", b.k),
+            new Binding("unknown_unknown", "exchange_queue", b.k),
+            new Binding(b.q, b.x, "unknown_rk"),
+            new Binding("unknown_queue", "unknown_exchange", "unknown_rk")
+        };
+
+        for (int i = 0; i < tests.length; i++) {
+
+            Binding test = tests[i];
+            try {
+                channel.queueUnbind(test.q, test.x, test.k);
+                fail("expected not_found in test " + i);
+            } catch (IOException ee) {
+                checkShutdownSignal(AMQP.NOT_FOUND, ee);
+                openChannel();
+            }
+        }
+
+        // success case
+
+        channel.queueBind(b.q, b.x, b.k);
+        sendRoutable(b);
+        channel.queueUnbind(b.q, b.x, b.k);
+        sendUnroutable(b);
+    }
+
     private void doAutoDelete(boolean durable, int queues) throws IOException {
 
         String[] queueNames = null;
@@ -350,7 +386,7 @@ public class BindingLifecycle extends PersisterRestartBase {
             for (String s : queueNames) {
                 channel.basicConsume(s, true,
                                      new QueueingConsumer(channel));
-                Binding tmp = new Binding(binding.x, s, binding.k);
+                Binding tmp = new Binding(s, binding.x, binding.k);
                 sendUnroutable(tmp);
             }
         }
@@ -410,15 +446,15 @@ public class BindingLifecycle extends PersisterRestartBase {
 
     private static class Binding {
 
-        String x, q, k;
+        String q, x, k;
 
         static Binding randomBinding() {
             return new Binding(randomString(), randomString(), randomString());
         }
 
-        private Binding(String x, String q, String k) {
-            this.x = x;
+        private Binding(String q, String x, String k) {
             this.q = q;
+            this.x = x;
             this.k = k;
         }
     }
