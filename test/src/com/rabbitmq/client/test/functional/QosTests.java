@@ -138,9 +138,10 @@ public class QosTests extends BrokerTestCase
         channel.basicQos(1);
         QueueingConsumer c1 = new QueueingConsumer(channel);
         declareBindConsume(channel, c1, false);
-        fill(2);
+        fill(1);
         QueueingConsumer c2 = new QueueingConsumer(channel);
         declareBindConsume(channel, c2, true);
+        fill(1);
         try {
             Delivery d = c2.nextDelivery(1000);
             assertNull(d);
@@ -148,8 +149,10 @@ public class QosTests extends BrokerTestCase
             fail("interrupted");
         }
         Queue<Delivery> d = drain(c1, 1);
+        ack(d, false); // must ack before the next one appears
+        d = drain(c1, 1);
         ack(d, false);
-        // we have no guarantees about where the other message has gone
+        drain(c2, 1);
     }
 
     public void testPermutations()
