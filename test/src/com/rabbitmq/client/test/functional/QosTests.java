@@ -38,11 +38,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
+
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.Envelope;
 
 public class QosTests extends BrokerTestCase
 {
@@ -199,6 +206,51 @@ public class QosTests extends BrokerTestCase
             assertTrue(ok.getMessageCount() < messageCount);
         }
             
+    }
+
+    public void testRoundRobin()
+        throws IOException
+    {
+        //check that when we have multiple consumers on the same
+        //channel & queue, and a prefetch limit set, that all
+        //consumers get a fair share of the messages
+
+        channel.basicQos(1);
+        String q = channel.queueDeclare().getQueue();
+        channel.queueBind(q, "amq.fanout", "");
+
+        final Map<String, Integer> counts =
+            Collections.synchronizedMap(new HashMap<String, Integer>());
+
+        QueueingConsumer c = new QueueingConsumer(channel) {
+                @Override public void handleDelivery(String consumerTag,
+                                                     Envelope envelope,
+                                                     AMQP.BasicProperties properties,
+                                                     byte[] body)
+                    throws IOException {
+                    counts.put(consumerTag, counts.get(consumerTag) + 1);
+                    super.handleDelivery(consumerTag, envelope,
+                                         properties, body);
+                }
+            };
+
+        channel.basicConsume(q, false, "c1", c);
+        channel.basicConsume(q, false, "c2", c);
+
+        int count = 4;
+        counts.put("c1", 0);
+        counts.put("c2", 0);
+        fill(count);
+        try {
+            for (int i = 0; i < count; i++) {
+                Delivery d = c.nextDelivery();
+                channel.basicAck(d.getEnvelope().getDeliveryTag(), false);
+            }
+        } catch (InterruptedException ie) {
+            fail("interrupted");
+        }
+        assertEquals(count / 2, counts.get("c1").intValue());
+        assertEquals(count / 2, counts.get("c2").intValue());
     }
 
     public void testConsumerLifecycle()
