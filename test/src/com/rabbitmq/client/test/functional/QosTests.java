@@ -32,19 +32,17 @@
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
-import com.rabbitmq.client.ShutdownSignalException;
-
-import com.rabbitmq.client.AMQP;
 
 public class QosTests extends BrokerTestCase
 {
@@ -124,7 +122,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 2);
     }
 
-    public void testNoAckUnlimited()
+    public void testNoAckNoAlterLimit()
         throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
@@ -132,6 +130,29 @@ public class QosTests extends BrokerTestCase
         channel.basicQos(1);
         fill(2);
         drain(c, 2);
+    }
+
+    public void testNoAckObeysLimit()
+        throws IOException
+    {
+        channel.basicQos(1);
+        QueueingConsumer c1 = new QueueingConsumer(channel);
+        declareBindConsume(channel, c1, false);
+        fill(1);
+        QueueingConsumer c2 = new QueueingConsumer(channel);
+        declareBindConsume(channel, c2, true);
+        fill(1);
+        try {
+            Delivery d = c2.nextDelivery(1000);
+            assertNull(d);
+        } catch (InterruptedException ie) {
+            fail("interrupted");
+        }
+        Queue<Delivery> d = drain(c1, 1);
+        ack(d, false); // must ack before the next one appears
+        d = drain(c1, 1);
+        ack(d, false);
+        drain(c2, 1);
     }
 
     public void testPermutations()
