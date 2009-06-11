@@ -221,6 +221,7 @@ public class QosTests extends BrokerTestCase
 
         final Map<String, Integer> counts =
             Collections.synchronizedMap(new HashMap<String, Integer>());
+        final String [] nextTag = new String[] { null };
 
         QueueingConsumer c = new QueueingConsumer(channel) {
                 @Override public void handleDelivery(String consumerTag,
@@ -228,6 +229,10 @@ public class QosTests extends BrokerTestCase
                                                      AMQP.BasicProperties properties,
                                                      byte[] body)
                     throws IOException {
+                    String otherConsumerTag = "c1".equals(consumerTag) ? "c2" : "c1";
+                    if (null != nextTag[0])
+                        assertEquals(consumerTag, nextTag[0]);
+                    nextTag[0] = otherConsumerTag;
                     counts.put(consumerTag, counts.get(consumerTag) + 1);
                     super.handleDelivery(consumerTag, envelope,
                                          properties, body);
