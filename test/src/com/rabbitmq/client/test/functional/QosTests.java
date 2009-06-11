@@ -208,12 +208,12 @@ public class QosTests extends BrokerTestCase
             
     }
 
-    public void testRoundRobin()
+    public void testSingleChannelAndQueueFairness()
         throws IOException
     {
         //check that when we have multiple consumers on the same
         //channel & queue, and a prefetch limit set, that all
-        //consumers get a fair share of the messages
+        //consumers get a fair share of the messages.
 
         channel.basicQos(1);
         String q = channel.queueDeclare().getQueue();
@@ -221,7 +221,6 @@ public class QosTests extends BrokerTestCase
 
         final Map<String, Integer> counts =
             Collections.synchronizedMap(new HashMap<String, Integer>());
-        final String [] nextTag = new String[] { null };
 
         QueueingConsumer c = new QueueingConsumer(channel) {
                 @Override public void handleDelivery(String consumerTag,
@@ -229,10 +228,6 @@ public class QosTests extends BrokerTestCase
                                                      AMQP.BasicProperties properties,
                                                      byte[] body)
                     throws IOException {
-                    String otherConsumerTag = "c1".equals(consumerTag) ? "c2" : "c1";
-                    if (null != nextTag[0])
-                        assertEquals(consumerTag, nextTag[0]);
-                    nextTag[0] = otherConsumerTag;
                     counts.put(consumerTag, counts.get(consumerTag) + 1);
                     super.handleDelivery(consumerTag, envelope,
                                          properties, body);
@@ -242,7 +237,7 @@ public class QosTests extends BrokerTestCase
         channel.basicConsume(q, false, "c1", c);
         channel.basicConsume(q, false, "c2", c);
 
-        int count = 4;
+        int count = 10;
         counts.put("c1", 0);
         counts.put("c2", 0);
         fill(count);
@@ -254,8 +249,12 @@ public class QosTests extends BrokerTestCase
         } catch (InterruptedException ie) {
             fail("interrupted");
         }
-        assertEquals(count / 2, counts.get("c1").intValue());
-        assertEquals(count / 2, counts.get("c2").intValue());
+
+        //we only check that the server isn't grossly unfair; perfect
+        //fairness is too much to ask for (even though RabbitMQ atm
+        //does actually provide it in this case)
+        assertTrue(counts.get("c1").intValue() > 0);
+        assertTrue(counts.get("c2").intValue() > 0);
     }
 
     public void testConsumerLifecycle()
