@@ -153,6 +153,12 @@ public class ProducerMain implements Runnable {
         String queueName = "test queue";
         String exchangeName = "test exchange";
         
+        String testQueueName = "test queue";
+        _channel.queueDeclare(testQueueName, true);
+
+        String testExchangeName = "test exchange";
+        _channel.exchangeDeclare(testExchangeName, "fanout", true);
+
         if (shouldCommit()) {
             _channel.txSelect();
         }
