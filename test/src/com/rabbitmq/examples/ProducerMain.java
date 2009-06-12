@@ -40,6 +40,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.AMQP.BasicProperties;
 
 public class ProducerMain implements Runnable {
     public static final int SUMMARY_EVERY_MS = 1000;
@@ -150,12 +151,12 @@ public class ProducerMain implements Runnable {
         _channel = _connection.createChannel();
 
         String queueName = "test queue";
-        _channel.queueDeclare(queueName, shouldPersist());
+        String exchangeName = "test exchange";
         
         if (shouldCommit()) {
             _channel.txSelect();
         }
-        sendBatch(queueName);
+        sendBatch(exchangeName, queueName);
 
         if (_sendCompletion) {
             // Declaring this exchange as auto-delete is a bit dodgy because of a
@@ -165,7 +166,7 @@ public class ProducerMain implements Runnable {
             // Hence we're delaying a possible re-declaration until as late as possible.
             // Ideally you would use a global lock around both critical sections,
             // but thread safety has gone out of fashion these days.
-            String exchangeName = "test completion";
+            exchangeName = "test completion";
             _channel.exchangeDeclare(exchangeName, "fanout", false, false, true, null);
             _channel.basicPublish(exchangeName, "", MessageProperties.BASIC, new byte[0]);
             if (shouldCommit())
@@ -187,7 +188,7 @@ public class ProducerMain implements Runnable {
         System.out.println("...starting.");
     }
 
-    public void sendBatch(String queueName) throws IOException {
+    public void sendBatch(String exchangeName, String queueName) throws IOException {
         //primeServer(queueName);
 
         long startTime = System.currentTimeMillis();
@@ -197,6 +198,9 @@ public class ProducerMain implements Runnable {
 
         long nextSummaryTime = startTime + SUMMARY_EVERY_MS;
         byte[] message = new byte[256];
+        BasicProperties props = shouldPersist() ?
+                MessageProperties.MINIMAL_PERSISTENT_BASIC :
+                    MessageProperties.MINIMAL_BASIC;
         for (int i = 0; i < _messageCount; i++) {
             ByteArrayOutputStream acc = new ByteArrayOutputStream();
             DataOutputStream d = new DataOutputStream(acc);
@@ -211,7 +215,7 @@ public class ProducerMain implements Runnable {
             acc.flush();
             byte[] message0 = acc.toByteArray();
             System.arraycopy(message0, 0, message, 0, message0.length);
-            _channel.basicPublish("", queueName, shouldPersist() ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
+            _channel.basicPublish(exchangeName, queueName, props,
                     message);
             sent++;
             if (shouldCommit()) {

@@ -109,8 +109,13 @@ public class ConsumerMain implements Runnable {
     private void runIt() throws IOException {
         Channel channel = _connection.createChannel();
 
-        String queueName = "test queue";
-        channel.queueDeclare(queueName);
+        String testQueueName = "test queue";
+        channel.queueDeclare(testQueueName, true);
+
+        String testExchangeName = "test exchange";
+        channel.exchangeDeclare(testExchangeName, "fanout", true);
+
+        channel.queueBind(testQueueName, testExchangeName, "");
 
         String exchangeName = "test completion";
         channel.exchangeDeclare(exchangeName, "fanout", false, false, true, null);
@@ -118,18 +123,21 @@ public class ConsumerMain implements Runnable {
         String completionQueue = channel.queueDeclare().getQueue();
         channel.queueBind(completionQueue, exchangeName, "");
 
-        LatencyExperimentConsumer callback = new LatencyExperimentConsumer(channel, queueName);
+        LatencyExperimentConsumer callback = new LatencyExperimentConsumer(channel, testQueueName);
         
-        channel.basicConsume(queueName, true, callback);
+        channel.basicConsume(testQueueName, true, callback);
         channel.basicConsume(completionQueue, true, "completion", callback);
         callback.report(_writeStats);
        
         System.out.println("Deleting test queue.");
-        channel.queueDelete(queueName);
+        channel.queueDelete(testQueueName);
 
         System.out.println("Deleting completion queue.");
         channel.queueDelete(completionQueue);
         
+        System.out.println("Deleting test exchange.");
+        channel.exchangeDelete(testExchangeName);
+
         System.out.println("Closing the channel.");
         channel.close();
         
