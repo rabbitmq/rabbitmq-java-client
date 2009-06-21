@@ -273,8 +273,7 @@ public class Frame {
                 acc += longStrSize((String)entry.getValue());
             }
             else if(value instanceof LongString) {
-                acc += 4;
-                acc += ((LongString)value).length();
+                acc += 4 + ((LongString)value).length();
             }
             else if(value instanceof Integer) {
                 acc += 4;
@@ -286,8 +285,30 @@ public class Frame {
                 acc += 8;
             }
             else if(value instanceof Map) {
+                acc += 4 + tableSize((Map<String, Object>) value);
+            }
+            else if (value instanceof Byte) {
+                acc += 1;
+            }
+            else if(value instanceof Double) {
+                acc += 8;
+            }
+            else if(value instanceof Float) {
                 acc += 4;
-                acc += tableSize((Map<String, Object>) value);
+            }
+            else if(value instanceof Long) {
+                acc += 8;
+            }
+            else if(value instanceof Short) {
+                acc += 2;
+            }
+            else if(value instanceof Boolean) {
+                acc += 1;
+            }
+            else if(value instanceof byte[]) {
+                acc += 4 + ((byte[])value).length;
+            }
+            else if(value == null) {
             }
             else {
                 throw new IllegalArgumentException("invalid value in table");

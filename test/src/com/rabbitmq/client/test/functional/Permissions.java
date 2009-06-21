@@ -32,6 +32,8 @@
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -223,6 +225,29 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
+    public void testAltExchConfiguration()
+        throws IOException
+    {
+        runTest(false, false, false,
+                createAltExchConfigTest("configure-me"));
+        runTest(false, false, false,
+                createAltExchConfigTest("configure-and-write-me"));
+        runTest(false, true, false,
+                createAltExchConfigTest("configure-and-read-me"));
+    }
+
+    protected WithName createAltExchConfigTest(final String exchange)
+        throws IOException
+    {
+        return new WithName() {
+            public void with(String ae) throws IOException {
+                Map<String, Object> args = new HashMap<String, Object>();
+                args.put("alternate-exchange", ae);
+                channel.exchangeDeclare(exchange, "direct", false, false, false, args);
+                channel.exchangeDelete(exchange);
+            }};
+    }
+
     protected void runConfigureTest(WithName test)
         throws IOException
     {
@@ -243,18 +268,20 @@ public class Permissions extends BrokerTestCase
     protected void runTest(boolean exp, String name, WithName test)
         throws IOException
     {
+        String msg = "'" + name + "' -> " + exp;
         try {
             test.with(name);
-            assertTrue(exp);
+            assertTrue(msg, exp);
         } catch (IOException e) {
-            assertFalse(exp);
+            assertFalse(msg, exp);
             Throwable t = e.getCause();
-            assertTrue(t instanceof ShutdownSignalException);
+            assertTrue(msg, t instanceof ShutdownSignalException);
             Object r = ((ShutdownSignalException)t).getReason();
-            assertTrue(r instanceof Command);
+            assertTrue(msg, r instanceof Command);
             Method m = ((Command)r).getMethod();
-            assertTrue(m instanceof AMQP.Channel.Close);
-            assertEquals(AMQP.ACCESS_REFUSED,
+            assertTrue(msg, m instanceof AMQP.Channel.Close);
+            assertEquals(msg,
+                         AMQP.ACCESS_REFUSED,
                          ((AMQP.Channel.Close)m).getReplyCode());
             //This fails due to bug 20296
             //openChannel();

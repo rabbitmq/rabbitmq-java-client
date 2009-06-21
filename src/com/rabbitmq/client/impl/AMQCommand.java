@@ -100,17 +100,17 @@ public class AMQCommand implements Command {
         setContentBody(body);
     }
 
-    /** Public API - Retrieve the Command's method. */
+    /** Public API - {@inheritDoc} */
     public Method getMethod() {
         return _method;
     }
 
-    /** Public API - Retrieve the Command's ContentHeader. */
+    /** Public API - {@inheritDoc} */
     public ContentHeader getContentHeader() {
         return _contentHeader;
     }
 
-    /** Public API - Retrieve the Command's content body. */
+    /** Public API - {@inheritDoc} */
     public byte[] getContentBody() {
         if (_bodyN != null) {
             coalesceContentBody();

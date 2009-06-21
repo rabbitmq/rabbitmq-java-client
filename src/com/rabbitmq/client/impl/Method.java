@@ -42,13 +42,13 @@ import com.rabbitmq.client.impl.AMQImpl.MethodVisitor;
  * code in AMQP.java.
  */
 public abstract class Method implements com.rabbitmq.client.Method {
-    /** Gets the class ID of this Method */
+    /** {@inheritDoc} */
     public abstract int protocolClassId(); /* properly an unsigned short */
 
-    /** Gets the method ID of this Method */
+    /** {@inheritDoc} */
     public abstract int protocolMethodId(); /* properly an unsigned short */
 
-    /** Gets the method name of this Method */
+    /** {@inheritDoc} */
     public abstract String protocolMethodName();
 
     /**
