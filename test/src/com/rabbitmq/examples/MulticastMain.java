@@ -124,7 +124,7 @@ public class MulticastMain {
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
-                channel.exchangeDeclare(exchangeName, exchangeType);
+                channel.exchangeDeclare(exchangeName, exchangeType, false, true, true, null);
                 Thread t = 
                     new Thread(new Producer(channel, exchangeName, id,
                                             flags, producerTxSize,
