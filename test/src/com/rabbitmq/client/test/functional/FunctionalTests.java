@@ -37,6 +37,8 @@ import junit.framework.TestSuite;
 public class FunctionalTests extends TestCase {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("functional");
+        suite.addTestSuite(Tables.class);
+        suite.addTestSuite(DoubleDeletion.class);
         suite.addTestSuite(Routing.class);
         suite.addTestSuite(BindingLifecycle.class);
         suite.addTestSuite(Transactions.class);
@@ -45,8 +47,10 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(RequeueOnChannelClose.class);
         suite.addTestSuite(DurableOnTransient.class);
         suite.addTestSuite(NoRequeueOnCancel.class);
+        suite.addTestSuite(Bug20004Test.class);
         suite.addTestSuite(QosTests.class);
         suite.addTestSuite(Permissions.class);
+        suite.addTestSuite(AlternateExchange.class);
         return suite;
     }
 }

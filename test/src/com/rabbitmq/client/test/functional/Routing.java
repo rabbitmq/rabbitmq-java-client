@@ -217,22 +217,4 @@ public class Routing extends BrokerTestCase
 	checkGet(Q2, false);
     }
 
-    public void testUnbind() throws Exception {
-        AMQP.Queue.DeclareOk ok = channel.queueDeclare();
-        String queue = ok.getQueue();
-
-        String routingKey = "quay";
-        String x = "amq.direct";
-
-        channel.queueBind(queue, x, routingKey);
-        channel.basicPublish(x, routingKey, null, "foobar".getBytes());
-        checkGet(queue, true);
-
-        channel.queueUnbind(queue, x, routingKey);
-
-        channel.basicPublish(x, routingKey, null, "foobar".getBytes());
-        checkGet(queue, false);
-
-        channel.queueDelete(queue);
-    }
 }

@@ -29,21 +29,42 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test;
+package com.rabbitmq.client.test.functional;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ShutdownSignalException;
+import java.io.IOException;
 
-public class AllTest extends TestCase {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("all");
-        suite.addTest(TableTest.suite());
-        suite.addTest(BlockingCellTest.suite());
-        suite.addTest(TruncatedInputStreamTest.suite());
-        suite.addTest(AMQConnectionTest.suite());
-        suite.addTest(ValueOrExceptionTest.suite());
-        suite.addTest(BrokenFramesTest.suite());
-        suite.addTestSuite(Bug19356Test.class);
-        return suite;
+public class DoubleDeletion extends BrokerTestCase
+{
+    protected static final String Q = "DoubleDeletionQueue";
+    protected static final String X = "DoubleDeletionExchange";
+
+    public void testDoubleDeletionQueue()
+        throws IOException
+    {
+        channel.queueDeclare(Q);
+	channel.queueDelete(Q);
+        try {
+            channel.queueDelete(Q);
+            fail("Expected exception from double deletion of queue");
+        } catch (IOException ee) {
+	    checkShutdownSignal(AMQP.NOT_FOUND, ee);
+            // Pass!
+        }
+    }
+
+    public void testDoubleDeletionExchange()
+        throws IOException
+    {
+        channel.exchangeDeclare(X, "direct");
+	channel.exchangeDelete(X);
+        try {
+            channel.exchangeDelete(X);
+            fail("Expected exception from double deletion of exchange");
+        } catch (IOException ee) {
+	    checkShutdownSignal(AMQP.NOT_FOUND, ee);
+            // Pass!
+        }
     }
 }

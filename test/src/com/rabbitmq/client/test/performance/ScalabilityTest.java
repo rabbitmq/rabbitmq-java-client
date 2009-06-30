@@ -323,7 +323,7 @@ public class ScalabilityTest {
         // Compute the roundtrip time
         final long finish = System.nanoTime();
         final long wallclock = finish - start;
-        return wallclock  / (float) params.messageCount / 1000;
+        return (params.messageCount == 0) ? (float)0.0 : wallclock  / (float) params.messageCount / 1000;
     }
 
     private static Parameters parseArgs(String [] args) {
