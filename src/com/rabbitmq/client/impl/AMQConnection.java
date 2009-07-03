@@ -52,18 +52,6 @@ import com.rabbitmq.utility.Utility;
 
 /**
  * Concrete class representing and managing an AMQP connection to a broker.
- * <p>
- * To connect to a broker,
- *
- * <pre>
- * AMQConnection conn = new AMQConnection(hostName, portNumber);
- * conn.open(userName, portNumber, virtualHost);
- * </pre>
- *
- * <pre>
- * ChannelN ch1 = conn.createChannel(1);
- * ch1.open(&quot;&quot;);
- * </pre>
  */
 public class AMQConnection extends ShutdownNotifierComponent implements Connection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
@@ -174,15 +162,40 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public AMQConnection(ConnectionParameters params,
                          boolean insist,
-                         FrameHandler frameHandler) throws RedirectException, IOException {
-        this(params, insist, frameHandler, new DefaultExceptionHandler());
+                         FrameHandler frameHandler)
+        throws RedirectException, IOException
+    {
+        this(params, insist, frameHandler, true);
     }
 
     /**
-     * Construct a new connection to a broker.
+     * Construct a new connection to a broker, with explicit control
+     * over whether the connection's thread is marked as a daemon
+     * thread or not.
      * @param params the initialization parameters for a connection
      * @param insist true if broker redirects are disallowed
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
+     * @param useDaemonThread true if the connection's thread should be a daemon thread
+     * @throws RedirectException if the server is redirecting us to a different host/port
+     * @throws java.io.IOException if an error is encountered
+     */
+    public AMQConnection(ConnectionParameters params,
+                         boolean insist,
+                         FrameHandler frameHandler,
+                         boolean useDaemonThread)
+        throws RedirectException, IOException
+    {
+        this(params, insist, frameHandler, useDaemonThread, new DefaultExceptionHandler());
+    }
+
+    /**
+     * Construct a new connection to a broker, with explicit control
+     * over exception handling and over whether the connection's
+     * thread is marked as a daemon thread or not.
+     * @param params the initialization parameters for a connection
+     * @param insist true if broker redirects are disallowed
+     * @param frameHandler interface to an object that will handle the frame I/O for this connection
+     * @param useDaemonThread true if the connection's thread should be a daemon thread
      * @param exceptionHandler interface to an object that will handle any special exceptions encountered while using this connection
      * @throws RedirectException if the server is redirecting us to a different host/port
      * @throws java.io.IOException if an error is encountered
@@ -190,6 +203,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public AMQConnection(ConnectionParameters params,
                          boolean insist,
                          FrameHandler frameHandler,
+                         boolean useDaemonThread,
                          ExceptionHandler exceptionHandler)
         throws RedirectException, IOException
     {
@@ -203,7 +217,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _exceptionHandler = exceptionHandler;
         _brokerInitiatedShutdown = false;
 
-        new MainLoop(); // start the main loop going
+        new MainLoop(useDaemonThread); // start the main loop going
 
         _knownHosts = open(_params, insist);
     }
@@ -415,7 +429,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private class MainLoop extends Thread {
 
         /** Start the main loop going. */
-        public MainLoop() {
+        public MainLoop(boolean useDaemonThread) {
+            setDaemon(useDaemonThread);
             start();
         }
 
@@ -567,6 +582,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         
         public SocketCloseWait(ShutdownSignalException sse) {
             cause = sse;
+            setDaemon(true);
             start();
         }
         

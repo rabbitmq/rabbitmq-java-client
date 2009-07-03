@@ -57,6 +57,12 @@ public class ConnectionFactory {
     private SocketFactory _factory = SocketFactory.getDefault();
 
     /**
+     * Used to control the daemon status of connections to be created
+     * by this factory.
+     */
+    private boolean _useDaemonThread = true;
+
+    /**
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
     public ConnectionFactory() {
@@ -95,6 +101,27 @@ public class ConnectionFactory {
      */
     public void setSocketFactory(SocketFactory factory) {
         _factory = factory;
+    }
+
+    /**
+     * Returns true (the default) if connections to be created by this
+     * factory will be set to use a daemon thread. Returns false if
+     * they will use non-daemon threads.
+     */
+    public boolean getUseDaemonThread() {
+        return _useDaemonThread;
+    }
+
+    /**
+     * Configure the behaviour of this factory with respect to whether
+     * it constructs connections using daemon threads or not. If true
+     * is given as an argument, connections created in future will
+     * have their main threads set to be daemon threads, via the
+     * Thread.setDaemon() call; otherwise, they will not.
+     * @param useDaemonThread true if future connections should be daemonized
+     */
+    public void setUseDaemonThread(boolean useDaemonThread) {
+        _useDaemonThread = useDaemonThread;
     }
 
     /**
@@ -162,7 +189,10 @@ public class ConnectionFactory {
                         redirectCount = 0;
                     boolean allowRedirects = redirectCount < maxRedirects;
                     try {
-                        return new AMQConnection(_params, !allowRedirects, frameHandler);
+                        return new AMQConnection(_params,
+                                                 !allowRedirects,
+                                                 frameHandler,
+                                                 _useDaemonThread);
                     } catch (RedirectException e) {
                         if (!allowRedirects) {
                             //this should never happen with a well-behaved server
