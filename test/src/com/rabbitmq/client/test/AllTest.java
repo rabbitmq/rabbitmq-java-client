@@ -43,6 +43,7 @@ public class AllTest extends TestCase {
         suite.addTest(AMQConnectionTest.suite());
         suite.addTest(ValueOrExceptionTest.suite());
         suite.addTest(BrokenFramesTest.suite());
+	suite.addTestSuite(ClonePropertiesTest.class);
         return suite;
     }
 }
