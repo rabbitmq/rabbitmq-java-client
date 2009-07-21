@@ -55,9 +55,9 @@ public class Bug19356Test extends BrokerTestCase {
         try {
             connectionFactory.useSslProtocol();
         } catch (NoSuchAlgorithmException ex) {
-            throw new IOException(ex);
+            throw new IOException(ex.toString());
         } catch (KeyManagementException ex) {
-            throw new IOException(ex);
+            throw new IOException(ex.toString());
         }
 
 
