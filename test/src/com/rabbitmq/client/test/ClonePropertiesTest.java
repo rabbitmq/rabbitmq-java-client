@@ -28,23 +28,29 @@
 //
 //   Contributor(s): ______________________________________.
 //
-
 package com.rabbitmq.client.test;
 
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
-public class AllTest extends TestCase {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("all");
-        suite.addTest(TableTest.suite());
-        suite.addTest(BlockingCellTest.suite());
-        suite.addTest(TruncatedInputStreamTest.suite());
-        suite.addTest(AMQConnectionTest.suite());
-        suite.addTest(ValueOrExceptionTest.suite());
-        suite.addTest(BrokenFramesTest.suite());
-	    suite.addTestSuite(ClonePropertiesTest.class);
-        suite.addTestSuite(Bug19356Test.class);
-        return suite;
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.MessageProperties;
+
+public class ClonePropertiesTest extends TestCase {
+    public void testPropertyCloneIsDistinct()
+        throws CloneNotSupportedException
+    {
+        assertTrue(MessageProperties.MINIMAL_PERSISTENT_BASIC !=
+                   MessageProperties.MINIMAL_PERSISTENT_BASIC.clone());
+    }
+
+    public void testPropertyClonePreservesValues()
+        throws CloneNotSupportedException
+    {
+        assertEquals(MessageProperties.MINIMAL_PERSISTENT_BASIC.deliveryMode,
+                     ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
+                       .deliveryMode);
+        assertEquals((Integer) 2,
+                     ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
+                       .deliveryMode);
     }
 }
