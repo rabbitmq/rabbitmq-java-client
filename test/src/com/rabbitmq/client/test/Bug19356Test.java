@@ -62,7 +62,7 @@ public class Bug19356Test extends BrokerTestCase {
 
 
         if (connection == null) {
-            connection = connectionFactory.newConnection("localhost", 5673);
+            connection = connectionFactory.newConnection("localhost", 5671);
         }
     }
 
