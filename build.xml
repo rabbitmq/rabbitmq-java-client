@@ -106,7 +106,50 @@
       </fileset>
     </javadoc>
   </target>
-	
+
+  <target name="detect-ssl">
+    <property environment="env"/>
+    <property name="SSL_CERTS_DIR" value="${env.SSL_CERTS_DIR}"/>
+    <available property="SSL_AVAILABLE" file="${SSL_CERTS_DIR}/Makefile"/>
+  </target>
+
+  <target name="make-client-ssl-certs" if="SSL_AVAILABLE" depends="detect-ssl">
+    <exec executable="mktemp" outputproperty="CLIENT_SSL_DIR" failonerror="true" osfamily="unix">
+      <arg value="-d"/>
+    </exec>
+    <exec executable="make" failonerror="true" osfamily="unix">
+      <arg line="-C ${SSL_CERTS_DIR} all DIR=${CLIENT_SSL_DIR}"/>
+    </exec>
+    <exec executable="keytool" failonerror="true" osfamily="unix">
+      <arg line="-import"/>
+      <arg value="-alias"/>
+      <arg value="server1"/>
+      <arg value="-file"/>
+      <arg value="${SSL_CERTS_DIR}/server/cert.pem"/>
+      <arg value="-keystore"/>
+      <arg value="${CLIENT_SSL_DIR}/clientstore"/>
+      <arg value="-noprompt"/>
+      <arg value="-storepass"/>
+      <arg value="bunnies"/>
+    </exec>
+    <exec executable="keytool" failonerror="true" osfamily="unix" inputstring="\n\n">
+      <arg value="-genkey"/>
+      <arg value="-keystore"/>
+      <arg value="${CLIENT_SSL_DIR}/clientstore"/>
+      <arg value="-noprompt"/>
+      <arg value="-storepass"/>
+      <arg value="bunnies"/>
+      <arg value="-dname"/>
+      <arg value="CN=cName, OU=orgUnit, O=org, L=city, S=state, C=countryCode"/>
+    </exec>
+  </target>
+  
+  <target name="remove-client-ssl-certs" if="SSL_AVAILABLE" depends="make-client-ssl-certs">
+    <delete includeemptydirs="true">
+      <fileset dir="${CLIENT_SSL_DIR}" includes="**/*" />
+    </delete>
+  </target>
+  
   <target name="test-prepare">
 	<property name="haltOnFailureJunit" value="yes" />
   	<property name="haltOnFailureJava" value="true" />

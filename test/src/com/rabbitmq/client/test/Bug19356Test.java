@@ -31,12 +31,10 @@
 package com.rabbitmq.client.test;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.AMQP;
-
 import com.rabbitmq.client.test.functional.BrokerTestCase;
 
 /**
