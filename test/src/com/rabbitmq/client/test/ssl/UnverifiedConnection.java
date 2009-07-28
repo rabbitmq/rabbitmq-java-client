@@ -30,20 +30,10 @@
 //
 package com.rabbitmq.client.test.ssl;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
-
-import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.functional.BrokerTestCase;
 
@@ -51,7 +41,7 @@ import com.rabbitmq.client.test.functional.BrokerTestCase;
  * Test for bug 19356 - SSL Support in rabbitmq
  *
  */
-public class Bug19356KeystoreTest extends BrokerTestCase {
+public class UnverifiedConnection extends BrokerTestCase {
 
     public Exception caughtException = null;
     public boolean completed = false;
@@ -61,37 +51,13 @@ public class Bug19356KeystoreTest extends BrokerTestCase {
         throws IOException
     {
         try {
-            String keystorePath = System.getProperty("keystore.path");
-            assertNotNull(keystorePath);
-            String keystorePasswd = System.getProperty("keystore.phrase");
-            assertNotNull(keystorePasswd);
-            char [] passphrase = keystorePasswd.toCharArray();
-
-            KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(new FileInputStream(keystorePath), passphrase);
-
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, passphrase);
-
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-            tmf.init(ks);
-
-            SSLContext c = SSLContext.getInstance("SSLv3");
-            c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-            connectionFactory = new ConnectionFactory();
-            connectionFactory.useSslProtocol(c);
+            connectionFactory.useSslProtocol();
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex.toString());
         } catch (KeyManagementException ex) {
             throw new IOException(ex.toString());
-        } catch (KeyStoreException ex) {
-            throw new IOException(ex.toString());
-        } catch (CertificateException ex) {
-            throw new IOException(ex.toString());
-        } catch (UnrecoverableKeyException ex) {
-            throw new IOException(ex.toString());
         }
+
 
         if (connection == null) {
             connection = connectionFactory.newConnection("localhost", 5671);
@@ -106,16 +72,16 @@ public class Bug19356KeystoreTest extends BrokerTestCase {
         }
     }
 
-    public void testBug19356Keystore()
-        throws IOException, NoSuchAlgorithmException, CertificateException,
-            KeyStoreException, UnrecoverableKeyException, KeyManagementException
+    public void testSSL() throws IOException
     {
         channel.queueDeclare("Bug19356Test", false, false, true, true, null);
-        channel.basicPublish("", "Bug19356Test", null, "SSLKeystore".getBytes());
+        channel.basicPublish("", "Bug19356Test", null, "SSL".getBytes());
 
         GetResponse chResponse = channel.basicGet("Bug19356Test", false);
-            
+        assertNotNull(chResponse);
+
         byte[] body = chResponse.getBody();
-        assertEquals("SSLKeystore", new String(body));
+        assertEquals("SSL", new String(body));
     }
+    
 }

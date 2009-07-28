@@ -37,8 +37,8 @@ import junit.framework.TestSuite;
 public class SSLTests extends TestCase {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("ssl");
-        suite.addTestSuite(Bug19356Test.class);
-        suite.addTestSuite(Bug19356KeystoreTest.class);
+        suite.addTestSuite(UnverifiedConnection.class);
+        suite.addTestSuite(VerifiedConnection.class);
         return suite;
     }
 }
