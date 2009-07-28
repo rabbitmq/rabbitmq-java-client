@@ -41,6 +41,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.DefaultExceptionHandler;
+import com.rabbitmq.client.impl.ExceptionHandler;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 
@@ -56,6 +58,11 @@ public class ConnectionFactory {
      */
     private SocketFactory _factory = SocketFactory.getDefault();
 
+    /**
+     * Holds the ExceptionHandler used in new AMQConnections
+     */
+    private ExceptionHandler _exceptionHandler = new DefaultExceptionHandler();
+    
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
@@ -97,6 +104,23 @@ public class ConnectionFactory {
         _factory = factory;
     }
 
+    /**
+     * Retrieve the ExceptionHandler used in new AMQConnections
+     * @return 
+     */
+    public ExceptionHandler getExceptionHandler() {
+        return _exceptionHandler;
+    }
+    
+    /**
+     * Set the ExceptionHandler used in new AMQConnections
+     * 
+     * @param handler The ExceptionHandler to use
+     */
+    public void setExceptionHandler(ExceptionHandler handler) {
+        _exceptionHandler = handler;
+    }
+    
     /**
      * Convenience method for setting up a SSL socket factory, using
      * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
@@ -173,7 +197,7 @@ public class ConnectionFactory {
                         redirectCount = 0;
                     boolean allowRedirects = redirectCount < maxRedirects;
                     try {
-                        return new AMQConnection(_params, !allowRedirects, frameHandler);
+                        return new AMQConnection(_params, !allowRedirects, frameHandler, _exceptionHandler);
                     } catch (RedirectException e) {
                         if (!allowRedirects) {
                             //this should never happen with a well-behaved server

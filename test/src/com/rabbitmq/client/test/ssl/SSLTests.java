@@ -39,6 +39,7 @@ public class SSLTests extends TestCase {
         TestSuite suite = new TestSuite("ssl");
         suite.addTestSuite(UnverifiedConnection.class);
         suite.addTestSuite(VerifiedConnection.class);
+        suite.addTestSuite(BadVerifiedConnection.class);
         return suite;
     }
 }

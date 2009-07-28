@@ -140,10 +140,24 @@
       <arg value="-dname"/>
       <arg value="CN=test, OU=test, O=test, L=test, S=test, C=pluto"/>
     </exec>
+    <exec executable="mktemp" outputproperty="CLIENT_KEYSTORE_EMPTY" failonerror="true" osfamily="unix">
+      <arg value="-u"/>
+    </exec>
+    <exec executable="keytool" failonerror="true" osfamily="unix" inputstring="\n\n">
+      <arg value="-genkey"/>
+      <arg value="-keystore"/>
+      <arg value="${CLIENT_KEYSTORE_EMPTY}"/>
+      <arg value="-noprompt"/>
+      <arg value="-storepass"/>
+      <arg value="${CLIENT_KEYSTORE_PHRASE}"/>
+      <arg value="-dname"/>
+      <arg value="CN=test, OU=test, O=test, L=test, S=test, C=pluto"/>
+    </exec>
   </target>
   
   <target name="remove-client-keystore" if="SSL_AVAILABLE">
     <delete file="${CLIENT_KEYSTORE}" failonerror="false"/>
+    <delete file="${CLIENT_KEYSTORE_EMPTY}" failonerror="false"/>
   </target>
   
   <target name="test-prepare">
@@ -322,6 +336,7 @@
         fork="yes">
       <classpath refid="test.classpath"/>
       <jvmarg value="-Dkeystore.path=${CLIENT_KEYSTORE}"/>
+      <jvmarg value="-Dkeystore.empty.path=${CLIENT_KEYSTORE_EMPTY}"/>
       <jvmarg value="-Dkeystore.phrase=${CLIENT_KEYSTORE_PHRASE}"/>
 
       <formatter type="plain"/>
