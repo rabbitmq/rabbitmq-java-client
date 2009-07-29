@@ -47,6 +47,7 @@ import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.AMQChannel.SimpleBlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
@@ -167,31 +168,22 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * Construct a new connection to a broker.
      * @param params the initialization parameters for a connection
-     * @param insist true if broker redirects are disallowed
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
-     * @throws RedirectException if the server is redirecting us to a different host/port
-     * @throws java.io.IOException if an error is encountered
      */
     public AMQConnection(ConnectionParameters params,
-                         boolean insist,
-                         FrameHandler frameHandler) throws RedirectException, IOException {
-        this(params, insist, frameHandler, new DefaultExceptionHandler());
+                         FrameHandler frameHandler) {
+        this(params, frameHandler, new DefaultExceptionHandler());
     }
 
     /**
      * Construct a new connection to a broker.
      * @param params the initialization parameters for a connection
-     * @param insist true if broker redirects are disallowed
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      * @param exceptionHandler interface to an object that will handle any special exceptions encountered while using this connection
-     * @throws RedirectException if the server is redirecting us to a different host/port
-     * @throws java.io.IOException if an error is encountered
      */
     public AMQConnection(ConnectionParameters params,
-                         boolean insist,
                          FrameHandler frameHandler,
                          ExceptionHandler exceptionHandler)
-        throws RedirectException, IOException
     {
         checkPreconditions();
         _params = params;
@@ -202,10 +194,36 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _heartbeat = 0;
         _exceptionHandler = exceptionHandler;
         _brokerInitiatedShutdown = false;
+    }
 
-        new MainLoop(); // start the main loop going
+    /**
+     * Start up the connection, including the MainLoop thread
+     * @param insist true if broker redirects are disallowed
+     * @throws RedirectException if the server is redirecting us to a different host/port
+     * @throws java.io.IOException if an error is encountered
+     */
+    public void startConnection(boolean insist)
+        throws IOException, RedirectException
+    {
+        // Make sure that the first thing we do is to send the header,
+        // which should cause any socket errors to show up for us, rather
+        // than risking them pop out in the MainLoop
+        AMQChannel.SimpleBlockingRpcContinuation connStartBlocker =
+            new AMQChannel.SimpleBlockingRpcContinuation();
+        // We enqueue an RPC continuation here without sending an RPC
+        // request, since the protocol specifies that after sending
+        // the version negotiation header, the client (connection
+        // initiator) is to wait for a connection.start method to
+        // arrive.
+        _channel0.enqueueRpc(connStartBlocker);
+        // The following two lines are akin to AMQChannel's
+        // transmit() method for this pseudo-RPC.
+        _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
+        _frameHandler.sendHeader();
 
-        _knownHosts = open(_params, insist);
+        new MainLoop().start(); // start the main loop going
+
+        _knownHosts = open(_params, insist, connStartBlocker);
     }
 
     /**
@@ -316,28 +334,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * calls Connection.Open and waits for the OpenOk. Sets heartbeat
      * and frame max values after tuning has taken place.
      * @param params the construction parameters for a Connection
+     * @param connStartBlocker the blocker we're waiting on for the start-ok
      * @return the known hosts that came back in the connection.open-ok
      * @throws RedirectException if the server asks us to redirect to
      *                           a different host/port.
      * @throws java.io.IOException if any other I/O error occurs
      */
-    public Address[] open(final ConnectionParameters params, boolean insist)
+    public Address[] open(final ConnectionParameters params, boolean insist, SimpleBlockingRpcContinuation connStartBlocker)
         throws RedirectException, IOException
     {
         try {
-            AMQChannel.SimpleBlockingRpcContinuation connStartBlocker =
-                new AMQChannel.SimpleBlockingRpcContinuation();
-            // We enqueue an RPC continuation here without sending an RPC
-            // request, since the protocol specifies that after sending
-            // the version negotiation header, the client (connection
-            // initiator) is to wait for a connection.start method to
-            // arrive.
-            _channel0.enqueueRpc(connStartBlocker);
-            // The following two lines are akin to AMQChannel's
-            // transmit() method for this pseudo-RPC.
-            _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
-            _frameHandler.sendHeader();
-
             // See bug 17389. The MainLoop could have shut down already in
             // which case we don't want to wait forever for a reply.
 
@@ -413,11 +419,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     private class MainLoop extends Thread {
-
-        /** Start the main loop going. */
-        public MainLoop() {
-            start();
-        }
 
         /**
          * Channel reader thread main loop. Reads a frame, and if it is

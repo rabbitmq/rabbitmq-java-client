@@ -41,46 +41,20 @@ import java.security.cert.CertificateException;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.impl.ExceptionHandler;
 
 /**
  * Test for bug 19356 - SSL Support in rabbitmq
  *
  */
 public class BadVerifiedConnection extends UnverifiedConnection {
-    private boolean exceptionCaught = false;
-
     public void openConnection()
         throws IOException
     {
-        final Object lock = new Object();
-        
         connectionFactory = new ConnectionFactory();
-        connectionFactory.setExceptionHandler(new ExceptionHandler() {
-
-            public void handleConsumerException(Channel channel,
-                    Throwable exception, Consumer consumer, String consumerTag,
-                    String methodName) {
-            }
-
-            public void handleReturnListenerException(Channel channel,
-                    Throwable exception) {
-            }
-
-            public void handleUnexpectedConnectionDriverException(
-                    Connection conn, Throwable exception) {
-                synchronized (lock) {
-                    exceptionCaught = true;
-                    lock.notifyAll();
-                }
-            }});
-        
         try {
             String keystorePath = System.getProperty("keystore.empty.path");
             assertNotNull(keystorePath);
@@ -117,18 +91,9 @@ public class BadVerifiedConnection extends UnverifiedConnection {
             try {
                 connection = connectionFactory.newConnection("localhost", 5671);
                 fail();
-            } catch (Throwable e) {
-                synchronized (lock) {
-                    while (! exceptionCaught) {
-                        try {
-                            lock.wait(10000);
-                            if (! exceptionCaught) {
-                                fail();
-                            }
-                        } catch (InterruptedException e1) {
-                        }
-                    }
-                }
+            } catch (SSLHandshakeException e) {
+            } catch (IOException e) {
+                fail();
             }
         }
     }
