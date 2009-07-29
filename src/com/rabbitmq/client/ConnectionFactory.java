@@ -175,7 +175,7 @@ public class ConnectionFactory {
                     try {
                         AMQConnection conn = new AMQConnection(_params,
                                     frameHandler);
-                        conn.startConnection(!allowRedirects);
+                        conn.start(!allowRedirects);
                         return conn;
                     } catch (RedirectException e) {
                         if (!allowRedirects) {
