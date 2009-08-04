@@ -112,6 +112,8 @@
     <property name="SSL_CERTS_DIR" value="${env.SSL_CERTS_DIR}"/>
     <available property="SSL_AVAILABLE" file="${SSL_CERTS_DIR}/client"/>
     <property name="CLIENT_KEYSTORE_PHRASE" value="bunnies"/>
+    <property environment="env"/>
+    <property name="SSL_P12_PASSWORD" value="${env.PASSWORD}"/>
   </target>
 
   <target name="make-client-keystore" if="SSL_AVAILABLE" depends="detect-ssl">
@@ -123,35 +125,37 @@
       <arg value="-alias"/>
       <arg value="server1"/>
       <arg value="-file"/>
-      <arg value="${SSL_CERTS_DIR}/server/cert.pem"/>
+      <arg value="${SSL_CERTS_DIR}/testca/cacert.pem"/>
       <arg value="-keystore"/>
       <arg value="${CLIENT_KEYSTORE}"/>
       <arg value="-noprompt"/>
       <arg value="-storepass"/>
       <arg value="${CLIENT_KEYSTORE_PHRASE}"/>
-    </exec>
-    <exec executable="keytool" failonerror="true" osfamily="unix" inputstring="\n\n">
-      <arg value="-genkey"/>
-      <arg value="-keystore"/>
-      <arg value="${CLIENT_KEYSTORE}"/>
-      <arg value="-noprompt"/>
-      <arg value="-storepass"/>
-      <arg value="${CLIENT_KEYSTORE_PHRASE}"/>
-      <arg value="-dname"/>
-      <arg value="CN=test, OU=test, O=test, L=test, S=test, C=pluto"/>
     </exec>
     <exec executable="mktemp" outputproperty="CLIENT_KEYSTORE_EMPTY" failonerror="true" osfamily="unix">
       <arg value="-u"/>
     </exec>
-    <exec executable="keytool" failonerror="true" osfamily="unix" inputstring="\n\n">
-      <arg value="-genkey"/>
+    <!-- can't create an empty keystore, so add cert in and then delete it! -->
+    <exec executable="keytool" failonerror="true" osfamily="unix">
+      <arg line="-import"/>
+      <arg value="-alias"/>
+      <arg value="server1"/>
+      <arg value="-file"/>
+      <arg value="${SSL_CERTS_DIR}/testca/cacert.pem"/>
       <arg value="-keystore"/>
       <arg value="${CLIENT_KEYSTORE_EMPTY}"/>
       <arg value="-noprompt"/>
       <arg value="-storepass"/>
       <arg value="${CLIENT_KEYSTORE_PHRASE}"/>
-      <arg value="-dname"/>
-      <arg value="CN=test, OU=test, O=test, L=test, S=test, C=pluto"/>
+    </exec>
+    <exec executable="keytool" failonerror="true" osfamily="unix">
+      <arg line="-delete"/>
+      <arg value="-alias"/>
+      <arg value="server1"/>
+      <arg value="-keystore"/>
+      <arg value="${CLIENT_KEYSTORE_EMPTY}"/>
+      <arg value="-storepass"/>
+      <arg value="${CLIENT_KEYSTORE_PHRASE}"/>
     </exec>
   </target>
   
@@ -337,7 +341,10 @@
       <classpath refid="test.classpath"/>
       <jvmarg value="-Dkeystore.path=${CLIENT_KEYSTORE}"/>
       <jvmarg value="-Dkeystore.empty.path=${CLIENT_KEYSTORE_EMPTY}"/>
-      <jvmarg value="-Dkeystore.phrase=${CLIENT_KEYSTORE_PHRASE}"/>
+      <jvmarg value="-Dkeystore.passwd=${CLIENT_KEYSTORE_PHRASE}"/>
+      
+      <jvmarg value="-Dp12.path=${SSL_CERTS_DIR}/client/keycert.p12"/>
+      <jvmarg value="-Dp12.passwd=${SSL_P12_PASSWORD}"/>
 
       <formatter type="plain"/>
       <formatter type="xml"/>

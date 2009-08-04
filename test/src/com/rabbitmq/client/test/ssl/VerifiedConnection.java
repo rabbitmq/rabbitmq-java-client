@@ -57,19 +57,27 @@ public class VerifiedConnection extends UnverifiedConnection {
         try {
             String keystorePath = System.getProperty("keystore.path");
             assertNotNull(keystorePath);
-            String keystorePasswd = System.getProperty("keystore.phrase");
+            String keystorePasswd = System.getProperty("keystore.passwd");
             assertNotNull(keystorePasswd);
-            char [] passphrase = keystorePasswd.toCharArray();
+            char [] keystorePassword = keystorePasswd.toCharArray();
 
-            KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(new FileInputStream(keystorePath), passphrase);
-
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, passphrase);
+            KeyStore tks = KeyStore.getInstance("JKS");
+            tks.load(new FileInputStream(keystorePath), keystorePassword);
 
             TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-            tmf.init(ks);
+            tmf.init(tks);
 
+            String p12Path = System.getProperty("p12.path");
+            assertNotNull(p12Path);
+            String p12Passwd = System.getProperty("p12.passwd");
+            assertNotNull(p12Passwd);
+            KeyStore ks = KeyStore.getInstance("PKCS12");
+            char [] p12Password = p12Passwd.toCharArray();
+            ks.load(new FileInputStream(p12Path), p12Password);
+
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            kmf.init(ks, p12Password);
+            
             SSLContext c = SSLContext.getInstance("SSLv3");
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
