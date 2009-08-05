@@ -98,7 +98,7 @@ public class ChannelManager {
 
     public synchronized int allocateChannelNumber(int maxChannels) {
         if (maxChannels == 0) {
-            maxChannels = Integer.MAX_VALUE;
+            maxChannels = Integer.MAX_VALUE - 1;
         }
         int channelNumber = -1;
         for (int candidate = 1; candidate <= maxChannels; candidate++) {
