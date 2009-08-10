@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -39,7 +45,7 @@ import com.rabbitmq.client.ContentHeader;
  */
 public class ContentHeaderPropertyReader {
     /** Stream we are reading from */
-    private final DataInputStream in;
+    private final ValueReader in;
 
     /** Current field flag word */
     public int flagWord;
@@ -51,7 +57,7 @@ public class ContentHeaderPropertyReader {
      * Protected API - Constructs a reader from the given input stream
      */
     public ContentHeaderPropertyReader(DataInputStream in) throws IOException {
-        this.in = in;
+        this.in = new ValueReader(in);
         this.flagWord = 1; // just the continuation bit
         this.bitCount = 15; // forces a flagWord read
     }
@@ -88,41 +94,41 @@ public class ContentHeaderPropertyReader {
 
     /** Reads and returns an AMQP short string content header field. */
     public String readShortstr() throws IOException {
-        return MethodArgumentReader.readShortstr(in);
+        return in.readShortstr();
     }
 
     /** Reads and returns an AMQP "long string" (binary) content header field. */
     public LongString readLongstr() throws IOException {
-        return MethodArgumentReader.readLongstr(in);
+        return in.readLongstr();
     }
 
     /** Reads and returns an AMQP short integer content header field. */
     public Integer readShort() throws IOException {
-        return new Integer(in.readUnsignedShort());
+        return in.readShort();
     }
 
     /** Reads and returns an AMQP integer content header field. */
     public Integer readLong() throws IOException {
-        return in.readInt();
+        return in.readLong();
     }
 
     /** Reads and returns an AMQP long integer content header field. */
     public Long readLonglong() throws IOException {
-        return new Long(in.readLong());
+        return in.readLonglong();
     }
 
     /** Reads and returns an AMQP table content header field. */
     public Map<String, Object> readTable() throws IOException {
-        return MethodArgumentReader.readTable(in);
+        return in.readTable();
     }
 
     /** Reads and returns an AMQP octet content header field. */
     public Integer readOctet() throws IOException {
-        return in.readUnsignedByte();
+        return in.readOctet();
     }
 
     /** Reads and returns an AMQP timestamp content header field. */
     public Date readTimestamp() throws IOException {
-        return MethodArgumentReader.readTimestamp(in);
+        return in.readTimestamp();
     }
 }

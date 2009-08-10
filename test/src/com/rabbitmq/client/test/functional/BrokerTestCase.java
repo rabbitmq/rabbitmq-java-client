@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -27,10 +33,13 @@ package com.rabbitmq.client.test.functional;
 
 import junit.framework.TestCase;
 
-import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ShutdownSignalException;
+
+import com.rabbitmq.client.AMQP;
 
 public class BrokerTestCase extends TestCase
 {
@@ -92,14 +101,22 @@ public class BrokerTestCase extends TestCase
 
     public void closeChannel() {
         if (channel != null) {
-            try {
-                channel.close();
-            } catch (AlreadyClosedException ace) {
-                // The API is broken so we have to catch this here.
-                // See bug 19676.
-            }
+            channel.abort();
             channel = null;
         }
     }
 
+    public void checkShutdownSignal(int expectedCode, IOException ioe) {
+        ShutdownSignalException sse = (ShutdownSignalException) ioe.getCause();
+        Command closeCommand = (Command) sse.getReason();
+        channel = null;
+        if (sse.isHardError()) {
+            connection = null;
+            AMQP.Connection.Close closeMethod = (AMQP.Connection.Close) closeCommand.getMethod();
+            assertEquals(expectedCode, closeMethod.getReplyCode());
+        } else {
+            AMQP.Channel.Close closeMethod = (AMQP.Channel.Close) closeCommand.getMethod();
+            assertEquals(expectedCode, closeMethod.getReplyCode());
+        }
+    }
 }

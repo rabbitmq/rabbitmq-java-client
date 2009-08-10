@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -41,7 +47,7 @@ public class GetResponse {
      * @param envelope the {@link Envelope}
      * @param props message properties
      * @param body the message body
-     * @param messageCount the number of messages in the response
+     * @param messageCount the server's most recent estimate of the number of messages remaining on the queue
      */
     public GetResponse(Envelope envelope, BasicProperties props, byte[] body, int messageCount)
     {
@@ -76,8 +82,20 @@ public class GetResponse {
     }
 
     /**
-     * Get the message count included in this response
-     * @return the message count
+     * Get the server's most recent estimate of the number of messages
+     * remaining on the queue. This number can only ever be a rough
+     * estimate, because of concurrent activity at the server and the
+     * delay between the server sending its estimate and the client
+     * receiving and processing the message containing the estimate.
+     *
+     * <p>According to the AMQP specification, this figure does not
+     * include the message being delivered. For example, this field
+     * will be zero in the simplest case of a single reader issuing a
+     * Basic.Get on a private queue holding a single message (the
+     * message being delivered in this GetResponse).
+     *
+     * @return an estimate of the number of messages remaining to be
+     * read from the queue
      */
     public int getMessageCount() {
         return messageCount;

@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -31,6 +37,8 @@ import junit.framework.TestSuite;
 public class FunctionalTests extends TestCase {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("functional");
+        suite.addTestSuite(Tables.class);
+        suite.addTestSuite(DoubleDeletion.class);
         suite.addTestSuite(Routing.class);
         suite.addTestSuite(BindingLifecycle.class);
         suite.addTestSuite(Transactions.class);
@@ -39,6 +47,10 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(RequeueOnChannelClose.class);
         suite.addTestSuite(DurableOnTransient.class);
         suite.addTestSuite(NoRequeueOnCancel.class);
+        suite.addTestSuite(Bug20004Test.class);
+        suite.addTestSuite(QosTests.class);
+        suite.addTestSuite(Permissions.class);
+        suite.addTestSuite(AlternateExchange.class);
         return suite;
     }
 }

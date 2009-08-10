@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -267,8 +273,7 @@ public class Frame {
                 acc += longStrSize((String)entry.getValue());
             }
             else if(value instanceof LongString) {
-                acc += 4;
-                acc += ((LongString)value).length();
+                acc += 4 + ((LongString)value).length();
             }
             else if(value instanceof Integer) {
                 acc += 4;
@@ -280,8 +285,30 @@ public class Frame {
                 acc += 8;
             }
             else if(value instanceof Map) {
+                acc += 4 + tableSize((Map<String, Object>) value);
+            }
+            else if (value instanceof Byte) {
+                acc += 1;
+            }
+            else if(value instanceof Double) {
+                acc += 8;
+            }
+            else if(value instanceof Float) {
                 acc += 4;
-                acc += tableSize((Map<String, Object>) value);
+            }
+            else if(value instanceof Long) {
+                acc += 8;
+            }
+            else if(value instanceof Short) {
+                acc += 2;
+            }
+            else if(value instanceof Boolean) {
+                acc += 1;
+            }
+            else if(value instanceof byte[]) {
+                acc += 4 + ((byte[])value).length;
+            }
+            else if(value == null) {
             }
             else {
                 throw new IllegalArgumentException("invalid value in table");

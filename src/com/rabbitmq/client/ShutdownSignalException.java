@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -60,6 +66,10 @@ public class ShutdownSignalException extends RuntimeException {
                                    boolean initiatedByApplication,
                                    Object reason, Object ref)
     {
+        super((initiatedByApplication
+               ? ("clean " + (hardError ? "connection" : "channel") + " shutdown")
+               : ((hardError ? "connection" : "channel") + " error"))
+              + "; reason: " + reason);
         this._hardError = hardError;
         this._initiatedByApplication = initiatedByApplication;
         this._reason = reason;
@@ -82,13 +92,6 @@ public class ShutdownSignalException extends RuntimeException {
     /** @return Reference to Connection or Channel object that fired the signal **/
     public Object getReference() { return _ref; }
 
-    public String toString() {
-        return super.toString() + " (" +
-            (_initiatedByApplication
-                    ? ("clean " + (_hardError ? "connection" : "channel") + " shutdown")
-             : ((_hardError ? "connection" : "channel") + " error"))
-            + "; reason: " + _reason + ")";
-    }
 }
 
 

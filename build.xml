@@ -44,13 +44,13 @@
   <target name="amqp-generate" depends="amqp-generate-check"
     unless="amqp.generate.notRequired" description="generate AMQP.java and AMQImpl.java from AMQP spec">
     <mkdir dir="${src.generated}/com/rabbitmq/client/"/>
-    <exec dir="." executable="python"
-          output="${src.generated}/com/rabbitmq/client/AMQP.java"
+    <exec dir="." executable="${python.bin}"
     	  errorproperty="amqp.generate.error1"
           resultproperty="amqp.generate.result1">
       <arg line="codegen.py"/>
       <arg line="header"/>
       <arg line="${AMQP_SPEC_JSON_PATH}"/>
+      <arg line="${src.generated}/com/rabbitmq/client/AMQP.java"/>
     </exec>
   	<fail message="Generation of AMQP.java failed with message:${line.separator}${amqp.generate.error1}">
         <condition>
@@ -60,13 +60,13 @@
         </condition>
     </fail>
     <mkdir dir="${src.generated}/com/rabbitmq/client/impl"/>
-    <exec dir="." executable="python"
-          output="${src.generated}/com/rabbitmq/client/impl/AMQImpl.java"
+    <exec dir="." executable="${python.bin}"
           errorproperty="amqp.generate.error2"
           resultproperty="amqp.generate.result2">
       <arg line="codegen.py"/>
       <arg line="body"/>
       <arg line="${AMQP_SPEC_JSON_PATH}"/>
+      <arg line="${src.generated}/com/rabbitmq/client/impl/AMQImpl.java"/>
     </exec>
   	<fail message="Generation of AMQPImpl.java failed with message:${line.separator}${amqp.generate.error2}">
         <condition>
@@ -106,15 +106,20 @@
       </fileset>
     </javadoc>
   </target>
+	
+  <target name="test-prepare">
+	<property name="haltOnFailureJunit" value="yes" />
+  	<property name="haltOnFailureJava" value="true" />
+  </target>
 
-  <target name="test-build">
+  <target name="test-build" depends="test-prepare">
 	<antcall target="test-build-param">
     	<param name="javac.source" value="${standard.javac.source}"/>
     	<param name="javac.target" value="${standard.javac.target}"/>
 	</antcall>
   </target>
 
-  <target name="test-build-alt">
+  <target name="test-build-alt" depends="test-prepare">
 	<antcall target="test-build-param">
     	<param name="javac.source" value="${alt.javac.source}"/>
     	<param name="javac.target" value="${alt.javac.target}"/>
@@ -148,7 +153,8 @@
   </target>
 
   <target name="test-main" depends="test-build">
-    <java fork="true" classname="${test.main}">
+    <java fork="true" classname="${test.main}"
+        failonerror="${haltOnFailureJava}" errorproperty="test.failure">
       <jvmarg value="-Xdebug"/>
       <arg value="${broker.hostname}"/>
       <arg value="${broker.port}"/>
@@ -161,7 +167,8 @@
   </target>
 
   <target name="test-main-silent" depends="test-build">
-    <java fork="true" classname="${test.main}">
+    <java fork="true" classname="${test.main}"
+    	failonerror="${haltOnFailureJava}" errorproperty="test.failure">
       <jvmarg value="-Xdebug"/>
       <jvmarg value="-Dsilent=true"/>
       <arg value="${broker.hostname}"/>
@@ -176,7 +183,9 @@
 
   <!-- Alternate version that runs using Java 1.4 as a compatibility test -->
   <target name="test-main-silent-1.4" depends="dist1.4">
-    <java fork="true" classname="${test.main}" jvm="${java-jvm-1.4}">
+    <java fork="true" classname="${test.main}"
+        jvm="${java-jvm-1.4}" failonerror="${haltOnFailureJava}"
+    	errorproperty="test.failure">
       <jvmarg value="-Xdebug"/>
       <jvmarg value="-Dsilent=true"/>
       <arg value="${broker.hostname}"/>
@@ -192,7 +201,8 @@
   </target>
 
   <target name="test-main-silent-alt" depends="test-build-alt">
-    <java fork="true" classname="${test.main}">
+    <java fork="true" classname="${test.main}"
+        failonerror="${haltOnFailureJava}" errorproperty="test.failure">
       <jvmarg value="-Xdebug"/>
       <jvmarg value="-Dsilent=true"/>
       <arg value="${broker.hostname}"/>
@@ -236,10 +246,28 @@
     </java>
   </target>
 
-  <target name="test-suite" depends="test, test-persister-restart, test-functional, test-main-silent"/>
+  <target name="test-suite-prepare">
+  	<property name="haltOnFailureJunit" value="no" />
+  	<property name="haltOnFailureJava" value="false" />	
+  </target>
+	
+  <target name="test-suite" depends="test-suite-prepare, test-suite-run">
+  	<fail message="Errors occured in tests">
+  	    <condition>
+            <not>
+                <equals arg1="${test.failure}" arg2="" />
+            </not>
+       </condition>
+  	</fail>
+  </target>
+
+  <target name="test-suite-run" depends="test, test-persister-restart, test-functional, test-main-silent"/>
     
   <target name="test" depends="test-build">
-    <junit printSummary="withOutAndErr" haltOnFailure="no" fork="yes">
+    <junit printSummary="withOutAndErr"
+        haltOnFailure="${haltOnFailureJunit}"
+        failureproperty="test.failure"
+        fork="yes">
       <classpath refid="test.classpath"/>
 
       <formatter type="plain"/>
@@ -249,7 +277,10 @@
   </target>
 
   <target name="test-functional" depends="test-build">
-    <junit printSummary="withOutAndErr" haltOnFailure="no" fork="yes">
+    <junit printSummary="withOutAndErr"
+        haltOnFailure="${haltOnFailureJunit}"
+        failureproperty="test.failure"
+        fork="yes">
       <classpath refid="test.classpath"/>
 
       <formatter type="plain"/>
@@ -259,7 +290,10 @@
   </target>
 
   <target name="test-persister-restart" depends="test-build">
-    <junit printSummary="withOutAndErr" haltOnFailure="no" fork="yes">
+    <junit printSummary="withOutAndErr"
+        haltOnFailure="${haltOnFailureJunit}"
+        failureproperty="test.failure"
+        fork="yes">
       <classpath refid="test.classpath"/>
       <formatter type="plain"/>
       <formatter type="xml"/>

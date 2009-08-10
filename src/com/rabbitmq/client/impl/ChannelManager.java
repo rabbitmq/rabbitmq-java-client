@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -36,7 +42,7 @@ public class ChannelManager {
     /** Mapping from channel number to AMQChannel instance */
     private final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
 
-    /** Maximum number of channels available on this connection. */
+    /** Maximum channel number available on this connection. */
     public int _channelMax = 0;
 
     public synchronized int getChannelMax() {
@@ -87,10 +93,11 @@ public class ChannelManager {
 
     public synchronized int allocateChannelNumber(int maxChannels) {
         if (maxChannels == 0) {
-            maxChannels = Integer.MAX_VALUE;
+            // The framing encoding only allows for unsigned 16-bit integers for the channel number
+            maxChannels = (1 << 16) - 1;
         }
         int channelNumber = -1;
-        for (int candidate = 1; candidate < maxChannels; candidate++) {
+        for (int candidate = 1; candidate <= maxChannels; candidate++) {
             if (!_channelMap.containsKey(candidate)) {
                 channelNumber = candidate;
                 break;

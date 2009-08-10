@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -75,6 +81,7 @@ public class MulticastMain {
             int producerTxSize   = intArg(cmd, 'm', 0);
             int consumerTxSize   = intArg(cmd, 'n', 0);
             boolean autoAck      = cmd.hasOption('a');
+            int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
             int maxRedirects     = intArg(cmd, 'd', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
@@ -99,6 +106,7 @@ public class MulticastMain {
                 Queue.DeclareOk res = channel.queueDeclare();
                 String queueName = res.getQueue();
                 QueueingConsumer consumer = new QueueingConsumer(channel);
+                if (prefetchCount > 0) channel.basicQos(prefetchCount);
                 channel.basicConsume(queueName, autoAck, consumer);
                 channel.queueBind(queueName, exchangeName, id);
                 Thread t = 
@@ -161,6 +169,7 @@ public class MulticastMain {
         options.addOption(new Option("m", "ptxsize",   true, "producer tx size"));
         options.addOption(new Option("n", "ctxsize",   true, "consumer tx size"));
         options.addOption(new Option("a", "autoack",   false,"auto ack"));
+        options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
         options.addOption(new Option("s", "size",      true, "message size"));
         options.addOption(new Option("d", "redirects", true, "max redirects"));
         options.addOption(new Option("z", "time",      true, "time limit"));

@@ -10,13 +10,19 @@
 ##
 ##   The Original Code is RabbitMQ.
 ##
-##   The Initial Developers of the Original Code are LShift Ltd.,
-##   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+##   The Initial Developers of the Original Code are LShift Ltd,
+##   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 ##
-##   Portions created by LShift Ltd., Cohesive Financial Technologies
-##   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-##   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-##   Technologies Ltd.;
+##   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+##   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+##   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+##   Technologies LLC, and Rabbit Technologies Ltd.
+##
+##   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+##   Ltd. Portions created by Cohesive Financial Technologies LLC are
+##   Copyright (C) 2007-2009 Cohesive Financial Technologies
+##   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+##   (C) 2007-2009 Rabbit Technologies Ltd.
 ##
 ##   All Rights Reserved.
 ##
@@ -124,8 +130,7 @@ public interface AMQP
                     print "            %s %s();" % (java_field_type(spec, a.domain), java_getter_name(a.name))
                 print "        }"
             print "    }"
-
-
+        
     def printReadProperties(c):
         print
         print """        public void readPropertiesFrom(ContentHeaderPropertyReader reader)
@@ -165,10 +170,11 @@ public interface AMQP
         
     def printClassProperties(c):
         print
-        print "    public static class %s extends AMQContentHeader {" % ( java_class_name(c.name) + 'Properties')
+        print "    public static class %(className)s extends %(parentClass)s {" % {'className' : java_class_name(c.name) + 'Properties', 'parentClass' : 'com.rabbitmq.client.impl.AMQ' + java_class_name(c.name) + 'Properties'}
         #property fields
         for f in c.fields:
-            print "        public %s %s;" % (java_property_type(spec, f.domain),java_field_name(f.name))
+            print "        private %s %s;" % (java_property_type(spec, f.domain),java_field_name(f.name))
+
         #constructor
         if c.fields:
             print
@@ -189,12 +195,21 @@ public interface AMQP
         print "        public %sProperties() {}" % (java_class_name(c.name))
         print "        public int getClassId() { return %i; }" % (c.index)
         print "        public java.lang.String getClassName() { return \"%s\"; }" % (c.name)
+        
+        #access functions
+        print
+        for f in c.fields:
+            print """        public %(fieldType)s get%(capFieldName)s() { return %(fieldName)s; }
+        public void set%(capFieldName)s(%(fieldType)s %(fieldName)s) { this.%(fieldName)s = %(fieldName)s; }""" % \
+            {'fieldType' : java_property_type(spec, f.domain), \
+            'capFieldName' : (java_field_name(f.name)[0].upper() + java_field_name(f.name)[1:]), \
+            'fieldName' : java_field_name(f.name)}
 
         printReadProperties(c)
         printWriteProperties(c)
         printPropertyDebug(c)
         print "    }"
-        
+
     printHeader()
     printConstants()
     printClassInterfaces()

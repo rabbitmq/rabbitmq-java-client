@@ -10,13 +10,19 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -67,12 +73,13 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     ConnectionParameters getParameters();
 
     /**
-     * Get the negotiated maximum number of channels allowed.
+     * Get the negotiated maximum channel number. Usable channel
+     * numbers range from 1 to this number, inclusive.
      *
      * Note that this is the <i>current</i> setting, as opposed to the <i>initially-requested</i>
      * setting available from {@link #getParameters()}.{@link ConnectionParameters#getRequestedChannelMax()}.
      *
-     * @return the maximum number of simultaneously-open channels permitted for this connection.
+     * @return the maximum channel number permitted for this connection.
      */
     int getChannelMax();
 
