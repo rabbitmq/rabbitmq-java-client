@@ -91,4 +91,8 @@ public abstract class AMQContentHeader implements ContentHeader {
         writeTo(bodyOut, bodySize);
         return frame;
     }
+    
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
 }

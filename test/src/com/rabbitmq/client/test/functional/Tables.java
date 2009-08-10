@@ -73,7 +73,7 @@ public class Tables extends BrokerTestCase
                                                     null, null);
         channel.basicPublish("", q, props, "".getBytes());
         BasicProperties rProps = channel.basicGet(q, true).getProps();
-        assertMapsEqual(props.headers, rProps.headers);
+        assertMapsEqual(props.getHeaders(), rProps.getHeaders());
 
         //sending as part of method arguments - we are relying on
         //exchange.declare ignoring the arguments table.
