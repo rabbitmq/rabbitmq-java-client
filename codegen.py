@@ -132,6 +132,15 @@ public interface AMQP
             print "    }"
 
 
+    def printClone(c):
+        print
+        print """        public Object clone()
+            throws CloneNotSupportedException
+        {
+            return super.clone();
+        }""" % \
+        {"n": java_class_name(c.name)}
+        
     def printReadProperties(c):
         print
         print """        public void readPropertiesFrom(ContentHeaderPropertyReader reader)
@@ -171,7 +180,7 @@ public interface AMQP
         
     def printClassProperties(c):
         print
-        print "    public static class %s extends AMQContentHeader {" % ( java_class_name(c.name) + 'Properties')
+        print "    public static class %s extends AMQContentHeader implements Cloneable {" % ( java_class_name(c.name) + 'Properties')
         #property fields
         for f in c.fields:
             print "        public %s %s;" % (java_property_type(spec, f.domain),java_field_name(f.name))
@@ -196,6 +205,7 @@ public interface AMQP
         print "        public int getClassId() { return %i; }" % (c.index)
         print "        public java.lang.String getClassName() { return \"%s\"; }" % (c.name)
 
+        printClone(c)
         printReadProperties(c)
         printWriteProperties(c)
         printPropertyDebug(c)
