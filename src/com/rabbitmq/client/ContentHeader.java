@@ -35,7 +35,7 @@ package com.rabbitmq.client;
  * Public API for abstract AMQP content header objects.
  */
 
-public interface ContentHeader {
+public interface ContentHeader extends Cloneable {
     /**
      * Retrieve the class ID (see the spec for a list of allowable IDs).
      * @return class ID of this ContentHeader. Properly an unsigned short, i.e. only the lowest 16 bits are significant

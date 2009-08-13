@@ -180,31 +180,31 @@ public class Routing extends BrokerTestCase
 	channel.basicPublish("amq.match", "", null, "0".getBytes());
 	channel.basicPublish("amq.match", "", props, "0b".getBytes());
 
-	props.headers = new Hashtable<String, Object>();
-	props.headers.put("h1", "12345");
+	props.setHeaders(new Hashtable<String, Object>());
+	props.getHeaders().put("h1", "12345");
 	channel.basicPublish("amq.match", "", props, "1".getBytes());
 
-	props.headers = new Hashtable<String, Object>();
-	props.headers.put("h1", 12345);
+	props.setHeaders(new Hashtable<String, Object>());
+	props.getHeaders().put("h1", 12345);
 	channel.basicPublish("amq.match", "", props, "1b".getBytes());
 
-	props.headers = new Hashtable<String, Object>();
-	props.headers.put("h2", "bar");
+	props.setHeaders(new Hashtable<String, Object>());
+	props.getHeaders().put("h2", "bar");
 	channel.basicPublish("amq.match", "", props, "2".getBytes());
 
-	props.headers = new Hashtable<String, Object>();
-	props.headers.put("h1", "12345");
-	props.headers.put("h2", "bar");
+	props.setHeaders(new Hashtable<String, Object>());
+	props.getHeaders().put("h1", "12345");
+	props.getHeaders().put("h2", "bar");
 	channel.basicPublish("amq.match", "", props, "3".getBytes());
 
-	props.headers = new Hashtable<String, Object>();
-	props.headers.put("h1", "12345");
-	props.headers.put("h2", "quux");
+	props.setHeaders(new Hashtable<String, Object>());
+	props.getHeaders().put("h1", "12345");
+	props.getHeaders().put("h2", "quux");
 	channel.basicPublish("amq.match", "", props, "4".getBytes());
 
-	props.headers = new Hashtable<String, Object>();
-	props.headers.put("h1", "zot");
-	props.headers.put("h2", "quux");
+	props.setHeaders(new Hashtable<String, Object>());
+	props.getHeaders().put("h1", "zot");
+	props.getHeaders().put("h2", "quux");
 	channel.basicPublish("amq.match", "", props, "5".getBytes());
 
 	checkGet(Q1, true); // 3
@@ -218,3 +218,4 @@ public class Routing extends BrokerTestCase
     }
 
 }
+

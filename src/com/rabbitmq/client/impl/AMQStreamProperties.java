@@ -28,22 +28,34 @@
 //
 //   Contributor(s): ______________________________________.
 //
+package com.rabbitmq.client.impl;
 
-package com.rabbitmq.client.test;
+import java.util.Date;
+import java.util.Map;
+import java.util.Hashtable;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.rabbitmq.client.BasicProperties;
+import com.rabbitmq.client.StreamProperties;
 
-public class AllTest extends TestCase {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("all");
-        suite.addTest(TableTest.suite());
-        suite.addTest(BlockingCellTest.suite());
-        suite.addTest(TruncatedInputStreamTest.suite());
-        suite.addTest(AMQConnectionTest.suite());
-        suite.addTest(ValueOrExceptionTest.suite());
-        suite.addTest(BrokenFramesTest.suite());
-        suite.addTest(ClonePropertiesTest.suite());
-        return suite;
+public abstract class AMQStreamProperties
+        extends AMQContentHeader implements StreamProperties {
+    
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        AMQStreamProperties spClone = (AMQStreamProperties) super.clone();
+        
+        Map<String, Object> thisHeaders = getHeaders();
+        if (thisHeaders != null) {
+            Map<String, Object> headers = new Hashtable<String, Object>();
+            headers.putAll(thisHeaders);
+            spClone.setHeaders(headers);
+        }
+        
+        Date thisTimestamp = getTimestamp();
+        if (thisTimestamp != null) {
+            spClone.setTimestamp((Date) thisTimestamp.clone());
+        }
+        
+        return spClone;
     }
 }
