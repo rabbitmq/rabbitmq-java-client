@@ -147,7 +147,7 @@ public class RpcClient {
                                        byte[] body)
                     throws IOException {
                 synchronized (_continuationMap) {
-                    String replyId = properties.correlationId;
+                    String replyId = properties.getCorrelationId();
                     BlockingCell<Object> blocker = _continuationMap.get(replyId);
                     _continuationMap.remove(replyId);
                     blocker.set(body);
@@ -173,8 +173,8 @@ public class RpcClient {
             _correlationId++;
             String replyId = "" + _correlationId;
             if (props != null) {
-                props.correlationId = replyId;
-                props.replyTo = _replyQueue;
+                props.setCorrelationId(replyId);
+                props.setReplyTo(_replyQueue);
             }
             else {
                 props = new AMQP.BasicProperties(null, null, null, null,
