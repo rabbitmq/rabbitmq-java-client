@@ -56,7 +56,7 @@ public class LogTail {
             while (true) {
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 String routingKey = delivery.getEnvelope().getRoutingKey();
-                String contentType = delivery.getProperties().contentType;
+                String contentType = delivery.getProperties().getContentType();
                 System.out.println("Content-type: " + contentType);
                 System.out.println("Routing-key: " + routingKey);
                 System.out.println("Body:");

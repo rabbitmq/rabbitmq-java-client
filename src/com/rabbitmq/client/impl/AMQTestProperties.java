@@ -28,22 +28,11 @@
 //
 //   Contributor(s): ______________________________________.
 //
+package com.rabbitmq.client.impl;
 
-package com.rabbitmq.client.test;
+import com.rabbitmq.client.TestProperties;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+public abstract class AMQTestProperties
+        extends AMQContentHeader implements TestProperties {
 
-public class AllTest extends TestCase {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("all");
-        suite.addTest(TableTest.suite());
-        suite.addTest(BlockingCellTest.suite());
-        suite.addTest(TruncatedInputStreamTest.suite());
-        suite.addTest(AMQConnectionTest.suite());
-        suite.addTest(ValueOrExceptionTest.suite());
-        suite.addTest(BrokenFramesTest.suite());
-        suite.addTest(ClonePropertiesTest.suite());
-        return suite;
-    }
 }
