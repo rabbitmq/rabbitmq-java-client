@@ -105,7 +105,7 @@ public class FileConsumer {
             ch.basicConsume(queueName, consumer);
             while (true) {
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
-		Map<String, Object> headers = delivery.getProperties().headers;
+		Map<String, Object> headers = delivery.getProperties().getHeaders();
 		byte[] body = delivery.getBody();
 		Object headerFilenameO = headers.get("filename");
 		String headerFilename =

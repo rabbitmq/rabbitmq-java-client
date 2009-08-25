@@ -98,7 +98,8 @@ public class ChannelManager {
 
     public synchronized int allocateChannelNumber(int maxChannels) {
         if (maxChannels == 0) {
-            maxChannels = Integer.MAX_VALUE;
+            // The framing encoding only allows for unsigned 16-bit integers for the channel number
+            maxChannels = (1 << 16) - 1;
         }
         int channelNumber = -1;
         for (int candidate = 1; candidate <= maxChannels; candidate++) {
