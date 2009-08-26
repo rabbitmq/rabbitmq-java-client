@@ -106,7 +106,64 @@
       </fileset>
     </javadoc>
   </target>
-	
+
+  <target name="detect-ssl">
+    <property environment="env"/>
+    <property name="SSL_CERTS_DIR" value="${env.SSL_CERTS_DIR}"/>
+    <available property="SSL_AVAILABLE" file="${SSL_CERTS_DIR}/client"/>
+    <property name="CLIENT_KEYSTORE_PHRASE" value="bunnies"/>
+    <property environment="env"/>
+    <property name="SSL_P12_PASSWORD" value="${env.PASSWORD}"/>
+  </target>
+
+  <target name="make-client-keystore" if="SSL_AVAILABLE" depends="detect-ssl">
+    <exec executable="mktemp" outputproperty="CLIENT_KEYSTORE" failonerror="true" osfamily="unix">
+      <arg value="-u"/>
+    </exec>
+    <exec executable="keytool" failonerror="true" osfamily="unix">
+      <arg line="-import"/>
+      <arg value="-alias"/>
+      <arg value="server1"/>
+      <arg value="-file"/>
+      <arg value="${SSL_CERTS_DIR}/testca/cacert.pem"/>
+      <arg value="-keystore"/>
+      <arg value="${CLIENT_KEYSTORE}"/>
+      <arg value="-noprompt"/>
+      <arg value="-storepass"/>
+      <arg value="${CLIENT_KEYSTORE_PHRASE}"/>
+    </exec>
+    <exec executable="mktemp" outputproperty="CLIENT_KEYSTORE_EMPTY" failonerror="true" osfamily="unix">
+      <arg value="-u"/>
+    </exec>
+    <!-- can't create an empty keystore, so add cert in and then delete it! -->
+    <exec executable="keytool" failonerror="true" osfamily="unix">
+      <arg line="-import"/>
+      <arg value="-alias"/>
+      <arg value="server1"/>
+      <arg value="-file"/>
+      <arg value="${SSL_CERTS_DIR}/testca/cacert.pem"/>
+      <arg value="-keystore"/>
+      <arg value="${CLIENT_KEYSTORE_EMPTY}"/>
+      <arg value="-noprompt"/>
+      <arg value="-storepass"/>
+      <arg value="${CLIENT_KEYSTORE_PHRASE}"/>
+    </exec>
+    <exec executable="keytool" failonerror="true" osfamily="unix">
+      <arg line="-delete"/>
+      <arg value="-alias"/>
+      <arg value="server1"/>
+      <arg value="-keystore"/>
+      <arg value="${CLIENT_KEYSTORE_EMPTY}"/>
+      <arg value="-storepass"/>
+      <arg value="${CLIENT_KEYSTORE_PHRASE}"/>
+    </exec>
+  </target>
+  
+  <target name="remove-client-keystore" if="SSL_AVAILABLE">
+    <delete file="${CLIENT_KEYSTORE}" failonerror="false"/>
+    <delete file="${CLIENT_KEYSTORE_EMPTY}" failonerror="false"/>
+  </target>
+  
   <target name="test-prepare">
 	<property name="haltOnFailureJunit" value="yes" />
   	<property name="haltOnFailureJava" value="true" />
@@ -261,7 +318,7 @@
   	</fail>
   </target>
 
-  <target name="test-suite-run" depends="test, test-persister-restart, test-functional, test-main-silent"/>
+  <target name="test-suite-run" depends="test, test-ssl, test-persister-restart, test-functional, test-main-silent"/>
     
   <target name="test" depends="test-build">
     <junit printSummary="withOutAndErr"
@@ -274,6 +331,26 @@
       <formatter type="xml"/>
       <test todir="${build.out}" name="com.rabbitmq.client.test.AllTest"/>
     </junit>
+  </target>
+
+  <target name="test-ssl" depends="test-build, make-client-keystore" if="SSL_AVAILABLE">
+    <junit printSummary="withOutAndErr"
+        haltOnFailure="${haltOnFailureJunit}"
+        failureproperty="test.failure"
+        fork="yes">
+      <classpath refid="test.classpath"/>
+      <jvmarg value="-Dkeystore.path=${CLIENT_KEYSTORE}"/>
+      <jvmarg value="-Dkeystore.empty.path=${CLIENT_KEYSTORE_EMPTY}"/>
+      <jvmarg value="-Dkeystore.passwd=${CLIENT_KEYSTORE_PHRASE}"/>
+      
+      <jvmarg value="-Dp12.path=${SSL_CERTS_DIR}/client/keycert.p12"/>
+      <jvmarg value="-Dp12.passwd=${SSL_P12_PASSWORD}"/>
+
+      <formatter type="plain"/>
+      <formatter type="xml"/>
+      <test todir="${build.out}" name="com.rabbitmq.client.test.ssl.SSLTests"/>
+    </junit>
+    <antcall target="remove-client-keystore"/>
   </target>
 
   <target name="test-functional" depends="test-build">

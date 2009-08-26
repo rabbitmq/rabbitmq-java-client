@@ -55,7 +55,7 @@ public class ConnectionFactory {
      * Holds the SocketFactory used to manufacture outbound sockets.
      */
     private SocketFactory _factory = SocketFactory.getDefault();
-
+    
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
@@ -132,6 +132,17 @@ public class ConnectionFactory {
     }
 
     /**
+     * Convenience method for setting up an SSL socket factory.
+     * Pass in an initialized SSLContext.
+     *
+     * @param context An initialized SSLContext
+     */
+    public void useSslProtocol(SSLContext context)
+    {
+        setSocketFactory(context.getSocketFactory());
+    }
+
+    /**
      * The default SSL protocol (currently "SSLv3").
      */
     public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
@@ -162,7 +173,10 @@ public class ConnectionFactory {
                         redirectCount = 0;
                     boolean allowRedirects = redirectCount < maxRedirects;
                     try {
-                        return new AMQConnection(_params, !allowRedirects, frameHandler);
+                        AMQConnection conn = new AMQConnection(_params,
+                                    frameHandler);
+                        conn.start(!allowRedirects);
+                        return conn;
                     } catch (RedirectException e) {
                         if (!allowRedirects) {
                             //this should never happen with a well-behaved server
