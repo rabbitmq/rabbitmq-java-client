@@ -63,7 +63,7 @@ public class ConnectionParameters {
     public static final int DEFAULT_FRAME_MAX = 0;
 
     /** Default value for desired heartbeat interval; zero for none */
-    public static final int DEFAULT_HEARTBEAT = 3;
+    public static final int DEFAULT_HEARTBEAT = 0;
 
     private String _userName = DEFAULT_USER;
     private String _password = DEFAULT_PASS;
