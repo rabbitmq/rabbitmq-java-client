@@ -356,6 +356,27 @@ public interface Channel extends ShutdownNotifier{
     Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
 
     /**
+     * Purges the contents of the given queue and awaits a completion.
+     * @see com.rabbitmq.client.AMQP.Queue.Purge
+     * @see com.rabbitmq.client.AMQP.Queue.PurgeOk
+     * @param queue the name of the queue
+     * @return a purge-confirm method if the purge was executed succesfully
+     * @throws java.io.IOException if an error is encountered
+     */
+    Queue.PurgeOk queuePurge(String queue) throws IOException;
+
+    /**
+     * Purges the contents of the given queue.
+     * @see com.rabbitmq.client.AMQP.Queue.Purge
+     * @see com.rabbitmq.client.AMQP.Queue.PurgeOk
+     * @param queue the name of the queue
+     * @param nowait whether to await completion of the purge 
+     * @return a purge-confirm method if the purge was executed succesfully
+     * @throws java.io.IOException if an error is encountered
+     */
+    Queue.PurgeOk queuePurge(String queue, boolean nowait) throws IOException;
+
+    /**
      * Retrieve a message from a queue using {@link com.rabbitmq.client.AMQP.Basic.Get}
      * @see com.rabbitmq.client.AMQP.Basic.Get
      * @see com.rabbitmq.client.AMQP.Basic.GetOk
