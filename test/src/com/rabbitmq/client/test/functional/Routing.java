@@ -195,7 +195,7 @@ public class Routing extends BrokerTestCase
 
         props.setHeaders(new HashMap<String, Object>());
         props.getHeaders().put("h1", "12345");
-        props.getHeaders().put("h2", "bat");
+        props.getHeaders().put("h2", "bar");
         channel.basicPublish("amq.match", "", props, "3".getBytes());
 
         props.setHeaders(new HashMap<String, Object>());
