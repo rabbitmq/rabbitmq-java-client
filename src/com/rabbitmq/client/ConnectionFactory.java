@@ -55,7 +55,7 @@ public class ConnectionFactory {
      * Holds the SocketFactory used to manufacture outbound sockets.
      */
     private SocketFactory _factory = SocketFactory.getDefault();
-
+    
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
@@ -128,7 +128,18 @@ public class ConnectionFactory {
     {
         SSLContext c = SSLContext.getInstance(protocol);
         c.init(null, new TrustManager[] { trustManager }, null);
-        setSocketFactory(c.getSocketFactory());
+        useSslProtocol(c);
+    }
+
+    /**
+     * Convenience method for setting up an SSL socket factory.
+     * Pass in an initialized SSLContext.
+     *
+     * @param context An initialized SSLContext
+     */
+    public void useSslProtocol(SSLContext context)
+    {
+        setSocketFactory(context.getSocketFactory());
     }
 
     /**
@@ -158,13 +169,15 @@ public class ConnectionFactory {
 
         for (Address addr : addrs) {
             try {
-		FrameHandler frameHandler = createFrameHandler(addr);
-		return new AMQConnection(_params, frameHandler);
+              FrameHandler frameHandler = createFrameHandler(addr);
+              AMQConnection conn = new AMQConnection(_params,
+                                                     frameHandler);
+              conn.start();
+              return conn;
             } catch (IOException e) {
-                lastException = e;
+              lastException = e;
             }
         }
-
         if (lastException == null) {
             throw new IOException("failed to connect");
         } else {

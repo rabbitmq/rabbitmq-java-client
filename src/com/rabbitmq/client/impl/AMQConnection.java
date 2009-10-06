@@ -46,6 +46,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.AMQChannel.SimpleBlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
@@ -167,6 +168,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this(params, frameHandler, new DefaultExceptionHandler());
     }
 
+
     /**
      * Construct a new connection to a broker.
      * @param params the initialization parameters for a connection
@@ -188,10 +190,101 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _heartbeat = 0;
         _exceptionHandler = exceptionHandler;
         _brokerInitiatedShutdown = false;
+    }
 
-        new MainLoop(); // start the main loop going
+    /**
+     * Start up the connection, including the MainLoop thread.
+     * Sends the protocol
+     * version negotiation header, and runs through
+     * Connection.Start/.StartOk, Connection.Tune/.TuneOk, and then
+     * calls Connection.Open and waits for the OpenOk. Sets heartbeat
+     * and frame max values after tuning has taken place.
+     * @throws java.io.IOException if an error is encountered
+     */
+    public void start()
+        throws IOException
+    {
+        // Make sure that the first thing we do is to send the header,
+        // which should cause any socket errors to show up for us, rather
+        // than risking them pop out in the MainLoop
+        AMQChannel.SimpleBlockingRpcContinuation connStartBlocker =
+            new AMQChannel.SimpleBlockingRpcContinuation();
+        // We enqueue an RPC continuation here without sending an RPC
+        // request, since the protocol specifies that after sending
+        // the version negotiation header, the client (connection
+        // initiator) is to wait for a connection.start method to
+        // arrive.
+        _channel0.enqueueRpc(connStartBlocker);
+        // The following two lines are akin to AMQChannel's
+        // transmit() method for this pseudo-RPC.
+        _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
+        _frameHandler.sendHeader();
 
-	open(params);
+        new MainLoop().start(); // start the main loop going
+
+        try {
+            // See bug 17389. The MainLoop could have shut down already in
+            // which case we don't want to wait forever for a reply.
+        
+            // There is no race if the MainLoop shuts down after enqueuing
+            // the RPC because if that happens the channel will correctly
+            // pass the exception into RPC, waking it up.
+            ensureIsOpen();
+        
+            AMQP.Connection.Start connStart =
+                (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
+        
+            Version serverVersion =
+                new Version(connStart.getVersionMajor(),
+                            connStart.getVersionMinor());
+        
+            if (!Version.checkVersion(clientVersion, serverVersion)) {
+                _frameHandler.close(); //this will cause mainLoop to terminate
+                //TODO: throw a more specific exception
+                throw new IOException("protocol version mismatch: expected " +
+                                      clientVersion + ", got " + serverVersion);
+            }
+        } catch (ShutdownSignalException sse) {
+            throw AMQChannel.wrap(sse);
+        }
+        
+        LongString saslResponse = LongStringHelper.asLongString("\0" + _params.getUserName() +
+                                                                "\0" + _params.getPassword());
+        AMQImpl.Connection.StartOk startOk =
+            new AMQImpl.Connection.StartOk(buildClientPropertiesTable(),
+                                           "PLAIN",
+                                           saslResponse,
+                                           "en_US");
+        
+        AMQP.Connection.Tune connTune =
+            (AMQP.Connection.Tune) _channel0.exnWrappingRpc(startOk).getMethod();
+        
+        int channelMax =
+            negotiatedMaxValue(getParameters().getRequestedChannelMax(),
+                               connTune.getChannelMax());
+        setChannelMax(channelMax);
+        
+        int frameMax =
+            negotiatedMaxValue(getParameters().getRequestedFrameMax(),
+                               connTune.getFrameMax());
+        setFrameMax(frameMax);
+        
+        int heartbeat =
+            negotiatedMaxValue(getParameters().getRequestedHeartbeat(),
+                               connTune.getHeartbeat());
+        setHeartbeat(heartbeat);
+        
+        _channel0.transmit(new AMQImpl.Connection.TuneOk(channelMax,
+                                                         frameMax,
+                                                         heartbeat));
+        // 0.9.1: insist [on not being redirected] is deprecated, but
+        // still in generated code; just pass a dummy value here
+        Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_params.getVirtualHost(),
+                                                                          "",
+                                                                          true)).getMethod();
+        AMQP.Connection.OpenOk openOk = (AMQP.Connection.OpenOk) res;
+                
+        return;
     }
 
     /**
@@ -295,93 +388,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         });
     }
 
-    /**
-     * Called by the connection's constructor. Sends the protocol
-     * version negotiation header, and runs through
-     * Connection.Start/.StartOk, Connection.Tune/.TuneOk, and then
-     * calls Connection.Open and waits for the OpenOk. Sets heartbeat
-     * and frame max values after tuning has taken place.
-     * @param params the construction parameters for a Connection
-     * @throws java.io.IOException if any other I/O error occurs
-     */
-    public void open(final ConnectionParameters params)
-        throws IOException
-    {
-        try {
-            AMQChannel.SimpleBlockingRpcContinuation connStartBlocker =
-                new AMQChannel.SimpleBlockingRpcContinuation();
-            // We enqueue an RPC continuation here without sending an RPC
-            // request, since the protocol specifies that after sending
-            // the version negotiation header, the client (connection
-            // initiator) is to wait for a connection.start method to
-            // arrive.
-            _channel0.enqueueRpc(connStartBlocker);
-            // The following two lines are akin to AMQChannel's
-            // transmit() method for this pseudo-RPC.
-            _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
-            _frameHandler.sendHeader();
-
-            // See bug 17389. The MainLoop could have shut down already in
-            // which case we don't want to wait forever for a reply.
-
-            // There is no race if the MainLoop shuts down after enqueuing
-            // the RPC because if that happens the channel will correctly
-            // pass the exception into RPC, waking it up.
-            ensureIsOpen();
-
-            AMQP.Connection.Start connStart =
-                (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
-
-            Version serverVersion =
-                new Version(connStart.getVersionMajor(),
-                            connStart.getVersionMinor());
-
-            if (!Version.checkVersion(clientVersion, serverVersion)) {
-                _frameHandler.close(); //this will cause mainLoop to terminate
-                //TODO: throw a more specific exception
-                throw new IOException("protocol version mismatch: expected " +
-                                      clientVersion + ", got " + serverVersion);
-            }
-        } catch (ShutdownSignalException sse) {
-            throw AMQChannel.wrap(sse);
-        }
-
-        LongString saslResponse = LongStringHelper.asLongString("\0" + params.getUserName() +
-                                                                "\0" + params.getPassword());
-        AMQImpl.Connection.StartOk startOk =
-            new AMQImpl.Connection.StartOk(buildClientPropertiesTable(),
-                                           "PLAIN",
-                                           saslResponse,
-                                           "en_US");
-
-        AMQP.Connection.Tune connTune =
-            (AMQP.Connection.Tune) _channel0.exnWrappingRpc(startOk).getMethod();
-
-        int channelMax =
-            negotiatedMaxValue(getParameters().getRequestedChannelMax(),
-                               connTune.getChannelMax());
-        setChannelMax(channelMax);
-
-        int frameMax =
-            negotiatedMaxValue(getParameters().getRequestedFrameMax(),
-                               connTune.getFrameMax());
-        setFrameMax(frameMax);
-
-        int heartbeat =
-            negotiatedMaxValue(getParameters().getRequestedHeartbeat(),
-                               connTune.getHeartbeat());
-        setHeartbeat(heartbeat);
-
-        _channel0.transmit(new AMQImpl.Connection.TuneOk(channelMax,
-                                                         frameMax,
-                                                         heartbeat));
-
-        Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(params.getVirtualHost(),
-                                                                          "",
-                                                                          true)).getMethod();
-	AMQP.Connection.OpenOk openOk = (AMQP.Connection.OpenOk) res;
-    }
-
     private static int negotiatedMaxValue(int clientValue, int serverValue) {
         return (clientValue == 0 || serverValue == 0) ?
             Math.max(clientValue, serverValue) :
@@ -389,11 +395,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     private class MainLoop extends Thread {
-
-        /** Start the main loop going. */
-        public MainLoop() {
-            start();
-        }
 
         /**
          * Channel reader thread main loop. Reads a frame, and if it is

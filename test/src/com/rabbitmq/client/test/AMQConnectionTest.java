@@ -102,7 +102,11 @@ public class AMQConnectionTest extends TestCase {
         MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, _mockFrameHandler.countHeadersSent());
         try {
+<<<<<<< local
             new AMQConnection(_params, _mockFrameHandler, handler);
+=======
+            new AMQConnection(_params, _mockFrameHandler, handler).start(false);
+>>>>>>> other
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
            // As expected 

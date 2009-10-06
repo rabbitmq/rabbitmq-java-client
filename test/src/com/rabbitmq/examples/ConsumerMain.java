@@ -68,9 +68,10 @@ public class ConsumerMain implements Runnable {
             String hostName = optArg(args, 0, "localhost");
             int portNumber = optArg(args, 1, AMQP.PROTOCOL.PORT);
             boolean writeStats = optArg(args, 2, true);
+            boolean noAck = optArg(args, 3, true);
             final Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
             System.out.println("Channel 0 fully open.");
-            new ConsumerMain(conn, writeStats).run();
+            new ConsumerMain(conn, writeStats, noAck).run();
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
             e.printStackTrace();
@@ -90,10 +91,14 @@ public class ConsumerMain implements Runnable {
 
     public boolean _writeStats;
 
-    public ConsumerMain(Connection connection, boolean writeStats) {
+    public boolean _noAck;
+
+    public ConsumerMain(Connection connection, boolean writeStats, boolean noAck) {
         _connection = connection;
         _writeStats = writeStats;
+        _noAck = noAck;
         System.out.println((_writeStats ? "WILL" : "WON'T") + " write statistics.");
+        System.out.println((_noAck ? "WILL" : "WON'T") + " use server-side auto-acking.");
     }
 
     public void run() {
@@ -110,7 +115,7 @@ public class ConsumerMain implements Runnable {
         Channel channel = _connection.createChannel();
 
         String queueName = "test queue";
-        channel.queueDeclare(queueName);
+        channel.queueDeclare(queueName, true);
 
         String exchangeName = "test completion";
         channel.exchangeDeclare(exchangeName, "fanout", false, false, null);
@@ -119,8 +124,9 @@ public class ConsumerMain implements Runnable {
         channel.queueBind(completionQueue, exchangeName, "");
 
         LatencyExperimentConsumer callback = new LatencyExperimentConsumer(channel, queueName);
+        callback._noAck = this._noAck;
         
-        channel.basicConsume(queueName, true, callback);
+        channel.basicConsume(queueName, _noAck, callback);
         channel.basicConsume(completionQueue, true, "completion", callback);
         callback.report(_writeStats);
        
