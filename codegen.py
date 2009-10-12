@@ -113,6 +113,7 @@ public interface AMQP
     public static class PROTOCOL {"""
         print "        public static final int MAJOR = %i;" % spec.major
         print "        public static final int MINOR = %i;" % spec.minor
+        print "        public static final int REVISION = %i;" % spec.revision
         print "        public static final int PORT = %i;" % spec.port
         print "    }"
 
