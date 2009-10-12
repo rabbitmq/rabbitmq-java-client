@@ -76,11 +76,15 @@ public class BrokenFramesTest extends TestCase {
         List<Frame> frames = new ArrayList<Frame>();
         frames.add(new Frame(AMQP.FRAME_HEADER, 0));
         myFrameHandler.setFrames(frames.iterator());
-
+        AMQConnection conn = new AMQConnection(params, myFrameHandler);
         try {
-            new AMQConnection(params, myFrameHandler).start();
+            conn.start();
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
+            if (unexpectedFrameError==null) {
+              e.printStackTrace();
+              conn.getCloseReason().printStackTrace();
+            }
             assertNotNull(unexpectedFrameError);
             assertEquals(AMQP.FRAME_HEADER, unexpectedFrameError.getReceivedFrame().type);
             assertEquals(AMQP.FRAME_METHOD, unexpectedFrameError.getExpectedFrameType());
