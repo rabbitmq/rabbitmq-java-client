@@ -35,8 +35,10 @@ import java.io.IOException;
 import java.io.DataInputStream;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.impl.Method;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.SocketFrameHandler;
+import com.rabbitmq.client.impl.AMQCommand;
 import com.rabbitmq.client.ConnectionFactory;
 
 import junit.framework.TestCase;
@@ -52,7 +54,20 @@ public class ConnectionOpen extends TestCase
     SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory(),
                                                    "localhost", AMQP.PROTOCOL.PORT);
     fh.sendHeader();
-    Frame f = fh.readFrame();
+    AMQCommand.Assembler a = AMQCommand.newAssembler();
+    AMQCommand command = null;
+    while (command==null) {
+      command = a.handleFrame(fh.readFrame());
+    }
+    Method m = command.getMethod();
+    System.out.println(m.getClass());
+    assertTrue("First command must be Connection.start",
+               m instanceof AMQP.Connection.Start);
+    AMQP.Connection.Start start = (AMQP.Connection.Start) m;
+    assertTrue("Version in Connection.start is <= what we sent",
+               start.getVersionMajor() < AMQP.PROTOCOL.MAJOR ||
+               (start.getVersionMajor() == AMQP.PROTOCOL.MAJOR &&
+                start.getVersionMinor() <= AMQP.PROTOCOL.MINOR));
   }
 
   public void testCrazyProtocolHeader() throws IOException {
