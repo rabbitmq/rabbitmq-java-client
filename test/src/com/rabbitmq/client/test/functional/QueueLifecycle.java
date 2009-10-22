@@ -118,5 +118,22 @@ public class QueueLifecycle extends BrokerTestCase
     }
     fail("Queue should have been auto-deleted after we removed its only consumer");
   }
-  
+
+  public void testExclusiveNotAutoDelete() throws IOException {
+    String name = "exclusivequeue";
+    AMQP.Queue.DeclareOk qok = channel.queueDeclare(name,
+                                                    false,
+                                                    false,
+                                                    true,
+                                                    false,
+                                                    noArgs);
+    // now it's there
+    verifyQueue(name, false, true, false, noArgs);
+    QueueingConsumer consumer = new QueueingConsumer(channel);
+    channel.basicConsume(name, consumer);
+    channel.basicCancel(consumer.getConsumerTag());
+    // and still there, because exclusive no longer implies autodelete
+    verifyQueueExists(name);
+  }
+
 }
