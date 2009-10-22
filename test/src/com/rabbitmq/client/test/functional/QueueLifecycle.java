@@ -105,7 +105,7 @@ public class QueueLifecycle extends BrokerTestCase
                                                     true,
                                                     noArgs);
     // now it's there
-    verifyQueue(name, false, false, false, noArgs);
+    verifyQueue(name, false, false, true, noArgs);
     QueueingConsumer consumer = new QueueingConsumer(channel);
     channel.basicConsume(name, consumer);
     channel.basicCancel(consumer.getConsumerTag());
