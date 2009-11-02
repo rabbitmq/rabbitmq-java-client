@@ -263,4 +263,9 @@ public class ConnectionFactory {
     public Connection newConnection(String hostName) throws IOException {
         return newConnection(hostName, -1);
     }
+
+    public Connection newConnection() throws IOException {
+        // Don't ask :-)
+        return newConnection(_params.getHostName(), -1);
+    }
 }
