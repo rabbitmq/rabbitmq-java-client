@@ -59,6 +59,12 @@ public class ValueWriter
         throws IOException
     {
         byte [] bytes = str.getBytes("utf-8");
+        int length = bytes.length;
+        if (length > 255) {
+            throw new IllegalArgumentException(
+                    "Short string too long; utf-8 encoded length = " + length +
+                    ", max = 255."); 
+        }
         out.writeByte(bytes.length);
         out.write(bytes);
     }
@@ -91,7 +97,7 @@ public class ValueWriter
     public final void writeLong(int l)
         throws IOException
     {
-        // java's arithmetic on this type is signed, however its
+        // java's arithmetic on this type is signed, however it's
         // reasonable to use ints to represent the unsigned long
         // type - for values < Integer.MAX_VALUE everything works
         // as expected
