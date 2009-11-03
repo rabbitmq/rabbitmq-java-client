@@ -65,7 +65,9 @@ public class QueueExclusivity extends BrokerTestCase
   }
 
   protected void releaseResources() throws IOException {
-    altConnection.close();
+    if (altConnection != null && altConnection.isOpen()) {
+      altConnection.close();
+    }
   }
   
   public void testQueueExclusiveForPassiveDeclare() throws Exception {
@@ -104,7 +106,6 @@ public class QueueExclusivity extends BrokerTestCase
   }
 
   public void testQueueExclusiveForPurge() throws Exception {
-    QueueingConsumer c = new QueueingConsumer(channel);
     try {
       channel.queuePurge(q);
     }
@@ -115,7 +116,6 @@ public class QueueExclusivity extends BrokerTestCase
   }
 
   public void testQueueExclusiveForDelete() throws Exception {
-    QueueingConsumer c = new QueueingConsumer(channel);
     try {
       channel.queueDelete(q);
     }
@@ -125,4 +125,16 @@ public class QueueExclusivity extends BrokerTestCase
     fail("Exclusive queue should be locked for queue delete from another connection");
   }
 
+  public void testQueueExclusiveForBind() throws Exception {
+    try {
+      channel.queueBind(q, "", ""); // NB uses default exchange
+    }
+    catch (IOException ioe) {
+      return;
+    }
+    fail("Exclusive queue should be locked for queue bind from another connection");
+  }
+
+  // NB The spec XML doesn't mention queue.unbind or basic.get in the exclusive rule
+  
 }
