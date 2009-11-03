@@ -45,9 +45,6 @@ public class ConnectionParameters {
         }
     }
 
-    /** Default host name */
-    public static final String DEFAULT_HOST = "localhost";
-
     /** Default user name */
     public static final String DEFAULT_USER = "guest";
 
@@ -68,7 +65,6 @@ public class ConnectionParameters {
     /** Default value for desired heartbeat interval; zero for none */
     public static final int DEFAULT_HEARTBEAT = 0;
 
-    private String _hostName = DEFAULT_HOST;
     private String _userName = DEFAULT_USER;
     private String _password = DEFAULT_PASS;
     private String _virtualHost = DEFAULT_VHOST;
@@ -80,15 +76,6 @@ public class ConnectionParameters {
      * Instantiate a set of parameters with all values set to the defaults
      */
     public ConnectionParameters() {}
-
-
-    public String getHostName() {
-        return _hostName;
-    }
-
-    public void setHostName(String hostName) {
-        _hostName = hostName;
-    }
 
     /**
      * Retrieve the user name.

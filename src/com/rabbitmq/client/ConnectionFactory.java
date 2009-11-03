@@ -50,6 +50,7 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
 
 public class ConnectionFactory {
     private final ConnectionParameters _params;
+    private final EndpointDescriptor _endpoints;
 
     /**
      * Holds the SocketFactory used to manufacture outbound sockets.
@@ -60,7 +61,7 @@ public class ConnectionFactory {
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
     public ConnectionFactory() {
-        _params = new ConnectionParameters();
+        this(new ConnectionParameters());
     }
 
     /**
@@ -68,7 +69,12 @@ public class ConnectionFactory {
      * @param params the relevant parameters for instantiating the broker connection
      */
     public ConnectionFactory(ConnectionParameters params) {
+        this(params, EndpointDescriptor.DEFAULT);
+    }
+
+    public ConnectionFactory(ConnectionParameters params, EndpointDescriptor descriptor) {
         _params = params;
+        _endpoints = descriptor;
     }
 
     /**
@@ -265,7 +271,6 @@ public class ConnectionFactory {
     }
 
     public Connection newConnection() throws IOException {
-        // Don't ask :-)
-        return newConnection(_params.getHostName(), -1);
+        return newConnection(_endpoints.getAddresses());
     }
 }
