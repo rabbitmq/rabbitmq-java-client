@@ -52,6 +52,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(Permissions.class);
         suite.addTestSuite(AlternateExchange.class);
         suite.addTestSuite(QueueLifecycle.class);
+        suite.addTestSuite(QueueExclusivity.class);
         return suite;
     }
 }

@@ -118,7 +118,7 @@ public class QueueLifecycle extends BrokerTestCase
   }
 
   public void testQueueNonEquivalenceAutoDelete() throws IOException {
-    verifyNotEquivalent(false, false, true);    
+    verifyNotEquivalent(false, false, true);
   }
 
   // Note that this assumes that auto-deletion is synchronous with basic.cancel,
