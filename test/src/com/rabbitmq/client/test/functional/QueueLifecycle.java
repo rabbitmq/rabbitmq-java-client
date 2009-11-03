@@ -63,6 +63,26 @@ public class QueueLifecycle extends BrokerTestCase
     channel.queueDeclare(name, false, durable, exclusive, autoDelete, args);
   }
 
+  // NB the exception will close the connection
+  void verifyNotEquivalent(boolean durable,
+                           boolean exclusive,
+                           boolean autoDelete) throws IOException {
+    String q = "queue";
+    AMQP.Queue.DeclareOk qok = channel.queueDeclare(q,
+                                                    false,
+                                                    false,
+                                                    false,
+                                                    false,
+                                                    noArgs);
+    try {
+      verifyQueue(q, durable, exclusive, autoDelete, noArgs);
+    }
+    catch (IOException ioe) {
+      return;
+    }
+    fail("Queue.declare should have been rejected as not equivalent");
+  }
+  
   // From amqp-0-9-1.xml, for "passive" property, "equivalent" rule:
   // "If not set and the queue exists, the server MUST check that the
   // existing queue has the same values for durable, exclusive,
@@ -79,19 +99,26 @@ public class QueueLifecycle extends BrokerTestCase
                                                     noArgs);
     // equivalent
     verifyQueue(q, false, false, false, noArgs);
-    // not equivalent in various ways
-    try {
-      verifyQueue(q, true, false, false, noArgs);
-      verifyQueue(q, false, true, false, noArgs);
-      verifyQueue(q, false, false, true, noArgs);
-      HashMap<String,Object> args = new HashMap();
-      args.put("foo", "bar");
-      verifyQueue(q, false, false, false, args);
-    }
-    catch (IOException ioe) {
-      return;
-    }
-    fail("Actively declaring a pre-existing queue with different properties should fail");
+
+    // the spec says that the arguments table is matched on
+    // being semantically equivalent.
+    HashMap<String,Object> args = new HashMap();
+    args.put("assumed-to-be-semantically-void", "bar");
+    verifyQueue(q, false, false, false, args);
+    
+  }
+
+  // not equivalent in various ways
+  public void testQueueNonEquivalenceDurable() throws IOException {
+    verifyNotEquivalent(true, false, false);    
+  }
+
+  public void testQueueNonEquivalenceExclusive() throws IOException {
+    verifyNotEquivalent(false, true, false);    
+  }
+
+  public void testQueueNonEquivalenceAutoDelete() throws IOException {
+    verifyNotEquivalent(false, false, true);    
   }
 
   // Note that this assumes that auto-deletion is synchronous with basic.cancel,
