@@ -67,7 +67,7 @@ public class ExclusiveQueueDurability extends PersisterRestartBase {
   // -> queue should no longer exist
   public void testConnectionQueueSameNode() throws Exception {
     AMQP.Queue.DeclareOk ok = channel.queueDeclare("scenario1", false, true, true, false, noArgs);
-    restartNode();
+    restartAbruptly();
     verifyQueueMissing(channel, "scenario1");
   }
   
