@@ -49,6 +49,25 @@ public class QueueLifecycle extends BrokerTestCase
                          // these are ignored, since it's passive
                          false, false, false, noArgs);
   }
+
+  void verifyQueueMissing(String name) throws IOException {
+    // we can't in general check with a passive declare, since that
+    // may return an IOException because of exclusivity.  But we can
+    // check that we can happily declare another with the same name:
+    // the only circumstance in which this won't result in an error is
+    // if it doesn't exist.
+    try {
+      channel.queueDeclare(name, false,
+                           false, true, true, noArgs);
+
+    }
+    catch (IOException ioe) {
+      fail("Queue.Declare threw an exception, probably meaning that the queue already exists");
+    }
+    // clean up
+    channel.queueDelete(name);
+  }
+
   
   /** Verify that a queue both exists and has the properties as given
    * @throws IOException if one of these conditions is not true
@@ -163,4 +182,20 @@ public class QueueLifecycle extends BrokerTestCase
     verifyQueueExists(name);
   }
 
+  public void testExclusiveGoesWithConnection() throws IOException {
+    String name = "exclusivequeue2";
+    AMQP.Queue.DeclareOk qok = channel.queueDeclare(name,
+                                                    false,
+                                                    false,
+                                                    true,
+                                                    false,
+                                                    noArgs);
+    // now it's there
+    verifyQueue(name, false, true, false, noArgs);
+    closeConnection();
+    openConnection();
+    openChannel();
+    verifyQueueMissing(name);
+  }
+  
 }

@@ -50,12 +50,6 @@ public class QueueExclusivity extends BrokerTestCase
   public Channel altChannel;
   String q = "exclusiveQ";
   
-  void verifyQueueExists(String name) throws IOException {
-    channel.queueDeclare(name, true,
-                         // these are ignored, since it's passive
-                         false, false, false, noArgs);
-  }
-
   protected void createResources() throws IOException {
     altConnection = connectionFactory.newConnection("localhost");
     altChannel = altConnection.createChannel();
