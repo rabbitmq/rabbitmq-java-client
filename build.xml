@@ -116,9 +116,17 @@
     <property name="SSL_P12_PASSWORD" value="${env.PASSWORD}"/>
   </target>
 
-  <target name="make-client-keystore" if="SSL_AVAILABLE" depends="detect-ssl">
+  <target name="detect-tmpdir">
+    <property environment="env"/>
+    <condition property="TMPDIR" value="${env.TMPDIR}" else="/tmp">
+      <available file="${env.TMPDIR}" type="dir"/>
+    </condition>
+  </target>
+
+  <target name="make-client-keystore" if="SSL_AVAILABLE" depends="detect-ssl, detect-tmpdir">
     <exec executable="mktemp" outputproperty="CLIENT_KEYSTORE" failonerror="true" osfamily="unix">
       <arg value="-u"/>
+      <arg value="${TMPDIR}/tmp.XXXXXXXXXX"/>
     </exec>
     <exec executable="keytool" failonerror="true" osfamily="unix">
       <arg line="-import"/>
@@ -134,6 +142,7 @@
     </exec>
     <exec executable="mktemp" outputproperty="CLIENT_KEYSTORE_EMPTY" failonerror="true" osfamily="unix">
       <arg value="-u"/>
+      <arg value="${TMPDIR}/tmp.XXXXXXXXXX"/>
     </exec>
     <!-- can't create an empty keystore, so add cert in and then delete it! -->
     <exec executable="keytool" failonerror="true" osfamily="unix">

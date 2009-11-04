@@ -220,7 +220,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
         _frameHandler.sendHeader();
 
-        new MainLoop().start(); // start the main loop going
+        // start the main loop going
+        Thread ml = new MainLoop();
+        ml.setName("AMQP Connection " + getHost() + ":" + getPort());
+        ml.start();
 
         try {
             // See bug 17389. The MainLoop could have shut down already in
@@ -536,7 +539,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
         _heartbeat = 0; // Do not try to send heartbeats after CloseOk
         _brokerInitiatedShutdown = true;
-        new SocketCloseWait(sse);
+        Thread scw = new SocketCloseWait(sse);
+        scw.setName("AMQP Connection Closing Monitor " +
+                    getHost() + ":" + getPort());
+        scw.start();
     }
     
     private class SocketCloseWait extends Thread {
@@ -544,7 +550,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         
         public SocketCloseWait(ShutdownSignalException sse) {
             cause = sse;
-            start();
         }
         
         @Override public void run() {
