@@ -63,12 +63,27 @@ public class ExclusiveQueueDurability extends PersisterRestartBase {
     }
   }
   
-  //  connection and queue are on same node, node restarts
-  // -> queue should no longer exist
+  // 1) connection and queue are on same node, node restarts -> queue
+  // should no longer exist
   public void testConnectionQueueSameNode() throws Exception {
     AMQP.Queue.DeclareOk ok = channel.queueDeclare("scenario1", false, true, true, false, noArgs);
     restartAbruptly();
     verifyQueueMissing(channel, "scenario1");
   }
+
+  /* The other scenarios:
+   *
+   * 2) connection and queue are on different nodes, queue's node
+   * restarts, connection is still alive -> queue should exist
+   *
+   * 3) connection and queue are on different nodes, queue's node
+   * restarts, connection has been terminated in the meantime -> queue
+   * should no longer exist
+   * 
+   * There's no way to test these, as things stand; connections and
+   * queues are tied to nodes, so one can't engineer a situation in
+   * which a connection and its exclusive queue are on different
+   * nodes.
+   */
   
 }
