@@ -135,6 +135,32 @@ public class QueueExclusivity extends BrokerTestCase
     fail("Exclusive queue should be locked for queue bind from another connection");
   }
 
-  // NB The spec XML doesn't mention queue.unbind or basic.get in the exclusive rule
-  
+  // NB The spec XML doesn't mention queue.unbind, basic.cancel, or
+  // basic.get in the exclusive rule.  It seems the most sensible
+  // interpretation to include queue.unbind and basic.get in the
+  // prohibition.
+  // basic.cancel is inherently local to a channel, so it
+  // *doesn't* make sense to include it.
+
+  public void testQueueExclusiveForUnbind() throws Exception {
+    altChannel.queueBind(q, "", ""); // NB uses default exchange
+    try {
+      channel.queueUnbind(q, "", "");
+    }
+    catch (IOException ioe) {
+      return;
+    }
+    fail("Exclusive queue should be locked for queue unbind from another connection");
+  }
+
+  public void testQueueExclusiveForGet() throws Exception {
+    try {
+      channel.basicGet(q, true);
+    }
+    catch (IOException ioe) {
+      return;
+    }
+    fail("Exclusive queue should be locked for basic get from another connection");
+  }
+
 }
