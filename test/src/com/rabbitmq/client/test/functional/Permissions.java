@@ -116,7 +116,7 @@ public class Permissions extends BrokerTestCase
         withNames(new WithName() {
                 public void with(String name) throws IOException {
                     adminCh.exchangeDeclare(name, "direct");
-                    adminCh.queueDeclare(name);
+                    adminCh.queueDeclare(name, false, false, false, null);
                 }});
     }
 
@@ -161,11 +161,11 @@ public class Permissions extends BrokerTestCase
     {
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                    channel.queueDeclare(name);
+                  channel.queueDeclare(name, false, false, false, null);
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                    channel.queueDeclare(name, true, false, false, false, null);
+                  channel.queueDeclarePassive(name);
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {

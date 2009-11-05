@@ -47,7 +47,7 @@ public class HelloServer {
             Connection conn = connFactory.newConnection(hostName, portNumber);
             final Channel ch = conn.createChannel();
 
-            ch.queueDeclare("Hello");
+            ch.queueDeclare("Hello", false, false, false, null);
             StringRpcServer server = new StringRpcServer(ch, "Hello") {
                     public String handleStringCall(String request) {
                         System.out.println("Got request: " + request);

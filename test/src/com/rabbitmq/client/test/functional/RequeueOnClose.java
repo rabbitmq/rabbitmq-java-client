@@ -63,9 +63,9 @@ public abstract class RequeueOnClose
     public void injectMessage()
         throws IOException
     {
-        channel.queueDeclare(Q);
+      channel.queueDeclare(Q, false, false, false, null);
         channel.queueDelete(Q);
-        channel.queueDeclare(Q);
+        channel.queueDeclare(Q, false, false, false, null);
         channel.basicPublish("", Q, null, "RequeueOnClose message".getBytes());
     }
 
@@ -132,9 +132,9 @@ public abstract class RequeueOnClose
     {
         openConnection();
         open();
-        channel.queueDeclare(Q);
+        channel.queueDeclare(Q, false, false, false, null);
         channel.queueDelete(Q);
-        channel.queueDeclare(Q);
+        channel.queueDeclare(Q, false, false, false, null);
         for (int i = 0; i < MESSAGE_COUNT; i++) {
             channel.basicPublish("", Q, null, "in flight message".getBytes());
         }

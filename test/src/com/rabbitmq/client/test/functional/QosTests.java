@@ -202,7 +202,7 @@ public class QosTests extends BrokerTestCase
         //behind" - a notion of fairness somewhat short of perfect but
         //probably good enough.
         for (String q : queues) {
-            AMQP.Queue.DeclareOk ok = channel.queueDeclare(q, true, false, true, true, null);
+            AMQP.Queue.DeclareOk ok = channel.queueDeclare(q, false, false, false, null);
             assertTrue(ok.getMessageCount() < messageCount);
         }
             
@@ -263,7 +263,7 @@ public class QosTests extends BrokerTestCase
         channel.basicQos(1);
         QueueingConsumer c = new QueueingConsumer(channel);
         String queue = "qosTest";
-        channel.queueDeclare(queue, false);
+        channel.queueDeclare(queue, false, false, false, null);
         channel.queueBind(queue, "amq.fanout", "");
         fill(3);
         String tag;
@@ -454,7 +454,7 @@ public class QosTests extends BrokerTestCase
                                         boolean noAck)
         throws IOException
     {
-        AMQP.Queue.DeclareOk ok = ch.queueDeclare();
+        AMQP.Queue.DeclareOk ok = ch.queueDeclare("", false, false, false, null);
         String queue = ok.getQueue();
         ch.queueBind(queue, "amq.fanout", "");
         ch.basicConsume(queue, noAck, c);

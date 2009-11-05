@@ -448,35 +448,29 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public Queue.DeclareOk queueDeclare(String queue, boolean passive,
-                                        boolean durable, boolean exclusive,
+    public Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive,
                                         boolean autoDelete, Map<String, Object> arguments)
         throws IOException
     {
         return (Queue.DeclareOk)
-            exnWrappingRpc(new Queue.Declare(TICKET, queue, passive, durable,
+            exnWrappingRpc(new Queue.Declare(TICKET, queue, false, durable,
                                              exclusive, autoDelete, false, arguments)).getMethod();
-    }
-
-    /** Public API - {@inheritDoc} */
-    public Queue.DeclareOk queueDeclare(String queue, boolean durable)
-        throws IOException
-    {
-        return queueDeclare(queue, false, durable, false, false, null);
-    }
-
-    /** Public API - {@inheritDoc} */
-    public Queue.DeclareOk queueDeclare(String queue)
-        throws IOException
-    {
-        return queueDeclare(queue, false, false, false, false, null);
     }
 
     /** Public API - {@inheritDoc} */
     public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclare()
         throws IOException
     {
-        return queueDeclare("", false, false, true, true, null);
+        return queueDeclare("", false, true, true, null);
+    }
+
+    /** Public API - {@inheritDoc} */
+    public Queue.DeclareOk queueDeclarePassive(String queue)
+        throws IOException
+    {
+        return (Queue.DeclareOk)
+            exnWrappingRpc(new Queue.Declare(TICKET, queue, true, false,
+                                             true, true, false, null)).getMethod();
     }
 
     /** Public API - {@inheritDoc} */

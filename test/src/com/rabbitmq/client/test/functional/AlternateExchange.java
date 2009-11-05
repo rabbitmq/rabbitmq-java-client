@@ -85,7 +85,7 @@ public class AlternateExchange extends BrokerTestCase
 
     @Override protected void createResources() throws IOException {
         for (String q : resources) {
-            channel.queueDeclare(q);
+          channel.queueDeclare(q, false, false, false, null);
         }
     }
 

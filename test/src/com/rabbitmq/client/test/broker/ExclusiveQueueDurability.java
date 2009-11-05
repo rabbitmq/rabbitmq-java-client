@@ -55,7 +55,7 @@ public class ExclusiveQueueDurability extends PersisterRestartBase {
 
   void verifyQueueMissing(Channel channel, String queueName) throws IOException {
     try {
-      channel.queueDeclare(queueName);
+      channel.queueDeclare(queueName, false, false, false, null);
     }
     catch (IOException ioe) {
       // FIXME check that it's specifically resource locked
@@ -66,7 +66,7 @@ public class ExclusiveQueueDurability extends PersisterRestartBase {
   // 1) connection and queue are on same node, node restarts -> queue
   // should no longer exist
   public void testConnectionQueueSameNode() throws Exception {
-    AMQP.Queue.DeclareOk ok = channel.queueDeclare("scenario1", false, true, true, false, noArgs);
+    AMQP.Queue.DeclareOk ok = channel.queueDeclare("scenario1", true, true, false, noArgs);
     restartAbruptly();
     verifyQueueMissing(channel, "scenario1");
   }

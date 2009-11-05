@@ -42,12 +42,8 @@ import com.rabbitmq.client.QueueingConsumer;
 public class QueueLifecycle extends BrokerTestCase
 {
 
-  HashMap<String,Object> noArgs = new HashMap();
-
   void verifyQueueExists(String name) throws IOException {
-    channel.queueDeclare(name, true,
-                         // these are ignored, since it's passive
-                         false, false, false, noArgs);
+    channel.queueDeclarePassive(name);
   }
 
   void verifyQueueMissing(String name) throws IOException {
@@ -57,9 +53,7 @@ public class QueueLifecycle extends BrokerTestCase
     // the only circumstance in which this won't result in an error is
     // if it doesn't exist.
     try {
-      channel.queueDeclare(name, false,
-                           false, true, true, noArgs);
-
+      channel.queueDeclare(name, false, false, false, null);
     }
     catch (IOException ioe) {
       fail("Queue.Declare threw an exception, probably meaning that the queue already exists");
@@ -79,7 +73,7 @@ public class QueueLifecycle extends BrokerTestCase
                    Map<String,Object> args) throws IOException {
     verifyQueueExists(name);
     // use passive/equivalent rule to check that it has the same properties
-    channel.queueDeclare(name, false, durable, exclusive, autoDelete, args);
+    channel.queueDeclare(name, durable, exclusive, autoDelete, args);
   }
 
   // NB the exception will close the connection
@@ -87,14 +81,9 @@ public class QueueLifecycle extends BrokerTestCase
                            boolean exclusive,
                            boolean autoDelete) throws IOException {
     String q = "queue";
-    AMQP.Queue.DeclareOk qok = channel.queueDeclare(q,
-                                                    false,
-                                                    false,
-                                                    false,
-                                                    false,
-                                                    noArgs);
+    AMQP.Queue.DeclareOk qok = channel.queueDeclare(q, false, false, false, null);
     try {
-      verifyQueue(q, durable, exclusive, autoDelete, noArgs);
+      verifyQueue(q, durable, exclusive, autoDelete, null);
     }
     catch (IOException ioe) {
       return;
@@ -110,14 +99,9 @@ public class QueueLifecycle extends BrokerTestCase
   // raise a channel exception if not."
   public void testQueueEquivalence() throws IOException {
     String q = "queue";
-    AMQP.Queue.DeclareOk qok = channel.queueDeclare(q,
-                                                    false,
-                                                    false,
-                                                    false,
-                                                    false,
-                                                    noArgs);
+    AMQP.Queue.DeclareOk qok = channel.queueDeclare(q, false, false, false, null);
     // equivalent
-    verifyQueue(q, false, false, false, noArgs);
+    verifyQueue(q, false, false, false, null);
 
     // the spec says that the arguments table is matched on
     // being semantically equivalent.
@@ -144,14 +128,9 @@ public class QueueLifecycle extends BrokerTestCase
   // which is not actually in the spec. (If it isn't, there's a race here).
   public void testQueueAutoDelete() throws IOException {
     String name = "tempqueue";
-    AMQP.Queue.DeclareOk qok = channel.queueDeclare(name,
-                                                    false,
-                                                    false,
-                                                    false,
-                                                    true,
-                                                    noArgs);
+    AMQP.Queue.DeclareOk qok = channel.queueDeclare(name, false, false, true, null);
     // now it's there
-    verifyQueue(name, false, false, true, noArgs);
+    verifyQueue(name, false, false, true, null);
     QueueingConsumer consumer = new QueueingConsumer(channel);
     channel.basicConsume(name, consumer);
     channel.basicCancel(consumer.getConsumerTag());
@@ -167,14 +146,9 @@ public class QueueLifecycle extends BrokerTestCase
 
   public void testExclusiveNotAutoDelete() throws IOException {
     String name = "exclusivequeue";
-    AMQP.Queue.DeclareOk qok = channel.queueDeclare(name,
-                                                    false,
-                                                    false,
-                                                    true,
-                                                    false,
-                                                    noArgs);
+    AMQP.Queue.DeclareOk qok = channel.queueDeclare(name, false, true, false, null);
     // now it's there
-    verifyQueue(name, false, true, false, noArgs);
+    verifyQueue(name, false, true, false, null);
     QueueingConsumer consumer = new QueueingConsumer(channel);
     channel.basicConsume(name, consumer);
     channel.basicCancel(consumer.getConsumerTag());
@@ -184,14 +158,9 @@ public class QueueLifecycle extends BrokerTestCase
 
   public void testExclusiveGoesWithConnection() throws IOException {
     String name = "exclusivequeue2";
-    AMQP.Queue.DeclareOk qok = channel.queueDeclare(name,
-                                                    false,
-                                                    false,
-                                                    true,
-                                                    false,
-                                                    noArgs);
+    AMQP.Queue.DeclareOk qok = channel.queueDeclare(name, false, true, false, null);
     // now it's there
-    verifyQueue(name, false, true, false, noArgs);
+    verifyQueue(name, false, true, false, null);
     closeConnection();
     openConnection();
     openChannel();

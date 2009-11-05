@@ -92,7 +92,7 @@ public class PersisterRestartBase extends BrokerTestCase
     protected void declareDurableQueue(String q)
         throws IOException
     {
-        channel.queueDeclare(q, true);
+      channel.queueDeclare(q, true, false, false, null);
     }
 
     protected void declareAndBindDurableQueue(String q, String x, String r)

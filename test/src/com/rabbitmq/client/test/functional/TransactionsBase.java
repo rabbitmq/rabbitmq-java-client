@@ -53,7 +53,7 @@ public abstract class TransactionsBase
     }
 
     protected void createResources() throws IOException {
-        channel.queueDeclare(Q);
+        channel.queueDeclare(Q, false, false, false, null);
     }
 
     protected void releaseResources() throws IOException {

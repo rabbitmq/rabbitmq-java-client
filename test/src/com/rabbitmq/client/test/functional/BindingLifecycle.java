@@ -110,7 +110,7 @@ public class BindingLifecycle extends PersisterRestartBase {
 
     @Override protected void declareDurableQueue(String q) throws IOException {
         (secondaryChannel == null ? channel : secondaryChannel).
-            queueDeclare(q, true);
+          queueDeclare(q, true, false, false, null);
     }
 
     /**
@@ -206,7 +206,7 @@ public class BindingLifecycle extends PersisterRestartBase {
         // nothing to get routed.
 
         channel.queueDelete(binding.q);
-        channel.queueDeclare(binding.q, durable);
+        channel.queueDeclare(binding.q, durable, false, false, null);
 
         sendUnroutable(binding);
 
@@ -375,8 +375,7 @@ public class BindingLifecycle extends PersisterRestartBase {
 
         channel.exchangeDeclare(binding.x, "direct",
                                 false, durable, null);
-        channel.queueDeclare(binding.q,
-                             false, durable, false, true, null);
+        channel.queueDeclare(binding.q, durable, false, true, null);
         channel.queueBind(binding.q, binding.x, binding.k);
 
         if (queues > 1) {
@@ -384,8 +383,7 @@ public class BindingLifecycle extends PersisterRestartBase {
             queueNames = new String[j];
             for (int i = 0 ; i < j ; i++) {
                 queueNames[i] = randomString();
-                channel.queueDeclare(queueNames[i],
-                                     false, durable, false, false, null);
+                channel.queueDeclare(queueNames[i], durable, false, false, null);
                 channel.queueBind(queueNames[i],
                                   binding.x, binding.k);
                 channel.basicConsume(queueNames[i], true,
@@ -411,8 +409,7 @@ public class BindingLifecycle extends PersisterRestartBase {
             }
         }
 
-        channel.queueDeclare(binding.q,
-                             false, durable, true, true, null);
+        channel.queueDeclare(binding.q, durable, true, true, null);
 
         // if (queues == 1): Because the exchange does not exist, this
         // bind should fail
@@ -491,7 +488,7 @@ public class BindingLifecycle extends PersisterRestartBase {
         throws IOException {
 
         channel.exchangeDeclare(binding.x, "direct", durable);
-        channel.queueDeclare(binding.q, durable);
+        channel.queueDeclare(binding.q, durable, true, true, null);
         channel.queueBind(binding.q, binding.x, binding.k);
     }
 

@@ -49,7 +49,7 @@ public class SimpleConsumer {
 
             final Channel ch = conn.createChannel();
 
-            ch.queueDeclare(queueName);
+            ch.queueDeclare(queueName, false, false, false, null);
 
             QueueingConsumer consumer = new QueueingConsumer(ch);
             ch.basicConsume(queueName, consumer);

@@ -72,7 +72,7 @@ public class SimpleTopicConsumer {
             if (queue == null) {
                 queue = channel.queueDeclare().getQueue();
             } else {
-                channel.queueDeclare(queue);
+              channel.queueDeclare(queue, false, false, false, null);
             }
 
             channel.queueBind(queue, exchange, topicPattern);

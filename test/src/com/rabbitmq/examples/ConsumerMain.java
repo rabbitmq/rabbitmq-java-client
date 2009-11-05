@@ -115,7 +115,7 @@ public class ConsumerMain implements Runnable {
         Channel channel = _connection.createChannel();
 
         String queueName = "test queue";
-        channel.queueDeclare(queueName, true);
+        channel.queueDeclare(queueName, true, false, false, null);
 
         String exchangeName = "test completion";
         channel.exchangeDeclare(exchangeName, "fanout", false, false, null);

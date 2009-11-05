@@ -119,7 +119,7 @@ public class RpcClient {
      * @return the name of the reply queue
      */
     private String setupReplyQueue() throws IOException {
-        return _channel.queueDeclare("", false, false, true, true, null).getQueue();
+        return _channel.queueDeclare("", false, true, true, null).getQueue();
     }
 
     /**

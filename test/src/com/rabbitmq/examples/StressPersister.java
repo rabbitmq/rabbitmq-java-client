@@ -124,7 +124,7 @@ public class StressPersister {
 
     public void redeclare(String q, Channel chan) throws IOException {
         trace("Redeclaring queue " + q);
-        chan.queueDeclare(q, true);
+        chan.queueDeclare(q, true, false, false, null);
         // ^^ synchronous operation to get some kind
         // of indication back from the server that it's caught up with us
     }
@@ -139,7 +139,7 @@ public class StressPersister {
         List<Double> plateauSampleDeltas = new ArrayList<Double>(repeatCount);
 
         trace("Declaring and purging queue " + q);
-        chan.queueDeclare(q, true);
+        chan.queueDeclare(q, true, false, false, null);
         chan.queuePurge(q);
         chan.basicQos(1);
 

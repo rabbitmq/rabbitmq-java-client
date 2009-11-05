@@ -412,9 +412,9 @@ public class TestMain {
         String q2 = "tryTopicsQueue2";
         String q3 = "tryTopicsQueue3";
         String x = "tryTopicsExch";
-        _ch1.queueDeclare(q1);
-        _ch1.queueDeclare(q2);
-        _ch1.queueDeclare(q3);
+        _ch1.queueDeclare(q1, false, false, false, null);
+        _ch1.queueDeclare(q2, false, false, false, null);
+        _ch1.queueDeclare(q3, false, false, false, null);
         _ch1.exchangeDeclare(x, "topic", false, false, null);
         _ch1.queueBind(q1, x, "test.#");
         _ch1.queueBind(q2, x, "test.test");
@@ -470,7 +470,7 @@ public class TestMain {
         doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
 
         String mq = "mandatoryTestQueue";
-        _ch1.queueDeclare(mq, false, false, false, true, null);
+        _ch1.queueDeclare(mq, false, false, true, null);
         _ch1.queueBind(mq, mx, "");
 
         returnCell = new BlockingCell<Object>();

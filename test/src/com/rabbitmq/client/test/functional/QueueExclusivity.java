@@ -53,7 +53,7 @@ public class QueueExclusivity extends BrokerTestCase
   protected void createResources() throws IOException {
     altConnection = connectionFactory.newConnection("localhost");
     altChannel = altConnection.createChannel();
-    AMQP.Queue.DeclareOk ok = altChannel.queueDeclare(q, false,
+    AMQP.Queue.DeclareOk ok = altChannel.queueDeclare(q, 
                                                       // not durable, exclusive, not auto-delete
                                                       false, true, false, noArgs);
   }
@@ -66,7 +66,7 @@ public class QueueExclusivity extends BrokerTestCase
   
   public void testQueueExclusiveForPassiveDeclare() throws Exception {
     try {
-      AMQP.Queue.DeclareOk ok2 = channel.queueDeclare(q, true, false, true, false, noArgs);
+      AMQP.Queue.DeclareOk ok2 = channel.queueDeclarePassive(q);
     }
     catch (IOException ioe) {
       // TODO test the particular error
@@ -79,7 +79,7 @@ public class QueueExclusivity extends BrokerTestCase
   // the all the arguments
   public void testQueueExclusiveForDeclare() throws Exception {
     try {
-      AMQP.Queue.DeclareOk ok2 = channel.queueDeclare(q, false, false, true, false, noArgs);
+      AMQP.Queue.DeclareOk ok2 = channel.queueDeclare(q, false, true, false, noArgs);
     }
     catch (IOException ioe) {
       // TODO test the particular error

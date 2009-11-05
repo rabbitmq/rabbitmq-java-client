@@ -51,7 +51,7 @@ public class SimpleProducer {
             Channel ch = conn.createChannel();
 
             if (exchange.equals("")) {
-                ch.queueDeclare(routingKey);
+              ch.queueDeclare(routingKey, false, false, false, null);
             }
             ch.basicPublish(exchange, routingKey, null, message.getBytes());
             ch.close();

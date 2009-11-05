@@ -47,7 +47,7 @@ public class HelloJsonServer {
             Connection conn = connFactory.newConnection(hostName, portNumber);
             final Channel ch = conn.createChannel();
 
-            ch.queueDeclare("Hello");
+            ch.queueDeclare("Hello", false, false, false, null);
             JsonRpcServer server =
                 new JsonRpcServer(ch, "Hello", HelloJsonService.class,
                                   new HelloJsonService() {
