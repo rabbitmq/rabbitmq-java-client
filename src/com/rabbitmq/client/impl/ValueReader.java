@@ -38,6 +38,8 @@ import java.math.BigInteger;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 import com.rabbitmq.client.MalformedFrameException;
 
@@ -162,62 +164,84 @@ Stream. */
 
         DataInputStream tableIn = new DataInputStream
             (new TruncatedInputStream(in, tableLength));
-        Object value = null;
         while(tableIn.available() > 0) {
             String name = readShortstr(tableIn);
-            switch(tableIn.readUnsignedByte()) {
-            case 'S':
-                value = readLongstr(tableIn);
-                break;
-            case 'I':
-                value = tableIn.readInt();
-                break;
-            case 'D':
-                int scale = tableIn.readUnsignedByte();
-                byte [] unscaled = new byte[4];
-                tableIn.readFully(unscaled);
-                value = new BigDecimal(new BigInteger(unscaled), scale);
-                break;
-            case 'T':
-                value = readTimestamp(tableIn);
-                break;
-            case 'F':
-                value = readTable(tableIn);
-                break;
-            case 'b':
-                value = tableIn.readByte();
-                break;
-            case 'd':
-                value = tableIn.readDouble();
-                break;
-            case 'f':
-                value = tableIn.readFloat();
-                break;
-            case 'l':
-                value = tableIn.readLong();
-                break;
-            case 's':
-                value = tableIn.readShort();
-                break;
-            case 't':
-                value = tableIn.readBoolean();
-                break;
-            case 'x':
-                value = readBytes(tableIn);
-                break;
-            case 'V':
-                value = null;
-                break;
-            default:
-                throw new MalformedFrameException
-                    ("Unrecognised type in table");
-            }
-
+            Object value = readFieldValue(tableIn);
             if(!table.containsKey(name))
                 table.put(name, value);
         }
-
         return table;
+    }
+
+    public static final Object readFieldValue(DataInputStream in)
+        throws IOException {
+        Object value = null;
+        switch(in.readUnsignedByte()) {
+          case 'S':
+              value = readLongstr(in);
+              break;
+          case 'I':
+              value = in.readInt();
+              break;
+          case 'D':
+              int scale = in.readUnsignedByte();
+              byte [] unscaled = new byte[4];
+              in.readFully(unscaled);
+              value = new BigDecimal(new BigInteger(unscaled), scale);
+              break;
+          case 'T':
+              value = readTimestamp(in);
+              break;
+          case 'F':
+              value = readTable(in);
+              break;
+          case 'A':
+              value = readArray(in);
+              break;
+          case 'b':
+              value = in.readByte();
+              break;
+          case 'd':
+              value = in.readDouble();
+              break;
+          case 'f':
+              value = in.readFloat();
+              break;
+          case 'l':
+              value = in.readLong();
+              break;
+          case 's':
+              value = in.readShort();
+              break;
+          case 't':
+              value = in.readBoolean();
+              break;
+          case 'x':
+              value = readBytes(in);
+              break;
+          case 'V':
+              value = null;
+              break;
+          default:
+              throw new MalformedFrameException
+                  ("Unrecognised type in table");
+        }
+        return value;
+    }
+
+    /** Read a field-array */
+    public static List readArray(DataInputStream in)
+        throws IOException
+    {
+        long length = unsignedExtend(in.readInt());
+        DataInputStream arrayIn = new DataInputStream
+            (new TruncatedInputStream(in, length));
+        List array = new ArrayList();
+        while(arrayIn.available() > 0) {
+            Object value = readFieldValue(arrayIn);
+            array.add(value);
+        }
+        return array;
     }
 
     /** Public API - reads a table. */
