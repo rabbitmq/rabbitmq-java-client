@@ -40,6 +40,7 @@ import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.impl.AMQCommand;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ConnectionParameters;
 
 import junit.framework.TestCase;
 
@@ -93,4 +94,17 @@ public class ConnectionOpen extends TestCase
     fail("Expected an IOException trying to read more from the socket.");
   }
 
+  public void testFrameMaxLessThanFrameMinSize() throws IOException {
+    ConnectionParameters params = new ConnectionParameters();
+    params.setRequestedFrameMax(100);
+    ConnectionFactory factory = new ConnectionFactory(params);
+    try {
+      factory.newConnection("localhost");
+    }
+    catch (IOException ioe) {
+      return;
+    }
+    fail("Broker should have closed the connection since our frame max < frame_min_size");
+  }
+  
 }
