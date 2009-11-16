@@ -42,6 +42,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(Tables.class);
         suite.addTestSuite(DoubleDeletion.class);
         suite.addTestSuite(Routing.class);
+        suite.addTestSuite(BindingLifecycle.class);
         suite.addTestSuite(Transactions.class);
         suite.addTestSuite(PersistentTransactions.class);
         suite.addTestSuite(RequeueOnConnectionClose.class);
