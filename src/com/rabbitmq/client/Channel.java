@@ -469,6 +469,18 @@ public interface Channel extends ShutdownNotifier{
     void basicCancel(String consumerTag) throws IOException;
 
     /**
+     * Ask the broker to resend unacknowledged messages.  In 0-8
+     * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
+     * the new, deprecated method basic.recover_async is asynchronous.
+     * To avoid this API changing, this is named for the latter, and
+     * will be deprecated.
+     * @param requeue If true, messages will be requeued and possibly
+     * delivered to a different consumer. If false, messages will be
+     * redelivered to the same consumer.
+     */
+    void basicRecoverAsync(boolean requeue) throws IOException;
+
+    /**
      * Enables TX mode on this channel.
      * @see com.rabbitmq.client.AMQP.Tx.Select
      * @see com.rabbitmq.client.AMQP.Tx.SelectOk
