@@ -33,7 +33,7 @@ package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
-public class PersisterRestart5 extends PersisterRestartBase
+public class PersisterRestart5 extends RestartBase
 {
 
     private static final String Q1 = "Restart5One";

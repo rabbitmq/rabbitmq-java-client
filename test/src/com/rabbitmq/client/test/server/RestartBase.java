@@ -31,52 +31,43 @@
 
 package com.rabbitmq.client.test.server;
 
+import com.rabbitmq.client.test.BrokerTestCase;
+
 import java.io.IOException;
 
-public class PersisterRestart4 extends RestartBase
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.tools.Host;
+
+public class RestartBase extends BrokerTestCase
 {
 
-    private static final String Q1 = "Restart4One";
-    private static final String Q2 = "Restart4Two";
+    // The time in ms the RabbitMQ persister waits before flushing the
+    // persister log
+    //
+    // This matches the value of LOG_BUNDLE_DELAY in
+    // rabbit_persister.erl
+    protected static final int PERSISTER_DELAY = 5;
 
-    protected void exercisePersister() 
-      throws IOException
+    // The number of entries that the RabbitMQ persister needs to
+    // write before it takes a snapshot.
+    //
+    // This matches the value of MAX_WRAP_ENTRIES in
+    // rabbit_persister.erl
+    protected final int PERSISTER_SNAPSHOT_THRESHOLD = 500;
+
+    protected void restart()
+        throws IOException
     {
-        basicPublishPersistent(Q1);
-        basicPublishVolatile(Q1);
-
-        basicPublishPersistent(Q2);
-        basicPublishVolatile(Q2);
+        tearDown();
+        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
+        setUp();
     }
 
-    public void testRestart()
+    protected void forceSnapshot()
         throws IOException, InterruptedException
     {
-        declareDurableQueue(Q1);
-        declareDurableQueue(Q2);
-        channel.txSelect();
-        exercisePersister();
-        channel.txCommit();
-        exercisePersister();
-        forceSnapshot();
-        // delivering messages which are in the snapshot
-        channel.txCommit();
-        // Those will be in the incremental snapshot then
-        exercisePersister();
-        // but removed
-        channel.txRollback();
-        // Those will be in the incremental snapshot then
-        exercisePersister();
-        // and hopefully delivered
-        // That's three per queue in the end.
-        channel.txCommit();
-
-        restart();
-        
-        assertDelivered(Q1, 3);
-        assertDelivered(Q2, 3);
-        deleteQueue(Q2);
-        deleteQueue(Q1);
+        Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
     }
 
 }

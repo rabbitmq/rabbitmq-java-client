@@ -31,7 +31,6 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.server.BindingLifecycle;
 import com.rabbitmq.client.test.Bug20004Test;
 import com.rabbitmq.client.test.server.Permissions;
 import junit.framework.TestCase;

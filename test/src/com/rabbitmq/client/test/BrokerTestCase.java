@@ -39,6 +39,8 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ShutdownSignalException;
 
 import com.rabbitmq.client.AMQP;
@@ -137,4 +139,64 @@ public class BrokerTestCase extends TestCase
             assertEquals(expectedCode, closeMethod.getReplyCode());
         }
     }
+
+  protected void assertDelivered(String q, int count) throws IOException {
+    assertDelivered(q, count, false);
+  }
+
+  protected void assertDelivered(String q, int count, boolean redelivered) throws IOException {
+    GetResponse r;
+    for (int i = 0; i < count; i++) {
+      r = basicGet(q);
+      assertNotNull(r);
+      assertEquals(r.getEnvelope().isRedeliver(), redelivered);
+    }
+    assertNull(basicGet(q));
+  }
+
+  protected GetResponse basicGet(String q) throws IOException {
+    return channel.basicGet(q, true);
+  }
+
+  protected void basicPublishPersistent(String q) throws IOException {
+    channel.basicPublish("", q, MessageProperties.PERSISTENT_TEXT_PLAIN, "persistent message".getBytes());
+  }
+
+  protected void basicPublishPersistent(String x, String routingKey) throws IOException {
+    channel.basicPublish(x, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, "persistent message".getBytes());
+  }
+
+  protected void basicPublishVolatile(String q) throws IOException {
+    channel.basicPublish("", q, MessageProperties.TEXT_PLAIN, "not persistent message".getBytes());
+  }
+
+  protected void basicPublishVolatile(String x, String routingKey) throws IOException {
+    channel.basicPublish(x, routingKey, MessageProperties.TEXT_PLAIN, "not persistent message".getBytes());
+  }
+
+  protected void declareAndBindDurableQueue(String q, String x, String r) throws IOException {
+    declareDurableQueue(q);
+    channel.queueBind(q, x, r);
+  }
+
+  protected void declareDurableDirectExchange(String x) throws IOException {
+    channel.exchangeDeclare(x, "direct", true);
+  }
+
+  protected void declareDurableQueue(String q) throws IOException {
+    channel.queueDeclare(q, true);
+  }
+
+  protected void declareDurableTopicExchange(String x) throws IOException {
+    channel.exchangeDeclare(x, "topic", true);
+  }
+
+  protected void deleteExchange(String x) throws IOException {
+    channel.exchangeDelete(x);
+  }
+
+  protected void deleteQueue(String q) throws IOException {
+    channel.queueDelete(q);
+  }
+
 }
