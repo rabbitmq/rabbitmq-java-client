@@ -38,6 +38,9 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.List;
+import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashMap;
 import java.math.BigDecimal;
@@ -63,7 +66,10 @@ public class Tables extends BrokerTestCase
         table.put("t", true);
         table.put("x", "byte".getBytes());
         table.put("V", null);
-
+        List fieldArray = new ArrayList();
+        fieldArray.add(LongStringHelper.asLongString("foo"));
+        fieldArray.add(123);
+        table.put("A", fieldArray);
         //roundtrip of content headers
         AMQP.Queue.DeclareOk ok = channel.queueDeclare();
         String q = ok.getQueue();
@@ -92,7 +98,15 @@ public class Tables extends BrokerTestCase
             if (va instanceof byte[] && vb instanceof byte[]) {
                 assertTrue("unequal entry for key " + k,
                            Arrays.equals((byte[])va, (byte[])vb));
-            } else {
+            }
+            else if (va instanceof List && vb instanceof List) {
+                Iterator vbi = ((List)vb).iterator(); 
+                for (Object vaEntry : (List)va) {
+                    Object vbEntry = vbi.next();
+                    assertEquals("arrays unequal at key " + k, vaEntry, vbEntry);
+                }
+            }
+            else {
                 assertEquals("unequal entry for key " + k, va, vb);
             }
         }
