@@ -29,37 +29,37 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
-public class PersisterRestart5 extends PersisterRestartBase
+public class PersisterRestart4 extends PersisterRestartBase
 {
 
-    private static final String Q1 = "Restart5One";
-    private static final String Q2 = "Restart5Two";
-    private static final String X = "Exchange5";
-
+    private static final String Q1 = "Restart4One";
+    private static final String Q2 = "Restart4Two";
 
     protected void exercisePersister() 
       throws IOException
     {
-        basicPublishPersistent(X, "foo.foo");
-        basicPublishVolatile(X, "foo.qux");
+        basicPublishPersistent(Q1);
+        basicPublishVolatile(Q1);
+
+        basicPublishPersistent(Q2);
+        basicPublishVolatile(Q2);
     }
 
     public void testRestart()
         throws IOException, InterruptedException
     {
-        declareDurableTopicExchange(X);
-        declareAndBindDurableQueue(Q1, X, "foo.*");
-        declareAndBindDurableQueue(Q2, X, "foo.*");
+        declareDurableQueue(Q1);
+        declareDurableQueue(Q2);
         channel.txSelect();
         exercisePersister();
         channel.txCommit();
         exercisePersister();
         forceSnapshot();
-        // Delivering messages which are in the snapshot
+        // delivering messages which are in the snapshot
         channel.txCommit();
         // Those will be in the incremental snapshot then
         exercisePersister();
@@ -68,6 +68,7 @@ public class PersisterRestart5 extends PersisterRestartBase
         // Those will be in the incremental snapshot then
         exercisePersister();
         // and hopefully delivered
+        // That's three per queue in the end.
         channel.txCommit();
 
         restart();
@@ -76,7 +77,6 @@ public class PersisterRestart5 extends PersisterRestartBase
         assertDelivered(Q2, 3);
         deleteQueue(Q2);
         deleteQueue(Q1);
-        deleteExchange(X);
     }
 
 }

@@ -29,47 +29,54 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
-public class PersisterRestart3 extends PersisterRestartBase
+public class PersisterRestart5 extends PersisterRestartBase
 {
 
-    private static final String Q1 = "Restart3One";
-    private static final String Q2 = "Restart3Two";
+    private static final String Q1 = "Restart5One";
+    private static final String Q2 = "Restart5Two";
+    private static final String X = "Exchange5";
 
-    protected void exercisePersister(String q) 
+
+    protected void exercisePersister() 
       throws IOException
     {
-        basicPublishPersistent(q);
-        basicPublishVolatile(q);
+        basicPublishPersistent(X, "foo.foo");
+        basicPublishVolatile(X, "foo.qux");
     }
 
     public void testRestart()
         throws IOException, InterruptedException
     {
-        declareDurableQueue(Q1);
-        declareDurableQueue(Q2);
+        declareDurableTopicExchange(X);
+        declareAndBindDurableQueue(Q1, X, "foo.*");
+        declareAndBindDurableQueue(Q2, X, "foo.*");
         channel.txSelect();
-        exercisePersister(Q1);
-        exercisePersister(Q2);
+        exercisePersister();
+        channel.txCommit();
+        exercisePersister();
         forceSnapshot();
-        // removing messages which are in the snapshot
+        // Delivering messages which are in the snapshot
+        channel.txCommit();
+        // Those will be in the incremental snapshot then
+        exercisePersister();
+        // but removed
         channel.txRollback();
         // Those will be in the incremental snapshot then
-        exercisePersister(Q1);
-        exercisePersister(Q2);
+        exercisePersister();
         // and hopefully delivered
-        // That's one persistent and one volatile per queue.
         channel.txCommit();
 
         restart();
         
-        assertDelivered(Q1, 1);
-        assertDelivered(Q2, 1);
+        assertDelivered(Q1, 3);
+        assertDelivered(Q2, 3);
         deleteQueue(Q2);
         deleteQueue(Q1);
+        deleteExchange(X);
     }
 
 }

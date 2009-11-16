@@ -31,6 +31,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 
 import com.rabbitmq.client.GetResponse;

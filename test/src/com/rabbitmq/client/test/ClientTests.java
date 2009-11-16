@@ -34,9 +34,9 @@ package com.rabbitmq.client.test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-public class AllTest extends TestCase {
+public class ClientTests extends TestCase {
     public static TestSuite suite() {
-        TestSuite suite = new TestSuite("all");
+        TestSuite suite = new TestSuite("client");
         suite.addTest(TableTest.suite());
         suite.addTest(BlockingCellTest.suite());
         suite.addTest(TruncatedInputStreamTest.suite());
@@ -44,6 +44,7 @@ public class AllTest extends TestCase {
         suite.addTest(ValueOrExceptionTest.suite());
         suite.addTest(BrokenFramesTest.suite());
         suite.addTest(ClonePropertiesTest.suite());
+        suite.addTestSuite(Bug20004Test.class);
         return suite;
     }
 }

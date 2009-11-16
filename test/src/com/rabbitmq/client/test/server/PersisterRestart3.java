@@ -29,24 +29,21 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
-public class PersisterRestart4 extends PersisterRestartBase
+public class PersisterRestart3 extends PersisterRestartBase
 {
 
-    private static final String Q1 = "Restart4One";
-    private static final String Q2 = "Restart4Two";
+    private static final String Q1 = "Restart3One";
+    private static final String Q2 = "Restart3Two";
 
-    protected void exercisePersister() 
+    protected void exercisePersister(String q) 
       throws IOException
     {
-        basicPublishPersistent(Q1);
-        basicPublishVolatile(Q1);
-
-        basicPublishPersistent(Q2);
-        basicPublishVolatile(Q2);
+        basicPublishPersistent(q);
+        basicPublishVolatile(q);
     }
 
     public void testRestart()
@@ -55,26 +52,22 @@ public class PersisterRestart4 extends PersisterRestartBase
         declareDurableQueue(Q1);
         declareDurableQueue(Q2);
         channel.txSelect();
-        exercisePersister();
-        channel.txCommit();
-        exercisePersister();
+        exercisePersister(Q1);
+        exercisePersister(Q2);
         forceSnapshot();
-        // delivering messages which are in the snapshot
-        channel.txCommit();
-        // Those will be in the incremental snapshot then
-        exercisePersister();
-        // but removed
+        // removing messages which are in the snapshot
         channel.txRollback();
         // Those will be in the incremental snapshot then
-        exercisePersister();
+        exercisePersister(Q1);
+        exercisePersister(Q2);
         // and hopefully delivered
-        // That's three per queue in the end.
+        // That's one persistent and one volatile per queue.
         channel.txCommit();
 
         restart();
         
-        assertDelivered(Q1, 3);
-        assertDelivered(Q2, 3);
+        assertDelivered(Q1, 1);
+        assertDelivered(Q2, 1);
         deleteQueue(Q2);
         deleteQueue(Q1);
     }

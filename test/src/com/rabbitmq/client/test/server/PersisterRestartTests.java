@@ -29,7 +29,7 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
