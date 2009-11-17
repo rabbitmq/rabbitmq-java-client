@@ -55,7 +55,7 @@ public class Recover extends BrokerTestCase {
         assertTrue("consumed message body not as sent",
                    Arrays.equals(body, delivery.getBody()));
         // Don't ack it, and get it redelivered to the same consumer
-        channel.basicRecoverAsync(false);
+        channel.basicRecoverAsync(true);
         QueueingConsumer.Delivery secondDelivery = consumer.nextDelivery(5000);
         assertNotNull("timed out waiting for redelivered message", secondDelivery);
         assertTrue("consumed (redelivered) message body not as sent",
@@ -69,12 +69,13 @@ public class Recover extends BrokerTestCase {
         QueueingConsumer.Delivery delivery = consumer.nextDelivery();
         assertTrue("consumed message body not as sent",
                    Arrays.equals(body, delivery.getBody()));
-        channel.basicRecoverAsync(false);
+        channel.basicRecoverAsync(true);
         // there's a race here between our recover finishing and the basic.get;
         Thread.sleep(500);
         assertNull("should be no message available", channel.basicGet(queue, true));
     }
 
     // The AMQP specification under-specifies the behaviour when
-    // requeue=false.  So we can't really test anything.
+    // requeue=false.  So we can't really test any scenarios for
+    // requeue=false.
 }
