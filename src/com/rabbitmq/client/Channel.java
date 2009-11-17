@@ -468,6 +468,7 @@ public interface Channel extends ShutdownNotifier{
      * delivered to a different consumer. If false, messages will be
      * redelivered to the same consumer.
      */
+    @Deprecated
     void basicRecoverAsync(boolean requeue) throws IOException;
 
     /**
