@@ -226,14 +226,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ml.start();
 
         try {
-            // See bug 17389. The MainLoop could have shut down already in
-            // which case we don't want to wait forever for a reply.
-        
-            // There is no race if the MainLoop shuts down after enqueuing
-            // the RPC because if that happens the channel will correctly
-            // pass the exception into RPC, waking it up.
-            ensureIsOpen();
-        
             AMQP.Connection.Start connStart =
                 (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
         

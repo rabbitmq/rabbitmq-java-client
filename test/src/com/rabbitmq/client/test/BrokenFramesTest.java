@@ -76,6 +76,7 @@ public class BrokenFramesTest extends TestCase {
         List<Frame> frames = new ArrayList<Frame>();
         frames.add(new Frame(AMQP.FRAME_HEADER, 0));
         myFrameHandler.setFrames(frames.iterator());
+
         AMQConnection conn = new AMQConnection(params, myFrameHandler);
         try {
             conn.start();
