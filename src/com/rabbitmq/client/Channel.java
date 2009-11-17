@@ -37,6 +37,7 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.AMQP.Exchange;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.AMQP.Tx;
+import com.rabbitmq.client.AMQP.Basic;
 
 /**
  * Public API: Interface to an AMQ channel. See the <a href="http://www.amqp.org/">spec</a> for details.
@@ -462,8 +463,17 @@ public interface Channel extends ShutdownNotifier{
      * Ask the broker to resend unacknowledged messages.  In 0-8
      * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
      * the new, deprecated method basic.recover_async is asynchronous.
-     * To avoid this API changing, this is named for the latter, and
-     * will be deprecated.
+     * @param requeue If true, messages will be requeued and possibly
+     * delivered to a different consumer. If false, messages will be
+     * redelivered to the same consumer.
+     */
+    Basic.RecoverOk basicRecover(boolean requeue) throws IOException;
+
+    /**
+     * Ask the broker to resend unacknowledged messages.  In 0-8
+     * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
+     * the new, deprecated method basic.recover_async is asynchronous
+     * and deprecated.
      * @param requeue If true, messages will be requeued and possibly
      * delivered to a different consumer. If false, messages will be
      * redelivered to the same consumer.
