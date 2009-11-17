@@ -145,6 +145,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Hosts retrieved from the connection.open-ok */
     public Address[] _knownHosts;
 
+    /** Saved server properties field from connection.start */
+    public Map<String, Object> _serverProperties;
+
     /** {@inheritDoc} */
     public String getHost() {
         return _frameHandler.getHost();
@@ -234,6 +237,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         try {
             AMQP.Connection.Start connStart =
                 (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
+
+            _serverProperties = connStart.getServerProperties();
         
             Version serverVersion =
                 new Version(connStart.getVersionMajor(),
