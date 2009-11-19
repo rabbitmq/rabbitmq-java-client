@@ -168,6 +168,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _knownHosts;
     }
 
+    /** {@inheritDoc} */
+    public Map<String, Object> getServerProperties() {
+        return _serverProperties;
+    }
+
     /**
      * Construct a new connection to a broker.
      * @param params the initialization parameters for a connection
