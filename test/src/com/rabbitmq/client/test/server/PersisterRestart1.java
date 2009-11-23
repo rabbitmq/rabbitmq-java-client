@@ -28,60 +28,82 @@
 //
 //   Contributor(s): ______________________________________.
 //
-package com.rabbitmq.client.test.ssl;
+
+package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.BrokerTestCase;
 
-/**
- * Test for bug 19356 - SSL Support in rabbitmq
- *
- */
-public class UnverifiedConnection extends BrokerTestCase {
+public class PersisterRestart1 extends RestartBase
+{
 
-    public Exception caughtException = null;
-    public boolean completed = false;
-    public boolean created = false;
+    private static final String Q = "Restart";
 
-    public void openConnection()
+    private Channel channel2;
+
+    protected void setUp()
         throws IOException
     {
-        try {
-            connectionFactory.useSslProtocol();
-        } catch (NoSuchAlgorithmException ex) {
-            throw new IOException(ex.toString());
-        } catch (KeyManagementException ex) {
-            throw new IOException(ex.toString());
-        }
-
-
-        if (connection == null) {
-            connection = connectionFactory.newConnection("localhost", 5671);
-        }
+        super.setUp();
+        channel2 = connection.createChannel();
     }
 
-    protected void releaseResources()
+    protected void tearDown()
         throws IOException
     {
-        if (created) {
-            channel.queueDelete("Bug19356Test");
+        if (channel2 != null) {
+            channel2.close();
+            channel2 = null;
         }
+        super.tearDown();
     }
 
-    public void testSSL() throws IOException
+    protected void publishTwo()
+        throws IOException
     {
-        channel.queueDeclare("Bug19356Test", false, false, true, true, null);
-        channel.basicPublish("", "Bug19356Test", null, "SSL".getBytes());
-
-        GetResponse chResponse = channel.basicGet("Bug19356Test", false);
-        assertNotNull(chResponse);
-
-        byte[] body = chResponse.getBody();
-        assertEquals("SSL", new String(body));
+        basicPublishPersistent(Q);
+        basicPublishPersistent(Q);
     }
-    
+
+    protected void ackSecond()
+        throws IOException
+    {
+        GetResponse r;
+        assertNotNull(r = channel2.basicGet(Q, false));
+        assertNotNull(r = channel2.basicGet(Q, false));
+        channel2.basicAck(r.getEnvelope().getDeliveryTag(), false);
+    }
+
+    protected void exercisePersister()
+        throws IOException
+    {
+        publishTwo();
+        channel.txSelect();
+        ackSecond();
+        publishTwo();
+        channel.txCommit();
+        ackSecond();
+        publishTwo();
+        channel.txRollback();
+        publishTwo();
+    }
+
+    public void testRestart()
+        throws IOException, InterruptedException
+    {
+        declareDurableQueue(Q);
+        exercisePersister();
+        forceSnapshot();
+        closeChannel();
+        openChannel();
+        exercisePersister();
+
+        restart();
+
+        assertDelivered(Q, 4, true);
+        deleteQueue(Q);
+    }
+
 }

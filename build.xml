@@ -327,9 +327,9 @@
   	</fail>
   </target>
 
-  <target name="test-suite-run" depends="test, test-ssl, test-persister-restart, test-functional, test-main-silent"/>
+  <target name="test-suite-run" depends="test-client, test-ssl, test-server, test-functional, test-main-silent"/>
     
-  <target name="test" depends="test-build">
+  <target name="test-client" depends="test-build">
     <junit printSummary="withOutAndErr"
         haltOnFailure="${haltOnFailureJunit}"
         failureproperty="test.failure"
@@ -338,7 +338,7 @@
 
       <formatter type="plain"/>
       <formatter type="xml"/>
-      <test todir="${build.out}" name="com.rabbitmq.client.test.AllTest"/>
+      <test todir="${build.out}" name="com.rabbitmq.client.test.ClientTests"/>
     </junit>
   </target>
 
@@ -375,7 +375,7 @@
     </junit>
   </target>
 
-  <target name="test-persister-restart" depends="test-build">
+  <target name="test-server" depends="test-build">
     <junit printSummary="withOutAndErr"
         haltOnFailure="${haltOnFailureJunit}"
         failureproperty="test.failure"
@@ -384,7 +384,7 @@
       <formatter type="plain"/>
       <formatter type="xml"/>
       <test todir="${build.out}"
-        name="com.rabbitmq.client.test.functional.PersisterRestartTests"/>
+        name="com.rabbitmq.client.test.server.ServerTests"/>
     </junit>
   </target>
 

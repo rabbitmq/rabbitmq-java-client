@@ -29,47 +29,22 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test;
 
-import java.io.IOException;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
-public class PersisterRestart3 extends PersisterRestartBase
-{
-
-    private static final String Q1 = "Restart3One";
-    private static final String Q2 = "Restart3Two";
-
-    protected void exercisePersister(String q) 
-      throws IOException
-    {
-        basicPublishPersistent(q);
-        basicPublishVolatile(q);
+public class ClientTests extends TestCase {
+    public static TestSuite suite() {
+        TestSuite suite = new TestSuite("client");
+        suite.addTest(TableTest.suite());
+        suite.addTest(BlockingCellTest.suite());
+        suite.addTest(TruncatedInputStreamTest.suite());
+        suite.addTest(AMQConnectionTest.suite());
+        suite.addTest(ValueOrExceptionTest.suite());
+        suite.addTest(BrokenFramesTest.suite());
+        suite.addTest(ClonePropertiesTest.suite());
+        suite.addTestSuite(Bug20004Test.class);
+        return suite;
     }
-
-    public void testRestart()
-        throws IOException, InterruptedException
-    {
-        declareDurableQueue(Q1);
-        declareDurableQueue(Q2);
-        channel.txSelect();
-        exercisePersister(Q1);
-        exercisePersister(Q2);
-        forceSnapshot();
-        // removing messages which are in the snapshot
-        channel.txRollback();
-        // Those will be in the incremental snapshot then
-        exercisePersister(Q1);
-        exercisePersister(Q2);
-        // and hopefully delivered
-        // That's one persistent and one volatile per queue.
-        channel.txCommit();
-
-        restart();
-        
-        assertDelivered(Q1, 1);
-        assertDelivered(Q2, 1);
-        deleteQueue(Q2);
-        deleteQueue(Q1);
-    }
-
 }

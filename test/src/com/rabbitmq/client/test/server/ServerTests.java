@@ -29,54 +29,18 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
-import java.io.IOException;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
-public class PersisterRestart4 extends PersisterRestartBase
-{
-
-    private static final String Q1 = "Restart4One";
-    private static final String Q2 = "Restart4Two";
-
-    protected void exercisePersister() 
-      throws IOException
-    {
-        basicPublishPersistent(Q1);
-        basicPublishVolatile(Q1);
-
-        basicPublishPersistent(Q2);
-        basicPublishVolatile(Q2);
-    }
-
-    public void testRestart()
-        throws IOException, InterruptedException
-    {
-        declareDurableQueue(Q1);
-        declareDurableQueue(Q2);
-        channel.txSelect();
-        exercisePersister();
-        channel.txCommit();
-        exercisePersister();
-        forceSnapshot();
-        // delivering messages which are in the snapshot
-        channel.txCommit();
-        // Those will be in the incremental snapshot then
-        exercisePersister();
-        // but removed
-        channel.txRollback();
-        // Those will be in the incremental snapshot then
-        exercisePersister();
-        // and hopefully delivered
-        // That's three per queue in the end.
-        channel.txCommit();
-
-        restart();
-        
-        assertDelivered(Q1, 3);
-        assertDelivered(Q2, 3);
-        deleteQueue(Q2);
-        deleteQueue(Q1);
+public class ServerTests extends TestCase {
+    public static TestSuite suite() {
+        TestSuite suite = new TestSuite("server-tests");
+        suite.addTestSuite(Permissions.class);
+        suite.addTestSuite(DurableBindingLifecycle.class);
+        suite.addTest(PersisterRestartTests.suite());
+        return suite;
     }
 
 }

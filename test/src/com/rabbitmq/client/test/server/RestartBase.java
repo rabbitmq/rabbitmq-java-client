@@ -29,20 +29,45 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.rabbitmq.client.test.BrokerTestCase;
 
-public class PersisterRestartTests extends TestCase {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("persister-restarts");
-        suite.addTestSuite(PersisterRestart1.class);
-        suite.addTestSuite(PersisterRestart2.class);
-        suite.addTestSuite(PersisterRestart3.class);
-        suite.addTestSuite(PersisterRestart4.class);
-        suite.addTestSuite(PersisterRestart5.class);
-        return suite;
+import java.io.IOException;
+
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.tools.Host;
+
+public class RestartBase extends BrokerTestCase
+{
+
+    // The time in ms the RabbitMQ persister waits before flushing the
+    // persister log
+    //
+    // This matches the value of LOG_BUNDLE_DELAY in
+    // rabbit_persister.erl
+    protected static final int PERSISTER_DELAY = 5;
+
+    // The number of entries that the RabbitMQ persister needs to
+    // write before it takes a snapshot.
+    //
+    // This matches the value of MAX_WRAP_ENTRIES in
+    // rabbit_persister.erl
+    protected final int PERSISTER_SNAPSHOT_THRESHOLD = 500;
+
+    protected void restart()
+        throws IOException
+    {
+        tearDown();
+        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
+        setUp();
+    }
+
+    protected void forceSnapshot()
+        throws IOException, InterruptedException
+    {
+        Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
     }
 
 }

@@ -29,8 +29,10 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
+import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.functional.*;
 import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;

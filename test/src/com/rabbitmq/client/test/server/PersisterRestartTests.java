@@ -29,41 +29,20 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
-import java.io.IOException;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
-public class PersisterRestart2 extends PersisterRestartBase
-{
-
-    private static final String Q1 = "Restart2One";
-    private static final String Q2 = "Restart2Two";
-
-    protected void exercisePersister(String q) 
-      throws IOException
-    {
-        basicPublishPersistent(q);
-        basicPublishVolatile(q);
-    }
-
-    public void testRestart()
-        throws IOException, InterruptedException
-    {
-        declareDurableQueue(Q1);
-        declareDurableQueue(Q2);
-        exercisePersister(Q1);
-        exercisePersister(Q2);
-        forceSnapshot();
-        // Those will be in the incremental snapshot then
-        exercisePersister(Q1);
-        exercisePersister(Q2);
-        
-        restart();
-        
-        assertDelivered(Q1, 2);
-        assertDelivered(Q2, 2);
-        deleteQueue(Q2);
-        deleteQueue(Q1);
+public class PersisterRestartTests extends TestCase {
+    public static TestSuite suite() {
+        TestSuite suite = new TestSuite("persister-restarts");
+        suite.addTestSuite(PersisterRestart1.class);
+        suite.addTestSuite(PersisterRestart2.class);
+        suite.addTestSuite(PersisterRestart3.class);
+        suite.addTestSuite(PersisterRestart4.class);
+        suite.addTestSuite(PersisterRestart5.class);
+        return suite;
     }
 
 }
