@@ -37,6 +37,8 @@ import java.io.IOException;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
 
+import com.rabbitmq.client.test.BrokerTestCase;
+
 public class Recover extends BrokerTestCase {
 
     String queue;
