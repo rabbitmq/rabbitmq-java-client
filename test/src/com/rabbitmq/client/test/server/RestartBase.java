@@ -29,81 +29,54 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
+
+import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 
-import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.tools.Host;
 
-public class PersisterRestart1 extends PersisterRestartBase
+public class RestartBase extends BrokerTestCase
 {
 
-    private static final String Q = "Restart";
+    // The time in ms the RabbitMQ persister waits before flushing the
+    // persister log
+    //
+    // This matches the value of LOG_BUNDLE_DELAY in
+    // rabbit_persister.erl
+    protected static final int PERSISTER_DELAY = 5;
 
-    private Channel channel2;
+    // The number of entries that the RabbitMQ persister needs to
+    // write before it takes a snapshot.
+    //
+    // This matches the value of MAX_WRAP_ENTRIES in
+    // rabbit_persister.erl
+    protected final int PERSISTER_SNAPSHOT_THRESHOLD = 500;
 
-    protected void setUp()
+    protected void restart()
         throws IOException
     {
-        super.setUp();
-        channel2 = connection.createChannel();
+        tearDown();
+        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
+        setUp();
     }
 
-    protected void tearDown()
+  protected void restartAbruptly()
         throws IOException
     {
-        if (channel2 != null) {
-            channel2.close();
-            channel2 = null;
-        }
-        super.tearDown();
+        Host.executeCommand("cd ../rabbitmq-test; make restart-node");
+        // we do this so that setUp will reconnect
+        connection = null;
+        setUp();
     }
 
-    protected void publishTwo()
-        throws IOException
-    {
-        basicPublishPersistent(Q);
-        basicPublishPersistent(Q);
-    }
-
-    protected void ackSecond()
-        throws IOException
-    {
-        GetResponse r;
-        assertNotNull(r = channel2.basicGet(Q, false));
-        assertNotNull(r = channel2.basicGet(Q, false));
-        channel2.basicAck(r.getEnvelope().getDeliveryTag(), false);
-    }
-
-    protected void exercisePersister()
-        throws IOException
-    {
-        publishTwo();
-        channel.txSelect();
-        ackSecond();
-        publishTwo();
-        channel.txCommit();
-        ackSecond();
-        publishTwo();
-        channel.txRollback();
-        publishTwo();
-    }
-
-    public void testRestart()
+    protected void forceSnapshot()
         throws IOException, InterruptedException
     {
-        declareDurableQueue(Q);
-        exercisePersister();
-        forceSnapshot();
-        closeChannel();
-        openChannel();
-        exercisePersister();
-
-        restart();
-
-        assertDelivered(Q, 4, true);
-        deleteQueue(Q);
+        Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
     }
 
 }

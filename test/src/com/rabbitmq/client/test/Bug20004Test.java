@@ -28,8 +28,9 @@
 //
 //   Contributor(s): ______________________________________.
 //
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.test.functional.*;
 import java.io.IOException;
 
 /**

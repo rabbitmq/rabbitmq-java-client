@@ -29,16 +29,47 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.broker;
+package com.rabbitmq.client.test.server;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import java.io.IOException;
 
-public class BrokerTests extends TestCase {
+public class PersisterRestart3 extends RestartBase
+{
 
-public static TestSuite suite() {
-        TestSuite suite = new TestSuite("broker");
-        suite.addTestSuite(ExclusiveQueueDurability.class);
-        return suite;
-    }  
+    private static final String Q1 = "Restart3One";
+    private static final String Q2 = "Restart3Two";
+
+    protected void exercisePersister(String q) 
+      throws IOException
+    {
+        basicPublishPersistent(q);
+        basicPublishVolatile(q);
+    }
+
+    public void testRestart()
+        throws IOException, InterruptedException
+    {
+        declareDurableQueue(Q1);
+        declareDurableQueue(Q2);
+        channel.txSelect();
+        exercisePersister(Q1);
+        exercisePersister(Q2);
+        forceSnapshot();
+        // removing messages which are in the snapshot
+        channel.txRollback();
+        // Those will be in the incremental snapshot then
+        exercisePersister(Q1);
+        exercisePersister(Q2);
+        // and hopefully delivered
+        // That's one persistent and one volatile per queue.
+        channel.txCommit();
+
+        restart();
+        
+        assertDelivered(Q1, 1);
+        assertDelivered(Q2, 1);
+        deleteQueue(Q2);
+        deleteQueue(Q1);
+    }
+
 }

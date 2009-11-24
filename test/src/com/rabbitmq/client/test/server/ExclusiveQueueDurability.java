@@ -29,7 +29,7 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.broker;
+package com.rabbitmq.client.test.server;
 
 import java.util.HashMap;
 
@@ -39,7 +39,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 
-import com.rabbitmq.client.test.functional.PersisterRestartBase;
+import com.rabbitmq.client.test.server.RestartBase;
 
 import com.rabbitmq.tools.Host;
 
@@ -49,7 +49,7 @@ import java.io.IOException;
  * This tests whether exclusive, durable queues are deleted when
  * appropriate (following the scenarios given in bug 20578).
  */
-public class ExclusiveQueueDurability extends PersisterRestartBase {
+public class ExclusiveQueueDurability extends RestartBase {
 
   HashMap<String,Object> noArgs = new HashMap();
 

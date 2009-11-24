@@ -35,7 +35,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.functional.BrokerTestCase;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 /**
  * Test for bug 19356 - SSL Support in rabbitmq

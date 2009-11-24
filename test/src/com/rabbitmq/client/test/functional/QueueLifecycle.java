@@ -38,6 +38,8 @@ import java.io.IOException;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
 
+import com.rabbitmq.client.test.BrokerTestCase;
+
 // Test queue auto-delete and exclusive semantics.
 public class QueueLifecycle extends BrokerTestCase
 {

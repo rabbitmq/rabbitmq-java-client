@@ -29,32 +29,41 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.Bug20004Test;
-import com.rabbitmq.client.test.server.Permissions;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import java.io.IOException;
 
-public class FunctionalTests extends TestCase {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("functional");
-        suite.addTestSuite(ConnectionOpen.class);
-        suite.addTestSuite(Tables.class);
-        suite.addTestSuite(DoubleDeletion.class);
-        suite.addTestSuite(Routing.class);
-        suite.addTestSuite(BindingLifecycle.class);
-        suite.addTestSuite(Recover.class);
-        suite.addTestSuite(Transactions.class);
-        suite.addTestSuite(PersistentTransactions.class);
-        suite.addTestSuite(RequeueOnConnectionClose.class);
-        suite.addTestSuite(RequeueOnChannelClose.class);
-        suite.addTestSuite(NoRequeueOnCancel.class);
-        suite.addTestSuite(Bug20004Test.class);
-        suite.addTestSuite(QosTests.class);
-        suite.addTestSuite(AlternateExchange.class);
-        suite.addTestSuite(QueueLifecycle.class);
-        suite.addTestSuite(QueueExclusivity.class);
-        return suite;
+public class PersisterRestart2 extends RestartBase
+{
+
+    private static final String Q1 = "Restart2One";
+    private static final String Q2 = "Restart2Two";
+
+    protected void exercisePersister(String q) 
+      throws IOException
+    {
+        basicPublishPersistent(q);
+        basicPublishVolatile(q);
     }
+
+    public void testRestart()
+        throws IOException, InterruptedException
+    {
+        declareDurableQueue(Q1);
+        declareDurableQueue(Q2);
+        exercisePersister(Q1);
+        exercisePersister(Q2);
+        forceSnapshot();
+        // Those will be in the incremental snapshot then
+        exercisePersister(Q1);
+        exercisePersister(Q2);
+        
+        restart();
+        
+        assertDelivered(Q1, 2);
+        assertDelivered(Q2, 2);
+        deleteQueue(Q2);
+        deleteQueue(Q1);
+    }
+
 }

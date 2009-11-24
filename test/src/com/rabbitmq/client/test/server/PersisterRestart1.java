@@ -29,54 +29,81 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
-public class PersisterRestart4 extends PersisterRestartBase
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.GetResponse;
+
+public class PersisterRestart1 extends RestartBase
 {
 
-    private static final String Q1 = "Restart4One";
-    private static final String Q2 = "Restart4Two";
+    private static final String Q = "Restart";
 
-    protected void exercisePersister() 
-      throws IOException
+    private Channel channel2;
+
+    protected void setUp()
+        throws IOException
     {
-        basicPublishPersistent(Q1);
-        basicPublishVolatile(Q1);
+        super.setUp();
+        channel2 = connection.createChannel();
+    }
 
-        basicPublishPersistent(Q2);
-        basicPublishVolatile(Q2);
+    protected void tearDown()
+        throws IOException
+    {
+        if (channel2 != null) {
+            channel2.close();
+            channel2 = null;
+        }
+        super.tearDown();
+    }
+
+    protected void publishTwo()
+        throws IOException
+    {
+        basicPublishPersistent(Q);
+        basicPublishPersistent(Q);
+    }
+
+    protected void ackSecond()
+        throws IOException
+    {
+        GetResponse r;
+        assertNotNull(r = channel2.basicGet(Q, false));
+        assertNotNull(r = channel2.basicGet(Q, false));
+        channel2.basicAck(r.getEnvelope().getDeliveryTag(), false);
+    }
+
+    protected void exercisePersister()
+        throws IOException
+    {
+        publishTwo();
+        channel.txSelect();
+        ackSecond();
+        publishTwo();
+        channel.txCommit();
+        ackSecond();
+        publishTwo();
+        channel.txRollback();
+        publishTwo();
     }
 
     public void testRestart()
         throws IOException, InterruptedException
     {
-        declareDurableQueue(Q1);
-        declareDurableQueue(Q2);
-        channel.txSelect();
-        exercisePersister();
-        channel.txCommit();
+        declareDurableQueue(Q);
         exercisePersister();
         forceSnapshot();
-        // delivering messages which are in the snapshot
-        channel.txCommit();
-        // Those will be in the incremental snapshot then
+        closeChannel();
+        openChannel();
         exercisePersister();
-        // but removed
-        channel.txRollback();
-        // Those will be in the incremental snapshot then
-        exercisePersister();
-        // and hopefully delivered
-        // That's three per queue in the end.
-        channel.txCommit();
 
         restart();
-        
-        assertDelivered(Q1, 3);
-        assertDelivered(Q2, 3);
-        deleteQueue(Q2);
-        deleteQueue(Q1);
+
+        assertDelivered(Q, 4, true);
+        deleteQueue(Q);
     }
 
 }

@@ -29,19 +29,18 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-public class PersisterRestartTests extends TestCase {
+public class ServerTests extends TestCase {
     public static TestSuite suite() {
-        TestSuite suite = new TestSuite("persister-restarts");
-        suite.addTestSuite(PersisterRestart1.class);
-        suite.addTestSuite(PersisterRestart2.class);
-        suite.addTestSuite(PersisterRestart3.class);
-        suite.addTestSuite(PersisterRestart4.class);
-        suite.addTestSuite(PersisterRestart5.class);
+        TestSuite suite = new TestSuite("server-tests");
+        suite.addTestSuite(Permissions.class);
+        suite.addTestSuite(DurableBindingLifecycle.class);
+        suite.addTest(PersisterRestartTests.suite());
+        suite.addTestSuite(ExclusiveQueueDurability.class);
         return suite;
     }
 
