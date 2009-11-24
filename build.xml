@@ -401,6 +401,19 @@
     </junit>
   </target>
 
+  <target name="test-single" depends="test-build">
+    <junit printSummary="withOutAndErr"
+        haltOnFailure="${haltOnFailureJunit}"
+        failureproperty="test.failure"
+        fork="yes">
+      <classpath refid="test.classpath"/>
+
+      <formatter type="plain"/>
+      <formatter type="xml"/>
+      <test todir="${build.out}" name="${test}"/>
+    </junit>
+  </target>
+
   <target name="jar" depends="build">
     <mkdir dir="${lib.out}"/>
     <antcall target="doJarWithTags">
