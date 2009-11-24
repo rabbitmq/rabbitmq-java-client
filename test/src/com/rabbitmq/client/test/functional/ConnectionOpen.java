@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.DataInputStream;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.impl.Method;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.SocketFrameHandler;
@@ -84,14 +85,23 @@ public class ConnectionOpen extends TestCase
     // supports.  We can really only test for the first bit.
     assertEquals("AMQP", new String(header));
     in.read(header);
+    assertEquals(in.available(), 0);
+    // At this point the socket should have been closed.  We can't
+    // directly test for this, since Socket.isClosed isn't very
+    // reliable, but we can test whether trying to read more bytes
+    // gives an error.
+    fh._socket.setSoTimeout(500);
+    // NB the frame handler will return null if the socket times out
     try {
       fh.readFrame();
+      fail("Expected socket read to fail due to socket being closed");
+    }
+    catch (MalformedFrameException mfe) {
+      fail("Expected nothing, rather than a badly-formed something");
     }
     catch (IOException ioe) {
-      // expected
       return;
     }
-    fail("Expected an IOException trying to read more from the socket.");
   }
 
   public void testFrameMaxLessThanFrameMinSize() throws IOException {
