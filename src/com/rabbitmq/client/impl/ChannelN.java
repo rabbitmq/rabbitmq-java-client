@@ -75,7 +75,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * and this field can be deleted.
      */
     @Deprecated
-    private static final int TICKET = 1;
+    private static final int TICKET = 0;
 
     /**
      * Map from consumer tag to {@link Consumer} instance.
