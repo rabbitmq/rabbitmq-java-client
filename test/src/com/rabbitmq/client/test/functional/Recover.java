@@ -31,12 +31,13 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
 import java.util.Arrays;
 import java.io.IOException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
+
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public class Recover extends BrokerTestCase {
 
