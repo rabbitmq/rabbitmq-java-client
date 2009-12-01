@@ -179,9 +179,9 @@ public interface Channel extends ShutdownNotifier{
      * Actively declare a non-autodelete, non-durable exchange with no extra arguments
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
-     * @param exchange the name of the exchange
+     * @param exchange the name of the exchange; if an empty string, the server will generate a name
      * @param type the exchange type
-     * @return a deletion-confirm method to indicate the exchange was successfully deleted
+     * @return a declaration-confirm method to indicate the exchange was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
     Exchange.DeclareOk exchangeDeclare(String exchange, String type) throws IOException;
@@ -190,7 +190,7 @@ public interface Channel extends ShutdownNotifier{
      * Actively declare a non-autodelete exchange with no extra arguments
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
-     * @param exchange the name of the exchange
+     * @param exchange the name of the exchange; if an empty string, the server will generate a name
      * @param type the exchange type
      * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
      * @throws java.io.IOException if an error is encountered
@@ -199,11 +199,11 @@ public interface Channel extends ShutdownNotifier{
     Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable) throws IOException;
 
     /**
-     * Declare an exchange, via an interface that allows the complete set of arguments
-     * The name of the new queue is held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk} result.
+     * Declare an exchange, via an interface that allows the complete set of arguments.
+     * The name of the new exchange is held in the "exchange" field of the {@link com.rabbitmq.client.AMQP.Exchange.DeclareOk} result.
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
-     * @param exchange the name of the exchange
+     * @param exchange the name of the exchange; if an empty string, the server will generate a name
      * @param type the exchange type
      * @param passive true if we are passively declaring a exchange (asserting the exchange already exists)
      * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
@@ -240,7 +240,7 @@ public interface Channel extends ShutdownNotifier{
      * The name of the new queue is held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk} result.
      * @see com.rabbitmq.client.AMQP.Queue.Declare
      * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
-     * @return a declaration-confirm method to indicate the exchange was successfully declared
+     * @return a declaration-confirm method to indicate the queue was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
     Queue.DeclareOk queueDeclare() throws IOException;
@@ -401,7 +401,7 @@ public interface Channel extends ShutdownNotifier{
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicAck
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Consumer)
+     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
      */
     String basicConsume(String queue, Consumer callback) throws IOException;
 
@@ -415,7 +415,7 @@ public interface Channel extends ShutdownNotifier{
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Consumer)
+     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
      */
     String basicConsume(String queue, boolean noAck, Consumer callback) throws IOException;
 
@@ -429,7 +429,7 @@ public interface Channel extends ShutdownNotifier{
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Consumer)
+     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
      */
     String basicConsume(String queue, boolean noAck, String consumerTag, Consumer callback) throws IOException;
 
