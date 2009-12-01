@@ -176,16 +176,6 @@ public interface Channel extends ShutdownNotifier{
             throws IOException;
 
     /**
-     * Delete an exchange, without regard for whether it is in use or not
-     * @see com.rabbitmq.client.AMQP.Exchange.Delete
-     * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
-     * @param exchange the name of the exchange
-     * @return a deletion-confirm method to indicate the exchange was successfully deleted
-     * @throws java.io.IOException if an error is encountered
-     */
-    Exchange.DeleteOk exchangeDelete(String exchange) throws IOException;
-
-    /**
      * Actively declare a non-autodelete, non-durable exchange with no extra arguments
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
@@ -195,17 +185,6 @@ public interface Channel extends ShutdownNotifier{
      * @throws java.io.IOException if an error is encountered
      */
     Exchange.DeclareOk exchangeDeclare(String exchange, String type) throws IOException;
-
-    /**
-     * Delete an exchange
-     * @see com.rabbitmq.client.AMQP.Exchange.Delete
-     * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
-     * @param exchange the name of the exchange
-     * @param ifUnused true to indicate that the exchange is only to be deleted if it is unused
-     * @return a deletion-confirm method to indicate the exchange was successfully deleted
-     * @throws java.io.IOException if an error is encountered
-     */
-    Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException;
 
     /**
      * Actively declare a non-autodelete exchange with no extra arguments
@@ -234,6 +213,27 @@ public interface Channel extends ShutdownNotifier{
      */
     Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean passive, boolean durable,
                                        Map<String, Object> arguments) throws IOException;
+
+    /**
+     * Delete an exchange
+     * @see com.rabbitmq.client.AMQP.Exchange.Delete
+     * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
+     * @param exchange the name of the exchange
+     * @param ifUnused true to indicate that the exchange is only to be deleted if it is unused
+     * @return a deletion-confirm method to indicate the exchange was successfully deleted
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException;
+
+      /**
+     * Delete an exchange, without regard for whether it is in use or not
+     * @see com.rabbitmq.client.AMQP.Exchange.Delete
+     * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
+     * @param exchange the name of the exchange
+     * @return a deletion-confirm method to indicate the exchange was successfully deleted
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.DeleteOk exchangeDelete(String exchange) throws IOException;
 
     /**
      * Actively declare a server-named exclusive, autodelete, non-durable queue.
