@@ -150,7 +150,7 @@ public class Permissions extends BrokerTestCase
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                    channel.exchangeDeclare(name, "direct", true, false, null);
+                    channel.exchangeDeclarePassive(name);
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
@@ -245,7 +245,7 @@ public class Permissions extends BrokerTestCase
             public void with(String ae) throws IOException {
                 Map<String, Object> args = new HashMap<String, Object>();
                 args.put("alternate-exchange", ae);
-                channel.exchangeDeclare(exchange, "direct", false, false, args);
+                channel.exchangeDeclare(exchange, "direct", false, args);
                 channel.exchangeDelete(exchange);
             }};
     }

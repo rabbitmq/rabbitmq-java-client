@@ -205,15 +205,21 @@ public interface Channel extends ShutdownNotifier{
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
      * @param exchange the name of the exchange; if an empty string, the server will generate a name
      * @param type the exchange type
-     * @param passive true if we are passively declaring a exchange (asserting the exchange already exists)
      * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
      * @param arguments other properties (construction arguments) for the exchange
      * @return a declaration-confirm method to indicate the exchange was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
-    Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean passive, boolean durable,
+    Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable,
                                        Map<String, Object> arguments) throws IOException;
 
+    /**
+     * Declare an exchange passively; that is, check if the named exchange exists.
+     * @param name will check the existence of an exchange named this
+     * @throws IOException the server will raise a 404 channel exception if the named exchange does not exist.
+     */
+    Exchange.DeclareOk exchangeDeclarePassive(String name) throws IOException;
+    
     /**
      * Delete an exchange
      * @see com.rabbitmq.client.AMQP.Exchange.Delete

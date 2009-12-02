@@ -415,7 +415,7 @@ public class TestMain {
         _ch1.queueDeclare(q1, false, false, false, null);
         _ch1.queueDeclare(q2, false, false, false, null);
         _ch1.queueDeclare(q3, false, false, false, null);
-        _ch1.exchangeDeclare(x, "topic", false, false, null);
+        _ch1.exchangeDeclare(x, "topic", false, null);
         _ch1.queueBind(q1, x, "test.#");
         _ch1.queueBind(q2, x, "test.test");
         _ch1.queueBind(q3, x, "*.test.#");
@@ -455,7 +455,7 @@ public class TestMain {
         log("About to try mandatory/immediate publications");
 
         String mx = "mandatoryTestExchange";
-        _ch1.exchangeDeclare(mx, "fanout", false, false, null);
+        _ch1.exchangeDeclare(mx, "fanout", false, null);
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());

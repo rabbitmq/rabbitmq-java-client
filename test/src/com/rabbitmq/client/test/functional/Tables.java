@@ -84,7 +84,7 @@ public class Tables extends BrokerTestCase
 
         //sending as part of method arguments - we are relying on
         //exchange.declare ignoring the arguments table.
-        channel.exchangeDeclare("x", "direct", false, false, table);
+        channel.exchangeDeclare("x", "direct", false, table);
         channel.exchangeDelete("x");
     }
 

@@ -118,7 +118,7 @@ public class ConsumerMain implements Runnable {
         channel.queueDeclare(queueName, true, false, false, null);
 
         String exchangeName = "test completion";
-        channel.exchangeDeclare(exchangeName, "fanout", false, false, null);
+        channel.exchangeDeclare(exchangeName, "fanout", false, null);
 
         String completionQueue = channel.queueDeclare().getQueue();
         channel.queueBind(completionQueue, exchangeName, "");

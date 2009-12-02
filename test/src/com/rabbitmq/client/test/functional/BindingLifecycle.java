@@ -36,6 +36,9 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.Method;
+import com.rabbitmq.client.Command;
 
 import java.io.IOException;
 
@@ -113,6 +116,32 @@ public class BindingLifecycle extends BindingLifecycleBase {
         fail("Exchange delete should have failed");
     }
 
+    /**
+     * 
+     */
+    public void testExchangePassiveDeclare() throws IOException {
+        channel.exchangeDeclare("testPassive", "direct");
+        channel.exchangeDeclarePassive("testPassive");
+
+        try {
+            channel.exchangeDeclarePassive("unknown_exchange");
+            fail("Passive declare of an unknown exchange should fail");
+        }
+        catch (IOException ioe) {
+            Throwable t = ioe.getCause();
+            String msg = "Passive declare of an unknown exchange should send a 404";
+            assertTrue(msg, t instanceof ShutdownSignalException);
+            Object r = ((ShutdownSignalException)t).getReason();
+            assertTrue(msg, r instanceof Command);
+            Method m = ((Command)r).getMethod();
+            assertTrue(msg, m instanceof AMQP.Channel.Close);
+            assertEquals(msg,
+                         AMQP.NOT_FOUND,
+                         ((AMQP.Channel.Close)m).getReplyCode());
+            return;
+        }
+    }
+  
     /**
      * Test the behaviour of queue.unbind
      */
