@@ -29,33 +29,35 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.Bug20004Test;
-import com.rabbitmq.client.test.server.Permissions;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import java.util.Map;
+import java.util.HashMap;
+import java.io.IOException;
 
-public class FunctionalTests extends TestCase {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("functional");
-        suite.addTestSuite(ConnectionOpen.class);
-        suite.addTestSuite(Tables.class);
-        suite.addTestSuite(DoubleDeletion.class);
-        suite.addTestSuite(Routing.class);
-        suite.addTestSuite(BindingLifecycle.class);
-        suite.addTestSuite(Recover.class);
-        suite.addTestSuite(Transactions.class);
-        suite.addTestSuite(PersistentTransactions.class);
-        suite.addTestSuite(RequeueOnConnectionClose.class);
-        suite.addTestSuite(RequeueOnChannelClose.class);
-        suite.addTestSuite(NoRequeueOnCancel.class);
-        suite.addTestSuite(Bug20004Test.class);
-        suite.addTestSuite(QosTests.class);
-        suite.addTestSuite(AlternateExchange.class);
-        suite.addTestSuite(ExchangeDeclare.class);
-        suite.addTestSuite(QueueLifecycle.class);
-        suite.addTestSuite(QueueExclusivity.class);
-        return suite;
-    }
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.QueueingConsumer;
+
+import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.functional.ExchangeDeclare;
+
+public class ExchangeEquivalence extends BrokerTestCase {
+
+  static Map<String, Object> args = new HashMap<String, Object>();
+  {
+    args.put("alternate-exchange", "UME");
+  }
+  
+  public void testAlternateExchangeEquivalence() throws IOException {
+    channel.exchangeDeclare("alternate", "direct", false, args);
+    ExchangeDeclare.verifyEquivalent(channel, "alternate", "direct", false, args);
+  }
+
+  public void testAlternateExchangeNonEquivalence() throws IOException {
+    channel.exchangeDeclare("alternate", "direct", false, args);
+    Map<String, Object> altargs = new HashMap<String, Object>();
+    altargs.put("alternate-exchange", "somewhere");
+    ExchangeDeclare.verifyNotEquivalent(channel, "alternate", "direct", false, altargs);
+  }
+
 }

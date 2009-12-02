@@ -41,6 +41,7 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(DurableBindingLifecycle.class);
         suite.addTest(PersisterRestartTests.suite());
         suite.addTestSuite(ExclusiveQueueDurability.class);
+        suite.addTestSuite(ExchangeEquivalence.class);
         return suite;
     }
 
