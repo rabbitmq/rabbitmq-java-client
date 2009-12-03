@@ -248,7 +248,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (ShutdownSignalException sse) {
             throw AMQChannel.wrap(sse);
         }
-        
+
         LongString saslResponse = LongStringHelper.asLongString("\0" + _params.getUserName() +
                                                                 "\0" + _params.getPassword());
         AMQImpl.Connection.StartOk startOk =
@@ -256,7 +256,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                            "PLAIN",
                                            saslResponse,
                                            "en_US");
-        
         AMQP.Connection.Tune connTune =
             (AMQP.Connection.Tune) _channel0.exnWrappingRpc(startOk).getMethod();
         

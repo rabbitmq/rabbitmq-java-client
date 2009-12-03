@@ -36,17 +36,25 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.HashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.impl.Method;
 import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.UnexpectedFrameError;
+import com.rabbitmq.client.MalformedFrameException;
+import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.AMQImpl;
+import com.rabbitmq.client.impl.LongStringHelper;
 import com.rabbitmq.client.impl.AMQImpl.Basic.Publish;
+
 
 public class BrokenFramesTest extends TestCase {
     public static TestSuite suite() {
@@ -72,6 +80,13 @@ public class BrokenFramesTest extends TestCase {
         super.tearDown();
     }
 
+    // [1]NB: These test cases only avoid a race because
+    // AMQConnection.start() won't return until it's done protocol
+    // negotiation.  This makes them a bit brittle.  One way or
+    // another, AMQConnection *should* block until it's ready to use;
+    // however, it may behave differently during protocol negotiation
+    // to during regular operation.  Be wary.
+    
     public void testNoMethod() throws Exception {
         List<Frame> frames = new ArrayList<Frame>();
         frames.add(new Frame(AMQP.FRAME_HEADER, 0));
@@ -81,8 +96,8 @@ public class BrokenFramesTest extends TestCase {
         try {
             conn.start(false);
         } catch (IOException e) {
-            UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
-            assertNotNull(unexpectedFrameError);
+            UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e); 
+            assertNotNull("Expected UnexpectedFrameError", unexpectedFrameError);
             assertEquals(AMQP.FRAME_HEADER, unexpectedFrameError.getReceivedFrame().type);
             assertEquals(AMQP.FRAME_METHOD, unexpectedFrameError.getExpectedFrameType());
             return;
@@ -117,6 +132,55 @@ public class BrokenFramesTest extends TestCase {
         fail("No UnexpectedFrameError thrown");
     }
 
+    public void testNonChannelZeroHeartbeat() throws IOException, RedirectException {
+        // See [1]: Heartbeats don't officially start until after
+        // protocol negotiation. (Specifically, the client should
+        // start monitoring heartbeats after it receives
+        // Connection.Open).
+        Frame[] negotation = new Frame[] {
+            new AMQImpl.Connection.Start(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR,
+                                         new HashMap<String, Object>(),
+                                         LongStringHelper.asLongString("PLAIN"),
+                                         LongStringHelper.asLongString("en_US")).toFrame(0),
+            new WaitForWrite(), // startOK
+            new AMQImpl.Connection.Tune(0, 0, 1).toFrame(0),
+            new WaitForWrite(), // tuneOK
+            new WaitForWrite(), // open
+            new AMQImpl.Connection.OpenOk("").toFrame(0)
+        };
+        Frame bogusHeartbeat = new Frame(AMQP.FRAME_HEARTBEAT, 1);
+        ArrayList<Frame> frames = new ArrayList<Frame>();
+        for (Frame f : negotation) frames.add(f);
+        frames.add(bogusHeartbeat);
+        myFrameHandler.setFrames(frames.iterator());
+        AMQConnection conn = new AMQConnection(params, myFrameHandler);
+        try {
+            conn.start(false);
+            // Sadly, there's a race here, since start will return
+            // after doing the negotiation.  But we can give the
+            // frame-handling loop a big head start.
+            try {
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException ie) {
+                // well maybe that was long enough ..
+            }
+        }
+        catch (IOException ioe) {
+            // must be 501 Frame error somewhere here
+            Throwable t = ioe;
+            while ((t = t.getCause()) != null) {
+                if (t instanceof MalformedFrameException) {
+                    assertFalse("Expected connection to have been closed", conn.isOpen());
+                    Frame f = myFrameHandler.getLastWrittenFrame();
+                    // FIXME check if it's a connection.close
+                }
+            }
+            fail("Expected MalformedFrameError (501)");
+        }
+        fail("Connection should complain about a heartbeat on a non-zero channel.");
+    }
+  
     private UnexpectedFrameError findUnexpectedFrameError(Exception e) {
         Throwable t = e;
         while ((t = t.getCause()) != null) {
@@ -129,15 +193,53 @@ public class BrokenFramesTest extends TestCase {
         return null;
     }
 
+    // Use this to signal that the frame handler should wait until it's
+    // been written to.
+    private static class WaitForWrite extends Frame {
+    }
+    
     private static class MyFrameHandler implements FrameHandler {
     	private Iterator<Frame> frames;
 
-    	public void setFrames(Iterator<Frame> frames) {
-			this.frames = frames;
-		}
+        private LinkedBlockingQueue<Frame> writtenFrames = new LinkedBlockingQueue<Frame>();
+        private List<Frame> allWrittenFrames = new ArrayList<Frame>();
 
-		public Frame readFrame() throws IOException {
-        	return frames.next();
+        public void setFrame(Frame frame) {
+            ArrayList<Frame> frames = new ArrayList();
+            frames.add(frame);
+            setFrames(frames.iterator());
+        }
+        
+    	public void setFrames(Iterator<Frame> frames) {
+            this.frames = frames;
+        }
+
+        public List<Frame> getWrittenFrames() {
+            return allWrittenFrames;
+        }
+
+        public Frame getLastWrittenFrame() {
+            int last = allWrittenFrames.size() - 1;
+            if (last < 0) return null;
+            return allWrittenFrames.get(last);
+        }
+        
+        public Frame readFrame() throws IOException {
+            Frame next = frames.next();
+            if (next instanceof WaitForWrite) {
+                Frame w = null;
+                while (w == null) {
+                    try {
+                        w = writtenFrames.take();
+                    }
+                    catch (InterruptedException ie) {
+                    }
+                }
+                return readFrame();
+            }
+            else {
+                return next;
+            }
         }
 
         public void sendHeader() throws IOException {
@@ -148,7 +250,16 @@ public class BrokenFramesTest extends TestCase {
         }
 
         public void writeFrame(Frame frame) throws IOException {
-            // no need to implement this: don't bother writing the frame
+            allWrittenFrames.add(frame);
+            boolean written = false;
+            while (!written) {
+                try {
+                    writtenFrames.put(frame);
+                    written = true;
+                }
+                catch (InterruptedException ie) {
+                }
+            }
         }
 
         public void close() {

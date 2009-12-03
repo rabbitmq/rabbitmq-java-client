@@ -131,7 +131,7 @@ public class AMQConnectionTest extends TestCase {
 
 // add test that we time out if no initial Start command is received,
 // setting a timeout and having the FrameHandler return null
-    
+
      /** Mock frame handler to facilitate testing. */
     public static class MockFrameHandler implements FrameHandler {
         /** How many times has sendHeader() been called? */
@@ -188,7 +188,7 @@ public class AMQConnectionTest extends TestCase {
         }
     }
 
-    /** Mock frame handler to facilitate testing. */
+    /** Mock exception handler to facilitate testing. */
     public class MyExceptionHandler implements ExceptionHandler {
         private List<Throwable> _handledExceptions = new ArrayList<Throwable>();
 
