@@ -46,6 +46,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.RedirectException;
+import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQChannel.SimpleBlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
@@ -416,6 +417,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     if (frame != null) {
                         _missedHeartbeats = 0;
                         if (frame.type == AMQP.FRAME_HEARTBEAT) {
+                            if (frame.channel != 0) {
+                                // 
+                                close(AMQP.FRAME_ERROR, "Heartbeat frame on channel > 0",
+                                      false, new MalformedFrameException("Heartbeat frame with channel > 0"));
+                            }
                             // Ignore it: we've already just reset the heartbeat counter.
                         } else {
                             if (frame.channel == 0) { // the special channel

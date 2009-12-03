@@ -44,6 +44,8 @@ import junit.framework.TestSuite;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.Method;
+import com.rabbitmq.client.Command;
+import com.rabbitmq.client.impl.AMQCommand;
 import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.UnexpectedFrameError;
 import com.rabbitmq.client.MalformedFrameException;
@@ -137,48 +139,26 @@ public class BrokenFramesTest extends TestCase {
         // protocol negotiation. (Specifically, the client should
         // start monitoring heartbeats after it receives
         // Connection.Open).
-        Frame[] negotation = new Frame[] {
-            new AMQImpl.Connection.Start(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR,
-                                         new HashMap<String, Object>(),
-                                         LongStringHelper.asLongString("PLAIN"),
-                                         LongStringHelper.asLongString("en_US")).toFrame(0),
-            new WaitForWrite(), // startOK
-            new AMQImpl.Connection.Tune(0, 0, 1).toFrame(0),
-            new WaitForWrite(), // tuneOK
-            new WaitForWrite(), // open
-            new AMQImpl.Connection.OpenOk("").toFrame(0)
-        };
         Frame bogusHeartbeat = new Frame(AMQP.FRAME_HEARTBEAT, 1);
-        ArrayList<Frame> frames = new ArrayList<Frame>();
-        for (Frame f : negotation) frames.add(f);
+        ArrayList<Frame> frames = negotiation();
         frames.add(bogusHeartbeat);
         myFrameHandler.setFrames(frames.iterator());
         AMQConnection conn = new AMQConnection(params, myFrameHandler);
+        conn.start(false);
+        // Sadly, there's a race here, since start will return
+        // after doing the negotiation.  But we can give the
+        // frame-handling loop a big head start.
         try {
-            conn.start(false);
-            // Sadly, there's a race here, since start will return
-            // after doing the negotiation.  But we can give the
-            // frame-handling loop a big head start.
-            try {
-                Thread.sleep(1000);
-            }
-            catch (InterruptedException ie) {
-                // well maybe that was long enough ..
-            }
+            Thread.sleep(1000);
         }
-        catch (IOException ioe) {
-            // must be 501 Frame error somewhere here
-            Throwable t = ioe;
-            while ((t = t.getCause()) != null) {
-                if (t instanceof MalformedFrameException) {
-                    assertFalse("Expected connection to have been closed", conn.isOpen());
-                    Frame f = myFrameHandler.getLastWrittenFrame();
-                    // FIXME check if it's a connection.close
-                }
-            }
-            fail("Expected MalformedFrameError (501)");
+        catch (InterruptedException ie) {
+            // well maybe that was long enough ..
         }
-        fail("Connection should complain about a heartbeat on a non-zero channel.");
+        // must be 501 Frame error somewhere here
+        assertFalse("Expect connection to be closed", conn.isOpen());
+        Command c = myFrameHandler.getLastCompletedCommand();
+        assertTrue(c.getMethod() instanceof AMQP.Connection.Close);
+        assertEquals(AMQP.FRAME_ERROR, ((AMQP.Connection.Close)c.getMethod()).getReplyCode());
     }
   
     private UnexpectedFrameError findUnexpectedFrameError(Exception e) {
@@ -189,10 +169,26 @@ public class BrokenFramesTest extends TestCase {
                 return (UnexpectedFrameError) t;
             }
         }
-        
         return null;
     }
 
+    ArrayList<Frame> negotiation() throws IOException {
+        Frame[] negotiationFrames = new Frame[] {
+            new AMQImpl.Connection.Start(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR,
+                                         new HashMap<String, Object>(),
+                                         LongStringHelper.asLongString("PLAIN"),
+                                         LongStringHelper.asLongString("en_US")).toFrame(0),
+            new WaitForWrite(), // startOK
+            new AMQImpl.Connection.Tune(0, 0, 1).toFrame(0),
+            new WaitForWrite(), // tuneOK
+            new WaitForWrite(), // open
+            new AMQImpl.Connection.OpenOk("").toFrame(0)
+        };
+        ArrayList<Frame> frames = new ArrayList<Frame>();
+        for (Frame f : negotiationFrames) frames.add(f);
+        return frames;
+    }
+    
     // Use this to signal that the frame handler should wait until it's
     // been written to.
     private static class WaitForWrite extends Frame {
@@ -220,8 +216,27 @@ public class BrokenFramesTest extends TestCase {
 
         public Frame getLastWrittenFrame() {
             int last = allWrittenFrames.size() - 1;
-            if (last < 0) return null;
-            return allWrittenFrames.get(last);
+            return (last < 0) ? null : allWrittenFrames.get(last);
+        }
+
+        public Command getLastCompletedCommand() throws IOException {
+            List<Command> cmds = getCompletedCommands();
+            int last = cmds.size() - 1;
+            return (last < 0) ? null : cmds.get(last);
+        }
+
+        public List<Command> getCompletedCommands() throws IOException {
+            List<Command> cmds = new ArrayList<Command>();
+            AMQCommand.Assembler asm = AMQCommand.newAssembler();
+            for (Frame f : allWrittenFrames) {
+                asm.handleFrame(f);
+                Command c = asm.completedCommand();
+                if (c != null) {
+                    cmds.add(c);
+                    asm = AMQCommand.newAssembler(); 
+                }
+            }
+            return cmds;
         }
         
         public Frame readFrame() throws IOException {
@@ -238,6 +253,7 @@ public class BrokenFramesTest extends TestCase {
                 return readFrame();
             }
             else {
+                //System.out.println("< " + next.toString());
                 return next;
             }
         }
@@ -251,6 +267,7 @@ public class BrokenFramesTest extends TestCase {
 
         public void writeFrame(Frame frame) throws IOException {
             allWrittenFrames.add(frame);
+            //System.out.println("> " + frame.toString());
             boolean written = false;
             while (!written) {
                 try {
