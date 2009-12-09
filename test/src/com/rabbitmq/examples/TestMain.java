@@ -36,6 +36,7 @@ import java.io.InputStream;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.AMQPConnectionParameters;
+import com.rabbitmq.client.TCPConnectionParameters;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.client.impl.FrameHandler;
@@ -55,7 +56,7 @@ public class TestMain {
             String hostName = (args.length > 0) ? args[0] : "localhost";
             int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
             runConnectionNegotiationTest(hostName, portNumber);
-            final Connection conn = new ConnectionFactory(new TCPSettings(hostName, portNumber)).newConnection();
+            final Connection conn = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber)).newConnection();
             if (!silent) {
                 System.out.println("Channel 0 fully open.");
             }
@@ -80,12 +81,13 @@ public class TestMain {
         private final int protocolMajor;
         private final int protocolMinor;
 
-        public TestConnectionFactory(int major, int minor) {
+        public TestConnectionFactory(int major, int minor, String hostName, int port) {
+            super(new TCPConnectionParameters(hostName, port));
             this.protocolMajor = major;
             this.protocolMinor = minor;
         }
 
-        protected FrameHandler createFrameHandler(TcpConnectionParameters params)
+        protected FrameHandler createFrameHandler(TCPConnectionParameters params)
             throws IOException {
             Address addr = params.getAddress();
             String hostName = addr.getHost();
@@ -104,14 +106,14 @@ public class TestMain {
         Connection conn;
 
         try {
-            conn = new TestConnectionFactory(0, 1).newConnection(hostName, portNumber);
+            conn = new TestConnectionFactory(0, 1, hostName, portNumber).newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
 
         //should succeed IF the highest version supported by the
         //server is a version supported by this client
-        conn = new TestConnectionFactory(100, 0).newConnection(hostName, portNumber);
+        conn = new TestConnectionFactory(100, 0, hostName, portNumber).newConnection();
         conn.close();
 
         AMQPConnectionParameters params;

@@ -36,6 +36,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.StringRpcServer;
+import com.rabbitmq.client.TCPConnectionParameters;
 
 public class HelloServer {
     public static void main(String[] args) {
@@ -43,8 +44,8 @@ public class HelloServer {
             String hostName = (args.length > 0) ? args[0] : "localhost";
             int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
 
-            ConnectionFactory connFactory = new ConnectionFactory();
-            Connection conn = connFactory.newConnection(hostName, portNumber);
+            ConnectionFactory connFactory = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber));
+            Connection conn = connFactory.newConnection();
             final Channel ch = conn.createChannel();
 
             ch.queueDeclare("Hello");

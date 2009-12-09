@@ -36,6 +36,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.TCPConnectionParameters;
 
 public class SimpleConsumer {
     public static void main(String[] args) {
@@ -44,8 +45,8 @@ public class SimpleConsumer {
             int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
             String queueName = (args.length > 2) ? args[2] : "SimpleQueue";
 
-            ConnectionFactory connFactory = new ConnectionFactory();
-            Connection conn = connFactory.newConnection(hostName, portNumber);
+            ConnectionFactory connFactory = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber));
+            Connection conn = connFactory.newConnection();
 
             final Channel ch = conn.createChannel();
 

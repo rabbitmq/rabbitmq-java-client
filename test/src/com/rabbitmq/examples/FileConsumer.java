@@ -47,6 +47,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.TCPConnectionParameters;
 
 public class FileConsumer {
     public static void main(String[] args) {
@@ -78,8 +79,8 @@ public class FileConsumer {
 		System.exit(2);
 	    }
 
-            ConnectionFactory connFactory = new ConnectionFactory();
-            Connection conn = connFactory.newConnection(hostName, portNumber);
+            ConnectionFactory connFactory = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber));
+            Connection conn = connFactory.newConnection();
 
             final Channel ch = conn.createChannel();
 

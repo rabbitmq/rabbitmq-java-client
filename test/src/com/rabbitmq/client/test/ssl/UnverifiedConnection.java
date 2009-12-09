@@ -60,7 +60,7 @@ public class UnverifiedConnection extends BrokerTestCase {
 
 
         if (connection == null) {
-            connection = connectionFactory.newConnection("localhost", 5671);
+            connection = connectionFactory.newConnection();
         }
     }
 

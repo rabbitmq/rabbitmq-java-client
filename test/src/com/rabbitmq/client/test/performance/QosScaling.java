@@ -35,6 +35,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.TCPConnectionParameters;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
@@ -82,8 +83,6 @@ public class QosScaling {
     }
 
     protected final Parameters params;
-    protected final ConnectionFactory connectionFactory =
-        new ConnectionFactory();
     protected Connection connection;
     protected Channel channel;
 
@@ -136,7 +135,7 @@ public class QosScaling {
     }
 
     public long run() throws IOException {
-        connection = connectionFactory.newConnection(params.host, params.port);
+        connection = new ConnectionFactory(new TCPConnectionParameters(params.host, params.port)).newConnection();
         channel = connection.createChannel();
         channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);

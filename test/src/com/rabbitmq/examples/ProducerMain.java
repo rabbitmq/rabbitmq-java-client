@@ -40,6 +40,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.TCPConnectionParameters;
 
 public class ProducerMain implements Runnable {
     public static final int SUMMARY_EVERY_MS = 1000;

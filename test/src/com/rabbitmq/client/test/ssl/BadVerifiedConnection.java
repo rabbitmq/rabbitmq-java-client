@@ -45,6 +45,7 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
 
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.TCPConnectionParameters;
 
 /**
  * Test for bug 19356 - SSL Support in rabbitmq
@@ -81,7 +82,7 @@ public class BadVerifiedConnection extends UnverifiedConnection {
             SSLContext c = SSLContext.getInstance("SSLv3");
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-            connectionFactory = new ConnectionFactory();
+            connectionFactory = new ConnectionFactory(new TCPConnectionParameters("localhost", 5671));
             connectionFactory.useSslProtocol(c);
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex.toString());
@@ -97,7 +98,7 @@ public class BadVerifiedConnection extends UnverifiedConnection {
 
         if (connection == null) {
             try {
-                connection = connectionFactory.newConnection("localhost", 5671);
+                connection = connectionFactory.newConnection();
                 fail();
             } catch (SSLHandshakeException e) {
             } catch (IOException e) {

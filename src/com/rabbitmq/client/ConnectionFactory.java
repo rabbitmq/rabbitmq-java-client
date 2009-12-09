@@ -191,4 +191,36 @@ public class ConnectionFactory {
     {
         return newConnection(0);
     }
+
+
+    /**
+     * Ensure all connections produced by this factory use the default SSL protocol.
+     */
+    public void useSslProtocol()
+            throws NoSuchAlgorithmException, KeyManagementException {
+      useSslProtocol(TCPConnectionParameters.DEFAULT_SSL_PROTOCOL);
+    }
+
+    /**
+     * Ensure all connections produced by this factory use the specified protocol.
+     * Equivalent to setting the protocol on each TCPConnectionParameters object.
+     * @param protocol the protocol to use
+     */
+    public void useSslProtocol(String protocol)  
+            throws NoSuchAlgorithmException, KeyManagementException {
+      for(ConnectionParameters params : _connectionParams){
+        params.getTCPParameters().useSslProtocol(protocol);
+      }
+    }
+
+    /**
+     * Ensure all connections produced by this factory use the specified protocol.
+     * Equivalent to setting the protocol on each TCPConnectionParameters object.
+     * @param protocol the protocol to use
+     */
+    public void useSslProtocol(SSLContext protocol)  {
+      for(ConnectionParameters params : _connectionParams){
+        params.getTCPParameters().useSslProtocol(protocol);
+      }
+    }
 }

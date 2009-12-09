@@ -47,6 +47,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.TCPConnectionParameters;
 
 public class FileProducer {
     public static void main(String[] args) {
@@ -68,8 +69,8 @@ public class FileProducer {
 	    String exchange = strArg(cmd, 'e', null);
 	    String routingKey = strArg(cmd, 'k', null);
 
-            ConnectionFactory connFactory = new ConnectionFactory();
-            Connection conn = connFactory.newConnection(hostName, portNumber);
+            ConnectionFactory connFactory = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber));
+            Connection conn = connFactory.newConnection();
 
             final Channel ch = conn.createChannel();
 

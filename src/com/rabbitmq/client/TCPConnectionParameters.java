@@ -27,8 +27,12 @@ public class TCPConnectionParameters {
       this(SocketFactory.getDefault(), new Address(host, port));
     }
 
+    public TCPConnectionParameters(String host){
+      this(host, -1);
+    }
+
     public TCPConnectionParameters(){
-        this("localhost", -1);
+        this("localhost");
     }
 
 

@@ -7,6 +7,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.TCPConnectionParameters;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -95,11 +96,11 @@ public class StressPersister {
         repeatCount = intArg(cmd, 'c', backlogSize * 5);
         sampleGranularity = intArg(cmd, 's', Math.max(5, repeatCount / 250));
 
-        connectionFactory = new ConnectionFactory();
+        connectionFactory = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber));
     }
 
     public Connection newConnection() throws IOException {
-        return connectionFactory.newConnection(hostName, portNumber);
+        return connectionFactory.newConnection();
     }
 
     public void run() throws IOException, InterruptedException {

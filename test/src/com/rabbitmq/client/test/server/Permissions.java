@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 import com.rabbitmq.client.AMQPConnectionParameters;
+import com.rabbitmq.client.TCPConnectionParameters;
 import com.rabbitmq.client.impl.AMQChannel;
 import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.tools.Host;
@@ -105,8 +106,8 @@ public class Permissions extends BrokerTestCase
         params.setUsername("testadmin");
         params.setPassword("test");
         params.setVirtualHost("/test");
-        ConnectionFactory factory = new ConnectionFactory(params);
-        Connection connection = factory.newConnection("localhost");
+        ConnectionFactory factory = new ConnectionFactory(params, new TCPConnectionParameters("localhost"));
+        Connection connection = factory.newConnection();
         adminCh = connection.createChannel();
         withNames(new WithName() {
                 public void with(String name) throws IOException {
