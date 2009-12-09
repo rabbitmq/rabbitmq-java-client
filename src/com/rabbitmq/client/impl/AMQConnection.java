@@ -77,38 +77,38 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
 
     /** Initialization parameters */
-    public final ConnectionParameters _params;
+    private final ConnectionParameters _params;
 
     /** The special channel 0 */
-    public final AMQChannel _channel0 = new AMQChannel(this, 0) {
+    private final AMQChannel _channel0 = new AMQChannel(this, 0) {
             @Override public boolean processAsync(Command c) throws IOException {
                 return _connection.processControlCommand(c);
             }
         };
 
     /** Object that manages a set of channels */
-    public final ChannelManager _channelManager = new ChannelManager();
+    private final ChannelManager _channelManager = new ChannelManager();
 
     /** Frame source/sink */
-    public final FrameHandler _frameHandler;
+    private final FrameHandler _frameHandler;
 
     /** Flag controlling the main driver loop's termination */
-    public volatile boolean _running = false;
+    private volatile boolean _running = false;
 
     /** Maximum frame length, or zero if no limit is set */
-    public int _frameMax;
+    private int _frameMax;
 
     /** Handler for (otherwise-unhandled) exceptions that crop up in the mainloop. */
-    public final ExceptionHandler _exceptionHandler;
+    private final ExceptionHandler _exceptionHandler;
 
     /**
      * Object used for blocking main application thread when doing all the necessary
      * connection shutdown operations
      */
-    public BlockingCell<Object> _appContinuation = new BlockingCell<Object>();
+    private BlockingCell<Object> _appContinuation = new BlockingCell<Object>();
 
     /** Flag indicating whether the client received Connection.Close message from the broker */
-    public boolean _brokerInitiatedShutdown = false;
+    private boolean _brokerInitiatedShutdown = false;
     
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
@@ -130,20 +130,20 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Timestamp of last time we wrote a frame - used for deciding when to
      * send a heartbeat
      */
-    public volatile long _lastActivityTime = Long.MAX_VALUE;
+    private volatile long _lastActivityTime = Long.MAX_VALUE;
 
     /**
      * Count of socket-timeouts that have happened without any incoming frames
      */
-    public int _missedHeartbeats;
+    private int _missedHeartbeats;
 
     /**
      * Currently-configured heartbeat interval, in seconds. 0 meaning none.
      */
-    public int _heartbeat;
+    private int _heartbeat;
 
     /** Hosts retrieved from the connection.open-ok */
-    public Address[] _knownHosts;
+    private Address[] _knownHosts;
 
     /** {@inheritDoc} */
     public String getHost() {
