@@ -75,7 +75,8 @@ public class BindingLifecycleBase extends BrokerTestCase {
     super.openConnection();
     if (secondaryConnection == null) {
       try {
-        secondaryConnection = connectionFactory.newConnection("localhost", 5673);
+        setupConnectionFactory("localhost", 5673);
+        secondaryConnection = connectionFactory.newConnection();
       }
       catch (IOException e) {
       }

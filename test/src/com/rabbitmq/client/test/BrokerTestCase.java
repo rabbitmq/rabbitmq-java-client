@@ -43,6 +43,7 @@ import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ShutdownSignalException;
 
+import com.rabbitmq.client.TCPConnectionParameters;
 import com.rabbitmq.client.AMQP;
 
 public class BrokerTestCase extends TestCase
@@ -94,11 +95,20 @@ public class BrokerTestCase extends TestCase
         throws IOException
     {}
 
+    public void setupConnectionFactory(String host, int port){
+      connectionFactory = new ConnectionFactory(new TCPConnectionParameters(host, port));
+    }
+
+    public void setupConnectionFactory(String host){
+      setupConnectionFactory(host, -1);
+    }
+
     public void openConnection()
         throws IOException
     {
         if (connection == null) {
-            connection = connectionFactory.newConnection("localhost");
+          setupConnectionFactory("localhost");
+          connection = connectionFactory.newConnection();
         }
     }
 
