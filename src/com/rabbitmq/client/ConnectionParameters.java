@@ -36,15 +36,6 @@ import java.security.AccessControlException;
  * Properties bean to encapsulate parameters for a Connection.
  */
 public class ConnectionParameters {
-
-    private static String safeGetProperty(String key, String def) {
-        try {
-            return System.getProperty(key, def);
-        } catch (AccessControlException ex) {
-            return def;
-        }
-    }
-
     /** Default user name */
     public static final String DEFAULT_USER = "guest";
 
