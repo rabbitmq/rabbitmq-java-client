@@ -46,7 +46,7 @@ public class SimpleProducer {
             String exchange = (args.length > 3) ? args[3] : "";
             String routingKey = (args.length > 4) ? args[4] : "SimpleQueue";
 
-            Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            Connection conn = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber)).newConnection();
 
             Channel ch = conn.createChannel();
 

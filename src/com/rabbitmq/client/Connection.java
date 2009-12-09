@@ -35,10 +35,10 @@ import java.io.IOException;
 /**
  * Public API: Interface to an AMQ connection. See the see the <a href="http://www.amqp.org/">spec</a> for details.
  * <p>
- * To connect to a broker, fill in a {@link ConnectionParameters} and use a {@link ConnectionFactory} as follows:
+ * To connect to a broker, fill in a {@link AMQPConnectionParameters} and use a {@link ConnectionFactory} as follows:
  *
  * <pre>
- * ConnectionParameters params = new ConnectionParameters();
+ * AMQPConnectionParameters params = new AMQPConnectionParameters();
  * params.setUsername(userName);
  * params.setPassword(password);
  * params.setVirtualHost(virtualHost);
@@ -73,7 +73,7 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * numbers range from 1 to this number, inclusive.
      *
      * Note that this is the <i>current</i> setting, as opposed to the <i>initially-requested</i>
-     * setting available from {@link #getParameters()}.{@link ConnectionParameters#getRequestedChannelMax()}.
+     * setting available from {@link #getParameters()}.{@link AMQPConnectionParameters#getRequestedChannelMax()}.
      *
      * @return the maximum channel number permitted for this connection.
      */
@@ -83,7 +83,7 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * Get the negotiated maximum frame size.
      *
      * Note that this is the <i>current</i> setting, as opposed to the <i>initially-requested</i>
-     * setting available from {@link #getParameters()}.{@link ConnectionParameters#getRequestedFrameMax()}.
+     * setting available from {@link #getParameters()}.{@link AMQPConnectionParameters#getRequestedFrameMax()}.
      *
      * @return the maximum frame size, in octets; zero if unlimited
      */
@@ -93,7 +93,7 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * Get the negotiated heartbeat interval.
      *
      * Note that this is the <i>current</i> setting, as opposed to the <i>initially-requested</i>
-     * setting available from {@link #getParameters()}.{@link ConnectionParameters#getRequestedHeartbeat()}.
+     * setting available from {@link #getParameters()}.{@link AMQPConnectionParameters#getRequestedHeartbeat()}.
      *
      * @return the heartbeat interval, in seconds; zero if none
      */

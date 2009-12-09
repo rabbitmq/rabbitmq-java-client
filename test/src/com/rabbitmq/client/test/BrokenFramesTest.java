@@ -41,7 +41,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.AMQPConnectionParameters;
 import com.rabbitmq.client.UnexpectedFrameError;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.Frame;
@@ -56,13 +56,13 @@ public class BrokenFramesTest extends TestCase {
     }
 
     private MyFrameHandler myFrameHandler;
-    private ConnectionParameters params;
+    private AMQPConnectionParameters params;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         myFrameHandler = new MyFrameHandler();
-        params = new ConnectionParameters();
+        params = new AMQPConnectionParameters();
     }
 
     @Override

@@ -31,10 +31,7 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.*;
 import com.rabbitmq.tools.jsonrpc.JsonRpcClient;
 
 public class HelloJsonClient {
@@ -44,7 +41,7 @@ public class HelloJsonClient {
             String hostName = (args.length > 1) ? args[1] : "localhost";
             int portNumber = (args.length > 2) ? Integer.parseInt(args[2]) : AMQP.PROTOCOL.PORT;
 
-            Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            Connection conn = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber)).newConnection();
             Channel ch = conn.createChannel();
             JsonRpcClient client = new JsonRpcClient(ch, "", "Hello");
             HelloJsonService service =

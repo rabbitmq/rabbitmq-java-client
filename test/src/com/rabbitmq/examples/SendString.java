@@ -51,7 +51,7 @@ public class SendString {
             String message = args[4];
             int portNumber = (args.length > 5) ? Integer.parseInt(args[5]) : AMQP.PROTOCOL.PORT;
 
-            Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            Connection conn = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber)).newConnection();
             Channel ch = conn.createChannel();
 
             ch.exchangeDeclare(exchange, exchangeType);

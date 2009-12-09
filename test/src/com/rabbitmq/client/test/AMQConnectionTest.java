@@ -45,7 +45,7 @@ import junit.framework.TestSuite;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.AMQPConnectionParameters;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.impl.AMQConnection;
@@ -72,7 +72,7 @@ public class AMQConnectionTest extends TestCase {
 
     /** The mock frame handler used to test connection behaviour. */
     private MockFrameHandler _mockFrameHandler;
-    private ConnectionParameters _params;
+    private AMQPConnectionParameters _params;
 
     /** Setup the environment for this test
      * @see junit.framework.TestCase#setUp()
@@ -81,7 +81,7 @@ public class AMQConnectionTest extends TestCase {
     @Override protected void setUp() throws Exception {
         super.setUp();
         _mockFrameHandler = new MockFrameHandler();
-        _params = new ConnectionParameters();
+        _params = new AMQPConnectionParameters();
     }
 
     /** Tear down the environment for this test

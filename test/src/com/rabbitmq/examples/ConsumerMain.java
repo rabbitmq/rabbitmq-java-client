@@ -37,13 +37,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.*;
 import com.rabbitmq.utility.BlockingCell;
 
 public class ConsumerMain implements Runnable {
@@ -69,7 +63,7 @@ public class ConsumerMain implements Runnable {
             int portNumber = optArg(args, 1, AMQP.PROTOCOL.PORT);
             boolean writeStats = optArg(args, 2, true);
             boolean noAck = optArg(args, 3, true);
-            final Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            final Connection conn = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber)).newConnection();
             System.out.println("Channel 0 fully open.");
             new ConsumerMain(conn, writeStats, noAck).run();
         } catch (Exception e) {

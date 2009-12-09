@@ -53,7 +53,8 @@ import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.AMQPConnectionParameters;
+import com.rabbitmq.client.TCPConnectionParameters;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
@@ -90,10 +91,10 @@ public class MulticastMain {
             //setup
             String id = UUID.randomUUID().toString();
             Stats stats = new Stats(1000L * samplingInterval);
-            Address[] addresses = new Address[] {
-                new Address(hostName, portNumber)
+            TCPConnectionParameters[] addresses = new TCPConnectionParameters[] {
+                new TCPConnectionParameters(hostName, portNumber)
             };
-            ConnectionParameters params = new ConnectionParameters();
+            AMQPConnectionParameters params = new AMQPConnectionParameters();
             Thread[] consumerThreads = new Thread[consumerCount];
             Connection[] consumerConnections = new Connection[consumerCount];
             for (int i = 0; i < consumerCount; i++) {

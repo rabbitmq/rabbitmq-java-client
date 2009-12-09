@@ -33,10 +33,7 @@ package com.rabbitmq.examples;
 
 import java.util.Random;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.*;
 
 /**
  * This producer creates messages with constantly changing topic keys, sending as
@@ -67,7 +64,7 @@ public class SpammyTopicProducer {
             String message = (args.length > 4) ? args[4] :
                 "the time is " + new java.util.Date().toString();
 
-            Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            Connection conn = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber)).newConnection();
 
             Channel ch = conn.createChannel();
 

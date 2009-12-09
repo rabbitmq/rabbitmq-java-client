@@ -31,21 +31,14 @@
 
 package com.rabbitmq.client.test.server;
 
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.test.functional.*;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Command;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ConnectionParameters;
-import com.rabbitmq.client.Method;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.AMQPConnectionParameters;
 import com.rabbitmq.client.impl.AMQChannel;
 import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.tools.Host;
@@ -57,7 +50,7 @@ public class Permissions extends BrokerTestCase
 
     public Permissions()
     {
-        ConnectionParameters params = new ConnectionParameters();
+        AMQPConnectionParameters params = new AMQPConnectionParameters();
         params.setUsername("test");
         params.setPassword("test");
         params.setVirtualHost("/test");
@@ -108,7 +101,7 @@ public class Permissions extends BrokerTestCase
     protected void createResources()
         throws IOException
     {
-        ConnectionParameters params = new ConnectionParameters();
+        AMQPConnectionParameters params = new AMQPConnectionParameters();
         params.setUsername("testadmin");
         params.setPassword("test");
         params.setVirtualHost("/test");
