@@ -69,12 +69,6 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     int getPort();
 
     /**
-     * Retrieve the connection parameters.
-     * @return the initialization parameters used to open this connection.
-     */
-    ConnectionParameters getParameters();
-
-    /**
      * Get the negotiated maximum channel number. Usable channel
      * numbers range from 1 to this number, inclusive.
      *

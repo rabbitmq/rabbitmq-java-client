@@ -145,6 +145,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Hosts retrieved from the connection.open-ok */
     private Address[] _knownHosts;
 
+    private final String _userName, _password, _virtualHost;
+    private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
+
     /** {@inheritDoc} */
     public String getHost() {
         return _frameHandler.getHost();
@@ -186,6 +189,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                          ExceptionHandler exceptionHandler)
     {
         checkPreconditions();
+
+        _userName = params.getUserName();
+        _password = params.getPassword();
+        _virtualHost = params.getVirtualHost();
+        _requestedChannelMax = params.getRequestedChannelMax();
+        _requestedFrameMax = params.getRequestedFrameMax();
+        _requestedHeartbeat = params.getRequestedHeartbeat();
+
         _params = params;
         _frameHandler = frameHandler;
         _running = true;
@@ -249,8 +260,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             throw AMQChannel.wrap(sse);
         }
         
-        LongString saslResponse = LongStringHelper.asLongString("\0" + _params.getUserName() +
-                                                                "\0" + _params.getPassword());
+        LongString saslResponse = LongStringHelper.asLongString("\0" + _userName +
+                                                                "\0" + _password);
         AMQImpl.Connection.StartOk startOk =
             new AMQImpl.Connection.StartOk(buildClientPropertiesTable(),
                                            "PLAIN",
@@ -279,7 +290,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                                          frameMax,
                                                          heartbeat));
         
-        Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_params.getVirtualHost(),
+        Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
                                                                           "",
                                                                           insist)).getMethod();
         if (res instanceof AMQP.Connection.Redirect) {
@@ -703,6 +714,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     @Override public String toString() {
-        return "amqp://" + _params.getUserName() + "@" + getHost() + ":" + getPort() + _params.getVirtualHost();
+        return "amqp://" + _userName + "@" + getHost() + ":" + getPort() + _virtualHost;
     }
 }
