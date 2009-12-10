@@ -51,7 +51,7 @@ public class UnverifiedConnection extends BrokerTestCase {
         throws IOException
     {
         try {
-            connectionFactory.useSslProtocol();
+            params.getTCPParameters().useSslProtocol();
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex.toString());
         } catch (KeyManagementException ex) {

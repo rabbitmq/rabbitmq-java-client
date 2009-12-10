@@ -81,9 +81,9 @@ public class BadVerifiedConnection extends UnverifiedConnection {
             
             SSLContext c = SSLContext.getInstance("SSLv3");
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-            connectionFactory = new ConnectionFactory(new TCPConnectionParameters("localhost", 5671));
-            connectionFactory.useSslProtocol(c);
+            TCPConnectionParameters tcp =  new TCPConnectionParameters("localhost", 5671);
+            tcp.useSslProtocol(c);
+            connectionFactory = new ConnectionFactory(tcp);
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex.toString());
         } catch (KeyManagementException ex) {
