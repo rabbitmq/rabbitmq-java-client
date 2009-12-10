@@ -98,7 +98,8 @@ public class BrokerTestCase extends TestCase
     {}
 
     public void setupConnectionFactory(String host, int port){
-      connectionFactory = new ConnectionFactory(new TCPConnectionParameters(host, port));
+      params.setTCPParameters(new TCPConnectionParameters(host, port));
+      connectionFactory = new ConnectionFactory(params);
     }
 
     public void setupConnectionFactory(String host){
