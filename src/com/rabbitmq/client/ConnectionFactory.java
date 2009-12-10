@@ -84,6 +84,10 @@ public class ConnectionFactory {
     }
 
 
+    public ConnectionParameters[] getConnectionParameters(){
+      return _connectionParams;
+    }
+
     protected FrameHandler createFrameHandler(TCPConnectionParameters params)
         throws IOException {
         Address addr = params.getAddress();
@@ -100,7 +104,7 @@ public class ConnectionFactory {
     {
         IOException lastException = null;
 
-        for (ConnectionParameters params : connectionParams) {
+        for (ConnectionParameters params : connectionParams) {            
             TCPConnectionParameters tcpParams = params.getTCPParameters();
             Address addr = tcpParams.getAddress();
             ConnectionParameters[] redirectionTargets = new ConnectionParameters[0];
