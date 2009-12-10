@@ -86,7 +86,7 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
     }
 
     public boolean isOpen() {
-        return _shutdownCause == null;
+      return _shutdownCause == null;
     }
 
 }

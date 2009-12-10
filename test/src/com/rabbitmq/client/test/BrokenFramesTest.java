@@ -51,6 +51,8 @@ import com.rabbitmq.client.UnexpectedFrameError;
 import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.AMQImpl;
@@ -59,6 +61,11 @@ import com.rabbitmq.client.impl.AMQImpl.Basic.Publish;
 
 
 public class BrokenFramesTest extends TestCase {
+
+    public static void main(String args[]) {
+        junit.textui.TestRunner.main(new String[] {"com.rabbitmq.client.test.BrokenFramesTest"});
+    }
+
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("connection");
         suite.addTestSuite(BrokenFramesTest.class);
@@ -160,7 +167,35 @@ public class BrokenFramesTest extends TestCase {
         assertTrue(c.getMethod() instanceof AMQP.Connection.Close);
         assertEquals(AMQP.FRAME_ERROR, ((AMQP.Connection.Close)c.getMethod()).getReplyCode());
     }
-  
+
+    public void testNonZeroChannelConnectionMethod() throws Exception {
+        // do negotiation then hit it with a Connection method on a
+        // channel other than zero
+        List<Frame> frames = negotiation();
+        frames.add(new WaitForWrite());
+        frames.add(new AMQImpl.Channel.OpenOk().toFrame(1));
+        // importantly, Connection.Close is plausible after negotiation
+        frames.add(new AMQImpl.Connection.Close(200, "OK", 0, 0).toFrame(1));
+        myFrameHandler.setFrames(frames.iterator());
+        AMQConnection conn = new AMQConnection(params, myFrameHandler);
+        try {
+            conn.start(false);
+            conn.createChannel(1);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ie) {
+                // well maybe that was long enough ..
+            }
+        }
+        catch (ShutdownSignalException sse) {
+        }
+        // must be 501 Frame error somewhere here
+        assertFalse("Expect connection to be closed", conn.isOpen());
+        Command c = myFrameHandler.getLastCompletedCommand();
+        assertTrue("Expect Connection.Close method, got " + myFrameHandler.getCompletedCommands().toString(), c.getMethod() instanceof AMQP.Connection.Close);
+        assertEquals(AMQP.FRAME_ERROR, ((AMQP.Connection.Close) c.getMethod()).getReplyCode());
+    }
+    
     private UnexpectedFrameError findUnexpectedFrameError(Exception e) {
         Throwable t = e;
         while ((t = t.getCause()) != null) {

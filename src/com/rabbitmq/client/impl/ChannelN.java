@@ -42,6 +42,7 @@ import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.UnexpectedMethodError;
+import com.rabbitmq.client.DisallowedFrameException;
 import com.rabbitmq.client.impl.AMQImpl.Basic;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
 import com.rabbitmq.client.impl.AMQImpl.Exchange;
@@ -169,6 +170,25 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         _connection.disconnectChannel(_channelNumber);
     }
 
+    /**
+     * This is overridden because non-zero channels should not receive
+     * Connection methods
+     */
+    @Override public void handleCompleteInboundCommand(AMQCommand command)
+        throws IOException
+    {
+        if (isConnectionMethod(command.getMethod())) {
+            throw new DisallowedFrameException("Connection method not allowed on channel > 0: " + command.toString());
+        }
+        else {
+            super.handleCompleteInboundCommand(command);
+        }
+    }
+
+    protected boolean isConnectionMethod(Method method) {
+        return (method.protocolClassId()==AMQImpl.Connection.INDEX);
+    }
+    
     /**
      * Protected API - Filters the inbound command stream, processing
      * Basic.Deliver, Basic.Return and Channel.Close specially.

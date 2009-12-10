@@ -40,6 +40,7 @@ import java.util.concurrent.TimeoutException;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.DisallowedFrameException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
@@ -418,9 +419,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                         _missedHeartbeats = 0;
                         if (frame.type == AMQP.FRAME_HEARTBEAT) {
                             if (frame.channel != 0) {
-                                // 
-                                close(AMQP.FRAME_ERROR, "Heartbeat frame on channel > 0",
-                                      false, new MalformedFrameException("Heartbeat frame with channel > 0"));
+                                throw new DisallowedFrameException("Heartbeat frame with channel > 0");
                             }
                             // Ignore it: we've already just reset the heartbeat counter.
                         } else {
@@ -444,6 +443,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                         // Maybe missed heartbeat.
                         handleSocketTimeout();
                     }
+                }
+            } catch (DisallowedFrameException dfe) {
+                try {
+                    // DEADLOCKS
+                    close(AMQP.FRAME_ERROR, "Frame not allowed", dfe);
+                } catch (Exception ioe) {
+                    ioe.printStackTrace();
                 }
             } catch (EOFException ex) {
                 if (!_brokerInitiatedShutdown)
@@ -532,7 +538,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     // It's our final "RPC".
                     return false;
                 } else {
-                    // Ignore all others.
+                    // FIXME All others are *not allowed*.  Close the
+                    // connection with a 503.
                     return true;
                 }
             }
@@ -665,11 +672,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public void close(int closeCode,
                       String closeMessage,
-                      boolean initiatedByApplication,
                       Throwable cause)
         throws IOException
     {
-        close(closeCode, closeMessage, initiatedByApplication, cause, 0, false);
+        close(closeCode, closeMessage, false, cause, 0, false);
     }
 
     /**
@@ -692,7 +698,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             AMQChannel.SimpleBlockingRpcContinuation k =
                 new AMQChannel.SimpleBlockingRpcContinuation();
             _channel0.quiescingRpc(reason, k);
-            k.getReply(timeout);
+            if (initiatedByApplication) k.getReply(timeout);
         } catch (TimeoutException tte) {
             if (!abort)
                 throw new ShutdownSignalException(true, true, tte, this);

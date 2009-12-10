@@ -55,7 +55,6 @@ public class DefaultExceptionHandler implements ExceptionHandler {
         try {
             ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
                                                             "Internal error in ReturnListener",
-                                                            false,
                                                             exception);
         } catch (IOException ioe) {
             // Man, this clearly isn't our day.
@@ -77,7 +76,6 @@ public class DefaultExceptionHandler implements ExceptionHandler {
             ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
                                                             "Internal error in Consumer " +
                                                               consumerTag,
-                                                            false,
                                                             exception);
         } catch (IOException ioe) {
             // Man, this clearly isn't our day.
