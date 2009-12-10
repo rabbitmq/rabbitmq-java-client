@@ -44,11 +44,13 @@ import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ShutdownSignalException;
 
 import com.rabbitmq.client.TCPConnectionParameters;
+import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.AMQP;
 
 public class BrokerTestCase extends TestCase
 {
-    public ConnectionFactory connectionFactory = new ConnectionFactory();
+    public ConnectionFactory connectionFactory = null; 
+    public ConnectionParameters params = new ConnectionParameters();
 
     public Connection connection;
     public Channel channel;
