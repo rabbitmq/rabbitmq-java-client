@@ -31,4 +31,12 @@ public class ConnectionParameters {
     public void setTCPParameters(TCPConnectionParameters tcpParameters) {
         this.tcpParameters = tcpParameters;
     }
+
+    @Override
+    public String toString() {
+        return "ConnectionParameters{" +
+                "amqpParameters=" + amqpParameters +
+                ", tcpParameters=" + tcpParameters +
+                '}';
+    }
 }

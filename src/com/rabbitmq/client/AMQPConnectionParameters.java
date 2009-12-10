@@ -140,6 +140,7 @@ public class AMQPConnectionParameters {
         return _requestedFrameMax;
     }
 
+
     /**
      * Retrieve the requested heartbeat interval.
      * @return the initially requested heartbeat interval, in seconds; zero for none
@@ -164,4 +165,15 @@ public class AMQPConnectionParameters {
         _requestedChannelMax = requestedChannelMax;
     }
 
+    @Override
+    public String toString() {
+        return "AMQPConnectionParameters{" +
+                "_userName='" + _userName + '\'' +
+                ", _password='" + _password + '\'' +
+                ", _virtualHost='" + _virtualHost + '\'' +
+                ", _requestedChannelMax=" + _requestedChannelMax +
+                ", _requestedFrameMax=" + _requestedFrameMax +
+                ", _requestedHeartbeat=" + _requestedHeartbeat +
+                '}';
+    }
 }

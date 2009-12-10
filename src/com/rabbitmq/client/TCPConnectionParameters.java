@@ -102,4 +102,12 @@ public class TCPConnectionParameters {
     public void setAddress(Address _address) {
         this._address = _address;
     }
+
+        @Override
+    public String toString() {
+        return "TCPConnectionParameters{" +
+                "_factory=" + _factory +
+                ", _address=" + _address +
+                '}';
+    }
 }
