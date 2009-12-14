@@ -146,7 +146,8 @@ public class BrokenFramesTest extends TestCase {
         assertFalse("Expect connection to be closed", conn.isOpen());
         Command c = myFrameHandler.getLastCompletedCommand();
         assertTrue("Expect Connection.Close method, got " + myFrameHandler.getCompletedCommands().toString(), c.getMethod() instanceof AMQP.Connection.Close);
-        assertEquals(AMQP.FRAME_ERROR, ((AMQP.Connection.Close) c.getMethod()).getReplyCode());
+        assertEquals(AMQP.COMMAND_INVALID,
+                     ((AMQP.Connection.Close) c.getMethod()).getReplyCode());
     }
     
     public void testNonZeroChannelHeartbeat() throws Exception {

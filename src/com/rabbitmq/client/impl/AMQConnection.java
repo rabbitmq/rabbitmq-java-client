@@ -446,7 +446,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 }
             } catch (DisallowedFrameException dfe) {
                 try {
-                    close(AMQP.FRAME_ERROR, "Frame not allowed", dfe);
+                    close(AMQP.COMMAND_INVALID, "Command not allowed", dfe);
                 } catch (Exception ioe) {
                     ioe.printStackTrace();
                 }
