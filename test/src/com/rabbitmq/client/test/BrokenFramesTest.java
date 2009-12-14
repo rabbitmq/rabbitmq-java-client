@@ -141,7 +141,15 @@ public class BrokenFramesTest extends TestCase {
         fail("No UnexpectedFrameError thrown");
     }
 
-    public void testNonChannelZeroHeartbeat() throws IOException, RedirectException {
+    protected void checkFor501(AMQConnection conn) throws IOException {
+        // must be 501 Frame error somewhere here
+        assertFalse("Expect connection to be closed", conn.isOpen());
+        Command c = myFrameHandler.getLastCompletedCommand();
+        assertTrue("Expect Connection.Close method, got " + myFrameHandler.getCompletedCommands().toString(), c.getMethod() instanceof AMQP.Connection.Close);
+        assertEquals(AMQP.FRAME_ERROR, ((AMQP.Connection.Close) c.getMethod()).getReplyCode());
+    }
+    
+    public void testNonZeroChannelHeartbeat() throws Exception {
         // See [1]: Heartbeats don't officially start until after
         // protocol negotiation. (Specifically, the client should
         // start monitoring heartbeats after it receives
@@ -162,10 +170,7 @@ public class BrokenFramesTest extends TestCase {
             // well maybe that was long enough ..
         }
         // must be 501 Frame error somewhere here
-        assertFalse("Expect connection to be closed", conn.isOpen());
-        Command c = myFrameHandler.getLastCompletedCommand();
-        assertTrue(c.getMethod() instanceof AMQP.Connection.Close);
-        assertEquals(AMQP.FRAME_ERROR, ((AMQP.Connection.Close)c.getMethod()).getReplyCode());
+        checkFor501(conn);
     }
 
     public void testNonZeroChannelConnectionMethod() throws Exception {
@@ -189,11 +194,7 @@ public class BrokenFramesTest extends TestCase {
         }
         catch (IOException shutdown) {
         }
-        // must be 501 Frame error somewhere here
-        assertFalse("Expect connection to be closed", conn.isOpen());
-        Command c = myFrameHandler.getLastCompletedCommand();
-        assertTrue("Expect Connection.Close method, got " + myFrameHandler.getCompletedCommands().toString(), c.getMethod() instanceof AMQP.Connection.Close);
-        assertEquals(AMQP.FRAME_ERROR, ((AMQP.Connection.Close) c.getMethod()).getReplyCode());
+        checkFor501(conn);
     }
 
     public void testZeroChannelNonConnectionMethod() throws Exception {
@@ -216,13 +217,7 @@ public class BrokenFramesTest extends TestCase {
             try {Thread.sleep(200);}
             catch (InterruptedException ie) {}
         }
-        // must be 501 Frame error somewhere here
-        assertFalse("Expect connection to be closed", conn.isOpen());
-        List<Command> cs = myFrameHandler.getCompletedCommands();
-        Command c = cs.get(cs.size()-1);
-        assertTrue("Expect Connection.Close method, got " + c.toString(),
-                   c.getMethod() instanceof AMQP.Connection.Close);
-        assertEquals(AMQP.FRAME_ERROR, ((AMQP.Connection.Close) c.getMethod()).getReplyCode());
+        checkFor501(conn);
     }
     
     private UnexpectedFrameError findUnexpectedFrameError(Exception e) {
