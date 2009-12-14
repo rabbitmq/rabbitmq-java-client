@@ -447,8 +447,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             } catch (DisallowedFrameException dfe) {
                 try {
                     close(AMQP.COMMAND_INVALID, "Command not allowed", dfe);
-                } catch (Exception ioe) {
-                    ioe.printStackTrace();
+                } catch (IOException ex) {
+                    // We can't even send a close.  Break.
+                    _exceptionHandler.handleUnexpectedConnectionDriverException(AMQConnection.this,
+                                                                                ex);
+                    shutdown(ex, false, ex, true);
                 }
             } catch (EOFException ex) {
                 if (!_brokerInitiatedShutdown)
