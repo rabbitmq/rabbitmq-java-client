@@ -446,7 +446,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 }
             } catch (DisallowedFrameException dfe) {
                 try {
-                    // DEADLOCKS
                     close(AMQP.FRAME_ERROR, "Frame not allowed", dfe);
                 } catch (Exception ioe) {
                     ioe.printStackTrace();
@@ -531,6 +530,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } else {
             if (isOpen()) {
                 // Normal command.
+                if (method.protocolClassId() != AMQImpl.Connection.INDEX) {
+                    throw new DisallowedFrameException("Non-heartbeat, non-Connection frame on channel 0");
+                }
                 return false;
             } else {
                 // Quiescing.
@@ -538,8 +540,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     // It's our final "RPC".
                     return false;
                 } else {
-                    // FIXME All others are *not allowed*.  Close the
-                    // connection with a 503.
                     return true;
                 }
             }

@@ -187,12 +187,41 @@ public class BrokenFramesTest extends TestCase {
                 // well maybe that was long enough ..
             }
         }
-        catch (ShutdownSignalException sse) {
+        catch (IOException shutdown) {
         }
         // must be 501 Frame error somewhere here
         assertFalse("Expect connection to be closed", conn.isOpen());
         Command c = myFrameHandler.getLastCompletedCommand();
         assertTrue("Expect Connection.Close method, got " + myFrameHandler.getCompletedCommands().toString(), c.getMethod() instanceof AMQP.Connection.Close);
+        assertEquals(AMQP.FRAME_ERROR, ((AMQP.Connection.Close) c.getMethod()).getReplyCode());
+    }
+
+    public void testZeroChannelNonConnectionMethod() throws Exception {
+        List<Frame> frames = negotiation();
+        frames.add(new WaitForWrite());
+        frames.add(new AMQImpl.Channel.OpenOk().toFrame(0));        
+        myFrameHandler.setFrames(frames.iterator());
+        AMQConnection conn = new AMQConnection(params, myFrameHandler);
+        try {
+            conn.start(false);
+            // this will block, and the exception is thrown before it returns
+            conn.createChannel(1);
+            fail("Expected to have shutdown exception inside RPC");
+        }
+        catch (IOException shutdown) {
+            // this should be the shutdown --
+            // ignore and check that everything happened correctly.
+            // There is a race here with the frame handler getting the close frame;
+            // try to mitigate that by sleeping a bit
+            try {Thread.sleep(200);}
+            catch (InterruptedException ie) {}
+        }
+        // must be 501 Frame error somewhere here
+        assertFalse("Expect connection to be closed", conn.isOpen());
+        List<Command> cs = myFrameHandler.getCompletedCommands();
+        Command c = cs.get(cs.size()-1);
+        assertTrue("Expect Connection.Close method, got " + c.toString(),
+                   c.getMethod() instanceof AMQP.Connection.Close);
         assertEquals(AMQP.FRAME_ERROR, ((AMQP.Connection.Close) c.getMethod()).getReplyCode());
     }
     
@@ -250,8 +279,10 @@ public class BrokenFramesTest extends TestCase {
         }
 
         public Frame getLastWrittenFrame() {
-            int last = allWrittenFrames.size() - 1;
-            return (last < 0) ? null : allWrittenFrames.get(last);
+            synchronized (allWrittenFrames) {
+                int last = allWrittenFrames.size() - 1;
+                return (last < 0) ? null : allWrittenFrames.get(last);
+            }
         }
 
         public Command getLastCompletedCommand() throws IOException {
@@ -263,12 +294,14 @@ public class BrokenFramesTest extends TestCase {
         public List<Command> getCompletedCommands() throws IOException {
             List<Command> cmds = new ArrayList<Command>();
             AMQCommand.Assembler asm = AMQCommand.newAssembler();
-            for (Frame f : allWrittenFrames) {
-                asm.handleFrame(f);
-                Command c = asm.completedCommand();
-                if (c != null) {
-                    cmds.add(c);
-                    asm = AMQCommand.newAssembler(); 
+            synchronized (allWrittenFrames) {
+                for (Frame f : allWrittenFrames) {
+                    asm.handleFrame(f);
+                    Command c = asm.completedCommand();
+                    if (c != null) {
+                        cmds.add(c);
+                        asm = AMQCommand.newAssembler(); 
+                    }
                 }
             }
             return cmds;
@@ -301,7 +334,7 @@ public class BrokenFramesTest extends TestCase {
         }
 
         public void writeFrame(Frame frame) throws IOException {
-            allWrittenFrames.add(frame);
+            synchronized (allWrittenFrames) { allWrittenFrames.add(frame); }
             //System.out.println("> " + frame.toString());
             boolean written = false;
             while (!written) {
