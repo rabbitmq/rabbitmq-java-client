@@ -379,13 +379,25 @@
     <junit printSummary="withOutAndErr"
         haltOnFailure="${haltOnFailureJunit}"
         failureproperty="test.failure"
-        showoutput="true"
         fork="yes">
       <classpath refid="test.classpath"/>
       <formatter type="plain"/>
       <formatter type="xml"/>
       <test todir="${build.out}"
         name="com.rabbitmq.client.test.server.ServerTests"/>
+    </junit>
+  </target>
+
+  <target name="test-single" depends="test-build">
+    <junit printSummary="withOutAndErr"
+        haltOnFailure="${haltOnFailureJunit}"
+        failureproperty="test.failure"
+        fork="yes">
+      <classpath refid="test.classpath"/>
+
+      <formatter type="plain"/>
+      <formatter type="xml"/>
+      <test todir="${build.out}" name="${test}"/>
     </junit>
   </target>
 
