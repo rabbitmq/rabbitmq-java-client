@@ -5,6 +5,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import javax.net.ssl.SSLSocketFactory;
 
 public class TCPConnectionParameters {
     /**
@@ -18,6 +19,12 @@ public class TCPConnectionParameters {
      */
     public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
+    /**
+     * The default port to use for SSL connections. This is not part of the 
+     * spec but seems to have been settled on as a convention.  
+     */
+    public static final int DEFAULT_SSL_PORT = AMQP.PROTOCOL.PORT - 1;
+
     public TCPConnectionParameters(SocketFactory factory, Address address) {
         this._factory = factory;
         this._address = address;
@@ -25,6 +32,13 @@ public class TCPConnectionParameters {
 
     public TCPConnectionParameters(String host, int port){
       this(SocketFactory.getDefault(), new Address(host, port));
+    }
+
+    public TCPConnectionParameters(String host, boolean useSSL) throws NoSuchAlgorithmException{
+      this( 
+        useSSL ? SSLContext.getInstance(DEFAULT_SSL_PROTOCOL).getSocketFactory()
+               : SocketFactory.getDefault()
+        , new Address(host, -1));
     }
 
     public TCPConnectionParameters(String host){
@@ -52,6 +66,30 @@ public class TCPConnectionParameters {
      */
     public void setSocketFactory(SocketFactory factory) {
         _factory = factory;
+    }
+
+
+    /**
+     * @returns the host of the underlying address
+     */
+    public String getHost(){
+      return _address.getHost();
+    }
+
+    /**
+     * @returns the port of the underlying address or a suitable 
+     * default if none was provided.
+     */
+    public int getPort(){
+      if(_address.getPort() == -1){
+        return isSSL() ? DEFAULT_SSL_PORT : AMQP.PROTOCOL.PORT;
+      } else {
+        return _address.getPort();
+      }
+    }
+
+    public boolean isSSL(){
+      return _factory instanceof SSLSocketFactory;
     }
 
     /**

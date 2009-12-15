@@ -49,6 +49,12 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory {
+    /**
+     * The default port to use for SSL connections. This is not part of the 
+     * spec but seems to have been settled on as a convention.  
+     */
+    public static final int DEFAULT_SSL_PORT = AMQP.PROTOCOL.PORT - 1;
+
     private final ConnectionParameters[] _connectionParams;
 
     /**
@@ -91,9 +97,8 @@ public class ConnectionFactory {
     protected FrameHandler createFrameHandler(TCPConnectionParameters params)
         throws IOException {
         Address addr = params.getAddress();
-        String hostName = addr.getHost();
-        int portNumber = addr.getPort();
-        if (portNumber == -1) portNumber = AMQP.PROTOCOL.PORT;
+        String hostName = params.getHost();
+        int portNumber = params.getPort();
         return new SocketFrameHandler(params.getSocketFactory(), hostName, portNumber);
     }
 
