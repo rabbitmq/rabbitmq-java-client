@@ -50,10 +50,11 @@ public class TCPConnectionParameters {
     public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
     /**
-     * The default port to use for SSL connections. This is not part of the 
-     * spec but seems to have been settled on as a convention.  
+     * The default port to use for SSL connections. 
+     * This is not part of the spec but is the official IANA assigned port for 
+     * AMQP over SSL. 
      */
-    public static final int DEFAULT_SSL_PORT = AMQP.PROTOCOL.PORT - 1;
+    public static final int DEFAULT_SSL_PORT = 5671;
 
     public TCPConnectionParameters(SocketFactory factory, Address address) {
         this._factory = factory;
