@@ -57,11 +57,8 @@ public class UnverifiedConnection extends BrokerTestCase {
         } catch (KeyManagementException ex) {
             throw new IOException(ex.toString());
         }
-
-
-        if (connection == null) {
-            connection = connectionFactory.newConnection();
-        }
+     
+        super.openConnection();    
     }
 
     protected void releaseResources()
