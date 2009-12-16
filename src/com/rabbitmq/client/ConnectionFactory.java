@@ -94,6 +94,10 @@ public class ConnectionFactory {
       return _connectionParams;
     }
 
+    public void setConnectionParameters(ConnectionParameters... params){
+      _connectionParams = params;
+    }
+
     protected FrameHandler createFrameHandler(TCPConnectionParameters params)
         throws IOException {
         Address addr = params.getAddress();
