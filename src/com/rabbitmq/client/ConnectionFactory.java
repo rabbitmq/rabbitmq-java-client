@@ -55,13 +55,13 @@ public class ConnectionFactory {
      */
     public static final int DEFAULT_SSL_PORT = AMQP.PROTOCOL.PORT - 1;
 
-    private final ConnectionParameters[] _connectionParams;
+    private ConnectionParameters[] _connectionParams;
 
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
     public ConnectionFactory() {
-      _connectionParams = new ConnectionParameters[0];  
+      _connectionParams = new ConnectionParameters[]{ new ConnectionParameters() };  
     }
 
     /**
