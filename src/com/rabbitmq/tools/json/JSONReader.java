@@ -97,12 +97,12 @@ public class JSONReader {
             next();
         } else if (c == 't' && next() == 'r' && next() == 'u' && next() == 'e') {
             ret = Boolean.TRUE;
-	    next();
+        next();
         } else if (c == 'f' && next() == 'a' && next() == 'l' && next() == 's' && next() == 'e') {
             ret = Boolean.FALSE;
-	    next();
+        next();
         } else if (c == 'n' && next() == 'u' && next() == 'l' && next() == 'l') {
-	    next();
+        next();
         } else if (Character.isDigit(c) || c == '-') {
             ret = number();
         }
@@ -158,12 +158,12 @@ public class JSONReader {
             addDigits();
         }
 
-	String result = buf.toString();
-	try {
-	    return new Integer(result);
-	} catch (NumberFormatException nfe) {
-	    return new Double(result);
-	}
+    String result = buf.toString();
+    try {
+        return new Integer(result);
+    } catch (NumberFormatException nfe) {
+        return new Double(result);
+    }
     }
 
     private Object string() {

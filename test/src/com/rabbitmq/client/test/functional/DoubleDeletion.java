@@ -45,12 +45,12 @@ public class DoubleDeletion extends BrokerTestCase
         throws IOException
     {
         channel.queueDeclare(Q);
-	channel.queueDelete(Q);
+    channel.queueDelete(Q);
         try {
             channel.queueDelete(Q);
             fail("Expected exception from double deletion of queue");
         } catch (IOException ee) {
-	    checkShutdownSignal(AMQP.NOT_FOUND, ee);
+        checkShutdownSignal(AMQP.NOT_FOUND, ee);
             // Pass!
         }
     }
@@ -59,12 +59,12 @@ public class DoubleDeletion extends BrokerTestCase
         throws IOException
     {
         channel.exchangeDeclare(X, "direct");
-	channel.exchangeDelete(X);
+    channel.exchangeDelete(X);
         try {
             channel.exchangeDelete(X);
             fail("Expected exception from double deletion of exchange");
         } catch (IOException ee) {
-	    checkShutdownSignal(AMQP.NOT_FOUND, ee);
+        checkShutdownSignal(AMQP.NOT_FOUND, ee);
             // Pass!
         }
     }
