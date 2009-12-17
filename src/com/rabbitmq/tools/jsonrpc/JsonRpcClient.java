@@ -46,9 +46,9 @@ import com.rabbitmq.tools.json.JSONWriter;
 
 /**
       <a
-      href= "http://json-rpc.org/wd/JSON-RPC-1-1-WD-20060807.html">JSON-RPC</a>
+      href="http://json-rpc.org/wd/JSON-RPC-1-1-WD-20060807.html">JSON-RPC</a>
       is a lightweight RPC mechanism using <a
-      href= "http://www.json.org/">JSON</a> as a data language for
+      href="http://www.json.org/">JSON</a> as a data language for
       request and reply messages. It is rapidly becoming a
       standard in web development, where it is used to make RPC
       requests over HTTP. RabbitMQ provides an AMQP transport

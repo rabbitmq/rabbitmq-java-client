@@ -33,7 +33,7 @@ package com.rabbitmq.client;
 import java.io.IOException;
 
 /**
- * Public API: Interface to an AMQ connection. See the see the <a href= "http://www.amqp.org/">spec</a> for details.
+ * Public API: Interface to an AMQ connection. See the see the <a href="http://www.amqp.org/">spec</a> for details.
  * <p>
  * To connect to a broker, fill in a {@link AMQPConnectionParameters} and use a {@link ConnectionFactory} as follows:
  *
