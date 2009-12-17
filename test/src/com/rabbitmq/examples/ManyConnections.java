@@ -62,7 +62,7 @@ public class ManyConnections {
             params.setRequestedHeartbeat(heartbeatInterval);
 	    for (int i = 0; i < connectionCount; i++) {
                 System.out.println("Starting connection "+i);
-		final Connection conn =new ConnectionFactory(params, new TCPConnectionParameters(hostName, portNumber)).newConnection();
+		final Connection conn = new ConnectionFactory(params, new TCPConnectionParameters(hostName, portNumber)).newConnection();
 
 		for (int j = 0; j < channelPerConnectionCount; j++) {
 		    final Channel ch = conn.createChannel();

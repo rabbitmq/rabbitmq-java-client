@@ -121,7 +121,7 @@ public class TestMain {
         params.setUsername("invalid");
         params.setPassword("invalid");
         try {
-            conn =new ConnectionFactory(params, new TCPConnectionParameters(hostName, portNumber)).newConnection();
+            conn = new ConnectionFactory(params, new TCPConnectionParameters(hostName, portNumber)).newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
@@ -130,7 +130,7 @@ public class TestMain {
         params.setRequestedChannelMax(10);
         params.setRequestedFrameMax(8192);
         params.setRequestedHeartbeat(1);
-        conn =new ConnectionFactory(params, new TCPConnectionParameters(hostName, portNumber)).newConnection();
+        conn = new ConnectionFactory(params, new TCPConnectionParameters(hostName, portNumber)).newConnection();
         checkNegotiatedMaxValue("channel-max", 10, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 8192, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 1, conn.getHeartbeat());
@@ -140,7 +140,7 @@ public class TestMain {
         params.setRequestedChannelMax(0);
         params.setRequestedFrameMax(0);
         params.setRequestedHeartbeat(0);
-        conn =new ConnectionFactory(params, new TCPConnectionParameters(hostName, portNumber)).newConnection();
+        conn = new ConnectionFactory(params, new TCPConnectionParameters(hostName, portNumber)).newConnection();
         checkNegotiatedMaxValue("channel-max", 0, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 0, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 0, conn.getHeartbeat());
@@ -237,7 +237,7 @@ public class TestMain {
             }
         });
 
-        String queueName =_ch1.queueDeclare().getQueue();
+        String queueName = _ch1.queueDeclare().getQueue();
 
         sendLotsOfTrivialMessages(batchSize, queueName);
         expect(batchSize, drain(batchSize, queueName, false));
@@ -257,7 +257,7 @@ public class TestMain {
         tryTopics();
         tryBasicReturn();
 
-        queueName =_ch1.queueDeclare().getQueue();
+        queueName = _ch1.queueDeclare().getQueue();
         sendLotsOfTrivialMessages(batchSize, queueName);
         expect(batchSize, drain(batchSize, queueName, true));
 
@@ -452,7 +452,7 @@ public class TestMain {
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());
-        // %%% FIXME: 312 and 313 should be replaced with symbolic constants when we move to >=0-9
+        // %%% FIXME: 312 and 313 should be replaced with symbolic constants when we move to >= 0-9
         doBasicReturn(returnCell, 312);
 
         returnCell = new BlockingCell<Object>();

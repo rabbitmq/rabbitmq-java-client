@@ -32,7 +32,7 @@
 package com.rabbitmq.client;
 
 /**
- * Public interface to objects representing an AMQP method - see the <a href="http://www.amqp.org/">spec</a> for details.
+ * Public interface to objects representing an AMQP method - see the <a href= "http://www.amqp.org/">spec</a> for details.
  */
 
 public interface Method {

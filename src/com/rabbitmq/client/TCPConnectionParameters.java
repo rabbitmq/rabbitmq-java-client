@@ -175,9 +175,9 @@ public class TCPConnectionParameters {
         @Override
     public String toString() {
         return "TCPConnectionParameters{" +
-                "factory=" + getSocketFactory() +
-                ", host=" + getHost() +
-                ", port=" + getPort() +
+                "factory= " + getSocketFactory() +
+                ", host= " + getHost() +
+                ", port= " + getPort() +
                 '}';
     }
 }

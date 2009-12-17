@@ -90,9 +90,9 @@ public abstract class RequeueOnClose
             open();
             GetResponse r2 = getMessage();
             if (doAck && r2 != null) {
-                fail("Expected missing second basicGet (repeat="+repeat+")");
+                fail("Expected missing second basicGet (repeat= "+repeat+")");
             } else if (!doAck && r2 == null) {
-                fail("Expected present second basicGet (repeat="+repeat+")");
+                fail("Expected present second basicGet (repeat= "+repeat+")");
             }
             close();
         }

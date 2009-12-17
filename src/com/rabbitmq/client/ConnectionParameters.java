@@ -35,8 +35,8 @@ public class ConnectionParameters {
     @Override
     public String toString() {
         return "ConnectionParameters{" +
-                "amqpParameters=" + amqpParameters +
-                ", tcpParameters=" + tcpParameters +
+                "amqpParameters= " + amqpParameters +
+                ", tcpParameters= " + tcpParameters +
                 '}';
     }
 }

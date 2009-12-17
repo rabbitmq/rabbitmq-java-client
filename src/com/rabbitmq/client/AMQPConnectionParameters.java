@@ -168,12 +168,12 @@ public class AMQPConnectionParameters {
     @Override
     public String toString() {
         return "AMQPConnectionParameters{" +
-                "_userName='" + _userName + '\'' +
-                ", _password='" + _password + '\'' +
-                ", _virtualHost='" + _virtualHost + '\'' +
-                ", _requestedChannelMax=" + _requestedChannelMax +
-                ", _requestedFrameMax=" + _requestedFrameMax +
-                ", _requestedHeartbeat=" + _requestedHeartbeat +
+                "_userName= '" + _userName + '\'' +
+                ", _password= '" + _password + '\'' +
+                ", _virtualHost= '" + _virtualHost + '\'' +
+                ", _requestedChannelMax= " + _requestedChannelMax +
+                ", _requestedFrameMax= " + _requestedFrameMax +
+                ", _requestedHeartbeat= " + _requestedHeartbeat +
                 '}';
     }
 }

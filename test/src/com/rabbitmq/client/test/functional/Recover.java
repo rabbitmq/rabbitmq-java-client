@@ -78,6 +78,6 @@ public class Recover extends BrokerTestCase {
     }
 
     // The AMQP specification under-specifies the behaviour when
-    // requeue=false.  So we can't really test any scenarios for
-    // requeue=false.
+    // requeue= false.  So we can't really test any scenarios for
+    // requeue= false.
 }

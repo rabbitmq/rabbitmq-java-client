@@ -72,11 +72,11 @@ public class QosScaling {
 
         public String toString() {
             StringBuilder b = new StringBuilder();
-            b.append("host="      + host);
-            b.append(",port="     + port);
-            b.append(",messages=" + messageCount);
-            b.append(",queues="   + queueCount);
-            b.append(",empty="    + emptyCount);
+            b.append("host= "      + host);
+            b.append(",port= "     + port);
+            b.append(",messages= " + messageCount);
+            b.append(",queues= "   + queueCount);
+            b.append(",empty= "    + emptyCount);
             return b.toString();
         }
 

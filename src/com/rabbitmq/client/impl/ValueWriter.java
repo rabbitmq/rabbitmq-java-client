@@ -209,7 +209,7 @@ public class ValueWriter
     public void writeArray(List value)
         throws IOException
     {
-        if (value==null) {
+        if (value== null) {
             out.write(0);
         }
         else {

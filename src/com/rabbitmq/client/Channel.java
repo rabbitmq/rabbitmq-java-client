@@ -39,7 +39,7 @@ import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.AMQP.Tx;
 
 /**
- * Public API: Interface to an AMQ channel. See the <a href="http://www.amqp.org/">spec</a> for details.
+ * Public API: Interface to an AMQ channel. See the <a href= "http://www.amqp.org/">spec</a> for details.
  *
  * <p>
  * To open a channel,
