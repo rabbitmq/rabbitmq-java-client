@@ -38,11 +38,6 @@ import java.security.NoSuchAlgorithmException;
 import javax.net.ssl.SSLSocketFactory;
 
 public class TCPConnectionParameters {
-    /**
-     * Holds the SocketFactory used to manufacture outbound sockets.
-     */
-    private SocketFactory _factory;
-    private Address _address;
 
     /**
      * The default SSL protocol (currently "SSLv3").
@@ -56,6 +51,16 @@ public class TCPConnectionParameters {
      */
     public static final int DEFAULT_SSL_PORT = 5671;
 
+    /** 
+     * The default host (i.e. localhost) to look for a broker.
+     */
+    public static final String DEFAULT_HOST = "localhost";
+
+    /**
+     * Holds the SocketFactory used to manufacture outbound sockets.
+     */
+    private SocketFactory _factory;
+    private Address _address;
     public TCPConnectionParameters(SocketFactory factory, Address address) {
         this._factory = factory;
         this._address = address;
@@ -77,7 +82,7 @@ public class TCPConnectionParameters {
     }
 
     public TCPConnectionParameters(){
-        this("localhost");
+        this(DEFAULT_HOST);
     }
 
 
