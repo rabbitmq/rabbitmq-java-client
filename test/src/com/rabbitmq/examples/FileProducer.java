@@ -31,32 +31,23 @@
 
 package com.rabbitmq.examples;
 
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP.BasicProperties;
+import org.apache.commons.cli.*;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.TCPConnectionParameters;
-
 public class FileProducer {
     public static void main(String[] args) {
-    Options options = new Options();
-    options.addOption(new Option("h", "host", true, "broker host"));
-    options.addOption(new Option("p", "port", true, "broker port"));
-    options.addOption(new Option("t", "type", true, "exchange type"));
-    options.addOption(new Option("e", "exchange", true, "exchange name"));
-    options.addOption(new Option("k", "routing-key", true, "routing key"));
+        Options options = new Options();
+        options.addOption(new Option("h", "host", true, "broker host"));
+        options.addOption(new Option("p", "port", true, "broker port"));
+        options.addOption(new Option("t", "type", true, "exchange type"));
+        options.addOption(new Option("e", "exchange", true, "exchange name"));
+        options.addOption(new Option("k", "routing-key", true, "routing key"));
 
         CommandLineParser parser = new GnuParser();
 
@@ -65,45 +56,45 @@ public class FileProducer {
 
             String hostName = strArg(cmd, 'h', "localhost");
             int portNumber = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
-        String exchangeType = strArg(cmd, 't', "direct");
-        String exchange = strArg(cmd, 'e', null);
-        String routingKey = strArg(cmd, 'k', null);
+            String exchangeType = strArg(cmd, 't', "direct");
+            String exchange = strArg(cmd, 'e', null);
+            String routingKey = strArg(cmd, 'k', null);
 
             ConnectionFactory connFactory = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber));
             Connection conn = connFactory.newConnection();
 
             final Channel ch = conn.createChannel();
 
-        if (exchange == null) {
-        System.err.println("Please supply exchange name to send to (-e)");
-        System.exit(2);
-        }
-        if (routingKey == null) {
-        System.err.println("Please supply routing key to send to (-k)");
-        System.exit(2);
-        }
-        ch.exchangeDeclare(exchange, exchangeType);
+            if (exchange == null) {
+                System.err.println("Please supply exchange name to send to (-e)");
+                System.exit(2);
+            }
+            if (routingKey == null) {
+                System.err.println("Please supply routing key to send to (-k)");
+                System.exit(2);
+            }
+            ch.exchangeDeclare(exchange, exchangeType);
 
-        for (String filename : cmd.getArgs()) {
-        System.out.print("Sending " + filename + "...");
-        File f = new File(filename);
-        FileInputStream i = new FileInputStream(f);
-        byte[] body = new byte[(int) f.length()];
-        i.read(body);
-        i.close();
+            for (String filename : cmd.getArgs()) {
+                System.out.print("Sending " + filename + "...");
+                File f = new File(filename);
+                FileInputStream i = new FileInputStream(f);
+                byte[] body = new byte[(int) f.length()];
+                i.read(body);
+                i.close();
 
-        Map<String, Object> headers = new HashMap<String, Object>();
-        headers.put("filename", filename);
-        headers.put("length", (int) f.length());
-        BasicProperties props = new BasicProperties(null, null, headers, null,
-                                null, null, null, null,
-                                null, null, null, null,
-                                null, null);
-        ch.basicPublish(exchange, routingKey, props, body);
-        System.out.println(" done.");
-        }
+                Map<String, Object> headers = new HashMap<String, Object>();
+                headers.put("filename", filename);
+                headers.put("length", (int) f.length());
+                BasicProperties props = new BasicProperties(null, null, headers, null,
+                        null, null, null, null,
+                        null, null, null, null,
+                        null, null);
+                ch.basicPublish(exchange, routingKey, props, body);
+                System.out.println(" done.");
+            }
 
-        conn.close();
+            conn.close();
         } catch (Exception ex) {
             System.err.println("Main thread caught exception: " + ex);
             ex.printStackTrace();

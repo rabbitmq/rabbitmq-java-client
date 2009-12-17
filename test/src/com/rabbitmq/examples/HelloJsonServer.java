@@ -31,11 +31,7 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.TCPConnectionParameters;
+import com.rabbitmq.client.*;
 import com.rabbitmq.tools.jsonrpc.JsonRpcServer;
 
 public class HelloJsonServer {
@@ -50,17 +46,20 @@ public class HelloJsonServer {
 
             ch.queueDeclare("Hello");
             JsonRpcServer server =
-                new JsonRpcServer(ch, "Hello", HelloJsonService.class,
-                                  new HelloJsonService() {
-                                      public String greeting(String name) {
-                                          return "Hello, "+name+", from JSON-RPC over AMQP!";
-                                      }
-                                      public int sum(java.util.List<Integer> args) {
-                                          int s = 0;
-                                          for (int i: args) { s += i; }
-                                          return s;
-                                      }
-                                  });
+                    new JsonRpcServer(ch, "Hello", HelloJsonService.class,
+                            new HelloJsonService() {
+                                public String greeting(String name) {
+                                    return "Hello, " + name + ", from JSON-RPC over AMQP!";
+                                }
+
+                                public int sum(java.util.List<Integer> args) {
+                                    int s = 0;
+                                    for (int i : args) {
+                                        s += i;
+                                    }
+                                    return s;
+                                }
+                            });
             server.mainloop();
         } catch (Exception ex) {
             System.err.println("Main thread caught exception: " + ex);

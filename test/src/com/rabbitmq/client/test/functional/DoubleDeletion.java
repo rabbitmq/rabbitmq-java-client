@@ -31,40 +31,37 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.test.BrokerTestCase;
+
 import java.io.IOException;
 
-public class DoubleDeletion extends BrokerTestCase
-{
+public class DoubleDeletion extends BrokerTestCase {
     protected static final String Q = "DoubleDeletionQueue";
     protected static final String X = "DoubleDeletionExchange";
 
     public void testDoubleDeletionQueue()
-        throws IOException
-    {
+            throws IOException {
         channel.queueDeclare(Q);
-    channel.queueDelete(Q);
+        channel.queueDelete(Q);
         try {
             channel.queueDelete(Q);
             fail("Expected exception from double deletion of queue");
         } catch (IOException ee) {
-        checkShutdownSignal(AMQP.NOT_FOUND, ee);
+            checkShutdownSignal(AMQP.NOT_FOUND, ee);
             // Pass!
         }
     }
 
     public void testDoubleDeletionExchange()
-        throws IOException
-    {
+            throws IOException {
         channel.exchangeDeclare(X, "direct");
-    channel.exchangeDelete(X);
+        channel.exchangeDelete(X);
         try {
             channel.exchangeDelete(X);
             fail("Expected exception from double deletion of exchange");
         } catch (IOException ee) {
-        checkShutdownSignal(AMQP.NOT_FOUND, ee);
+            checkShutdownSignal(AMQP.NOT_FOUND, ee);
             // Pass!
         }
     }

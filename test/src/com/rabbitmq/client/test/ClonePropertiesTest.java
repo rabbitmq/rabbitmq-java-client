@@ -30,46 +30,42 @@
 //
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.MessageProperties;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.Map;
 import java.util.Hashtable;
-
-import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.MessageProperties;
+import java.util.Map;
 
 public class ClonePropertiesTest extends TestCase {
 
-    public static TestSuite suite()
-    {
+    public static TestSuite suite() {
         TestSuite suite = new TestSuite("cloneProperties");
         suite.addTestSuite(ClonePropertiesTest.class);
         return suite;
     }
 
     public void testPropertyCloneIsDistinct()
-        throws CloneNotSupportedException
-    {
+            throws CloneNotSupportedException {
         assertTrue(MessageProperties.MINIMAL_PERSISTENT_BASIC !=
-                   MessageProperties.MINIMAL_PERSISTENT_BASIC.clone());
-        
+                MessageProperties.MINIMAL_PERSISTENT_BASIC.clone());
+
         BasicProperties bp = (BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone();
         Map<String, Object> headers = new Hashtable<String, Object>();
         headers.put("test", "123");
         bp.setHeaders(headers);
         assertTrue(
-            bp.getHeaders() != ((BasicProperties) bp.clone()).getHeaders());
+                bp.getHeaders() != ((BasicProperties) bp.clone()).getHeaders());
     }
 
     public void testPropertyClonePreservesValues()
-        throws CloneNotSupportedException
-    {
+            throws CloneNotSupportedException {
         assertEquals(MessageProperties.MINIMAL_PERSISTENT_BASIC.getDeliveryMode(),
-                     ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
-                       .getDeliveryMode());
+                ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
+                        .getDeliveryMode());
         assertEquals((Integer) 2,
-                     ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
-                       .getDeliveryMode());
+                ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
+                        .getDeliveryMode());
     }
 }

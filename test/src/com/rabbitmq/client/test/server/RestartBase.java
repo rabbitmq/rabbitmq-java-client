@@ -32,15 +32,11 @@
 package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
 
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.tools.Host;
-
-public class RestartBase extends BrokerTestCase
-{
+public class RestartBase extends BrokerTestCase {
 
     // The time in ms the RabbitMQ persister waits before flushing the
     // persister log
@@ -57,16 +53,14 @@ public class RestartBase extends BrokerTestCase
     protected final int PERSISTER_SNAPSHOT_THRESHOLD = 500;
 
     protected void restart()
-        throws IOException
-    {
+            throws IOException {
         tearDown();
         Host.executeCommand("cd ../rabbitmq-test; make restart-app");
         setUp();
     }
 
     protected void forceSnapshot()
-        throws IOException, InterruptedException
-    {
+            throws IOException, InterruptedException {
         Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
     }
 

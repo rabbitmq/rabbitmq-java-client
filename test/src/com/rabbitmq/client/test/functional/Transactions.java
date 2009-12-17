@@ -34,11 +34,9 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.AMQP.BasicProperties;
 
 public class Transactions
-    extends TransactionsBase
-{
+        extends TransactionsBase {
 
-    protected BasicProperties getMessageProperties()
-    {
+    protected BasicProperties getMessageProperties() {
         return null;
     }
 

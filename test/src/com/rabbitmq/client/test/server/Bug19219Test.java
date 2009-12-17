@@ -30,19 +30,13 @@
 //
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.*;
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.test.BrokerTestCase;
+import junit.framework.TestSuite;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
-
-import junit.framework.TestSuite;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * Test for bug 19219 - timeouts due to task parallelism in channel
@@ -76,10 +70,10 @@ public class Bug19219Test extends BrokerTestCase {
     }
 
     private static void publish(final Channel ch)
-        throws IOException {
+            throws IOException {
         ch.basicPublish("amq.fanout", "",
-                        MessageProperties.PERSISTENT_TEXT_PLAIN,
-                        new byte[0]);
+                MessageProperties.PERSISTENT_TEXT_PLAIN,
+                new byte[0]);
     }
 
     public void testIt() throws IOException, InterruptedException {
@@ -98,14 +92,14 @@ public class Bug19219Test extends BrokerTestCase {
         //2. send lots of messages in background, to keep the server,
         //and especially the queues, busy
         final Runnable r = new Runnable() {
-                public void run() {
-                    try {
-                        startPublisher();
-                    } catch (IOException e) {
-                    } catch (InterruptedException e) {
-                    }
+            public void run() {
+                try {
+                    startPublisher();
+                } catch (IOException e) {
+                } catch (InterruptedException e) {
                 }
-            };
+            }
+        };
 
         for (int i = 0; i < PUB_THREAD_COUNT; i++) {
             final Thread t = new Thread(r);
@@ -144,8 +138,8 @@ public class Bug19219Test extends BrokerTestCase {
 
         final Connection conn;
         {
-          setupConnectionFactory("localhost");
-          conn = connectionFactory.newConnection();
+            setupConnectionFactory("localhost");
+            conn = connectionFactory.newConnection();
         }
         final Channel pubCh = conn.createChannel();
 
@@ -163,7 +157,7 @@ public class Bug19219Test extends BrokerTestCase {
         resume.await();
 
         //publish lots of messages
-        while(true) {
+        while (true) {
             publish(pubCh);
         }
 

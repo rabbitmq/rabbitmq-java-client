@@ -31,18 +31,13 @@
 
 package com.rabbitmq.client.test.performance;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.TCPConnectionParameters;
-
+import com.rabbitmq.client.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class QosScaling {
 
@@ -56,27 +51,27 @@ public class QosScaling {
         public static CommandLine parseCommandLine(String[] args) {
             CLIHelper helper = CLIHelper.defaultHelper();
             helper.addOption(new Option("n", "messages", true, "number of messages to send"));
-            helper.addOption(new Option("q", "queues",   true, "number of queues to route messages to"));
-            helper.addOption(new Option("e", "empty",    true, "number of queues to leave empty"));
-            
+            helper.addOption(new Option("q", "queues", true, "number of queues to route messages to"));
+            helper.addOption(new Option("e", "empty", true, "number of queues to leave empty"));
+
             return helper.parseCommandLine(args);
         }
-        
+
         public Parameters(CommandLine cmd) {
-            host         = cmd.getOptionValue("h", "localhost");
-            port         = CLIHelper.getOptionValue(cmd, "p", 5672);
+            host = cmd.getOptionValue("h", "localhost");
+            port = CLIHelper.getOptionValue(cmd, "p", 5672);
             messageCount = CLIHelper.getOptionValue(cmd, "n", 2000);
-            queueCount   = CLIHelper.getOptionValue(cmd, "q", 100);
-            emptyCount   = CLIHelper.getOptionValue(cmd, "e", 0);
+            queueCount = CLIHelper.getOptionValue(cmd, "q", 100);
+            emptyCount = CLIHelper.getOptionValue(cmd, "e", 0);
         }
 
         public String toString() {
             StringBuilder b = new StringBuilder();
-            b.append("host= "      + host);
-            b.append(",port= "     + port);
+            b.append("host= " + host);
+            b.append(",port= " + port);
             b.append(",messages= " + messageCount);
-            b.append(",queues= "   + queueCount);
-            b.append(",empty= "    + emptyCount);
+            b.append(",queues= " + queueCount);
+            b.append(",empty= " + emptyCount);
             return b.toString();
         }
 

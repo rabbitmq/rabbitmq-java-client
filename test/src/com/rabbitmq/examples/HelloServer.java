@@ -31,12 +31,7 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.StringRpcServer;
-import com.rabbitmq.client.TCPConnectionParameters;
+import com.rabbitmq.client.*;
 
 public class HelloServer {
     public static void main(String[] args) {
@@ -50,11 +45,11 @@ public class HelloServer {
 
             ch.queueDeclare("Hello");
             StringRpcServer server = new StringRpcServer(ch, "Hello") {
-                    public String handleStringCall(String request) {
-                        System.out.println("Got request: " + request);
-                        return "Hello, " + request + "!";
-                    }
-                };
+                public String handleStringCall(String request) {
+                    System.out.println("Got request: " + request);
+                    return "Hello, " + request + "!";
+                }
+            };
             server.mainloop();
         } catch (Exception ex) {
             System.err.println("Main thread caught exception: " + ex);

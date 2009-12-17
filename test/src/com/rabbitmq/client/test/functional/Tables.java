@@ -31,23 +31,16 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.impl.LongStringHelper;
 import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.impl.LongStringHelper;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.HashMap;
 import java.math.BigDecimal;
+import java.util.*;
 
-public class Tables extends BrokerTestCase
-{
+public class Tables extends BrokerTestCase {
 
     public void testTypes() throws IOException {
 
@@ -59,11 +52,11 @@ public class Tables extends BrokerTestCase
         table.put("D", new BigDecimal("1.1"));
         table.put("T", new java.util.Date(1000000));
         table.put("F", subTable);
-        table.put("b", (byte)1);
+        table.put("b", (byte) 1);
         table.put("d", 1.1d);
         table.put("f", 1.1f);
         table.put("l", 1L);
-        table.put("s", (short)1);
+        table.put("s", (short) 1);
         table.put("t", true);
         table.put("x", "byte".getBytes());
         table.put("V", null);
@@ -75,9 +68,9 @@ public class Tables extends BrokerTestCase
         AMQP.Queue.DeclareOk ok = channel.queueDeclare();
         String q = ok.getQueue();
         BasicProperties props = new BasicProperties(null, null, table, null,
-                                                    null, null, null, null,
-                                                    null, null, null, null,
-                                                    null, null);
+                null, null, null, null,
+                null, null, null, null,
+                null, null);
         channel.basicPublish("", q, props, "".getBytes());
         BasicProperties rProps = channel.basicGet(q, true).getProps();
         assertMapsEqual(props.getHeaders(), rProps.getHeaders());
@@ -98,16 +91,14 @@ public class Tables extends BrokerTestCase
             Object vb = b.get(k);
             if (va instanceof byte[] && vb instanceof byte[]) {
                 assertTrue("unequal entry for key " + k,
-                           Arrays.equals((byte[])va, (byte[])vb));
-            }
-            else if (va instanceof List && vb instanceof List) {
-                Iterator vbi = ((List)vb).iterator(); 
-                for (Object vaEntry : (List)va) {
+                        Arrays.equals((byte[]) va, (byte[]) vb));
+            } else if (va instanceof List && vb instanceof List) {
+                Iterator vbi = ((List) vb).iterator();
+                for (Object vaEntry : (List) va) {
                     Object vbEntry = vbi.next();
                     assertEquals("arrays unequal at key " + k, vaEntry, vbEntry);
                 }
-            }
-            else {
+            } else {
                 assertEquals("unequal entry for key " + k, va, vb);
             }
         }

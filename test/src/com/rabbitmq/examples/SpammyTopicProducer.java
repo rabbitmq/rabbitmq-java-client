@@ -31,9 +31,9 @@
 
 package com.rabbitmq.examples;
 
-import java.util.Random;
-
 import com.rabbitmq.client.*;
+
+import java.util.Random;
 
 /**
  * This producer creates messages with constantly changing topic keys, sending as
@@ -48,13 +48,13 @@ public class SpammyTopicProducer {
         try {
             if (args.length < 1 || args.length > 5) {
                 System.err.print("Usage: SpammyTopicProducer brokerhostname [brokerport\n" +
-                                 "                                           [topic prefix\n" +
-                                 "                                            [exchange\n" +
-                                 "                                             [message]]]]\n" +
-                                 "where\n" +
-                                 " - topic defaults to \""+DEFAULT_TOPIC_PREFIX+"\",\n" +
-                                 " - exchange defaults to \"amq.topic\", and\n" +
-                                 " - message defaults to a time-of-day message\n");
+                        "                                           [topic prefix\n" +
+                        "                                            [exchange\n" +
+                        "                                             [message]]]]\n" +
+                        "where\n" +
+                        " - topic defaults to \"" + DEFAULT_TOPIC_PREFIX + "\",\n" +
+                        " - exchange defaults to \"amq.topic\", and\n" +
+                        " - message defaults to a time-of-day message\n");
                 System.exit(1);
             }
             String hostName = (args.length > 0) ? args[0] : "localhost";
@@ -62,7 +62,7 @@ public class SpammyTopicProducer {
             String topicPrefix = (args.length > 2) ? args[2] : DEFAULT_TOPIC_PREFIX;
             String exchange = (args.length > 3) ? args[3] : null;
             String message = (args.length > 4) ? args[4] :
-                "the time is " + new java.util.Date().toString();
+                    "the time is " + new java.util.Date().toString();
 
             Connection conn = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber)).newConnection();
 
@@ -75,7 +75,7 @@ public class SpammyTopicProducer {
             }
 
             System.out.println("Sending to exchange " + exchange + ", prefix: " + topicPrefix);
-            
+
             int thisTimeCount = 0;
             int allTimeCount = 0;
             long startTime = System.currentTimeMillis();
@@ -86,8 +86,8 @@ public class SpammyTopicProducer {
                 allTimeCount++;
                 long now = System.currentTimeMillis();
                 if (now > nextSummaryTime) {
-                    int thisTimeRate = (int)(1.0 * thisTimeCount / (now - nextSummaryTime + SUMMARISE_EVERY) * SUMMARISE_EVERY);
-                    int allTimeRate = (int)(1.0 * allTimeCount / (now - startTime) * SUMMARISE_EVERY);
+                    int thisTimeRate = (int) (1.0 * thisTimeCount / (now - nextSummaryTime + SUMMARISE_EVERY) * SUMMARISE_EVERY);
+                    int allTimeRate = (int) (1.0 * allTimeCount / (now - startTime) * SUMMARISE_EVERY);
                     System.out.println(thisTimeRate + " / sec currently, " + allTimeRate + " / sec average");
                     thisTimeCount = 0;
                     nextSummaryTime = now + SUMMARISE_EVERY;

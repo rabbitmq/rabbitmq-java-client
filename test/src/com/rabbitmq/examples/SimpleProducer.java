@@ -31,11 +31,7 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.TCPConnectionParameters;
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.*;
 
 public class SimpleProducer {
     public static void main(String[] args) {
@@ -43,7 +39,7 @@ public class SimpleProducer {
             String hostName = (args.length > 0) ? args[0] : "localhost";
             int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
             String message = (args.length > 2) ? args[2] :
-                "the time is " + new java.util.Date().toString();
+                    "the time is " + new java.util.Date().toString();
             String exchange = (args.length > 3) ? args[3] : "";
             String routingKey = (args.length > 4) ? args[4] : "SimpleQueue";
 

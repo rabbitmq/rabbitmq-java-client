@@ -33,22 +33,19 @@ package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
-public class PersisterRestart3 extends RestartBase
-{
+public class PersisterRestart3 extends RestartBase {
 
     private static final String Q1 = "Restart3One";
     private static final String Q2 = "Restart3Two";
 
-    protected void exercisePersister(String q) 
-      throws IOException
-    {
+    protected void exercisePersister(String q)
+            throws IOException {
         basicPublishPersistent(q);
         basicPublishVolatile(q);
     }
 
     public void testRestart()
-        throws IOException, InterruptedException
-    {
+            throws IOException, InterruptedException {
         declareDurableQueue(Q1);
         declareDurableQueue(Q2);
         channel.txSelect();
@@ -65,7 +62,7 @@ public class PersisterRestart3 extends RestartBase
         channel.txCommit();
 
         restart();
-        
+
         assertDelivered(Q1, 1);
         assertDelivered(Q2, 1);
         deleteQueue(Q2);

@@ -30,16 +30,15 @@
 //
 package com.rabbitmq.client.test.ssl;
 
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.test.BrokerTestCase;
+
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.BrokerTestCase;
-
 /**
  * Test for bug 19356 - SSL Support in rabbitmq
- *
  */
 public class UnverifiedConnection extends BrokerTestCase {
 
@@ -48,8 +47,7 @@ public class UnverifiedConnection extends BrokerTestCase {
     public boolean created = false;
 
     public void openConnection()
-        throws IOException
-    {
+            throws IOException {
         try {
             params.getTCPParameters().useSslProtocol();
         } catch (NoSuchAlgorithmException ex) {
@@ -57,20 +55,18 @@ public class UnverifiedConnection extends BrokerTestCase {
         } catch (KeyManagementException ex) {
             throw new IOException(ex.toString());
         }
-     
-        super.openConnection();    
+
+        super.openConnection();
     }
 
     protected void releaseResources()
-        throws IOException
-    {
+            throws IOException {
         if (created) {
             channel.queueDelete("Bug19356Test");
         }
     }
 
-    public void testSSL() throws IOException
-    {
+    public void testSSL() throws IOException {
         channel.queueDeclare("Bug19356Test", false, false, true, true, null);
         channel.basicPublish("", "Bug19356Test", null, "SSL".getBytes());
 
@@ -80,5 +76,5 @@ public class UnverifiedConnection extends BrokerTestCase {
         byte[] body = chResponse.getBody();
         assertEquals("SSL", new String(body));
     }
-    
+
 }
