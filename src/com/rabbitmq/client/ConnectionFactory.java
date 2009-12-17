@@ -95,7 +95,6 @@ public class ConnectionFactory {
 
     protected FrameHandler createFrameHandler(TCPConnectionParameters params)
         throws IOException {
-        Address addr = params.getAddress();
         String hostName = params.getHost();
         int portNumber = params.getPort();
         return new SocketFrameHandler(params.getSocketFactory(), hostName, portNumber);
