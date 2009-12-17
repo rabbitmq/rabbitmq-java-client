@@ -49,11 +49,6 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory {
-    /**
-     * The default port to use for SSL connections. This is not part of the 
-     * spec but seems to have been settled on as a convention.  
-     */
-    public static final int DEFAULT_SSL_PORT = AMQP.PROTOCOL.PORT - 1;
 
     private ConnectionParameters[] _connectionParams;
 
