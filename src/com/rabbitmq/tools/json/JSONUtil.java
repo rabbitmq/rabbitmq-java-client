@@ -50,9 +50,9 @@ public class JSONUtil {
      * the target object from the source Map.
      */
     public static Object fill(Object target, Map<String, Object> source)
-    throws IntrospectionException, IllegalAccessException, InvocationTargetException
+	throws IntrospectionException, IllegalAccessException, InvocationTargetException
     {
-    return fill(target, source, true);
+	return fill(target, source, true);
     }
 
     /**
@@ -60,40 +60,40 @@ public class JSONUtil {
      * properties of the target object from the source Map.
      */
     public static Object fill(Object target, Map<String, Object> source, boolean useProperties)
-    throws IntrospectionException, IllegalAccessException, InvocationTargetException
+	throws IntrospectionException, IllegalAccessException, InvocationTargetException
     {
-    if (useProperties) {
-        BeanInfo info = Introspector.getBeanInfo(target.getClass());
+	if (useProperties) {
+	    BeanInfo info = Introspector.getBeanInfo(target.getClass());
 
-        PropertyDescriptor[] props = info.getPropertyDescriptors();
-        for (int i = 0; i < props.length; ++i) {
-        PropertyDescriptor prop = props[i];
-        String name = prop.getName();
-        Method setter = prop.getWriteMethod();
-        if (setter != null && !Modifier.isStatic(setter.getModifiers())) {
-            //System.out.println(target + " " + name + " <- " + source.get(name));
-            setter.invoke(target, new Object[] { source.get(name) });
-        }
-        }
-    }
+	    PropertyDescriptor[] props = info.getPropertyDescriptors();
+	    for (int i = 0; i < props.length; ++i) {
+		PropertyDescriptor prop = props[i];
+		String name = prop.getName();
+		Method setter = prop.getWriteMethod();
+		if (setter != null && !Modifier.isStatic(setter.getModifiers())) {
+		    //System.out.println(target + " " + name + " <- " + source.get(name));
+		    setter.invoke(target, new Object[] { source.get(name) });
+		}
+	    }
+	}
 
-    Field[] ff = target.getClass().getDeclaredFields();
-    for (int i = 0; i < ff.length; ++i) {
-        Field field = ff[i];
+	Field[] ff = target.getClass().getDeclaredFields();
+	for (int i = 0; i < ff.length; ++i) {
+	    Field field = ff[i];
             int fieldMod = field.getModifiers();
-        if (Modifier.isPublic(fieldMod) && !(Modifier.isFinal(fieldMod) ||
+	    if (Modifier.isPublic(fieldMod) && !(Modifier.isFinal(fieldMod) ||
                                                  Modifier.isStatic(fieldMod)))
             {
-        //System.out.println(target + " " + field.getName() + " := " + source.get(field.getName()));
-        try {
-            field.set(target, source.get(field.getName()));
-        } catch (IllegalArgumentException iae) {
-            // no special error processing required
+		//System.out.println(target + " " + field.getName() + " := " + source.get(field.getName()));
+		try {
+		    field.set(target, source.get(field.getName()));
+		} catch (IllegalArgumentException iae) {
+		    // no special error processing required
                 }
-        }
-    }
+	    }
+	}
 
-    return target;
+	return target;
     }
 
     /**
@@ -102,14 +102,14 @@ public class JSONUtil {
      * source Map.
      */
     public static void tryFill(Object target, Map<String, Object> source) {
-    try {
-        fill(target, source);
-    } catch (IntrospectionException ie) {
-        ie.printStackTrace();
-    } catch (IllegalAccessException iae) {
-        iae.printStackTrace();
-    } catch (InvocationTargetException ite) {
-        ite.printStackTrace();
-    }
+	try {
+	    fill(target, source);
+	} catch (IntrospectionException ie) {
+	    ie.printStackTrace();
+	} catch (IllegalAccessException iae) {
+	    iae.printStackTrace();
+	} catch (InvocationTargetException ite) {
+	    ite.printStackTrace();
+	}
     }
 }

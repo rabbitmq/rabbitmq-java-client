@@ -130,14 +130,14 @@ public class BrokenFramesTest extends TestCase {
     }
 
     private static class MyFrameHandler implements FrameHandler {
-        private Iterator<Frame> frames;
+    	private Iterator<Frame> frames;
 
-        public void setFrames(Iterator<Frame> frames) {
-            this.frames = frames;
-        }
+    	public void setFrames(Iterator<Frame> frames) {
+			this.frames = frames;
+		}
 
-        public Frame readFrame() throws IOException {
-            return frames.next();
+		public Frame readFrame() throws IOException {
+        	return frames.next();
         }
 
         public void sendHeader() throws IOException {
