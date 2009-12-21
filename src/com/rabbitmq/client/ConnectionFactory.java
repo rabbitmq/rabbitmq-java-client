@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
@@ -69,12 +70,57 @@ public class ConnectionFactory {
     /** Default value for desired heartbeat interval; zero for none */
     public static final int DEFAULT_HEARTBEAT = 0;
 
+    /** The default host to connect to */
+    public static final String DEFAULT_HOST = "localhost";
+
+    /** A constant that when passed as a port number causes the connection to use the default port */
+    public static final int USE_DEFAULT_PORT = -1;
+
+    /** The default port to use for AMQP connections when not using SSL */
+    public static final int DEFAULT_AMQP_PORT = 5672;
+
+    /** The default port to use for AMQP connections when using SSL */
+    public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
+
     private String _userName = DEFAULT_USER;
     private String _password = DEFAULT_PASS;
     private String _virtualHost = DEFAULT_VHOST;
+    private String host = DEFAULT_HOST;
+    private int port = USE_DEFAULT_PORT;
     private int _requestedChannelMax = DEFAULT_CHANNEL_MAX;
     private int _requestedFrameMax = DEFAULT_FRAME_MAX;
     private int _requestedHeartbeat = DEFAULT_HEARTBEAT;
+    private SocketFactory _factory = SocketFactory.getDefault();
+    
+    /**
+     *  @return the default host to use for connections
+     */
+    public String getHost() {
+        return host;
+    }
+
+    /**
+     *  @param host the default host to use for connections
+     */
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    /**
+     *  @return the default port to use for connections
+     */
+    public int getPort() {
+        if(port != USE_DEFAULT_PORT) return port;
+        else if(isSSL()) return DEFAULT_AMQP_OVER_SSL_PORT;
+        else return DEFAULT_AMQP_PORT; 
+    }
+
+    /**
+     *  @return the default port to use for connections
+     */
+    public void setPort(int port) {
+        this.port = port;
+    }
 
     /**
      * Retrieve the user name.
@@ -173,11 +219,6 @@ public class ConnectionFactory {
     }
                                           
     /**
-     * Holds the SocketFactory used to manufacture outbound sockets.
-     */
-    private SocketFactory _factory = SocketFactory.getDefault();
-    
-    /**
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
     public ConnectionFactory() {
@@ -199,6 +240,11 @@ public class ConnectionFactory {
      */
     public void setSocketFactory(SocketFactory factory) {
         _factory = factory;
+    }
+
+  
+    public boolean isSSL(){
+      return getSocketFactory() instanceof SSLSocketFactory;
     }
 
     /**
@@ -359,12 +405,23 @@ public class ConnectionFactory {
     }
 
     /**
-     * Create a new broker connection, using the default AMQP port
+     * Create a new broker connection, using the ConnectionFactory's default port.  
      * @param hostName the host to connect to
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection(String hostName) throws IOException {
-        return newConnection(hostName, -1);
+        return newConnection(hostName, getPort());
     }
+
+    /**
+     * Create a new broker connection, using the ConnectionFactory's default host and port.  
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newConnection() throws IOException {
+        return newConnection(getHost());
+    }
+
+    
 }
