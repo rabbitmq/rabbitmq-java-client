@@ -90,7 +90,8 @@ public class TestMain {
         private final int protocolMajor;
         private final int protocolMinor;
 
-        public TestConnectionFactory(int major, int minor) {
+        public TestConnectionFactory(int major, int minor, String hostName, int port) {
+            super(hostName, port);
             this.protocolMajor = major;
             this.protocolMinor = minor;
         }
@@ -114,14 +115,14 @@ public class TestMain {
         Connection conn;
 
         try {
-            conn = new TestConnectionFactory(0, 1).newConnection(hostName, portNumber);
+            conn = new TestConnectionFactory(0, 1, hostName, portNumber).newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
 
         //should succeed IF the highest version supported by the
         //server is a version supported by this client
-        conn = new TestConnectionFactory(100, 0).newConnection(hostName, portNumber);
+        conn = new TestConnectionFactory(100, 0, hostName, portNumber).newConnection();
         conn.close();
 
         ConnectionFactory params;
