@@ -73,12 +73,12 @@ public class MulticastMain {
             Address[] addresses = new Address[]{
                     new Address(hostName, portNumber)
             };
-            ConnectionFactory params = new ConnectionFactory();
+            ConnectionFactory connectionFactory = new ConnectionFactory();
             Thread[] consumerThreads = new Thread[consumerCount];
             Connection[] consumerConnections = new Connection[consumerCount];
             for (int i = 0; i < consumerCount; i++) {
                 System.out.println("starting consumer #" + i);
-                Connection conn = params.newConnection(addresses, maxRedirects);
+                Connection conn = connectionFactory.newConnection(addresses, maxRedirects);
                 consumerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (consumerTxSize > 0) channel.txSelect();
@@ -100,7 +100,7 @@ public class MulticastMain {
             Connection[] producerConnections = new Connection[producerCount];
             for (int i = 0; i < producerCount; i++) {
                 System.out.println("starting producer #" + i);
-                Connection conn = params.newConnection(addresses, maxRedirects);
+                Connection conn = connectionFactory.newConnection(addresses, maxRedirects);
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();

@@ -57,11 +57,11 @@ public class ManyConnections {
             rate = (args.length > 4) ? Double.parseDouble(args[4]) : 1.0;
             int portNumber = (args.length > 5) ? Integer.parseInt(args[5]) : AMQP.PROTOCOL.PORT;
 
-            ConnectionFactory params = new ConnectionFactory();
-            params.setRequestedHeartbeat(heartbeatInterval);
+            ConnectionFactory connectionFactory = new ConnectionFactory();
+            connectionFactory.setRequestedHeartbeat(heartbeatInterval);
             for (int i = 0; i < connectionCount; i++) {
                 System.out.println("Starting connection " + i);
-                final Connection conn = params.newConnection(hostName, portNumber);
+                final Connection conn = connectionFactory.newConnection(hostName, portNumber);
 
                 for (int j = 0; j < channelPerConnectionCount; j++) {
                     final Channel ch = conn.createChannel();

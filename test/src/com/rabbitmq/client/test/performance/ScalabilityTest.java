@@ -199,32 +199,32 @@ public class ScalabilityTest {
 
     private static NumberFormat format = new DecimalFormat("0.00");
 
-    private final Parameters params;
+    private final Parameters connectionFactory;
 
     public ScalabilityTest(Parameters p) {
-        params = p;
+        connectionFactory = p;
     }
 
     public static void main(String[] args) throws Exception {
-        Parameters params = parseArgs(args);
-        if (params == null) return;
+        Parameters connectionFactory = parseArgs(args);
+        if (connectionFactory == null) return;
 
-        ScalabilityTest test = new ScalabilityTest(params);
+        ScalabilityTest test = new ScalabilityTest(connectionFactory);
         Results r = test.run();
-        if (params.filePrefix != null)
-            r.print(params.base, params.filePrefix);
+        if (connectionFactory.filePrefix != null)
+            r.print(connectionFactory.base, connectionFactory.filePrefix);
     }
 
 
     public Results run() throws Exception {
-        Connection con = new ConnectionFactory().newConnection(params.host, params.port);
+        Connection con = new ConnectionFactory().newConnection(connectionFactory.host, connectionFactory.port);
         Channel channel = con.createChannel();
 
-        Results r = new Results(params.maxBindingExp);
+        Results r = new Results(connectionFactory.maxBindingExp);
 
-        for (int y = 0; y < params.maxBindingExp; y++) {
+        for (int y = 0; y < connectionFactory.maxBindingExp; y++) {
 
-            final int maxBindings = pow(params.base, y);
+            final int maxBindings = pow(connectionFactory.base, y);
 
             String[] routingKeys = new String[maxBindings];
             for (int b = 0; b < maxBindings; b++) {
@@ -233,10 +233,10 @@ public class ScalabilityTest {
 
             Stack<String> queues = new Stack<String>();
 
-            int maxQueueExp = Math.min(params.maxQueueExp, params.maxExp - y);
+            int maxQueueExp = Math.min(connectionFactory.maxQueueExp, connectionFactory.maxExp - y);
 
             System.out.println("---------------------------------");
-            System.out.println("| bindings = " + maxBindings + ", messages = " + params.messageCount);
+            System.out.println("| bindings = " + maxBindings + ", messages = " + connectionFactory.messageCount);
 
             System.out.println("| Routing");
 
@@ -247,7 +247,7 @@ public class ScalabilityTest {
             float routingTimes[] = new float[maxQueueExp];
             for (int x = 0; x < maxQueueExp; x++) {
 
-                final int maxQueues = pow(params.base, x);
+                final int maxQueues = pow(connectionFactory.base, x);
 
                 for (; q < maxQueues; q++) {
                     AMQP.Queue.DeclareOk ok = channel.queueDeclare();
@@ -261,20 +261,20 @@ public class ScalabilityTest {
 
                 float routingTime = timeRouting(channel, routingKeys);
                 routingTimes[x] = routingTime;
-                printTime(params.base, x, routingTime);
+                printTime(connectionFactory.base, x, routingTime);
             }
 
             r.routingTimes[y] = routingTimes;
-            float[] creationTimes = creation.analyse(params.base);
+            float[] creationTimes = creation.analyse(connectionFactory.base);
             r.creationTimes[y] = creationTimes;
             System.out.println("| Creating");
-            printTimes(params.base, creationTimes);
+            printTimes(connectionFactory.base, creationTimes);
 
             // delete queues & bindings
             Measurements deletion = new DeletionMeasurements(maxQueueExp);
             for (int x = maxQueueExp - 1; x >= 0; x--) {
 
-                final int maxQueues = (x == 0) ? 0 : pow(params.base, x - 1);
+                final int maxQueues = (x == 0) ? 0 : pow(connectionFactory.base, x - 1);
 
                 for (; q > maxQueues; q--) {
                     channel.queueDelete(queues.pop());
@@ -283,10 +283,10 @@ public class ScalabilityTest {
                 deletion.addDataPoint(x);
             }
 
-            float[] deletionTimes = deletion.analyse(params.base);
+            float[] deletionTimes = deletion.analyse(connectionFactory.base);
             r.deletionTimes[y] = deletionTimes;
             System.out.println("| Deleting");
-            printTimes(params.base, deletionTimes);
+            printTimes(connectionFactory.base, deletionTimes);
         }
 
         channel.close();
@@ -300,7 +300,7 @@ public class ScalabilityTest {
 
         boolean mandatory = true;
         boolean immdediate = true;
-        final CountDownLatch latch = new CountDownLatch(params.messageCount);
+        final CountDownLatch latch = new CountDownLatch(connectionFactory.messageCount);
         channel.setReturnListener(new ReturnListener() {
             public void handleBasicReturn(int replyCode, String replyText,
                                           String exchange, String routingKey,
@@ -314,7 +314,7 @@ public class ScalabilityTest {
         // route some messages
         Random r = new Random();
         int size = routingKeys.length;
-        for (int n = 0; n < params.messageCount; n++) {
+        for (int n = 0; n < connectionFactory.messageCount; n++) {
             String key = routingKeys[r.nextInt(size)];
             channel.basicPublish("amq.direct", key, mandatory, immdediate,
                     MessageProperties.MINIMAL_BASIC, null);
@@ -326,7 +326,7 @@ public class ScalabilityTest {
         // Compute the roundtrip time
         final long finish = System.nanoTime();
         final long wallclock = finish - start;
-        return (params.messageCount == 0) ? (float) 0.0 : wallclock / (float) params.messageCount / 1000;
+        return (connectionFactory.messageCount == 0) ? (float) 0.0 : wallclock / (float) connectionFactory.messageCount / 1000;
     }
 
     private static Parameters parseArgs(String[] args) {
@@ -342,17 +342,17 @@ public class ScalabilityTest {
         CommandLine cmd = helper.parseCommandLine(args);
         if (null == cmd) return null;
 
-        Parameters params = new Parameters();
-        params.host = cmd.getOptionValue("h", "0.0.0.0");
-        params.port = CLIHelper.getOptionValue(cmd, "p", 5672);
-        params.messageCount = CLIHelper.getOptionValue(cmd, "n", 100);
-        params.base = CLIHelper.getOptionValue(cmd, "b", 10);
-        params.maxQueueExp = CLIHelper.getOptionValue(cmd, "x", 4);
-        params.maxBindingExp = CLIHelper.getOptionValue(cmd, "y", 4);
-        params.maxExp = CLIHelper.getOptionValue(cmd, "c", Math.max(params.maxQueueExp, params.maxBindingExp));
-        params.filePrefix = cmd.getOptionValue("f", null);
+        Parameters connectionFactory = new Parameters();
+        connectionFactory.host = cmd.getOptionValue("h", "0.0.0.0");
+        connectionFactory.port = CLIHelper.getOptionValue(cmd, "p", 5672);
+        connectionFactory.messageCount = CLIHelper.getOptionValue(cmd, "n", 100);
+        connectionFactory.base = CLIHelper.getOptionValue(cmd, "b", 10);
+        connectionFactory.maxQueueExp = CLIHelper.getOptionValue(cmd, "x", 4);
+        connectionFactory.maxBindingExp = CLIHelper.getOptionValue(cmd, "y", 4);
+        connectionFactory.maxExp = CLIHelper.getOptionValue(cmd, "c", Math.max(connectionFactory.maxQueueExp, connectionFactory.maxBindingExp));
+        connectionFactory.filePrefix = cmd.getOptionValue("f", null);
 
-        return params;
+        return connectionFactory;
     }
 
     private static int pow(int x, int y) {

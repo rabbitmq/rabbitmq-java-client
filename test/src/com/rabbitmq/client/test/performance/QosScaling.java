@@ -80,23 +80,23 @@ public class QosScaling {
 
     }
 
-    protected final Parameters params;
+    protected final Parameters connectionFactory;
     protected final ConnectionFactory connectionFactory =
             new ConnectionFactory();
     protected Connection connection;
     protected Channel channel;
 
     public QosScaling(Parameters p) {
-        params = p;
+        connectionFactory = p;
     }
 
     protected List<String> consume(QueueingConsumer c) throws IOException {
-        for (int i = 0; i < params.emptyCount; i++) {
+        for (int i = 0; i < connectionFactory.emptyCount; i++) {
             String queue = channel.queueDeclare().getQueue();
             channel.basicConsume(queue, false, c);
         }
         List<String> queues = new ArrayList<String>();
-        for (int i = 0; i < params.queueCount; i++) {
+        for (int i = 0; i < connectionFactory.queueCount; i++) {
             String queue = channel.queueDeclare().getQueue();
             channel.basicConsume(queue, false, c);
             queues.add(queue);
@@ -108,7 +108,7 @@ public class QosScaling {
         Channel pubCh = connection.createChannel();
         pubCh.txSelect();
         byte[] body = "".getBytes();
-        int messagesPerQueue = params.messageCount / queues.size();
+        int messagesPerQueue = connectionFactory.messageCount / queues.size();
         for (String queue : queues) {
             for (int i = 0; i < messagesPerQueue; i++) {
                 pubCh.basicPublish("", queue, null, body);
@@ -121,7 +121,7 @@ public class QosScaling {
     protected long drain(QueueingConsumer c) throws IOException {
         long start = System.nanoTime();
         try {
-            for (int i = 0; i < params.messageCount; i++) {
+            for (int i = 0; i < connectionFactory.messageCount; i++) {
                 long tag = c.nextDelivery().getEnvelope().getDeliveryTag();
                 channel.basicAck(tag, false);
             }
@@ -135,7 +135,7 @@ public class QosScaling {
     }
 
     public long run() throws IOException {
-        connection = connectionFactory.newConnection(params.host, params.port);
+        connection = connectionFactory.newConnection(connectionFactory.host, connectionFactory.port);
         channel = connection.createChannel();
         channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);
@@ -150,9 +150,9 @@ public class QosScaling {
     public static void main(String[] args) throws Exception {
         CommandLine cmd = Parameters.parseCommandLine(args);
         if (cmd == null) return;
-        Parameters params = new Parameters(cmd);
-        System.out.print(params.toString());
-        QosScaling test = new QosScaling(params);
+        Parameters connectionFactory = new Parameters(cmd);
+        System.out.print(connectionFactory.toString());
+        QosScaling test = new QosScaling(connectionFactory);
         long result = test.run();
         System.out.println(" -> " + result / 1000000 + "ms");
     }

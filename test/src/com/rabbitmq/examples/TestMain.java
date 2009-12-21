@@ -111,32 +111,32 @@ public class TestMain {
         conn = new TestConnectionFactory(100, 0).newConnection(hostName, portNumber);
         conn.close();
 
-        ConnectionFactory params;
-        params = new ConnectionFactory();
-        params.setUsername("invalid");
-        params.setPassword("invalid");
+        ConnectionFactory connectionFactory;
+        connectionFactory = new ConnectionFactory();
+        connectionFactory.setUsername("invalid");
+        connectionFactory.setPassword("invalid");
         try {
-            conn = params.newConnection(hostName, portNumber);
+            conn = connectionFactory.newConnection(hostName, portNumber);
             conn.close();
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {
         }
 
-        params = new ConnectionFactory();
-        params.setRequestedChannelMax(10);
-        params.setRequestedFrameMax(8192);
-        params.setRequestedHeartbeat(1);
-        conn = params.newConnection(hostName, portNumber);
+        connectionFactory = new ConnectionFactory();
+        connectionFactory.setRequestedChannelMax(10);
+        connectionFactory.setRequestedFrameMax(8192);
+        connectionFactory.setRequestedHeartbeat(1);
+        conn = connectionFactory.newConnection(hostName, portNumber);
         checkNegotiatedMaxValue("channel-max", 10, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 8192, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 1, conn.getHeartbeat());
         conn.close();
 
-        params = new ConnectionFactory();
-        params.setRequestedChannelMax(0);
-        params.setRequestedFrameMax(0);
-        params.setRequestedHeartbeat(0);
-        conn = params.newConnection(hostName, portNumber);
+        connectionFactory = new ConnectionFactory();
+        connectionFactory.setRequestedChannelMax(0);
+        connectionFactory.setRequestedFrameMax(0);
+        connectionFactory.setRequestedHeartbeat(0);
+        conn = connectionFactory.newConnection(hostName, portNumber);
         checkNegotiatedMaxValue("channel-max", 0, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 0, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 0, conn.getHeartbeat());
