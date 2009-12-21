@@ -42,7 +42,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -57,7 +57,7 @@ public class Permissions extends BrokerTestCase
 
     public Permissions()
     {
-        ConnectionParameters params = new ConnectionParameters();
+        ConnectionFactory params = new ConnectionFactory();
         params.setUsername("test");
         params.setPassword("test");
         params.setVirtualHost("/test");
@@ -108,7 +108,7 @@ public class Permissions extends BrokerTestCase
     protected void createResources()
         throws IOException
     {
-        ConnectionParameters params = new ConnectionParameters();
+        ConnectionFactory params = new ConnectionFactory();
         params.setUsername("testadmin");
         params.setPassword("test");
         params.setVirtualHost("/test");

@@ -39,7 +39,7 @@ import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
@@ -124,8 +124,8 @@ public class TestMain {
         conn = new TestConnectionFactory(100, 0).newConnection(hostName, portNumber);
         conn.close();
 
-        ConnectionParameters params;
-        params = new ConnectionParameters();
+        ConnectionFactory params;
+        params = new ConnectionFactory();
         params.setUsername("invalid");
         params.setPassword("invalid");
         try {
@@ -134,7 +134,7 @@ public class TestMain {
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
 
-        params = new ConnectionParameters();
+        params = new ConnectionFactory();
         params.setRequestedChannelMax(10);
         params.setRequestedFrameMax(8192);
         params.setRequestedHeartbeat(1);
@@ -144,7 +144,7 @@ public class TestMain {
         checkNegotiatedMaxValue("heartbeat", 1, conn.getHeartbeat());
         conn.close();
 
-        params = new ConnectionParameters();
+        params = new ConnectionFactory();
         params.setRequestedChannelMax(0);
         params.setRequestedFrameMax(0);
         params.setRequestedHeartbeat(0);

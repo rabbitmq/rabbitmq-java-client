@@ -34,7 +34,7 @@ package com.rabbitmq.examples;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
 
@@ -62,7 +62,7 @@ public class ManyConnections {
 	    rate = (args.length > 4) ? Double.parseDouble(args[4]) : 1.0;
             int portNumber = (args.length > 5) ? Integer.parseInt(args[5]) : AMQP.PROTOCOL.PORT;
 
-            ConnectionParameters params = new ConnectionParameters();
+            ConnectionFactory params = new ConnectionFactory();
             params.setRequestedHeartbeat(heartbeatInterval);
 	    for (int i = 0; i < connectionCount; i++) {
                 System.out.println("Starting connection "+i);
