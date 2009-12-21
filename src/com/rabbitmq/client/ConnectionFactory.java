@@ -82,15 +82,15 @@ public class ConnectionFactory {
     /** The default port to use for AMQP connections when using SSL */
     public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
 
-    private String _userName = DEFAULT_USER;
-    private String _password = DEFAULT_PASS;
-    private String _virtualHost = DEFAULT_VHOST;
+    private String userName = DEFAULT_USER;
+    private String password = DEFAULT_PASS;
+    private String virtualHost = DEFAULT_VHOST;
     private String host = DEFAULT_HOST;
     private int port = USE_DEFAULT_PORT;
-    private int _requestedChannelMax = DEFAULT_CHANNEL_MAX;
-    private int _requestedFrameMax = DEFAULT_FRAME_MAX;
-    private int _requestedHeartbeat = DEFAULT_HEARTBEAT;
-    private SocketFactory _factory = SocketFactory.getDefault();
+    private int requestedChannelMax = DEFAULT_CHANNEL_MAX;
+    private int requestedFrameMax = DEFAULT_FRAME_MAX;
+    private int requestedHeartbeat = DEFAULT_HEARTBEAT;
+    private SocketFactory factory = SocketFactory.getDefault();
     private ConnectionFactory fallback = null;   
  
     /**
@@ -132,7 +132,7 @@ public class ConnectionFactory {
      * @return the AMQP user name to use when connecting to the broker
      */
     public String getUserName() {
-        return _userName;
+        return this.userName;
     }
 
     /**
@@ -140,7 +140,7 @@ public class ConnectionFactory {
      * @param userName the AMQP user name to use when connecting to the broker
      */
     public void setUsername(String userName) {
-        _userName = userName;
+        this.userName = userName;
     }
 
     /**
@@ -148,7 +148,7 @@ public class ConnectionFactory {
      * @return the password to use when connecting to the broker
      */
     public String getPassword() {
-        return _password;
+        return this.password;
     }
 
     /**
@@ -156,7 +156,7 @@ public class ConnectionFactory {
      * @param password the password to use when connecting to the broker
      */
     public void setPassword(String password) {
-        _password = password;
+        this.password = password;
     }
 
     /**
@@ -164,7 +164,7 @@ public class ConnectionFactory {
      * @return the virtual host to use when connecting to the broker
      */
     public String getVirtualHost() {
-        return _virtualHost;
+        return this.virtualHost;
     }
 
     /**
@@ -172,7 +172,7 @@ public class ConnectionFactory {
      * @param virtualHost the virtual host to use when connecting to the broker
      */
     public void setVirtualHost(String virtualHost) {
-        _virtualHost = virtualHost;
+        this.virtualHost = virtualHost;
     }
 
     /**
@@ -180,7 +180,7 @@ public class ConnectionFactory {
      * @return the initially requested maximum channel number; zero for unlimited
      */
     public int getRequestedChannelMax() {
-        return _requestedChannelMax;
+        return this.requestedChannelMax;
     }
 
     /**
@@ -188,7 +188,7 @@ public class ConnectionFactory {
      * @param requestedFrameMax initially requested maximum frame size, in octets; zero for unlimited
      */
     public void setRequestedFrameMax(int requestedFrameMax) {
-        _requestedFrameMax = requestedFrameMax;
+        this.requestedFrameMax = requestedFrameMax;
     }
 
     /**
@@ -196,7 +196,7 @@ public class ConnectionFactory {
      * @return the initially requested maximum frame size, in octets; zero for unlimited
      */
     public int getRequestedFrameMax() {
-        return _requestedFrameMax;
+        return this.requestedFrameMax;
     }
 
     /**
@@ -204,7 +204,7 @@ public class ConnectionFactory {
      * @return the initially requested heartbeat interval, in seconds; zero for none
      */
     public int getRequestedHeartbeat() {
-        return _requestedHeartbeat;
+        return this.requestedHeartbeat;
     }
 
     /**
@@ -212,7 +212,7 @@ public class ConnectionFactory {
      * @param requestedHeartbeat the initially requested heartbeat interval, in seconds; zero for none
      */
     public void setRequestedHeartbeat(int requestedHeartbeat) {
-        _requestedHeartbeat = requestedHeartbeat;
+        this.requestedHeartbeat = requestedHeartbeat;
     }
 
     /**
@@ -220,7 +220,7 @@ public class ConnectionFactory {
      * @param requestedChannelMax initially requested maximum channel number; zero for unlimited
      */
     public void setRequestedChannelMax(int requestedChannelMax) {
-        _requestedChannelMax = requestedChannelMax;
+        this.requestedChannelMax = requestedChannelMax;
     }
                                           
     /**
@@ -241,7 +241,7 @@ public class ConnectionFactory {
      * Retrieve the socket factory used to make connections with.
      */
     public SocketFactory getSocketFactory() {
-        return _factory;
+        return this.factory;
     }
 
     /**
@@ -252,7 +252,7 @@ public class ConnectionFactory {
      * @see #useSslProtocol
      */
     public void setSocketFactory(SocketFactory factory) {
-        _factory = factory;
+        this.factory = factory;
     }
 
 
@@ -331,7 +331,7 @@ public class ConnectionFactory {
 
         String hostName = addr.getHost();
         int portNumber = portOrDefault(addr.getPort());
-        return new SocketFrameHandler(_factory, hostName, portNumber);
+        return new SocketFrameHandler(factory, hostName, portNumber);
     }
 
     private Connection newConnection(Address[] addresses,
