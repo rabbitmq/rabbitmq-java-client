@@ -129,7 +129,7 @@ public class TestMain {
         params.setUsername("invalid");
         params.setPassword("invalid");
         try {
-            conn = new ConnectionFactory(params).newConnection(hostName, portNumber);
+            conn = params.newConnection(hostName, portNumber);
             conn.close();
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
@@ -138,7 +138,7 @@ public class TestMain {
         params.setRequestedChannelMax(10);
         params.setRequestedFrameMax(8192);
         params.setRequestedHeartbeat(1);
-        conn = new ConnectionFactory(params).newConnection(hostName, portNumber);
+        conn = params.newConnection(hostName, portNumber);
         checkNegotiatedMaxValue("channel-max", 10, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 8192, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 1, conn.getHeartbeat());
@@ -148,7 +148,7 @@ public class TestMain {
         params.setRequestedChannelMax(0);
         params.setRequestedFrameMax(0);
         params.setRequestedHeartbeat(0);
-        conn = new ConnectionFactory(params).newConnection(hostName, portNumber);
+        conn = params.newConnection(hostName, portNumber);
         checkNegotiatedMaxValue("channel-max", 0, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 0, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 0, conn.getHeartbeat());

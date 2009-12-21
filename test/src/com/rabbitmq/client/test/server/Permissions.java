@@ -61,7 +61,7 @@ public class Permissions extends BrokerTestCase
         params.setUsername("test");
         params.setPassword("test");
         params.setVirtualHost("/test");
-        connectionFactory = new ConnectionFactory(params);
+        connectionFactory = params;
     }
 
     protected void setUp()
@@ -112,7 +112,7 @@ public class Permissions extends BrokerTestCase
         params.setUsername("testadmin");
         params.setPassword("test");
         params.setVirtualHost("/test");
-        ConnectionFactory factory = new ConnectionFactory(params);
+        ConnectionFactory factory = params;
         Connection connection = factory.newConnection("localhost");
         adminCh = connection.createChannel();
         withNames(new WithName() {
