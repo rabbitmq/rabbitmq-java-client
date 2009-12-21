@@ -56,18 +56,18 @@ public class BrokenFramesTest extends TestCase {
     }
 
     private MyFrameHandler myFrameHandler;
-    private ConnectionFactory params;
+    private ConnectionFactory factory;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         myFrameHandler = new MyFrameHandler();
-        params = new ConnectionFactory();
+        factory = new ConnectionFactory();
     }
 
     @Override
     protected void tearDown() throws Exception {
-        params = null;
+        factory = null;
         myFrameHandler = null;
         super.tearDown();
     }
@@ -77,7 +77,7 @@ public class BrokenFramesTest extends TestCase {
         frames.add(new Frame(AMQP.FRAME_HEADER, 0));
         myFrameHandler.setFrames(frames.iterator());
 
-        AMQConnection conn = new AMQConnection(params, myFrameHandler);
+        AMQConnection conn = new AMQConnection(factory, myFrameHandler);
         try {
             conn.start(false);
         } catch (IOException e) {
@@ -105,7 +105,7 @@ public class BrokenFramesTest extends TestCase {
         myFrameHandler.setFrames(frames.iterator());
  
         try {
-            new AMQConnection(params, myFrameHandler).start(false);
+            new AMQConnection(factory, myFrameHandler).start(false);
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);

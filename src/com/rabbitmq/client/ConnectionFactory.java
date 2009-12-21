@@ -91,7 +91,7 @@ public class ConnectionFactory {
     private int requestedFrameMax         = DEFAULT_FRAME_MAX;
     private int requestedHeartbeat        = DEFAULT_HEARTBEAT;
     private SocketFactory factory         = SocketFactory.getDefault();
- 
+
     /**
      *  @return the default host to use for connections
      */
@@ -109,7 +109,7 @@ public class ConnectionFactory {
     private int portOrDefault(int port){
         if(port != USE_DEFAULT_PORT) return port;
         else if(isSSL()) return DEFAULT_AMQP_OVER_SSL_PORT;
-        else return DEFAULT_AMQP_PORT; 
+        else return DEFAULT_AMQP_PORT;
     }
 
     /**
@@ -221,7 +221,7 @@ public class ConnectionFactory {
     public void setRequestedChannelMax(int requestedChannelMax) {
         this.requestedChannelMax = requestedChannelMax;
     }
-                                          
+
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
      */

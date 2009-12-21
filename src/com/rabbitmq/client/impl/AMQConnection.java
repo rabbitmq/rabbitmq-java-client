@@ -174,34 +174,34 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /**
      * Construct a new connection to a broker.
-     * @param params the initialization parameters for a connection
+     * @param factory the initialization parameters for a connection
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      */
-    public AMQConnection(ConnectionFactory params,
+    public AMQConnection(ConnectionFactory factory,
                          FrameHandler frameHandler) {
-        this(params, frameHandler, new DefaultExceptionHandler());
+        this(factory, frameHandler, new DefaultExceptionHandler());
     }
 
     /**
      * Construct a new connection to a broker.
-     * @param params the initialization parameters for a connection
+     * @param factory the initialization parameters for a connection
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      * @param exceptionHandler interface to an object that will handle any special exceptions encountered while using this connection
      */
-    public AMQConnection(ConnectionFactory params,
+    public AMQConnection(ConnectionFactory factory,
                          FrameHandler frameHandler,
                          ExceptionHandler exceptionHandler)
     {
         checkPreconditions();
 
-        _userName = params.getUserName();
-        _password = params.getPassword();
-        _virtualHost = params.getVirtualHost();
-        _requestedChannelMax = params.getRequestedChannelMax();
-        _requestedFrameMax = params.getRequestedFrameMax();
-        _requestedHeartbeat = params.getRequestedHeartbeat();
+        _userName = factory.getUserName();
+        _password = factory.getPassword();
+        _virtualHost = factory.getVirtualHost();
+        _requestedChannelMax = factory.getRequestedChannelMax();
+        _requestedFrameMax = factory.getRequestedFrameMax();
+        _requestedHeartbeat = factory.getRequestedHeartbeat();
 
-        _params = params;
+        _params = factory;
         _frameHandler = frameHandler;
         _running = true;
         _frameMax = 0;

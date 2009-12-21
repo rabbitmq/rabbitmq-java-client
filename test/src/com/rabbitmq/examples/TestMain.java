@@ -126,37 +126,37 @@ public class TestMain {
         conn = new TestConnectionFactory(100, 0, hostName, portNumber).newConnection();
         conn.close();
 
-        ConnectionFactory params;
-        params = new ConnectionFactory();
-        params.setUsername("invalid");
-        params.setPassword("invalid");
+        ConnectionFactory factory;
+        factory = new ConnectionFactory();
+        factory.setUsername("invalid");
+        factory.setPassword("invalid");
         try {
-            params.setHost(hostName);
-            params.setPort(portNumber);
-            conn = params.newConnection();
+            factory.setHost(hostName);
+            factory.setPort(portNumber);
+            conn = factory.newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
 
-        params = new ConnectionFactory();
-        params.setRequestedChannelMax(10);
-        params.setRequestedFrameMax(8192);
-        params.setRequestedHeartbeat(1);
-        params.setHost(hostName);
-        params.setPort(portNumber);
-        conn = params.newConnection();
+        factory = new ConnectionFactory();
+        factory.setRequestedChannelMax(10);
+        factory.setRequestedFrameMax(8192);
+        factory.setRequestedHeartbeat(1);
+        factory.setHost(hostName);
+        factory.setPort(portNumber);
+        conn = factory.newConnection();
         checkNegotiatedMaxValue("channel-max", 10, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 8192, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 1, conn.getHeartbeat());
         conn.close();
 
-        params = new ConnectionFactory();
-        params.setRequestedChannelMax(0);
-        params.setRequestedFrameMax(0);
-        params.setRequestedHeartbeat(0);
-        params.setHost(hostName);
-        params.setPort(portNumber);
-        conn = params.newConnection();
+        factory = new ConnectionFactory();
+        factory.setRequestedChannelMax(0);
+        factory.setRequestedFrameMax(0);
+        factory.setRequestedHeartbeat(0);
+        factory.setHost(hostName);
+        factory.setPort(portNumber);
+        conn = factory.newConnection();
         checkNegotiatedMaxValue("channel-max", 0, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 0, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 0, conn.getHeartbeat());

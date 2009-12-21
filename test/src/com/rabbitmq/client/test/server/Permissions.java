@@ -57,11 +57,11 @@ public class Permissions extends BrokerTestCase
 
     public Permissions()
     {
-        ConnectionFactory params = new ConnectionFactory();
-        params.setUsername("test");
-        params.setPassword("test");
-        params.setVirtualHost("/test");
-        connectionFactory = params;
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setUsername("test");
+        factory.setPassword("test");
+        factory.setVirtualHost("/test");
+        connectionFactory = factory;
     }
 
     protected void setUp()
@@ -108,11 +108,11 @@ public class Permissions extends BrokerTestCase
     protected void createResources()
         throws IOException
     {
-        ConnectionFactory params = new ConnectionFactory();
-        params.setUsername("testadmin");
-        params.setPassword("test");
-        params.setVirtualHost("/test");
-        ConnectionFactory factory = params;
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setUsername("testadmin");
+        factory.setPassword("test");
+        factory.setVirtualHost("/test");
+        ConnectionFactory factory = factory;
         Connection connection = factory.newConnection();
         adminCh = connection.createChannel();
         withNames(new WithName() {
