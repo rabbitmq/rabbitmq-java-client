@@ -43,13 +43,13 @@ public class SimpleTopicProducer {
         try {
             if (args.length < 1 || args.length > 5) {
                 System.err.print("Usage: SimpleTopicProducer brokerhostname [brokerport\n" +
-                        "                                           [topic\n" +
-                        "                                            [exchange\n" +
-                        "                                             [message]]]]\n" +
-                        "where\n" +
-                        " - topic defaults to \"" + DEFAULT_TOPIC + "\",\n" +
-                        " - exchange defaults to \"amq.topic\", and\n" +
-                        " - message defaults to a time-of-day message\n");
+                                 "                                           [topic\n" +
+                                 "                                            [exchange\n" +
+                                 "                                             [message]]]]\n" +
+                                 "where\n" +
+                                 " - topic defaults to \""+DEFAULT_TOPIC+"\",\n" +
+                                 " - exchange defaults to \"amq.topic\", and\n" +
+                                 " - message defaults to a time-of-day message\n");
                 System.exit(1);
             }
             String hostName = (args.length > 0) ? args[0] : "localhost";
@@ -57,7 +57,7 @@ public class SimpleTopicProducer {
             String topic = (args.length > 2) ? args[2] : DEFAULT_TOPIC;
             String exchange = (args.length > 3) ? args[3] : null;
             String message = (args.length > 4) ? args[4] :
-                    "the time is " + new java.util.Date().toString();
+                "the time is " + new java.util.Date().toString();
 
             Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
 

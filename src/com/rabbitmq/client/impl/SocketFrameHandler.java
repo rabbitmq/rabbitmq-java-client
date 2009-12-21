@@ -30,41 +30,36 @@
 //
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.AMQP;
-
-import javax.net.SocketFactory;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
+
+import javax.net.SocketFactory;
+
+import com.rabbitmq.client.AMQP;
 
 /**
  * A socket-based frame handler.
  */
 
 public class SocketFrameHandler implements FrameHandler {
-    /**
-     * Host we connect to
-     */
+    /** Host we connect to */
     public final String _host;
 
-    /**
-     * Port number we connect to
-     */
+    /** Port number we connect to */
     public final int _port;
 
-    /**
-     * The underlying socket
-     */
+    /** The underlying socket */
     public final Socket _socket;
 
-    /**
-     * Socket's inputstream - data from the broker
-     */
+    /** Socket's inputstream - data from the broker */
     public final DataInputStream _inputStream;
 
-    /**
-     * Socket's outputstream - data to the broker
-     */
+    /** Socket's outputstream - data to the broker */
     public final DataOutputStream _outputStream;
 
     // Note, we use each of these to synchronize on to make sure we don't try to use them
@@ -72,16 +67,16 @@ public class SocketFrameHandler implements FrameHandler {
 
     /**
      * Instantiate a SocketFrameHandler.
-     *
-     * @param factory    the socket factory to use to build our Socket - may be SSLSocketFactory etc
-     * @param hostName   the host name
+     * @param factory the socket factory to use to build our Socket - may be SSLSocketFactory etc
+     * @param hostName the host name
      * @param portNumber the port number
      * @throws IOException if there is a problem accessing the connection
      */
     public SocketFrameHandler(SocketFactory factory,
                               String hostName,
                               int portNumber)
-            throws IOException {
+        throws IOException
+    {
         _host = hostName;
         _port = portNumber;
         _socket = factory.createSocket(_host, _port);
@@ -101,12 +96,14 @@ public class SocketFrameHandler implements FrameHandler {
     }
 
     public void setTimeout(int timeoutMs)
-            throws SocketException {
+        throws SocketException
+    {
         _socket.setSoTimeout(timeoutMs);
     }
 
     public int getTimeout()
-            throws SocketException {
+        throws SocketException
+    {
         return _socket.getSoTimeout();
     }
 
@@ -145,10 +142,9 @@ public class SocketFrameHandler implements FrameHandler {
 
     /**
      * Read a {@link Frame} from the underlying socket.
-     *
+     * @see FrameHandler#readFrame()
      * @return an incoming Frame, or null if there is none
      * @throws IOException if there is a problem accessing the connection
-     * @see FrameHandler#readFrame()
      */
     public Frame readFrame() throws IOException {
         synchronized (_inputStream) {
@@ -158,7 +154,6 @@ public class SocketFrameHandler implements FrameHandler {
 
     /**
      * Write a {@link Frame} to the underlying socket.
-     *
      * @param frame an incoming Frame, or null if there is none
      * @throws IOException if there is a problem accessing the connection
      * @see FrameHandler#writeFrame(Frame frame)

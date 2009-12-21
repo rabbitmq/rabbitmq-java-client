@@ -30,31 +30,32 @@
 //
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.FileProperties;
-
 import java.util.Date;
-import java.util.Hashtable;
 import java.util.Map;
+import java.util.Hashtable;
+
+import com.rabbitmq.client.FileProperties;
+import com.rabbitmq.client.StreamProperties;
 
 public abstract class AMQFileProperties
         extends AMQContentHeader implements FileProperties {
-
+    
     @Override
     public Object clone() throws CloneNotSupportedException {
         AMQFileProperties fpClone = (AMQFileProperties) super.clone();
-
+        
         Map<String, Object> thisHeaders = getHeaders();
         if (thisHeaders != null) {
             Map<String, Object> headers = new Hashtable<String, Object>();
             headers.putAll(thisHeaders);
             fpClone.setHeaders(headers);
         }
-
+        
         Date thisTimestamp = getTimestamp();
         if (thisTimestamp != null) {
             fpClone.setTimestamp((Date) thisTimestamp.clone());
         }
-
+        
         return fpClone;
     }
 }

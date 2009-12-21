@@ -31,13 +31,13 @@
 
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.utility.ValueOrException;
-
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.utility.ValueOrException;
 
 /**
  * Convenience class: an implementation of {@link Consumer} with straightforward blocking semantics
@@ -47,28 +47,28 @@ public class QueueingConsumer extends DefaultConsumer {
 
     public QueueingConsumer(Channel ch) {
         this(ch,
-                new LinkedBlockingQueue<ValueOrException<Delivery, ShutdownSignalException>>());
+             new LinkedBlockingQueue<ValueOrException<Delivery, ShutdownSignalException>>());
     }
 
     public QueueingConsumer(Channel ch,
-                            BlockingQueue<ValueOrException<Delivery, ShutdownSignalException>> q) {
+                            BlockingQueue<ValueOrException<Delivery, ShutdownSignalException>> q)
+    {
         super(ch);
         this._queue = q;
     }
 
-    @Override
-    public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
-        this._queue.add(ValueOrException.<Delivery, ShutdownSignalException>makeException(sig));
+    @Override public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
+        this._queue.add(ValueOrException. <Delivery, ShutdownSignalException> makeException(sig));
     }
 
-    @Override
-    public void handleDelivery(String consumerTag,
+    @Override public void handleDelivery(String consumerTag,
                                Envelope envelope,
                                AMQP.BasicProperties properties,
                                byte[] body)
-            throws IOException {
-        this._queue.add(ValueOrException.<Delivery, ShutdownSignalException>makeValue
-                (new Delivery(envelope, properties, body)));
+        throws IOException
+    {
+        this._queue.add(ValueOrException. <Delivery, ShutdownSignalException> makeValue
+                        (new Delivery(envelope, properties, body)));
     }
 
     /**
@@ -87,7 +87,6 @@ public class QueueingConsumer extends DefaultConsumer {
 
         /**
          * Retrieve the message envelope.
-         *
          * @return the message envelope
          */
         public Envelope getEnvelope() {
@@ -96,7 +95,6 @@ public class QueueingConsumer extends DefaultConsumer {
 
         /**
          * Retrieve the message properties.
-         *
          * @return the message properties
          */
         public BasicProperties getProperties() {
@@ -105,7 +103,6 @@ public class QueueingConsumer extends DefaultConsumer {
 
         /**
          * Retrieve the message body.
-         *
          * @return the message body
          */
         public byte[] getBody() {
@@ -115,34 +112,33 @@ public class QueueingConsumer extends DefaultConsumer {
 
     /**
      * Main application-side API: wait for the next message delivery and return it.
-     *
      * @return the next message
-     * @throws InterruptedException    if an interrupt is received while waiting
+     * @throws InterruptedException if an interrupt is received while waiting
      * @throws ShutdownSignalException if the connection is shut down while waiting
      */
     public Delivery nextDelivery()
-            throws InterruptedException, ShutdownSignalException {
+        throws InterruptedException, ShutdownSignalException
+    {
         return _queue.take().getValue();
     }
 
     /**
      * Main application-side API: wait for the next message delivery and return it.
-     *
      * @param timeout timeout in millisecond
      * @return the next message or null if timed out
-     * @throws InterruptedException    if an interrupt is received while waiting
+     * @throws InterruptedException if an interrupt is received while waiting
      * @throws ShutdownSignalException if the connection is shut down while waiting
      */
     public Delivery nextDelivery(long timeout)
-            throws InterruptedException, ShutdownSignalException {
+        throws InterruptedException, ShutdownSignalException
+    {
         ValueOrException<Delivery, ShutdownSignalException> r =
-                _queue.poll(timeout, TimeUnit.MILLISECONDS);
+            _queue.poll(timeout, TimeUnit.MILLISECONDS);
         return r == null ? null : r.getValue();
     }
 
     /**
      * Retrieve the underlying blocking queue.
-     *
      * @return the queue where incoming messages are stored
      */
     public BlockingQueue<ValueOrException<Delivery, ShutdownSignalException>> getQueue() {

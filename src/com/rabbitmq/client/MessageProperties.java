@@ -43,68 +43,56 @@ public class MessageProperties {
     private static final Integer ONE = 1;
     private static final Integer TWO = 2;
 
-    /**
-     * Empty basic properties, with no fields set
-     */
+    /** Empty basic properties, with no fields set */
     public static final BasicProperties MINIMAL_BASIC =
-            new BasicProperties(null, null, null, null,
-                    null, null, null, null,
-                    null, null, null, null,
-                    null, null);
-    /**
-     * Empty basic properties, with only deliveryMode set to 2 (persistent)
-     */
+        new BasicProperties(null, null, null, null,
+                            null, null, null, null,
+                            null, null, null, null,
+                            null, null);
+    /** Empty basic properties, with only deliveryMode set to 2 (persistent) */
     public static final BasicProperties MINIMAL_PERSISTENT_BASIC =
-            new BasicProperties(null, null, null, TWO,
-                    null, null, null, null,
-                    null, null, null, null,
-                    null, null);
+        new BasicProperties(null, null, null, TWO,
+                            null, null, null, null,
+                            null, null, null, null,
+                            null, null);
 
-    /**
-     * Content-type "application/octet-stream", deliveryMode 1 (nonpersistent), priority zero
-     */
+    /** Content-type "application/octet-stream", deliveryMode 1 (nonpersistent), priority zero */
     public static final BasicProperties BASIC =
-            new BasicProperties("application/octet-stream",
-                    null,
-                    null,
-                    ONE,
-                    ZERO, null, null, null,
-                    null, null, null, null,
-                    null, null);
+        new BasicProperties("application/octet-stream",
+                            null,
+                            null,
+                            ONE,
+                            ZERO, null, null, null,
+                            null, null, null, null,
+                            null, null);
 
-    /**
-     * Content-type "application/octet-stream", deliveryMode 2 (persistent), priority zero
-     */
+    /** Content-type "application/octet-stream", deliveryMode 2 (persistent), priority zero */
     public static final BasicProperties PERSISTENT_BASIC =
-            new BasicProperties("application/octet-stream",
-                    null,
-                    null,
-                    TWO,
-                    ZERO, null, null, null,
-                    null, null, null, null,
-                    null, null);
+        new BasicProperties("application/octet-stream",
+                            null,
+                            null,
+                            TWO,
+                            ZERO, null, null, null,
+                            null, null, null, null,
+                            null, null);
 
-    /**
-     * Content-type "text/plain", deliveryMode 1 (nonpersistent), priority zero
-     */
+    /** Content-type "text/plain", deliveryMode 1 (nonpersistent), priority zero */
     public static final BasicProperties TEXT_PLAIN =
-            new BasicProperties("text/plain",
-                    null,
-                    null,
-                    ONE,
-                    ZERO, null, null, null,
-                    null, null, null, null,
-                    null, null);
+        new BasicProperties("text/plain",
+                            null,
+                            null,
+                            ONE,
+                            ZERO, null, null, null,
+                            null, null, null, null,
+                            null, null);
 
-    /**
-     * Content-type "text/plain", deliveryMode 2 (persistent), priority zero
-     */
+    /** Content-type "text/plain", deliveryMode 2 (persistent), priority zero */
     public static final BasicProperties PERSISTENT_TEXT_PLAIN =
-            new BasicProperties("text/plain",
-                    null,
-                    null,
-                    TWO,
-                    ZERO, null, null, null,
-                    null, null, null, null,
-                    null, null);
+        new BasicProperties("text/plain",
+                            null,
+                            null,
+                            TWO,
+                            ZERO, null, null, null,
+                            null, null, null, null,
+                            null, null);
 }

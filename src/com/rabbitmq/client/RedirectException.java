@@ -35,25 +35,18 @@ package com.rabbitmq.client;
  * Encapsulates an exception requiring redirection to the next from a list of "known addresses"
  */
 public class RedirectException extends Exception {
-    /**
-     * Standard serialization ID.
-     */
+    /** Standard serialization ID. */
     private static final long serialVersionUID = 1L;
 
-    /**
-     * The address to redirect to *
-     */
+    /** The address to redirect to **/
     private final Address _address;
 
-    /**
-     * Known cluster addresses *
-     */
+    /** Known cluster addresses **/
     private final Address[] _knownAddresses;
 
     /**
      * Construct a RedirectException from the given initialization parameters.
-     *
-     * @param address        the address we are redirecting to
+     * @param address the address we are redirecting to
      * @param knownAddresses the list of all known addresses
      */
     public RedirectException(Address address, Address[] knownAddresses) {
@@ -64,7 +57,6 @@ public class RedirectException extends Exception {
 
     /**
      * Returns the address to redirect to
-     *
      * @return the redirection address
      */
     public Address getAddress() {
@@ -73,7 +65,6 @@ public class RedirectException extends Exception {
 
     /**
      * Returns the known cluster addresses
-     *
      * @return an array of the known cluster addresses (each a hostname/port pair)
      */
     public Address[] getKnownAddresses() {

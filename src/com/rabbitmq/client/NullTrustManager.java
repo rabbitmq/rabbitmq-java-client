@@ -31,8 +31,9 @@
 
 package com.rabbitmq.client;
 
-import javax.net.ssl.X509TrustManager;
 import java.security.cert.X509Certificate;
+
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Convenience class providing a default implementation of javax.net.ssl.X509TrustManager.

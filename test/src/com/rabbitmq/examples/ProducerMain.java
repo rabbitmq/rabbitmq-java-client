@@ -31,11 +31,15 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
-
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MessageProperties;
 
 public class ProducerMain implements Runnable {
     public static final int SUMMARY_EVERY_MS = 1000;
@@ -147,7 +151,7 @@ public class ProducerMain implements Runnable {
 
         String queueName = "test queue";
         _channel.queueDeclare(queueName, true);
-
+        
         if (shouldCommit()) {
             _channel.txSelect();
         }

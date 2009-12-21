@@ -31,7 +31,11 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.RpcClient;
 
 public class HelloClient {
     public static void main(String[] args) {

@@ -31,15 +31,35 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
-import com.rabbitmq.client.AMQP.Queue;
-import com.rabbitmq.client.QueueingConsumer.Delivery;
-import org.apache.commons.cli.*;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Address;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.AMQP.Queue;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
 
 
 public class MulticastMain {
@@ -50,35 +70,35 @@ public class MulticastMain {
         try {
             CommandLine cmd = parser.parse(options, args);
 
-            String hostName = strArg(cmd, 'h', "localhost");
-            int portNumber = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
-            String exchangeType = strArg(cmd, 't', "direct");
-            String exchangeName = strArg(cmd, 'e', exchangeType);
+            String hostName      = strArg(cmd, 'h', "localhost");
+            int portNumber       = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
+            String exchangeType  = strArg(cmd, 't', "direct");
+            String exchangeName  = strArg(cmd, 'e', exchangeType);
             int samplingInterval = intArg(cmd, 'i', 1);
-            int rateLimit = intArg(cmd, 'r', 0);
-            int producerCount = intArg(cmd, 'x', 1);
-            int consumerCount = intArg(cmd, 'y', 1);
-            int producerTxSize = intArg(cmd, 'm', 0);
-            int consumerTxSize = intArg(cmd, 'n', 0);
-            boolean autoAck = cmd.hasOption('a');
-            int prefetchCount = intArg(cmd, 'q', 0);
-            int minMsgSize = intArg(cmd, 's', 0);
-            int maxRedirects = intArg(cmd, 'd', 0);
-            int timeLimit = intArg(cmd, 'z', 0);
-            List flags = lstArg(cmd, 'f');
+            int rateLimit        = intArg(cmd, 'r', 0);
+            int producerCount    = intArg(cmd, 'x', 1);
+            int consumerCount    = intArg(cmd, 'y', 1);
+            int producerTxSize   = intArg(cmd, 'm', 0);
+            int consumerTxSize   = intArg(cmd, 'n', 0);
+            boolean autoAck      = cmd.hasOption('a');
+            int prefetchCount    = intArg(cmd, 'q', 0);
+            int minMsgSize       = intArg(cmd, 's', 0);
+            int maxRedirects     = intArg(cmd, 'd', 0);
+            int timeLimit        = intArg(cmd, 'z', 0);
+            List flags           = lstArg(cmd, 'f');
 
             //setup
             String id = UUID.randomUUID().toString();
             Stats stats = new Stats(1000L * samplingInterval);
-            Address[] addresses = new Address[]{
-                    new Address(hostName, portNumber)
+            Address[] addresses = new Address[] {
+                new Address(hostName, portNumber)
             };
-            ConnectionFactory connectionFactory = new ConnectionFactory();
+            ConnectionFactory params = new ConnectionFactory();
             Thread[] consumerThreads = new Thread[consumerCount];
             Connection[] consumerConnections = new Connection[consumerCount];
             for (int i = 0; i < consumerCount; i++) {
                 System.out.println("starting consumer #" + i);
-                Connection conn = connectionFactory.newConnection(addresses, maxRedirects);
+                Connection conn = params.newConnection(addresses, maxRedirects);
                 consumerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (consumerTxSize > 0) channel.txSelect();
@@ -89,10 +109,10 @@ public class MulticastMain {
                 if (prefetchCount > 0) channel.basicQos(prefetchCount);
                 channel.basicConsume(queueName, autoAck, consumer);
                 channel.queueBind(queueName, exchangeName, id);
-                Thread t =
-                        new Thread(new Consumer(consumer, id,
-                                consumerTxSize, autoAck,
-                                stats, timeLimit));
+                Thread t = 
+                    new Thread(new Consumer(consumer, id,
+                                            consumerTxSize, autoAck,
+                                            stats, timeLimit));
                 consumerThreads[i] = t;
                 t.start();
             }
@@ -100,16 +120,16 @@ public class MulticastMain {
             Connection[] producerConnections = new Connection[producerCount];
             for (int i = 0; i < producerCount; i++) {
                 System.out.println("starting producer #" + i);
-                Connection conn = connectionFactory.newConnection(addresses, maxRedirects);
+                Connection conn = params.newConnection(addresses, maxRedirects);
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
-                Thread t =
-                        new Thread(new Producer(channel, exchangeName, id,
-                                flags, producerTxSize,
-                                1000L * samplingInterval,
-                                rateLimit, minMsgSize, timeLimit));
+                Thread t = 
+                    new Thread(new Producer(channel, exchangeName, id,
+                                            flags, producerTxSize,
+                                            1000L * samplingInterval,
+                                            rateLimit, minMsgSize, timeLimit));
                 producerThreads[i] = t;
                 t.start();
             }
@@ -125,7 +145,7 @@ public class MulticastMain {
             }
 
         }
-        catch (ParseException exp) {
+        catch( ParseException exp ) {
             System.err.println("Parsing failed. Reason: " + exp.getMessage());
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("<program>", options);
@@ -138,22 +158,22 @@ public class MulticastMain {
 
     private static Options getOptions() {
         Options options = new Options();
-        options.addOption(new Option("h", "host", true, "broker host"));
-        options.addOption(new Option("p", "port", true, "broker port"));
-        options.addOption(new Option("t", "type", true, "exchange type"));
-        options.addOption(new Option("e", "exchange", true, "exchange name"));
-        options.addOption(new Option("i", "interval", true, "sampling interval"));
-        options.addOption(new Option("r", "rate", true, "rate limit"));
+        options.addOption(new Option("h", "host",      true, "broker host"));
+        options.addOption(new Option("p", "port",      true, "broker port"));
+        options.addOption(new Option("t", "type",      true, "exchange type"));
+        options.addOption(new Option("e", "exchange",  true, "exchange name"));
+        options.addOption(new Option("i", "interval",  true, "sampling interval"));
+        options.addOption(new Option("r", "rate",      true, "rate limit"));
         options.addOption(new Option("x", "producers", true, "producer count"));
         options.addOption(new Option("y", "consumers", true, "consumer count"));
-        options.addOption(new Option("m", "ptxsize", true, "producer tx size"));
-        options.addOption(new Option("n", "ctxsize", true, "consumer tx size"));
-        options.addOption(new Option("a", "autoack", false, "auto ack"));
-        options.addOption(new Option("q", "qos", true, "qos prefetch count"));
-        options.addOption(new Option("s", "size", true, "message size"));
+        options.addOption(new Option("m", "ptxsize",   true, "producer tx size"));
+        options.addOption(new Option("n", "ctxsize",   true, "consumer tx size"));
+        options.addOption(new Option("a", "autoack",   false,"auto ack"));
+        options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
+        options.addOption(new Option("s", "size",      true, "message size"));
         options.addOption(new Option("d", "redirects", true, "max redirects"));
-        options.addOption(new Option("z", "time", true, "time limit"));
-        Option flag = new Option("f", "flag", true, "message flag");
+        options.addOption(new Option("z", "time",      true, "time limit"));
+        Option flag =     new Option("f", "flag",      true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(flag);
         return options;
@@ -170,7 +190,7 @@ public class MulticastMain {
     private static List lstArg(CommandLine cmd, char opt) {
         String[] vals = cmd.getOptionValues('f');
         if (vals == null) {
-            vals = new String[]{};
+            vals = new String[] {};
         }
         return Arrays.asList(vals);
     }
@@ -178,38 +198,38 @@ public class MulticastMain {
     public static class Producer implements Runnable {
 
         private Channel channel;
-        private String exchangeName;
-        private String id;
+        private String  exchangeName;
+        private String  id;
         private boolean mandatory;
         private boolean immediate;
         private boolean persistent;
-        private int txSize;
-        private long interval;
-        private int rateLimit;
-        private long timeLimit;
+        private int     txSize;
+        private long    interval;
+        private int     rateLimit;
+        private long    timeLimit;
 
-        private byte[] message;
+        private byte[]  message;
 
-        private long startTime;
-        private long lastStatsTime;
-        private int msgCount;
+        private long    startTime;
+        private long    lastStatsTime;
+        private int     msgCount;
 
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
                         long interval, int rateLimit, int minMsgSize, int timeLimit)
-                throws IOException {
+            throws IOException {
 
-            this.channel = channel;
+            this.channel      = channel;
             this.exchangeName = exchangeName;
-            this.id = id;
-            this.mandatory = flags.contains("mandatory");
-            this.immediate = flags.contains("immediate");
-            this.persistent = flags.contains("persistent");
-            this.txSize = txSize;
-            this.interval = interval;
-            this.rateLimit = rateLimit;
-            this.timeLimit = 1000L * timeLimit;
-            this.message = new byte[minMsgSize];
+            this.id           = id;
+            this.mandatory    = flags.contains("mandatory");
+            this.immediate    = flags.contains("immediate");
+            this.persistent   = flags.contains("persistent");
+            this.txSize       = txSize;
+            this.interval     = interval;
+            this.rateLimit    = rateLimit;
+            this.timeLimit    = 1000L * timeLimit;
+            this.message      = new byte[minMsgSize];
         }
 
         public void run() {
@@ -234,26 +254,26 @@ public class MulticastMain {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException (e);
             }
 
             System.out.println("sending rate avg: " +
-                    (totalMsgCount * 1000 / (now - startTime)) +
-                    " msg/s");
+                               (totalMsgCount * 1000 / (now - startTime)) +
+                               " msg/s");
 
         }
 
         private void publish(byte[] msg)
-                throws IOException {
+            throws IOException {
 
             channel.basicPublish(exchangeName, id,
-                    mandatory, immediate,
-                    persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
-                    msg);
+                                 mandatory, immediate,
+                                 persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
+                                 msg);
         }
 
         private void delay(long now)
-                throws InterruptedException {
+            throws InterruptedException {
 
             long elapsed = now - lastStatsTime;
             //example: rateLimit is 5000 msg/s,
@@ -261,21 +281,21 @@ public class MulticastMain {
             //the 200 msgs we have actually sent should have taken us
             //200 * 1000 / 5000 = 40 ms. So we pause for 40ms - 10ms
             long pause = rateLimit == 0 ?
-                    0 : (msgCount * 1000L / rateLimit - elapsed);
+                0 : (msgCount * 1000L / rateLimit - elapsed);
             if (pause > 0) {
                 Thread.sleep(pause);
             }
             if (elapsed > interval) {
                 System.out.println("sending rate: " +
-                        (msgCount * 1000 / elapsed) +
-                        " msg/s");
+                                   (msgCount * 1000 / elapsed) +
+                                   " msg/s");
                 msgCount = 0;
                 lastStatsTime = now;
             }
         }
 
         private byte[] createMessage(int sequenceNumber)
-                throws IOException {
+            throws IOException {
 
             ByteArrayOutputStream acc = new ByteArrayOutputStream();
             DataOutputStream d = new DataOutputStream(acc);
@@ -298,21 +318,21 @@ public class MulticastMain {
     public static class Consumer implements Runnable {
 
         private QueueingConsumer q;
-        private String id;
-        private int txSize;
-        private boolean autoAck;
-        private Stats stats;
-        private long timeLimit;
+        private String           id;
+        private int              txSize;
+        private boolean          autoAck;
+        private Stats            stats;
+        private long             timeLimit;
 
         public Consumer(QueueingConsumer q, String id,
                         int txSize, boolean autoAck,
                         Stats stats, int timeLimit) {
 
-            this.q = q;
-            this.id = id;
-            this.txSize = txSize;
-            this.autoAck = autoAck;
-            this.stats = stats;
+            this.q         = q;
+            this.id        = id;
+            this.txSize    = txSize;
+            this.autoAck   = autoAck;
+            this.stats     = stats;
             this.timeLimit = 1000L * timeLimit;
         }
 
@@ -341,7 +361,7 @@ public class MulticastMain {
                     int msgSeq = d.readInt();
                     long msgNano = d.readLong();
                     long nano = System.nanoTime();
-
+                    
                     Envelope envelope = delivery.getEnvelope();
 
                     if (!autoAck) {
@@ -360,7 +380,7 @@ public class MulticastMain {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException (e);
             } catch (ShutdownSignalException e) {
                 throw new RuntimeException(e);
             }
@@ -368,8 +388,8 @@ public class MulticastMain {
             long elapsed = now - startTime;
             if (elapsed > 0) {
                 System.out.println("recving rate avg: " +
-                        (totalMsgCount * 1000 / elapsed) +
-                        " msg/s");
+                                   (totalMsgCount * 1000 / elapsed) +
+                                   " msg/s");
             }
         }
 
@@ -377,14 +397,14 @@ public class MulticastMain {
 
     public static class Stats {
 
-        private long interval;
+        private long    interval;
 
-        private long lastStatsTime;
-        private int msgCount;
-        private int latencyCount;
-        private long minLatency;
-        private long maxLatency;
-        private long cumulativeLatency;
+        private long    lastStatsTime;
+        private int     msgCount;
+        private int     latencyCount;
+        private long    minLatency;
+        private long    maxLatency;
+        private long    cumulativeLatency;
 
         public Stats(long interval) {
             this.interval = interval;
@@ -392,17 +412,17 @@ public class MulticastMain {
         }
 
         private void reset(long t) {
-            lastStatsTime = t;
-            msgCount = 0;
-            latencyCount = 0;
-            minLatency = Long.MAX_VALUE;
-            maxLatency = Long.MIN_VALUE;
+            lastStatsTime     = t;
+            msgCount          = 0;
+            latencyCount      = 0;
+            minLatency        = Long.MAX_VALUE;
+            maxLatency        = Long.MIN_VALUE;
             cumulativeLatency = 0L;
         }
 
         public synchronized void collectStats(long now, long latency) {
             msgCount++;
-
+            
             if (latency > 0) {
                 minLatency = Math.min(minLatency, latency);
                 maxLatency = Math.max(maxLatency, latency);
@@ -413,19 +433,19 @@ public class MulticastMain {
             long elapsed = now - lastStatsTime;
             if (elapsed > interval) {
                 System.out.println("recving rate: " +
-                        (1000L * msgCount / elapsed) +
-                        " msg/s" +
-                        (latencyCount > 0 ?
-                                ", min/avg/max latency: " +
-                                        minLatency / 1000L + "/" +
-                                        cumulativeLatency / (1000L * latencyCount) + "/" +
-                                        maxLatency / 1000L + " microseconds" :
-                                ""));
+                                   (1000L * msgCount / elapsed) +
+                                   " msg/s" +
+                                   (latencyCount > 0 ?
+                                    ", min/avg/max latency: " +
+                                    minLatency/1000L + "/" + 
+                                    cumulativeLatency / (1000L * latencyCount) + "/" +
+                                    maxLatency/1000L + " microseconds" :
+                                    ""));
                 reset(now);
             }
-
+            
         }
-
+        
     }
 
 }

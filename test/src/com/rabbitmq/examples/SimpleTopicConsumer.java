@@ -31,20 +31,25 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.QueueingConsumer;
 
 public class SimpleTopicConsumer {
     public static void main(String[] args) {
         try {
             if (args.length < 1 || args.length > 5) {
                 System.err.print("Usage: SimpleTopicConsumer brokerhostname [brokerport\n" +
-                        "                                           [topicpattern\n" +
-                        "                                            [exchange\n" +
-                        "                                             [queue]]]]\n" +
-                        "where\n" +
-                        " - topicpattern defaults to \"#\",\n" +
-                        " - exchange to \"amq.topic\", and\n" +
-                        " - queue to a private, autodelete queue\n");
+                                 "                                           [topicpattern\n" +
+                                 "                                            [exchange\n" +
+                                 "                                             [queue]]]]\n" +
+                                 "where\n" +
+                                 " - topicpattern defaults to \"#\",\n" +
+                                 " - exchange to \"amq.topic\", and\n" +
+                                 " - queue to a private, autodelete queue\n");
                 System.exit(1);
             }
 
@@ -73,7 +78,7 @@ public class SimpleTopicConsumer {
             channel.queueBind(queue, exchange, topicPattern);
 
             System.out.println("Listening to exchange " + exchange + ", pattern " + topicPattern +
-                    " from queue " + queue);
+                               " from queue " + queue);
 
             QueueingConsumer consumer = new QueueingConsumer(channel);
             channel.basicConsume(queue, consumer);

@@ -35,74 +35,64 @@ import java.util.Map;
 
 
 public interface StreamProperties {
-
+    
     /**
      * Retrieve the value in the contentType field.
-     *
      * @return contentType field, or null if the field has not been set.
      */
     public abstract String getContentType();
-
+    
     /**
      * Retrieve the value in the contentEncoding field.
-     *
      * @return contentEncoding field, or null if the field has not been set.
      */
     public abstract String getContentEncoding();
-
+    
     /**
      * Retrieve the table in the headers field as a map of fields names and
-     * values.
-     *
+     * values. 
      * @return headers table, or null if the headers field has not been set.
      */
     public abstract Map<String, Object> getHeaders();
-
+    
     /**
      * Retrieve the value in the priority field.
-     *
      * @return priority field, or null if the field has not been set.
      */
     public abstract Integer getPriority();
 
     /**
      * Retrieve the value in the timestamp field.
-     *
      * @return timestamp field, or null if the field has not been set.
      */
     public abstract Date getTimestamp();
-
+ 
     /**
      * Set the contentType field, or null indicating the field is not set
-     *
      * @param contentType the value to set the field to
      */
     public abstract void setContentType(String contentType);
-
+    
     /**
      * Set the contentEncoding field, or null indicating the field is not set
-     *
      * @param contentEncoding the value to set the field to
      */
     public abstract void setContentEncoding(String contentEncoding);
-
+    
     /**
      * Set the headers table, or null indicating the field is not set
-     *
      * @param headers a map of table field names and values
      */
     public abstract void setHeaders(Map<String, Object> headers);
-
+    
     /**
      * Set the priority field, or null indicating the field is not set
-     *
      * @param priority the value to set the field to
      */
     public abstract void setPriority(Integer priority);
-
+    
     /**
      * Set the timestamp field, or null indicating the field is not set
-     *
      * @param timestamp the value to set the field to
      */
     public abstract void setTimestamp(Date timestamp);

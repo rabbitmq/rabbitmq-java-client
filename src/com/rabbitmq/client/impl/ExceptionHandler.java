@@ -42,8 +42,7 @@ public interface ExceptionHandler {
      * Perform any required exception processing for the situation
      * when the driver thread for the connection has an exception
      * signalled to it that it can't otherwise deal with.
-     *
-     * @param conn      the Connection that caught the exception
+     * @param conn the Connection that caught the exception
      * @param exception the exception caught in the driver thread
      */
     void handleUnexpectedConnectionDriverException(Connection conn, Throwable exception);
@@ -53,8 +52,7 @@ public interface ExceptionHandler {
      * when the driver thread for the connection has called a
      * ReturnListener's handleBasicReturn method, and that method has
      * thrown an exception.
-     *
-     * @param channel   the ChannelN that held the ReturnListener
+     * @param channel the ChannelN that held the ReturnListener
      * @param exception the exception thrown by ReturnListener.handleBasicReturn
      */
     void handleReturnListenerException(Channel channel, Throwable exception);
@@ -63,12 +61,11 @@ public interface ExceptionHandler {
      * Perform any required exception processing for the situation
      * when the driver thread for the connection has called a method
      * on a Consumer, and that method has thrown an exception.
-     *
-     * @param channel     the ChannelN that held the Consumer
-     * @param exception   the exception thrown by the Consumer
-     * @param consumer    the Consumer that caused the fault
+     * @param channel the ChannelN that held the Consumer
+     * @param exception the exception thrown by the Consumer
+     * @param consumer the Consumer that caused the fault
      * @param consumerTag the Consumer's consumerTag
-     * @param methodName  the name of the method on the Consumer that threw the exception
+     * @param methodName the name of the method on the Consumer that threw the exception
      */
     void handleConsumerException(Channel channel,
                                  Throwable exception,

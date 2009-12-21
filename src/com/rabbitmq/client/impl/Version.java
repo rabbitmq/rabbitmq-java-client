@@ -52,7 +52,6 @@ public class Version {
 
     /**
      * Retrieve the major version number.
-     *
      * @return the major version number
      */
     public int getMajor() {
@@ -61,7 +60,6 @@ public class Version {
 
     /**
      * Retrieve the minor version number.
-     *
      * @return the minor version number
      */
     public int getMinor() {
@@ -75,31 +73,28 @@ public class Version {
      * @return a <code>String</code> representation of the version
      * @see Object#toString()
      */
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return "" + getMajor() + "-" + getMinor();
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof Version) {
-            Version other = (Version) o;
+    @Override public boolean equals(Object o) {
+        if(o instanceof Version) {
+            Version other = (Version)o;
             return
-                    this.getMajor() == other.getMajor() &&
-                            this.getMinor() == other.getMinor();
+                this.getMajor() == other.getMajor() &&
+                this.getMinor() == other.getMinor();
         } else {
             return false;
         }
     }
 
-    @Override
-    public int hashCode() {
-        return 31 * getMajor() + getMinor();
+    @Override public int hashCode() {
+        return 31 * getMajor()+ getMinor();
     }
 
     /**
      * Adjust a version for spec weirdness.
-     * <p/>
+     *
      * The AMQP 0-8 spec confusingly defines the version as 8-0. This
      * method maps the latter to the former.
      *
@@ -107,7 +102,7 @@ public class Version {
      */
     public Version adjust() {
         return (getMajor() == 8 && getMinor() == 0) ?
-                new Version(0, 8) : this;
+            new Version(0, 8) : this;
     }
 
     /**

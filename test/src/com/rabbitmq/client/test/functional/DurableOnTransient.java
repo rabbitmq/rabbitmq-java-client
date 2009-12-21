@@ -31,26 +31,29 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.BrokerTestCase;
-
 import java.io.IOException;
 
-public class DurableOnTransient extends BrokerTestCase {
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.MessageProperties;
+
+public class DurableOnTransient extends BrokerTestCase
+{
     protected static final String Q = "DurableQueue";
     protected static final String X = "TransientExchange";
 
     private GetResponse basicGet()
-            throws IOException {
+        throws IOException
+    {
         return channel.basicGet(Q, true);
     }
 
     private void basicPublish()
-            throws IOException {
+        throws IOException
+    {
         channel.basicPublish(X, "",
-                MessageProperties.PERSISTENT_TEXT_PLAIN,
-                "persistent message".getBytes());
+                             MessageProperties.PERSISTENT_TEXT_PLAIN,
+                             "persistent message".getBytes());
     }
 
     protected void createResources() throws IOException {
@@ -66,7 +69,8 @@ public class DurableOnTransient extends BrokerTestCase {
     }
 
     public void testBind()
-            throws IOException {
+        throws IOException
+    {
         try {
             channel.queueBind(Q, X, "");
             fail("Expected exception from queueBind");

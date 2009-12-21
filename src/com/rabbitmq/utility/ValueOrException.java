@@ -34,13 +34,12 @@ public class ValueOrException<V, E extends Throwable> {
     private final boolean _useValue;
     private final V _value;
     private final E _exception;
-
+    
     /**
      * dual-purpose private constructor: one will be null, and the flag tells which to use
-     *
-     * @param value     the value to wrap, if applicable
+     * @param value the value to wrap, if applicable
      * @param exception the exception to wrap, if applicable
-     * @param useValue  true if we should use the value, rather than the exception
+     * @param useValue true if we should use the value, rather than the exception
      */
     private ValueOrException(V value, E exception, boolean useValue) {
         _useValue = useValue;
@@ -55,7 +54,6 @@ public class ValueOrException<V, E extends Throwable> {
 
     /**
      * Factory method for values
-     *
      * @param value the value to wrap as a ValueOrException
      * @return the wrapped value
      */
@@ -65,17 +63,14 @@ public class ValueOrException<V, E extends Throwable> {
 
     /**
      * Factory method for exceptions
-     *
      * @param exception the exception to wrap as a ValueOrException
      * @return the wrapped exception
      */
     public static <V, E extends Throwable> ValueOrException<V, E> makeException(E exception) {
         return new ValueOrException<V, E>(null, exception, false);
     }
-
-    /**
-     * Retrieve value or throw exception
-     *
+    
+    /** Retrieve value or throw exception
      * @return the wrapped value, if it's a value
      * @throws E the wrapped exception, if it's an exception
      */

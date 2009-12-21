@@ -31,10 +31,20 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
-import com.rabbitmq.utility.BlockingCell;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 
-import java.io.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.utility.BlockingCell;
 
 public class ConsumerMain implements Runnable {
     public static final int SUMMARY_EVERY_MS = 1000;
@@ -115,23 +125,23 @@ public class ConsumerMain implements Runnable {
 
         LatencyExperimentConsumer callback = new LatencyExperimentConsumer(channel, queueName);
         callback._noAck = this._noAck;
-
+        
         channel.basicConsume(queueName, _noAck, callback);
         channel.basicConsume(completionQueue, true, "completion", callback);
         callback.report(_writeStats);
-
+       
         System.out.println("Deleting test queue.");
         channel.queueDelete(queueName);
 
         System.out.println("Deleting completion queue.");
         channel.queueDelete(completionQueue);
-
+        
         System.out.println("Closing the channel.");
         channel.close();
-
+        
         System.out.println("Closing the connection.");
         _connection.close();
-
+        
         System.out.println("Leaving ConsumerMain.run().");
     }
 
@@ -223,23 +233,23 @@ public class ConsumerMain implements Runnable {
             }
         }
 
-        @Override
-        public void handleShutdownSignal(String consumerTag,
-                                         ShutdownSignalException sig) {
+        @Override public void handleShutdownSignal(String consumerTag,
+                                                   ShutdownSignalException sig)
+        {
             System.out.println("Shutdown signal terminating consumer " + consumerTag +
-                    " with signal " + sig);
+                               " with signal " + sig);
             if (sig.getCause() != null) {
                 sig.printStackTrace();
             }
             _blocker.setIfUnset(sig);
         }
 
-        @Override
-        public void handleDelivery(String consumerTag,
-                                   Envelope envelope,
-                                   AMQP.BasicProperties properties,
-                                   byte[] body)
-                throws IOException {
+        @Override public void handleDelivery(String consumerTag,
+                                             Envelope envelope,
+                                             AMQP.BasicProperties properties,
+                                             byte[] body)
+            throws IOException
+        {
             if ("completion".equals(consumerTag)) {
                 System.out.println("Got completion message.");
                 finish();

@@ -38,21 +38,18 @@ package com.rabbitmq.client;
 public interface ContentHeader extends Cloneable {
     /**
      * Retrieve the class ID (see the spec for a list of allowable IDs).
-     *
      * @return class ID of this ContentHeader. Properly an unsigned short, i.e. only the lowest 16 bits are significant
      */
     public abstract int getClassId();
 
     /**
      * Retrieve the class name, eg "basic" (see the spec for a list of these).
-     *
      * @return class name of this ContentHeader
      */
     public abstract String getClassName();
 
     /**
      * A debugging utility - enable properties to be appended to a string buffer for use as trace messages.
-     *
      * @param buffer a place to append the properties as a string
      */
     public void appendPropertyDebugStringTo(StringBuffer buffer);

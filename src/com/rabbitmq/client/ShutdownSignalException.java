@@ -39,9 +39,7 @@ package com.rabbitmq.client;
  */
 
 public class ShutdownSignalException extends RuntimeException {
-    /**
-     * True if the connection is shut down, or false if this signal refers to a channel
-     */
+    /** True if the connection is shut down, or false if this signal refers to a channel */
     private final boolean _hardError;
 
     /**
@@ -51,31 +49,27 @@ public class ShutdownSignalException extends RuntimeException {
      */
     private final boolean _initiatedByApplication;
 
-    /**
-     * Possible explanation
-     */
+    /** Possible explanation */
     private final Object _reason;
 
-    /**
-     * Either Channel or Connection instance, depending on _hardError
-     */
+    /** Either Channel or Connection instance, depending on _hardError */
     private final Object _ref;
 
     /**
      * Construct a ShutdownSignalException from the arguments.
-     *
-     * @param hardError              the relevant hard error
+     * @param hardError the relevant hard error
      * @param initiatedByApplication if the shutdown was client-initiated
-     * @param reason                 Object describing the origin of the exception
-     * @param ref                    Reference to Connection or Channel that fired the signal
+     * @param reason Object describing the origin of the exception
+     * @param ref Reference to Connection or Channel that fired the signal
      */
     public ShutdownSignalException(boolean hardError,
                                    boolean initiatedByApplication,
-                                   Object reason, Object ref) {
+                                   Object reason, Object ref)
+    {
         super((initiatedByApplication
-                ? ("clean " + (hardError ? "connection" : "channel") + " shutdown")
-                : ((hardError ? "connection" : "channel") + " error"))
-                + "; reason: " + reason);
+               ? ("clean " + (hardError ? "connection" : "channel") + " shutdown")
+               : ((hardError ? "connection" : "channel") + " error"))
+              + "; reason: " + reason);
         this._hardError = hardError;
         this._initiatedByApplication = initiatedByApplication;
         this._reason = reason;
@@ -83,35 +77,20 @@ public class ShutdownSignalException extends RuntimeException {
         this._ref = ref;
     }
 
-    /**
-     * @return true if this signals a connection error, or false if a channel error
-     */
-    public boolean isHardError() {
-        return _hardError;
-    }
+    /** @return true if this signals a connection error, or false if a channel error */
+    public boolean isHardError() { return _hardError; }
 
-    /**
-     * @return true if this exception was caused by explicit application
-     *         action; false if it originated with the broker or as a result
-     *         of detectable non-deliberate application failure
+    /** @return true if this exception was caused by explicit application
+     * action; false if it originated with the broker or as a result
+     * of detectable non-deliberate application failure
      */
-    public boolean isInitiatedByApplication() {
-        return _initiatedByApplication;
-    }
+    public boolean isInitiatedByApplication() { return _initiatedByApplication; }
 
-    /**
-     * @return the reason object, if any
-     */
-    public Object getReason() {
-        return _reason;
-    }
+    /** @return the reason object, if any */
+    public Object getReason() { return _reason; }
 
-    /**
-     * @return Reference to Connection or Channel object that fired the signal *
-     */
-    public Object getReference() {
-        return _ref;
-    }
+    /** @return Reference to Connection or Channel object that fired the signal **/
+    public Object getReference() { return _ref; }
 
 }
 

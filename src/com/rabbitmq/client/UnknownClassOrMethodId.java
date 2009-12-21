@@ -41,12 +41,10 @@ public class UnknownClassOrMethodId extends IOException {
     private static final long serialVersionUID = 1L;
     public final int classId;
     public final int methodId;
-
     public UnknownClassOrMethodId(int classId, int methodId) {
         this.classId = classId;
         this.methodId = methodId;
     }
-
     public String toString() {
         if (this.methodId == -1) {
             return super.toString() + "<" + classId + ">";

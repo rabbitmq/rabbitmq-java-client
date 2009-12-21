@@ -31,17 +31,18 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-public class Routing extends BrokerTestCase {
+public class Routing extends BrokerTestCase
+{
 
     protected final String E = "MRDQ";
     protected final String Q1 = "foo";
@@ -60,19 +61,22 @@ public class Routing extends BrokerTestCase {
     }
 
     private void bind(String queue, String routingKey)
-            throws IOException {
+        throws IOException
+    {
         channel.queueBind(queue, E, routingKey);
     }
 
     private void check(String routingKey, boolean expectQ1, boolean expectQ2)
-            throws IOException {
+        throws IOException
+    {
         channel.basicPublish(E, routingKey, null, "mrdq".getBytes());
         checkGet(Q1, expectQ1);
         checkGet(Q2, expectQ2);
     }
 
     private void checkGet(String queue, boolean messageExpected)
-            throws IOException {
+        throws IOException
+    {
         GetResponse r = channel.basicGet(queue, true);
         if (messageExpected) {
             assertNotNull(r);
@@ -87,7 +91,8 @@ public class Routing extends BrokerTestCase {
      * fields of queue.bind.
      */
     public void testMRDQRouting()
-            throws IOException {
+        throws IOException
+    {
         bind(Q1, "baz");        //Q1, "baz"
         bind(Q1, "");           //Q1, ""
         bind("", "baz");        //Q2, "baz"
@@ -104,7 +109,8 @@ public class Routing extends BrokerTestCase {
      * bindings.
      */
     public void testDoubleBinding()
-            throws IOException {
+        throws IOException
+    {
         channel.queueBind(Q1, "amq.topic", "x.#");
         channel.queueBind(Q1, "amq.topic", "#.x");
         channel.basicPublish("amq.topic", "x.y", null, "x.y".getBytes());
@@ -130,7 +136,7 @@ public class Routing extends BrokerTestCase {
         }
 
         channel.basicPublish("amq.fanout", System.nanoTime() + "",
-                null, "fanout".getBytes());
+                             null, "fanout".getBytes());
 
         for (String q : queues) {
             checkGet(q, true);

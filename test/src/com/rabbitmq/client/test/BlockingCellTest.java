@@ -31,22 +31,26 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.utility.BlockingCell;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import com.rabbitmq.utility.BlockingCell;
+
 public class BlockingCellTest
-        extends TestCase {
-    public static TestSuite suite() {
+    extends TestCase
+{
+    public static TestSuite suite()
+    {
         TestSuite suite = new TestSuite("blockingCells");
         suite.addTestSuite(BlockingCellTest.class);
         return suite;
     }
 
-    public void testDoubleSet() throws InterruptedException {
+    public void testDoubleSet() throws InterruptedException
+    {
         BlockingCell<String> cell = new BlockingCell<String>();
         cell.set("one");
         assertEquals("one", cell.get());
@@ -59,7 +63,8 @@ public class BlockingCellTest
     }
 
     public void testMultiGet()
-            throws InterruptedException {
+        throws InterruptedException
+    {
         final BlockingCell<String> cell = new BlockingCell<String>();
         cell.set("one");
         assertEquals("one", cell.get());
@@ -67,32 +72,34 @@ public class BlockingCellTest
     }
 
     public void testNullSet()
-            throws InterruptedException {
+        throws InterruptedException
+    {
         BlockingCell<Integer> c = new BlockingCell<Integer>();
         c.set(null);
         assertNull(c.get());
     }
 
     public void testEarlySet()
-            throws InterruptedException {
+        throws InterruptedException
+    {
         final BlockingCell<String> cell = new BlockingCell<String>();
         final AtomicReference<String> holder = new AtomicReference<String>();
 
         Thread getterThread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    Thread.sleep(300);
-                    holder.set(cell.get());
-                } catch (InterruptedException ie) {
-                    // no special handling required
+                public void run() {
+                    try {
+                        Thread.sleep(300);
+                        holder.set(cell.get());
+                    } catch (InterruptedException ie) {
+                        // no special handling required
+                    }
                 }
-            }
-        });
+            });
         Thread setterThread = new Thread(new Runnable() {
-            public void run() {
-                cell.set("hello");
-            }
-        });
+                public void run() {
+                    cell.set("hello");
+                }
+            });
 
         getterThread.start();
         setterThread.start();
@@ -104,29 +111,30 @@ public class BlockingCellTest
     }
 
     public void testLateSet()
-            throws InterruptedException {
+        throws InterruptedException
+    {
         final BlockingCell<String> cell = new BlockingCell<String>();
         final AtomicReference<String> holder = new AtomicReference<String>();
 
         Thread getterThread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    holder.set(cell.get());
-                } catch (InterruptedException ie) {
-                    // no special handling required
+                public void run() {
+                    try {
+                        holder.set(cell.get());
+                    } catch (InterruptedException ie) {
+                        // no special handling required
+                    }
                 }
-            }
-        });
+            });
         Thread setterThread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    Thread.sleep(300);
-                    cell.set("hello");
-                } catch (InterruptedException ie) {
-                    // no special handling required
+                public void run() {
+                    try {
+                        Thread.sleep(300);
+                        cell.set("hello");
+                    } catch (InterruptedException ie) {
+                        // no special handling required
+                    }
                 }
-            }
-        });
+            });
 
         getterThread.start();
         setterThread.start();
@@ -136,15 +144,14 @@ public class BlockingCellTest
 
         assertEquals("hello", holder.get());
     }
-
+    
     public void testGetWaitsUntilSet() throws InterruptedException {
         final BlockingCell<String> cell = new BlockingCell<String>();
         final String value = "foo";
         final AtomicReference<Object> valueHolder = new AtomicReference<Object>();
         final AtomicBoolean doneHolder = new AtomicBoolean(false);
         Thread getterThread = new Thread() {
-            @Override
-            public void run() {
+            @Override public void run() {
                 try {
                     valueHolder.set(cell.get());
                 } catch (InterruptedException ex) {

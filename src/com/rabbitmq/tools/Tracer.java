@@ -31,19 +31,19 @@
 
 package com.rabbitmq.tools;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.impl.AMQCommand;
-import com.rabbitmq.client.impl.AMQContentHeader;
-import com.rabbitmq.client.impl.AMQImpl;
-import com.rabbitmq.client.impl.Frame;
-import com.rabbitmq.utility.BlockingCell;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.impl.AMQCommand;
+import com.rabbitmq.client.impl.AMQContentHeader;
+import com.rabbitmq.client.impl.AMQImpl;
+import com.rabbitmq.client.impl.Frame;
+import com.rabbitmq.utility.BlockingCell;
 
 /**
  * AMQP Protocol Analyzer program. Listens on a configurable port and when a
@@ -53,17 +53,17 @@ import java.net.Socket;
  */
 public class Tracer implements Runnable {
     public static final boolean WITHHOLD_INBOUND_HEARTBEATS =
-            new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_INBOUND_HEARTBEATS"))
-                    .booleanValue();
+        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_INBOUND_HEARTBEATS"))
+        .booleanValue();
     public static final boolean WITHHOLD_OUTBOUND_HEARTBEATS =
-            new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_OUTBOUND_HEARTBEATS"))
-                    .booleanValue();
+        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_OUTBOUND_HEARTBEATS"))
+        .booleanValue();
     public static final boolean NO_ASSEMBLE_FRAMES =
-            new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES"))
-                    .booleanValue();
+        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES"))
+        .booleanValue();
     public static final boolean NO_DECODE_FRAMES =
-            new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"))
-                    .booleanValue();
+        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"))
+        .booleanValue();
 
     public static void main(String[] args) {
         int listenPort = args.length > 0 ? Integer.parseInt(args[0]) : 5673;
@@ -73,13 +73,13 @@ public class Tracer implements Runnable {
         System.out.println("Usage: Tracer [<listenport> [<connecthost> [<connectport>]]]");
         System.out.println("Invoked as: Tracer " + listenPort + " " + connectHost + " " + connectPort);
         System.out.println("com.rabbitmq.tools.Tracer.WITHHOLD_INBOUND_HEARTBEATS = " +
-                com.rabbitmq.tools.Tracer.WITHHOLD_INBOUND_HEARTBEATS);
+                           com.rabbitmq.tools.Tracer.WITHHOLD_INBOUND_HEARTBEATS);
         System.out.println("com.rabbitmq.tools.Tracer.WITHHOLD_OUTBOUND_HEARTBEATS = " +
-                com.rabbitmq.tools.Tracer.WITHHOLD_OUTBOUND_HEARTBEATS);
+                           com.rabbitmq.tools.Tracer.WITHHOLD_OUTBOUND_HEARTBEATS);
         System.out.println("com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES = " +
-                com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES);
+                           com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES);
         System.out.println("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES = " +
-                com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES);
+                           com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES);
 
         try {
             ServerSocket server = new ServerSocket(listenPort);
@@ -178,24 +178,25 @@ public class Tracer implements Runnable {
         }
 
         public void reportFrame(Frame f)
-                throws IOException {
+            throws IOException
+        {
             switch (f.type) {
-                case AMQP.FRAME_METHOD: {
-                    report(f.channel, AMQImpl.readMethodFrom(f.getInputStream()));
-                    break;
-                }
-                case AMQP.FRAME_HEADER: {
-                    DataInputStream in = f.getInputStream();
-                    AMQContentHeader contentHeader = AMQImpl.readContentHeaderFrom(in);
-                    long remainingBodyBytes = contentHeader.readFrom(in);
-                    report(f.channel,
-                            "Expected body size: " + remainingBodyBytes +
-                                    "; " + contentHeader.toString());
-                    break;
-                }
-                default: {
-                    report(f.channel, f);
-                }
+              case AMQP.FRAME_METHOD: {
+                  report(f.channel, AMQImpl.readMethodFrom(f.getInputStream()));
+                  break;
+              }
+              case AMQP.FRAME_HEADER: {
+                  DataInputStream in = f.getInputStream();
+                  AMQContentHeader contentHeader = AMQImpl.readContentHeaderFrom(in);
+                  long remainingBodyBytes = contentHeader.readFrom(in);
+                  report(f.channel,
+                         "Expected body size: " + remainingBodyBytes +
+                         "; " + contentHeader.toString());
+                  break;
+              }
+              default: {
+                  report(f.channel, f);
+              }
             }
         }
 
@@ -204,7 +205,8 @@ public class Tracer implements Runnable {
             if (f != null) {
                 if (f.type == AMQP.FRAME_HEARTBEAT) {
                     if ((inBound && !WITHHOLD_INBOUND_HEARTBEATS) ||
-                            (!inBound && !WITHHOLD_OUTBOUND_HEARTBEATS)) {
+                        (!inBound && !WITHHOLD_OUTBOUND_HEARTBEATS))
+                    {
                         f.writeTo(o);
                         report(f.channel, f);
                     } else {

@@ -31,19 +31,26 @@
 
 package com.rabbitmq.client.test.server;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.QueueingConsumer;
+
 import com.rabbitmq.client.test.functional.BindingLifecycleBase;
+
 import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
 
 /**
  * This tests whether bindings are created and nuked properly.
- * <p/>
+ *
  * The tests attempt to declare durable queues on a secondary node, if
  * present, and that node is restarted as part of the tests while the
  * primary node is still running. That way we exercise any node-down
  * handler code in the server.
+ *
  */
 public class DurableBindingLifecycle extends BindingLifecycleBase {
 
@@ -61,7 +68,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
     }
 
     /**
-     * Tests whether durable bindings are correctly recovered.
+     *   Tests whether durable bindings are correctly recovered.
      */
     public void testDurableBindingRecovery() throws IOException {
         declareDurableTopicExchange(X);
@@ -69,7 +76,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
 
         restart();
 
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < N; i++){
             basicPublishVolatile(X, K);
         }
 
@@ -82,16 +89,16 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
     /**
      * This tests whether the bindings attached to a durable exchange
      * are correctly blown away when the exhange is nuked.
-     * <p/>
+     *
      * This complements a unit test for testing non-durable exhanges.
      * In that case, an exchange is deleted and you expect any
      * bindings hanging to it to be deleted as well. To verify this,
      * the exchange is deleted and then recreated.
-     * <p/>
+     *
      * After the recreation, the old bindings should no longer exist
      * and hence any messages published to that exchange get routed to
      * /dev/null
-     * <p/>
+     *
      * This test exercises the durable variable of that test, so the
      * main difference is that the broker has to be restarted to
      * verify that the durable routes have been turfed.
@@ -106,7 +113,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
 
         declareDurableTopicExchange(X);
 
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < N; i++){
             basicPublishVolatile(X, K);
         }
 
@@ -121,7 +128,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
     /**
      * This tests whether the default bindings for durable queues
      * are recovered properly.
-     * <p/>
+     *
      * The idea is to create a durable queue, nuke the server and then
      * publish a message to it using the queue name as a routing key
      */

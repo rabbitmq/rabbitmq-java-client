@@ -30,15 +30,17 @@
 //
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.utility.ValueOrException;
+import java.io.IOException;
+
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.io.IOException;
+import com.rabbitmq.utility.ValueOrException;
 
 
 public class ValueOrExceptionTest extends TestCase {
-    public static TestSuite suite() {
+    public static TestSuite suite()
+    {
         TestSuite suite = new TestSuite("valueOrEx");
         suite.addTestSuite(ValueOrExceptionTest.class);
         return suite;
@@ -47,7 +49,7 @@ public class ValueOrExceptionTest extends TestCase {
     public void testStoresValue() throws IOException {
         Integer value = new Integer(3);
         ValueOrException<Integer, IOException> valueOrEx = ValueOrException.<Integer, IOException>makeValue(value);
-
+        
         Integer returnedValue = valueOrEx.getValue();
         assertTrue(returnedValue == value);
     }
@@ -59,7 +61,7 @@ public class ValueOrExceptionTest extends TestCase {
         try {
             valueOrEx.getValue();
             fail("Expected exception");
-        } catch (IOException returnedException) {
+        } catch(IOException returnedException) {
             assertTrue(returnedException == exception);
         }
     }

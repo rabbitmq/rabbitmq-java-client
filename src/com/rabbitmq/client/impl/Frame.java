@@ -31,17 +31,22 @@
 
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.MalformedFrameException;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.SocketTimeoutException;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.List;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.MalformedFrameException;
 
 /**
  * Represents an AMQP wire-protocol frame, with frame type, channel number, and payload bytes.
@@ -52,19 +57,13 @@ public class Frame {
      */
     public int type;
 
-    /**
-     * Frame channel number, 0-65535
-     */
+    /** Frame channel number, 0-65535 */
     public int channel;
 
-    /**
-     * Frame payload bytes (for inbound frames)
-     */
+    /** Frame payload bytes (for inbound frames) */
     public byte[] payload;
 
-    /**
-     * Frame payload (for outbound frames)
-     */
+    /** Frame payload (for outbound frames) */
     public ByteArrayOutputStream accumulator;
 
     /**
@@ -97,7 +96,8 @@ public class Frame {
     }
 
     public static Frame fromBodyFragment(int channelNumber, byte[] body, int offset, int length)
-            throws IOException {
+        throws IOException
+    {
         Frame frame = new Frame(AMQP.FRAME_BODY, channelNumber);
         DataOutputStream bodyOut = frame.getOutputStream();
         bodyOut.write(body, offset, length);
@@ -154,19 +154,21 @@ public class Frame {
      * likely the broker is trying to tell us we are speaking the wrong AMQP
      * protocol version.
      *
-     * @throws MalformedFrameException if an AMQP protocol version mismatch is detected
-     * @throws MalformedFrameException if a corrupt AMQP protocol identifier is read
+     * @throws MalformedFrameException
+     *                 if an AMQP protocol version mismatch is detected
+     * @throws MalformedFrameException
+     *                 if a corrupt AMQP protocol identifier is read
      */
     public static void protocolVersionMismatch(DataInputStream is) throws IOException {
         MalformedFrameException x;
 
         // We expect the letters M, Q, P in that order: generate an informative error if they're not found
-        byte[] expectedBytes = new byte[]{'M', 'Q', 'P'};
+        byte[] expectedBytes = new byte[] { 'M', 'Q', 'P' };
         for (byte expectedByte : expectedBytes) {
             int nextByte = is.readUnsignedByte();
             if (nextByte != expectedByte) {
                 throw new MalformedFrameException("Invalid AMQP protocol header from server: expected character " +
-                        expectedByte + ", got " + nextByte);
+                    expectedByte + ", got " + nextByte);
             }
         }
 
@@ -231,8 +233,7 @@ public class Frame {
         return new DataOutputStream(accumulator);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("Frame(" + type + ", " + channel + ", ");
         if (accumulator == null) {
@@ -260,85 +261,96 @@ public class Frame {
         return result;
     }
 
-    /**
-     * Computes the AMQP wire-protocol length of protocol-encoded table entries.
+    /** Computes the AMQP wire-protocol length of protocol-encoded table entries.
      */
     public static long tableSize(Map<String, Object> table)
-            throws UnsupportedEncodingException {
+        throws UnsupportedEncodingException
+    {
         long acc = 0;
-        for (Map.Entry<String, Object> entry : table.entrySet()) {
+        for(Map.Entry<String, Object> entry: table.entrySet()) {
             acc += shortStrSize(entry.getKey());
             acc += fieldValueSize(entry.getValue());
         }
         return acc;
     }
 
-    /**
-     * Computes the AMQP wire-protocol length of a protocol-encoded field-value.
-     */
+    /** Computes the AMQP wire-protocol length of a protocol-encoded field-value. */
     public static long fieldValueSize(Object value)
-            throws UnsupportedEncodingException {
+        throws UnsupportedEncodingException
+    {
         long acc = 1; // for the type tag
-        if (value instanceof String) {
-            acc += longStrSize((String) value);
-        } else if (value instanceof LongString) {
-            acc += 4 + ((LongString) value).length();
-        } else if (value instanceof Integer) {
+        if(value instanceof String) {
+            acc += longStrSize((String)value);
+        }
+        else if(value instanceof LongString) {
+            acc += 4 + ((LongString)value).length();
+        }
+        else if(value instanceof Integer) {
             acc += 4;
-        } else if (value instanceof BigDecimal) {
+        }
+        else if(value instanceof BigDecimal) {
             acc += 5;
-        } else if (value instanceof Date || value instanceof Timestamp) {
+        }
+        else if(value instanceof Date || value instanceof Timestamp) {
             acc += 8;
-        } else if (value instanceof Map) {
+        }
+        else if(value instanceof Map) {
             acc += 4 + tableSize((Map<String, Object>) value);
-        } else if (value instanceof Byte) {
+        }
+        else if (value instanceof Byte) {
             acc += 1;
-        } else if (value instanceof Double) {
+        }
+        else if(value instanceof Double) {
             acc += 8;
-        } else if (value instanceof Float) {
+        }
+        else if(value instanceof Float) {
             acc += 4;
-        } else if (value instanceof Long) {
+        }
+        else if(value instanceof Long) {
             acc += 8;
-        } else if (value instanceof Short) {
+        }
+        else if(value instanceof Short) {
             acc += 2;
-        } else if (value instanceof Boolean) {
+        }
+        else if(value instanceof Boolean) {
             acc += 1;
-        } else if (value instanceof byte[]) {
-            acc += 4 + ((byte[]) value).length;
-        } else if (value instanceof List) {
-            acc += 4 + arraySize((List) value);
-        } else if (value == null) {
-        } else {
+        }
+        else if(value instanceof byte[]) {
+            acc += 4 + ((byte[])value).length;
+        }
+        else if(value instanceof List) {
+            acc += 4 + arraySize((List)value);
+        }
+        else if(value == null) {
+        }
+        else {
             throw new IllegalArgumentException("invalid value in table");
         }
         return acc;
     }
 
-    /**
-     * Computes the AMQP wire-protocol length of an encoded field-array
-     */
+    /** Computes the AMQP wire-protocol length of an encoded field-array */
     public static long arraySize(List values)
-            throws UnsupportedEncodingException {
+        throws UnsupportedEncodingException
+    {
         long acc = 0;
         for (Object value : values) {
             acc += fieldValueSize(value);
         }
         return acc;
     }
-
-    /**
-     * Computes the AMQP wire-protocol length of a protocol-encoded long string.
-     */
+  
+    /** Computes the AMQP wire-protocol length of a protocol-encoded long string. */
     public static int longStrSize(String str)
-            throws UnsupportedEncodingException {
+        throws UnsupportedEncodingException
+    {
         return str.getBytes("utf-8").length + 4;
     }
 
-    /**
-     * Computes the AMQP wire-protocol length of a protocol-encoded short string.
-     */
+    /** Computes the AMQP wire-protocol length of a protocol-encoded short string. */
     public static int shortStrSize(String str)
-            throws UnsupportedEncodingException {
+        throws UnsupportedEncodingException
+    {
         return str.getBytes("utf-8").length + 1;
     }
 }

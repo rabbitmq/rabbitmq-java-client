@@ -35,12 +35,13 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 
 public class QosScaling {
 
@@ -54,49 +55,49 @@ public class QosScaling {
         public static CommandLine parseCommandLine(String[] args) {
             CLIHelper helper = CLIHelper.defaultHelper();
             helper.addOption(new Option("n", "messages", true, "number of messages to send"));
-            helper.addOption(new Option("q", "queues", true, "number of queues to route messages to"));
-            helper.addOption(new Option("e", "empty", true, "number of queues to leave empty"));
-
+            helper.addOption(new Option("q", "queues",   true, "number of queues to route messages to"));
+            helper.addOption(new Option("e", "empty",    true, "number of queues to leave empty"));
+            
             return helper.parseCommandLine(args);
         }
-
+        
         public Parameters(CommandLine cmd) {
-            host = cmd.getOptionValue("h", "localhost");
-            port = CLIHelper.getOptionValue(cmd, "p", 5672);
+            host         = cmd.getOptionValue("h", "localhost");
+            port         = CLIHelper.getOptionValue(cmd, "p", 5672);
             messageCount = CLIHelper.getOptionValue(cmd, "n", 2000);
-            queueCount = CLIHelper.getOptionValue(cmd, "q", 100);
-            emptyCount = CLIHelper.getOptionValue(cmd, "e", 0);
+            queueCount   = CLIHelper.getOptionValue(cmd, "q", 100);
+            emptyCount   = CLIHelper.getOptionValue(cmd, "e", 0);
         }
 
         public String toString() {
             StringBuilder b = new StringBuilder();
-            b.append("host=" + host);
-            b.append(",port=" + port);
+            b.append("host="      + host);
+            b.append(",port="     + port);
             b.append(",messages=" + messageCount);
-            b.append(",queues=" + queueCount);
-            b.append(",empty=" + emptyCount);
+            b.append(",queues="   + queueCount);
+            b.append(",empty="    + emptyCount);
             return b.toString();
         }
 
     }
 
-    protected final Parameters connectionFactory;
+    protected final Parameters params;
     protected final ConnectionFactory connectionFactory =
-            new ConnectionFactory();
+        new ConnectionFactory();
     protected Connection connection;
     protected Channel channel;
 
     public QosScaling(Parameters p) {
-        connectionFactory = p;
+        params = p;
     }
 
     protected List<String> consume(QueueingConsumer c) throws IOException {
-        for (int i = 0; i < connectionFactory.emptyCount; i++) {
+        for (int i = 0; i < params.emptyCount; i++) {
             String queue = channel.queueDeclare().getQueue();
             channel.basicConsume(queue, false, c);
         }
         List<String> queues = new ArrayList<String>();
-        for (int i = 0; i < connectionFactory.queueCount; i++) {
+        for (int i = 0; i < params.queueCount; i++) {
             String queue = channel.queueDeclare().getQueue();
             channel.basicConsume(queue, false, c);
             queues.add(queue);
@@ -108,7 +109,7 @@ public class QosScaling {
         Channel pubCh = connection.createChannel();
         pubCh.txSelect();
         byte[] body = "".getBytes();
-        int messagesPerQueue = connectionFactory.messageCount / queues.size();
+        int messagesPerQueue = params.messageCount / queues.size();
         for (String queue : queues) {
             for (int i = 0; i < messagesPerQueue; i++) {
                 pubCh.basicPublish("", queue, null, body);
@@ -121,7 +122,7 @@ public class QosScaling {
     protected long drain(QueueingConsumer c) throws IOException {
         long start = System.nanoTime();
         try {
-            for (int i = 0; i < connectionFactory.messageCount; i++) {
+            for (int i = 0; i < params.messageCount; i++) {
                 long tag = c.nextDelivery().getEnvelope().getDeliveryTag();
                 channel.basicAck(tag, false);
             }
@@ -135,7 +136,7 @@ public class QosScaling {
     }
 
     public long run() throws IOException {
-        connection = connectionFactory.newConnection(connectionFactory.host, connectionFactory.port);
+        connection = connectionFactory.newConnection(params.host, params.port);
         channel = connection.createChannel();
         channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);
@@ -150,9 +151,9 @@ public class QosScaling {
     public static void main(String[] args) throws Exception {
         CommandLine cmd = Parameters.parseCommandLine(args);
         if (cmd == null) return;
-        Parameters connectionFactory = new Parameters(cmd);
-        System.out.print(connectionFactory.toString());
-        QosScaling test = new QosScaling(connectionFactory);
+        Parameters params = new Parameters(cmd);
+        System.out.print(params.toString());
+        QosScaling test = new QosScaling(params);
         long result = test.run();
         System.out.println(" -> " + result / 1000000 + "ms");
     }

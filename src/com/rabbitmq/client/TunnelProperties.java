@@ -30,77 +30,68 @@
 //
 package com.rabbitmq.client;
 
+import java.util.Date;
 import java.util.Map;
 
 public interface TunnelProperties {
-
+    
     /**
      * Retrieve the table in the headers field as a map of fields names and
-     * values.
-     *
+     * values. 
      * @return headers table, or null if the headers field has not been set.
      */
     public abstract Map<String, Object> getHeaders();
-
+    
     /**
      * Retrieve the value in the proxyName field.
-     *
      * @return proxyName field, or null if the field has not been set.
      */
     public abstract String getProxyName();
-
+    
     /**
      * Retrieve the value in the dataName field.
-     *
      * @return dataName field, or null if the field has not been set.
      */
     public abstract String getDataName();
-
+    
     /**
      * Retrieve the value in the durable field.
-     *
      * @return durable field, or null if the field has not been set.
      */
     public abstract Integer getDurable();
-
+    
     /**
      * Retrieve the value in the broadcast field.
-     *
      * @return broadcast field, or null if the field has not been set.
      */
     public abstract Integer getBroadcast();
-
-    /**
+    
+     /**
      * Set the headers table, or null indicating the field is not set
-     *
      * @param headers - a map of table field names and values
      */
     public abstract void setHeaders(Map<String, Object> headers);
-
+    
     /**
      * Set the proxyName field, or null indicating the field is not set
-     *
      * @param proxyName the value to set the field to
      */
     public abstract void setProxyName(String proxyName);
-
+    
     /**
      * Set the dataName field, or null indicating the field is not set
-     *
      * @param dataName the value to set the field to
      */
     public abstract void setDataName(String dataName);
-
+    
     /**
      * Set the durable field, or null indicating the field is not set
-     *
      * @param durable the value to set the field to
      */
     public abstract void setDurable(Integer durable);
-
+    
     /**
      * Set the broadcast field, or null indicating the field is not set
-     *
      * @param broadcast the value to set the field to
      */
     public abstract void setBroadcast(Integer broadcast);
