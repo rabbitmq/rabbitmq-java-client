@@ -47,7 +47,7 @@ public class HelloClient {
             ConnectionFactory cfconn = new ConnectionFactory(); 
             cfconn.setHost(hostName); 
             cfconn.setPort(portNumber);
-            Connection conn = connectionFactory.newConnection();
+            Connection conn = cfconn.newConnection();
             Channel ch = conn.createChannel();
             RpcClient service = new RpcClient(ch, "", "Hello");
 

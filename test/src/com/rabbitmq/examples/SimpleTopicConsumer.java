@@ -62,7 +62,7 @@ public class SimpleTopicConsumer {
             ConnectionFactory cfconn = new ConnectionFactory(); 
             cfconn.setHost(hostName); 
             cfconn.setPort(portNumber);
-            Connection conn = connectionFactory.newConnection();
+            Connection conn = cfconn.newConnection();
 
             final Channel channel = conn.createChannel();
 

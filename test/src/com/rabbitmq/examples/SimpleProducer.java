@@ -49,7 +49,7 @@ public class SimpleProducer {
             ConnectionFactory cfconn = new ConnectionFactory(); 
             cfconn.setHost(hostName); 
             cfconn.setPort(portNumber);
-            Connection conn = connectionFactory.newConnection();
+            Connection conn = cfconn.newConnection();
 
             Channel ch = conn.createChannel();
 
