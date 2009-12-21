@@ -88,7 +88,7 @@ public class ProducerMain implements Runnable {
             boolean sendCompletion = optArg("sendCompletion", args, 4, false);
             int commitEvery = optArg("commitEvery", args, 5, -1);
             boolean sendLatencyInfo = optArg("sendLatencyInfo", args, 6, true);
-            final Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            final Connection conn = new ConnectionFactory(hostName, portNumber).newConnection();
             //if (commitEvery > 0) { conn.getSocket().setTcpNoDelay(true); }
             System.out.println("Channel 0 fully open.");
             new ProducerMain(conn, rateLimit, messageCount, sendCompletion, commitEvery, sendLatencyInfo).run();

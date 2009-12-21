@@ -65,7 +65,7 @@ public class TestMain {
             String hostName = (args.length > 0) ? args[0] : "localhost";
             int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
             runConnectionNegotiationTest(hostName, portNumber);
-            final Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            final Connection conn = new ConnectionFactory(hostName, portNumber).newConnection();
             if (!silent) {
                 System.out.println("Channel 0 fully open.");
             }
@@ -154,7 +154,7 @@ public class TestMain {
         checkNegotiatedMaxValue("heartbeat", 0, conn.getHeartbeat());
         conn.close();
 
-        conn = new ConnectionFactory().newConnection(hostName, portNumber);
+        conn = new ConnectionFactory(hostName, portNumber).newConnection();
         conn.close();
     }
 
@@ -173,11 +173,11 @@ public class TestMain {
         Channel ch;
         // Test what happens when a connection is shut down w/o first
         // closing the channels.
-        conn = new ConnectionFactory().newConnection(hostName, portNumber);
+        conn = new ConnectionFactory(hostName, portNumber).newConnection();
         ch = conn.createChannel();
         conn.close();
         // Test what happens when we provoke an error
-        conn = new ConnectionFactory().newConnection(hostName, portNumber);
+        conn = new ConnectionFactory(hostName, portNumber).newConnection();
         ch = conn.createChannel();
         try {
             ch.exchangeDeclare("mumble", "invalid");
@@ -185,7 +185,7 @@ public class TestMain {
         } catch (IOException e) {
         }
         // Test what happens when we just kill the connection
-        conn = new ConnectionFactory().newConnection(hostName, portNumber);
+        conn = new ConnectionFactory(hostName, portNumber).newConnection();
         ch = conn.createChannel();
         ((SocketFrameHandler)((AMQConnection)conn).getFrameHandler()).close();
     }

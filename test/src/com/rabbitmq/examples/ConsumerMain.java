@@ -69,7 +69,7 @@ public class ConsumerMain implements Runnable {
             int portNumber = optArg(args, 1, AMQP.PROTOCOL.PORT);
             boolean writeStats = optArg(args, 2, true);
             boolean noAck = optArg(args, 3, true);
-            final Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            final Connection conn = new ConnectionFactory(hostName, portNumber).newConnection();
             System.out.println("Channel 0 fully open.");
             new ConsumerMain(conn, writeStats, noAck).run();
         } catch (Exception e) {
