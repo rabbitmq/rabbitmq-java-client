@@ -48,6 +48,6 @@ public class BlockingValueOrException<V, E extends Throwable>
     }
     
     public V uninterruptibleGetValue(int timeout) throws E, TimeoutException {
-    	return uninterruptibleGet(timeout).getValue();
+        return uninterruptibleGet(timeout).getValue();
     }
 }
