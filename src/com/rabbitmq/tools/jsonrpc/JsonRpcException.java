@@ -57,11 +57,11 @@ public class JsonRpcException extends Exception {
     }
 
     public JsonRpcException(Map<String, Object> errorMap) {
-    super(new JSONWriter().write(errorMap));
-    name = (String) errorMap.get("name");
-    code = 0;
-    if (errorMap.get("code") != null) { code = ((Integer) errorMap.get("code")); }
-    message = (String) errorMap.get("message");
-    error = errorMap.get("error");
+	super(new JSONWriter().write(errorMap));
+	name = (String) errorMap.get("name");
+	code = 0;
+	if (errorMap.get("code") != null) { code = ((Integer) errorMap.get("code")); }
+	message = (String) errorMap.get("message");
+	error = errorMap.get("error");
     }
 }

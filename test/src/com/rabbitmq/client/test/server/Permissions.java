@@ -31,41 +31,56 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.functional.*;
+import java.io.IOException;
+import java.util.Map;
+import java.util.HashMap;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Command;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.Method;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQChannel;
 import com.rabbitmq.client.impl.AMQImpl;
-import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-public class Permissions extends BrokerTestCase {
+public class Permissions extends BrokerTestCase
+{
 
     protected Channel adminCh;
 
-    public Permissions() {
-        AMQPConnectionParameters amq = this.params.getAMQPParameters();
-        amq.setUsername("test");
-        amq.setPassword("test");
-        amq.setVirtualHost("/test");
+    public Permissions()
+    {
+        ConnectionParameters params = new ConnectionParameters();
+        params.setUsername("test");
+        params.setPassword("test");
+        params.setVirtualHost("/test");
+        connectionFactory = new ConnectionFactory(params);
     }
 
     protected void setUp()
-            throws IOException {
+        throws IOException
+    {
         addRestrictedAccount();
         super.setUp();
     }
 
     protected void tearDown()
-            throws IOException {
+        throws IOException
+    {
         super.tearDown();
         deleteRestrictedAccount();
     }
 
     protected void addRestrictedAccount()
-            throws IOException {
+        throws IOException
+    {
         runCtl("add_user test test");
         runCtl("add_user testadmin test");
         runCtl("add_vhost /test");
@@ -74,7 +89,8 @@ public class Permissions extends BrokerTestCase {
     }
 
     protected void deleteRestrictedAccount()
-            throws IOException {
+        throws IOException
+    {
         runCtl("clear_permissions -p /test testadmin");
         runCtl("clear_permissions -p /test test");
         runCtl("delete_vhost /test");
@@ -83,139 +99,137 @@ public class Permissions extends BrokerTestCase {
     }
 
     protected void runCtl(String command)
-            throws IOException {
+        throws IOException
+    {
         Host.executeCommand("../rabbitmq-server/scripts/rabbitmqctl " +
-                command);
+                            command);
     }
 
     protected void createResources()
-            throws IOException {
-        AMQPConnectionParameters params = new AMQPConnectionParameters();
+        throws IOException
+    {
+        ConnectionParameters params = new ConnectionParameters();
         params.setUsername("testadmin");
         params.setPassword("test");
         params.setVirtualHost("/test");
-        ConnectionFactory factory = new ConnectionFactory(params, new TCPConnectionParameters("localhost"));
-        Connection connection = factory.newConnection();
+        ConnectionFactory factory = new ConnectionFactory(params);
+        Connection connection = factory.newConnection("localhost");
         adminCh = connection.createChannel();
         withNames(new WithName() {
-            public void with(String name) throws IOException {
-                adminCh.exchangeDeclare(name, "direct");
-                adminCh.queueDeclare(name);
-            }
-        });
+                public void with(String name) throws IOException {
+                    adminCh.exchangeDeclare(name, "direct");
+                    adminCh.queueDeclare(name);
+                }});
     }
 
     protected void releaseResources()
-            throws IOException {
+        throws IOException
+    {
         withNames(new WithName() {
-            public void with(String name) throws IOException {
-                adminCh.queueDelete(name);
-                adminCh.exchangeDelete(name);
-            }
-        });
+                public void with(String name) throws IOException {
+                    adminCh.queueDelete(name);
+                    adminCh.exchangeDelete(name);
+                }});
         adminCh.getConnection().abort();
     }
 
     protected void withNames(WithName action)
-            throws IOException {
+        throws IOException
+    {
         action.with("configure");
         action.with("write");
         action.with("read");
     }
 
     public void testExchangeConfiguration()
-            throws IOException {
+        throws IOException
+    {
         runConfigureTest(new WithName() {
-            public void with(String name) throws IOException {
-                channel.exchangeDeclare(name, "direct");
-            }
-        });
+                public void with(String name) throws IOException {
+                    channel.exchangeDeclare(name, "direct");
+                }});
         runConfigureTest(new WithName() {
-            public void with(String name) throws IOException {
-                channel.exchangeDeclare(name, "direct", true, false, false, null);
-            }
-        });
+                public void with(String name) throws IOException {
+                    channel.exchangeDeclare(name, "direct", true, false, false, null);
+                }});
         runConfigureTest(new WithName() {
-            public void with(String name) throws IOException {
-                channel.exchangeDelete(name);
-            }
-        });
+                public void with(String name) throws IOException {
+                    channel.exchangeDelete(name);
+                }});
     }
 
     public void testQueueConfiguration()
-            throws IOException {
+        throws IOException
+    {
         runConfigureTest(new WithName() {
-            public void with(String name) throws IOException {
-                channel.queueDeclare(name);
-            }
-        });
+                public void with(String name) throws IOException {
+                    channel.queueDeclare(name);
+                }});
         runConfigureTest(new WithName() {
-            public void with(String name) throws IOException {
-                channel.queueDeclare(name, true, false, false, false, null);
-            }
-        });
+                public void with(String name) throws IOException {
+                    channel.queueDeclare(name, true, false, false, false, null);
+                }});
         runConfigureTest(new WithName() {
-            public void with(String name) throws IOException {
-                channel.queueDelete(name);
-            }
-        });
+                public void with(String name) throws IOException {
+                    channel.queueDelete(name);
+                }});
     }
 
     public void testBinding()
-            throws IOException {
+        throws IOException
+    {
         runTest(false, true, false, new WithName() {
-            public void with(String name) throws IOException {
-                channel.queueBind(name, "read", "");
-            }
-        });
+                public void with(String name) throws IOException {
+                    channel.queueBind(name, "read", "");
+                }});
         runTest(false, false, true, new WithName() {
-            public void with(String name) throws IOException {
-                channel.queueBind("write", name, "");
-            }
-        });
+                public void with(String name) throws IOException {
+                    channel.queueBind("write", name, "");
+                }});
     }
 
     public void testPublish()
-            throws IOException {
+        throws IOException
+    {
         runTest(false, true, false, new WithName() {
-            public void with(String name) throws IOException {
-                channel.basicPublish(name, "", null, "foo".getBytes());
-                //followed by a dummy synchronous command in order
-                //to catch any errors
-                ((AMQChannel) channel).exnWrappingRpc(new AMQImpl.Channel.Flow(true));
-            }
-        });
+                public void with(String name) throws IOException {
+                    channel.basicPublish(name, "", null, "foo".getBytes());
+                    //followed by a dummy synchronous command in order
+                    //to catch any errors
+                    ((AMQChannel)channel).exnWrappingRpc(new AMQImpl.Channel.Flow(true));
+                }});
     }
 
     public void testGet()
-            throws IOException {
+        throws IOException
+    {
         runTest(false, false, true, new WithName() {
-            public void with(String name) throws IOException {
-                channel.basicGet(name, true);
-            }
-        });
+                public void with(String name) throws IOException {
+                    channel.basicGet(name, true);
+                }});
     }
 
     public void testConsume()
-            throws IOException {
+        throws IOException
+    {
         runTest(false, false, true, new WithName() {
-            public void with(String name) throws IOException {
-                channel.basicConsume(name, new QueueingConsumer(channel));
-            }
-        });
+                public void with(String name) throws IOException {
+                    channel.basicConsume(name, new QueueingConsumer(channel));
+                }});
     }
 
     public void testPurge()
-            throws IOException {
+        throws IOException
+    {
         runTest(false, false, true, new WithName() {
-            public void with(String name) throws IOException {
-                ((AMQChannel) channel).exnWrappingRpc(new AMQImpl.Queue.Purge(0, name, false));
-            }
-        });
+                public void with(String name) throws IOException {
+                    ((AMQChannel)channel).exnWrappingRpc(new AMQImpl.Queue.Purge(0, name, false));
+                }});
     }
 
     public void testAltExchConfiguration()
-            throws IOException {
+        throws IOException
+    {
         runTest(false, false, false,
                 createAltExchConfigTest("configure-me"));
         runTest(false, false, false,
@@ -225,19 +239,20 @@ public class Permissions extends BrokerTestCase {
     }
 
     protected WithName createAltExchConfigTest(final String exchange)
-            throws IOException {
+        throws IOException
+    {
         return new WithName() {
             public void with(String ae) throws IOException {
                 Map<String, Object> args = new HashMap<String, Object>();
                 args.put("alternate-exchange", ae);
                 channel.exchangeDeclare(exchange, "direct", false, false, false, args);
                 channel.exchangeDelete(exchange);
-            }
-        };
+            }};
     }
 
     protected void runConfigureTest(WithName test)
-            throws IOException {
+        throws IOException
+    {
         runTest(true, "configure-me", test);
         runTest(false, "write-me", test);
         runTest(false, "read-me", test);
@@ -245,14 +260,16 @@ public class Permissions extends BrokerTestCase {
 
     protected void runTest(boolean expC, boolean expW, boolean expR,
                            WithName test)
-            throws IOException {
+        throws IOException
+    {
         runTest(expC, "configure", test);
         runTest(expW, "write", test);
         runTest(expR, "read", test);
     }
 
     protected void runTest(boolean exp, String name, WithName test)
-            throws IOException {
+        throws IOException
+    {
         String msg = "'" + name + "' -> " + exp;
         try {
             test.with(name);
@@ -261,13 +278,13 @@ public class Permissions extends BrokerTestCase {
             assertFalse(msg, exp);
             Throwable t = e.getCause();
             assertTrue(msg, t instanceof ShutdownSignalException);
-            Object r = ((ShutdownSignalException) t).getReason();
+            Object r = ((ShutdownSignalException)t).getReason();
             assertTrue(msg, r instanceof Command);
-            Method m = ((Command) r).getMethod();
+            Method m = ((Command)r).getMethod();
             assertTrue(msg, m instanceof AMQP.Channel.Close);
             assertEquals(msg,
-                    AMQP.ACCESS_REFUSED,
-                    ((AMQP.Channel.Close) m).getReplyCode());
+                         AMQP.ACCESS_REFUSED,
+                         ((AMQP.Channel.Close)m).getReplyCode());
             //This fails due to bug 20296
             //openChannel();
             channel = connection.createChannel(channel.getChannelNumber() + 1);

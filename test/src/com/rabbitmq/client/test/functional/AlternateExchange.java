@@ -31,22 +31,23 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ReturnListener;
+import com.rabbitmq.client.GetResponse;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Map;
+import java.util.HashMap;
 
-public class AlternateExchange extends BrokerTestCase {
+public class AlternateExchange extends BrokerTestCase
+{
 
-    static private String[] resources = new String[]{"x", "u", "v"};
-    static private String[] keys = new String[]{"x", "u", "v", "z"};
+    static private String[] resources = new String[]{"x","u","v"};
+    static private String[] keys      = new String[]{"x","u","v","z"};
 
-    static private boolean unrouted[] = new boolean[]{false, false, false};
+    static private boolean unrouted[] = new boolean[] {false, false, false};
 
     private AtomicBoolean gotReturn = new AtomicBoolean();
 
@@ -68,31 +69,28 @@ public class AlternateExchange extends BrokerTestCase {
         return expected;
     }
 
-    @Override
-    protected void setUp() throws IOException {
+    @Override protected void setUp() throws IOException {
         super.setUp();
         channel.setReturnListener(new ReturnListener() {
-            public void handleBasicReturn(int replyCode,
-                                          String replyText,
-                                          String exchange,
-                                          String routingKey,
-                                          AMQP.BasicProperties properties,
-                                          byte[] body)
+                public void handleBasicReturn(int replyCode,
+                                              String replyText,
+                                              String exchange,
+                                              String routingKey,
+                                              AMQP.BasicProperties properties,
+                                              byte[] body)
                     throws IOException {
-                gotReturn.set(true);
-            }
-        });
+                    gotReturn.set(true);
+                }
+            });
     }
 
-    @Override
-    protected void createResources() throws IOException {
+    @Override protected void createResources() throws IOException {
         for (String q : resources) {
             channel.queueDeclare(q);
         }
     }
 
-    @Override
-    protected void releaseResources() throws IOException {
+    @Override protected void releaseResources() throws IOException {
         for (String q : resources) {
             channel.queueDelete(q);
         }
@@ -105,8 +103,8 @@ public class AlternateExchange extends BrokerTestCase {
      * <code>name</code>.
      *
      * @param name the name of the exchange to be created, and queue
-     *             to be bound
-     * @param ae   the name of the alternate-exchage
+     *        to be bound
+     * @param ae the name of the alternate-exchage
      */
     protected void setupRouting(String name, String ae) throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
@@ -128,9 +126,9 @@ public class AlternateExchange extends BrokerTestCase {
     }
 
     protected void publish(String key, boolean mandatory, boolean immediate)
-            throws IOException {
+        throws IOException {
         channel.basicPublish("x", key, mandatory, immediate, null,
-                "ae-test".getBytes());
+                             "ae-test".getBytes());
     }
 
     protected void publish(String key) throws IOException {
@@ -143,37 +141,38 @@ public class AlternateExchange extends BrokerTestCase {
      * retrieved when expected.
      *
      * @param expected an array of booleans that is zipped with {@link
-     *                 #resources} and indicates whether a messages is expected
-     *                 to be retrievable from the respective queue
+     *        #resources} and indicates whether a messages is expected
+     *        to be retrievable from the respective queue
      */
     protected void checkGet(boolean[] expected) throws IOException {
         for (int i = 0; i < resources.length; i++) {
             String q = resources[i];
             GetResponse r = channel.basicGet(q, true);
-            assertEquals("check " + q, expected[i], r != null);
+            assertEquals("check " + q , expected[i], r != null);
         }
     }
 
     /**
      * Test whether a message is routed as expected.
-     * <p/>
+     *
      * We publish a message to exchange 'x' with a routing key of
      * <code>key</code>, check whether the message (actually, any
      * message) can be retrieved from the queues named in {@link
      * #resources} when expected, and whether a 'basic.return' is
      * received when expected.
      *
-     * @param key       the routing key of the message to be sent
+     * @param key the routing key of the message to be sent
      * @param mandatory whether the message should be marked as 'mandatory'
      * @param immediate whether the message should be marked as 'immediate'
-     * @param expected  indicates which queues we expect the message to
-     *                  get routed to
-     * @param ret       whether a 'basic.return' is expected
+     * @param expected indicates which queues we expect the message to
+     *        get routed to
+     * @param ret whether a 'basic.return' is expected
+     *
      * @see #checkGet(boolean[])
      */
     protected void check(String key, boolean mandatory, boolean immediate,
                          boolean[] expected, boolean ret)
-            throws IOException {
+        throws IOException {
 
         gotReturn.set(false);
         publish(key, mandatory, immediate);
@@ -182,7 +181,7 @@ public class AlternateExchange extends BrokerTestCase {
     }
 
     protected void check(String key, boolean[] expected, boolean ret)
-            throws IOException {
+        throws IOException {
         check(key, false, false, expected, ret);
     }
 

@@ -35,23 +35,20 @@ import com.rabbitmq.client.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.FileOutputStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Random;
-import java.util.Stack;
-import java.util.UUID;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
 /**
  * This tests the scalability of the routing tables in two aspects:
- * <p/>
+ *
  * 1. The rate of creation and deletion for a fixed level of bindings
  * per queue accross varying amounts of queues;
- * <p/>
+ *
  * 2. The rate of publishing n messages to an exchange with a fixed
  * amount of bindings per queue accross varying amounts of queues.
  */
@@ -84,9 +81,9 @@ public class ScalabilityTest {
 
         protected static float[] calcOpTimes(final int base, final long[] t) {
             float[] r = new float[t.length];
-            for (int i = 0; i < t.length; i++) {
+            for (int i = 0; i < t.length; i ++) {
                 final int amount = pow(base, i);
-                r[i] = t[i] / (float) amount / 1000;
+                r[i] = t[i]  / (float)  amount / 1000;
             }
 
             return r;
@@ -139,7 +136,7 @@ public class ScalabilityTest {
         }
 
         public void print(final int base, final String prefix)
-                throws IOException {
+            throws IOException {
 
             PrintStream s;
             s = open(prefix, "creation");
@@ -147,7 +144,7 @@ public class ScalabilityTest {
             s.close();
             s = open(prefix, "deletion");
             print(s, base, deletionTimes);
-            s.close();
+            s.close(); 
             s = open(prefix, "routing");
             print(s, base, transpose(routingTimes));
             s.close();
@@ -155,10 +152,10 @@ public class ScalabilityTest {
 
         private static PrintStream open(final String prefix,
                                         final String suffix)
-                throws IOException {
+            throws IOException {
 
             return new PrintStream(new FileOutputStream(prefix + suffix +
-                    ".dat"));
+                                                        ".dat"));
         }
 
         private static void print(final PrintStream s, final int base,
@@ -216,8 +213,8 @@ public class ScalabilityTest {
     }
 
 
-    public Results run() throws Exception {
-        Connection con = new ConnectionFactory(new TCPConnectionParameters(params.host, params.port)).newConnection();
+    public Results run() throws Exception{
+        Connection con = new ConnectionFactory().newConnection(params.host, params.port);
         Channel channel = con.createChannel();
 
         Results r = new Results(params.maxBindingExp);
@@ -226,7 +223,7 @@ public class ScalabilityTest {
 
             final int maxBindings = pow(params.base, y);
 
-            String[] routingKeys = new String[maxBindings];
+            String[] routingKeys =  new String[maxBindings];
             for (int b = 0; b < maxBindings; b++) {
                 routingKeys[b] = UUID.randomUUID().toString();
             }
@@ -296,28 +293,28 @@ public class ScalabilityTest {
     }
 
     private float timeRouting(Channel channel, String[] routingKeys)
-            throws IOException, InterruptedException {
+        throws IOException, InterruptedException {
 
         boolean mandatory = true;
         boolean immdediate = true;
         final CountDownLatch latch = new CountDownLatch(params.messageCount);
         channel.setReturnListener(new ReturnListener() {
-            public void handleBasicReturn(int replyCode, String replyText,
-                                          String exchange, String routingKey,
-                                          AMQP.BasicProperties properties, byte[] body) throws IOException {
-                latch.countDown();
-            }
-        });
+                public void handleBasicReturn(int replyCode, String replyText,
+                                              String exchange, String routingKey,
+                                              AMQP.BasicProperties properties, byte[] body) throws IOException {
+                    latch.countDown();
+                }
+            });
 
         final long start = System.nanoTime();
 
         // route some messages
         Random r = new Random();
         int size = routingKeys.length;
-        for (int n = 0; n < params.messageCount; n++) {
+        for (int n = 0; n < params.messageCount; n ++) {
             String key = routingKeys[r.nextInt(size)];
             channel.basicPublish("amq.direct", key, mandatory, immdediate,
-                    MessageProperties.MINIMAL_BASIC, null);
+                                 MessageProperties.MINIMAL_BASIC, null);
         }
 
         // wait for the returns to come back
@@ -326,50 +323,50 @@ public class ScalabilityTest {
         // Compute the roundtrip time
         final long finish = System.nanoTime();
         final long wallclock = finish - start;
-        return (params.messageCount == 0) ? (float) 0.0 : wallclock / (float) params.messageCount / 1000;
+        return (params.messageCount == 0) ? (float)0.0 : wallclock  / (float) params.messageCount / 1000;
     }
 
-    private static Parameters parseArgs(String[] args) {
+    private static Parameters parseArgs(String [] args) {
         CLIHelper helper = CLIHelper.defaultHelper();
 
-        helper.addOption(new Option("n", "messages", true, "number of messages to send"));
-        helper.addOption(new Option("b", "base", true, "base for exponential scaling"));
+        helper.addOption(new Option("n", "messages",  true, "number of messages to send"));
+        helper.addOption(new Option("b", "base",      true, "base for exponential scaling"));
         helper.addOption(new Option("x", "q-max-exp", true, "maximum queue count exponent"));
         helper.addOption(new Option("y", "b-max-exp", true, "maximum per-queue binding count exponent"));
         helper.addOption(new Option("c", "c-max-exp", true, "combined maximum exponent"));
-        helper.addOption(new Option("f", "file", true, "result files prefix; defaults to no file output"));
+        helper.addOption(new Option("f", "file",      true, "result files prefix; defaults to no file output"));
 
         CommandLine cmd = helper.parseCommandLine(args);
         if (null == cmd) return null;
 
         Parameters params = new Parameters();
-        params.host = cmd.getOptionValue("h", "0.0.0.0");
-        params.port = CLIHelper.getOptionValue(cmd, "p", 5672);
-        params.messageCount = CLIHelper.getOptionValue(cmd, "n", 100);
-        params.base = CLIHelper.getOptionValue(cmd, "b", 10);
-        params.maxQueueExp = CLIHelper.getOptionValue(cmd, "x", 4);
+        params.host          = cmd.getOptionValue("h", "0.0.0.0");
+        params.port          = CLIHelper.getOptionValue(cmd, "p", 5672);
+        params.messageCount  = CLIHelper.getOptionValue(cmd, "n", 100);
+        params.base          = CLIHelper.getOptionValue(cmd, "b", 10);
+        params.maxQueueExp   = CLIHelper.getOptionValue(cmd, "x", 4);
         params.maxBindingExp = CLIHelper.getOptionValue(cmd, "y", 4);
-        params.maxExp = CLIHelper.getOptionValue(cmd, "c", Math.max(params.maxQueueExp, params.maxBindingExp));
-        params.filePrefix = cmd.getOptionValue("f", null);
+        params.maxExp        = CLIHelper.getOptionValue(cmd, "c", Math.max(params.maxQueueExp, params.maxBindingExp));
+        params.filePrefix    = cmd.getOptionValue("f", null);
 
         return params;
     }
 
     private static int pow(int x, int y) {
         int r = 1;
-        for (int i = 0; i < y; i++) r *= x;
+        for( int i = 0; i < y; i++ ) r *= x;
         return r;
     }
 
     private static void printTimes(int base, float[] times) {
-        for (int i = 0; i < times.length; i++) {
+        for (int i = 0; i < times.length; i ++) {
             printTime(base, i, times[i]);
         }
     }
 
     private static void printTime(int base, int exp, float v) {
         System.out.println("| " + pow(base, exp) +
-                " -> " + format.format(v) + " us/op");
+                           " -> " + format.format(v) + " us/op");
     }
 
 }

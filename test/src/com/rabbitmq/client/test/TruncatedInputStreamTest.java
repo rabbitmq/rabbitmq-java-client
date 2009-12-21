@@ -30,43 +30,36 @@
 //
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.impl.TruncatedInputStream;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import com.rabbitmq.client.impl.TruncatedInputStream;
 
 /**
  * Some basic (retroactive) tests for TruncatedInputStream.
  */
 public class TruncatedInputStreamTest extends TestCase {
 
-    /**
-     * a sample truncated stream to run tests on
-     */
+    /** a sample truncated stream to run tests on */
     private TruncatedInputStream _truncStream;
 
-    /**
-     * sample data to truncate
-     */
-    private static final byte[] TEST_BYTES = new byte[]{5, 4, 3, 2, 1};
+    /** sample data to truncate */
+    private static final byte[] TEST_BYTES = new byte[] { 5, 4, 3, 2, 1 };
 
-    /**
-     * what length to truncate it to
-     */
+    /** what length to truncate it to */
     private static final int TRUNCATED_LENGTH = 3;
 
-    @Override
-    protected void setUp() throws Exception {
+    @Override protected void setUp() throws Exception {
         super.setUp();
         InputStream baseStream = new ByteArrayInputStream(TEST_BYTES);
         _truncStream = new TruncatedInputStream(baseStream, TRUNCATED_LENGTH);
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @Override protected void tearDown() throws Exception {
         _truncStream = null;
         super.tearDown();
     }
@@ -76,10 +69,9 @@ public class TruncatedInputStreamTest extends TestCase {
         suite.addTestSuite(TruncatedInputStreamTest.class);
         return suite;
     }
-
+    
     /**
      * Check the amount of data initially available is as it should be
-     *
      * @throws IOException if there is an I/O problem
      */
     public void testAmountInitiallyAvailable() throws IOException {
@@ -88,7 +80,6 @@ public class TruncatedInputStreamTest extends TestCase {
 
     /**
      * Check the data read from the truncated stream is as it should be
-     *
      * @throws IOException if there is an I/O problem
      */
     public void testReadTruncatedBytes() throws IOException {
@@ -101,9 +92,9 @@ public class TruncatedInputStreamTest extends TestCase {
     }
 
     /**
-     * Check single-byte reads behave as they should
+     * Check single-byte reads behave as they should 
+     * @throws IOException 
      *
-     * @throws IOException
      */
     public void testSingleByteReads() throws IOException {
         for (int i = 0; i < TRUNCATED_LENGTH; i++) {

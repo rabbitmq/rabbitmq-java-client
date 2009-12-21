@@ -39,7 +39,8 @@ import java.io.InputStreamReader;
 public class Host {
 
     private static String capture(InputStream is)
-            throws IOException {
+        throws IOException
+    {
         final BufferedReader br = new BufferedReader(new InputStreamReader(is));
         String line;
         final StringBuffer buff = new StringBuffer();
@@ -50,7 +51,8 @@ public class Host {
     }
 
     public static void executeCommand(String command)
-            throws IOException {
+        throws IOException
+    {
         String[] finalCommand;
         if (System.getProperty("os.name").toLowerCase().indexOf("windows") != -1) {
             finalCommand = new String[4];
@@ -67,18 +69,17 @@ public class Host {
         final Process pr = Runtime.getRuntime().exec(finalCommand);
         final String stdout = capture(pr.getInputStream());
         final String stderr = capture(pr.getErrorStream());
-        while (true) {
+        while(true) {
             try {
                 pr.waitFor();
                 break;
-            } catch (InterruptedException e) {
-            }
+            } catch (InterruptedException e) {}
         }
         int ev = pr.exitValue();
         if (ev != 0) {
             throw new IOException("unexpected command exit value: " + ev +
-                    "\nstdout:\n" + stdout +
-                    "\nstderr:\n" + stderr + "\n");
+                                  "\nstdout:\n" + stdout +
+                                  "\nstderr:\n" + stderr + "\n");
         }
     }
 }

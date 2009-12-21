@@ -77,7 +77,7 @@ public class JsonRpcServer extends StringRpcServer {
                          Object interfaceInstance)
         throws IOException
     {
-    super(channel);
+	super(channel);
         init(interfaceClass, interfaceInstance);
     }
 
@@ -105,7 +105,7 @@ public class JsonRpcServer extends StringRpcServer {
                          Object interfaceInstance)
         throws IOException
     {
-    super(channel, queueName);
+	super(channel, queueName);
         init(interfaceClass, interfaceInstance);
     }
 
@@ -218,6 +218,6 @@ public class JsonRpcServer extends StringRpcServer {
      * service built from interfaceClass at construction time.
      */
     public ServiceDescription getServiceDescription() {
-    return serviceDescription;
+	return serviceDescription;
     }
 }

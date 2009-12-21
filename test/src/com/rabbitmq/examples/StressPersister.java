@@ -1,13 +1,24 @@
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
-import org.apache.commons.cli.*;
-
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 public class StressPersister {
     public static void main(String[] args) {
@@ -35,27 +46,17 @@ public class StressPersister {
         int multiplier = 1;
         boolean strip = false;
         switch (Character.toLowerCase(arg.charAt(arg.length() - 1))) {
-            case 'b':
-                multiplier = 1;
-                strip = true;
-                break;
-            case 'k':
-                multiplier = 1024;
-                strip = true;
-                break;
-            case 'm':
-                multiplier = 1048576;
-                strip = true;
-                break;
-            default:
-                break;
+            case 'b': multiplier = 1; strip = true; break;
+            case 'k': multiplier = 1024; strip = true; break;
+            case 'm': multiplier = 1048576; strip = true; break;
+            default: break;
         }
         if (strip) {
             arg = arg.substring(0, arg.length() - 1);
         }
         return multiplier * Integer.parseInt(arg);
     }
-
+    
     public String hostName;
     public int portNumber;
 
@@ -94,11 +95,11 @@ public class StressPersister {
         repeatCount = intArg(cmd, 'c', backlogSize * 5);
         sampleGranularity = intArg(cmd, 's', Math.max(5, repeatCount / 250));
 
-        connectionFactory = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber));
+        connectionFactory = new ConnectionFactory();
     }
 
     public Connection newConnection() throws IOException {
-        return connectionFactory.newConnection();
+        return connectionFactory.newConnection(hostName, portNumber);
     }
 
     public void run() throws IOException, InterruptedException {
@@ -162,9 +163,9 @@ public class StressPersister {
                 plateauSampleTimes.add(now);
                 plateauSampleDeltas.add(delta);
                 System.out.print(String.format("# %3d%%; %012d --> %g microseconds/roundtrip            \r",
-                        (100 * i / repeatCount),
-                        now,
-                        delta));
+                                    (100 * i / repeatCount),
+                                    now,
+                                    delta));
                 startTime = System.currentTimeMillis();
             }
             chan.basicPublish("", q, props, body);
@@ -193,8 +194,8 @@ public class StressPersister {
                 plateauSampleDeltas.get(plateauSampleDeltas.size() - 1) + ")");
         for (int i = 0; i < plateauSampleTimes.size(); i++) {
             String s = String.format("%d %d",
-                    plateauSampleTimes.get(i),
-                    plateauSampleDeltas.get(i).longValue());
+                        plateauSampleTimes.get(i),
+                        plateauSampleDeltas.get(i).longValue());
             logOut.println(s);
         }
         logOut.flush();

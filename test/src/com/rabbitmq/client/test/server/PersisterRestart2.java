@@ -33,19 +33,22 @@ package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
-public class PersisterRestart2 extends RestartBase {
+public class PersisterRestart2 extends RestartBase
+{
 
     private static final String Q1 = "Restart2One";
     private static final String Q2 = "Restart2Two";
 
-    protected void exercisePersister(String q)
-            throws IOException {
+    protected void exercisePersister(String q) 
+      throws IOException
+    {
         basicPublishPersistent(q);
         basicPublishVolatile(q);
     }
 
     public void testRestart()
-            throws IOException, InterruptedException {
+        throws IOException, InterruptedException
+    {
         declareDurableQueue(Q1);
         declareDurableQueue(Q2);
         exercisePersister(Q1);
@@ -54,9 +57,9 @@ public class PersisterRestart2 extends RestartBase {
         // Those will be in the incremental snapshot then
         exercisePersister(Q1);
         exercisePersister(Q2);
-
+        
         restart();
-
+        
         assertDelivered(Q1, 2);
         assertDelivered(Q2, 2);
         deleteQueue(Q2);

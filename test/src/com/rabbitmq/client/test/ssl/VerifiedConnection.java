@@ -30,30 +30,36 @@
 //
 package com.rabbitmq.client.test.ssl;
 
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.TCPConnectionParameters;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.*;
-import java.security.cert.CertificateException;
+
+import com.rabbitmq.client.ConnectionFactory;
 
 /**
  * Test for bug 19356 - SSL Support in rabbitmq
+ *
  */
 public class VerifiedConnection extends UnverifiedConnection {
 
     public void openConnection()
-            throws IOException {
+        throws IOException
+    {
         try {
             String keystorePath = System.getProperty("keystore.path");
             assertNotNull(keystorePath);
             String keystorePasswd = System.getProperty("keystore.passwd");
             assertNotNull(keystorePasswd);
-            char[] keystorePassword = keystorePasswd.toCharArray();
+            char [] keystorePassword = keystorePasswd.toCharArray();
 
             KeyStore tks = KeyStore.getInstance("JKS");
             tks.load(new FileInputStream(keystorePath), keystorePassword);
@@ -66,18 +72,17 @@ public class VerifiedConnection extends UnverifiedConnection {
             String p12Passwd = System.getProperty("p12.passwd");
             assertNotNull(p12Passwd);
             KeyStore ks = KeyStore.getInstance("PKCS12");
-            char[] p12Password = p12Passwd.toCharArray();
+            char [] p12Password = p12Passwd.toCharArray();
             ks.load(new FileInputStream(p12Path), p12Password);
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ks, p12Password);
-
+            
             SSLContext c = SSLContext.getInstance("SSLv3");
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-            TCPConnectionParameters tcp = new TCPConnectionParameters("localhost", 5671);
-            tcp.useSslProtocol(c);
-            connectionFactory = new ConnectionFactory(tcp);
+            connectionFactory = new ConnectionFactory();
+            connectionFactory.useSslProtocol(c);
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex.toString());
         } catch (KeyManagementException ex) {
@@ -91,7 +96,7 @@ public class VerifiedConnection extends UnverifiedConnection {
         }
 
         if (connection == null) {
-            connection = connectionFactory.newConnection();
+            connection = connectionFactory.newConnection("localhost", 5671);
         }
     }
 }

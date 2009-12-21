@@ -30,43 +30,147 @@
 //
 package com.rabbitmq.client;
 
+import java.security.AccessControlException;
+
 /**
- * Holder class for a pair of AMQPConnectionParameters and TCPConnectionParameters
+ * Properties bean to encapsulate parameters for a Connection.
  */
 public class ConnectionParameters {
-    private AMQPConnectionParameters amqpParameters;
-    private TCPConnectionParameters tcpParameters;
 
-    public ConnectionParameters(AMQPConnectionParameters amqpp, TCPConnectionParameters tcp){
-      this.amqpParameters = amqpp;
-      this.tcpParameters = tcp;
+    private static String safeGetProperty(String key, String def) {
+        try {
+            return System.getProperty(key, def);
+        } catch (AccessControlException ex) {
+            return def;
+        }
     }
 
-    public ConnectionParameters(){
-      this(new AMQPConnectionParameters(), new TCPConnectionParameters());
+    /** Default user name */
+    public static final String DEFAULT_USER = "guest";
+
+    /** Default password */
+    public static final String DEFAULT_PASS = "guest";
+
+    /** Default virtual host */
+    public static final String DEFAULT_VHOST = "/";
+
+    /** Default value for the desired maximum channel number; zero for
+     * unlimited */
+    public static final int DEFAULT_CHANNEL_MAX = 0;
+
+    /** Default value for the desired maximum frame size; zero for
+     * unlimited */
+    public static final int DEFAULT_FRAME_MAX = 0;
+
+    /** Default value for desired heartbeat interval; zero for none */
+    public static final int DEFAULT_HEARTBEAT = 0;
+
+    private String _userName = DEFAULT_USER;
+    private String _password = DEFAULT_PASS;
+    private String _virtualHost = DEFAULT_VHOST;
+    private int _requestedChannelMax = DEFAULT_CHANNEL_MAX;
+    private int _requestedFrameMax = DEFAULT_FRAME_MAX;
+    private int _requestedHeartbeat = DEFAULT_HEARTBEAT;
+
+    /**
+     * Instantiate a set of parameters with all values set to the defaults
+     */
+    public ConnectionParameters() {}
+
+    /**
+     * Retrieve the user name.
+     * @return the AMQP user name to use when connecting to the broker
+     */
+    public String getUserName() {
+        return _userName;
     }
 
-    public AMQPConnectionParameters getAMQPParameters() {
-        return amqpParameters;
+    /**
+     * Set the user name.
+     * @param userName the AMQP user name to use when connecting to the broker
+     */
+    public void setUsername(String userName) {
+        _userName = userName;
     }
 
-    public void setAMQPParameters(AMQPConnectionParameters amqpParameters) {
-        this.amqpParameters = amqpParameters;
+    /**
+     * Retrieve the password.
+     * @return the password to use when connecting to the broker
+     */
+    public String getPassword() {
+        return _password;
     }
 
-    public TCPConnectionParameters getTCPParameters() {
-        return tcpParameters;
+    /**
+     * Set the password.
+     * @param password the password to use when connecting to the broker
+     */
+    public void setPassword(String password) {
+        _password = password;
     }
 
-    public void setTCPParameters(TCPConnectionParameters tcpParameters) {
-        this.tcpParameters = tcpParameters;
+    /**
+     * Retrieve the virtual host.
+     * @return the virtual host to use when connecting to the broker
+     */
+    public String getVirtualHost() {
+        return _virtualHost;
     }
 
-    @Override
-    public String toString() {
-        return "ConnectionParameters{" +
-                "amqpParameters= " + amqpParameters +
-                ", tcpParameters= " + tcpParameters +
-                '}';
+    /**
+     * Set the virtual host.
+     * @param virtualHost the virtual host to use when connecting to the broker
+     */
+    public void setVirtualHost(String virtualHost) {
+        _virtualHost = virtualHost;
     }
+
+    /**
+     * Retrieve the requested maximum channel number
+     * @return the initially requested maximum channel number; zero for unlimited
+     */
+    public int getRequestedChannelMax() {
+        return _requestedChannelMax;
+    }
+
+    /**
+     * Set the requested maximum frame size
+     * @param requestedFrameMax initially requested maximum frame size, in octets; zero for unlimited
+     */
+    public void setRequestedFrameMax(int requestedFrameMax) {
+        _requestedFrameMax = requestedFrameMax;
+    }
+
+    /**
+     * Retrieve the requested maximum frame size
+     * @return the initially requested maximum frame size, in octets; zero for unlimited
+     */
+    public int getRequestedFrameMax() {
+        return _requestedFrameMax;
+    }
+
+    /**
+     * Retrieve the requested heartbeat interval.
+     * @return the initially requested heartbeat interval, in seconds; zero for none
+     */
+    public int getRequestedHeartbeat() {
+        return _requestedHeartbeat;
+    }
+
+    /**
+     * Set the requested heartbeat.
+     * @param requestedHeartbeat the initially requested heartbeat interval, in seconds; zero for none
+     */
+    public void setRequestedHeartbeat(int requestedHeartbeat) {
+        _requestedHeartbeat = requestedHeartbeat;
+    }
+
+    /**
+     * Set the requested maximum channel number
+     * @param requestedChannelMax initially requested maximum channel number; zero for unlimited
+     */
+    public void setRequestedChannelMax(int requestedChannelMax) {
+        _requestedChannelMax = requestedChannelMax;
+    }
+
 }

@@ -32,17 +32,21 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.QueueingConsumer;
 
 import java.io.IOException;
 
 /**
  * This tests whether bindings are created and nuked properly.
- * <p/>
+ *
  * The tests attempt to declare durable queues on a secondary node, if
  * present, and that node is restarted as part of the tests while the
  * primary node is still running. That way we exercise any node-down
  * handler code in the server.
+ *
  */
 public class BindingLifecycle extends BindingLifecycleBase {
 
@@ -87,7 +91,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * This tests whether the server checks that an exchange is
      * actually being used when you try to delete it with the ifunused
      * flag.
-     * <p/>
+     *
      * To test this, you try to delete an exchange with a queue still
      * bound to it and expect the delete operation to fail.
      */
@@ -113,18 +117,18 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * This tests whether the server checks that an auto_delete
      * exchange actually deletes the bindings attached to it when it
      * is deleted.
-     * <p/>
+     *
      * To test this, you declare and auto_delete exchange and bind an
      * auto_delete queue to it.
-     * <p/>
+     *
      * Start a consumer on this queue, send a message, let it get
      * consumed and then cancel the consumer
-     * <p/>
+     *
      * The unsubscribe should cause the queue to auto_delete, which in
      * turn should cause the exchange to auto_delete.
-     * <p/>
+     *
      * Then re-declare the queue again and try to rebind it to the same exhange.
-     * <p/>
+     *
      * Because the exchange has been auto-deleted, the bind operation
      * should fail.
      */
@@ -135,7 +139,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
     /**
      * Runs something similar to testExchangeAutoDelete, but adds
      * different queues with the same binding to the same exchange.
-     * <p/>
+     *
      * The difference should be that the original exchange should not
      * get auto-deleted
      */
@@ -149,17 +153,17 @@ public class BindingLifecycle extends BindingLifecycleBase {
     public void testUnbind() throws Exception {
 
         Binding b = new Binding(channel.queueDeclare().getQueue(),
-                "amq.direct",
-                "quay");
+                                "amq.direct",
+                                "quay");
 
         // failure cases
 
-        Binding[] tests = new Binding[]{
-                new Binding("unknown_queue", b.x, b.k),
-                new Binding(b.q, "unknown_exchange", b.k),
-                new Binding("unknown_unknown", "exchange_queue", b.k),
-                new Binding(b.q, b.x, "unknown_rk"),
-                new Binding("unknown_queue", "unknown_exchange", "unknown_rk")
+        Binding[] tests = new Binding[] {
+            new Binding("unknown_queue", b.x, b.k),
+            new Binding(b.q, "unknown_exchange", b.k),
+            new Binding("unknown_unknown", "exchange_queue", b.k),
+            new Binding(b.q, b.x, "unknown_rk"),
+            new Binding("unknown_queue", "unknown_exchange", "unknown_rk")
         };
 
         for (int i = 0; i < tests.length; i++) {

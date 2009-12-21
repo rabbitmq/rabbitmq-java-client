@@ -31,7 +31,10 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 
 public class SendString {
     public static void main(String[] args) {
@@ -48,7 +51,7 @@ public class SendString {
             String message = args[4];
             int portNumber = (args.length > 5) ? Integer.parseInt(args[5]) : AMQP.PROTOCOL.PORT;
 
-            Connection conn = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber)).newConnection();
+            Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
             Channel ch = conn.createChannel();
 
             ch.exchangeDeclare(exchange, exchangeType);

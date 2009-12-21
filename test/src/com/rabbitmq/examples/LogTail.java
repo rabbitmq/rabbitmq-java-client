@@ -31,7 +31,11 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.QueueingConsumer;
 
 public class LogTail {
     public static void main(String[] args) {
@@ -40,7 +44,7 @@ public class LogTail {
             int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
             String exchange = (args.length > 2) ? args[2] : "amq.rabbitmq.log";
 
-            Connection conn = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber)).newConnection();
+            Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
 
             Channel ch1 = conn.createChannel();
 

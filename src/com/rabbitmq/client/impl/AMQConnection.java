@@ -37,8 +37,17 @@ import java.net.SocketException;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import com.rabbitmq.client.*;
-import com.rabbitmq.client.AMQPConnectionParameters;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Address;
+import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Command;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.MissedHeartbeatException;
+import com.rabbitmq.client.RedirectException;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.AMQChannel.SimpleBlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
@@ -68,7 +77,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
 
     /** Initialization parameters */
-    private final AMQPConnectionParameters _params;
+    private final ConnectionParameters _params;
 
     /** The special channel 0 */
     private final AMQChannel _channel0 = new AMQChannel(this, 0) {
@@ -150,7 +159,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** {@inheritDoc} */
-    public AMQPConnectionParameters getParameters() {
+    public ConnectionParameters getParameters() {
         return _params;
     }
 
@@ -164,7 +173,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @param params the initialization parameters for a connection
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      */
-    public AMQConnection(AMQPConnectionParameters params,
+    public AMQConnection(ConnectionParameters params,
                          FrameHandler frameHandler) {
         this(params, frameHandler, new DefaultExceptionHandler());
     }
@@ -175,7 +184,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      * @param exceptionHandler interface to an object that will handle any special exceptions encountered while using this connection
      */
-    public AMQConnection(AMQPConnectionParameters params,
+    public AMQConnection(ConnectionParameters params,
                          FrameHandler frameHandler,
                          ExceptionHandler exceptionHandler)
     {
@@ -401,10 +410,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return (clientValue == 0 || serverValue == 0) ?
             Math.max(clientValue, serverValue) :
             Math.min(clientValue, serverValue);
-    }
-
-    public FrameHandler getFrameHandler() {
-        return _frameHandler;
     }
 
     private class MainLoop extends Thread {

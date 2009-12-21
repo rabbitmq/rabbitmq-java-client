@@ -31,7 +31,11 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.RpcClient;
 
 public class HelloClient {
     public static void main(String[] args) {
@@ -40,7 +44,7 @@ public class HelloClient {
             String hostName = (args.length > 1) ? args[1] : "localhost";
             int portNumber = (args.length > 2) ? Integer.parseInt(args[2]) : AMQP.PROTOCOL.PORT;
 
-            Connection conn = new ConnectionFactory(new TCPConnectionParameters(hostName, portNumber)).newConnection();
+            Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
             Channel ch = conn.createChannel();
             RpcClient service = new RpcClient(ch, "", "Hello");
 

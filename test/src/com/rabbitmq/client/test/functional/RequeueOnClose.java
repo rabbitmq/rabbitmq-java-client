@@ -31,15 +31,16 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.test.BrokerTestCase;
+import java.io.IOException;
+
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.test.BrokerTestCase;
-
-import java.io.IOException;
 
 public abstract class RequeueOnClose
-        extends BrokerTestCase {
+    extends BrokerTestCase
+{
     public static final String Q = "RequeueOnClose";
     public static final int GRATUITOUS_DELAY = 100;
     public static final int MESSAGE_COUNT = 2000;
@@ -49,17 +50,20 @@ public abstract class RequeueOnClose
     protected abstract void close() throws IOException;
 
     protected void setUp()
-            throws IOException {
+        throws IOException
+    {
         // Override to disable the default behaviour from BrokerTestCase.
     }
 
     protected void tearDown()
-            throws IOException {
+        throws IOException
+    {
         // Override to disable the default behaviour from BrokerTestCase.
     }
 
     public void injectMessage()
-            throws IOException {
+        throws IOException
+    {
         channel.queueDeclare(Q);
         channel.queueDelete(Q);
         channel.queueDeclare(Q);
@@ -67,12 +71,14 @@ public abstract class RequeueOnClose
     }
 
     public GetResponse getMessage()
-            throws IOException {
+        throws IOException
+    {
         return channel.basicGet(Q, false);
     }
 
     public void publishAndGet(int count, boolean doAck)
-            throws IOException, InterruptedException {
+        throws IOException, InterruptedException
+    {
         openConnection();
         for (int repeat = 0; repeat < count; repeat++) {
             open();
@@ -84,9 +90,9 @@ public abstract class RequeueOnClose
             open();
             GetResponse r2 = getMessage();
             if (doAck && r2 != null) {
-                fail("Expected missing second basicGet (repeat= " + repeat + ")");
+                fail("Expected missing second basicGet (repeat="+repeat+")");
             } else if (!doAck && r2 == null) {
-                fail("Expected present second basicGet (repeat= " + repeat + ")");
+                fail("Expected present second basicGet (repeat="+repeat+")");
             }
             close();
         }
@@ -94,17 +100,20 @@ public abstract class RequeueOnClose
     }
 
     public void testNormal()
-            throws IOException, InterruptedException {
+        throws IOException, InterruptedException
+    {
         publishAndGet(3, true);
     }
 
     public void testRequeueing()
-            throws IOException, InterruptedException {
+        throws IOException, InterruptedException
+    {
         publishAndGet(3, false);
     }
 
     public void testRequeueingConsumer()
-            throws IOException, InterruptedException, ShutdownSignalException {
+        throws IOException, InterruptedException, ShutdownSignalException
+    {
         openConnection();
         open();
         injectMessage();
@@ -120,7 +129,8 @@ public abstract class RequeueOnClose
     }
 
     public void publishLotsAndGet()
-            throws IOException, InterruptedException, ShutdownSignalException {
+        throws IOException, InterruptedException, ShutdownSignalException
+    {
         openConnection();
         open();
         channel.queueDeclare(Q);
@@ -137,7 +147,7 @@ public abstract class RequeueOnClose
         for (int i = 0; i < MESSAGE_COUNT; i++) {
             GetResponse r = channel.basicGet(Q, true);
             assertNotNull("only got " + i + " out of " + MESSAGE_COUNT +
-                    " messages", r);
+                          " messages", r);
         }
         assertNull(channel.basicGet(Q, true));
         channel.queueDelete(Q);
@@ -146,7 +156,8 @@ public abstract class RequeueOnClose
     }
 
     public void testRequeueInFlight()
-            throws IOException, InterruptedException, ShutdownSignalException {
+        throws IOException, InterruptedException, ShutdownSignalException
+    {
         for (int i = 0; i < 5; i++) {
             publishLotsAndGet();
         }

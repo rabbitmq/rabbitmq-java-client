@@ -31,18 +31,19 @@
 
 package com.rabbitmq.client.test.functional;
 
+import java.util.Arrays;
+import java.io.IOException;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.test.BrokerTestCase;
 
-import java.io.IOException;
-import java.util.Arrays;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public class Recover extends BrokerTestCase {
 
     String queue;
     byte[] body = "message".getBytes();
-
+    
     public void createResources() throws IOException {
         AMQP.Queue.DeclareOk ok = channel.queueDeclare();
         queue = ok.getQueue();
@@ -54,13 +55,13 @@ public class Recover extends BrokerTestCase {
         channel.basicPublish("", queue, new AMQP.BasicProperties(), body);
         QueueingConsumer.Delivery delivery = consumer.nextDelivery();
         assertTrue("consumed message body not as sent",
-                Arrays.equals(body, delivery.getBody()));
+                   Arrays.equals(body, delivery.getBody()));
         // Don't ack it, and get it redelivered to the same consumer
         channel.basicRecoverAsync(true);
         QueueingConsumer.Delivery secondDelivery = consumer.nextDelivery(5000);
         assertNotNull("timed out waiting for redelivered message", secondDelivery);
         assertTrue("consumed (redelivered) message body not as sent",
-                Arrays.equals(body, delivery.getBody()));
+                   Arrays.equals(body, delivery.getBody()));        
     }
 
     public void testNoRedeliveryWithAutoAck() throws IOException, InterruptedException {
@@ -69,7 +70,7 @@ public class Recover extends BrokerTestCase {
         channel.basicPublish("", queue, new AMQP.BasicProperties(), body);
         QueueingConsumer.Delivery delivery = consumer.nextDelivery();
         assertTrue("consumed message body not as sent",
-                Arrays.equals(body, delivery.getBody()));
+                   Arrays.equals(body, delivery.getBody()));
         channel.basicRecoverAsync(true);
         // there's a race here between our recover finishing and the basic.get;
         Thread.sleep(500);
@@ -77,6 +78,6 @@ public class Recover extends BrokerTestCase {
     }
 
     // The AMQP specification under-specifies the behaviour when
-    // requeue= false.  So we can't really test any scenarios for
-    // requeue= false.
+    // requeue=false.  So we can't really test any scenarios for
+    // requeue=false.
 }

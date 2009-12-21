@@ -29,17 +29,9 @@
 //   Contributor(s): ______________________________________.
 //
 /**
- *
+ * 
  */
 package com.rabbitmq.client.test;
-
-import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ExceptionHandler;
-import com.rabbitmq.client.impl.Frame;
-import com.rabbitmq.client.impl.FrameHandler;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 import java.io.IOException;
 import java.net.SocketException;
@@ -48,6 +40,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.RedirectException;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.ExceptionHandler;
+import com.rabbitmq.client.impl.Frame;
+import com.rabbitmq.client.impl.FrameHandler;
+
 /**
  * Test suite for AMQConnection.
  */
@@ -55,9 +60,8 @@ import java.util.List;
 public class AMQConnectionTest extends TestCase {
     // private static final String CLOSE_MESSAGE = "terminated by test";
 
-    /**
-     * Build a suite of tests
-     *
+    /** 
+     * Build a suite of tests 
      * @return the test suite for this class
      */
     public static TestSuite suite() {
@@ -66,41 +70,32 @@ public class AMQConnectionTest extends TestCase {
         return suite;
     }
 
-    /**
-     * The mock frame handler used to test connection behaviour.
-     */
+    /** The mock frame handler used to test connection behaviour. */
     private MockFrameHandler _mockFrameHandler;
-    private AMQPConnectionParameters _params;
+    private ConnectionParameters _params;
 
-    /**
-     * Setup the environment for this test
-     *
-     * @throws Exception if anything goes wrong
+    /** Setup the environment for this test
      * @see junit.framework.TestCase#setUp()
+     * @throws Exception if anything goes wrong
      */
-    @Override
-    protected void setUp() throws Exception {
+    @Override protected void setUp() throws Exception {
         super.setUp();
         _mockFrameHandler = new MockFrameHandler();
-        _params = new AMQPConnectionParameters();
+        _params = new ConnectionParameters();
     }
 
-    /**
-     * Tear down the environment for this test
-     *
-     * @throws Exception if anything goes wrong
+    /** Tear down the environment for this test
      * @see junit.framework.TestCase#tearDown()
+     * @throws Exception if anything goes wrong
      */
-    @Override
-    protected void tearDown() throws Exception {
+    @Override protected void tearDown() throws Exception {
         _params = null;
         _mockFrameHandler = null;
         super.tearDown();
     }
 
-    /**
-     * Check the AMQConnection does send exactly 1 initial header, and deal correctly with
-     * the frame handler throwing an exception when we try to read data
+    /** Check the AMQConnection does send exactly 1 initial header, and deal correctly with
+     * the frame handler throwing an exception when we try to read data 
      */
     public void testConnectionSendsSingleHeaderAndTimesOut() {
         IOException exception = new SocketTimeoutException();
@@ -110,9 +105,9 @@ public class AMQConnectionTest extends TestCase {
         try {
             new AMQConnection(_params, _mockFrameHandler, handler).start(false);
             fail("Connection should have thrown exception");
-        } catch (IOException signal) {
-            // As expected
-        } catch (RedirectException e) {
+        } catch(IOException signal) {
+           // As expected 
+        } catch(RedirectException e) {
             fail("Unexpected redirect");
         }
         assertEquals(1, _mockFrameHandler.countHeadersSent());
@@ -120,7 +115,7 @@ public class AMQConnectionTest extends TestCase {
         List<Throwable> exceptionList = handler.getHandledExceptions();
         assertEquals(Collections.<Throwable>singletonList(exception), exceptionList);
     }
-
+   
     /** Check we can open a connection once, but not twice.
      * @throws IOException */
 //    public void testCanOpenConnectionOnceOnly() throws IOException {
@@ -136,24 +131,16 @@ public class AMQConnectionTest extends TestCase {
 
 // add test that we time out if no initial Start command is received,
 // setting a timeout and having the FrameHandler return null
-
-    /**
-     * Mock frame handler to facilitate testing.
-     */
+    
+     /** Mock frame handler to facilitate testing. */
     public static class MockFrameHandler implements FrameHandler {
-        /**
-         * How many times has sendHeader() been called?
-         */
+        /** How many times has sendHeader() been called? */
         private int _numHeadersSent;
-
-        /**
-         * An optional exception for us to throw on reading frames
-         */
+        
+        /** An optional exception for us to throw on reading frames */
         private IOException _exceptionOnReadingFrames;
 
-        /**
-         * count how many headers we've sent
-         *
+        /** count how many headers we've sent 
          * @return the number of sent headers
          */
         public int countHeadersSent() {
@@ -161,7 +148,7 @@ public class AMQConnectionTest extends TestCase {
         }
 
         public void setExceptionOnReadingFrames(IOException exception) {
-            _exceptionOnReadingFrames = exception;
+            _exceptionOnReadingFrames = exception;            
         }
 
         public Frame readFrame() throws IOException {
@@ -173,7 +160,7 @@ public class AMQConnectionTest extends TestCase {
         }
 
         public void sendHeader() throws IOException {
-            _numHeadersSent++;
+            _numHeadersSent++;            
         }
 
         public void setTimeout(int timeoutMs) throws SocketException {
@@ -201,9 +188,7 @@ public class AMQConnectionTest extends TestCase {
         }
     }
 
-    /**
-     * Mock frame handler to facilitate testing.
-     */
+    /** Mock frame handler to facilitate testing. */
     public class MyExceptionHandler implements ExceptionHandler {
         private List<Throwable> _handledExceptions = new ArrayList<Throwable>();
 
@@ -219,12 +204,13 @@ public class AMQConnectionTest extends TestCase {
                                             Throwable ex,
                                             Consumer c,
                                             String consumerTag,
-                                            String methodName) {
+                                            String methodName)
+        {
             fail("handleConsumerException " + consumerTag + " " + methodName + ": " + ex);
         }
-
+        
         public List<Throwable> getHandledExceptions() {
             return _handledExceptions;
         }
-    }
+    }    
 }

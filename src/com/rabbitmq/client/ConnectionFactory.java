@@ -49,80 +49,132 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory {
+    private final ConnectionParameters _params;
 
-    private ConnectionParameters[] _connectionParams;
-
+    /**
+     * Holds the SocketFactory used to manufacture outbound sockets.
+     */
+    private SocketFactory _factory = SocketFactory.getDefault();
+    
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
     public ConnectionFactory() {
-      _connectionParams = new ConnectionParameters[]{ new ConnectionParameters() };  
+        _params = new ConnectionParameters();
     }
 
     /**
      * Instantiate a ConnectionFactory with the given connection parameters.
      * @param params the relevant parameters for instantiating the broker connection
      */
-    public ConnectionFactory(AMQPConnectionParameters amqpParams, TCPConnectionParameters tcpParams) {
-      _connectionParams = new ConnectionParameters[]{ new ConnectionParameters(amqpParams, tcpParams) };
+    public ConnectionFactory(ConnectionParameters params) {
+        _params = params;
     }
 
-    public ConnectionFactory(ConnectionParameters... connectionParams){
-      _connectionParams = connectionParams;
+    /**
+     * Retrieve the connection parameters.
+     * @return the initialization parameters used to open the connection
+     */
+    public ConnectionParameters getParameters() {
+        return _params;
     }
 
-    public ConnectionFactory(TCPConnectionParameters tcpParams){
-      this(new AMQPConnectionParameters(), tcpParams);
+    /**
+     * Retrieve the socket factory used to make connections with.
+     */
+    public SocketFactory getSocketFactory() {
+        return _factory;
     }
 
-    public ConnectionFactory(AMQPConnectionParameters amqpParams, TCPConnectionParameters... tcpParams){
-      if(tcpParams.length == 0)
-        tcpParams = new TCPConnectionParameters[]{ new TCPConnectionParameters() };
-
-      _connectionParams = new ConnectionParameters[tcpParams.length];
-      for(int i = 0; i < tcpParams.length; i++)
-        _connectionParams[i] = new ConnectionParameters(amqpParams, tcpParams[i]);
+    /**
+     * Set the socket factory used to make connections with. Can be
+     * used to enable SSL connections by passing in a
+     * javax.net.ssl.SSLSocketFactory instance.
+     *
+     * @see #useSslProtocol
+     */
+    public void setSocketFactory(SocketFactory factory) {
+        _factory = factory;
     }
 
-
-    public ConnectionParameters[] getConnectionParameters(){
-      return _connectionParams;
+    /**
+     * Convenience method for setting up a SSL socket factory, using
+     * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
+     */
+    public void useSslProtocol()
+        throws NoSuchAlgorithmException, KeyManagementException
+    {
+        useSslProtocol(DEFAULT_SSL_PROTOCOL);
     }
 
-    public void setConnectionParameters(ConnectionParameters... params){
-      _connectionParams = params;
+    /**
+     * Convenience method for setting up a SSL socket factory, using
+     * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
+     */
+    public void useSslProtocol(String protocol)
+        throws NoSuchAlgorithmException, KeyManagementException
+    {
+        useSslProtocol(protocol, new NullTrustManager());
     }
 
-    protected FrameHandler createFrameHandler(TCPConnectionParameters params)
+    /**
+     * Convenience method for setting up an SSL socket factory.
+     * Pass in the SSL protocol to use, e.g. "TLS" or "SSLv3".
+     *
+     * @param protocol SSL protocol to use.
+     */
+    public void useSslProtocol(String protocol, TrustManager trustManager)
+        throws NoSuchAlgorithmException, KeyManagementException
+    {
+        SSLContext c = SSLContext.getInstance(protocol);
+        c.init(null, new TrustManager[] { trustManager }, null);
+        useSslProtocol(c);
+    }
+
+    /**
+     * Convenience method for setting up an SSL socket factory.
+     * Pass in an initialized SSLContext.
+     *
+     * @param context An initialized SSLContext
+     */
+    public void useSslProtocol(SSLContext context)
+    {
+        setSocketFactory(context.getSocketFactory());
+    }
+
+    /**
+     * The default SSL protocol (currently "SSLv3").
+     */
+    public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
+
+    protected FrameHandler createFrameHandler(Address addr)
         throws IOException {
-        String hostName = params.getHost();
-        int portNumber = params.getPort();
-        return new SocketFrameHandler(params.getSocketFactory(), hostName, portNumber);
+
+        String hostName = addr.getHost();
+        int portNumber = addr.getPort();
+        if (portNumber == -1) portNumber = AMQP.PROTOCOL.PORT;
+        return new SocketFrameHandler(_factory, hostName, portNumber);
     }
 
-    private Connection newConnection(ConnectionParameters[] connectionParams,
+    private Connection newConnection(Address[] addrs,
                                      int maxRedirects,
                                      Map<Address,Integer> redirectAttempts)
         throws IOException
     {
         IOException lastException = null;
 
-        for (ConnectionParameters params : connectionParams) {            
-            TCPConnectionParameters tcpParams = params.getTCPParameters();
-            Address addr = tcpParams.getAddress();
-            ConnectionParameters[] redirectionTargets = new ConnectionParameters[0];
+        for (Address addr : addrs) {
+            Address[] lastKnownAddresses = new Address[0];
             try {
                 while(true) {
-                    FrameHandler frameHandler = createFrameHandler(tcpParams);
+                    FrameHandler frameHandler = createFrameHandler(addr);
                     Integer redirectCount = redirectAttempts.get(addr);
                     if (redirectCount == null)
                         redirectCount = 0;
                     boolean allowRedirects = redirectCount < maxRedirects;
                     try {
-                        AMQConnection conn = 
-                          new AMQConnection(
-                            params.getAMQPParameters(),
-                            frameHandler);
+                        AMQConnection conn = new AMQConnection(_params,
+                                    frameHandler);
                         conn.start(!allowRedirects);
                         return conn;
                     } catch (RedirectException e) {
@@ -131,17 +183,7 @@ public class ConnectionFactory {
                             throw new IOException("server ignored 'insist'");
                         } else {
                             redirectAttempts.put(addr, redirectCount+1);
-                            Address[] knownAddresses = e.getKnownAddresses();
-                            redirectionTargets = new ConnectionParameters[knownAddresses.length];
-                            for(int i = 0; i < redirectionTargets.length; i++){
-                              ConnectionParameters redirectParams = new ConnectionParameters();
-                              redirectParams.setAMQPParameters(params.getAMQPParameters());
-                              TCPConnectionParameters redirectTcp = new TCPConnectionParameters();
-                              redirectTcp.setSocketFactory(tcpParams.getSocketFactory());
-                              redirectTcp.setAddress(knownAddresses[i]);
-                              redirectParams.setTCPParameters(redirectTcp);
-                              redirectionTargets[i] = redirectParams;
-                            }
+                            lastKnownAddresses = e.getKnownAddresses();
                             addr = e.getAddress();
                             //TODO: we may want to log redirection attempts.
                         }
@@ -149,13 +191,13 @@ public class ConnectionFactory {
                 }
             } catch (IOException e) {
                 lastException = e;
-                if (redirectionTargets.length > 0) {
+                if (lastKnownAddresses.length > 0) {
                     // If there aren't any, don't bother trying, since
-                    // a recursive call with empty redirectionTargets
+                    // a recursive call with empty lastKnownAddresses
                     // will cause our lastException to be stomped on
                     // by an uninformative IOException. See bug 16273.
                     try {
-                        return newConnection(redirectionTargets,
+                        return newConnection(lastKnownAddresses,
                                              maxRedirects,
                                              redirectAttempts);
                     } catch (IOException e1) {
@@ -179,10 +221,10 @@ public class ConnectionFactory {
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(int maxRedirects)
+    public Connection newConnection(Address[] addrs, int maxRedirects)
         throws IOException
     {
-        return newConnection(_connectionParams,
+        return newConnection(addrs,
                              maxRedirects,
                              new HashMap<Address,Integer>());
     }
@@ -193,9 +235,32 @@ public class ConnectionFactory {
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection()
+    public Connection newConnection(Address[] addrs)
         throws IOException
     {
-        return newConnection(0);
+        return newConnection(addrs, 0);
+    }
+
+    /**
+     * Instantiates a connection and return an interface to it.
+     * @param hostName the host to connect to
+     * @param portNumber the port number to use
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newConnection(String hostName, int portNumber) throws IOException {
+        return newConnection(new Address[] {
+                                 new Address(hostName, portNumber)
+                             });
+    }
+
+    /**
+     * Create a new broker connection, using the default AMQP port
+     * @param hostName the host to connect to
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newConnection(String hostName) throws IOException {
+        return newConnection(hostName, -1);
     }
 }

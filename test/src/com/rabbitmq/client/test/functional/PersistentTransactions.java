@@ -31,13 +31,15 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.AMQP.BasicProperties;
 
 public class PersistentTransactions
-        extends TransactionsBase {
+    extends TransactionsBase
+{
 
-    protected BasicProperties getMessageProperties() {
+    protected BasicProperties getMessageProperties()
+    {
         return MessageProperties.PERSISTENT_TEXT_PLAIN;
     }
 
