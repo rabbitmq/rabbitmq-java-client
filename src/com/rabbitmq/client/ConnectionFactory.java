@@ -116,7 +116,7 @@ public class ConnectionFactory {
      *  @return the default port to use for connections
      */
     public int getPort() {
-      return portOrDefault(port);
+        return portOrDefault(port);
     }
 
     /**
@@ -247,7 +247,7 @@ public class ConnectionFactory {
     }
 
     public boolean isSSL(){
-      return getSocketFactory() instanceof SSLSocketFactory;
+        return getSocketFactory() instanceof SSLSocketFactory;
     }
 
     /**
