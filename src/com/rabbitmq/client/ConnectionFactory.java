@@ -82,16 +82,16 @@ public class ConnectionFactory {
     /** The default port to use for AMQP connections when using SSL */
     public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
 
-    private String userName = DEFAULT_USER;
-    private String password = DEFAULT_PASS;
-    private String virtualHost = DEFAULT_VHOST;
-    private String host = DEFAULT_HOST;
-    private int port = USE_DEFAULT_PORT;
-    private int requestedChannelMax = DEFAULT_CHANNEL_MAX;
-    private int requestedFrameMax = DEFAULT_FRAME_MAX;
-    private int requestedHeartbeat = DEFAULT_HEARTBEAT;
-    private SocketFactory factory = SocketFactory.getDefault();
-    private ConnectionFactory fallback = null;   
+    private String userName               = DEFAULT_USER;
+    private String password               = DEFAULT_PASS;
+    private String virtualHost            = DEFAULT_VHOST;
+    private String host                   = DEFAULT_HOST;
+    private int port                      = USE_DEFAULT_PORT;
+    private int requestedChannelMax       = DEFAULT_CHANNEL_MAX;
+    private int requestedFrameMax         = DEFAULT_FRAME_MAX;
+    private int requestedHeartbeat        = DEFAULT_HEARTBEAT;
+    private SocketFactory factory         = SocketFactory.getDefault();
+    private ConnectionFactory fallback    = null;   
  
     /**
      *  @return the default host to use for connections
