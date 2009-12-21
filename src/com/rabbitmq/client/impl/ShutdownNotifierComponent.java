@@ -31,16 +31,18 @@
 
 package com.rabbitmq.client.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownNotifier;
 import com.rabbitmq.client.ShutdownSignalException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ShutdownNotifierComponent implements ShutdownNotifier {
 
-    /** List of all shutdown listeners associated with the component */
+    /**
+     * List of all shutdown listeners associated with the component
+     */
     public List<ShutdownListener> listeners
             = new ArrayList<ShutdownListener>();
 
@@ -51,10 +53,9 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
      */
     public volatile ShutdownSignalException _shutdownCause = null;
 
-    public void addShutdownListener(ShutdownListener listener)
-    {
+    public void addShutdownListener(ShutdownListener listener) {
         boolean closed = false;
-        synchronized(listeners) {
+        synchronized (listeners) {
             closed = !isOpen();
             listeners.add(listener);
         }
@@ -66,10 +67,9 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
         return _shutdownCause;
     }
 
-    public void notifyListeners()
-    {
-        synchronized(listeners) {
-            for (ShutdownListener l: listeners)
+    public void notifyListeners() {
+        synchronized (listeners) {
+            for (ShutdownListener l : listeners)
                 try {
                     l.shutdownCompleted(getCloseReason());
                 } catch (Exception e) {
@@ -78,9 +78,8 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
         }
     }
 
-    public void removeShutdownListener(ShutdownListener listener)
-    {
-        synchronized(listeners) {
+    public void removeShutdownListener(ShutdownListener listener) {
+        synchronized (listeners) {
             listeners.remove(listener);
         }
     }

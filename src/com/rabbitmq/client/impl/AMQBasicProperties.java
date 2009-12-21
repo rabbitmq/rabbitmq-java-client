@@ -30,12 +30,11 @@
 //
 package com.rabbitmq.client.impl;
 
-import java.io.IOException;
-import java.util.Date;
-import java.util.Map;
-import java.util.Hashtable;
-
 import com.rabbitmq.client.BasicProperties;
+
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Map;
 
 public abstract class AMQBasicProperties
         extends AMQContentHeader implements BasicProperties {
@@ -43,19 +42,19 @@ public abstract class AMQBasicProperties
     @Override
     public Object clone() throws CloneNotSupportedException {
         AMQBasicProperties bpClone = (AMQBasicProperties) super.clone();
-        
+
         Map<String, Object> thisHeaders = getHeaders();
         if (thisHeaders != null) {
             Map<String, Object> headers = new Hashtable<String, Object>();
             headers.putAll(thisHeaders);
             bpClone.setHeaders(headers);
         }
-        
+
         Date thisTimestamp = getTimestamp();
         if (thisTimestamp != null) {
             bpClone.setTimestamp((Date) thisTimestamp.clone());
         }
-        
+
         return bpClone;
     }
 }

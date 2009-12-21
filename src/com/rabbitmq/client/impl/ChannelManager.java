@@ -30,24 +30,24 @@
 //
 package com.rabbitmq.client.impl;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import com.rabbitmq.client.ShutdownSignalException;
+
+import java.io.IOException;
+import java.util.*;
 
 /**
  * Manages a set of channels, indexed by channel number.
  */
 
 public class ChannelManager {
-    /** Mapping from channel number to AMQChannel instance */
+    /**
+     * Mapping from channel number to AMQChannel instance
+     */
     private final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
 
-    /** Maximum channel number available on this connection. */
+    /**
+     * Maximum channel number available on this connection.
+     */
     public int _channelMax = 0;
 
     public synchronized int getChannelMax() {
@@ -60,6 +60,7 @@ public class ChannelManager {
 
     /**
      * Public API - Looks up an existing channel associated with this connection.
+     *
      * @param channelNumber the number of the required channel
      * @return the relevant channel descriptor
      */
@@ -69,7 +70,7 @@ public class ChannelManager {
 
     public void handleSignal(ShutdownSignalException signal) {
         Set<ChannelN> channels;
-        synchronized(_channelMap) {
+        synchronized (_channelMap) {
             channels = new HashSet<ChannelN>(_channelMap.values());
         }
         for (AMQChannel channel : channels) {

@@ -31,22 +31,21 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.UnexpectedFrameError;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.AMQImpl.Basic.Publish;
+import com.rabbitmq.client.impl.Frame;
+import com.rabbitmq.client.impl.FrameHandler;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
 import java.io.IOException;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.UnexpectedFrameError;
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.Frame;
-import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.AMQImpl.Basic.Publish;
 
 public class BrokenFramesTest extends TestCase {
     public static TestSuite suite() {
@@ -87,23 +86,23 @@ public class BrokenFramesTest extends TestCase {
             assertEquals(AMQP.FRAME_METHOD, unexpectedFrameError.getExpectedFrameType());
             return;
         }
-        
+
         fail("No UnexpectedFrameError thrown");
     }
-    
+
     public void testMethodThenBody() throws Exception {
         List<Frame> frames = new ArrayList<Frame>();
-        
+
         byte[] contentBody = new byte[10];
         int channelNumber = 0;
-        
+
         Publish method = new Publish(1, "test", "test", false, false);
 
         frames.add(method.toFrame(0));
         frames.add(Frame.fromBodyFragment(channelNumber, contentBody, 0, contentBody.length));
-        
+
         myFrameHandler.setFrames(frames.iterator());
- 
+
         try {
             new AMQConnection(params, myFrameHandler).start(false);
         } catch (IOException e) {
@@ -113,7 +112,7 @@ public class BrokenFramesTest extends TestCase {
             assertEquals(AMQP.FRAME_HEADER, unexpectedFrameError.getExpectedFrameType());
             return;
         }
-        
+
         fail("No UnexpectedFrameError thrown");
     }
 
@@ -125,19 +124,19 @@ public class BrokenFramesTest extends TestCase {
                 return (UnexpectedFrameError) t;
             }
         }
-        
+
         return null;
     }
 
     private static class MyFrameHandler implements FrameHandler {
-    	private Iterator<Frame> frames;
+        private Iterator<Frame> frames;
 
-    	public void setFrames(Iterator<Frame> frames) {
-			this.frames = frames;
-		}
+        public void setFrames(Iterator<Frame> frames) {
+            this.frames = frames;
+        }
 
-		public Frame readFrame() throws IOException {
-        	return frames.next();
+        public Frame readFrame() throws IOException {
+            return frames.next();
         }
 
         public void sendHeader() throws IOException {

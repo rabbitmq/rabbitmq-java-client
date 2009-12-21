@@ -39,7 +39,7 @@ import java.io.PrintStream;
  */
 
 public class Utility {
-  
+
     public static String makeStackTrace(Throwable throwable) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);

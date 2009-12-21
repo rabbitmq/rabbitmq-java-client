@@ -31,28 +31,14 @@
 
 package com.rabbitmq.examples;
 
-import java.io.IOException;
-import java.io.InputStream;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Address;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.ReturnListener;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.AMQImpl;
-import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.*;
 import com.rabbitmq.client.impl.Method;
-import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 public class TestMain {
     public static void main(String[] args) throws IOException {
@@ -96,16 +82,16 @@ public class TestMain {
         }
 
         protected FrameHandler createFrameHandler(Address addr)
-            throws IOException {
+                throws IOException {
 
             String hostName = addr.getHost();
             int portNumber = addr.getPort();
             if (portNumber == -1) portNumber = AMQP.PROTOCOL.PORT;
             return new SocketFrameHandler(getSocketFactory(), hostName, portNumber) {
-                    public void sendHeader() throws IOException {
-                        sendHeader(protocolMajor, protocolMinor);
-                    }
-                };
+                public void sendHeader() throws IOException {
+                    sendHeader(protocolMajor, protocolMinor);
+                }
+            };
         }
     }
 
@@ -117,7 +103,8 @@ public class TestMain {
             conn = new TestConnectionFactory(0, 1).newConnection(hostName, portNumber);
             conn.close();
             throw new RuntimeException("expected socket close");
-        } catch (IOException e) {}
+        } catch (IOException e) {
+        }
 
         //should succeed IF the highest version supported by the
         //server is a version supported by this client
@@ -132,7 +119,8 @@ public class TestMain {
             conn = params.newConnection(hostName, portNumber);
             conn.close();
             throw new RuntimeException("expected socket close");
-        } catch (IOException e) {}
+        } catch (IOException e) {
+        }
 
         params = new ConnectionFactory();
         params.setRequestedChannelMax(10);
@@ -163,8 +151,8 @@ public class TestMain {
                                                 int negotiated) {
         if (requested != 0 && (negotiated == 0 || negotiated > requested)) {
             throw new RuntimeException("requested " + name + " of " +
-                                       requested + ", negotiated " +
-                                       negotiated);
+                    requested + ", negotiated " +
+                    negotiated);
         }
     }
 
@@ -187,7 +175,7 @@ public class TestMain {
         // Test what happens when we just kill the connection
         conn = new ConnectionFactory().newConnection(hostName, portNumber);
         ch = conn.createChannel();
-        ((SocketFrameHandler)((AMQConnection)conn).getFrameHandler()).close();
+        ((SocketFrameHandler) ((AMQConnection) conn).getFrameHandler()).close();
     }
 
     public static void runProducerConsumerTest(String hostName, int portNumber, int commitEvery) throws IOException {
@@ -241,11 +229,11 @@ public class TestMain {
                     throws IOException {
                 Method method = new AMQImpl.Basic.Return(replyCode, replyText, exchange, routingKey);
                 log("Handling return with body " + new String(body));
-                returnCell.set(new Object[] { method, properties, body });
+                returnCell.set(new Object[]{method, properties, body});
             }
         });
 
-        String queueName =_ch1.queueDeclare().getQueue();
+        String queueName = _ch1.queueDeclare().getQueue();
 
         sendLotsOfTrivialMessages(batchSize, queueName);
         expect(batchSize, drain(batchSize, queueName, false));
@@ -265,7 +253,7 @@ public class TestMain {
         tryTopics();
         tryBasicReturn();
 
-        queueName =_ch1.queueDeclare().getQueue();
+        queueName = _ch1.queueDeclare().getQueue();
         sendLotsOfTrivialMessages(batchSize, queueName);
         expect(batchSize, drain(batchSize, queueName, true));
 
@@ -298,17 +286,20 @@ public class TestMain {
             super(ch);
         }
 
-        @Override public void handleConsumeOk(String c) {
+        @Override
+        public void handleConsumeOk(String c) {
             log(this + ".handleConsumeOk(" + c + ")");
             super.handleConsumeOk(c);
         }
 
-        @Override public void handleCancelOk(String c) {
+        @Override
+        public void handleCancelOk(String c) {
             log(this + ".handleCancelOk(" + c + ")");
             super.handleCancelOk(c);
         }
 
-        @Override public void handleShutdownSignal(String c, ShutdownSignalException sig) {
+        @Override
+        public void handleShutdownSignal(String c, ShutdownSignalException sig) {
             log(this + ".handleShutdownSignal(" + c + ", " + sig + ")");
             super.handleShutdownSignal(c, sig);
         }
@@ -331,7 +322,8 @@ public class TestMain {
             _counter = 0;
         }
 
-        @Override public void handleDelivery(String consumer_Tag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+        @Override
+        public void handleDelivery(String consumer_Tag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
             log("Async message (" + _counter + "," + (_noAck ? "noack" : "ack") + "): " + new String(body));
             _counter++;
             if (_counter == _batchSize) {
@@ -561,7 +553,6 @@ public class TestMain {
 
         */
     }
-
 
 
     // utility: tell what Java compiler version a class was compiled with

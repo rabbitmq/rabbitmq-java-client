@@ -32,18 +32,15 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class JSONWriter {
     private boolean indentMode = false;
     private int indentLevel = 0;
     private StringBuffer buf = new StringBuffer();
 
-    public JSONWriter() {}
+    public JSONWriter() {
+    }
 
     public JSONWriter(boolean indenting) {
         indentMode = indenting;
@@ -107,20 +104,23 @@ public class JSONWriter {
 
     /**
      * Write only a certain subset of the object's properties and fields.
-     * @param klass the class to look up properties etc in
-     * @param object the object
+     *
+     * @param klass      the class to look up properties etc in
+     * @param object     the object
      * @param properties explicit list of property/field names to include - may be null for "all"
      */
     public void writeLimited(Class klass, Object object, String[] properties) {
         Set<String> propertiesSet = null;
         if (properties != null) {
             propertiesSet = new HashSet<String>();
-            for (String p: properties) {
+            for (String p : properties) {
                 propertiesSet.add(p);
             }
         }
 
-        add("{"); indentLevel += 2; newline();
+        add("{");
+        indentLevel += 2;
+        newline();
         boolean needComma = false;
 
         BeanInfo info;
@@ -143,8 +143,11 @@ public class JSONWriter {
                     Method accessor = prop.getReadMethod();
                     if (accessor != null && !Modifier.isStatic(accessor.getModifiers())) {
                         try {
-                            Object value = accessor.invoke(object, (Object[])null);
-                            if (needComma) { add(','); newline(); }
+                            Object value = accessor.invoke(object, (Object[]) null);
+                            if (needComma) {
+                                add(',');
+                                newline();
+                            }
                             needComma = true;
                             add(name, value);
                         } catch (Exception e) {
@@ -164,7 +167,10 @@ public class JSONWriter {
                 if (!Modifier.isStatic(fieldMod)) {
                     try {
                         Object v = field.get(object);
-                        if (needComma) { add(','); newline(); }
+                        if (needComma) {
+                            add(',');
+                            newline();
+                        }
                         needComma = true;
                         add(name, v);
                     } catch (Exception e) {
@@ -174,7 +180,9 @@ public class JSONWriter {
             }
         }
 
-        indentLevel -= 2; newline(); add("}");
+        indentLevel -= 2;
+        newline();
+        add("}");
     }
 
     private void add(String name, Object value) {
@@ -185,16 +193,23 @@ public class JSONWriter {
     }
 
     private void map(Map<String, Object> map) {
-        add("{"); indentLevel += 2; newline();
+        add("{");
+        indentLevel += 2;
+        newline();
         Iterator<String> it = map.keySet().iterator();
         while (it.hasNext()) {
             Object key = it.next();
             value(key);
             add(":");
             value(map.get(key));
-            if (it.hasNext()) { add(","); newline(); }
+            if (it.hasNext()) {
+                add(",");
+                newline();
+            }
         }
-        indentLevel -= 2; newline(); add("}");
+        indentLevel -= 2;
+        newline();
+        add("}");
     }
 
     private void array(Iterator it) {

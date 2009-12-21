@@ -31,28 +31,25 @@
 
 package com.rabbitmq.client.test.server;
 
-import java.io.IOException;
-
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 
-public class PersisterRestart1 extends RestartBase
-{
+import java.io.IOException;
+
+public class PersisterRestart1 extends RestartBase {
 
     private static final String Q = "Restart";
 
     private Channel channel2;
 
     protected void setUp()
-        throws IOException
-    {
+            throws IOException {
         super.setUp();
         channel2 = connection.createChannel();
     }
 
     protected void tearDown()
-        throws IOException
-    {
+            throws IOException {
         if (channel2 != null) {
             channel2.close();
             channel2 = null;
@@ -61,15 +58,13 @@ public class PersisterRestart1 extends RestartBase
     }
 
     protected void publishTwo()
-        throws IOException
-    {
+            throws IOException {
         basicPublishPersistent(Q);
         basicPublishPersistent(Q);
     }
 
     protected void ackSecond()
-        throws IOException
-    {
+            throws IOException {
         GetResponse r;
         assertNotNull(r = channel2.basicGet(Q, false));
         assertNotNull(r = channel2.basicGet(Q, false));
@@ -77,8 +72,7 @@ public class PersisterRestart1 extends RestartBase
     }
 
     protected void exercisePersister()
-        throws IOException
-    {
+            throws IOException {
         publishTwo();
         channel.txSelect();
         ackSecond();
@@ -91,8 +85,7 @@ public class PersisterRestart1 extends RestartBase
     }
 
     public void testRestart()
-        throws IOException, InterruptedException
-    {
+            throws IOException, InterruptedException {
         declareDurableQueue(Q);
         exercisePersister();
         forceSnapshot();

@@ -38,19 +38,20 @@ import java.io.UnsupportedEncodingException;
  * Subclass of RpcServer which accepts UTF-8 string requests.
  */
 public class StringRpcServer extends RpcServer {
-    public StringRpcServer(Channel channel) throws IOException
-    { super(channel); }
+    public StringRpcServer(Channel channel) throws IOException {
+        super(channel);
+    }
 
-    public StringRpcServer(Channel channel, String queueName) throws IOException
-    { super(channel, queueName); }
+    public StringRpcServer(Channel channel, String queueName) throws IOException {
+        super(channel, queueName);
+    }
 
     /**
      * Overridden to do UTF-8 processing, and delegate to
      * handleStringCall. If UTF-8 is not understood by this JVM, falls
      * back to the platform default.
      */
-    public byte[] handleCall(byte[] requestBody, AMQP.BasicProperties replyProperties)
-    {
+    public byte[] handleCall(byte[] requestBody, AMQP.BasicProperties replyProperties) {
         String request;
         try {
             request = new String(requestBody, "UTF-8");
@@ -68,16 +69,14 @@ public class StringRpcServer extends RpcServer {
     /**
      * Delegates to handleStringCall(String).
      */
-    public String handleStringCall(String request, AMQP.BasicProperties replyProperties)
-    {
+    public String handleStringCall(String request, AMQP.BasicProperties replyProperties) {
         return handleStringCall(request);
     }
 
     /**
      * Default implementation - override in subclasses. Returns the empty string.
      */
-    public String handleStringCall(String request)
-    {
+    public String handleStringCall(String request) {
         return "";
     }
 
@@ -86,8 +85,7 @@ public class StringRpcServer extends RpcServer {
      * handleStringCast. If UTF-8 is not understood by this JVM, falls
      * back to the platform default.
      */
-    public void handleCast(byte[] requestBody)
-    {
+    public void handleCast(byte[] requestBody) {
         try {
             handleStringCast(new String(requestBody, "UTF-8"));
         } catch (UnsupportedEncodingException uee) {

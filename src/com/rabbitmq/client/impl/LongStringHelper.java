@@ -40,58 +40,58 @@ import java.util.Arrays;
 /**
  * Utility for working with {@link LongString}s.
  */
-public class LongStringHelper
-{
+public class LongStringHelper {
     /**
      * Private API - Implementation of {@link LongString}. When
      * interpreting bytes as a string, uses UTF-8 encoding.
      */
     public static class ByteArrayLongString
-        implements LongString
-    {
-        byte [] bytes;
+            implements LongString {
+        byte[] bytes;
 
-        public ByteArrayLongString(byte[] bytes)
-        {
+        public ByteArrayLongString(byte[] bytes) {
             this.bytes = bytes;
         }
 
-        @Override public boolean equals(Object o)
-        {
-            if(o instanceof LongString) {
-                LongString other = (LongString)o;
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof LongString) {
+                LongString other = (LongString) o;
                 return Arrays.equals(this.bytes, other.getBytes());
             }
 
             return false;
         }
 
-        @Override public int hashCode()
-        {
-           return Arrays.hashCode(this.bytes);
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(this.bytes);
         }
 
-        /** {@inheritDoc} */
-        public byte[] getBytes()
-        {
+        /**
+         * {@inheritDoc}
+         */
+        public byte[] getBytes() {
             return bytes;
         }
 
-        /** {@inheritDoc} */
+        /**
+         * {@inheritDoc}
+         */
         public DataInputStream getStream()
-            throws IOException
-        {
+                throws IOException {
             return new DataInputStream(new ByteArrayInputStream(bytes));
         }
 
-        /** {@inheritDoc} */
-        public long length()
-        {
+        /**
+         * {@inheritDoc}
+         */
+        public long length() {
             return bytes.length;
         }
 
-        @Override public String toString()
-        {
+        @Override
+        public String toString() {
             try {
                 return new String(bytes, "utf-8");
             }
@@ -103,11 +103,11 @@ public class LongStringHelper
 
     /**
      * Converts a String to a LongString using UTF-8 encoding.
+     *
      * @param string the string to wrap
      * @return a LongString wrapping it
      */
-    public static LongString asLongString(String string)
-    {
+    public static LongString asLongString(String string) {
         try {
             return new ByteArrayLongString(string.getBytes("utf-8"));
         }
@@ -118,11 +118,11 @@ public class LongStringHelper
 
     /**
      * Converts a binary block to a LongString.
+     *
      * @param bytes the data to wrap
      * @return a LongString wrapping it
      */
-    public static LongString asLongString(byte [] bytes)
-    {
+    public static LongString asLongString(byte[] bytes) {
         return new ByteArrayLongString(bytes);
     }
 }

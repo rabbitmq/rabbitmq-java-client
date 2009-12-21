@@ -41,10 +41,11 @@ public class Envelope {
 
     /**
      * Construct an {@link Envelope} with the specified construction parameters
+     *
      * @param deliveryTag the delivery tag
-     * @param redeliver true if this is a redelivery following a failed ack
-     * @param exchange the exchange used for the current operation
-     * @param routingKey the associated routing key
+     * @param redeliver   true if this is a redelivery following a failed ack
+     * @param exchange    the exchange used for the current operation
+     * @param routingKey  the associated routing key
      */
     public Envelope(long deliveryTag, boolean redeliver, String exchange, String routingKey) {
         this._deliveryTag = deliveryTag;
@@ -55,6 +56,7 @@ public class Envelope {
 
     /**
      * Get the delivery tag included in this parameter envelope
+     *
      * @return the delivery tag
      */
     public long getDeliveryTag() {
@@ -63,6 +65,7 @@ public class Envelope {
 
     /**
      * Get the redelivery flag included in this parameter envelope
+     *
      * @return the redelivery flag
      */
     public boolean isRedeliver() {
@@ -71,6 +74,7 @@ public class Envelope {
 
     /**
      * Get the name of the exchange included in this parameter envelope
+     *
      * @return the exchange
      */
     public String getExchange() {
@@ -79,6 +83,7 @@ public class Envelope {
 
     /**
      * Get the routing key included in this parameter envelope
+     *
      * @return the routing key
      */
     public String getRoutingKey() {

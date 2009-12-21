@@ -38,13 +38,18 @@ import java.io.IOException;
  * We anticipate that most Consumer implementations will subclass this class.
  */
 public class DefaultConsumer implements Consumer {
-    /** Channel that this consumer is associated with. */
+    /**
+     * Channel that this consumer is associated with.
+     */
     private final Channel _channel;
-    /** Consumer tag for this consumer. */
+    /**
+     * Consumer tag for this consumer.
+     */
     private String _consumerTag;
 
     /**
      * Constructs a new instance and records its association to the passed-in channel.
+     *
      * @param channel the channel on which the
      */
     public DefaultConsumer(Channel channel) {
@@ -53,6 +58,7 @@ public class DefaultConsumer implements Consumer {
 
     /**
      * Stores the most recently passed-in consumerTag - semantically, there should be only one.
+     *
      * @see Consumer#handleConsumeOk
      */
     public void handleConsumeOk(String consumerTag) {
@@ -61,6 +67,7 @@ public class DefaultConsumer implements Consumer {
 
     /**
      * No-op implementation of {@link Consumer#handleCancelOk}.
+     *
      * @param consumerTag the defined consumer tag (client- or server-generated)
      */
     public void handleCancelOk(String consumerTag) {
@@ -81,13 +88,13 @@ public class DefaultConsumer implements Consumer {
                                Envelope envelope,
                                AMQP.BasicProperties properties,
                                byte[] body)
-        throws IOException
-    {
-            // no work to do
+            throws IOException {
+        // no work to do
     }
 
     /**
-    *  Retrieve the channel.
+     * Retrieve the channel.
+     *
      * @return the channel this consumer is attached to.
      */
     public Channel getChannel() {
@@ -95,7 +102,8 @@ public class DefaultConsumer implements Consumer {
     }
 
     /**
-    *  Retrieve the consumer tag.
+     * Retrieve the consumer tag.
+     *
      * @return the most recently notified consumer tag.
      */
     public String getConsumerTag() {

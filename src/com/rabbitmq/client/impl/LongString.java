@@ -40,12 +40,12 @@ import java.io.IOException;
  * socket, depending on the size of the content to be read -
  * long strings may contain up to 4Gb of content.
  */
-public interface LongString
-{
+public interface LongString {
     public static final long MAX_LENGTH = 0xffffffffL;
 
     /**
      * Get the length of the content of the long string in bytes
+     *
      * @return the length in bytes >= 0 <= MAX_LENGTH
      */
     public long length();
@@ -54,6 +54,7 @@ public interface LongString
      * Get the content stream.
      * Repeated calls to this function return the same stream,
      * which may not support rewind.
+     *
      * @return An input stream the reads the content
      * @throws IOException if an error is encountered
      */
@@ -64,7 +65,8 @@ public interface LongString
      * Repeated calls to this function return the same array.
      * This function will fail if getContentLength() > Integer.MAX_VALUE
      * throwing an IllegalStateException.
+     *
      * @return the content as an array
      */
-    public byte [] getBytes();
+    public byte[] getBytes();
 }

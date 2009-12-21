@@ -34,15 +34,20 @@ package com.rabbitmq.client;
 /**
  * A representation of network addresses, i.e. host/port pairs,
  * with some utility functions for parsing address strings.
-*/
+ */
 public class Address {
-    /** host name **/
+    /**
+     * host name *
+     */
     private final String _host;
-    /** port number **/
+    /**
+     * port number *
+     */
     private final int _port;
 
     /**
      * Construct an address from a host name and port number.
+     *
      * @param host the host name
      * @param port the port number
      */
@@ -53,6 +58,7 @@ public class Address {
 
     /**
      * Construct an address from a host.
+     *
      * @param host the host name
      */
     public Address(String host) {
@@ -62,6 +68,7 @@ public class Address {
 
     /**
      * Get the host name
+     *
      * @return the host name
      */
     public String getHost() {
@@ -70,6 +77,7 @@ public class Address {
 
     /**
      * Get the port number
+     *
      * @return the port number
      */
     public int getPort() {
@@ -78,19 +86,21 @@ public class Address {
 
     /**
      * Factory method: takes a formatted addressString string as construction parameter
+     *
      * @param addressString an addressString of the form "host[:port]".
      * @return an {@link Address} from the given data
      */
     public static Address parseAddress(String addressString) {
         int idx = addressString.indexOf(':');
         return (idx == -1) ?
-            new Address(addressString) :
-            new Address(addressString.substring(0, idx),
-                        Integer.parseInt(addressString.substring(idx+1)));
+                new Address(addressString) :
+                new Address(addressString.substring(0, idx),
+                        Integer.parseInt(addressString.substring(idx + 1)));
     }
 
     /**
      * Array-based factory method: takes an array of formatted address strings as construction parameter
+     *
      * @param addresses array of strings of form "host[:port],..."
      * @return a list of {@link Address} values
      */
@@ -103,20 +113,23 @@ public class Address {
         return res;
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return 31 * _host.hashCode() + _port;
     }
 
-    @Override public boolean equals(Object obj) {
-        if(this == obj)
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
             return true;
         if (obj == null || getClass() != obj.getClass())
             return false;
-        final Address addr = (Address)obj;
+        final Address addr = (Address) obj;
         return _host.equals(addr._host) && _port == addr._port;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return _port == -1 ? _host : _host + ":" + _port;
     }
 

@@ -37,6 +37,7 @@ public class JSONReader {
     private static final Object COMMA = new Object();
 
     private static Map<Character, Character> escapes = new HashMap<Character, Character>();
+
     static {
         escapes.put(new Character('"'), new Character('"'));
         escapes.put(new Character('\\'), new Character('\\'));
@@ -97,12 +98,12 @@ public class JSONReader {
             next();
         } else if (c == 't' && next() == 'r' && next() == 'u' && next() == 'e') {
             ret = Boolean.TRUE;
-	    next();
+            next();
         } else if (c == 'f' && next() == 'a' && next() == 'l' && next() == 's' && next() == 'e') {
             ret = Boolean.FALSE;
-	    next();
+            next();
         } else if (c == 'n' && next() == 'u' && next() == 'l' && next() == 'l') {
-	    next();
+            next();
         } else if (Character.isDigit(c) || c == '-') {
             ret = number();
         }
@@ -158,12 +159,12 @@ public class JSONReader {
             addDigits();
         }
 
-	String result = buf.toString();
-	try {
-	    return new Integer(result);
-	} catch (NumberFormatException nfe) {
-	    return new Double(result);
-	}
+        String result = buf.toString();
+        try {
+            return new Integer(result);
+        } catch (NumberFormatException nfe) {
+            return new Double(result);
+        }
     }
 
     private Object string() {
@@ -207,16 +208,34 @@ public class JSONReader {
         int value = 0;
         for (int i = 0; i < 4; ++i) {
             switch (next()) {
-            case '0': case '1': case '2': case '3': case '4': 
-            case '5': case '6': case '7': case '8': case '9':
-                value = (value << 4) + c - '0';
-                break;
-            case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-                value = (value << 4) + c - 'a' + 10;
-                break;
-            case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-                value = (value << 4) + c - 'A' + 10;
-                break;
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    value = (value << 4) + c - '0';
+                    break;
+                case 'a':
+                case 'b':
+                case 'c':
+                case 'd':
+                case 'e':
+                case 'f':
+                    value = (value << 4) + c - 'a' + 10;
+                    break;
+                case 'A':
+                case 'B':
+                case 'C':
+                case 'D':
+                case 'E':
+                case 'F':
+                    value = (value << 4) + c - 'A' + 10;
+                    break;
             }
         }
         return (char) value;

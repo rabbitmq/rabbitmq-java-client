@@ -39,17 +39,20 @@ import java.net.SocketTimeoutException;
  */
 
 public interface FrameHandler {
-    /** Retrieve hostname of peer. */
+    /**
+     * Retrieve hostname of peer.
+     */
     public String getHost();
 
-    /** Retrieve port number of peer. */
+    /**
+     * Retrieve port number of peer.
+     */
     public int getPort();
 
     /**
      * Set the underlying socket's read timeout in milliseconds, if applicable.
      *
-     * @param timeoutMs
-     *            The timeout in milliseconds
+     * @param timeoutMs The timeout in milliseconds
      */
     void setTimeout(int timeoutMs) throws SocketException;
 
@@ -72,7 +75,7 @@ public interface FrameHandler {
      * Read a {@link Frame} from the underlying data connection.
      *
      * @return an incoming Frame, or null if there is none
-     * @throws IOException if there is a problem accessing the connection
+     * @throws IOException            if there is a problem accessing the connection
      * @throws SocketTimeoutException if the underlying read times out
      */
     Frame readFrame() throws IOException;

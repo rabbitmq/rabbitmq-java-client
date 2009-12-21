@@ -31,12 +31,12 @@
 
 package com.rabbitmq.tools.jsonrpc;
 
+import com.rabbitmq.tools.json.JSONUtil;
+
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.rabbitmq.tools.json.JSONUtil;
 
 /**
  * Description of a JSON-RPC service.
@@ -44,18 +44,30 @@ import com.rabbitmq.tools.json.JSONUtil;
 public class ServiceDescription {
     public static final String JSON_RPC_VERSION = "1.1";
 
-    /** The service name */
+    /**
+     * The service name
+     */
     public String name;
-    /** ID for the service */
+    /**
+     * ID for the service
+     */
     public String id;
-    /** Version of the service */
+    /**
+     * Version of the service
+     */
     public String version;
-    /** Human-readable summary for the service */
+    /**
+     * Human-readable summary for the service
+     */
     public String summary;
-    /** Human-readable instructions for how to get information on the service's operation */
+    /**
+     * Human-readable instructions for how to get information on the service's operation
+     */
     public String help;
 
-    /** Map from procedure name to {@link ProcedureDescription} */
+    /**
+     * Map from procedure name to {@link ProcedureDescription}
+     */
     private Map<String, ProcedureDescription> procedures;
 
     public ServiceDescription(Map<String, Object> rawServiceDescription) {
@@ -64,7 +76,7 @@ public class ServiceDescription {
 
     public ServiceDescription(Class klass) {
         this.procedures = new HashMap<String, ProcedureDescription>();
-        for (Method m: klass.getMethods()) {
+        for (Method m : klass.getMethods()) {
             ProcedureDescription proc = new ProcedureDescription(m);
             addProcedure(proc);
         }
@@ -74,27 +86,34 @@ public class ServiceDescription {
         // No work to do here
     }
 
-    /** Gets a collection of all {@link ProcedureDescription} for this service */
+    /**
+     * Gets a collection of all {@link ProcedureDescription} for this service
+     */
     public Collection<ProcedureDescription> getProcs() {
         return procedures.values();
     }
 
-    /** Private API - used via reflection during parsing/loading */
+    /**
+     * Private API - used via reflection during parsing/loading
+     */
     public void setProcs(Collection<Map<String, Object>> p) {
         procedures = new HashMap<String, ProcedureDescription>();
-        for (Map<String, Object> pm: p) {
+        for (Map<String, Object> pm : p) {
             ProcedureDescription proc = new ProcedureDescription(pm);
             addProcedure(proc);
         }
     }
 
-    /** Private API - used during initialization */
+    /**
+     * Private API - used during initialization
+     */
     private void addProcedure(ProcedureDescription proc) {
         procedures.put(proc.name + "/" + proc.arity(), proc);
     }
 
     /**
      * Looks up a single ProcedureDescription by name and arity.
+     *
      * @return non-null ProcedureDescription if a match is found
      * @throws IllegalArgumentException if no match is found
      */
@@ -102,7 +121,7 @@ public class ServiceDescription {
         ProcedureDescription proc = procedures.get(newname + "/" + arity);
         if (proc == null) {
             throw new IllegalArgumentException("Procedure not found: " + newname +
-                                               ", arity " + arity);
+                    ", arity " + arity);
         }
         return proc;
     }

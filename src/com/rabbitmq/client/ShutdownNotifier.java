@@ -56,12 +56,14 @@ public interface ShutdownNotifier {
 
     /**
      * Get the shutdown reason object
+     *
      * @return ShutdownSignalException if component is closed, null otherwise
      */
     public ShutdownSignalException getCloseReason();
 
     /**
      * Protected API - notify the listeners attached to the component
+     *
      * @see com.rabbitmq.client.ShutdownListener
      */
     public void notifyListeners();

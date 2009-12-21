@@ -30,56 +30,75 @@
 //
 package com.rabbitmq.client;
 
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.SocketFrameHandler;
+
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.SocketFrameHandler;
-
 /**
  * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
  */
 
 public class ConnectionFactory {
-    /** Default user name */
+    /**
+     * Default user name
+     */
     public static final String DEFAULT_USER = "guest";
 
-    /** Default password */
+    /**
+     * Default password
+     */
     public static final String DEFAULT_PASS = "guest";
 
-    /** Default virtual host */
+    /**
+     * Default virtual host
+     */
     public static final String DEFAULT_VHOST = "/";
 
-    /** Default value for the desired maximum channel number; zero for
-     * unlimited */
+    /**
+     * Default value for the desired maximum channel number; zero for
+     * unlimited
+     */
     public static final int DEFAULT_CHANNEL_MAX = 0;
 
-    /** Default value for the desired maximum frame size; zero for
-     * unlimited */
+    /**
+     * Default value for the desired maximum frame size; zero for
+     * unlimited
+     */
     public static final int DEFAULT_FRAME_MAX = 0;
 
-    /** Default value for desired heartbeat interval; zero for none */
+    /**
+     * Default value for desired heartbeat interval; zero for none
+     */
     public static final int DEFAULT_HEARTBEAT = 0;
 
-    /** The default host to connect to */
+    /**
+     * The default host to connect to
+     */
     public static final String DEFAULT_HOST = "localhost";
 
-    /** A constant that when passed as a port number causes the connection to use the default port */
+    /**
+     * A constant that when passed as a port number causes the connection to use the default port
+     */
     public static final int USE_DEFAULT_PORT = -1;
 
-    /** The default port to use for AMQP connections when not using SSL */
+    /**
+     * The default port to use for AMQP connections when not using SSL
+     */
     public static final int DEFAULT_AMQP_PORT = 5672;
 
-    /** The default port to use for AMQP connections when using SSL */
+    /**
+     * The default port to use for AMQP connections when using SSL
+     */
     public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
 
     private String _userName = DEFAULT_USER;
@@ -91,32 +110,32 @@ public class ConnectionFactory {
     private int _requestedFrameMax = DEFAULT_FRAME_MAX;
     private int _requestedHeartbeat = DEFAULT_HEARTBEAT;
     private SocketFactory _factory = SocketFactory.getDefault();
-    
+
     /**
-     *  @return the default host to use for connections
+     * @return the default host to use for connections
      */
     public String getHost() {
         return host;
     }
 
     /**
-     *  @param host the default host to use for connections
+     * @param host the default host to use for connections
      */
     public void setHost(String host) {
         this.host = host;
     }
 
     /**
-     *  @return the default port to use for connections
+     * @return the default port to use for connections
      */
     public int getPort() {
-        if(port != USE_DEFAULT_PORT) return port;
-        else if(isSSL()) return DEFAULT_AMQP_OVER_SSL_PORT;
-        else return DEFAULT_AMQP_PORT; 
+        if (port != USE_DEFAULT_PORT) return port;
+        else if (isSSL()) return DEFAULT_AMQP_OVER_SSL_PORT;
+        else return DEFAULT_AMQP_PORT;
     }
 
     /**
-     *  @return the default port to use for connections
+     * @return the default port to use for connections
      */
     public void setPort(int port) {
         this.port = port;
@@ -124,6 +143,7 @@ public class ConnectionFactory {
 
     /**
      * Retrieve the user name.
+     *
      * @return the AMQP user name to use when connecting to the broker
      */
     public String getUserName() {
@@ -132,6 +152,7 @@ public class ConnectionFactory {
 
     /**
      * Set the user name.
+     *
      * @param userName the AMQP user name to use when connecting to the broker
      */
     public void setUsername(String userName) {
@@ -140,6 +161,7 @@ public class ConnectionFactory {
 
     /**
      * Retrieve the password.
+     *
      * @return the password to use when connecting to the broker
      */
     public String getPassword() {
@@ -148,6 +170,7 @@ public class ConnectionFactory {
 
     /**
      * Set the password.
+     *
      * @param password the password to use when connecting to the broker
      */
     public void setPassword(String password) {
@@ -156,6 +179,7 @@ public class ConnectionFactory {
 
     /**
      * Retrieve the virtual host.
+     *
      * @return the virtual host to use when connecting to the broker
      */
     public String getVirtualHost() {
@@ -164,6 +188,7 @@ public class ConnectionFactory {
 
     /**
      * Set the virtual host.
+     *
      * @param virtualHost the virtual host to use when connecting to the broker
      */
     public void setVirtualHost(String virtualHost) {
@@ -172,6 +197,7 @@ public class ConnectionFactory {
 
     /**
      * Retrieve the requested maximum channel number
+     *
      * @return the initially requested maximum channel number; zero for unlimited
      */
     public int getRequestedChannelMax() {
@@ -180,6 +206,7 @@ public class ConnectionFactory {
 
     /**
      * Set the requested maximum frame size
+     *
      * @param requestedFrameMax initially requested maximum frame size, in octets; zero for unlimited
      */
     public void setRequestedFrameMax(int requestedFrameMax) {
@@ -188,6 +215,7 @@ public class ConnectionFactory {
 
     /**
      * Retrieve the requested maximum frame size
+     *
      * @return the initially requested maximum frame size, in octets; zero for unlimited
      */
     public int getRequestedFrameMax() {
@@ -196,6 +224,7 @@ public class ConnectionFactory {
 
     /**
      * Retrieve the requested heartbeat interval.
+     *
      * @return the initially requested heartbeat interval, in seconds; zero for none
      */
     public int getRequestedHeartbeat() {
@@ -204,6 +233,7 @@ public class ConnectionFactory {
 
     /**
      * Set the requested heartbeat.
+     *
      * @param requestedHeartbeat the initially requested heartbeat interval, in seconds; zero for none
      */
     public void setRequestedHeartbeat(int requestedHeartbeat) {
@@ -212,12 +242,13 @@ public class ConnectionFactory {
 
     /**
      * Set the requested maximum channel number
+     *
      * @param requestedChannelMax initially requested maximum channel number; zero for unlimited
      */
     public void setRequestedChannelMax(int requestedChannelMax) {
         _requestedChannelMax = requestedChannelMax;
     }
-                                          
+
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
@@ -242,9 +273,9 @@ public class ConnectionFactory {
         _factory = factory;
     }
 
-  
-    public boolean isSSL(){
-      return getSocketFactory() instanceof SSLSocketFactory;
+
+    public boolean isSSL() {
+        return getSocketFactory() instanceof SSLSocketFactory;
     }
 
     /**
@@ -252,8 +283,7 @@ public class ConnectionFactory {
      * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
      */
     public void useSslProtocol()
-        throws NoSuchAlgorithmException, KeyManagementException
-    {
+            throws NoSuchAlgorithmException, KeyManagementException {
         useSslProtocol(DEFAULT_SSL_PROTOCOL);
     }
 
@@ -262,8 +292,7 @@ public class ConnectionFactory {
      * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
      */
     public void useSslProtocol(String protocol)
-        throws NoSuchAlgorithmException, KeyManagementException
-    {
+            throws NoSuchAlgorithmException, KeyManagementException {
         useSslProtocol(protocol, new NullTrustManager());
     }
 
@@ -274,10 +303,9 @@ public class ConnectionFactory {
      * @param protocol SSL protocol to use.
      */
     public void useSslProtocol(String protocol, TrustManager trustManager)
-        throws NoSuchAlgorithmException, KeyManagementException
-    {
+            throws NoSuchAlgorithmException, KeyManagementException {
         SSLContext c = SSLContext.getInstance(protocol);
-        c.init(null, new TrustManager[] { trustManager }, null);
+        c.init(null, new TrustManager[]{trustManager}, null);
         useSslProtocol(c);
     }
 
@@ -287,8 +315,7 @@ public class ConnectionFactory {
      *
      * @param context An initialized SSLContext
      */
-    public void useSslProtocol(SSLContext context)
-    {
+    public void useSslProtocol(SSLContext context) {
         setSocketFactory(context.getSocketFactory());
     }
 
@@ -298,7 +325,7 @@ public class ConnectionFactory {
     public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
     protected FrameHandler createFrameHandler(Address addr)
-        throws IOException {
+            throws IOException {
 
         String hostName = addr.getHost();
         int portNumber = addr.getPort();
@@ -308,15 +335,14 @@ public class ConnectionFactory {
 
     private Connection newConnection(Address[] addrs,
                                      int maxRedirects,
-                                     Map<Address,Integer> redirectAttempts)
-        throws IOException
-    {
+                                     Map<Address, Integer> redirectAttempts)
+            throws IOException {
         IOException lastException = null;
 
         for (Address addr : addrs) {
             Address[] lastKnownAddresses = new Address[0];
             try {
-                while(true) {
+                while (true) {
                     FrameHandler frameHandler = createFrameHandler(addr);
                     Integer redirectCount = redirectAttempts.get(addr);
                     if (redirectCount == null)
@@ -324,7 +350,7 @@ public class ConnectionFactory {
                     boolean allowRedirects = redirectCount < maxRedirects;
                     try {
                         AMQConnection conn = new AMQConnection(this,
-                                    frameHandler);
+                                frameHandler);
                         conn.start(!allowRedirects);
                         return conn;
                     } catch (RedirectException e) {
@@ -332,7 +358,7 @@ public class ConnectionFactory {
                             //this should never happen with a well-behaved server
                             throw new IOException("server ignored 'insist'");
                         } else {
-                            redirectAttempts.put(addr, redirectCount+1);
+                            redirectAttempts.put(addr, redirectCount + 1);
                             lastKnownAddresses = e.getKnownAddresses();
                             addr = e.getAddress();
                             //TODO: we may want to log redirection attempts.
@@ -348,8 +374,8 @@ public class ConnectionFactory {
                     // by an uninformative IOException. See bug 16273.
                     try {
                         return newConnection(lastKnownAddresses,
-                                             maxRedirects,
-                                             redirectAttempts);
+                                maxRedirects,
+                                redirectAttempts);
                     } catch (IOException e1) {
                         lastException = e1;
                     }
@@ -366,46 +392,48 @@ public class ConnectionFactory {
 
     /**
      * Create a new broker connection
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
+     *
+     * @param addrs        an array of known broker addresses (hostname/port pairs) to try in order
      * @param maxRedirects the maximum allowable number of redirects
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection(Address[] addrs, int maxRedirects)
-        throws IOException
-    {
+            throws IOException {
         return newConnection(addrs,
-                             maxRedirects,
-                             new HashMap<Address,Integer>());
+                maxRedirects,
+                new HashMap<Address, Integer>());
     }
 
     /**
      * Create a new broker connection (no redirects allowed)
+     *
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection(Address[] addrs)
-        throws IOException
-    {
+            throws IOException {
         return newConnection(addrs, 0);
     }
 
     /**
      * Instantiates a connection and return an interface to it.
-     * @param hostName the host to connect to
+     *
+     * @param hostName   the host to connect to
      * @param portNumber the port number to use
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection(String hostName, int portNumber) throws IOException {
-        return newConnection(new Address[] {
-                                 new Address(hostName, portNumber)
-                             });
+        return newConnection(new Address[]{
+                new Address(hostName, portNumber)
+        });
     }
 
     /**
-     * Create a new broker connection, using the ConnectionFactory's default port.  
+     * Create a new broker connection, using the ConnectionFactory's default port.
+     *
      * @param hostName the host to connect to
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
@@ -415,7 +443,8 @@ public class ConnectionFactory {
     }
 
     /**
-     * Create a new broker connection, using the ConnectionFactory's default host and port.  
+     * Create a new broker connection, using the ConnectionFactory's default host and port.
+     *
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
@@ -423,5 +452,5 @@ public class ConnectionFactory {
         return newConnection(getHost());
     }
 
-    
+
 }

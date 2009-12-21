@@ -30,12 +30,12 @@
 //
 package com.rabbitmq.client.impl;
 
-import java.io.IOException;
-
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
+
+import java.io.IOException;
 
 public class DefaultExceptionHandler implements ExceptionHandler {
     public void handleUnexpectedConnectionDriverException(Connection conn, Throwable exception) {
@@ -50,13 +50,13 @@ public class DefaultExceptionHandler implements ExceptionHandler {
     public void handleReturnListenerException(Channel channel, Throwable exception) {
         // TODO: Convert to logging framework
         System.err.println("ReturnListener.handleBasicReturn threw an exception for channel " +
-                           channel + ":");
+                channel + ":");
         exception.printStackTrace();
         try {
             ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
-                                                            "Internal error in ReturnListener",
-                                                            false,
-                                                            exception);
+                    "Internal error in ReturnListener",
+                    false,
+                    exception);
         } catch (IOException ioe) {
             // Man, this clearly isn't our day.
             // Ignore the exception? TODO: Log the nested failure
@@ -67,18 +67,17 @@ public class DefaultExceptionHandler implements ExceptionHandler {
                                         Throwable exception,
                                         Consumer consumer,
                                         String consumerTag,
-                                        String methodName)
-    {
+                                        String methodName) {
         // TODO: Convert to logging framework
         System.err.println("Consumer " + consumer + " method " + methodName + " for channel " +
-                           channel + " threw an exception:");
+                channel + " threw an exception:");
         exception.printStackTrace();
         try {
             ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
-                                                            "Internal error in Consumer " +
-                                                              consumerTag,
-                                                            false,
-                                                            exception);
+                    "Internal error in Consumer " +
+                            consumerTag,
+                    false,
+                    exception);
         } catch (IOException ioe) {
             // Man, this clearly isn't our day.
             // Ignore the exception? TODO: Log the nested failure

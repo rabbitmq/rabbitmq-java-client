@@ -42,7 +42,7 @@ public class SimpleProducer {
             String hostName = (args.length > 0) ? args[0] : "localhost";
             int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
             String message = (args.length > 2) ? args[2] :
-                "the time is " + new java.util.Date().toString();
+                    "the time is " + new java.util.Date().toString();
             String exchange = (args.length > 3) ? args[3] : "";
             String routingKey = (args.length > 4) ? args[4] : "SimpleQueue";
 

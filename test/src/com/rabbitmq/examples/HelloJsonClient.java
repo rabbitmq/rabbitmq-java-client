@@ -48,7 +48,7 @@ public class HelloJsonClient {
             Channel ch = conn.createChannel();
             JsonRpcClient client = new JsonRpcClient(ch, "", "Hello");
             HelloJsonService service =
-                (HelloJsonService) client.createProxy(HelloJsonService.class);
+                    (HelloJsonService) client.createProxy(HelloJsonService.class);
 
             System.out.println(service.greeting(request));
 

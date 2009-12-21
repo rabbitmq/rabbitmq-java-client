@@ -30,7 +30,6 @@
 //
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.test.functional.*;
 import java.io.IOException;
 
 /**
@@ -45,38 +44,37 @@ public class Bug20004Test extends BrokerTestCase {
     public boolean created = false;
 
     protected void releaseResources()
-        throws IOException
-    {
+            throws IOException {
         if (created) {
             channel.queueDelete("Bug20004Test");
         }
     }
 
     public void testBug20004()
-        throws IOException
-    {
+            throws IOException {
         final Bug20004Test testInstance = this;
 
         Thread declaringThread = new Thread(new Runnable() {
-                public void run() {
-                    try {
-                        synchronized (channel) {
-                            channel.queueDeclare("Bug20004Test");
-                            testInstance.created = true;
-                        }
-                    } catch (Exception e) {
-                        testInstance.caughtException = e;
+            public void run() {
+                try {
+                    synchronized (channel) {
+                        channel.queueDeclare("Bug20004Test");
+                        testInstance.created = true;
                     }
-                    testInstance.completed = true;
+                } catch (Exception e) {
+                    testInstance.caughtException = e;
                 }
-            });
+                testInstance.completed = true;
+            }
+        });
         declaringThread.start();
 
         long startTime = System.currentTimeMillis();
         while (!completed && (System.currentTimeMillis() - startTime < 5000)) {
             try {
                 Thread.sleep(100);
-            } catch (InterruptedException ie) {}
+            } catch (InterruptedException ie) {
+            }
         }
 
         declaringThread.stop(); // see bug 20012.

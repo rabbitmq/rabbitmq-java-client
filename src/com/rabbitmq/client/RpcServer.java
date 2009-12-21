@@ -36,16 +36,24 @@ import java.io.IOException;
 /**
  * Class which manages a request queue for a simple RPC-style service.
  * The class is agnostic about the format of RPC arguments / return values.
-*/
+ */
 public class RpcServer {
-    /** Channel we are communicating on */
+    /**
+     * Channel we are communicating on
+     */
     protected final Channel _channel;
-    /** Queue to receive requests from */
+    /**
+     * Queue to receive requests from
+     */
     protected final String _queueName;
-    /** Boolean controlling the exit from the mainloop. */
+    /**
+     * Boolean controlling the exit from the mainloop.
+     */
     protected boolean _mainloopRunning = true;
 
-    /** Consumer attached to our request queue */
+    /**
+     * Consumer attached to our request queue
+     */
     protected QueueingConsumer _consumer;
 
     /**
@@ -53,8 +61,7 @@ public class RpcServer {
      * autodelete queue.
      */
     public RpcServer(Channel channel)
-        throws IOException
-    {
+            throws IOException {
         this(channel, null);
     }
 
@@ -64,8 +71,7 @@ public class RpcServer {
      * the queue to have already been declared.
      */
     public RpcServer(Channel channel, String queueName)
-        throws IOException
-    {
+            throws IOException {
         _channel = channel;
         if (queueName == null || queueName.equals("")) {
             _queueName = _channel.queueDeclare().getQueue();
@@ -78,11 +84,11 @@ public class RpcServer {
     /**
      * Public API - cancels the consumer, thus deleting the queue, if
      * it was a temporary queue, and marks the RpcServer as closed.
+     *
      * @throws IOException if an error is encountered
      */
     public void close()
-        throws IOException
-    {
+            throws IOException {
         if (_consumer != null) {
             _channel.basicCancel(_consumer.getConsumerTag());
             _consumer = null;
@@ -92,12 +98,12 @@ public class RpcServer {
 
     /**
      * Registers a consumer on the reply queue.
-     * @throws IOException if an error is encountered
+     *
      * @return the newly created and registered consumer
+     * @throws IOException if an error is encountered
      */
     protected QueueingConsumer setupConsumer()
-        throws IOException
-    {
+            throws IOException {
         QueueingConsumer consumer = new QueueingConsumer(_channel);
         _channel.basicConsume(_queueName, consumer);
         return consumer;
@@ -108,7 +114,7 @@ public class RpcServer {
      * requests. Request processing will continue until the Channel
      * (or its underlying Connection) is shut down, or until
      * terminateMainloop() is called.
-     *
+     * <p/>
      * Note that if the mainloop is blocked waiting for a request, the
      * termination flag is not checked until a request is received, so
      * a good time to call terminateMainloop() is during a request
@@ -117,8 +123,7 @@ public class RpcServer {
      * @return the exception that signalled the Channel shutdown, or null for orderly shutdown
      */
     public ShutdownSignalException mainloop()
-        throws IOException
-    {
+            throws IOException {
         try {
             while (_mainloopRunning) {
                 QueueingConsumer.Delivery request;
@@ -138,7 +143,7 @@ public class RpcServer {
 
     /**
      * Call this method to terminate the mainloop.
-     *
+     * <p/>
      * Note that if the mainloop is blocked waiting for a request, the
      * termination flag is not checked until a request is received, so
      * a good time to call terminateMainloop() is during a request
@@ -152,16 +157,14 @@ public class RpcServer {
      * Private API - Process a single request. Called from mainloop().
      */
     public void processRequest(QueueingConsumer.Delivery request)
-        throws IOException
-    {
+            throws IOException {
         AMQP.BasicProperties requestProperties = request.getProperties();
-        if (requestProperties.getCorrelationId() != null && requestProperties.getReplyTo() != null)
-        {
+        if (requestProperties.getCorrelationId() != null && requestProperties.getReplyTo() != null) {
             AMQP.BasicProperties replyProperties = new AMQP.BasicProperties();
             byte[] replyBody = handleCall(request, replyProperties);
             replyProperties.setCorrelationId(requestProperties.getCorrelationId());
             _channel.basicPublish("", requestProperties.getReplyTo(),
-                                  replyProperties, replyBody);
+                    replyProperties, replyBody);
         } else {
             handleCast(request);
         }
@@ -172,11 +175,10 @@ public class RpcServer {
      * handleCall(AMQP.BasicProperties,byte[],AMQP.BasicProperties).
      */
     public byte[] handleCall(QueueingConsumer.Delivery request,
-                             AMQP.BasicProperties replyProperties)
-    {
+                             AMQP.BasicProperties replyProperties) {
         return handleCall(request.getProperties(),
-                          request.getBody(),
-                          replyProperties);
+                request.getBody(),
+                replyProperties);
     }
 
     /**
@@ -185,8 +187,7 @@ public class RpcServer {
      */
     public byte[] handleCall(AMQP.BasicProperties requestProperties,
                              byte[] requestBody,
-                             AMQP.BasicProperties replyProperties)
-    {
+                             AMQP.BasicProperties replyProperties) {
         return handleCall(requestBody, replyProperties);
     }
 
@@ -196,8 +197,7 @@ public class RpcServer {
      * methods) in subclasses.
      */
     public byte[] handleCall(byte[] requestBody,
-                             AMQP.BasicProperties replyProperties)
-    {
+                             AMQP.BasicProperties replyProperties) {
         return new byte[0];
     }
 
@@ -205,8 +205,7 @@ public class RpcServer {
      * Lowest-level handler method. Calls
      * handleCast(AMQP.BasicProperties,byte[]).
      */
-    public void handleCast(QueueingConsumer.Delivery request)
-    {
+    public void handleCast(QueueingConsumer.Delivery request) {
         handleCast(request.getProperties(), request.getBody());
     }
 
@@ -214,8 +213,7 @@ public class RpcServer {
      * Mid-level handler method. Calls
      * handleCast(byte[]).
      */
-    public void handleCast(AMQP.BasicProperties requestProperties, byte[] requestBody)
-    {
+    public void handleCast(AMQP.BasicProperties requestProperties, byte[] requestBody) {
         handleCast(requestBody);
     }
 
@@ -224,13 +222,13 @@ public class RpcServer {
      * this (or other handleCast and handleCast methods) in
      * subclasses.
      */
-    public void handleCast(byte[] requestBody)
-    {
+    public void handleCast(byte[] requestBody) {
         // Does nothing.
     }
 
     /**
      * Retrieve the channel.
+     *
      * @return the channel to which this server is connected
      */
     public Channel getChannel() {
@@ -239,6 +237,7 @@ public class RpcServer {
 
     /**
      * Retrieve the queue name.
+     *
      * @return the queue which this server is consuming from
      */
     public String getQueueName() {

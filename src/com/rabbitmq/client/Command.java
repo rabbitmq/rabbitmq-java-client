@@ -48,7 +48,7 @@ public interface Command {
 
     /**
      * Retrieves the ContentHeader subclass instance held as part of this Command, if any.
-     *
+     * <p/>
      * Downcast to one of the inner classes of AMQP,
      * for instance {@link AMQP.BasicProperties}, as appropriate.
      *

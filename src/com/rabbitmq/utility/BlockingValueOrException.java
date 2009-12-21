@@ -33,8 +33,7 @@ package com.rabbitmq.utility;
 import java.util.concurrent.TimeoutException;
 
 public class BlockingValueOrException<V, E extends Throwable>
-    extends BlockingCell<ValueOrException<V, E>>
-{
+        extends BlockingCell<ValueOrException<V, E>> {
     public void setValue(V v) {
         super.set(ValueOrException.<V, E>makeValue(v));
     }
@@ -46,8 +45,8 @@ public class BlockingValueOrException<V, E extends Throwable>
     public V uninterruptibleGetValue() throws E {
         return uninterruptibleGet().getValue();
     }
-    
+
     public V uninterruptibleGetValue(int timeout) throws E, TimeoutException {
-    	return uninterruptibleGet(timeout).getValue();
+        return uninterruptibleGet(timeout).getValue();
     }
 }

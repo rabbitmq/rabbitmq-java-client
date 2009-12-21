@@ -44,13 +44,13 @@ public class GetResponse {
 
     /**
      * Construct a {@link GetResponse} with the specified construction parameters
-     * @param envelope the {@link Envelope}
-     * @param props message properties
-     * @param body the message body
+     *
+     * @param envelope     the {@link Envelope}
+     * @param props        message properties
+     * @param body         the message body
      * @param messageCount the server's most recent estimate of the number of messages remaining on the queue
      */
-    public GetResponse(Envelope envelope, BasicProperties props, byte[] body, int messageCount)
-    {
+    public GetResponse(Envelope envelope, BasicProperties props, byte[] body, int messageCount) {
         this.envelope = envelope;
         this.props = props;
         this.body = body;
@@ -59,6 +59,7 @@ public class GetResponse {
 
     /**
      * Get the {@link Envelope} included in this response
+     *
      * @return the envelope
      */
     public Envelope getEnvelope() {
@@ -67,6 +68,7 @@ public class GetResponse {
 
     /**
      * Get the {@link BasicProperties} included in this response
+     *
      * @return the properties
      */
     public BasicProperties getProps() {
@@ -75,6 +77,7 @@ public class GetResponse {
 
     /**
      * Get the message body included in this response
+     *
      * @return the message body
      */
     public byte[] getBody() {
@@ -87,7 +90,7 @@ public class GetResponse {
      * estimate, because of concurrent activity at the server and the
      * delay between the server sending its estimate and the client
      * receiving and processing the message containing the estimate.
-     *
+     * <p/>
      * <p>According to the AMQP specification, this figure does not
      * include the message being delivered. For example, this field
      * will be zero in the simplest case of a single reader issuing a
@@ -95,7 +98,7 @@ public class GetResponse {
      * message being delivered in this GetResponse).
      *
      * @return an estimate of the number of messages remaining to be
-     * read from the queue
+     *         read from the queue
      */
     public int getMessageCount() {
         return messageCount;

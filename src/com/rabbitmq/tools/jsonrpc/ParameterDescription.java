@@ -31,16 +31,18 @@
 
 package com.rabbitmq.tools.jsonrpc;
 
+import com.rabbitmq.tools.json.JSONUtil;
+
 import java.util.Collection;
 import java.util.Map;
-
-import com.rabbitmq.tools.json.JSONUtil;
 
 /**
  * Description of a single JSON-RPC procedure parameter.
  */
 public class ParameterDescription {
-    /** The parameter name. */
+    /**
+     * The parameter name.
+     */
     public String name;
     /**
      * The parameter type - one of "bit", "num", "str", "arr",

@@ -31,65 +31,54 @@
 
 package com.rabbitmq.client.test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import com.rabbitmq.client.impl.Frame;
+import com.rabbitmq.client.impl.LongStringHelper;
+import com.rabbitmq.client.impl.MethodArgumentReader;
+import com.rabbitmq.client.impl.MethodArgumentWriter;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import java.io.*;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-import com.rabbitmq.client.impl.Frame;
-import com.rabbitmq.client.impl.LongStringHelper;
-import com.rabbitmq.client.impl.MethodArgumentReader;
-import com.rabbitmq.client.impl.MethodArgumentWriter;
-
 public class TableTest
-    extends TestCase
-{
-    public static TestSuite suite()
-    {
+        extends TestCase {
+    public static TestSuite suite() {
         TestSuite suite = new TestSuite("tables");
         suite.addTestSuite(TableTest.class);
         return suite;
     }
-    
-    public byte [] marshal(Map<String, Object> table) 
-        throws IOException
-    {
+
+    public byte[] marshal(Map<String, Object> table)
+            throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         MethodArgumentWriter writer = new MethodArgumentWriter(new DataOutputStream(buffer));
         writer.writeTable(table);
         writer.flush();
-        
+
         assertEquals(Frame.tableSize(table) + 4, buffer.size());
         return buffer.toByteArray();
     }
-    
-    public Map<String, Object> unmarshal(byte [] bytes) 
-        throws IOException
-    {
-        MethodArgumentReader reader = 
-            new MethodArgumentReader
-            (new DataInputStream
-             (new ByteArrayInputStream(bytes)));
-        
+
+    public Map<String, Object> unmarshal(byte[] bytes)
+            throws IOException {
+        MethodArgumentReader reader =
+                new MethodArgumentReader
+                        (new DataInputStream
+                                (new ByteArrayInputStream(bytes)));
+
         return reader.readTable();
     }
 
-    public Date secondDate()
-    {
-        return new Date((System.currentTimeMillis()/1000)*1000);
+    public Date secondDate() {
+        return new Date((System.currentTimeMillis() / 1000) * 1000);
     }
-    
-    public void testLoop() 
-        throws IOException
-    {
+
+    public void testLoop()
+            throws IOException {
         Map<String, Object> table = new HashMap<String, Object>();
         table.put("a", 1);
         assertEquals(table, unmarshal(marshal(table)));
@@ -103,6 +92,6 @@ public class TableTest
         table.put("d", LongStringHelper.asLongString("d"));
         assertEquals(table, unmarshal(marshal(table)));
 
- 
+
     }
 }

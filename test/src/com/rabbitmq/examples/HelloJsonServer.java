@@ -49,17 +49,20 @@ public class HelloJsonServer {
 
             ch.queueDeclare("Hello");
             JsonRpcServer server =
-                new JsonRpcServer(ch, "Hello", HelloJsonService.class,
-                                  new HelloJsonService() {
-                                      public String greeting(String name) {
-                                          return "Hello, "+name+", from JSON-RPC over AMQP!";
-                                      }
-                                      public int sum(java.util.List<Integer> args) {
-                                          int s = 0;
-                                          for (int i: args) { s += i; }
-                                          return s;
-                                      }
-                                  });
+                    new JsonRpcServer(ch, "Hello", HelloJsonService.class,
+                            new HelloJsonService() {
+                                public String greeting(String name) {
+                                    return "Hello, " + name + ", from JSON-RPC over AMQP!";
+                                }
+
+                                public int sum(java.util.List<Integer> args) {
+                                    int s = 0;
+                                    for (int i : args) {
+                                        s += i;
+                                    }
+                                    return s;
+                                }
+                            });
             server.mainloop();
         } catch (Exception ex) {
             System.err.println("Main thread caught exception: " + ex);

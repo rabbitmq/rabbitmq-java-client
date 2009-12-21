@@ -46,6 +46,7 @@ public class UnexpectedMethodError extends Error {
 
     /**
      * Construct an UnexpecteMethodError with the given method parameter
+     *
      * @param method the unexpected method
      */
     public UnexpectedMethodError(Method method) {
@@ -54,6 +55,7 @@ public class UnexpectedMethodError extends Error {
 
     /**
      * Return a string representation of this error.
+     *
      * @return a string describing the error
      */
     public String toString() {
@@ -62,6 +64,7 @@ public class UnexpectedMethodError extends Error {
 
     /**
      * Return the wrapped method.
+     *
      * @return the method whose appearance was "unexpected" and was deemed an error
      */
     public Method getMethod() {

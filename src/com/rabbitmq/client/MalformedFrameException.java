@@ -37,11 +37,14 @@ import java.io.IOException;
  * Encapsulates a frame format error at the wire level.
  */
 public class MalformedFrameException extends IOException {
-    /** Standard serialization ID. */
+    /**
+     * Standard serialization ID.
+     */
     private static final long serialVersionUID = 1L;
 
     /**
      * Instantiate a MalformedFrameException.
+     *
      * @param reason a string describing the exception
      */
     public MalformedFrameException(String reason) {

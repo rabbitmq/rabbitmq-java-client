@@ -35,18 +35,18 @@ import com.rabbitmq.client.impl.AMQChannel;
 
 /**
  * This class provides a very stripped-down clone of some of the functionality in
- * java.util.Timer (notably Timer.schedule(TimerTask task, long delay) but 
+ * java.util.Timer (notably Timer.schedule(TimerTask task, long delay) but
  * uses System.nanoTime() rather than System.currentTimeMillis() as a measure
  * of the underlying time, and thus behaves correctly if the system clock jumps
  * around.
- * 
- * This class does not have any relation to TimerTask due to the coupling 
- * between TimerTask and Timer - for example if someone invokes 
+ * <p/>
+ * This class does not have any relation to TimerTask due to the coupling
+ * between TimerTask and Timer - for example if someone invokes
  * TimerTask.cancel(), we can't find out about it as TimerTask.state is
  * package-private.
- * 
+ * <p/>
  * We currently just use this to time the quiescing RPC in AMQChannel.
- * 
+ *
  * @see AMQChannel
  */
 
@@ -58,7 +58,7 @@ public class SingleShotLinearTimer {
         if (task == null) {
             throw new IllegalArgumentException("Don't schedule a null task");
         }
-        
+
         if (_task != null) {
             throw new UnsupportedOperationException("Don't schedule more than one task");
         }
@@ -66,19 +66,19 @@ public class SingleShotLinearTimer {
         if (timeoutMillisec < 0) {
             throw new IllegalArgumentException("Timeout must not be negative");
         }
-        
+
         _task = task;
-        
+
         _thread = new Thread(new TimerThread(timeoutMillisec));
         _thread.setDaemon(true);
         _thread.start();
     }
-    
+
     private static final long NANOS_IN_MILLI = 1000 * 1000;
-    
+
     private class TimerThread implements Runnable {
         private long _runTime;
-        
+
         public TimerThread(long timeoutMillisec) {
             _runTime = System.nanoTime() / NANOS_IN_MILLI + timeoutMillisec;
         }
@@ -90,17 +90,17 @@ public class SingleShotLinearTimer {
                     if (_task == null) break;
 
                     try {
-                        synchronized(this) {
+                        synchronized (this) {
                             wait(_runTime - now);
                         }
                     } catch (InterruptedException e) {
                         // Don't care
                     }
                 }
-                
+
                 Runnable task = _task;
                 if (task != null) {
-                    task.run();                    
+                    task.run();
                 }
 
             } finally {

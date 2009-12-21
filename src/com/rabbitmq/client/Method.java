@@ -38,18 +38,21 @@ package com.rabbitmq.client;
 public interface Method {
     /**
      * Retrieve the protocol class ID
+     *
      * @return the AMQP protocol class ID of this Method
      */
     int protocolClassId(); /* properly an unsigned short */
 
     /**
      * Retrieve the protocol method ID
+     *
      * @return the AMQP protocol method ID of this Method
      */
     int protocolMethodId(); /* properly an unsigned short */
 
     /**
      * Retrieve the method name
+     *
      * @return the AMQP protocol method name of this Method
      */
     String protocolMethodName();

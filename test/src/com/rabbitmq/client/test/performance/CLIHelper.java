@@ -43,8 +43,8 @@ public class CLIHelper {
     private Options options = new Options();
 
     public static CLIHelper defaultHelper() {
-        Options opts = new Options(); 
-        opts.addOption(new Option( "help", "print this message"));
+        Options opts = new Options();
+        opts.addOption(new Option("help", "print this message"));
         opts.addOption(new Option("h", "host", true, "broker host"));
         opts.addOption(new Option("p", "port", true, "broker port"));
         return new CLIHelper(opts);
@@ -61,8 +61,8 @@ public class CLIHelper {
         options.addOption(option);
     }
 
-    public CommandLine parseCommandLine(String [] args) {
-        CommandLineParser parser = new GnuParser();        
+    public CommandLine parseCommandLine(String[] args) {
+        CommandLineParser parser = new GnuParser();
         CommandLine commandLine = null;
         try {
             commandLine = parser.parse(options, args);

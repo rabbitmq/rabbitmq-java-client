@@ -31,31 +31,45 @@
 
 package com.rabbitmq.tools.jsonrpc;
 
+import com.rabbitmq.tools.json.JSONUtil;
+
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
-
-import com.rabbitmq.tools.json.JSONUtil;
 
 /**
  * Description of a single JSON-RPC procedure.
  */
 public class ProcedureDescription {
-    /** Procedure name */
+    /**
+     * Procedure name
+     */
     public String name;
-    /** Human-readable procedure summary */
+    /**
+     * Human-readable procedure summary
+     */
     public String summary;
-    /** Human-readable instructions for how to get information on the procedure's operation */
+    /**
+     * Human-readable instructions for how to get information on the procedure's operation
+     */
     public String help;
-    /** True if this procedure is idempotent, that is, can be accessed via HTTP GET */
+    /**
+     * True if this procedure is idempotent, that is, can be accessed via HTTP GET
+     */
     public boolean idempotent;
 
-    /** Descriptions of parameters for this procedure */
+    /**
+     * Descriptions of parameters for this procedure
+     */
     private ParameterDescription[] params;
-    /** Return type for this procedure */
+    /**
+     * Return type for this procedure
+     */
     private String returnType;
 
-    /** Reflected method object, used for service invocation */
+    /**
+     * Reflected method object, used for service invocation
+     */
     private Method method;
 
     public ProcedureDescription(Map<String, Object> pm) {
@@ -64,7 +78,7 @@ public class ProcedureDescription {
         List<Map<String, Object>> p = (List) pm.get("params");
         params = new ParameterDescription[p.size()];
         int count = 0;
-        for (Map<String, Object> param_map: p) {
+        for (Map<String, Object> param_map : p) {
             ParameterDescription param = new ParameterDescription(param_map);
             params[count++] = param;
         }
@@ -88,20 +102,37 @@ public class ProcedureDescription {
         // no work to do here
     }
 
-    /** Getter for return type */
-    public String getReturn() { return returnType; }
-    /** Private API - used via reflection during parsing/loading */
-    public void setReturn(String value) { returnType = value; }
+    /**
+     * Getter for return type
+     */
+    public String getReturn() {
+        return returnType;
+    }
 
-    /** Private API - used to get the reflected method object, for servers */
-    public Method internal_getMethod() { return method; }
+    /**
+     * Private API - used via reflection during parsing/loading
+     */
+    public void setReturn(String value) {
+        returnType = value;
+    }
 
-    /** Gets an array of parameter descriptions for all this procedure's parameters */
+    /**
+     * Private API - used to get the reflected method object, for servers
+     */
+    public Method internal_getMethod() {
+        return method;
+    }
+
+    /**
+     * Gets an array of parameter descriptions for all this procedure's parameters
+     */
     public ParameterDescription[] internal_getParams() {
         return params;
     }
 
-    /** Retrieves the parameter count for this procedure */
+    /**
+     * Retrieves the parameter count for this procedure
+     */
     public int arity() {
         return (params == null) ? 0 : params.length;
     }

@@ -31,9 +31,9 @@
 
 package com.rabbitmq.tools.jsonrpc;
 
-import java.util.Map;
-
 import com.rabbitmq.tools.json.JSONWriter;
+
+import java.util.Map;
 
 /**
  * Thrown when a JSON-RPC service indicates an error occurred during a call.
@@ -43,13 +43,21 @@ public class JsonRpcException extends Exception {
      * Default serialized version ID
      */
     private static final long serialVersionUID = 1L;
-    /** Usually the constant string, "JSONRPCError" */
+    /**
+     * Usually the constant string, "JSONRPCError"
+     */
     public String name;
-    /** Error code */
+    /**
+     * Error code
+     */
     public int code;
-    /** Error message */
+    /**
+     * Error message
+     */
     public String message;
-    /** Error detail object - may not always be present or meaningful */
+    /**
+     * Error detail object - may not always be present or meaningful
+     */
     public Object error;
 
     public JsonRpcException() {
@@ -57,11 +65,13 @@ public class JsonRpcException extends Exception {
     }
 
     public JsonRpcException(Map<String, Object> errorMap) {
-	super(new JSONWriter().write(errorMap));
-	name = (String) errorMap.get("name");
-	code = 0;
-	if (errorMap.get("code") != null) { code = ((Integer) errorMap.get("code")); }
-	message = (String) errorMap.get("message");
-	error = errorMap.get("error");
+        super(new JSONWriter().write(errorMap));
+        name = (String) errorMap.get("name");
+        code = 0;
+        if (errorMap.get("code") != null) {
+            code = ((Integer) errorMap.get("code"));
+        }
+        message = (String) errorMap.get("message");
+        error = errorMap.get("error");
     }
 }

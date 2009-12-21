@@ -30,32 +30,31 @@
 //
 package com.rabbitmq.client.impl;
 
-import java.util.Date;
-import java.util.Map;
-import java.util.Hashtable;
-
-import com.rabbitmq.client.BasicProperties;
 import com.rabbitmq.client.StreamProperties;
+
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Map;
 
 public abstract class AMQStreamProperties
         extends AMQContentHeader implements StreamProperties {
-    
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         AMQStreamProperties spClone = (AMQStreamProperties) super.clone();
-        
+
         Map<String, Object> thisHeaders = getHeaders();
         if (thisHeaders != null) {
             Map<String, Object> headers = new Hashtable<String, Object>();
             headers.putAll(thisHeaders);
             spClone.setHeaders(headers);
         }
-        
+
         Date thisTimestamp = getTimestamp();
         if (thisTimestamp != null) {
             spClone.setTimestamp((Date) thisTimestamp.clone());
         }
-        
+
         return spClone;
     }
 }
