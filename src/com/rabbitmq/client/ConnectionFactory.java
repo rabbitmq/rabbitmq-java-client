@@ -49,8 +49,129 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory {
-    private final ConnectionParameters _params;
+    /** Default user name */
+    public static final String DEFAULT_USER = "guest";
 
+    /** Default password */
+    public static final String DEFAULT_PASS = "guest";
+
+    /** Default virtual host */
+    public static final String DEFAULT_VHOST = "/";
+
+    /** Default value for the desired maximum channel number; zero for
+     * unlimited */
+    public static final int DEFAULT_CHANNEL_MAX = 0;
+
+    /** Default value for the desired maximum frame size; zero for
+     * unlimited */
+    public static final int DEFAULT_FRAME_MAX = 0;
+
+    /** Default value for desired heartbeat interval; zero for none */
+    public static final int DEFAULT_HEARTBEAT = 0;
+
+    private String _userName = DEFAULT_USER;
+    private String _password = DEFAULT_PASS;
+    private String _virtualHost = DEFAULT_VHOST;
+    private int _requestedChannelMax = DEFAULT_CHANNEL_MAX;
+    private int _requestedFrameMax = DEFAULT_FRAME_MAX;
+    private int _requestedHeartbeat = DEFAULT_HEARTBEAT;
+
+    /**
+     * Retrieve the user name.
+     * @return the AMQP user name to use when connecting to the broker
+     */
+    public String getUserName() {
+        return _userName;
+    }
+
+    /**
+     * Set the user name.
+     * @param userName the AMQP user name to use when connecting to the broker
+     */
+    public void setUsername(String userName) {
+        _userName = userName;
+    }
+
+    /**
+     * Retrieve the password.
+     * @return the password to use when connecting to the broker
+     */
+    public String getPassword() {
+        return _password;
+    }
+
+    /**
+     * Set the password.
+     * @param password the password to use when connecting to the broker
+     */
+    public void setPassword(String password) {
+        _password = password;
+    }
+
+    /**
+     * Retrieve the virtual host.
+     * @return the virtual host to use when connecting to the broker
+     */
+    public String getVirtualHost() {
+        return _virtualHost;
+    }
+
+    /**
+     * Set the virtual host.
+     * @param virtualHost the virtual host to use when connecting to the broker
+     */
+    public void setVirtualHost(String virtualHost) {
+        _virtualHost = virtualHost;
+    }
+
+    /**
+     * Retrieve the requested maximum channel number
+     * @return the initially requested maximum channel number; zero for unlimited
+     */
+    public int getRequestedChannelMax() {
+        return _requestedChannelMax;
+    }
+
+    /**
+     * Set the requested maximum frame size
+     * @param requestedFrameMax initially requested maximum frame size, in octets; zero for unlimited
+     */
+    public void setRequestedFrameMax(int requestedFrameMax) {
+        _requestedFrameMax = requestedFrameMax;
+    }
+
+    /**
+     * Retrieve the requested maximum frame size
+     * @return the initially requested maximum frame size, in octets; zero for unlimited
+     */
+    public int getRequestedFrameMax() {
+        return _requestedFrameMax;
+    }
+
+    /**
+     * Retrieve the requested heartbeat interval.
+     * @return the initially requested heartbeat interval, in seconds; zero for none
+     */
+    public int getRequestedHeartbeat() {
+        return _requestedHeartbeat;
+    }
+
+    /**
+     * Set the requested heartbeat.
+     * @param requestedHeartbeat the initially requested heartbeat interval, in seconds; zero for none
+     */
+    public void setRequestedHeartbeat(int requestedHeartbeat) {
+        _requestedHeartbeat = requestedHeartbeat;
+    }
+
+    /**
+     * Set the requested maximum channel number
+     * @param requestedChannelMax initially requested maximum channel number; zero for unlimited
+     */
+    public void setRequestedChannelMax(int requestedChannelMax) {
+        _requestedChannelMax = requestedChannelMax;
+    }
+                                          
     /**
      * Holds the SocketFactory used to manufacture outbound sockets.
      */
@@ -60,23 +181,6 @@ public class ConnectionFactory {
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
     public ConnectionFactory() {
-        _params = new ConnectionParameters();
-    }
-
-    /**
-     * Instantiate a ConnectionFactory with the given connection parameters.
-     * @param params the relevant parameters for instantiating the broker connection
-     */
-    public ConnectionFactory(ConnectionParameters params) {
-        _params = params;
-    }
-
-    /**
-     * Retrieve the connection parameters.
-     * @return the initialization parameters used to open the connection
-     */
-    public ConnectionParameters getParameters() {
-        return _params;
     }
 
     /**
@@ -173,7 +277,7 @@ public class ConnectionFactory {
                         redirectCount = 0;
                     boolean allowRedirects = redirectCount < maxRedirects;
                     try {
-                        AMQConnection conn = new AMQConnection(_params,
+                        AMQConnection conn = new AMQConnection(this,
                                     frameHandler);
                         conn.start(!allowRedirects);
                         return conn;
