@@ -187,7 +187,7 @@ public class TestMain {
         // Test what happens when we just kill the connection
         conn = new ConnectionFactory().newConnection(hostName, portNumber);
         ch = conn.createChannel();
-        ((SocketFrameHandler)((AMQConnection)conn)._frameHandler).close();
+        ((SocketFrameHandler)((AMQConnection)conn).getFrameHandler()).close();
     }
 
     public static void runProducerConsumerTest(String hostName, int portNumber, int commitEvery) throws IOException {

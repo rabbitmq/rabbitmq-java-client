@@ -168,6 +168,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _knownHosts;
     }
 
+    public FrameHandler getFrameHandler(){
+        return _frameHandler;
+    }
+
     /**
      * Construct a new connection to a broker.
      * @param params the initialization parameters for a connection
