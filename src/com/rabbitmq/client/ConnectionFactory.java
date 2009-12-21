@@ -106,13 +106,17 @@ public class ConnectionFactory {
         this.host = host;
     }
 
+    private int portOrDefault(int port){
+        if(port != USE_DEFAULT_PORT) return port;
+        else if(isSSL()) return DEFAULT_AMQP_OVER_SSL_PORT;
+        else return DEFAULT_AMQP_PORT; 
+    }
+
     /**
      *  @return the default port to use for connections
      */
     public int getPort() {
-        if(port != USE_DEFAULT_PORT) return port;
-        else if(isSSL()) return DEFAULT_AMQP_OVER_SSL_PORT;
-        else return DEFAULT_AMQP_PORT; 
+      return portOrDefault(port);
     }
 
     /**
@@ -241,8 +245,7 @@ public class ConnectionFactory {
     public void setSocketFactory(SocketFactory factory) {
         _factory = factory;
     }
-
-  
+      
     public boolean isSSL(){
       return getSocketFactory() instanceof SSLSocketFactory;
     }
@@ -301,8 +304,7 @@ public class ConnectionFactory {
         throws IOException {
 
         String hostName = addr.getHost();
-        int portNumber = addr.getPort();
-        if (portNumber == -1) portNumber = AMQP.PROTOCOL.PORT;
+        int portNumber = portOrDefault(addr.getPort());
         return new SocketFrameHandler(_factory, hostName, portNumber);
     }
 
@@ -371,7 +373,7 @@ public class ConnectionFactory {
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(Address[] addrs, int maxRedirects)
+    private Connection newConnection(Address[] addrs, int maxRedirects)
         throws IOException
     {
         return newConnection(addrs,
@@ -385,33 +387,10 @@ public class ConnectionFactory {
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(Address[] addrs)
+    private Connection newConnection(Address[] addrs)
         throws IOException
     {
         return newConnection(addrs, 0);
-    }
-
-    /**
-     * Instantiates a connection and return an interface to it.
-     * @param hostName the host to connect to
-     * @param portNumber the port number to use
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection(String hostName, int portNumber) throws IOException {
-        return newConnection(new Address[] {
-                                 new Address(hostName, portNumber)
-                             });
-    }
-
-    /**
-     * Create a new broker connection, using the ConnectionFactory's default port.  
-     * @param hostName the host to connect to
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection(String hostName) throws IOException {
-        return newConnection(hostName, getPort());
     }
 
     /**
@@ -420,8 +399,8 @@ public class ConnectionFactory {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection() throws IOException {
-        return newConnection(getHost());
+        return newConnection(new Address[] {
+                                 new Address(getHost(), getPort())
+                             });
     }
-
-    
 }
