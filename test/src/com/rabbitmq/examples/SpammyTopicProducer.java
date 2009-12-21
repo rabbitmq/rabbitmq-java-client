@@ -67,7 +67,10 @@ public class SpammyTopicProducer {
             String message = (args.length > 4) ? args[4] :
                 "the time is " + new java.util.Date().toString();
 
-            Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            ConnectionFactory cfconn = new ConnectionFactory(); 
+            cfconn.setHost(hostName); 
+            cfconn.setPort(portNumber);
+            Connection conn = connectionFactory.newConnection();
 
             Channel ch = conn.createChannel();
 

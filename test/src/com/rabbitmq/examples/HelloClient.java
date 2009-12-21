@@ -44,7 +44,10 @@ public class HelloClient {
             String hostName = (args.length > 1) ? args[1] : "localhost";
             int portNumber = (args.length > 2) ? Integer.parseInt(args[2]) : AMQP.PROTOCOL.PORT;
 
-            Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            ConnectionFactory cfconn = new ConnectionFactory(); 
+            cfconn.setHost(hostName); 
+            cfconn.setPort(portNumber);
+            Connection conn = connectionFactory.newConnection();
             Channel ch = conn.createChannel();
             RpcClient service = new RpcClient(ch, "", "Hello");
 
