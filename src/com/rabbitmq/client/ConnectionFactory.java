@@ -91,7 +91,8 @@ public class ConnectionFactory {
     private int _requestedFrameMax = DEFAULT_FRAME_MAX;
     private int _requestedHeartbeat = DEFAULT_HEARTBEAT;
     private SocketFactory _factory = SocketFactory.getDefault();
-    
+    private ConnectionFactory fallback = null;   
+ 
     /**
      *  @return the default host to use for connections
      */
@@ -253,6 +254,23 @@ public class ConnectionFactory {
     public void setSocketFactory(SocketFactory factory) {
         _factory = factory;
     }
+
+
+    /**
+     *  @return the connection factory used as a fallback if this one fails (
+     *          null if there is no fallback)
+     */
+    public ConnectionFactory getFallback(){
+      return fallback;
+    }
+
+    /**
+     *  @param fallback The connection factory to use as a fallback if this one
+     *                  fails 
+     */
+    public void setFallback(ConnectionFactory fallback){
+      this.fallback = fallback;
+    }
       
     public boolean isSSL(){
       return getSocketFactory() instanceof SSLSocketFactory;
@@ -316,19 +334,18 @@ public class ConnectionFactory {
         return new SocketFrameHandler(_factory, hostName, portNumber);
     }
 
-    private Connection newConnection(Address[] addrs,
+    private Connection newConnection(Address[] addresses,
                                      int maxRedirects,
                                      Map<Address,Integer> redirectAttempts)
         throws IOException
     {
         IOException lastException = null;
-
-        for (Address addr : addrs) {
+        for (Address address : addresses) {
             Address[] lastKnownAddresses = new Address[0];
             try {
                 while(true) {
-                    FrameHandler frameHandler = createFrameHandler(addr);
-                    Integer redirectCount = redirectAttempts.get(addr);
+                    FrameHandler frameHandler = createFrameHandler(address);
+                    Integer redirectCount = redirectAttempts.get(address);
                     if (redirectCount == null)
                         redirectCount = 0;
                     boolean allowRedirects = redirectCount < maxRedirects;
@@ -342,9 +359,9 @@ public class ConnectionFactory {
                             //this should never happen with a well-behaved server
                             throw new IOException("server ignored 'insist'");
                         } else {
-                            redirectAttempts.put(addr, redirectCount+1);
+                            redirectAttempts.put(address, redirectCount+1);
                             lastKnownAddresses = e.getKnownAddresses();
-                            addr = e.getAddress();
+                            address = e.getAddress();
                             //TODO: we may want to log redirection attempts.
                         }
                     }
@@ -367,6 +384,10 @@ public class ConnectionFactory {
             }
         }
 
+        if(getFallback() != null){
+            return getFallback().newConnection();
+        }
+
         if (lastException == null) {
             throw new IOException("failed to connect");
         } else {
@@ -376,39 +397,14 @@ public class ConnectionFactory {
 
     /**
      * Create a new broker connection
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @param maxRedirects the maximum allowable number of redirects
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    private Connection newConnection(Address[] addrs, int maxRedirects)
-        throws IOException
-    {
-        return newConnection(addrs,
-                             maxRedirects,
-                             new HashMap<Address,Integer>());
-    }
-
-    /**
-     * Create a new broker connection (no redirects allowed)
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    private Connection newConnection(Address[] addrs)
-        throws IOException
-    {
-        return newConnection(addrs, 0);
-    }
-
-    /**
-     * Create a new broker connection, using the ConnectionFactory's default host and port.  
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection() throws IOException {
         return newConnection(new Address[] {
                                  new Address(getHost(), getPort())
-                             });
+                             },
+                             0,
+                             new HashMap<Address,Integer>());
     }
 }
