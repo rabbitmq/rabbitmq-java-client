@@ -113,7 +113,7 @@ public class Permissions extends BrokerTestCase
         params.setPassword("test");
         params.setVirtualHost("/test");
         ConnectionFactory factory = params;
-        Connection connection = factory.newConnection("localhost");
+        Connection connection = factory.newConnection();
         adminCh = connection.createChannel();
         withNames(new WithName() {
                 public void with(String name) throws IOException {
