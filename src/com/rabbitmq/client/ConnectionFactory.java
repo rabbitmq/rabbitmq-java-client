@@ -91,7 +91,6 @@ public class ConnectionFactory {
     private int requestedFrameMax         = DEFAULT_FRAME_MAX;
     private int requestedHeartbeat        = DEFAULT_HEARTBEAT;
     private SocketFactory factory         = SocketFactory.getDefault();
-    private ConnectionFactory fallback    = null;   
  
     /**
      *  @return the default host to use for connections
@@ -255,23 +254,6 @@ public class ConnectionFactory {
         this.factory = factory;
     }
 
-
-    /**
-     *  @return the connection factory used as a fallback if this one fails (
-     *          null if there is no fallback)
-     */
-    public ConnectionFactory getFallback(){
-      return fallback;
-    }
-
-    /**
-     *  @param fallback The connection factory to use as a fallback if this one
-     *                  fails 
-     */
-    public void setFallback(ConnectionFactory fallback){
-      this.fallback = fallback;
-    }
-      
     public boolean isSSL(){
       return getSocketFactory() instanceof SSLSocketFactory;
     }
@@ -382,10 +364,6 @@ public class ConnectionFactory {
                     }
                 }
             }
-        }
-
-        if(getFallback() != null){
-            return getFallback().newConnection();
         }
 
         if (lastException == null) {
