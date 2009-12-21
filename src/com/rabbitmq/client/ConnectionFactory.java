@@ -229,14 +229,6 @@ public class ConnectionFactory {
     }
 
     /**
-     *  Instantiate a ConnectionFactory for connecting to the given hostName and port
-     */
-    public ConnectionFactory(String hostName, int port){
-      setHost(hostName);
-      setPort(port);
-    }
-
-    /**
      * Retrieve the socket factory used to make connections with.
      */
     public SocketFactory getSocketFactory() {

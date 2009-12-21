@@ -91,9 +91,10 @@ public class TestMain {
         private final int protocolMinor;
 
         public TestConnectionFactory(int major, int minor, String hostName, int port) {
-            super(hostName, port);
             this.protocolMajor = major;
             this.protocolMinor = minor;
+            setHost(hostName);
+            setPort(port);
         }
 
         protected FrameHandler createFrameHandler(Address addr)
