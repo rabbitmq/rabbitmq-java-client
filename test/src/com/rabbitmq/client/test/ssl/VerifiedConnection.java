@@ -96,7 +96,7 @@ public class VerifiedConnection extends UnverifiedConnection {
         }
 
         if (connection == null) {
-            connection = connectionFactory.newConnection("localhost", 5671);
+            connection = connectionFactory.newConnection();
         }
     }
 }
