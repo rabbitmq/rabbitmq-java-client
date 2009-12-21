@@ -214,7 +214,7 @@ public class ScalabilityTest {
 
 
     public Results run() throws Exception{
-        Connection con = new ConnectionFactory(params.host, params.port).newConnection();
+        Connection con = new ConnectionFactory(){{setHost(params.host); setPort(params.port);}}.newConnection();
         Channel channel = con.createChannel();
 
         Results r = new Results(params.maxBindingExp);
