@@ -89,16 +89,16 @@ public class MulticastMain {
 
             //setup
             String id = UUID.randomUUID().toString();
-            Stats stats = new Stats(1000L * samplingInterval);
-            Address[] addresses = new Address[] {
-                new Address(hostName, portNumber)
-            };
+            Stats stats = new Stats(1000L * samplingInterval);            
             ConnectionFactory params = new ConnectionFactory();
+            params.setHost(hostName);
+            params.setPort(portNumber);
+
             Thread[] consumerThreads = new Thread[consumerCount];
             Connection[] consumerConnections = new Connection[consumerCount];
             for (int i = 0; i < consumerCount; i++) {
                 System.out.println("starting consumer #" + i);
-                Connection conn = params.newConnection(addresses, maxRedirects);
+                Connection conn = params.newConnection();
                 consumerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (consumerTxSize > 0) channel.txSelect();
@@ -120,7 +120,7 @@ public class MulticastMain {
             Connection[] producerConnections = new Connection[producerCount];
             for (int i = 0; i < producerCount; i++) {
                 System.out.println("starting producer #" + i);
-                Connection conn = params.newConnection(addresses, maxRedirects);
+                Connection conn = params.newConnection();
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
