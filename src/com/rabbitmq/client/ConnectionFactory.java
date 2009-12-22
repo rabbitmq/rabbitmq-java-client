@@ -52,6 +52,8 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory {
+    public static final int DEFAULT_SOCKET_BUFFER_SIZE = 10 * 1024;
+
     private final ConnectionParameters _params;
 
     /**
@@ -167,15 +169,26 @@ public class ConnectionFactory {
      *  to connect to an AMQP server before they connect. 
      *
      *  The default behaviour of this method is to disable Nagle's algorithm to get
-     *  more consistently low latency.
+     *  more consistently low latency and set the buffer size to a reasonable figure
+     *  that seems to work well as a performance / size trade of. 
      *  However it may be overridden freely and there is no requirement to retain
      *  this behaviour. 
      *
      *  @param socket The socket that is to be used for the Connection
      */
     protected void configureSocket(Socket socket) throws IOException{
-        //disable Nagle's algorithm, for more consistently low latency
+        // disable Nagle's algorithm, for more consistently low latency
         socket.setTcpNoDelay(true);
+
+        // disabling Nagle's algorithm seems to come at a significant performance cost 
+        // at small buffer sizes. Empirically, buffer sizes of 10K seem to be enough to 
+        // equalise the throughput for local traffic. This needs more investigation at to
+        // how it behaves over a network.
+
+        if(socket.getSendBufferSize() < DEFAULT_SOCKET_BUFFER_SIZE)
+            socket.setSendBufferSize(DEFAULT_SOCKET_BUFFER_SIZE);
+        if(socket.getReceiveBufferSize() < DEFAULT_SOCKET_BUFFER_SIZE)
+            socket.setReceiveBufferSize(DEFAULT_SOCKET_BUFFER_SIZE);
     }
 
     private Connection newConnection(Address[] addrs,
