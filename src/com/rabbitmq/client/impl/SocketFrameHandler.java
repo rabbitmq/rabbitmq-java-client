@@ -47,12 +47,6 @@ import com.rabbitmq.client.AMQP;
  */
 
 public class SocketFrameHandler implements FrameHandler {
-    /** Host we connect to */
-    public final String _host;
-
-    /** Port number we connect to */
-    public final int _port;
-
     /** The underlying socket */
     public final Socket _socket;
 
@@ -66,33 +60,21 @@ public class SocketFrameHandler implements FrameHandler {
     // twice simultaneously.
 
     /**
-     * Instantiate a SocketFrameHandler.
-     * @param factory the socket factory to use to build our Socket - may be SSLSocketFactory etc
-     * @param hostName the host name
-     * @param portNumber the port number
-     * @throws IOException if there is a problem accessing the connection
+     * @param socket the socket to use
      */
-    public SocketFrameHandler(SocketFactory factory,
-                              String hostName,
-                              int portNumber)
-        throws IOException
-    {
-        _host = hostName;
-        _port = portNumber;
-        _socket = factory.createSocket(_host, _port);
-        //disable Nagle's algorithm, for more consistently low latency
-        _socket.setTcpNoDelay(true);
+    public SocketFrameHandler(Socket socket) throws IOException{
+        _socket = socket;
 
         _inputStream = new DataInputStream(new BufferedInputStream(_socket.getInputStream()));
         _outputStream = new DataOutputStream(new BufferedOutputStream(_socket.getOutputStream()));
     }
 
     public String getHost() {
-        return _host;
+        return _socket.getInetAddress().getHostName(); 
     }
 
     public int getPort() {
-        return _port;
+        return _socket.getPort();
     }
 
     public void setTimeout(int timeoutMs)
