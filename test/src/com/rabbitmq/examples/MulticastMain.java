@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.net.Socket;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -60,7 +61,6 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
-
 
 public class MulticastMain {
 
@@ -85,6 +85,7 @@ public class MulticastMain {
             int minMsgSize       = intArg(cmd, 's', 0);
             int maxRedirects     = intArg(cmd, 'd', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
+            final int bufferSize       = intArg(cmd, 'b', -1);
             List flags           = lstArg(cmd, 'f');
 
             //setup
@@ -98,7 +99,15 @@ public class MulticastMain {
             Connection[] consumerConnections = new Connection[consumerCount];
             for (int i = 0; i < consumerCount; i++) {
                 System.out.println("starting consumer #" + i);
-                Connection conn = new ConnectionFactory(params).newConnection(addresses, maxRedirects);
+                Connection conn = new ConnectionFactory(params){
+                    @Override public void configureSocket(Socket socket) throws IOException{
+                        super.configureSocket(socket);
+                        if(bufferSize > 0){
+                            socket.setReceiveBufferSize(bufferSize);
+                            socket.setSendBufferSize(bufferSize);
+                        }
+                    }
+                }.newConnection(addresses, maxRedirects);
                 consumerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (consumerTxSize > 0) channel.txSelect();
@@ -160,6 +169,7 @@ public class MulticastMain {
         Options options = new Options();
         options.addOption(new Option("h", "host",      true, "broker host"));
         options.addOption(new Option("p", "port",      true, "broker port"));
+        options.addOption(new Option("b", "buffer",    true, "buffer size"));
         options.addOption(new Option("t", "type",      true, "exchange type"));
         options.addOption(new Option("e", "exchange",  true, "exchange name"));
         options.addOption(new Option("i", "interval",  true, "sampling interval"));
