@@ -52,7 +52,8 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory {
-    public static final int DEFAULT_SOCKET_BUFFER_SIZE = 10 * 1024;
+    public static final int DEFAULT_SOCKET_SEND_BUFFER_SIZE = 10 * 1024;
+    public static final int DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE = 50 * 1024;
 
     private final ConnectionParameters _params;
 
@@ -185,10 +186,10 @@ public class ConnectionFactory {
         // equalise the throughput for local traffic. This needs more investigation at to
         // how it behaves over a network.
 
-        if(socket.getSendBufferSize() < DEFAULT_SOCKET_BUFFER_SIZE)
-            socket.setSendBufferSize(DEFAULT_SOCKET_BUFFER_SIZE);
-        if(socket.getReceiveBufferSize() < DEFAULT_SOCKET_BUFFER_SIZE)
-            socket.setReceiveBufferSize(DEFAULT_SOCKET_BUFFER_SIZE);
+        if(socket.getSendBufferSize() < DEFAULT_SOCKET_SEND_BUFFER_SIZE)
+            socket.setSendBufferSize(DEFAULT_SOCKET_SEND_BUFFER_SIZE);
+        if(socket.getReceiveBufferSize() < DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE)
+            socket.setReceiveBufferSize(DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE);
     }
 
     private Connection newConnection(Address[] addrs,
