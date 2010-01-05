@@ -52,7 +52,17 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory {
+    // We explicitly set some minimum buffer sizes for consistent reasonable behaviour
+    // These will only be applied if that platform's default is not larger than this.
+
+    // Due to our disabling of Nagle's algorithm, small buffers can very easily result in us
+    // sending a very large number of buffer sized packets. When we write messages faster than
+    // we can send them across the network, this quickly becomes a performance bottleneck. 
+    // Empirically, the throughput for with and without Nagle's seems to equalise around a 
+    // send buffer size of 8-10k for local messages. We need to do more benchmarking to verify
+    // whether there's a better choice of default number for typical ethernet setups.
     public static final int DEFAULT_SOCKET_SEND_BUFFER_SIZE = 10 * 1024;
+
     public static final int DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE = 50 * 1024;
 
     private final ConnectionParameters _params;
