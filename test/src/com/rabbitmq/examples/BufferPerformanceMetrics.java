@@ -22,7 +22,7 @@ public class BufferPerformanceMetrics{
     public static final String QUEUE = "performance-test-queue";
     public static final String EXCHANGE = "performance-test-exchange";
     public static final String ROUTING_KEY = "performance-test-rk";
-    public static final int MESSAGE_COUNT = 10000;
+    public static final int MESSAGE_COUNT = 100000;
     public static final byte[] MESSAGE = "Hello world".getBytes();
     public static double NANOSECONDS_PER_SECOND = 1000 * 1000 * 1000;
     public static final int REPEATS = 1000000;
