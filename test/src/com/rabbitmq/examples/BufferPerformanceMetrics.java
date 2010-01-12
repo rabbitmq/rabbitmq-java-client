@@ -5,18 +5,13 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
-import java.util.Arrays;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.QueueingConsumer;
+
 import java.net.Socket;
 import java.io.IOException;
 import java.util.Random;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 
 /**
  * Class to explore how performance of sending and receiving messages varies with the buffer size and 
@@ -67,14 +62,17 @@ public class BufferPerformanceMetrics{
             
                 start = System.nanoTime(); 
                 for(int i = 0; i < MESSAGE_COUNT; i++){
-                    channel.basicPublish(EXCHANGE, QUEUE, MessageProperties.BASIC, MESSAGE);
+                    channel.basicPublish(EXCHANGE, ROUTING_KEY, MessageProperties.BASIC, MESSAGE);
                 }                 
                 long publishTime =    System.nanoTime() - start;
 
                 start = System.nanoTime(); 
+
+                QueueingConsumer consumer = new QueueingConsumer(channel);
+                channel.basicConsume(QUEUE, true, consumer);
+
                 for(int i = 0; i < MESSAGE_COUNT; i++){
-                    GetResponse response = channel.basicGet(QUEUE, true);
-                    assert(Arrays.equals(MESSAGE, response.getBody()));
+                    consumer.nextDelivery();
                 } 
                 long getTime =    System.nanoTime() - start;
 

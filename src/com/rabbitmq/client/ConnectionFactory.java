@@ -52,19 +52,6 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory {
-    // We explicitly set some minimum buffer sizes for consistent reasonable behaviour
-    // These will only be applied if that platform's default is not larger than this.
-
-    // Due to our disabling of Nagle's algorithm, small buffers can very easily result in us
-    // sending a very large number of buffer sized packets. When we write messages faster than
-    // we can send them across the network, this quickly becomes a performance bottleneck. 
-    // Empirically, the throughput for with and without Nagle's seems to equalise around a 
-    // send buffer size of 8-10k for local messages. We need to do more benchmarking to verify
-    // whether there's a better choice of default number for typical ethernet setups.
-    public static final int DEFAULT_SOCKET_SEND_BUFFER_SIZE = 10 * 1024;
-
-    public static final int DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE = 50 * 1024;
-
     private final ConnectionParameters _params;
 
     /**
@@ -180,8 +167,7 @@ public class ConnectionFactory {
      *  to connect to an AMQP server before they connect. 
      *
      *  The default behaviour of this method is to disable Nagle's algorithm to get
-     *  more consistently low latency and set the buffer size to a reasonable figure
-     *  that seems to work well as a performance / size trade of. 
+     *  more consistently low latency.
      *  However it may be overridden freely and there is no requirement to retain
      *  this behaviour. 
      *
@@ -190,16 +176,6 @@ public class ConnectionFactory {
     protected void configureSocket(Socket socket) throws IOException{
         // disable Nagle's algorithm, for more consistently low latency
         socket.setTcpNoDelay(true);
-
-        // disabling Nagle's algorithm seems to come at a significant performance cost 
-        // at small buffer sizes. Empirically, buffer sizes of 10K seem to be enough to 
-        // equalise the throughput for local traffic. This needs more investigation at to
-        // how it behaves over a network.
-
-        if(socket.getSendBufferSize() < DEFAULT_SOCKET_SEND_BUFFER_SIZE)
-            socket.setSendBufferSize(DEFAULT_SOCKET_SEND_BUFFER_SIZE);
-        if(socket.getReceiveBufferSize() < DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE)
-            socket.setReceiveBufferSize(DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE);
     }
 
     private Connection newConnection(Address[] addrs,
