@@ -70,24 +70,24 @@ public class MulticastMain {
         try {
             CommandLine cmd = parser.parse(options, args);
 
-            String hostName      = strArg(cmd, 'h', "localhost");
-            int portNumber       = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
-            String exchangeType  = strArg(cmd, 't', "direct");
-            String exchangeName  = strArg(cmd, 'e', exchangeType);
-            int samplingInterval = intArg(cmd, 'i', 1);
-            int rateLimit        = intArg(cmd, 'r', 0);
-            int producerCount    = intArg(cmd, 'x', 1);
-            int consumerCount    = intArg(cmd, 'y', 1);
-            int producerTxSize   = intArg(cmd, 'm', 0);
-            int consumerTxSize   = intArg(cmd, 'n', 0);
-            boolean autoAck      = cmd.hasOption('a');
-            int prefetchCount    = intArg(cmd, 'q', 0);
-            int minMsgSize       = intArg(cmd, 's', 0);
-            int maxRedirects     = intArg(cmd, 'd', 0);
-            int timeLimit        = intArg(cmd, 'z', 0);
-            final int sendBufferSize       = intArg(cmd, 'b', -1);
-            final int receiveBufferSize       = intArg(cmd, 'c', -1);
-            List flags           = lstArg(cmd, 'f');
+            final String hostName      = strArg(cmd, 'h', "localhost");
+            final int portNumber       = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
+            final String exchangeType  = strArg(cmd, 't', "direct");
+            final String exchangeName  = strArg(cmd, 'e', exchangeType);
+            final int samplingInterval = intArg(cmd, 'i', 1);
+            final int rateLimit        = intArg(cmd, 'r', 0);
+            final int producerCount    = intArg(cmd, 'x', 1);
+            final int consumerCount    = intArg(cmd, 'y', 1);
+            final int producerTxSize   = intArg(cmd, 'm', 0);
+            final int consumerTxSize   = intArg(cmd, 'n', 0);
+            final boolean autoAck      = cmd.hasOption('a');
+            final int prefetchCount    = intArg(cmd, 'q', 0);
+            final int minMsgSize       = intArg(cmd, 's', 0);
+            final int maxRedirects     = intArg(cmd, 'd', 0);
+            final int timeLimit        = intArg(cmd, 'z', 0);
+            final int sendBufferSize   = intArg(cmd, 'b', -1);
+            final int recvBufferSize   = intArg(cmd, 'c', -1);
+            final List flags           = lstArg(cmd, 'f');
 
             //setup
             String id = UUID.randomUUID().toString();
@@ -103,8 +103,8 @@ public class MulticastMain {
                 Connection conn = new ConnectionFactory(params){
                     @Override public void configureSocket(Socket socket) throws IOException{
                         super.configureSocket(socket);
-                        if(receiveBufferSize > 0)
-                            socket.setReceiveBufferSize(receiveBufferSize);
+                        if(recvBufferSize > 0)
+                            socket.setReceiveBufferSize(recvBufferSize);
                         if(sendBufferSize > 0 )
                             socket.setSendBufferSize(sendBufferSize);
                         
@@ -171,7 +171,6 @@ public class MulticastMain {
         Options options = new Options();
         options.addOption(new Option("h", "host",      true, "broker host"));
         options.addOption(new Option("p", "port",      true, "broker port"));
-        options.addOption(new Option("b", "buffer",    true, "buffer size"));
         options.addOption(new Option("t", "type",      true, "exchange type"));
         options.addOption(new Option("e", "exchange",  true, "exchange name"));
         options.addOption(new Option("i", "interval",  true, "sampling interval"));
@@ -185,6 +184,8 @@ public class MulticastMain {
         options.addOption(new Option("s", "size",      true, "message size"));
         options.addOption(new Option("d", "redirects", true, "max redirects"));
         options.addOption(new Option("z", "time",      true, "time limit"));
+        options.addOption(new Option("b", "sendbuffer",true, "send buffer size"));
+        options.addOption(new Option("c", "recvbuffer",true, "receive buffer size"));
         Option flag =     new Option("f", "flag",      true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(flag);
