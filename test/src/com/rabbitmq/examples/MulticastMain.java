@@ -85,7 +85,8 @@ public class MulticastMain {
             int minMsgSize       = intArg(cmd, 's', 0);
             int maxRedirects     = intArg(cmd, 'd', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
-            final int bufferSize       = intArg(cmd, 'b', -1);
+            final int sendBufferSize       = intArg(cmd, 'b', -1);
+            final int receiveBufferSize       = intArg(cmd, 'c', -1);
             List flags           = lstArg(cmd, 'f');
 
             //setup
@@ -102,10 +103,11 @@ public class MulticastMain {
                 Connection conn = new ConnectionFactory(params){
                     @Override public void configureSocket(Socket socket) throws IOException{
                         super.configureSocket(socket);
-                        if(bufferSize > 0){
-                            socket.setReceiveBufferSize(bufferSize);
-                            socket.setSendBufferSize(bufferSize);
-                        }
+                        if(receiveBufferSize > 0)
+                            socket.setReceiveBufferSize(receiveBufferSize);
+                        if(sendBufferSize > 0 )
+                            socket.setSendBufferSize(sendBufferSize);
+                        
                     }
                 }.newConnection(addresses, maxRedirects);
                 consumerConnections[i] = conn;
