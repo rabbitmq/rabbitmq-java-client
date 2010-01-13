@@ -3,7 +3,6 @@ package com.rabbitmq.examples;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.QueueingConsumer;
@@ -37,9 +36,9 @@ public class BufferPerformanceMetrics {
 
         System.out.println("buffer size, " +
                            "publish rate with nagle, " +
-                           "get rate with nagle, " +
+                           "consume rate with nagle, " +
                            "publish rate without nagle, " +
-                           "get rate without nagle");
+                           "consume rate without nagle");
 
         for(int repeat = 0; repeat < REPEATS; repeat++) {
             final int bufferSize = 1 + rnd.nextInt(PEAK_SIZE);
@@ -47,8 +46,8 @@ public class BufferPerformanceMetrics {
             double
                 publishRateNagle   = 0,
                 publishRateNoNagle = 0,
-                getRateNagle       = 0,
-                getRateNoNagle     = 0;
+                consumeRateNagle   = 0,
+                consumeRateNoNagle = 0;
 
             for(final boolean useNagle : new boolean[] { false, true }) {
                 ConnectionFactory factory = new ConnectionFactory() {
@@ -86,19 +85,19 @@ public class BufferPerformanceMetrics {
                     consumer.nextDelivery();
                 }
 
-                long getTime = System.nanoTime() - start;
+                long consumeTime = System.nanoTime() - start;
 
                 double publishRate =
                     MESSAGE_COUNT / (publishTime / NANOSECONDS_PER_SECOND);
-                double getRate =
-                    MESSAGE_COUNT / (getTime / NANOSECONDS_PER_SECOND);
+                double consumeRate =
+                    MESSAGE_COUNT / (consumeTime / NANOSECONDS_PER_SECOND);
 
                 if(useNagle){
                     publishRateNagle = publishRate;
-                    getRateNagle = getRate;
+                    consumeRateNagle = consumeRate;
                 } else {
                     publishRateNoNagle = publishRate;
-                    getRateNoNagle = getRate;
+                    consumeRateNoNagle = consumeRate;
                 }
 
                 connection.close();
@@ -108,9 +107,9 @@ public class BufferPerformanceMetrics {
 
             System.out.println(bufferSize + ", " +
                                publishRateNagle + ", " +
-                               getRateNagle + ", " +
+                               consumeRateNagle + ", " +
                                publishRateNoNagle + ", " +
-                               getRateNoNagle);
+                               consumeRateNoNagle);
         }
     }
 }
