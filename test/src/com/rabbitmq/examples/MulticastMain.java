@@ -105,7 +105,7 @@ public class MulticastMain {
                             super.configureSocket(socket);
                             if(recvBufferSize > 0)
                                 socket.setReceiveBufferSize(recvBufferSize);
-                            if(sendBufferSize > 0 )
+                            if(sendBufferSize > 0)
                                 socket.setSendBufferSize(sendBufferSize);
                         }
                     }.newConnection(addresses, maxRedirects);
@@ -373,7 +373,7 @@ public class MulticastMain {
                     int msgSeq = d.readInt();
                     long msgNano = d.readLong();
                     long nano = System.nanoTime();
-                    
+
                     Envelope envelope = delivery.getEnvelope();
 
                     if (!autoAck) {
@@ -434,7 +434,7 @@ public class MulticastMain {
 
         public synchronized void collectStats(long now, long latency) {
             msgCount++;
-            
+
             if (latency > 0) {
                 minLatency = Math.min(minLatency, latency);
                 maxLatency = Math.max(maxLatency, latency);
@@ -455,9 +455,9 @@ public class MulticastMain {
                                     ""));
                 reset(now);
             }
-            
+
         }
-        
+
     }
 
 }
