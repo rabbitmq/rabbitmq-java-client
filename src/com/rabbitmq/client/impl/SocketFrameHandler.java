@@ -56,13 +56,13 @@ public class SocketFrameHandler implements FrameHandler {
     /** Socket's outputstream - data to the broker */
     public final DataOutputStream _outputStream;
 
-    // Note, we use each of these to synchronize on to make sure we don't try to use them
-    // twice simultaneously.
+    // Note, we use each of these to synchronize on to make sure we
+    // don't try to use them twice simultaneously.
 
     /**
      * @param socket the socket to use
      */
-    public SocketFrameHandler(Socket socket) throws IOException{
+    public SocketFrameHandler(Socket socket) throws IOException {
         _socket = socket;
 
         _inputStream = new DataInputStream(new BufferedInputStream(_socket.getInputStream()));
@@ -70,7 +70,7 @@ public class SocketFrameHandler implements FrameHandler {
     }
 
     public String getHost() {
-        return _socket.getInetAddress().getHostName(); 
+        return _socket.getInetAddress().getHostName();
     }
 
     public int getPort() {
