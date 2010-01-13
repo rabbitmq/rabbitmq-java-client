@@ -69,20 +69,23 @@ public class BufferPerformanceMetrics {
                 long start;
 
                 start = System.nanoTime();
+
                 for(int i = 0; i < MESSAGE_COUNT; i++) {
                     channel.basicPublish(EXCHANGE, ROUTING_KEY,
                                          MessageProperties.BASIC, MESSAGE);
                 }
-                long publishTime = System.nanoTime() - start;
-
-                start = System.nanoTime();
 
                 QueueingConsumer consumer = new QueueingConsumer(channel);
                 channel.basicConsume(QUEUE, true, consumer);
 
+                long publishTime = System.nanoTime() - start;
+
+                start = System.nanoTime();
+
                 for(int i = 0; i < MESSAGE_COUNT; i++){
                     consumer.nextDelivery();
                 }
+
                 long getTime = System.nanoTime() - start;
 
                 double publishRate =
