@@ -6,6 +6,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.AMQP.Queue;
 
 import java.net.Socket;
 import java.io.IOException;
@@ -19,9 +20,6 @@ import java.util.Random;
  */
 public class BufferPerformanceMetrics {
 
-    public static final String QUEUE       = "performance-test-queue";
-    public static final String EXCHANGE    = "performance-test-exchange";
-    public static final String ROUTING_KEY = "performance-test-rk";
     public static final int MESSAGE_COUNT  = 100000;
     public static final byte[] MESSAGE     = "Hello world".getBytes();
     public static final int REPEATS        = 1000000;
@@ -61,21 +59,20 @@ public class BufferPerformanceMetrics {
 
                 Connection connection = factory.newConnection(hostName);
                 Channel channel = connection.createChannel();
-                channel.exchangeDeclare(EXCHANGE, "direct");
-                channel.queueDeclare(QUEUE);
-                channel.queueBind(QUEUE, EXCHANGE, ROUTING_KEY);
+                Queue.DeclareOk res = channel.queueDeclare();
+                String queueName = res.getQueue();
 
                 long start;
 
                 start = System.nanoTime();
 
                 for(int i = 0; i < MESSAGE_COUNT; i++) {
-                    channel.basicPublish(EXCHANGE, ROUTING_KEY,
+                    channel.basicPublish("", queueName,
                                          MessageProperties.BASIC, MESSAGE);
                 }
 
                 QueueingConsumer consumer = new QueueingConsumer(channel);
-                channel.basicConsume(QUEUE, true, consumer);
+                channel.basicConsume(queueName, true, consumer);
 
                 long publishTime = System.nanoTime() - start;
 
