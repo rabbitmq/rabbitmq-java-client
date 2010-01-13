@@ -183,11 +183,11 @@ public class ConnectionFactory {
     }
 
     /**
-     * Set the requested maximum frame size
-     * @param requestedFrameMax initially requested maximum frame size, in octets; zero for unlimited
+     * Set the requested maximum channel number
+     * @param requestedChannelMax initially requested maximum channel number; zero for unlimited
      */
-    public void setRequestedFrameMax(int requestedFrameMax) {
-        this.requestedFrameMax = requestedFrameMax;
+    public void setRequestedChannelMax(int requestedChannelMax) {
+        this.requestedChannelMax = requestedChannelMax;
     }
 
     /**
@@ -196,6 +196,14 @@ public class ConnectionFactory {
      */
     public int getRequestedFrameMax() {
         return this.requestedFrameMax;
+    }
+
+    /**
+     * Set the requested maximum frame size
+     * @param requestedFrameMax initially requested maximum frame size, in octets; zero for unlimited
+     */
+    public void setRequestedFrameMax(int requestedFrameMax) {
+        this.requestedFrameMax = requestedFrameMax;
     }
 
     /**
@@ -212,14 +220,6 @@ public class ConnectionFactory {
      */
     public void setRequestedHeartbeat(int requestedHeartbeat) {
         this.requestedHeartbeat = requestedHeartbeat;
-    }
-
-    /**
-     * Set the requested maximum channel number
-     * @param requestedChannelMax initially requested maximum channel number; zero for unlimited
-     */
-    public void setRequestedChannelMax(int requestedChannelMax) {
-        this.requestedChannelMax = requestedChannelMax;
     }
 
     /**

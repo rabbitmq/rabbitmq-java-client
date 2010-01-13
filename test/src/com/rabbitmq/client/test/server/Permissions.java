@@ -112,7 +112,6 @@ public class Permissions extends BrokerTestCase
         factory.setUsername("testadmin");
         factory.setPassword("test");
         factory.setVirtualHost("/test");
-        ConnectionFactory factory = factory;
         Connection connection = factory.newConnection();
         adminCh = connection.createChannel();
         withNames(new WithName() {
