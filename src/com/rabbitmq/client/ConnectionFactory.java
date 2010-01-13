@@ -82,6 +82,11 @@ public class ConnectionFactory {
     /** The default port to use for AMQP connections when using SSL */
     public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
 
+    /**
+     * The default SSL protocol (currently "SSLv3").
+     */
+    public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
+
     private String userName               = DEFAULT_USER;
     private String password               = DEFAULT_PASS;
     private String virtualHost            = DEFAULT_VHOST;
@@ -91,6 +96,12 @@ public class ConnectionFactory {
     private int requestedFrameMax         = DEFAULT_FRAME_MAX;
     private int requestedHeartbeat        = DEFAULT_HEARTBEAT;
     private SocketFactory factory         = SocketFactory.getDefault();
+
+    /**
+     * Instantiate a ConnectionFactory with a default set of parameters.
+     */
+    public ConnectionFactory() {
+    }
 
     /**
      *  @return the default host to use for connections
@@ -223,12 +234,6 @@ public class ConnectionFactory {
     }
 
     /**
-     * Instantiate a ConnectionFactory with a default set of parameters.
-     */
-    public ConnectionFactory() {
-    }
-
-    /**
      * Retrieve the socket factory used to make connections with.
      */
     public SocketFactory getSocketFactory() {
@@ -294,11 +299,6 @@ public class ConnectionFactory {
     {
         setSocketFactory(context.getSocketFactory());
     }
-
-    /**
-     * The default SSL protocol (currently "SSLv3").
-     */
-    public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
     protected FrameHandler createFrameHandler(Address addr)
         throws IOException {
