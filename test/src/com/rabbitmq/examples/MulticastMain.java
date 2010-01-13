@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.net.Socket;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -62,6 +61,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 
+
 public class MulticastMain {
 
     public static void main(String[] args) {
@@ -70,24 +70,22 @@ public class MulticastMain {
         try {
             CommandLine cmd = parser.parse(options, args);
 
-            final String hostName      = strArg(cmd, 'h', "localhost");
-            final int portNumber       = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
-            final String exchangeType  = strArg(cmd, 't', "direct");
-            final String exchangeName  = strArg(cmd, 'e', exchangeType);
-            final int samplingInterval = intArg(cmd, 'i', 1);
-            final int rateLimit        = intArg(cmd, 'r', 0);
-            final int producerCount    = intArg(cmd, 'x', 1);
-            final int consumerCount    = intArg(cmd, 'y', 1);
-            final int producerTxSize   = intArg(cmd, 'm', 0);
-            final int consumerTxSize   = intArg(cmd, 'n', 0);
-            final boolean autoAck      = cmd.hasOption('a');
-            final int prefetchCount    = intArg(cmd, 'q', 0);
-            final int minMsgSize       = intArg(cmd, 's', 0);
-            final int maxRedirects     = intArg(cmd, 'd', 0);
-            final int timeLimit        = intArg(cmd, 'z', 0);
-            final int sendBufferSize   = intArg(cmd, 'b', -1);
-            final int recvBufferSize   = intArg(cmd, 'c', -1);
-            final List flags           = lstArg(cmd, 'f');
+            String hostName      = strArg(cmd, 'h', "localhost");
+            int portNumber       = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
+            String exchangeType  = strArg(cmd, 't', "direct");
+            String exchangeName  = strArg(cmd, 'e', exchangeType);
+            int samplingInterval = intArg(cmd, 'i', 1);
+            int rateLimit        = intArg(cmd, 'r', 0);
+            int producerCount    = intArg(cmd, 'x', 1);
+            int consumerCount    = intArg(cmd, 'y', 1);
+            int producerTxSize   = intArg(cmd, 'm', 0);
+            int consumerTxSize   = intArg(cmd, 'n', 0);
+            boolean autoAck      = cmd.hasOption('a');
+            int prefetchCount    = intArg(cmd, 'q', 0);
+            int minMsgSize       = intArg(cmd, 's', 0);
+            int maxRedirects     = intArg(cmd, 'd', 0);
+            int timeLimit        = intArg(cmd, 'z', 0);
+            List flags           = lstArg(cmd, 'f');
 
             //setup
             String id = UUID.randomUUID().toString();
@@ -100,15 +98,7 @@ public class MulticastMain {
             Connection[] consumerConnections = new Connection[consumerCount];
             for (int i = 0; i < consumerCount; i++) {
                 System.out.println("starting consumer #" + i);
-                Connection conn = new ConnectionFactory(params) {
-                        public void configureSocket(Socket socket) throws IOException {
-                            super.configureSocket(socket);
-                            if(recvBufferSize > 0)
-                                socket.setReceiveBufferSize(recvBufferSize);
-                            if(sendBufferSize > 0)
-                                socket.setSendBufferSize(sendBufferSize);
-                        }
-                    }.newConnection(addresses, maxRedirects);
+                Connection conn = new ConnectionFactory(params).newConnection(addresses, maxRedirects);
                 consumerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (consumerTxSize > 0) channel.txSelect();
@@ -119,7 +109,7 @@ public class MulticastMain {
                 if (prefetchCount > 0) channel.basicQos(prefetchCount);
                 channel.basicConsume(queueName, autoAck, consumer);
                 channel.queueBind(queueName, exchangeName, id);
-                Thread t =
+                Thread t = 
                     new Thread(new Consumer(consumer, id,
                                             consumerTxSize, autoAck,
                                             stats, timeLimit));
@@ -135,7 +125,7 @@ public class MulticastMain {
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
-                Thread t =
+                Thread t = 
                     new Thread(new Producer(channel, exchangeName, id,
                                             flags, producerTxSize,
                                             1000L * samplingInterval,
@@ -168,24 +158,22 @@ public class MulticastMain {
 
     private static Options getOptions() {
         Options options = new Options();
-        options.addOption(new Option("h", "host",       true, "broker host"));
-        options.addOption(new Option("p", "port",       true, "broker port"));
-        options.addOption(new Option("t", "type",       true, "exchange type"));
-        options.addOption(new Option("e", "exchange",   true, "exchange name"));
-        options.addOption(new Option("i", "interval",   true, "sampling interval"));
-        options.addOption(new Option("r", "rate",       true, "rate limit"));
-        options.addOption(new Option("x", "producers",  true, "producer count"));
-        options.addOption(new Option("y", "consumers",  true, "consumer count"));
-        options.addOption(new Option("m", "ptxsize",    true, "producer tx size"));
-        options.addOption(new Option("n", "ctxsize",    true, "consumer tx size"));
-        options.addOption(new Option("a", "autoack",    false,"auto ack"));
-        options.addOption(new Option("q", "qos",        true, "qos prefetch count"));
-        options.addOption(new Option("s", "size",       true, "message size"));
-        options.addOption(new Option("d", "redirects",  true, "max redirects"));
-        options.addOption(new Option("z", "time",       true, "time limit"));
-        options.addOption(new Option("b", "sendbuffer", true, "send buffer size"));
-        options.addOption(new Option("c", "recvbuffer", true, "receive buffer size"));
-        Option flag =     new Option("f", "flag",       true, "message flag");
+        options.addOption(new Option("h", "host",      true, "broker host"));
+        options.addOption(new Option("p", "port",      true, "broker port"));
+        options.addOption(new Option("t", "type",      true, "exchange type"));
+        options.addOption(new Option("e", "exchange",  true, "exchange name"));
+        options.addOption(new Option("i", "interval",  true, "sampling interval"));
+        options.addOption(new Option("r", "rate",      true, "rate limit"));
+        options.addOption(new Option("x", "producers", true, "producer count"));
+        options.addOption(new Option("y", "consumers", true, "consumer count"));
+        options.addOption(new Option("m", "ptxsize",   true, "producer tx size"));
+        options.addOption(new Option("n", "ctxsize",   true, "consumer tx size"));
+        options.addOption(new Option("a", "autoack",   false,"auto ack"));
+        options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
+        options.addOption(new Option("s", "size",      true, "message size"));
+        options.addOption(new Option("d", "redirects", true, "max redirects"));
+        options.addOption(new Option("z", "time",      true, "time limit"));
+        Option flag =     new Option("f", "flag",      true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(flag);
         return options;
@@ -373,7 +361,7 @@ public class MulticastMain {
                     int msgSeq = d.readInt();
                     long msgNano = d.readLong();
                     long nano = System.nanoTime();
-
+                    
                     Envelope envelope = delivery.getEnvelope();
 
                     if (!autoAck) {
@@ -434,7 +422,7 @@ public class MulticastMain {
 
         public synchronized void collectStats(long now, long latency) {
             msgCount++;
-
+            
             if (latency > 0) {
                 minLatency = Math.min(minLatency, latency);
                 maxLatency = Math.max(maxLatency, latency);
@@ -455,9 +443,9 @@ public class MulticastMain {
                                     ""));
                 reset(now);
             }
-
+            
         }
-
+        
     }
 
 }
