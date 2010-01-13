@@ -45,44 +45,48 @@ public class ManyConnections {
     public static int heartbeatInterval;
 
     public static int totalCount() {
-	return connectionCount * channelPerConnectionCount;
+        return connectionCount * channelPerConnectionCount;
     }
 
     public static void main(String[] args) {
         try {
-	    if (args.length < 4) {
-		System.err.println("Usage: ManyConnections hostName connCount chanPerConnCount heartbeatInterval [rate [port]]");
-		System.exit(2);
-	    }
+            if (args.length < 4) {
+                System.err
+                        .println("Usage: ManyConnections hostName connCount chanPerConnCount heartbeatInterval [rate [port]]");
+                System.exit(2);
+            }
 
             String hostName = args[0];
-	    connectionCount = Integer.parseInt(args[1]);
-	    channelPerConnectionCount = Integer.parseInt(args[2]);
+            connectionCount = Integer.parseInt(args[1]);
+            channelPerConnectionCount = Integer.parseInt(args[2]);
             heartbeatInterval = Integer.parseInt(args[3]);
-	    rate = (args.length > 4) ? Double.parseDouble(args[4]) : 1.0;
-            int portNumber = (args.length > 5) ? Integer.parseInt(args[5]) : AMQP.PROTOCOL.PORT;
+            rate = (args.length > 4) ? Double.parseDouble(args[4]) : 1.0;
+            int portNumber = (args.length > 5) ? Integer.parseInt(args[5])
+                    : AMQP.PROTOCOL.PORT;
 
             ConnectionFactory factory = new ConnectionFactory();
             factory.setRequestedHeartbeat(heartbeatInterval);
-	    for (int i = 0; i < connectionCount; i++) {
-                System.out.println("Starting connection "+i);
-factory.setHost(hostName);
-factory.setPort(portNumber);
-		final Connection conn = factory.newConnection();
+            for (int i = 0; i < connectionCount; i++) {
+                System.out.println("Starting connection " + i);
+                factory.setHost(hostName);
+                factory.setPort(portNumber);
+                final Connection conn = factory.newConnection();
 
-		for (int j = 0; j < channelPerConnectionCount; j++) {
-		    final Channel ch = conn.createChannel();
+                for (int j = 0; j < channelPerConnectionCount; j++) {
+                    final Channel ch = conn.createChannel();
 
-		    final int threadNumber = i * channelPerConnectionCount + j;
-		    System.out.println("Starting "+threadNumber+" "+ch+" thread...");
-		    new Thread(new Runnable() {
-			    public void run() {
-				runChannel(threadNumber, conn, ch);
-			    }
-			}).start();
-		}
-	    }
-	    System.out.println("Started " + totalCount() + " channels and threads.");
+                    final int threadNumber = i * channelPerConnectionCount + j;
+                    System.out.println("Starting " + threadNumber + " " + ch
+                            + " thread...");
+                    new Thread(new Runnable() {
+                        public void run() {
+                            runChannel(threadNumber, conn, ch);
+                        }
+                    }).start();
+                }
+            }
+            System.out.println("Started " + totalCount()
+                    + " channels and threads.");
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
             e.printStackTrace();
@@ -90,40 +94,39 @@ factory.setPort(portNumber);
         }
     }
 
-    public static void runChannel(int threadNumber,
-				  Connection conn,
-				  Channel ch){
-	try {
-	    int delayLen = (int) (1000 / rate);
-	    long startTime = System.currentTimeMillis();
+    public static void runChannel(int threadNumber, Connection conn, Channel ch) {
+        try {
+            int delayLen = (int) (1000 / rate);
+            long startTime = System.currentTimeMillis();
 
-	    int msgCount = 0;
-	    String queueName = "ManyConnections";
-	    ch.queueDeclare(queueName);
+            int msgCount = 0;
+            String queueName = "ManyConnections";
+            ch.queueDeclare(queueName);
 
-	    QueueingConsumer consumer = new QueueingConsumer(ch);
-	    ch.basicConsume(queueName, true, consumer);
-	    while (true) {
-		String toSend = threadNumber + "/" + msgCount++;
-		ch.basicPublish("", queueName, null, toSend.getBytes());
-		Thread.sleep(delayLen);
+            QueueingConsumer consumer = new QueueingConsumer(ch);
+            ch.basicConsume(queueName, true, consumer);
+            while (true) {
+                String toSend = threadNumber + "/" + msgCount++;
+                ch.basicPublish("", queueName, null, toSend.getBytes());
+                Thread.sleep(delayLen);
 
-		QueueingConsumer.Delivery delivery = consumer.nextDelivery();
-		if (threadNumber == 0) {
-		    long now = System.currentTimeMillis();
-		    double delta = (now - startTime) / 1000.0;
-		    double actualRate = msgCount / delta;
-		    double totalRate = totalCount() * actualRate;
-		    System.out.println(threadNumber + " got message: " +
-				       new String(delivery.getBody()) + "; " +
-				       msgCount + " messages in " + delta + " seconds (" +
-				       actualRate + " Hz * " +
-				       totalCount() + " channels -> " + totalRate + " Hz)");
-		}
-	    }
-	} catch (Exception e) {
-            System.err.println("Thread "+threadNumber+" caught exception: " + e);
+                QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+                if (threadNumber == 0) {
+                    long now = System.currentTimeMillis();
+                    double delta = (now - startTime) / 1000.0;
+                    double actualRate = msgCount / delta;
+                    double totalRate = totalCount() * actualRate;
+                    System.out.println(threadNumber + " got message: "
+                            + new String(delivery.getBody()) + "; " + msgCount
+                            + " messages in " + delta + " seconds ("
+                            + actualRate + " Hz * " + totalCount()
+                            + " channels -> " + totalRate + " Hz)");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Thread " + threadNumber + " caught exception: "
+                    + e);
             e.printStackTrace();
-	}
+        }
     }
 }
