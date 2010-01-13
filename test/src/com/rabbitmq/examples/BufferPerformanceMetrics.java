@@ -21,7 +21,7 @@ import java.util.Random;
 public class BufferPerformanceMetrics {
 
     public static final int MESSAGE_COUNT  = 100000;
-    public static final byte[] MESSAGE     = "Hello world".getBytes();
+    public static final byte[] MESSAGE     = "".getBytes();
     public static final int REPEATS        = 1000000;
     public static final int PEAK_SIZE      = 20 * 1024;
 
