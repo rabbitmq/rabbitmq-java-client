@@ -193,7 +193,7 @@ public class TestMain {
         ProducerMain p = new ProducerMain(connp, 2000, 10000, false, commitEvery, true);
         new Thread(p).start();
         Connection connc = new ConnectionFactory().newConnection(hostName, portNumber);
-        ConsumerMain c = new ConsumerMain(connc, false);
+        ConsumerMain c = new ConsumerMain(connc, false, true);
         c.run();
     }
 

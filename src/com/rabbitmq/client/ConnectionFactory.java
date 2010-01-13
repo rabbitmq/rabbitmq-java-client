@@ -48,17 +48,18 @@ import java.util.Map;
 
 public class ConnectionFactory {
     private final ConnectionParameters _params;
+    private final EndpointDescriptor _endpoints;
 
     /**
      * Holds the SocketFactory used to manufacture outbound sockets.
      */
     private SocketFactory _factory = SocketFactory.getDefault();
-
+    
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
     public ConnectionFactory() {
-        _params = new ConnectionParameters();
+        this(new ConnectionParameters());
     }
 
     /**
@@ -66,7 +67,12 @@ public class ConnectionFactory {
      * @param params the relevant parameters for instantiating the broker connection
      */
     public ConnectionFactory(ConnectionParameters params) {
+        this(params, EndpointDescriptor.DEFAULT);
+    }
+
+    public ConnectionFactory(ConnectionParameters params, EndpointDescriptor descriptor) {
         _params = params;
+        _endpoints = descriptor;
     }
 
     /**
@@ -126,7 +132,18 @@ public class ConnectionFactory {
     {
         SSLContext c = SSLContext.getInstance(protocol);
         c.init(null, new TrustManager[] { trustManager }, null);
-        setSocketFactory(c.getSocketFactory());
+        useSslProtocol(c);
+    }
+
+    /**
+     * Convenience method for setting up an SSL socket factory.
+     * Pass in an initialized SSLContext.
+     *
+     * @param context An initialized SSLContext
+     */
+    public void useSslProtocol(SSLContext context)
+    {
+        setSocketFactory(context.getSocketFactory());
     }
 
     /**
@@ -159,7 +176,10 @@ public class ConnectionFactory {
                         redirectCount = 0;
                     boolean allowRedirects = redirectCount < maxRedirects;
                     try {
-                        return new AMQConnection(_params, !allowRedirects, frameHandler);
+                        AMQConnection conn = new AMQConnection(_params,
+                                    frameHandler);
+                        conn.start(!allowRedirects);
+                        return conn;
                     } catch (RedirectException e) {
                         if (!allowRedirects) {
                             //this should never happen with a well-behaved server
@@ -238,5 +258,9 @@ public class ConnectionFactory {
      */
     public Connection newConnection(String hostName) {
         return newConnection(hostName, -1);
+    }
+
+    public Connection newConnection() throws IOException {
+        return newConnection(_endpoints.getAddresses());
     }
 }

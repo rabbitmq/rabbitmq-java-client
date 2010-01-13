@@ -121,6 +121,23 @@ public class BindingLifecycle extends PersisterRestartBase {
     }
 
     /**
+     * This tests that when you purge a queue, all of its messages go.
+     */
+    public void testQueuePurge() throws IOException {
+
+        Binding binding = setupExchangeBindings(false);
+        channel.basicPublish(binding.x, binding.k, null, payload);
+
+        // Purge the queue, and test that we don't recieve a message
+        channel.queuePurge(binding.q);
+
+        GetResponse response = channel.basicGet(binding.q, true);
+        assertNull("The response SHOULD BE null", response);
+
+        deleteExchangeAndQueue(binding);
+    }
+
+    /**
      * This tests whether when you delete an exchange, that any
      * bindings attached to it are deleted as well.
      */

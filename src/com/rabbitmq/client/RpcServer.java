@@ -139,12 +139,12 @@ public class RpcServer {
      */
     public void processRequest(QueueingConsumer.Delivery request) {
         AMQP.BasicProperties requestProperties = request.getProperties();
-        if (requestProperties.correlationId != null && requestProperties.replyTo != null)
+        if (requestProperties.getCorrelationId() != null && requestProperties.getReplyTo() != null)
         {
             AMQP.BasicProperties replyProperties = new AMQP.BasicProperties();
             byte[] replyBody = handleCall(request, replyProperties);
-            replyProperties.correlationId = requestProperties.correlationId;
-            _channel.basicPublish("", requestProperties.replyTo,
+            replyProperties.setCorrelationId(requestProperties.getCorrelationId());
+            _channel.basicPublish("", requestProperties.getReplyTo(),
                                   replyProperties, replyBody);
         } else {
             handleCast(request);
