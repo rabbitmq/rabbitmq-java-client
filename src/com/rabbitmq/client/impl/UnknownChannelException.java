@@ -31,15 +31,16 @@
 
 package com.rabbitmq.client.impl;
 
-class UnknownChannelException extends RuntimeException{
+class UnknownChannelException extends RuntimeException {
     private final int channelNumber;
-    
-    public UnknownChannelException(int channelNumber){
-        super("Unknown channel number " + channelNumber + " for this this connection");
+
+    public UnknownChannelException(int channelNumber) {
+        super("Unknown channel number " + channelNumber);
         this.channelNumber = channelNumber;
     }
 
-    public int getChannelNumber(){
+    public int getChannelNumber() {
         return channelNumber;
     }
+
 }
