@@ -41,7 +41,7 @@ import java.io.PrintStream;
 public class Utility {
     static class ThrowableCreatedElsewhere extends Throwable{
         public ThrowableCreatedElsewhere(Throwable throwable){
-          super(throwable.getClass() + " created elsewhere", throwable.getCause());
+          super(throwable.getClass() + " created elsewhere");
           this.setStackTrace(throwable.getStackTrace());
         }
 
