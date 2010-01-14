@@ -75,8 +75,7 @@ public class Utility {
       // We want to remove fixStackTrace from the trace.
       StackTraceElement[] existing = throwable.getStackTrace();
       StackTraceElement[] newTrace = new StackTraceElement[existing.length - 1];      
-      for(int i = 0; i < newTrace.length; i++)
-        newTrace[i] = existing[i + 1];
+      System.arraycopy(existing, 1, newTrace, 0, newTrace.length);
       throwable.setStackTrace(newTrace);
       return throwable;
     }
