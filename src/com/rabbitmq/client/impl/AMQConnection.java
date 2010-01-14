@@ -428,9 +428,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                     // for non-zero channels (and any inbound commands on
                                     // channel zero that aren't Connection.CloseOk) must
                                     // be discarded.
-                                    ChannelN channel = _channelManager.getChannel(frame.channel);
-                                    // FIXME: catch NullPointerException and throw more informative one?
-                                    channel.handleFrame(frame);
+                                    _channelManager
+                                        .getChannel(frame.channel)
+                                        .handleFrame(frame);
                                 }
                             }
                         }

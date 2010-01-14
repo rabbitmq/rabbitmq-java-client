@@ -62,9 +62,13 @@ public class ChannelManager {
      * Public API - Looks up an existing channel associated with this connection.
      * @param channelNumber the number of the required channel
      * @return the relevant channel descriptor
+     * @throws UnknownChannelException if there is no Channel associated with the 
+     *         required channel number.
      */
     public ChannelN getChannel(int channelNumber) {
-        return _channelMap.get(channelNumber);
+        ChannelN result = _channelMap.get(channelNumber);
+        if(result == null) throw new UnknownChannelException(channelNumber);
+        return result;
     }
 
     public void handleSignal(ShutdownSignalException signal) {
