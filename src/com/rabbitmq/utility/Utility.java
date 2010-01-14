@@ -39,6 +39,48 @@ import java.io.PrintStream;
  */
 
 public class Utility {
+    static class ThrowableCreatedElsewhere extends Throwable{
+        public ThrowableCreatedElsewhere(Throwable throwable){
+          super(throwable.getClass() + " created elsewhere", throwable.getCause());
+          this.setStackTrace(throwable.getStackTrace());
+        }
+
+        @Override public Throwable fillInStackTrace(){ 
+            return this; 
+        } 
+    }
+
+    public static <T extends Throwable> T fixStackTrace(T throwable){
+      if(throwable.getCause() == null){
+        // We'd like to preserve the original stack trace in the cause.
+        // Unfortunately Java doesn't let you set the cause once it's been
+        // set once. This means we have to choose between either 
+        //  - not preserving the type
+        //  - sometimes losing the original stack trace
+        //  - performing nasty reflective voodoo which may or may not work
+        // We only lose the original stack trace when there's a root cause
+        // which will hopefully be enlightening enough on its own that it 
+        // doesn't matter too much. 
+        try {
+          throwable.initCause(new ThrowableCreatedElsewhere(throwable));
+        } catch(IllegalStateException e){
+          // This exception was explicitly initialised with a null cause. 
+          // Alas this means we can't set the cause even though it has none. 
+          // Thanks. 
+        }
+      }
+
+
+      throwable.fillInStackTrace();
+      // We want to remove fixStackTrace from the trace.
+      StackTraceElement[] existing = throwable.getStackTrace();
+      StackTraceElement[] newTrace = new StackTraceElement[existing.length - 1];      
+      for(int i = 0; i < newTrace.length; i++)
+        newTrace[i] = existing[i + 1];
+      throwable.setStackTrace(newTrace);
+      return throwable;
+    }
+
   
     public static String makeStackTrace(Throwable throwable) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

@@ -78,7 +78,7 @@ public class ValueOrException<V, E extends Throwable> {
         if (_useValue) {
             return _value;
         } else {
-            throw _exception;
+            throw Utility.fixStackTrace(_exception);
         }
     }
 }
