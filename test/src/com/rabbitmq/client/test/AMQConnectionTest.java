@@ -72,7 +72,7 @@ public class AMQConnectionTest extends TestCase {
 
     /** The mock frame handler used to test connection behaviour. */
     private MockFrameHandler _mockFrameHandler;
-    private ConnectionFactory _params;
+    private ConnectionFactory factory;
 
     /** Setup the environment for this test
      * @see junit.framework.TestCase#setUp()
@@ -81,7 +81,7 @@ public class AMQConnectionTest extends TestCase {
     @Override protected void setUp() throws Exception {
         super.setUp();
         _mockFrameHandler = new MockFrameHandler();
-        _params = new ConnectionFactory();
+        factory = new ConnectionFactory();
     }
 
     /** Tear down the environment for this test
@@ -89,7 +89,7 @@ public class AMQConnectionTest extends TestCase {
      * @throws Exception if anything goes wrong
      */
     @Override protected void tearDown() throws Exception {
-        _params = null;
+        factory = null;
         _mockFrameHandler = null;
         super.tearDown();
     }
@@ -103,7 +103,7 @@ public class AMQConnectionTest extends TestCase {
         MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, _mockFrameHandler.countHeadersSent());
         try {
-            new AMQConnection(_params, _mockFrameHandler, handler).start(false);
+            new AMQConnection(factory, _mockFrameHandler, handler).start(false);
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
            // As expected 

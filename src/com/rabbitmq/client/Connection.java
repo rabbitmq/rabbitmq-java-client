@@ -38,13 +38,12 @@ import java.io.IOException;
  * To connect to a broker, fill in a {@link ConnectionFactory} and use a {@link ConnectionFactory} as follows:
  *
  * <pre>
- * ConnectionFactory params = new ConnectionFactory();
- * params.setUsername(userName);
- * params.setPassword(password);
- * params.setVirtualHost(virtualHost);
- * params.setRequestedHeartbeat(0);
- * ConnectionFactory factory = new ConnectionFactory(params);
- * Connection conn = factory.newConnection(hostName, AMQP.PROTOCOL.PORT);
+ * ConnectionFactory factory = new ConnectionFactory();
+ * factory.setHostName(hostName);
+ * factory.setVirtualHost(virtualHost);
+ * factory.setUsername(userName);
+ * factory.setPassword(password);
+ * Connection conn = factory.newConnection();
  *
  * // Then open a channel:
  *
@@ -72,9 +71,6 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * Get the negotiated maximum channel number. Usable channel
      * numbers range from 1 to this number, inclusive.
      *
-     * Note that this is the <i>current</i> setting, as opposed to the <i>initially-requested</i>
-     * setting available from {@link #getParameters()}.{@link ConnectionFactory#getRequestedChannelMax()}.
-     *
      * @return the maximum channel number permitted for this connection.
      */
     int getChannelMax();
@@ -82,18 +78,12 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     /**
      * Get the negotiated maximum frame size.
      *
-     * Note that this is the <i>current</i> setting, as opposed to the <i>initially-requested</i>
-     * setting available from {@link #getParameters()}.{@link ConnectionFactory#getRequestedFrameMax()}.
-     *
      * @return the maximum frame size, in octets; zero if unlimited
      */
     int getFrameMax();
 
     /**
      * Get the negotiated heartbeat interval.
-     *
-     * Note that this is the <i>current</i> setting, as opposed to the <i>initially-requested</i>
-     * setting available from {@link #getParameters()}.{@link ConnectionFactory#getRequestedHeartbeat()}.
      *
      * @return the heartbeat interval, in seconds; zero if none
      */

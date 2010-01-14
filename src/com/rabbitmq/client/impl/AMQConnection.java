@@ -47,7 +47,6 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.impl.AMQChannel.SimpleBlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
@@ -77,7 +76,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
 
     /** Initialization parameters */
-    private final ConnectionFactory _params;
+    private final ConnectionFactory factory;
 
     /** The special channel 0 */
     private final AMQChannel _channel0 = new AMQChannel(this, 0) {
@@ -109,7 +108,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /** Flag indicating whether the client received Connection.Close message from the broker */
     private boolean _brokerInitiatedShutdown = false;
-    
+
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
      * @param channelNumber the number of the channel to disconnect
@@ -159,11 +158,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** {@inheritDoc} */
-    public ConnectionFactory getParameters() {
-        return _params;
-    }
-
-    /** {@inheritDoc} */
     public Address[] getKnownHosts() {
         return _knownHosts;
     }
@@ -201,7 +195,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _requestedFrameMax = factory.getRequestedFrameMax();
         _requestedHeartbeat = factory.getRequestedHeartbeat();
 
-        _params = factory;
+        this.factory = factory;
         _frameHandler = frameHandler;
         _running = true;
         _frameMax = 0;
@@ -274,19 +268,19 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         
         AMQP.Connection.Tune connTune =
             (AMQP.Connection.Tune) _channel0.exnWrappingRpc(startOk).getMethod();
-        
+
         int channelMax =
-            negotiatedMaxValue(getParameters().getRequestedChannelMax(),
+            negotiatedMaxValue(factory.getRequestedChannelMax(),
                                connTune.getChannelMax());
         setChannelMax(channelMax);
-        
+
         int frameMax =
-            negotiatedMaxValue(getParameters().getRequestedFrameMax(),
+            negotiatedMaxValue(factory.getRequestedFrameMax(),
                                connTune.getFrameMax());
         setFrameMax(frameMax);
-        
+
         int heartbeat =
-            negotiatedMaxValue(getParameters().getRequestedHeartbeat(),
+            negotiatedMaxValue(factory.getRequestedHeartbeat(),
                                connTune.getHeartbeat());
         setHeartbeat(heartbeat);
         
