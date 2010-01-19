@@ -50,7 +50,9 @@ public class Utility {
         } 
     }
 
-    public static <T extends Throwable> T fixStackTrace(T throwable){
+    public static <T extends Throwable & SensibleClone<T>> T fixStackTrace(T throwable){
+      throwable = throwable.sensibleClone();
+
       if(throwable.getCause() == null){
         // We'd like to preserve the original stack trace in the cause.
         // Unfortunately Java doesn't let you set the cause once it's been

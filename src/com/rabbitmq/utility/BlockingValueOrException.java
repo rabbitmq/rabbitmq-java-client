@@ -32,7 +32,7 @@ package com.rabbitmq.utility;
 
 import java.util.concurrent.TimeoutException;
 
-public class BlockingValueOrException<V, E extends Throwable>
+public class BlockingValueOrException<V, E extends Throwable & SensibleClone<E>>
     extends BlockingCell<ValueOrException<V, E>>
 {
     public void setValue(V v) {

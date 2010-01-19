@@ -30,7 +30,7 @@
 //
 package com.rabbitmq.utility;
 
-public class ValueOrException<V, E extends Throwable> {
+public class ValueOrException<V, E extends Throwable & SensibleClone<E>> {
     private final boolean _useValue;
     private final V _value;
     private final E _exception;
@@ -57,7 +57,7 @@ public class ValueOrException<V, E extends Throwable> {
      * @param value the value to wrap as a ValueOrException
      * @return the wrapped value
      */
-    public static <V, E extends Throwable> ValueOrException<V, E> makeValue(V value) {
+    public static <V, E extends Throwable & SensibleClone<E>> ValueOrException<V, E> makeValue(V value) {
         return new ValueOrException<V, E>(value, null, true);
     }
 
@@ -66,7 +66,7 @@ public class ValueOrException<V, E extends Throwable> {
      * @param exception the exception to wrap as a ValueOrException
      * @return the wrapped exception
      */
-    public static <V, E extends Throwable> ValueOrException<V, E> makeException(E exception) {
+    public static <V, E extends Throwable & SensibleClone<E>> ValueOrException<V, E> makeException(E exception) {
         return new ValueOrException<V, E>(null, exception, false);
     }
     
