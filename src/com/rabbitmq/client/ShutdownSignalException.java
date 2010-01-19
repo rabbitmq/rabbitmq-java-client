@@ -40,7 +40,7 @@ import com.rabbitmq.utility.SensibleClone;
  * this exception.
  */
 
-public class ShutdownSignalException extends RuntimeException implements SensibleClone<ShutdownSignalException>{
+public class ShutdownSignalException extends RuntimeException implements SensibleClone<ShutdownSignalException> {
     /** True if the connection is shut down, or false if this signal refers to a channel */
     private final boolean _hardError;
 
@@ -94,10 +94,10 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
     /** @return Reference to Connection or Channel object that fired the signal **/
     public Object getReference() { return _ref; }
 
-    public ShutdownSignalException sensibleClone(){
+    public ShutdownSignalException sensibleClone() {
         try {
             return (ShutdownSignalException)super.clone();
-        } catch (CloneNotSupportedException e){
+        } catch (CloneNotSupportedException e) {
             // You've got to be kidding me
             throw new Error(e);
         }

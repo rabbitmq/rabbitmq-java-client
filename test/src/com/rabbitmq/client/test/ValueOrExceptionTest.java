@@ -38,12 +38,12 @@ import com.rabbitmq.utility.SensibleClone;
 
 
 public class ValueOrExceptionTest extends TestCase {
-    public static class InsufficientMagicException extends Exception implements SensibleClone<InsufficientMagicException>{
-      public InsufficientMagicException(String message){
+    public static class InsufficientMagicException extends Exception implements SensibleClone<InsufficientMagicException> {
+      public InsufficientMagicException(String message) {
         super(message);
       }
 
-      public InsufficientMagicException sensibleClone(){
+      public InsufficientMagicException sensibleClone() {
         return new InsufficientMagicException(getMessage());
       }
     }

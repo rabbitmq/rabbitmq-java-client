@@ -39,8 +39,8 @@ import java.io.PrintStream;
  */
 
 public class Utility {
-    static class ThrowableCreatedElsewhere extends Throwable{
-        public ThrowableCreatedElsewhere(Throwable throwable){
+    static class ThrowableCreatedElsewhere extends Throwable {
+        public ThrowableCreatedElsewhere(Throwable throwable) {
           super(throwable.getClass() + " created elsewhere");
           this.setStackTrace(throwable.getStackTrace());
         }
@@ -50,10 +50,10 @@ public class Utility {
         } 
     }
 
-    public static <T extends Throwable & SensibleClone<T>> T fixStackTrace(T throwable){
+    public static <T extends Throwable & SensibleClone<T>> T fixStackTrace(T throwable) {
       throwable = throwable.sensibleClone();
 
-      if(throwable.getCause() == null){
+      if(throwable.getCause() == null) {
         // We'd like to preserve the original stack trace in the cause.
         // Unfortunately Java doesn't let you set the cause once it's been
         // set once. This means we have to choose between either 
@@ -65,7 +65,7 @@ public class Utility {
         // doesn't matter too much. 
         try {
           throwable.initCause(new ThrowableCreatedElsewhere(throwable));
-        } catch(IllegalStateException e){
+        } catch(IllegalStateException e) {
           // This exception was explicitly initialised with a null cause. 
           // Alas this means we can't set the cause even though it has none. 
           // Thanks. 
