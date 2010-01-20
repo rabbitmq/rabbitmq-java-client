@@ -18,7 +18,7 @@ public class CloseInMainLoop extends BrokerTestCase{
     }
   
     public SpecialConnection() throws Exception{
-      super(new ConnectionParameters(), new SocketFrameHandler(SocketFactory.getDefault(), "localhost", 5672));
+      super(new ConnectionParameters(), new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", 5672)));
       this.start(true);
     }
 
