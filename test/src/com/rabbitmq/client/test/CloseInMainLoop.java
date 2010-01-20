@@ -36,6 +36,8 @@ public class CloseInMainLoop extends BrokerTestCase{
     assertTrue(connection.hadValidShutdown());
   }
   
+  // The thrown runtime exception should get intercepted by the
+  // consumer exception handler, and result in a clean shut down.
   public void testCloseWithFaultyConsumer() throws Exception{
     SpecialConnection connection = new SpecialConnection();
     Channel channel = connection.createChannel();

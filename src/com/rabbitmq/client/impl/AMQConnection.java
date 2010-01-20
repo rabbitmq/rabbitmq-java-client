@@ -526,9 +526,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 if (method instanceof AMQP.Connection.CloseOk) {    
                     // It's our final "RPC". Time to shut down.
                     _running = false;
-                    // If this was called from within the MainLoop we 
-                    // may not have a continuation to return to, so we 
-                    // treat this as processed in that case.
+                    // If Close was sent from within the MainLoop we
+                    // will not have a continuation to return to, so
+                    // we treat this as processed in that case.
                     return _channel0._activeRpc == null;
                 } else {
                     // Ignore all others.
