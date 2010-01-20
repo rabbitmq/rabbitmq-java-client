@@ -54,7 +54,7 @@ import java.util.Map;
  *
  */
 
-public interface Channel extends ShutdownNotifier{
+public interface Channel extends ShutdownNotifier {
     /**
      * Retrieve this channel's channel number.
      * @return the channel number
@@ -390,6 +390,18 @@ public interface Channel extends ShutdownNotifier{
      * @see com.rabbitmq.client.AMQP.Basic.CancelOk
      */
     void basicCancel(String consumerTag);
+
+    /**
+     * Ask the broker to resend unacknowledged messages.  In 0-8
+     * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
+     * the new, deprecated method basic.recover_async is asynchronous.
+     * To avoid this API changing, this is named for the latter, and
+     * will be deprecated.
+     * @param requeue If true, messages will be requeued and possibly
+     * delivered to a different consumer. If false, messages will be
+     * redelivered to the same consumer.
+     */
+    void basicRecoverAsync(boolean requeue) throws IOException;
 
     /**
      * Enables TX mode on this channel.

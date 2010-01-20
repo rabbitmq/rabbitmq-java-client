@@ -29,12 +29,12 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 
-public class PersisterRestart1 extends PersisterRestartBase
+public class PersisterRestart1 extends RestartBase
 {
 
     private static final String Q = "Restart";

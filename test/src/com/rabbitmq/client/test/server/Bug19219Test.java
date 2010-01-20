@@ -28,8 +28,9 @@
 //
 //   Contributor(s): ______________________________________.
 //
-package com.rabbitmq.client.test;
+package com.rabbitmq.client.test.server;
 
+import com.rabbitmq.client.test.*;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
@@ -42,7 +43,6 @@ import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.test.functional.BrokerTestCase;
 
 /**
  * Test for bug 19219 - timeouts due to task parallelism in channel

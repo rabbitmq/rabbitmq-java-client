@@ -43,6 +43,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.MalformedFrameException;
@@ -260,64 +261,85 @@ public class Frame {
         return result;
     }
 
-    /** Computes the AMQP wire-protocol length of a protocol-encoded table. */
+    /** Computes the AMQP wire-protocol length of protocol-encoded table entries.
+     */
     public static long tableSize(Map<String, Object> table)
         throws UnsupportedEncodingException
     {
         long acc = 0;
         for(Map.Entry<String, Object> entry: table.entrySet()) {
             acc += shortStrSize(entry.getKey());
-            acc += 1;
-            Object value = entry.getValue();
-            if(value instanceof String) {
-                acc += longStrSize((String)entry.getValue());
-            }
-            else if(value instanceof LongString) {
-                acc += 4 + ((LongString)value).length();
-            }
-            else if(value instanceof Integer) {
-                acc += 4;
-            }
-            else if(value instanceof BigDecimal) {
-                acc += 5;
-            }
-            else if(value instanceof Date || value instanceof Timestamp) {
-                acc += 8;
-            }
-            else if(value instanceof Map) {
-                acc += 4 + tableSize((Map<String, Object>) value);
-            }
-            else if (value instanceof Byte) {
-                acc += 1;
-            }
-            else if(value instanceof Double) {
-                acc += 8;
-            }
-            else if(value instanceof Float) {
-                acc += 4;
-            }
-            else if(value instanceof Long) {
-                acc += 8;
-            }
-            else if(value instanceof Short) {
-                acc += 2;
-            }
-            else if(value instanceof Boolean) {
-                acc += 1;
-            }
-            else if(value instanceof byte[]) {
-                acc += 4 + ((byte[])value).length;
-            }
-            else if(value == null) {
-            }
-            else {
-                throw new IllegalArgumentException("invalid value in table");
-            }
+            acc += fieldValueSize(entry.getValue());
         }
-
         return acc;
     }
 
+    /** Computes the AMQP wire-protocol length of a protocol-encoded field-value. */
+    public static long fieldValueSize(Object value)
+        throws UnsupportedEncodingException
+    {
+        long acc = 1; // for the type tag
+        if(value instanceof String) {
+            acc += longStrSize((String)value);
+        }
+        else if(value instanceof LongString) {
+            acc += 4 + ((LongString)value).length();
+        }
+        else if(value instanceof Integer) {
+            acc += 4;
+        }
+        else if(value instanceof BigDecimal) {
+            acc += 5;
+        }
+        else if(value instanceof Date || value instanceof Timestamp) {
+            acc += 8;
+        }
+        else if(value instanceof Map) {
+            acc += 4 + tableSize((Map<String, Object>) value);
+        }
+        else if (value instanceof Byte) {
+            acc += 1;
+        }
+        else if(value instanceof Double) {
+            acc += 8;
+        }
+        else if(value instanceof Float) {
+            acc += 4;
+        }
+        else if(value instanceof Long) {
+            acc += 8;
+        }
+        else if(value instanceof Short) {
+            acc += 2;
+        }
+        else if(value instanceof Boolean) {
+            acc += 1;
+        }
+        else if(value instanceof byte[]) {
+            acc += 4 + ((byte[])value).length;
+        }
+        else if(value instanceof List) {
+            acc += 4 + arraySize((List)value);
+        }
+        else if(value == null) {
+        }
+        else {
+            throw new IllegalArgumentException("invalid value in table");
+        }
+        return acc;
+    }
+
+    /** Computes the AMQP wire-protocol length of an encoded field-array */
+    public static long arraySize(List values)
+        throws UnsupportedEncodingException
+    {
+        long acc = 0;
+        for (Object value : values) {
+            acc += fieldValueSize(value);
+        }
+        return acc;
+    }
+  
     /** Computes the AMQP wire-protocol length of a protocol-encoded long string. */
     public static int longStrSize(String str)
         throws UnsupportedEncodingException

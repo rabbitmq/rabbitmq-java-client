@@ -213,7 +213,7 @@ public class ScalabilityTest {
     }
 
 
-    public Results run() throws Exception{
+    public Results run() throws Exception {
         Connection con = new ConnectionFactory().newConnection(params.host, params.port);
         Channel channel = con.createChannel();
 

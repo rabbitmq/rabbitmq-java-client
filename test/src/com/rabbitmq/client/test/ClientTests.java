@@ -28,26 +28,24 @@
 //
 //   Contributor(s): ______________________________________.
 //
-package com.rabbitmq.utility;
 
-import java.util.concurrent.TimeoutException;
+package com.rabbitmq.client.test;
 
-public class BlockingValueOrException<V, E extends Throwable & SensibleClone<E>>
-    extends BlockingCell<ValueOrException<V, E>>
-{
-    public void setValue(V v) {
-        super.set(ValueOrException.<V, E>makeValue(v));
-    }
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
-    public void setException(E e) {
-        super.set(ValueOrException.<V, E>makeException(e));
-    }
-
-    public V uninterruptibleGetValue() throws E {
-        return uninterruptibleGet().getValue();
-    }
-    
-    public V uninterruptibleGetValue(int timeout) throws E, TimeoutException {
-    	return uninterruptibleGet(timeout).getValue();
+public class ClientTests extends TestCase {
+    public static TestSuite suite() {
+        TestSuite suite = new TestSuite("client");
+        suite.addTest(TableTest.suite());
+        suite.addTest(BlockingCellTest.suite());
+        suite.addTest(TruncatedInputStreamTest.suite());
+        suite.addTest(AMQConnectionTest.suite());
+        suite.addTest(ValueOrExceptionTest.suite());
+        suite.addTest(BrokenFramesTest.suite());
+        suite.addTest(ClonePropertiesTest.suite());
+        suite.addTestSuite(Bug20004Test.class);
+        suite.addTestSuite(CloseInMainLoop.class);
+        return suite;
     }
 }
