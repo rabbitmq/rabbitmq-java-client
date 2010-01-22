@@ -31,6 +31,16 @@
 
 package com.rabbitmq.client.impl;
 
-public class ClientVersion {
-    public static final String VERSION = "@VERSION@";
+class UnknownChannelException extends RuntimeException {
+    private final int channelNumber;
+
+    public UnknownChannelException(int channelNumber) {
+        super("Unknown channel number " + channelNumber);
+        this.channelNumber = channelNumber;
+    }
+
+    public int getChannelNumber() {
+        return channelNumber;
+    }
+
 }

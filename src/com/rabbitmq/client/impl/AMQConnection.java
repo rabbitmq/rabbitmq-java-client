@@ -416,9 +416,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                     // for non-zero channels (and any inbound commands on
                                     // channel zero that aren't Connection.CloseOk) must
                                     // be discarded.
-                                    ChannelN channel = _channelManager.getChannel(frame.channel);
-                                    // FIXME: catch NullPointerException and throw more informative one?
-                                    channel.handleFrame(frame);
+                                    _channelManager
+                                        .getChannel(frame.channel)
+                                        .handleFrame(frame);
                                 }
                             }
                         }
@@ -511,9 +511,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 return false;
             } else {
                 // Quiescing.
-                if (method instanceof AMQP.Connection.CloseOk) {
-                    // It's our final "RPC".
-                    return false;
+                if (method instanceof AMQP.Connection.CloseOk) {    
+                    // It's our final "RPC". Time to shut down.
+                    _running = false;
+                    // If Close was sent from within the MainLoop we
+                    // will not have a continuation to return to, so
+                    // we treat this as processed in that case.
+                    return _channel0._activeRpc == null;
                 } else {
                     // Ignore all others.
                     return true;
@@ -668,14 +672,21 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                       boolean abort)
         throws IOException
     {
+        final boolean sync = !(Thread.currentThread() instanceof MainLoop);
+
         try {
             AMQImpl.Connection.Close reason =
                 new AMQImpl.Connection.Close(closeCode, closeMessage, 0, 0);
+
             shutdown(reason, initiatedByApplication, cause, true);
-            AMQChannel.SimpleBlockingRpcContinuation k =
-                new AMQChannel.SimpleBlockingRpcContinuation();
-            _channel0.quiescingRpc(reason, k);
-            k.getReply(timeout);
+            if(sync){
+              AMQChannel.SimpleBlockingRpcContinuation k =
+                  new AMQChannel.SimpleBlockingRpcContinuation();
+              _channel0.quiescingRpc(reason, k);
+              k.getReply(timeout);
+            } else {
+              _channel0.quiescingTransmit(reason);
+            }
         } catch (TimeoutException tte) {
             if (!abort)
                 throw new ShutdownSignalException(true, true, tte, this);
@@ -686,7 +697,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             if (!abort)
                 throw ioe;
         } finally {
-            _frameHandler.close();
+            if(sync) _frameHandler.close();
         }
     }
 
