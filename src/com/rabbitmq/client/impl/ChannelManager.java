@@ -45,7 +45,11 @@ import com.rabbitmq.client.ShutdownSignalException;
 
 public class ChannelManager {
     /** Mapping from channel number to AMQChannel instance */
-    private final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
+    public final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
+
+    public int[] freedChannels = new int[1];
+    public int freedChannelsCount = 0;
+    public int nextChannelNumber = 1;
 
     /** Maximum channel number available on this connection. */
     public int _channelMax = 0;
@@ -93,8 +97,11 @@ public class ChannelManager {
     public synchronized ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
         ChannelN ch = new ChannelN(connection, channelNumber);
         if (_channelMap.containsKey(channelNumber)) {
+            // TODO: Returning null here is really dodgy. We should throw a sensible
+            // exception. 
             return null; // That number's already allocated! Can't do it
         }
+        nextChannelNumber = Math.max(nextChannelNumber, channelNumber + 1);
         addChannel(ch);
         ch.open(); // now that it's been added to our internal tables
         return ch;
@@ -105,14 +112,30 @@ public class ChannelManager {
             // The framing encoding only allows for unsigned 16-bit integers for the channel number
             maxChannels = (1 << 16) - 1;
         }
-        int channelNumber = -1;
-        for (int candidate = 1; candidate <= maxChannels; candidate++) {
-            if (!_channelMap.containsKey(candidate)) {
-                channelNumber = candidate;
-                break;
-            }
+    
+        if(freedChannelsCount > 0)
+            return freedChannels[--freedChannelsCount];
+
+        if(nextChannelNumber > maxChannels) 
+            return -1;
+
+        return nextChannelNumber++;
+    }
+
+    public synchronized void freeChannelNumber(int channelNumber){
+      if(channelNumber == nextChannelNumber - 1) nextChannelNumber--;
+      else {
+        if(freedChannelsCount + 1 >= freedChannels.length){
+          // TODO: Could use this as an opportunity to see if we can lower the
+          // nextChannel mark to free up space in the freedChannels array. In 
+          // cases where we're generating a lot of garbage channels it could be 
+          // a big space saver.
+          int[] newArray = new int[freedChannels.length * 2];
+          System.arraycopy(freedChannels, 0, newArray, 0, freedChannels.length);
+          freedChannels = newArray;
         }
-        return channelNumber;
+        freedChannels[freedChannelsCount++] = channelNumber;
+      }
     }
 
     private void addChannel(ChannelN chan) {
@@ -121,5 +144,6 @@ public class ChannelManager {
 
     public void disconnectChannel(int channelNumber) {
         _channelMap.remove(channelNumber);
+        freeChannelNumber(channelNumber);
     }
 }
