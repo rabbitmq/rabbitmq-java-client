@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Arrays;
 
 import com.rabbitmq.client.ShutdownSignalException;
 
@@ -125,17 +126,35 @@ public class ChannelManager {
     public synchronized void freeChannelNumber(int channelNumber){
       if(channelNumber == nextChannelNumber - 1) nextChannelNumber--;
       else {
-        if(freedChannelsCount + 1 >= freedChannels.length){
-          // TODO: Could use this as an opportunity to see if we can lower the
-          // nextChannel mark to free up space in the freedChannels array. In 
-          // cases where we're generating a lot of garbage channels it could be 
-          // a big space saver.
-          int[] newArray = new int[freedChannels.length * 2];
-          System.arraycopy(freedChannels, 0, newArray, 0, freedChannels.length);
-          freedChannels = newArray;
+        if(freedChannelsCount >= freedChannels.length){
+          // First we see if there's a chunk of space at the end we can simply 
+          // ditch.
+
+          Arrays.sort(freedChannels);
+
+          while(freedChannels[freedChannelsCount - 1] == nextChannelNumber - 1){
+            freedChannelsCount--;
+            nextChannelNumber--;
+          }
+
+          // It's possible this scavenging actually freed up a massive amount of 
+          // space. However if it only freed up a little space then we want to 
+          // resize the array anyway in order to avoid a case where we're repeatedly
+          // sorting the array and only removing a few elements.
+
+          if(freedChannels.length <= 2 * freedChannelsCount + 1){
+              int[] newArray = new int[freedChannels.length * 2];
+              System.arraycopy(freedChannels, 0, newArray, 0, freedChannels.length);
+              freedChannels = newArray;
+          }
         }
         freedChannels[freedChannelsCount++] = channelNumber;
       }
+    }
+
+    public synchronized void resetChannelAllocation(){
+      freedChannelsCount = 0;
+      nextChannelNumber = 1;
     }
 
     private void addChannel(ChannelN chan) {
@@ -144,6 +163,10 @@ public class ChannelManager {
 
     public void disconnectChannel(int channelNumber) {
         _channelMap.remove(channelNumber);
-        freeChannelNumber(channelNumber);
+        if(_channelMap.isEmpty()){
+          resetChannelAllocation();
+        } else {
+          freeChannelNumber(channelNumber);
+        }
     }
 }
