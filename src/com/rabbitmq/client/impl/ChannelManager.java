@@ -48,7 +48,7 @@ public class ChannelManager {
     /** Mapping from channel number to AMQChannel instance */
     public final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
 
-    public int[] freedChannels = new int[1];
+    public int[] freedChannels = new int[8];
     public int freedChannelsCount = 0;
     public int nextChannelNumber = 1;
 
@@ -96,6 +96,8 @@ public class ChannelManager {
     }
 
     public synchronized ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
+        if(channelNumber == 0) return null;
+
         ChannelN ch = new ChannelN(connection, channelNumber);
         if (_channelMap.containsKey(channelNumber)) {
             // TODO: Returning null here is really dodgy. We should throw a sensible
@@ -117,8 +119,26 @@ public class ChannelManager {
         if(freedChannelsCount > 0)
             return freedChannels[--freedChannelsCount];
 
-        if(nextChannelNumber > maxChannels) 
-            return -1;
+        if(nextChannelNumber > maxChannels){
+            // We're looking passed the end of the available range of channel numbers
+            // This might be because of some manual allocation, so we check if there
+            // might be holes in the allocated channels.
+            if(_channelMap.size() < maxChannels){
+              // Rough heuristic for how many channel numbers to try to scavenge
+              int scavengeCount = Math.min(maxChannels - _channelMap.size(), freedChannels.length);
+              int j = 0;   
+ 
+              // Start from the end on the grounds that freeing the end is more useful.        
+              for(int i = maxChannels; i > 0; i--){
+                if(!_channelMap.containsKey(i)){
+                  freeChannelNumber(i);
+                  scavengeCount--;
+                  if(scavengeCount == 0) break;
+                }
+              }
+              return allocateChannelNumber(maxChannels);
+            } else return -1;
+        }
 
         return nextChannelNumber++;
     }

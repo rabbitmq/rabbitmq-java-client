@@ -5,7 +5,7 @@ import junit.framework.TestCase;
 import java.util.*;
 
 public class ChannelNumberAllocationTests extends TestCase{  
-  static int CHANNEL_COUNT = 1000;
+  static int CHANNEL_COUNT = 100;
   static Comparator<Channel> COMPARATOR = new Comparator<Channel>(){
     public int compare(Channel x, Channel y){
       if(x.getChannelNumber() < y.getChannelNumber()) return -1;
@@ -82,4 +82,9 @@ public class ChannelNumberAllocationTests extends TestCase{
     
   }
 
+  public void testManualAllocationDoesntBreakThings() throws Exception{
+    connection.createChannel((1 << 16) - 1);
+    Channel ch = connection.createChannel();
+    assertNotNull(ch);
+  }
 }
