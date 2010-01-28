@@ -64,7 +64,9 @@ public class ChannelNumberAllocationTests extends TestCase{
 
   public void testAllocateAfterManualAssign() throws Exception{
     connection.createChannel(10);
-    assertEquals(11, connection.createChannel().getChannelNumber());
+    
+    for(int i = 0; i < 20; i++)
+        assertTrue(10 != connection.createChannel().getChannelNumber());
   }
 
   public void testRandomOrderCloseResetsCount() throws Exception{

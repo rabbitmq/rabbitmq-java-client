@@ -36,9 +36,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.Arrays;
 
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.utility.IntAllocator;
 
 /**
  * Manages a set of channels, indexed by channel number.
@@ -46,23 +46,27 @@ import com.rabbitmq.client.ShutdownSignalException;
 
 public class ChannelManager {
     /** Mapping from channel number to AMQChannel instance */
-    public final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
-
-    public int[] freedChannels = new int[8];
-    public int freedChannelsCount = 0;
-    public int nextChannelNumber = 1;
+    private final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
+    private IntAllocator channelNumberAllocator;
 
     /** Maximum channel number available on this connection. */
-    public int _channelMax = 0;
+    public final int _channelMax;
 
-    public synchronized int getChannelMax() {
-        return _channelMax;
+    public int getChannelMax(){
+      return _channelMax;
     }
 
-    public synchronized void setChannelMax(int value) {
-        _channelMax = value;
+    public ChannelManager(int channelMax){
+      if(channelMax == 0){
+        // The framing encoding only allows for unsigned 16-bit integers for the channel number
+        channelMax = (1 << 16) - 1;
+      }
+
+      this._channelMax = channelMax;
+      channelNumberAllocator = new IntAllocator(1, channelMax);
     }
 
+    
     /**
      * Public API - Looks up an existing channel associated with this connection.
      * @param channelNumber the number of the required channel
@@ -88,105 +92,36 @@ public class ChannelManager {
     }
 
     public synchronized ChannelN createChannel(AMQConnection connection) throws IOException {
-        int channelNumber = allocateChannelNumber(getChannelMax());
+        int channelNumber = channelNumberAllocator.allocate();
         if (channelNumber == -1) {
             return null;
         }
-        return createChannel(connection, channelNumber);
+        return createChannelInternal(connection, channelNumber);
     }
 
     public synchronized ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
-        if(channelNumber == 0) return null;
+        if(channelNumberAllocator.reserve(channelNumber)) 
+            return createChannelInternal(connection, channelNumber);
+        else return null;
+    }
 
-        ChannelN ch = new ChannelN(connection, channelNumber);
+    private synchronized ChannelN createChannelInternal(AMQConnection connection, int channelNumber) throws IOException {
         if (_channelMap.containsKey(channelNumber)) {
-            // TODO: Returning null here is really dodgy. We should throw a sensible
-            // exception. 
             return null; // That number's already allocated! Can't do it
         }
-        nextChannelNumber = Math.max(nextChannelNumber, channelNumber + 1);
+        ChannelN ch = new ChannelN(connection, channelNumber);
         addChannel(ch);
         ch.open(); // now that it's been added to our internal tables
         return ch;
-    }
-
-    public synchronized int allocateChannelNumber(int maxChannels) {
-        if (maxChannels == 0) {
-            // The framing encoding only allows for unsigned 16-bit integers for the channel number
-            maxChannels = (1 << 16) - 1;
-        }
-    
-        if(freedChannelsCount > 0)
-            return freedChannels[--freedChannelsCount];
-
-        if(nextChannelNumber > maxChannels){
-            // We're looking passed the end of the available range of channel numbers
-            // This might be because of some manual allocation, so we check if there
-            // might be holes in the allocated channels.
-            if(_channelMap.size() < maxChannels){
-              // Rough heuristic for how many channel numbers to try to scavenge
-              int scavengeCount = Math.min(maxChannels - _channelMap.size(), freedChannels.length);
-              int j = 0;   
- 
-              // Start from the end on the grounds that freeing the end is more useful.        
-              for(int i = maxChannels; i > 0; i--){
-                if(!_channelMap.containsKey(i)){
-                  freeChannelNumber(i);
-                  scavengeCount--;
-                  if(scavengeCount == 0) break;
-                }
-              }
-              return allocateChannelNumber(maxChannels);
-            } else return -1;
-        }
-
-        return nextChannelNumber++;
-    }
-
-    public synchronized void freeChannelNumber(int channelNumber){
-      if(channelNumber == nextChannelNumber - 1) nextChannelNumber--;
-      else {
-        if(freedChannelsCount >= freedChannels.length){
-          // First we see if there's a chunk of space at the end we can simply 
-          // ditch.
-
-          Arrays.sort(freedChannels);
-
-          while(freedChannels[freedChannelsCount - 1] == nextChannelNumber - 1){
-            freedChannelsCount--;
-            nextChannelNumber--;
-          }
-
-          // It's possible this scavenging actually freed up a massive amount of 
-          // space. However if it only freed up a little space then we want to 
-          // resize the array anyway in order to avoid a case where we're repeatedly
-          // sorting the array and only removing a few elements.
-
-          if(freedChannels.length <= 2 * freedChannelsCount + 1){
-              int[] newArray = new int[freedChannels.length * 2];
-              System.arraycopy(freedChannels, 0, newArray, 0, freedChannels.length);
-              freedChannels = newArray;
-          }
-        }
-        freedChannels[freedChannelsCount++] = channelNumber;
-      }
-    }
-
-    public synchronized void resetChannelAllocation(){
-      freedChannelsCount = 0;
-      nextChannelNumber = 1;
     }
 
     private void addChannel(ChannelN chan) {
         _channelMap.put(chan.getChannelNumber(), chan);
     }
 
-    public void disconnectChannel(int channelNumber) {
+    public synchronized void disconnectChannel(int channelNumber) {
         _channelMap.remove(channelNumber);
-        if(_channelMap.isEmpty()){
-          resetChannelAllocation();
-        } else {
-          freeChannelNumber(channelNumber);
-        }
+        channelNumberAllocator.free(channelNumber);
+        if(_channelMap.isEmpty()) channelNumberAllocator = new IntAllocator(1, _channelMax);
     }
 }
