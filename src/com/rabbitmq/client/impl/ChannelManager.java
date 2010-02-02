@@ -47,7 +47,7 @@ import com.rabbitmq.utility.IntAllocator;
 public class ChannelManager {
     /** Mapping from channel number to AMQChannel instance */
     private final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
-    private IntAllocator channelNumberAllocator;
+    private final IntAllocator channelNumberAllocator;
 
     /** Maximum channel number available on this connection. */
     public final int _channelMax;
