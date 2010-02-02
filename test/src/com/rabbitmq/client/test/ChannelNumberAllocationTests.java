@@ -69,21 +69,6 @@ public class ChannelNumberAllocationTests extends TestCase{
         assertTrue(10 != connection.createChannel().getChannelNumber());
   }
 
-  public void testRandomOrderCloseResetsCount() throws Exception{
-    List<Channel> channels = new ArrayList<Channel>();
-
-    for(int i = 1; i <= CHANNEL_COUNT; i++)
-      channels.add(connection.createChannel());
-
-    Collections.shuffle(channels);
-
-    for(Channel channel : channels)
-      channel.close();
-    
-    assertEquals(1, connection.createChannel().getChannelNumber());
-    
-  }
-
   public void testManualAllocationDoesntBreakThings() throws Exception{
     connection.createChannel((1 << 16) - 1);
     Channel ch = connection.createChannel();

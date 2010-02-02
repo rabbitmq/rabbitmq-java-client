@@ -122,6 +122,5 @@ public class ChannelManager {
     public synchronized void disconnectChannel(int channelNumber) {
         _channelMap.remove(channelNumber);
         channelNumberAllocator.free(channelNumber);
-        if(_channelMap.isEmpty()) channelNumberAllocator = new IntAllocator(1, _channelMax);
     }
 }
