@@ -62,7 +62,7 @@ public class ChannelManager {
         channelMax = (1 << 16) - 1;
       }
 
-      this._channelMax = channelMax;
+      _channelMax = channelMax;
       channelNumberAllocator = new IntAllocator(1, channelMax);
     }
 
