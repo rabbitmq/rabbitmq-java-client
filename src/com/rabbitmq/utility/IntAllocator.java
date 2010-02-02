@@ -140,9 +140,9 @@ public class IntAllocator{
     ListIterator<Interval> it = intervals.listIterator();
 
     int i = 0;
-    while(i < unsorted.length){
+    while(i < unsortedCount){
       int start = i;
-      while((i < unsorted.length - 1) && (unsorted[i + 1] == unsorted[i] + 1))
+      while((i < unsortedCount - 1) && (unsorted[i + 1] == unsorted[i] + 1))
         i++;
 
       Interval interval = new Interval(start, i);
