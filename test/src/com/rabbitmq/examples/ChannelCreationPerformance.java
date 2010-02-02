@@ -34,7 +34,7 @@ package com.rabbitmq.examples;
 import com.rabbitmq.client.*;
 import java.util.*;
 
-public class ChannelCreationPerformance {
+class ChannelCreationPerformance {
     static Connection connect() throws Exception{
       return new ConnectionFactory(new ConnectionParameters(){{
         setRequestedChannelMax(CHANNEL_MAX);
@@ -45,53 +45,67 @@ public class ChannelCreationPerformance {
     static int STEP = 1000;
     static int START = STEP;
 
+    abstract static class PerformanceTest{
+      String name;
+      Connection c; 
+      int i;
+
+      PerformanceTest(String name){
+        this.name = name;
+      }
+      
+      void run() throws Exception{
+        System.out.println(name);
+        for(i = START; i <= CHANNEL_MAX ; i += STEP){
+          c = connect();
+          long start = System.currentTimeMillis(); 
+          body(); 
+          long time = System.currentTimeMillis() - start;
+          System.out.println(i + "\t" + time + " (" + (1000 * i / ((double)time)) + " channels/s)");
+          c.close();
+        }
+      } 
+
+      abstract void body() throws Exception;
+    
+    }
+
     public static void main(String[] args) throws Exception{
-      System.out.println("Sequential creation, no close:"); 
-      for(int i = START; i <= CHANNEL_MAX ; i += STEP){
-        Connection c = connect();
-        long start = System.currentTimeMillis(); 
-        for(int j = 1; j <= i; j++){
-            c.createChannel();
-        } 
-        System.out.println(i + "\t" + (System.currentTimeMillis() - start));
-        c.close();
-      }
+      new PerformanceTest("Sequential creation, no close:"){
+        void body() throws Exception{
+          for(int j = 1; j <= i; j++){
+              c.createChannel();
+          }
+        }
+      }.run(); 
 
-      System.out.println("Sequential creation followed by close:"); 
-      for(int i = START; i <= CHANNEL_MAX ; i += STEP){
-        Connection c = connect();
-        long start = System.currentTimeMillis(); 
-        for(int j = 1; j <= i; j++){
-            c.createChannel().close();
-        } 
-        System.out.println(i + "\t" + (System.currentTimeMillis() - start));
-        c.close();
-      }
+      new PerformanceTest("Sequential creation followed by close:"){
+        void body() throws Exception{
+          for(int j = 1; j <= i; j++){
+              c.createChannel().close();
+          }
+        }
+      }.run(); 
 
-      System.out.println("Sequential creation then bulk close:"); 
-      for(int i = START; i <= CHANNEL_MAX ; i += STEP){
-        Connection c = connect();
-        long start = System.currentTimeMillis(); 
-        ArrayList<Channel> channels = new ArrayList<Channel>();
-        for(int j = 1; j <= i; j++){
-            channels.add(c.createChannel());
-        } 
-        for(Channel chan : channels) chan.close();
-        System.out.println(i + "\t" + (System.currentTimeMillis() - start));
-        c.close();
-      }
-      System.out.println("Sequential creation then out of order bulk close:"); 
-      for(int i = START; i <= CHANNEL_MAX ; i += STEP){
-        Connection c = connect();
-        long start = System.currentTimeMillis(); 
-        ArrayList<Channel> channels = new ArrayList<Channel>();
-        for(int j = 1; j <= i; j++){
-            channels.add(c.createChannel());
-        } 
-        Collections.shuffle(channels);
-        for(Channel chan : channels) chan.close();
-        System.out.println(i + "\t" + (System.currentTimeMillis() - start));
-        c.close();
-      }
+      new PerformanceTest("Sequential creation then bulk close:"){
+        void body() throws Exception{
+          ArrayList<Channel> channels = new ArrayList<Channel>();
+          for(int j = 1; j <= i; j++){
+              channels.add(c.createChannel());
+          } 
+          for(Channel chan : channels) chan.close();
+        }
+      }.run();
+
+      new PerformanceTest("Sequential creation then out of order bulk close:"){
+        void body() throws Exception{
+          ArrayList<Channel> channels = new ArrayList<Channel>();
+          for(int j = 1; j <= i; j++){
+              channels.add(c.createChannel());
+          } 
+          Collections.shuffle(channels);
+          for(Channel chan : channels) chan.close();
+        }
+      }.run();
     }
 }
