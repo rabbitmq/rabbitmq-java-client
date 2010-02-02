@@ -107,7 +107,12 @@ public class ChannelManager {
 
     private synchronized ChannelN createChannelInternal(AMQConnection connection, int channelNumber) throws IOException {
         if (_channelMap.containsKey(channelNumber)) {
-            return null; // That number's already allocated! Can't do it
+            // That number's already allocated! Can't do it
+            // This should never happen unless something has gone
+            // badly wrong with our implementation. 
+            throw new IllegalStateException("We have attempted to"
+              + "create a channel with a number that is already in"
+              + "use. This should never happen. Please report this as a bug."); 
         }
         ChannelN ch = new ChannelN(connection, channelNumber);
         addChannel(ch);
