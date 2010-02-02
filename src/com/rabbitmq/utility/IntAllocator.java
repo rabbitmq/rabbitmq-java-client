@@ -45,6 +45,9 @@ public class IntAllocator{
   private final int[] unsorted;
   private int unsortedCount = 0;
 
+  /** 
+   * A class representing an inclusive interval from start to end.
+   */
   private static class Interval{
     Interval(int start, int end){
       this.start = start;
@@ -57,6 +60,9 @@ public class IntAllocator{
     int length(){ return end - start + 1; } 
   }
 
+  /** 
+   * Creates an IntAllocator allocating integer IDs within the inclusive range [start, end]
+   */
   public IntAllocator(int start, int end){
     if(start > end) throw new IllegalArgumentException("illegal range [" + start  +", " + end + "]");
 
