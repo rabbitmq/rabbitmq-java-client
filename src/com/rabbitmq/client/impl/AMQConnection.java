@@ -87,7 +87,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         };
 
     /** Object that manages a set of channels */
-    public final ChannelManager _channelManager = new ChannelManager();
+    public ChannelManager _channelManager = new ChannelManager(0);
 
     /** Frame source/sink */
     public final FrameHandler _frameHandler;
@@ -263,7 +263,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         int channelMax =
             negotiatedMaxValue(getParameters().getRequestedChannelMax(),
                                connTune.getChannelMax());
-        setChannelMax(channelMax);
+        _channelManager = new ChannelManager(channelMax);
         
         int frameMax =
             negotiatedMaxValue(getParameters().getRequestedFrameMax(),
@@ -304,13 +304,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** {@inheritDoc} */
     public int getChannelMax() {
         return _channelManager.getChannelMax();
-    }
-
-    /**
-     * Protected API - set the max channel <b>number</b>
-     */
-    public void setChannelMax(int value) {
-        _channelManager.setChannelMax(value);
     }
 
     /** {@inheritDoc} */
