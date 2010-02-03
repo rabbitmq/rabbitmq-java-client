@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.Lock;
 
 import com.rabbitmq.client.ShutdownSignalException;
@@ -47,22 +47,14 @@ import com.rabbitmq.utility.IntAllocator;
  */
 
 public class ChannelManager {
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ReentrantLock lock = new ReentrantLock();
 
-    private final void readLock(){
-      lock.readLock().lock();
+    private void lock(){
+      lock.lock();
     }
 
-    private final void readUnlock(){
-      lock.readLock().unlock();
-    }
-
-    private final void writeLock(){    
-      lock.writeLock().lock();
-    }
-
-    private final void writeUnlock(){
-      lock.writeLock().unlock();
+    private void unlock(){
+      lock.unlock();
     }
 
     /** Mapping from channel number to AMQChannel instance */
@@ -96,22 +88,22 @@ public class ChannelManager {
      */
     public ChannelN getChannel(int channelNumber) {
         try {
-          readLock();
+          lock();
           ChannelN result = _channelMap.get(channelNumber);
           if(result == null) throw new UnknownChannelException(channelNumber);
           return result;
         } finally {
-          readUnlock();
+          unlock();
         }
     }
 
     public void handleSignal(ShutdownSignalException signal) {
         Set<ChannelN> channels;
         try {
-            readLock();
+            lock();
             channels = new HashSet<ChannelN>(_channelMap.values());
         } finally {
-            readUnlock();
+            unlock();
         }
         for (AMQChannel channel : channels) {
             disconnectChannel(channel.getChannelNumber());
@@ -122,10 +114,10 @@ public class ChannelManager {
     public ChannelN createChannel(AMQConnection connection) throws IOException {
         int channelNumber = -1;
         try{
-            writeLock();
+            lock();
             channelNumber = channelNumberAllocator.allocate();
         } finally {
-            writeUnlock();
+            unlock();
         }
         
         if (channelNumber == -1) {
@@ -136,11 +128,11 @@ public class ChannelManager {
 
     public ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
         try{
-            writeLock();
+            lock();
             if(!channelNumberAllocator.reserve(channelNumber)) 
               return null;
         } finally {
-            writeUnlock();
+            unlock();
         }
 
         return createChannelInternal(connection, channelNumber);
@@ -149,7 +141,7 @@ public class ChannelManager {
     private ChannelN createChannelInternal(AMQConnection connection, int channelNumber) throws IOException {
         ChannelN ch = null;
         try{
-            writeLock();
+            lock();
             if (_channelMap.containsKey(channelNumber)) {
                 // That number's already allocated! Can't do it
                 // This should never happen unless something has gone
@@ -161,7 +153,7 @@ public class ChannelManager {
             ch = new ChannelN(connection, channelNumber);
             _channelMap.put(channelNumber, ch);
         } finally {
-            writeUnlock();
+            unlock();
         }
 
         ch.open(); // now that it's been added to our internal tables
@@ -170,11 +162,11 @@ public class ChannelManager {
 
     public void disconnectChannel(int channelNumber) {
         try{ 
-            writeLock();
+            lock();
             _channelMap.remove(channelNumber);
             channelNumberAllocator.free(channelNumber);
         } finally {
-            writeUnlock();
+            unlock();
         }
     }
 }
