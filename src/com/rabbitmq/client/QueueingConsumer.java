@@ -48,7 +48,7 @@ public class QueueingConsumer extends DefaultConsumer {
 
     // Marker object used to signal the queue is in shutdown mode. 
     // Invariant: This is never on _queue unless _shutdown != null.
-    public static final Delivery POISON = new Delivery(null, null, null);
+    private static final Delivery POISON = new Delivery(null, null, null);
 
     public QueueingConsumer(Channel ch) {
         this(ch, new LinkedBlockingQueue<Delivery>());
@@ -113,6 +113,10 @@ public class QueueingConsumer extends DefaultConsumer {
         }
     }
 
+    private void checkShutdown(){
+      if(_shutdown != null) throw _shutdown;
+    }
+
     private Delivery handle(Delivery delivery)
     {
       if(delivery == POISON || (delivery == null && _shutdown != null)){
@@ -131,6 +135,7 @@ public class QueueingConsumer extends DefaultConsumer {
     public Delivery nextDelivery()
         throws InterruptedException, ShutdownSignalException
     {
+        checkShutdown();
         return handle(_queue.take());
     }
 
@@ -144,14 +149,7 @@ public class QueueingConsumer extends DefaultConsumer {
     public Delivery nextDelivery(long timeout)
         throws InterruptedException, ShutdownSignalException
     {
+        checkShutdown();
         return handle(_queue.poll(timeout, TimeUnit.MILLISECONDS));
-    }
-
-    /**
-     * Retrieve the underlying blocking queue.
-     * @return the queue where incoming messages are stored
-     */
-    public BlockingQueue<Delivery> getQueue() {
-        return _queue;
     }
 }
