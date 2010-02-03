@@ -28,24 +28,49 @@
 //
 //   Contributor(s): ______________________________________.
 //
-
 package com.rabbitmq.client.test;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.rabbitmq.client.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-public class ClientTests extends TestCase {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("client");
-        suite.addTest(TableTest.suite());
-        suite.addTest(BlockingCellTest.suite());
-        suite.addTest(TruncatedInputStreamTest.suite());
-        suite.addTest(AMQConnectionTest.suite());
-        suite.addTest(ValueOrExceptionTest.suite());
-        suite.addTest(BrokenFramesTest.suite());
-        suite.addTest(ClonePropertiesTest.suite());
-        suite.addTestSuite(Bug20004Test.class);
-        suite.addTestSuite(QueueingConsumerShutdownTests.class);
-        return suite;
+public class QueueingConsumerShutdownTests extends BrokerTestCase{
+  static final String QUEUE = "some-queue";
+  static final int THREADS = 5;
+
+  public void testNThreadShutdown() throws Exception{
+    Channel channel = connection.createChannel();
+    final QueueingConsumer c = new QueueingConsumer(channel);
+    channel.queueDeclare(QUEUE);
+    channel.basicConsume(QUEUE, c);
+    final AtomicInteger count = new AtomicInteger(THREADS);
+    final CountDownLatch latch = new CountDownLatch(THREADS);
+
+    for(int i = 0; i < THREADS; i++){
+      new Thread(){
+        @Override public void run(){
+          try {
+            while(true){
+              c.nextDelivery();
+            }
+          } catch (ShutdownSignalException sig) {
+            count.decrementAndGet();
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          } finally {
+            latch.countDown();
+          }
+        }
+      }.start();
     }
+
+    connection.close();
+
+    // Far longer than this could reasonably take
+    assertTrue(latch.await(5, TimeUnit.SECONDS));
+    assertEquals(0, count.get());
+  }
+
+
 }
