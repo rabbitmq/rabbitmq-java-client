@@ -37,28 +37,32 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.utility.ValueOrException;
+import com.rabbitmq.utility.Utility;
 
 /**
  * Convenience class: an implementation of {@link Consumer} with straightforward blocking semantics
  */
 public class QueueingConsumer extends DefaultConsumer {
-    public BlockingQueue<ValueOrException<Delivery, ShutdownSignalException>> _queue;
+    private final BlockingQueue<Delivery> _queue;
+    private volatile ShutdownSignalException _shutdown;
+
+    // Marker object used to signal the queue is in shutdown mode. 
+    // Invariant: This is never on _queue unless _shutdown != null.
+    public static final Delivery POISON = new Delivery(null, null, null);
 
     public QueueingConsumer(Channel ch) {
-        this(ch,
-             new LinkedBlockingQueue<ValueOrException<Delivery, ShutdownSignalException>>());
+        this(ch, new LinkedBlockingQueue<Delivery>());
     }
 
-    public QueueingConsumer(Channel ch,
-                            BlockingQueue<ValueOrException<Delivery, ShutdownSignalException>> q)
+    public QueueingConsumer(Channel ch, BlockingQueue<Delivery> q)
     {
         super(ch);
         this._queue = q;
     }
 
     @Override public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
-        this._queue.add(ValueOrException. <Delivery, ShutdownSignalException> makeException(sig));
+        _shutdown = sig; 
+        _queue.add(POISON);
     }
 
     @Override public void handleDelivery(String consumerTag,
@@ -67,8 +71,7 @@ public class QueueingConsumer extends DefaultConsumer {
                                byte[] body)
         throws IOException
     {
-        this._queue.add(ValueOrException. <Delivery, ShutdownSignalException> makeValue
-                        (new Delivery(envelope, properties, body)));
+        this._queue.add(new Delivery(envelope, properties, body));
     }
 
     /**
@@ -110,6 +113,15 @@ public class QueueingConsumer extends DefaultConsumer {
         }
     }
 
+    private Delivery handle(Delivery delivery)
+    {
+      if(delivery == POISON || (delivery == null && _shutdown != null)){
+        _queue.add(POISON);
+        throw Utility.fixStackTrace(_shutdown);
+      }
+      return delivery;
+    }
+
     /**
      * Main application-side API: wait for the next message delivery and return it.
      * @return the next message
@@ -119,7 +131,7 @@ public class QueueingConsumer extends DefaultConsumer {
     public Delivery nextDelivery()
         throws InterruptedException, ShutdownSignalException
     {
-        return _queue.take().getValue();
+        return handle(_queue.take());
     }
 
     /**
@@ -132,16 +144,14 @@ public class QueueingConsumer extends DefaultConsumer {
     public Delivery nextDelivery(long timeout)
         throws InterruptedException, ShutdownSignalException
     {
-        ValueOrException<Delivery, ShutdownSignalException> r =
-            _queue.poll(timeout, TimeUnit.MILLISECONDS);
-        return r == null ? null : r.getValue();
+        return handle(_queue.poll(timeout, TimeUnit.MILLISECONDS));
     }
 
     /**
      * Retrieve the underlying blocking queue.
      * @return the queue where incoming messages are stored
      */
-    public BlockingQueue<ValueOrException<Delivery, ShutdownSignalException>> getQueue() {
+    public BlockingQueue<Delivery> getQueue() {
         return _queue;
     }
 }
