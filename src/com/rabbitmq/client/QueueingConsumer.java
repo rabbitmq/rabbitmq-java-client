@@ -44,9 +44,14 @@ import com.rabbitmq.utility.Utility;
  */
 public class QueueingConsumer extends DefaultConsumer {
     private final BlockingQueue<Delivery> _queue;
+
+    // When this is non-null the queue is in shutdown mode and nextDelivery should
+    // throw a shutdown signal exception.
     private volatile ShutdownSignalException _shutdown;
 
     // Marker object used to signal the queue is in shutdown mode. 
+    // It is only there to wake up consumers. The canonical representation
+    // of shutting down is the presence of _shutdown. 
     // Invariant: This is never on _queue unless _shutdown != null.
     private static final Delivery POISON = new Delivery(null, null, null);
 
@@ -113,10 +118,18 @@ public class QueueingConsumer extends DefaultConsumer {
         }
     }
 
+    /**
+     * Check if we are in shutdown mode and if so throw an exception.
+     */
     private void checkShutdown(){
-      if(_shutdown != null) throw _shutdown;
+      if(_shutdown != null) throw Utility.fixStackTrace(_shutdown);
     }
 
+    /**
+     * If this is a non-POISON non-null delivery simply return it.
+     * If this is POISON we are in shutdown mode, throw _shutdown
+     * If this is null, we may be in shutdown mode. Check and see.
+     */
     private Delivery handle(Delivery delivery)
     {
       if(delivery == POISON || (delivery == null && _shutdown != null)){
