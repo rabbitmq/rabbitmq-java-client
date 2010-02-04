@@ -37,6 +37,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.AMQCommand;
@@ -159,14 +160,13 @@ public class Tracer implements Runnable {
 
         public DataOutputStream o;
 
-        public AMQCommand.Assembler c;
+        public HashMap<Integer, AMQCommand.Assembler> assemblers = new HashMap();
 
         public DirectionHandler(BlockingCell<Object> waitCell, boolean inBound, DataInputStream i, DataOutputStream o) {
             this.waitCell = waitCell;
             this.inBound = inBound;
             this.i = i;
             this.o = o;
-            this.c = AMQCommand.newAssembler();
         }
 
         public Frame readFrame() throws IOException {
@@ -221,10 +221,15 @@ public class Tracer implements Runnable {
                             reportFrame(f);
                         }
                     } else {
+                        AMQCommand.Assembler c = assemblers.get(f.channel);
+                        if(c == null){
+                          c = AMQCommand.newAssembler();
+                          assemblers.put(f.channel, c);
+                        }
                         AMQCommand cmd = c.handleFrame(f);
                         if (cmd != null) {
                             report(f.channel, cmd);
-                            c = AMQCommand.newAssembler();
+                            assemblers.remove(f.channel); 
                         }
                     }
                 }
