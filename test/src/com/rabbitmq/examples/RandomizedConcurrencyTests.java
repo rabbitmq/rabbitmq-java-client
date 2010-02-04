@@ -6,10 +6,14 @@ import java.util.Random;
 
 class RandomizedConcurrencyTests{
 
-  final Connection conn;
+  public int port = 5672;
+  public String host = "localhost";
+  public int queueExchangeCount = 100; 
+  public int threadCount = 20;
+
+  private final Object lock = new Object();
 
   public RandomizedConcurrencyTests() throws Exception{
-    conn = new ConnectionFactory().newConnection("localhost");
   }
 
   public static void main(String[] args) throws Exception{
@@ -24,15 +28,14 @@ class RandomizedConcurrencyTests{
     return "rct-exchange-" + i;
   }
 
-  int QUEUE_EXCHANGE_COUNT = 1000;
-
-  private final Object LOCK = new Object();
 
   public void run(){
+    final Connection conn;
     try {
+      conn = new ConnectionFactory().newConnection(host, port);
       Channel setup = conn.createChannel();
 
-      for(int i = 0; i < QUEUE_EXCHANGE_COUNT; i++){
+      for(int i = 0; i < queueExchangeCount; i++){
         setup.exchangeDeclare(exchange(i), "direct");
         setup.queueDeclare(queue(i));
         setup.queueBind(queue(i),exchange(i), "");
@@ -42,9 +45,10 @@ class RandomizedConcurrencyTests{
     } catch(Exception e){
       e.printStackTrace();
       System.exit(1);
+      throw null; // placate the compiler
     }
 
-    for(int i = 0; i < 10; i++){
+    for(int i = 0; i < threadCount; i++){
       final int j = i;
       new Thread(){
         @Override public void run(){
@@ -52,32 +56,26 @@ class RandomizedConcurrencyTests{
             Random rnd = new Random();
             Channel ch = conn.createChannel();
             while(true){
-              switch(rnd.nextInt(4)){
+              switch(rnd.nextInt(3)){
                 case 0: 
-                  int old = ch.getChannelNumber();
+                  Channel old = ch;
                   ch.close();
                   ch = conn.createChannel(); 
-                  int newNo = ch.getChannelNumber();
-                  System.err.println("Thread " + j + " closed channel " + old + " now using channel " + newNo);
                 break;
                 case 1:
                   ch.basicPublish(
-                    exchange(rnd.nextInt(QUEUE_EXCHANGE_COUNT)), 
+                    exchange(rnd.nextInt(queueExchangeCount)), 
                     "", null,
                     new byte[rnd.nextInt(1024 * 1024)]
                   );
                 break;
                 case 2:
-                  ch.basicGet(queue(rnd.nextInt(QUEUE_EXCHANGE_COUNT)), true);
+                  ch.basicGet(queue(rnd.nextInt(queueExchangeCount)), true);
                 break;
-
-                case 3:
-                  Thread.sleep(50);
-                break;  
               }
             }
           } catch(Exception e){
-            synchronized(LOCK){
+            synchronized(lock){
               e.printStackTrace();
               System.err.println();
             }
