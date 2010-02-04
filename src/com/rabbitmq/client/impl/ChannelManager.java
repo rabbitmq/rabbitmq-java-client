@@ -36,8 +36,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.Lock;
 
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.IntAllocator;
@@ -47,18 +45,8 @@ import com.rabbitmq.utility.IntAllocator;
  */
 
 public class ChannelManager {
-    private final ReentrantLock lock = new ReentrantLock();
-
-    private void lock(){
-      lock.lock();
-    }
-
-    private void unlock(){
-      lock.unlock();
-    }
-
     /** Mapping from channel number to AMQChannel instance */
-    private final Map<Integer, ChannelN> _channelMap = new HashMap<Integer, ChannelN>();
+    private final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
     private final IntAllocator channelNumberAllocator;
 
     /** Maximum channel number available on this connection. */
@@ -87,23 +75,15 @@ public class ChannelManager {
      *         required channel number.
      */
     public ChannelN getChannel(int channelNumber) {
-        try {
-          lock();
-          ChannelN result = _channelMap.get(channelNumber);
-          if(result == null) throw new UnknownChannelException(channelNumber);
-          return result;
-        } finally {
-          unlock();
-        }
+        ChannelN result = _channelMap.get(channelNumber);
+        if(result == null) throw new UnknownChannelException(channelNumber);
+        return result;
     }
 
     public void handleSignal(ShutdownSignalException signal) {
         Set<ChannelN> channels;
-        try {
-            lock();
+        synchronized(_channelMap) {
             channels = new HashSet<ChannelN>(_channelMap.values());
-        } finally {
-            unlock();
         }
         for (AMQChannel channel : channels) {
             disconnectChannel(channel.getChannelNumber());
@@ -113,60 +93,41 @@ public class ChannelManager {
 
     public ChannelN createChannel(AMQConnection connection) throws IOException {
         int channelNumber = -1;
-        try{
-            lock();
-            channelNumber = channelNumberAllocator.allocate();
-        } finally {
-            unlock();
-        }
-        
+        synchronized(this) { channelNumber = channelNumberAllocator.allocate(); };
         if (channelNumber == -1) {
             return null;
         }
         return createChannelInternal(connection, channelNumber);
     }
 
-    public ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
-        try{
-            lock();
-            if(!channelNumberAllocator.reserve(channelNumber)) 
-              return null;
-        } finally {
-            unlock();
-        }
-
-        return createChannelInternal(connection, channelNumber);
+    public synchronized ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
+        if(channelNumberAllocator.reserve(channelNumber)) 
+            return createChannelInternal(connection, channelNumber);
+        else
+            return null;
     }
 
     private ChannelN createChannelInternal(AMQConnection connection, int channelNumber) throws IOException {
-        ChannelN ch = null;
-        try{
-            lock();
-            if (_channelMap.containsKey(channelNumber)) {
-                // That number's already allocated! Can't do it
-                // This should never happen unless something has gone
-                // badly wrong with our implementation. 
-                throw new IllegalStateException("We have attempted to"
-                  + "create a channel with a number that is already in"
-                  + "use. This should never happen. Please report this as a bug."); 
-            }
-            ch = new ChannelN(connection, channelNumber);
-            _channelMap.put(channelNumber, ch);
-        } finally {
-            unlock();
+        if (_channelMap.containsKey(channelNumber)) {
+            // That number's already allocated! Can't do it
+            // This should never happen unless something has gone
+            // badly wrong with our implementation. 
+            throw new IllegalStateException("We have attempted to"
+              + "create a channel with a number that is already in"
+              + "use. This should never happen. Please report this as a bug."); 
         }
-
+        ChannelN ch = new ChannelN(connection, channelNumber);
+        addChannel(ch);
         ch.open(); // now that it's been added to our internal tables
         return ch;
     }
 
-    public void disconnectChannel(int channelNumber) {
-        try{ 
-            lock();
-            _channelMap.remove(channelNumber);
-            channelNumberAllocator.free(channelNumber);
-        } finally {
-            unlock();
-        }
+    private void addChannel(ChannelN chan) {
+        _channelMap.put(chan.getChannelNumber(), chan);
+    }
+
+    public synchronized void disconnectChannel(int channelNumber) {
+        _channelMap.remove(channelNumber);
+        channelNumberAllocator.free(channelNumber);
     }
 }
