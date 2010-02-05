@@ -47,7 +47,6 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -348,7 +347,9 @@ public class QosTests extends BrokerTestCase
         ch2.close();
     }
 
-    public void testLimitInheritsUnackedCount() throws IOException, ShutdownSignalException, InterruptedException {
+    public void testLimitInheritsUnackedCount()
+        throws IOException
+    {
         QueueingConsumer c = new QueueingConsumer(channel);
         declareBindConsume(c);
         fill(1);
