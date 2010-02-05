@@ -350,14 +350,12 @@ public class QosTests extends BrokerTestCase
 
     public void testLimitInheritsUnackedCount() throws IOException, ShutdownSignalException, InterruptedException {
         QueueingConsumer c = new QueueingConsumer(channel);
-        channel.basicQos(1);
         declareBindConsume(c);
-        fill(4);
+        fill(1);
         drain(c, 1);
         channel.basicQos(2);
-        Queue<Delivery> acks = drain(c, 1);
-        ackDelivery(acks.remove(), true);
-        drain(c, 2);
+        fill(2);
+        drain(c, 1);
     }
     
     protected void runLimitTests(int limit,
