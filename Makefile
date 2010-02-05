@@ -6,6 +6,7 @@ JAVADOC_ARCHIVE=$(PACKAGE_NAME)-javadoc-$(VERSION)
 SRC_ARCHIVE=$(PACKAGE_NAME)-$(VERSION)
 
 WEB_URL=http://stage.rabbitmq.com/
+NEXUS_STAGE_URL=http://oss.sonatype.org/service/local/staging/deploy/maven2
 
 AMQP_CODEGEN_DIR=$(shell fgrep sibling.codegen.dir build.properties | sed -e 's:sibling\.codegen\.dir=::')
 
@@ -67,4 +68,33 @@ srcdist: distclean
 	(cd build; rm -rf $(SRC_ARCHIVE))
 
 deploy-maven-bundle: maven-bundle
-	rsync -r build/bundle/* $(MAVEN_RSYNC_DESTINATION)
+	( \
+	  cd build/bundle; \
+	  mvn deploy:deploy-file \
+	    -Durl=$(NEXUS_STAGE_URL) \
+            -DrepositoryId=sonatype-nexus-staging \
+            -Dfile=amqp-client-$(VERSION).pom \
+            -DpomFile=amqp-client-$(VERSION).pom \
+            -DgeneratePom=false \
+	    -Dpackaging=pom; \
+	  mvn deploy:deploy-file \
+	    -Durl=$(NEXUS_STAGE_URL) \
+	    -DrepositoryId=sonatype-nexus-staging \
+	    -Dfile=amqp-client-$(VERSION).jar \
+	    -DpomFile=amqp-client-$(VERSION).pom \
+	    -DgeneratePom=false; \
+	  mvn deploy:deploy-file \
+            -Durl=$(NEXUS_STAGE_URL) \
+            -DrepositoryId=sonatype-nexus-staging \
+            -Dfile=amqp-client-$(VERSION)-javadoc.jar \
+            -DpomFile=amqp-client-$(VERSION).pom \
+            -DgeneratePom=false \
+	    -Dclassifier=javadoc; \
+	  mvn deploy:deploy-file \
+            -Durl=$(NEXUS_STAGE_URL) \
+            -DrepositoryId=sonatype-nexus-staging \
+            -Dfile=amqp-client-$(VERSION)-sources.jar \
+            -DpomFile=amqp-client-$(VERSION).pom \
+            -DgeneratePom=false \
+	    -Dclassifier=sources \
+	)
