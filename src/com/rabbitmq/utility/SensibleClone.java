@@ -37,5 +37,10 @@ package com.rabbitmq.utility;
  * and want to provide some guarantees of the type of the cloned object. 
  */
 public interface SensibleClone<T extends SensibleClone<T>> extends Cloneable {
+
+  /**
+   * Like Object.clone but sensible; in particular, public and declared to return
+   * the right type. 
+   */
   public T sensibleClone();
 }
