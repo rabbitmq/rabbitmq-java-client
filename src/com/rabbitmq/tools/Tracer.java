@@ -54,17 +54,15 @@ import com.rabbitmq.utility.BlockingCell;
  */
 public class Tracer implements Runnable {
     public static final boolean WITHHOLD_INBOUND_HEARTBEATS =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_INBOUND_HEARTBEATS"))
-        .booleanValue();
+        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_INBOUND_HEARTBEATS"));
     public static final boolean WITHHOLD_OUTBOUND_HEARTBEATS =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_OUTBOUND_HEARTBEATS"))
-        .booleanValue();
+        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_OUTBOUND_HEARTBEATS"));
     public static final boolean NO_ASSEMBLE_FRAMES =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES"))
-        .booleanValue();
+        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES"));
     public static final boolean NO_DECODE_FRAMES =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"))
-        .booleanValue();
+        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"));
+    public static final boolean SUPPRESS_COMMAND_BODIES =
+        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.SUPPRESS_COMMAND_BODIES"));
 
     public static void main(String[] args) {
         int listenPort = args.length > 0 ? Integer.parseInt(args[0]) : 5673;
@@ -81,6 +79,8 @@ public class Tracer implements Runnable {
                            com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES);
         System.out.println("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES = " +
                            com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES);
+        System.out.println("com.rabbitmq.tools.Tracer.SUPPRESS_COMMAND_BODIES = " +
+                           com.rabbitmq.tools.Tracer.SUPPRESS_COMMAND_BODIES);
 
         try {
             ServerSocket server = new ServerSocket(listenPort);
@@ -228,7 +228,7 @@ public class Tracer implements Runnable {
                         }
                         AMQCommand cmd = c.handleFrame(f);
                         if (cmd != null) {
-                            report(f.channel, cmd);
+                            report(f.channel, cmd.toString(SUPPRESS_COMMAND_BODIES));
                             assemblers.remove(f.channel); 
                         }
                     }
