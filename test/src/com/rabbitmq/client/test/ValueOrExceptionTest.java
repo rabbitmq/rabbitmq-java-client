@@ -30,15 +30,25 @@
 //
 package com.rabbitmq.client.test;
 
-import java.io.IOException;
-
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import com.rabbitmq.utility.ValueOrException;
+import com.rabbitmq.utility.SensibleClone;
 
 
 public class ValueOrExceptionTest extends TestCase {
+    public static class InsufficientMagicException extends Exception implements SensibleClone<InsufficientMagicException> {
+      public InsufficientMagicException(String message) {
+        super(message);
+      }
+
+      public InsufficientMagicException sensibleClone() {
+        return new InsufficientMagicException(getMessage());
+      }
+    }
+
+
     public static TestSuite suite()
     {
         TestSuite suite = new TestSuite("valueOrEx");
@@ -46,23 +56,28 @@ public class ValueOrExceptionTest extends TestCase {
         return suite;
     }
 
-    public void testStoresValue() throws IOException {
+    public void testStoresValue() throws InsufficientMagicException {
         Integer value = new Integer(3);
-        ValueOrException<Integer, IOException> valueOrEx = ValueOrException.<Integer, IOException>makeValue(value);
+        ValueOrException<Integer, InsufficientMagicException> valueOrEx = ValueOrException.<Integer, InsufficientMagicException>makeValue(value);
         
         Integer returnedValue = valueOrEx.getValue();
         assertTrue(returnedValue == value);
     }
 
-    public void testStoresException() {
-        IOException exception = new IOException("dummy message");
-        ValueOrException<Integer, IOException> valueOrEx = ValueOrException.<Integer, IOException>makeException(exception);
+    public void testClonesException() {
+        InsufficientMagicException exception = new InsufficientMagicException("dummy message");
+        ValueOrException<Integer, InsufficientMagicException> valueOrEx = ValueOrException.<Integer, InsufficientMagicException>makeException(exception);
 
         try {
             valueOrEx.getValue();
             fail("Expected exception");
-        } catch(IOException returnedException) {
-            assertTrue(returnedException == exception);
+        } catch(InsufficientMagicException returnedException) {
+            assertTrue(returnedException != exception);
+            assertEquals(returnedException.getMessage(), exception.getMessage());
+            boolean inGetValue = false;
+            for(StackTraceElement elt : returnedException.getStackTrace())
+              inGetValue |= "getValue".equals(elt.getMethodName());
+            assertTrue(inGetValue);
         }
     }
 }

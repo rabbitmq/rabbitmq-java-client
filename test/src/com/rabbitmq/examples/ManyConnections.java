@@ -90,7 +90,7 @@ public class ManyConnections {
 
     public static void runChannel(int threadNumber,
 				  Connection conn,
-				  Channel ch){
+				  Channel ch) {
 	try {
 	    int delayLen = (int) (1000 / rate);
 	    long startTime = System.currentTimeMillis();

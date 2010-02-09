@@ -76,7 +76,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
 
         restart();
 
-        for (int i = 0; i < N; i++){
+        for (int i = 0; i < N; i++) {
             basicPublishVolatile(X, K);
         }
 
@@ -113,7 +113,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
 
         declareDurableTopicExchange(X);
 
-        for (int i = 0; i < N; i++){
+        for (int i = 0; i < N; i++) {
             basicPublishVolatile(X, K);
         }
 
