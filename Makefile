@@ -4,6 +4,8 @@ PACKAGE_NAME=rabbitmq-java-client
 
 JAVADOC_ARCHIVE=$(PACKAGE_NAME)-javadoc-$(VERSION)
 SRC_ARCHIVE=$(PACKAGE_NAME)-$(VERSION)
+SIGNING_KEY=056E8E56
+GNUPG_PATH=~
 
 WEB_URL=http://stage.rabbitmq.com/
 NEXUS_STAGE_URL=http://oss.sonatype.org/service/local/staging/deploy/maven2
@@ -70,31 +72,21 @@ srcdist: distclean
 deploy-maven-bundle: maven-bundle
 	( \
 	  cd build/bundle; \
-	  mvn deploy:deploy-file \
-	    -Durl=$(NEXUS_STAGE_URL) \
-            -DrepositoryId=sonatype-nexus-staging \
-            -Dfile=amqp-client-$(VERSION).pom \
-            -DpomFile=amqp-client-$(VERSION).pom \
-            -DgeneratePom=false \
-	    -Dpackaging=pom; \
-	  mvn deploy:deploy-file \
-	    -Durl=$(NEXUS_STAGE_URL) \
-	    -DrepositoryId=sonatype-nexus-staging \
-	    -Dfile=amqp-client-$(VERSION).jar \
-	    -DpomFile=amqp-client-$(VERSION).pom \
-	    -DgeneratePom=false; \
-	  mvn deploy:deploy-file \
-            -Durl=$(NEXUS_STAGE_URL) \
-            -DrepositoryId=sonatype-nexus-staging \
-            -Dfile=amqp-client-$(VERSION)-javadoc.jar \
-            -DpomFile=amqp-client-$(VERSION).pom \
-            -DgeneratePom=false \
-	    -Dclassifier=javadoc; \
-	  mvn deploy:deploy-file \
-            -Durl=$(NEXUS_STAGE_URL) \
-            -DrepositoryId=sonatype-nexus-staging \
-            -Dfile=amqp-client-$(VERSION)-sources.jar \
-            -DpomFile=amqp-client-$(VERSION).pom \
-            -DgeneratePom=false \
-	    -Dclassifier=sources \
+	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/nexus-username`; \
+	  NEXUS_PASSWORD=`cat $(GNUPG_PATH)/nexus-password`; \
+	  VERSION=$(VERSION) \
+	  SIGNING_KEY=$(SIGNING_KEY) \
+	  GNUPG_PATH=$(GNUPG_PATH) \
+	  CREDS="$$NEXUS_USERNAME:$$NEXUS_PASSWORD" \
+	  ../../nexus-upload.sh \
+	    amqp-client-$(VERSION).pom \
+	    amqp-client-$(VERSION).jar \
+	    amqp-client-$(VERSION)-javadoc.jar \
+	    amqp-client-$(VERSION)-sources.jar; \
+	  mvn org.sonatype.plugins:nexus-maven-plugin:staging-close \
+	    -Dnexus.url=http://oss.sonatype.org \
+	    -Dnexus.username=$$NEXUS_USERNAME \
+	    -Dnexus.password=$$NEXUS_PASSWORD \
+	    -B \
+	    -Dnexus.description="Staging complete" \
 	)
