@@ -35,9 +35,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.AMQCommand;
@@ -45,6 +47,7 @@ import com.rabbitmq.client.impl.AMQContentHeader;
 import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.utility.BlockingCell;
+
 
 /**
  * AMQP Protocol Analyzer program. Listens on a configurable port and when a
@@ -66,6 +69,53 @@ public class Tracer implements Runnable {
         new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"))
         .booleanValue();
 
+    static class AsyncLogger extends Thread{
+      final PrintStream ps;
+      final LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
+      private static final Object CLOSE = new Object();
+
+      public AsyncLogger(PrintStream ps){
+        this.ps = ps;
+        start();   
+      }
+
+      void printMessage(Object message){
+        if(message instanceof Throwable){
+          ((Throwable)message).printStackTrace(ps);    
+        } else if (message instanceof String){
+          ps.println(message);       
+        } else {
+          throw new RuntimeException("Unrecognised object " + message);
+        }
+      }
+
+      @Override public void run(){
+        try {
+          while(true){
+            Object message = queue.take();
+            if(message == CLOSE){
+              while((message = queue.poll()) != null){
+                if(message != CLOSE){
+                  printMessage(message);
+                }
+              }
+              break;
+            }
+            printMessage(message);      
+          }
+        } catch (InterruptedException interrupt){
+        }
+      }
+
+      public void log(Object message){
+        queue.add(message);
+      }
+
+      public void close(){
+        queue.add(CLOSE);
+      }
+    } 
+
     public static void main(String[] args) {
         int listenPort = args.length > 0 ? Integer.parseInt(args[0]) : 5673;
         String connectHost = args.length > 1 ? args[1] : "localhost";
@@ -85,9 +135,10 @@ public class Tracer implements Runnable {
         try {
             ServerSocket server = new ServerSocket(listenPort);
             int counter = 0;
+            AsyncLogger logger = new AsyncLogger(System.out);
             while (true) {
                 Socket conn = server.accept();
-                new Tracer(conn, counter++, connectHost, connectPort);
+                new Tracer(conn, counter++, connectHost, connectPort, logger);
             }
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -109,7 +160,9 @@ public class Tracer implements Runnable {
 
     public DataOutputStream oos;
 
-    public Tracer(Socket sock, int id, String host, int port) throws IOException {
+    public AsyncLogger logger;
+
+    public Tracer(Socket sock, int id, String host, int port, AsyncLogger logger) throws IOException {
         this.inSock = sock;
         this.outSock = new Socket(host, port);
         this.id = id;
@@ -118,6 +171,7 @@ public class Tracer implements Runnable {
         this.ios = new DataOutputStream(inSock.getOutputStream());
         this.ois = new DataInputStream(outSock.getInputStream());
         this.oos = new DataOutputStream(outSock.getOutputStream());
+        this.logger = logger; 
 
         new Thread(this).start();
     }
@@ -135,18 +189,18 @@ public class Tracer implements Runnable {
             new Thread(outHandler).start();
             Object result = w.uninterruptibleGet();
             if (result instanceof Exception) {
-                ((Exception) result).printStackTrace();
+                logger.log(result);
             }
         } catch (EOFException eofe) {
-            eofe.printStackTrace();
+            logger.log(eofe);
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            logger.log(ioe);
         } finally {
             try {
                 inSock.close();
                 outSock.close();
             } catch (IOException ioe2) {
-                ioe2.printStackTrace();
+                logger.log(ioe2);
             }
         }
     }
@@ -174,7 +228,7 @@ public class Tracer implements Runnable {
         }
 
         public void report(int channel, Object object) {
-            System.out.println("" + System.currentTimeMillis() + ": conn#" + id + " ch#" + channel + (inBound ? " -> " : " <- ") + object);
+            logger.log("" + System.currentTimeMillis() + ": conn#" + id + " ch#" + channel + (inBound ? " -> " : " <- ") + object);
         }
 
         public void reportFrame(Frame f)
