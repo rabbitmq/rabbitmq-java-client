@@ -118,7 +118,7 @@ public class RpcClient {
      * @throws IOException if an error is encountered
      * @return the name of the reply queue
      */
-    private String setupReplyQueue() throws IOException {
+    protected String setupReplyQueue() throws IOException {
         return _channel.queueDeclare("", false, false, true, true, null).getQueue();
     }
 
@@ -127,7 +127,7 @@ public class RpcClient {
      * @throws IOException if an error is encountered
      * @return the newly created and registered consumer
      */
-    private DefaultConsumer setupConsumer() throws IOException {
+    protected DefaultConsumer setupConsumer() throws IOException {
         DefaultConsumer consumer = new DefaultConsumer(_channel) {
             @Override
             public void handleShutdownSignal(String consumerTag,

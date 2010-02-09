@@ -347,6 +347,18 @@ public class QosTests extends BrokerTestCase
         ch2.close();
     }
 
+    public void testLimitInheritsUnackedCount()
+        throws IOException
+    {
+        QueueingConsumer c = new QueueingConsumer(channel);
+        declareBindConsume(c);
+        fill(1);
+        drain(c, 1);
+        channel.basicQos(2);
+        fill(2);
+        drain(c, 1);
+    }
+    
     protected void runLimitTests(int limit,
                                  boolean multiAck,
                                  boolean txMode,
