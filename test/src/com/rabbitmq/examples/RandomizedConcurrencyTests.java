@@ -8,7 +8,7 @@ class RandomizedConcurrencyTests{
 
   public int port = 5672;
   public String host = "localhost";
-  public int queueExchangeCount = 100; 
+  public int queueExchangeCount = 1000; 
   public int threadCount = 20;
 
   private final Object lock = new Object();
@@ -66,7 +66,7 @@ class RandomizedConcurrencyTests{
                   ch.basicPublish(
                     exchange(rnd.nextInt(queueExchangeCount)), 
                     "", null,
-                    new byte[rnd.nextInt(1024 * 1024)]
+                    new byte[1024 * 1024]
                   );
                 break;
                 case 2:
