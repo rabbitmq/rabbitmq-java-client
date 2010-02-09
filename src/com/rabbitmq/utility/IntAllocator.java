@@ -132,10 +132,10 @@ public class IntAllocator{
     return false;
   }
 
-  private void flush(){
+  public void flush(){
     if(unsortedCount == 0) return;
   
-    Arrays.sort(unsorted);
+    Arrays.sort(unsorted, 0, unsortedCount);
    
     ListIterator<Interval> it = intervals.listIterator();
 
@@ -145,7 +145,7 @@ public class IntAllocator{
       while((i < unsortedCount - 1) && (unsorted[i + 1] == unsorted[i] + 1))
         i++;
 
-      Interval interval = new Interval(start, i);
+      Interval interval = new Interval(unsorted[start], unsorted[i]);
 
       // Scan to an appropriate point in the list to insert this interval
       // this may well be the end
