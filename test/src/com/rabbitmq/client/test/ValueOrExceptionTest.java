@@ -74,6 +74,10 @@ public class ValueOrExceptionTest extends TestCase {
         } catch(InsufficientMagicException returnedException) {
             assertTrue(returnedException != exception);
             assertEquals(returnedException.getMessage(), exception.getMessage());
+            boolean inGetValue = false;
+            for(StackTraceElement elt : returnedException.getStackTrace())
+              inGetValue |= "getValue".equals(elt.getMethodName());
+            assertTrue(inGetValue);
         }
     }
 }
