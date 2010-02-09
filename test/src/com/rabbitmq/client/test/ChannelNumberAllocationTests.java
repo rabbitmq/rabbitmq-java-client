@@ -74,4 +74,9 @@ public class ChannelNumberAllocationTests extends TestCase{
     Channel ch = connection.createChannel();
     assertNotNull(ch);
   }
+
+  public void testReuseManuallyAllocatedChannelNumber() throws Exception{
+    connection.createChannel(1).close();
+    assertNotNull(connection.createChannel(1));
+  }
 }
