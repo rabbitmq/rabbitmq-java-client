@@ -177,6 +177,7 @@ public class IntAllocator{
       if(leading.start == trailing.end + 1) {
         it.remove(); 
         trailing.end = leading.end;
+        leading = trailing;
       }
     } 
   }

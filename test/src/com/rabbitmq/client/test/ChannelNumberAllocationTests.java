@@ -75,17 +75,21 @@ public class ChannelNumberAllocationTests extends TestCase{
     assertNotNull(ch);
   }
 
-  public void testReuseManuallyAllocatedChannelNumber() throws Exception{
+  public void testReuseManuallyAllocatedChannelNumber1() throws Exception{
     connection.createChannel(1).close();
-    Channel ch = connection.createChannel(1);
-    assertNotNull(ch);
-    ch.close();
+    assertNotNull(connection.createChannel(1));
+  }
 
-    for(int repeat = 0; repeat < 3; repeat++){
-      Channel[] channels = new Channel[8];
-      for(int i = 1; i <= channels.length; i++)
-        assertNotNull(channels[i-1] = connection.createChannel(i));
-      for(Channel ch2 : channels) ch2.close();
-    }
+  public void testReuseManuallyAllocatedChannelNumber2() throws Exception{
+    connection.createChannel(2).close();
+    assertNotNull(connection.createChannel(3));
+  }
+
+  public void testReserveOnBoundaries() throws Exception{
+    assertNotNull(connection.createChannel(3));
+    assertNotNull(connection.createChannel(4));
+    assertNotNull(connection.createChannel(2));
+    assertNotNull(connection.createChannel(5));
+    assertNotNull(connection.createChannel(1));
   }
 }

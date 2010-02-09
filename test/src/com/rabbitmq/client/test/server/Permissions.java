@@ -285,7 +285,9 @@ public class Permissions extends BrokerTestCase
             assertEquals(msg,
                          AMQP.ACCESS_REFUSED,
                          ((AMQP.Channel.Close)m).getReplyCode());
-            openChannel();
+            //This fails due to bug 20296
+            //openChannel();
+            channel = connection.createChannel(channel.getChannelNumber() + 1);
         }
     }
 
