@@ -31,19 +31,19 @@
 package com.rabbitmq.utility;
 
 /**
- * A class for allocating integer IDs in a given range. 
- */ 
+ * A class for allocating integer IDs in a given range.
+ */
 public class IntAllocator{
 
     // Invariant: Sorted in order of first element. Non-overlapping, non-adjacent.
-    // This could really use being a balanced binary tree. However for normal usages 
+    // This could really use being a balanced binary tree. However for normal usages
     // it doesn't actually matter.
     private IntervalList base;
 
     private final int[] unsorted;
     private int unsortedCount = 0;
 
-    /** 
+    /**
      * A class representing an inclusive interval from start to end.
      */
     private static class IntervalList{
@@ -56,14 +56,14 @@ public class IntAllocator{
         int end;
         IntervalList next;
 
-        int length(){ return end - start + 1; } 
+        int length(){ return end - start + 1; }
     }
 
     /** Destructively merge two IntervalLists.
      * Invariant: None of the Intervals in the two lists may overlap
      * intervals in this list.
      */
-    public static IntervalList merge(IntervalList x, IntervalList y){ 
+    public static IntervalList merge(IntervalList x, IntervalList y){
         if(x == null) return y;
         if(y == null) return x;
 
@@ -112,7 +112,7 @@ public class IntAllocator{
     }
 
 
-    /** 
+    /**
     * Creates an IntAllocator allocating integer IDs within the inclusive range [start, end]
     */
     public IntAllocator(int start, int end){
@@ -125,7 +125,7 @@ public class IntAllocator{
 
     /**
      * Allocate a fresh integer from the range, or return -1 if no more integers
-     * are available. This operation is guaranteed to run in O(1) 
+     * are available. This operation is guaranteed to run in O(1)
      */
     public int allocate(){
         if(unsortedCount > 0){
@@ -133,18 +133,18 @@ public class IntAllocator{
         } else if (base != null){
             IntervalList source = base;
             if(base.length() == 1) base = base.next;
-            return source.start++; 
+            return source.start++;
         } else {
             return -1;
         }
     }
 
-    /** 
-     * Make the provided integer available for allocation again. This operation 
-     * runs in amortized O(sqrt(range size)) time: About every sqrt(range size) 
-     * operations    will take O(range_size + number of intervals) to complete and 
+    /**
+     * Make the provided integer available for allocation again. This operation
+     * runs in amortized O(sqrt(range size)) time: About every sqrt(range size)
+     * operations    will take O(range_size + number of intervals) to complete and
      * the rest run in constant time.
-     * 
+     *
      * No error checking is performed, so if you double free or free an integer
      * that was not originally allocated the results are undefined. Sorry.
      */
@@ -155,13 +155,13 @@ public class IntAllocator{
         unsorted[unsortedCount++] = id;
     }
 
-    /** 
-     * Attempt to reserve the provided ID as if it had been allocated. Returns true 
-     * if it is available, false otherwise. 
+    /**
+     * Attempt to reserve the provided ID as if it had been allocated. Returns true
+     * if it is available, false otherwise.
      *
      * This operation runs in O(id) in the worst case scenario, though it can usually
      * be expected to perform better than that unless a great deal of fragmentation
-     * has occurred. 
+     * has occurred.
      */
     public boolean reserve(int id){
         flush();
@@ -174,13 +174,13 @@ public class IntAllocator{
 
         if(current == null) return false;
         if(current.start > id) return false;
-        
+
         if(current.end == id)
                 current.end--;
         else if(current.start == id)
             current.start++;
         else {
-            // The ID is in the middle of this interval. 
+            // The ID is in the middle of this interval.
             // We need to split the interval into two.
             IntervalList rest = new IntervalList(id + 1, current.end);
             current.end = id - 1;
@@ -193,9 +193,9 @@ public class IntAllocator{
 
     public void flush(){
         if(unsortedCount == 0) return;
-    
+
         base = merge(base, fromArray(unsorted, unsortedCount));
-        unsortedCount = 0; 
+        unsortedCount = 0;
     }
 
     @Override public String toString(){
@@ -207,8 +207,8 @@ public class IntAllocator{
         IntervalList it = base;
         while(it != null){
             builder.append(it.start).append("..").append(it.end);
-            if(it.next != null) builder.append(", ");         
-            it = it.next;            
+            if(it.next != null) builder.append(", ");
+            it = it.next;
         }
         builder.append("]");
 
