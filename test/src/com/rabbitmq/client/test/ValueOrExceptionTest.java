@@ -49,7 +49,7 @@ public class ValueOrExceptionTest extends TestCase {
     public void testStoresValue() throws IOException {
         Integer value = new Integer(3);
         ValueOrException<Integer, IOException> valueOrEx = ValueOrException.<Integer, IOException>makeValue(value);
-        
+
         Integer returnedValue = valueOrEx.getValue();
         assertTrue(returnedValue == value);
     }

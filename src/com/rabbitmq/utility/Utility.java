@@ -39,7 +39,7 @@ import java.io.PrintStream;
  */
 
 public class Utility {
-  
+
     public static String makeStackTrace(Throwable throwable) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);
@@ -49,7 +49,7 @@ public class Utility {
         try {
             outputStream.close();
         } catch (IOException ex) {
-            // Closing the output stream won't generate an error, and in 
+            // Closing the output stream won't generate an error, and in
             // fact does nothing - just being tidy
             ex.printStackTrace();
         }

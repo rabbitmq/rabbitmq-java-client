@@ -79,26 +79,26 @@ public class Tracer implements Runnable {
         final BlockingQueue<Object> queue = new ArrayBlockingQueue<Object>(LOG_QUEUE_SIZE, true);
         AsyncLogger(PrintStream ps){
             this.ps = new PrintStream(new BufferedOutputStream(ps, BUFFER_SIZE), false);
-            start(); 
+            start();
 
             new Thread(){
                 @Override public void run(){
                     while(true){
-                        try { 
-                            Thread.sleep(MAX_TIME_BETWEEN_FLUSHES); 
+                        try {
+                            Thread.sleep(MAX_TIME_BETWEEN_FLUSHES);
                             queue.add(FLUSH);
                         } catch(InterruptedException e) { }
                     }
-            
+
                 }
-            }.start();  
+            }.start();
         }
 
         void printMessage(Object message){
             if(message instanceof Throwable){
-                ((Throwable)message).printStackTrace(ps);    
+                ((Throwable)message).printStackTrace(ps);
             } else if (message instanceof String){
-                ps.println(message);          
+                ps.println(message);
             } else {
                 throw new RuntimeException("Unrecognised object " + message);
             }
@@ -116,13 +116,13 @@ public class Tracer implements Runnable {
         }
 
         void log(Object message){
-            try {            
+            try {
               queue.put(message);
             } catch(InterruptedException ex){
               throw new RuntimeException(ex);
             }
         }
-    } 
+    }
 
     public static void main(String[] args) {
         int listenPort = args.length > 0 ? Integer.parseInt(args[0]) : 5673;
@@ -179,7 +179,7 @@ public class Tracer implements Runnable {
         this.ios = new DataOutputStream(inSock.getOutputStream());
         this.ois = new DataInputStream(outSock.getInputStream());
         this.oos = new DataOutputStream(outSock.getOutputStream());
-        this.logger = logger; 
+        this.logger = logger;
 
         new Thread(this).start();
     }
@@ -297,7 +297,7 @@ public class Tracer implements Runnable {
                         AMQCommand cmd = c.handleFrame(f);
                         if (cmd != null) {
                             report(f.channel, cmd);
-                            assemblers.remove(f.channel); 
+                            assemblers.remove(f.channel);
                         }
                     }
                 }
