@@ -148,8 +148,8 @@ public class IntAllocator{
     /**
      * Make the provided integer available for allocation again. This operation
      * runs in amortized O(sqrt(range size)) time: About every sqrt(range size)
-     * operations    will take O(range_size + number of intervals) to complete
-     * and the rest run in constant time.
+     * operations will take O(range_size + number of intervals) to complete and
+     * the rest run in constant time.
      *
      * No error checking is performed, so if you double free or free an integer
      * that was not originally allocated the results are undefined. Sorry.
