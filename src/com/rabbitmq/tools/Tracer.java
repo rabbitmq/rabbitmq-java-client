@@ -69,10 +69,10 @@ public class Tracer implements Runnable {
         new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"))
         .booleanValue();
 
-    static class AsyncLogger extends Thread{
+    private static class AsyncLogger extends Thread{
         final PrintStream ps;
         final LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
-        public AsyncLogger(PrintStream ps){
+        AsyncLogger(PrintStream ps){
             this.ps = ps;
             start();   
         }
@@ -96,7 +96,7 @@ public class Tracer implements Runnable {
             }
         }
 
-        public void log(Object message){
+        void log(Object message){
             queue.add(message);
         }
     } 
