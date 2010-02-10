@@ -38,7 +38,8 @@ import com.rabbitmq.utility.SensibleClone;
 
 
 public class ValueOrExceptionTest extends TestCase {
-    public static class InsufficientMagicException extends Exception implements SensibleClone<InsufficientMagicException> {
+    public static class InsufficientMagicException extends Exception 
+      implements SensibleClone<InsufficientMagicException> {
       public InsufficientMagicException(String message) {
         super(message);
       }
@@ -58,15 +59,19 @@ public class ValueOrExceptionTest extends TestCase {
 
     public void testStoresValue() throws InsufficientMagicException {
         Integer value = new Integer(3);
-        ValueOrException<Integer, InsufficientMagicException> valueOrEx = ValueOrException.<Integer, InsufficientMagicException>makeValue(value);
+
+        ValueOrException<Integer, InsufficientMagicException> valueOrEx = 
+            ValueOrException.<Integer, InsufficientMagicException>makeValue(value);
         
         Integer returnedValue = valueOrEx.getValue();
         assertTrue(returnedValue == value);
     }
 
     public void testClonesException() {
-        InsufficientMagicException exception = new InsufficientMagicException("dummy message");
-        ValueOrException<Integer, InsufficientMagicException> valueOrEx = ValueOrException.<Integer, InsufficientMagicException>makeException(exception);
+        InsufficientMagicException exception = 
+            new InsufficientMagicException("dummy message");
+        ValueOrException<Integer, InsufficientMagicException> valueOrEx 
+            = ValueOrException.makeException(exception);
 
         try {
             valueOrEx.getValue();

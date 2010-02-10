@@ -144,7 +144,7 @@ public class ScalabilityTest {
             s.close();
             s = open(prefix, "deletion");
             print(s, base, deletionTimes);
-            s.close(); 
+            s.close();
             s = open(prefix, "routing");
             print(s, base, transpose(routingTimes));
             s.close();

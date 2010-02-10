@@ -76,7 +76,7 @@ public class Utility {
       throwable.fillInStackTrace();
       // We want to remove fixStackTrace from the trace.
       StackTraceElement[] existing = throwable.getStackTrace();
-      StackTraceElement[] newTrace = new StackTraceElement[existing.length - 1];      
+      StackTraceElement[] newTrace = new StackTraceElement[existing.length - 1];
       System.arraycopy(existing, 1, newTrace, 0, newTrace.length);
       throwable.setStackTrace(newTrace);
       return throwable;
@@ -92,7 +92,7 @@ public class Utility {
         try {
             outputStream.close();
         } catch (IOException ex) {
-            // Closing the output stream won't generate an error, and in 
+            // Closing the output stream won't generate an error, and in
             // fact does nothing - just being tidy
             ex.printStackTrace();
         }

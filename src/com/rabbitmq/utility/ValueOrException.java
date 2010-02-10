@@ -34,7 +34,7 @@ public class ValueOrException<V, E extends Throwable & SensibleClone<E>> {
     private final boolean _useValue;
     private final V _value;
     private final E _exception;
-    
+
     /**
      * dual-purpose private constructor: one will be null, and the flag tells which to use
      * @param value the value to wrap, if applicable
@@ -69,7 +69,7 @@ public class ValueOrException<V, E extends Throwable & SensibleClone<E>> {
     public static <V, E extends Throwable & SensibleClone<E>> ValueOrException<V, E> makeException(E exception) {
         return new ValueOrException<V, E>(null, exception, false);
     }
-    
+
     /** Retrieve value or throw exception
      * @return the wrapped value, if it's a value
      * @throws E the wrapped exception, if it's an exception

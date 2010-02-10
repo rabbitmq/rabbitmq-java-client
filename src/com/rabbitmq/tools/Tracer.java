@@ -31,13 +31,11 @@
 
 package com.rabbitmq.tools;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.concurrent.*;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.AMQCommand;
@@ -45,6 +43,7 @@ import com.rabbitmq.client.impl.AMQContentHeader;
 import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.utility.BlockingCell;
+
 
 /**
  * AMQP Protocol Analyzer program. Listens on a configurable port and when a
@@ -63,6 +62,64 @@ public class Tracer implements Runnable {
         Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"));
     public static final boolean SUPPRESS_COMMAND_BODIES =
         Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.SUPPRESS_COMMAND_BODIES"));
+
+    public static final boolean SILENT_MODE =
+        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.SILENT_MODE"));
+
+    final static int LOG_QUEUE_SIZE = 1024 * 1024;
+    final static int BUFFER_SIZE = 10 * 1024 * 1024;
+    final static int MAX_TIME_BETWEEN_FLUSHES = 1000;
+    final static Object FLUSH = new Object();
+
+    private static class AsyncLogger extends Thread{
+        final PrintStream ps;
+        final BlockingQueue<Object> queue = new ArrayBlockingQueue<Object>(LOG_QUEUE_SIZE, true);
+        AsyncLogger(PrintStream ps){
+            this.ps = new PrintStream(new BufferedOutputStream(ps, BUFFER_SIZE), false);
+            start();
+
+            new Thread(){
+                @Override public void run(){
+                    while(true){
+                        try {
+                            Thread.sleep(MAX_TIME_BETWEEN_FLUSHES);
+                            queue.add(FLUSH);
+                        } catch(InterruptedException e) { }
+                    }
+
+                }
+            }.start();
+        }
+
+        void printMessage(Object message){
+            if(message instanceof Throwable){
+                ((Throwable)message).printStackTrace(ps);
+            } else if (message instanceof String){
+                ps.println(message);
+            } else {
+                throw new RuntimeException("Unrecognised object " + message);
+            }
+        }
+
+        @Override public void run(){
+            try {
+                while(true){
+                    Object message = queue.take();
+                    if(message == FLUSH) ps.flush();
+                    else printMessage(message);
+                }
+            } catch (InterruptedException interrupt){
+            }
+        }
+
+        void log(Object message){
+            try {
+              queue.put(message);
+            } catch(InterruptedException ex){
+              throw new RuntimeException(ex);
+            }
+        }
+    }
 
     public static void main(String[] args) {
         int listenPort = args.length > 0 ? Integer.parseInt(args[0]) : 5673;
@@ -85,9 +142,10 @@ public class Tracer implements Runnable {
         try {
             ServerSocket server = new ServerSocket(listenPort);
             int counter = 0;
+            AsyncLogger logger = new AsyncLogger(System.out);
             while (true) {
                 Socket conn = server.accept();
-                new Tracer(conn, counter++, connectHost, connectPort);
+                new Tracer(conn, counter++, connectHost, connectPort, logger);
             }
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -109,7 +167,9 @@ public class Tracer implements Runnable {
 
     public DataOutputStream oos;
 
-    public Tracer(Socket sock, int id, String host, int port) throws IOException {
+    public AsyncLogger logger;
+
+    public Tracer(Socket sock, int id, String host, int port, AsyncLogger logger) throws IOException {
         this.inSock = sock;
         this.outSock = new Socket(host, port);
         this.id = id;
@@ -118,6 +178,7 @@ public class Tracer implements Runnable {
         this.ios = new DataOutputStream(inSock.getOutputStream());
         this.ois = new DataInputStream(outSock.getInputStream());
         this.oos = new DataOutputStream(outSock.getOutputStream());
+        this.logger = logger;
 
         new Thread(this).start();
     }
@@ -135,18 +196,18 @@ public class Tracer implements Runnable {
             new Thread(outHandler).start();
             Object result = w.uninterruptibleGet();
             if (result instanceof Exception) {
-                ((Exception) result).printStackTrace();
+                logger.log(result);
             }
         } catch (EOFException eofe) {
-            eofe.printStackTrace();
+            logger.log(eofe);
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            logger.log(ioe);
         } finally {
             try {
                 inSock.close();
                 outSock.close();
             } catch (IOException ioe2) {
-                ioe2.printStackTrace();
+                logger.log(ioe2);
             }
         }
     }
@@ -174,7 +235,7 @@ public class Tracer implements Runnable {
         }
 
         public void report(int channel, Object object) {
-            System.out.println("" + System.currentTimeMillis() + ": conn#" + id + " ch#" + channel + (inBound ? " -> " : " <- ") + object);
+            logger.log("" + System.currentTimeMillis() + ": conn#" + id + " ch#" + channel + (inBound ? " -> " : " <- ") + object);
         }
 
         public void reportFrame(Frame f)
@@ -202,7 +263,13 @@ public class Tracer implements Runnable {
 
         public void doFrame() throws IOException {
             Frame f = readFrame();
+
             if (f != null) {
+
+                if(SILENT_MODE){
+                  f.writeTo(o);
+                  return;
+                }
                 if (f.type == AMQP.FRAME_HEARTBEAT) {
                     if ((inBound && !WITHHOLD_INBOUND_HEARTBEATS) ||
                         (!inBound && !WITHHOLD_OUTBOUND_HEARTBEATS))

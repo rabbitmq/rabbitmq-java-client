@@ -46,7 +46,7 @@ public class BlockingValueOrException<V, E extends Throwable & SensibleClone<E>>
     public V uninterruptibleGetValue() throws E {
         return uninterruptibleGet().getValue();
     }
-    
+
     public V uninterruptibleGetValue(int timeout) throws E, TimeoutException {
     	return uninterruptibleGet(timeout).getValue();
     }
