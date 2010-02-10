@@ -69,6 +69,10 @@ public class Tracer implements Runnable {
         new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"))
         .booleanValue();
 
+    public static final boolean SILENT_MODE =
+        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.SILENT_MODE"))
+        .booleanValue();
+
     private static class AsyncLogger extends Thread{
         final PrintStream ps;
         final LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
@@ -241,7 +245,13 @@ public class Tracer implements Runnable {
 
         public void doFrame() throws IOException {
             Frame f = readFrame();
+
             if (f != null) {
+
+                if(SILENT_MODE){
+                  f.writeTo(o);
+                  return;
+                }
                 if (f.type == AMQP.FRAME_HEARTBEAT) {
                     if ((inBound && !WITHHOLD_INBOUND_HEARTBEATS) ||
                         (!inBound && !WITHHOLD_OUTBOUND_HEARTBEATS))
