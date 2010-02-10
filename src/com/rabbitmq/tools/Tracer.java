@@ -72,8 +72,6 @@ public class Tracer implements Runnable {
     static class AsyncLogger extends Thread{
       final PrintStream ps;
       final LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
-      private static final Object CLOSE = new Object();
-
       public AsyncLogger(PrintStream ps){
         this.ps = ps;
         start();   
@@ -92,16 +90,7 @@ public class Tracer implements Runnable {
       @Override public void run(){
         try {
           while(true){
-            Object message = queue.take();
-            if(message == CLOSE){
-              while((message = queue.poll()) != null){
-                if(message != CLOSE){
-                  printMessage(message);
-                }
-              }
-              break;
-            }
-            printMessage(message);      
+            printMessage(queue.take());      
           }
         } catch (InterruptedException interrupt){
         }
@@ -109,10 +98,6 @@ public class Tracer implements Runnable {
 
       public void log(Object message){
         queue.add(message);
-      }
-
-      public void close(){
-        queue.add(CLOSE);
       }
     } 
 
