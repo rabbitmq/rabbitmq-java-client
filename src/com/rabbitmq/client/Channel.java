@@ -61,7 +61,7 @@ import com.rabbitmq.client.AMQP.Tx;
  *
  */
 
-public interface Channel extends ShutdownNotifier{
+public interface Channel extends ShutdownNotifier {
     /**
      * Retrieve this channel's channel number.
      * @return the channel number
