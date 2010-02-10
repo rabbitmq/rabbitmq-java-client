@@ -70,35 +70,35 @@ public class Tracer implements Runnable {
         .booleanValue();
 
     static class AsyncLogger extends Thread{
-      final PrintStream ps;
-      final LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
-      public AsyncLogger(PrintStream ps){
-        this.ps = ps;
-        start();   
-      }
-
-      void printMessage(Object message){
-        if(message instanceof Throwable){
-          ((Throwable)message).printStackTrace(ps);    
-        } else if (message instanceof String){
-          ps.println(message);       
-        } else {
-          throw new RuntimeException("Unrecognised object " + message);
+        final PrintStream ps;
+        final LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
+        public AsyncLogger(PrintStream ps){
+            this.ps = ps;
+            start();   
         }
-      }
 
-      @Override public void run(){
-        try {
-          while(true){
-            printMessage(queue.take());      
-          }
-        } catch (InterruptedException interrupt){
+        void printMessage(Object message){
+            if(message instanceof Throwable){
+                ((Throwable)message).printStackTrace(ps);    
+            } else if (message instanceof String){
+                ps.println(message);          
+            } else {
+                throw new RuntimeException("Unrecognised object " + message);
+            }
         }
-      }
 
-      public void log(Object message){
-        queue.add(message);
-      }
+        @Override public void run(){
+            try {
+                while(true){
+                    printMessage(queue.take());        
+                }
+            } catch (InterruptedException interrupt){
+            }
+        }
+
+        public void log(Object message){
+            queue.add(message);
+        }
     } 
 
     public static void main(String[] args) {
