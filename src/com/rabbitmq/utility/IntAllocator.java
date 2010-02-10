@@ -37,9 +37,9 @@ import java.util.Arrays;
  */
 public class IntAllocator{
 
-    // Invariant: Sorted in order of first element. 
-    // Invariant: Intervals are non-overlapping, non-adjacent. 
-    // This could really use being a balanced binary tree. However for normal 
+    // Invariant: Sorted in order of first element.
+    // Invariant: Intervals are non-overlapping, non-adjacent.
+    // This could really use being a balanced binary tree. However for normal
     // usages it doesn't actually matter.
     private IntervalList base;
 
@@ -116,12 +116,12 @@ public class IntAllocator{
 
 
     /**
-    * Creates an IntAllocator allocating integer IDs within the inclusive range 
+    * Creates an IntAllocator allocating integer IDs within the inclusive range
     * [start, end]
     */
     public IntAllocator(int start, int end){
-        if(start > end) 
-            throw new IllegalArgumentException("illegal range [" + start    + 
+        if(start > end)
+            throw new IllegalArgumentException("illegal range [" + start    +
               ", " + end + "]");
 
         // Fairly arbitrary heuristic for a good size for the unsorted set.
@@ -148,7 +148,7 @@ public class IntAllocator{
     /**
      * Make the provided integer available for allocation again. This operation
      * runs in amortized O(sqrt(range size)) time: About every sqrt(range size)
-     * operations    will take O(range_size + number of intervals) to complete 
+     * operations    will take O(range_size + number of intervals) to complete
      * and the rest run in constant time.
      *
      * No error checking is performed, so if you double free or free an integer
@@ -162,11 +162,11 @@ public class IntAllocator{
     }
 
     /**
-     * Attempt to reserve the provided ID as if it had been allocated. Returns 
+     * Attempt to reserve the provided ID as if it had been allocated. Returns
      * true if it is available, false otherwise.
      *
-     * This operation runs in O(id) in the worst case scenario, though it can 
-     * usually be expected to perform better than that unless a great deal of 
+     * This operation runs in O(id) in the worst case scenario, though it can
+     * usually be expected to perform better than that unless a great deal of
      * fragmentation has occurred.
      */
     public boolean reserve(int id){

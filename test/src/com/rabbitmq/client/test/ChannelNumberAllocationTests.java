@@ -4,7 +4,7 @@ import com.rabbitmq.client.*;
 import junit.framework.TestCase;
 import java.util.*;
 
-public class ChannelNumberAllocationTests extends TestCase{  
+public class ChannelNumberAllocationTests extends TestCase{
   static int CHANNEL_COUNT = 100;
   static Comparator<Channel> COMPARATOR = new Comparator<Channel>(){
     public int compare(Channel x, Channel y){
@@ -64,7 +64,7 @@ public class ChannelNumberAllocationTests extends TestCase{
 
   public void testAllocateAfterManualAssign() throws Exception{
     connection.createChannel(10);
-    
+
     for(int i = 0; i < 20; i++)
         assertTrue(10 != connection.createChannel().getChannelNumber());
   }
