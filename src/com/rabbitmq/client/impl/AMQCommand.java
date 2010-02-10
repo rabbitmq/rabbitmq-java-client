@@ -207,7 +207,8 @@ public class AMQCommand implements Command {
         byte[] body = getContentBody();
         String contentStr;
         try {
-            contentStr = suppressBody ? (body.length + " bytes of payload") : ("\"" + new String(body) + "\"");
+            contentStr = suppressBody ? (body.length + " bytes of payload") :
+                ("\"" + new String(body) + "\"");
         } catch (Exception e) {
             contentStr = "|" + body.length + "|";
         }
