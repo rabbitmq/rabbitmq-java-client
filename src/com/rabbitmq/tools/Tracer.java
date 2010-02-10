@@ -71,6 +71,7 @@ public class Tracer implements Runnable {
 
     final static int LOG_QUEUE_SIZE = 1024 * 1024;
     final static int BUFFER_SIZE = 10 * 1024 * 1024;
+    final static int MAX_TIME_BETWEEN_FLUSHES = 1000;
 
     private static class AsyncLogger extends Thread{
         final PrintStream ps;
@@ -90,9 +91,19 @@ public class Tracer implements Runnable {
             }
         }
 
+        long lastFlush = System.currentTimeMillis();
+        void maybeFlush(){
+          long now = System.currentTimeMillis();
+          if(now - lastFlush > MAX_TIME_BETWEEN_FLUSHES){
+            ps.flush();
+            lastFlush = now;
+          }
+        }
+
         @Override public void run(){
             try {
                 while(true){
+                    maybeFlush();
                     Object message = queue.poll(50, TimeUnit.MILLISECONDS);
                     if(message != null) printMessage(message);
                     else ps.flush();
