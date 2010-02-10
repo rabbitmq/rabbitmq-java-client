@@ -30,6 +30,8 @@
 //
 package com.rabbitmq.utility;
 
+import java.util.Arrays;
+
 /**
  * A class for allocating integer IDs in a given range.
  */
