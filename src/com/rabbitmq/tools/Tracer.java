@@ -72,13 +72,26 @@ public class Tracer implements Runnable {
     final static int LOG_QUEUE_SIZE = 1024 * 1024;
     final static int BUFFER_SIZE = 10 * 1024 * 1024;
     final static int MAX_TIME_BETWEEN_FLUSHES = 1000;
+    final static Object FLUSH = new Object();
 
     private static class AsyncLogger extends Thread{
         final PrintStream ps;
         final BlockingQueue<Object> queue = new ArrayBlockingQueue<Object>(LOG_QUEUE_SIZE, true);
         AsyncLogger(PrintStream ps){
             this.ps = new PrintStream(new BufferedOutputStream(ps, BUFFER_SIZE), false);
-            start();   
+            start(); 
+
+            new Thread(){
+                @Override public void run(){
+                    while(true){
+                        try { 
+                            Thread.sleep(MAX_TIME_BETWEEN_FLUSHES); 
+                            queue.add(FLUSH);
+                        } catch(InterruptedException e) { }
+                    }
+            
+                }
+            }.start();  
         }
 
         void printMessage(Object message){
@@ -91,23 +104,12 @@ public class Tracer implements Runnable {
             }
         }
 
-        long lastFlush = System.currentTimeMillis();
-        void maybeFlush(){
-          long now = System.currentTimeMillis();
-          if(now - lastFlush > MAX_TIME_BETWEEN_FLUSHES){
-            ps.flush();
-            lastFlush = now;
-          }
-        }
-
         @Override public void run(){
             try {
                 while(true){
-                    maybeFlush();
-                    Object message = queue.poll(50, TimeUnit.MILLISECONDS);
-                    if(message != null) printMessage(message);
-                    else ps.flush();
-                    
+                    Object message = queue.take();
+                    if(message == FLUSH) ps.flush();
+                    else printMessage(message);
                 }
             } catch (InterruptedException interrupt){
             }
