@@ -200,10 +200,15 @@ public class AMQCommand implements Command {
     }
 
     @Override public String toString() {
+        return toString(false);
+    }
+
+    public String toString(boolean suppressBody){
         byte[] body = getContentBody();
         String contentStr;
         try {
-            contentStr = "\"" + new String(body) + "\"";
+            contentStr = suppressBody ? (body.length + " bytes of payload") :
+                ("\"" + new String(body) + "\"");
         } catch (Exception e) {
             contentStr = "|" + body.length + "|";
         }
