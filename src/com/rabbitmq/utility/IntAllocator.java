@@ -30,8 +30,6 @@
 //
 package com.rabbitmq.utility;
 
-import java.util.*;
-
 /**
  * A class for allocating integer IDs in a given range. 
  */ 
@@ -40,7 +38,7 @@ public class IntAllocator{
   // Invariant: Sorted in order of first element. Non-overlapping, non-adjacent.
   // This could really use being a balanced binary tree. However for normal usages 
   // it doesn't actually matter.
-  private LinkedList<Interval> intervals = new LinkedList<Interval>();
+  private IntervalList base;
 
   private final int[] unsorted;
   private int unsortedCount = 0;
@@ -48,27 +46,81 @@ public class IntAllocator{
   /** 
    * A class representing an inclusive interval from start to end.
    */
-  private static class Interval{
-    Interval(int start, int end){
+  private static class IntervalList{
+    IntervalList(int start, int end){
       this.start = start;
       this.end = end;
     }
 
     int start;
     int end;
+    IntervalList next;
 
     int length(){ return end - start + 1; } 
   }
 
-  /** 
-   * Creates an IntAllocator allocating integer IDs within the inclusive range [start, end]
+  /** Destructively merge two IntervalLists.
+   * Invariant: None of the Intervals in the two lists may overlap
+   * intervals in this list.
    */
-  public IntAllocator(int start, int end){
-    if(start > end) throw new IllegalArgumentException("illegal range [" + start  +", " + end + "]");
+  public static IntervalList merge(IntervalList x, IntervalList y){ 
+    if(x == null) return y;
+    if(y == null) return x;
 
-    // Fairly arbitrary heuristic for a good size for the unsorted set.
-    unsorted = new int[Math.max(32, (int)Math.sqrt(end - start))];
-    intervals.add(new Interval(start, end));
+    if(x.end > y.start) return merge(y, x);
+
+    // We now have x, y non-null and x.End < y.Start.
+    if(y.start == x.end + 1){
+      // The two intervals adjoin. Merge them into one and then
+      // merge the tails.
+      x.end = y.end;
+      x.next = merge(x.next, y.next);
+      return x;
+    }
+
+    // y belongs in the tail of x.
+
+    x.next = merge(y, x.next);
+    return x;
+  }
+
+
+  public static IntervalList fromArray(int[] xs, int length){
+    Arrays.sort(xs, 0, length);
+
+    IntervalList result = null;
+    IntervalList current = null;
+
+    int i = 0;
+    while(i < length){
+      int start = i;
+      while((i < length - 1) && (xs[i + 1] == xs[i] + 1))
+        i++;
+
+      IntervalList interval = new IntervalList(xs[start], xs[i]);
+
+      if(result == null){
+          result = interval;
+          current = interval;
+      } else {
+          current.next = interval;
+          current = interval;
+      }
+        i++;
+    }
+    return result;
+  }
+
+
+  /** 
+  * Creates an IntAllocator allocating integer IDs within the inclusive range [start, end]
+  */
+  public IntAllocator(int start, int end){
+      if(start > end) throw new IllegalArgumentException("illegal range [" + start  +", " + end + "]");
+
+      // Fairly arbitrary heuristic for a good size for the unsorted set.
+      unsorted = new int[Math.max(32, (int)Math.sqrt(end - start))];
+      base = new IntervalList(start, end);
   }
 
   /**
@@ -78,10 +130,10 @@ public class IntAllocator{
   public int allocate(){
     if(unsortedCount > 0){
       return unsorted[--unsortedCount];
-    } else if (!intervals.isEmpty()) {
-      Interval first = intervals.getFirst();
-      if(first.length() == 1) intervals.removeFirst();
-      return first.start++; 
+    } else if (base != null){
+      IntervalList source = base;
+      if(base.length() == 1) base = base.next;
+      return source.start++; 
     } else {
       return -1;
     }
@@ -113,73 +165,37 @@ public class IntAllocator{
    */
   public boolean reserve(int id){
     flush();
-    ListIterator<Interval> it = intervals.listIterator();
 
-    while(it.hasNext()){
-      Interval i = it.next();
-      if(i.start <= id && id <= i.end){
-        if(i.length() == 1) it.remove();
-        else if(i.start == id) i.start++;
-        else if(i.end == id) i.end--;
-        else {
-          it.add(new Interval(id + 1, i.end));
-          i.end = id - 1;
-        }
-        return true;
-      }
+    IntervalList current = base;
+
+    while(current != null && current.end < id){
+      current = current.next;
     }
 
-    return false;
+    if(current == null) return false;
+    if(current.start > id) return false;
+    
+    if(current.end == id)
+        current.end--;
+    else if(current.start == id)
+        current.start++;
+    else {
+        // The ID is in the middle of this interval. 
+        // We need to split the interval into two.
+        IntervalList rest = new IntervalList(id + 1, current.end);
+        current.end = id - 1;
+        rest.next = current.next;
+        current.next = rest;
+    }
+
+    return true;
   }
 
   public void flush(){
     if(unsortedCount == 0) return;
   
-    Arrays.sort(unsorted, 0, unsortedCount);
-   
-    ListIterator<Interval> it = intervals.listIterator();
-
-    int i = 0;
-    while(i < unsortedCount){
-      int start = i;
-      while((i < unsortedCount - 1) && (unsorted[i + 1] == unsorted[i] + 1))
-        i++;
-
-      Interval interval = new Interval(unsorted[start], unsorted[i]);
-
-      // Scan to an appropriate point in the list to insert this interval
-      // this may well be the end
-      while(it.hasNext()){
-        if(it.next().start > interval.end){
-          it.previous();
-          break;
-        }
-      }
-  
-      it.add(interval);
-      i++;
-    }
-
-    normalize();
+    base = merge(base, fromArray(unsorted, unsortedCount));
     unsortedCount = 0; 
-  }
-
-  private void normalize(){
-    if(intervals.isEmpty()) return;
-    Iterator<Interval> it = intervals.iterator();
-
-    Interval trailing, leading;
-    leading = it.next();
-    while(it.hasNext()){
-      trailing = leading;
-      leading = it.next();
-
-      if(leading.start == trailing.end + 1) {
-        it.remove(); 
-        trailing.end = leading.end;
-        leading = trailing;
-      }
-    } 
   }
 
   @Override public String toString(){
@@ -188,11 +204,11 @@ public class IntAllocator{
     builder.append("IntAllocator{");
 
     builder.append("intervals = [");
-    Iterator<Interval> it = intervals.iterator();
-    while(it.hasNext()){
-      Interval i = it.next();
-      builder.append(i.start).append("..").append(i.end);
-      if(it.hasNext()) builder.append(", ");     
+    IntervalList it = base;
+    while(it != null){
+      builder.append(it.start).append("..").append(it.end);
+      if(it.next != null) builder.append(", ");     
+      it = it.next;      
     }
     builder.append("]");
 
