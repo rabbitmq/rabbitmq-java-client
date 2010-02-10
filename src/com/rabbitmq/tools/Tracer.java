@@ -31,15 +31,11 @@
 
 package com.rabbitmq.tools;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.AMQCommand;
@@ -73,11 +69,14 @@ public class Tracer implements Runnable {
         new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.SILENT_MODE"))
         .booleanValue();
 
+    final static int LOG_QUEUE_SIZE = 1024 * 1024;
+    final static int BUFFER_SIZE = 10 * 1024 * 1024;
+
     private static class AsyncLogger extends Thread{
         final PrintStream ps;
-        final LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<Object>();
+        final BlockingQueue<Object> queue = new ArrayBlockingQueue<Object>(LOG_QUEUE_SIZE, true);
         AsyncLogger(PrintStream ps){
-            this.ps = ps;
+            this.ps = new PrintStream(new BufferedOutputStream(ps, BUFFER_SIZE), false);
             start();   
         }
 
@@ -94,14 +93,21 @@ public class Tracer implements Runnable {
         @Override public void run(){
             try {
                 while(true){
-                    printMessage(queue.take());        
+                    Object message = queue.poll(50, TimeUnit.MILLISECONDS);
+                    if(message != null) printMessage(message);
+                    else ps.flush();
+                    
                 }
             } catch (InterruptedException interrupt){
             }
         }
 
         void log(Object message){
-            queue.add(message);
+            try {            
+              queue.put(message);
+            } catch(InterruptedException ex){
+              throw new RuntimeException(ex);
+            }
         }
     } 
 
