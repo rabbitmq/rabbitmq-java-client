@@ -134,7 +134,7 @@ public class QueueingConsumer extends DefaultConsumer {
     private Delivery handle(Delivery delivery)
     {
       if(delivery == POISON || (delivery == null && _shutdown != null)){
-        _queue.add(POISON);
+        if(delivery == POISON) _queue.add(POISON);
         throw Utility.fixStackTrace(_shutdown);
       }
       return delivery;
