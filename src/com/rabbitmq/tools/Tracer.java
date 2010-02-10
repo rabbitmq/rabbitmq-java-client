@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -53,21 +53,18 @@ import com.rabbitmq.utility.BlockingCell;
  */
 public class Tracer implements Runnable {
     public static final boolean WITHHOLD_INBOUND_HEARTBEATS =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_INBOUND_HEARTBEATS"))
-        .booleanValue();
+        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_INBOUND_HEARTBEATS"));
     public static final boolean WITHHOLD_OUTBOUND_HEARTBEATS =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_OUTBOUND_HEARTBEATS"))
-        .booleanValue();
+        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_OUTBOUND_HEARTBEATS"));
     public static final boolean NO_ASSEMBLE_FRAMES =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES"))
-        .booleanValue();
+        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES"));
     public static final boolean NO_DECODE_FRAMES =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"))
-        .booleanValue();
+        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"));
+    public static final boolean SUPPRESS_COMMAND_BODIES =
+        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.SUPPRESS_COMMAND_BODIES"));
 
     public static final boolean SILENT_MODE =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.SILENT_MODE"))
-        .booleanValue();
+        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.SILENT_MODE"));
 
     final static int LOG_QUEUE_SIZE = 1024 * 1024;
     final static int BUFFER_SIZE = 10 * 1024 * 1024;
@@ -139,6 +136,8 @@ public class Tracer implements Runnable {
                            com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES);
         System.out.println("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES = " +
                            com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES);
+        System.out.println("com.rabbitmq.tools.Tracer.SUPPRESS_COMMAND_BODIES = " +
+                           com.rabbitmq.tools.Tracer.SUPPRESS_COMMAND_BODIES);
 
         try {
             ServerSocket server = new ServerSocket(listenPort);
@@ -296,8 +295,8 @@ public class Tracer implements Runnable {
                         }
                         AMQCommand cmd = c.handleFrame(f);
                         if (cmd != null) {
-                            report(f.channel, cmd);
-                            assemblers.remove(f.channel);
+                            report(f.channel, cmd.toString(SUPPRESS_COMMAND_BODIES));
+                            assemblers.remove(f.channel); 
                         }
                     }
                 }
