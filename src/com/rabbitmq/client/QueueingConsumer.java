@@ -76,6 +76,7 @@ public class QueueingConsumer extends DefaultConsumer {
                                byte[] body)
         throws IOException
     {
+        checkShutdown();
         this._queue.add(new Delivery(envelope, properties, body));
     }
 
@@ -148,7 +149,6 @@ public class QueueingConsumer extends DefaultConsumer {
     public Delivery nextDelivery()
         throws InterruptedException, ShutdownSignalException
     {
-        checkShutdown();
         return handle(_queue.take());
     }
 
