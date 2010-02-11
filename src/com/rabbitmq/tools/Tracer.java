@@ -52,19 +52,23 @@ import com.rabbitmq.utility.BlockingCell;
  * printed to stdout.
  */
 public class Tracer implements Runnable {
-    public static final boolean WITHHOLD_INBOUND_HEARTBEATS =
-        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_INBOUND_HEARTBEATS"));
-    public static final boolean WITHHOLD_OUTBOUND_HEARTBEATS =
-        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_OUTBOUND_HEARTBEATS"));
-    public static final boolean NO_ASSEMBLE_FRAMES =
-        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES"));
-    public static final boolean NO_DECODE_FRAMES =
-        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"));
-    public static final boolean SUPPRESS_COMMAND_BODIES =
-        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.SUPPRESS_COMMAND_BODIES"));
+    private static boolean property(String property){
+        return Boolean.parseBoolean(System.getProperty(
+            "com.rabbitmq.tools.Tracer." + property)); 
+    }
 
+    public static final boolean WITHHOLD_INBOUND_HEARTBEATS =
+        property("WITHHOLD_INBOUND_HEARTBEATS");
+    public static final boolean WITHHOLD_OUTBOUND_HEARTBEATS =
+        property("WITHHOLD_OUTBOUND_HEARTBEATS");
+    public static final boolean NO_ASSEMBLE_FRAMES =
+        property("NO_ASSEMBLE_FRAMES");
+    public static final boolean NO_DECODE_FRAMES =
+        property("NO_DECODE_FRAMES");
+    public static final boolean SUPPRESS_COMMAND_BODIES =
+       property("SUPPRESS_COMMAND_BODIES");
     public static final boolean SILENT_MODE =
-        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.SILENT_MODE"));
+        property("SILENT_MODE");
 
     final static int LOG_QUEUE_SIZE = 1024 * 1024;
     final static int BUFFER_SIZE = 10 * 1024 * 1024;
