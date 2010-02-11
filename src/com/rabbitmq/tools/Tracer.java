@@ -55,7 +55,7 @@ import com.rabbitmq.utility.Utility;
 public class Tracer implements Runnable {
     private static boolean property(String property){
         return Boolean.parseBoolean(System.getProperty(
-            "com.rabbitmq.tools.Tracer." + property)); 
+            "com.rabbitmq.tools.Tracer." + property));
     }
 
     public static final boolean WITHHOLD_INBOUND_HEARTBEATS =
@@ -212,7 +212,7 @@ public class Tracer implements Runnable {
     }
 
     public void log(String message){
-        logger.log("" + System.currentTimeMillis() + ": conn#" 
+        logger.log("" + System.currentTimeMillis() + ": conn#"
                       + id + " " + message);
     }
 
@@ -243,8 +243,8 @@ public class Tracer implements Runnable {
         }
 
         public void report(int channel, Object object) {
-            Tracer.this.log("ch#" + channel 
-                                  + (inBound ? " -> " : " <- ") 
+            Tracer.this.log("ch#" + channel
+                                  + (inBound ? " -> " : " <- ")
                                   + object);
         }
 
@@ -307,7 +307,7 @@ public class Tracer implements Runnable {
                         AMQCommand cmd = c.handleFrame(f);
                         if (cmd != null) {
                             report(f.channel, cmd.toString(SUPPRESS_COMMAND_BODIES));
-                            assemblers.remove(f.channel); 
+                            assemblers.remove(f.channel);
                         }
                     }
                 }
