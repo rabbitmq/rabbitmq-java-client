@@ -47,6 +47,7 @@ public class ClientTests extends TestCase {
         suite.addTestSuite(Bug20004Test.class);
         suite.addTestSuite(CloseInMainLoop.class);
         suite.addTestSuite(ChannelNumberAllocationTests.class);
+        suite.addTestSuite(QueueingConsumerShutdownTests.class);
         return suite;
     }
 }
