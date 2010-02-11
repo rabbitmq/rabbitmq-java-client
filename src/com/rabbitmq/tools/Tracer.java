@@ -43,6 +43,7 @@ import com.rabbitmq.client.impl.AMQContentHeader;
 import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.utility.BlockingCell;
+import com.rabbitmq.utility.Utility;
 
 
 /**
@@ -52,35 +53,39 @@ import com.rabbitmq.utility.BlockingCell;
  * printed to stdout.
  */
 public class Tracer implements Runnable {
-    public static final boolean WITHHOLD_INBOUND_HEARTBEATS =
-        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_INBOUND_HEARTBEATS"));
-    public static final boolean WITHHOLD_OUTBOUND_HEARTBEATS =
-        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_OUTBOUND_HEARTBEATS"));
-    public static final boolean NO_ASSEMBLE_FRAMES =
-        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES"));
-    public static final boolean NO_DECODE_FRAMES =
-        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"));
-    public static final boolean SUPPRESS_COMMAND_BODIES =
-        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.SUPPRESS_COMMAND_BODIES"));
+    private static boolean property(String property) {
+        return Boolean.parseBoolean(System.getProperty(
+            "com.rabbitmq.tools.Tracer." + property));
+    }
 
+    public static final boolean WITHHOLD_INBOUND_HEARTBEATS =
+        property("WITHHOLD_INBOUND_HEARTBEATS");
+    public static final boolean WITHHOLD_OUTBOUND_HEARTBEATS =
+        property("WITHHOLD_OUTBOUND_HEARTBEATS");
+    public static final boolean NO_ASSEMBLE_FRAMES =
+        property("NO_ASSEMBLE_FRAMES");
+    public static final boolean NO_DECODE_FRAMES =
+        property("NO_DECODE_FRAMES");
+    public static final boolean SUPPRESS_COMMAND_BODIES =
+       property("SUPPRESS_COMMAND_BODIES");
     public static final boolean SILENT_MODE =
-        Boolean.parseBoolean(System.getProperty("com.rabbitmq.tools.Tracer.SILENT_MODE"));
+        property("SILENT_MODE");
 
     final static int LOG_QUEUE_SIZE = 1024 * 1024;
     final static int BUFFER_SIZE = 10 * 1024 * 1024;
     final static int MAX_TIME_BETWEEN_FLUSHES = 1000;
     final static Object FLUSH = new Object();
 
-    private static class AsyncLogger extends Thread{
+    private static class AsyncLogger extends Thread {
         final PrintStream ps;
         final BlockingQueue<Object> queue = new ArrayBlockingQueue<Object>(LOG_QUEUE_SIZE, true);
-        AsyncLogger(PrintStream ps){
+        AsyncLogger(PrintStream ps) {
             this.ps = new PrintStream(new BufferedOutputStream(ps, BUFFER_SIZE), false);
             start();
 
-            new Thread(){
-                @Override public void run(){
-                    while(true){
+            new Thread() {
+                @Override public void run() {
+                    while(true) {
                         try {
                             Thread.sleep(MAX_TIME_BETWEEN_FLUSHES);
                             queue.add(FLUSH);
@@ -91,31 +96,21 @@ public class Tracer implements Runnable {
             }.start();
         }
 
-        void printMessage(Object message){
-            if(message instanceof Throwable){
-                ((Throwable)message).printStackTrace(ps);
-            } else if (message instanceof String){
-                ps.println(message);
-            } else {
-                throw new RuntimeException("Unrecognised object " + message);
-            }
-        }
-
-        @Override public void run(){
+        @Override public void run() {
             try {
-                while(true){
+                while(true) {
                     Object message = queue.take();
                     if(message == FLUSH) ps.flush();
-                    else printMessage(message);
+                    else ps.println(message);
                 }
-            } catch (InterruptedException interrupt){
+            } catch (InterruptedException interrupt) {
             }
         }
 
-        void log(Object message){
+        void log(String message) {
             try {
               queue.put(message);
-            } catch(InterruptedException ex){
+            } catch(InterruptedException ex) {
               throw new RuntimeException(ex);
             }
         }
@@ -196,20 +191,29 @@ public class Tracer implements Runnable {
             new Thread(outHandler).start();
             Object result = w.uninterruptibleGet();
             if (result instanceof Exception) {
-                logger.log(result);
+                logException((Exception)result);
             }
         } catch (EOFException eofe) {
-            logger.log(eofe);
+            logException((Exception)eofe);
         } catch (IOException ioe) {
-            logger.log(ioe);
+            logException((Exception)ioe);
         } finally {
             try {
                 inSock.close();
                 outSock.close();
             } catch (IOException ioe2) {
-                logger.log(ioe2);
+                logException((Exception)ioe2);
             }
         }
+    }
+
+    public void log(String message) {
+        logger.log("" + System.currentTimeMillis() + ": conn#"
+                      + id + " " + message);
+    }
+
+    public void logException(Exception e) {
+        log("uncaught " + Utility.makeStackTrace(e));
     }
 
     public class DirectionHandler implements Runnable {
@@ -235,7 +239,9 @@ public class Tracer implements Runnable {
         }
 
         public void report(int channel, Object object) {
-            logger.log("" + System.currentTimeMillis() + ": conn#" + id + " ch#" + channel + (inBound ? " -> " : " <- ") + object);
+            Tracer.this.log("ch#" + channel
+                                  + (inBound ? " -> " : " <- ")
+                                  + object);
         }
 
         public void reportFrame(Frame f)
@@ -261,12 +267,13 @@ public class Tracer implements Runnable {
             }
         }
 
+
         public void doFrame() throws IOException {
             Frame f = readFrame();
 
             if (f != null) {
 
-                if(SILENT_MODE){
+                if(SILENT_MODE) {
                   f.writeTo(o);
                   return;
                 }
@@ -289,14 +296,14 @@ public class Tracer implements Runnable {
                         }
                     } else {
                         AMQCommand.Assembler c = assemblers.get(f.channel);
-                        if(c == null){
+                        if(c == null) {
                           c = AMQCommand.newAssembler();
                           assemblers.put(f.channel, c);
                         }
                         AMQCommand cmd = c.handleFrame(f);
                         if (cmd != null) {
                             report(f.channel, cmd.toString(SUPPRESS_COMMAND_BODIES));
-                            assemblers.remove(f.channel); 
+                            assemblers.remove(f.channel);
                         }
                     }
                 }
