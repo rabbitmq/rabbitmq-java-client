@@ -43,6 +43,7 @@ import com.rabbitmq.client.impl.AMQContentHeader;
 import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.utility.BlockingCell;
+import com.rabbitmq.utility.Utility;
 
 
 /**
@@ -95,14 +96,8 @@ public class Tracer implements Runnable {
             }.start();
         }
 
-        void printMessage(Object message){
-            if(message instanceof Throwable){
-                ((Throwable)message).printStackTrace(ps);
-            } else if (message instanceof String){
-                ps.println(message);
-            } else {
-                throw new RuntimeException("Unrecognised object " + message);
-            }
+        void printMessage(String message){
+            ps.println(message);
         }
 
         @Override public void run(){
@@ -110,13 +105,13 @@ public class Tracer implements Runnable {
                 while(true){
                     Object message = queue.take();
                     if(message == FLUSH) ps.flush();
-                    else printMessage(message);
+                    else printMessage((String)message);
                 }
             } catch (InterruptedException interrupt){
             }
         }
 
-        void log(Object message){
+        void log(String message){
             try {
               queue.put(message);
             } catch(InterruptedException ex){
@@ -200,20 +195,29 @@ public class Tracer implements Runnable {
             new Thread(outHandler).start();
             Object result = w.uninterruptibleGet();
             if (result instanceof Exception) {
-                logger.log(result);
+                logException((Exception)result);
             }
         } catch (EOFException eofe) {
-            logger.log(eofe);
+            logException((Exception)eofe);
         } catch (IOException ioe) {
-            logger.log(ioe);
+            logException((Exception)ioe);
         } finally {
             try {
                 inSock.close();
                 outSock.close();
             } catch (IOException ioe2) {
-                logger.log(ioe2);
+                logException((Exception)ioe2);
             }
         }
+    }
+
+    public void log(String message){
+        logger.log("" + System.currentTimeMillis() + ": conn#" 
+                      + id + " " + message);
+    }
+
+    public void logException(Exception e){
+        log("uncaught " + Utility.makeStackTrace(e));
     }
 
     public class DirectionHandler implements Runnable {
@@ -239,7 +243,9 @@ public class Tracer implements Runnable {
         }
 
         public void report(int channel, Object object) {
-            logger.log("" + System.currentTimeMillis() + ": conn#" + id + " ch#" + channel + (inBound ? " -> " : " <- ") + object);
+            Tracer.this.log("ch#" + channel 
+                                  + (inBound ? " -> " : " <- ") 
+                                  + object);
         }
 
         public void reportFrame(Frame f)
@@ -264,6 +270,7 @@ public class Tracer implements Runnable {
               }
             }
         }
+
 
         public void doFrame() throws IOException {
             Frame f = readFrame();
