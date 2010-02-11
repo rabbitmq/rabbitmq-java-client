@@ -53,7 +53,7 @@ import com.rabbitmq.utility.Utility;
  * printed to stdout.
  */
 public class Tracer implements Runnable {
-    private static boolean property(String property){
+    private static boolean property(String property) {
         return Boolean.parseBoolean(System.getProperty(
             "com.rabbitmq.tools.Tracer." + property));
     }
@@ -76,16 +76,16 @@ public class Tracer implements Runnable {
     final static int MAX_TIME_BETWEEN_FLUSHES = 1000;
     final static Object FLUSH = new Object();
 
-    private static class AsyncLogger extends Thread{
+    private static class AsyncLogger extends Thread {
         final PrintStream ps;
         final BlockingQueue<Object> queue = new ArrayBlockingQueue<Object>(LOG_QUEUE_SIZE, true);
-        AsyncLogger(PrintStream ps){
+        AsyncLogger(PrintStream ps) {
             this.ps = new PrintStream(new BufferedOutputStream(ps, BUFFER_SIZE), false);
             start();
 
-            new Thread(){
-                @Override public void run(){
-                    while(true){
+            new Thread() {
+                @Override public void run() {
+                    while(true) {
                         try {
                             Thread.sleep(MAX_TIME_BETWEEN_FLUSHES);
                             queue.add(FLUSH);
@@ -96,25 +96,25 @@ public class Tracer implements Runnable {
             }.start();
         }
 
-        void printMessage(String message){
+        void printMessage(String message) {
             ps.println(message);
         }
 
-        @Override public void run(){
+        @Override public void run() {
             try {
-                while(true){
+                while(true) {
                     Object message = queue.take();
                     if(message == FLUSH) ps.flush();
                     else printMessage((String)message);
                 }
-            } catch (InterruptedException interrupt){
+            } catch (InterruptedException interrupt) {
             }
         }
 
-        void log(String message){
+        void log(String message) {
             try {
               queue.put(message);
-            } catch(InterruptedException ex){
+            } catch(InterruptedException ex) {
               throw new RuntimeException(ex);
             }
         }
@@ -211,12 +211,12 @@ public class Tracer implements Runnable {
         }
     }
 
-    public void log(String message){
+    public void log(String message) {
         logger.log("" + System.currentTimeMillis() + ": conn#"
                       + id + " " + message);
     }
 
-    public void logException(Exception e){
+    public void logException(Exception e) {
         log("uncaught " + Utility.makeStackTrace(e));
     }
 
@@ -277,7 +277,7 @@ public class Tracer implements Runnable {
 
             if (f != null) {
 
-                if(SILENT_MODE){
+                if(SILENT_MODE) {
                   f.writeTo(o);
                   return;
                 }
@@ -300,7 +300,7 @@ public class Tracer implements Runnable {
                         }
                     } else {
                         AMQCommand.Assembler c = assemblers.get(f.channel);
-                        if(c == null){
+                        if(c == null) {
                           c = AMQCommand.newAssembler();
                           assemblers.put(f.channel, c);
                         }
