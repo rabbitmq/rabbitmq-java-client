@@ -96,16 +96,12 @@ public class Tracer implements Runnable {
             }.start();
         }
 
-        void printMessage(String message) {
-            ps.println(message);
-        }
-
         @Override public void run() {
             try {
                 while(true) {
                     Object message = queue.take();
                     if(message == FLUSH) ps.flush();
-                    else printMessage((String)message);
+                    else ps.println(message);
                 }
             } catch (InterruptedException interrupt) {
             }
