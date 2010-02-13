@@ -28,55 +28,49 @@
 //
 //   Contributor(s): ______________________________________.
 //
+package com.rabbitmq.client.test;
 
-package com.rabbitmq.client.test.functional;
+import com.rabbitmq.client.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-import java.io.IOException;
+public class QueueingConsumerShutdownTests extends BrokerTestCase{
+  static final String QUEUE = "some-queue";
+  static final int THREADS = 5;
 
-public class PersisterRestart4 extends PersisterRestartBase
-{
+  public void testNThreadShutdown() throws Exception{
+    Channel channel = connection.createChannel();
+    final QueueingConsumer c = new QueueingConsumer(channel);
+    channel.queueDeclare(QUEUE);
+    channel.basicConsume(QUEUE, c);
+    final AtomicInteger count = new AtomicInteger(THREADS);
+    final CountDownLatch latch = new CountDownLatch(THREADS);
 
-    private static final String Q1 = "Restart4One";
-    private static final String Q2 = "Restart4Two";
-
-    protected void exercisePersister() 
-      throws IOException
-    {
-        basicPublishPersistent(Q1);
-        basicPublishVolatile(Q1);
-
-        basicPublishPersistent(Q2);
-        basicPublishVolatile(Q2);
+    for(int i = 0; i < THREADS; i++){
+      new Thread(){
+        @Override public void run(){
+          try {
+            while(true){
+              c.nextDelivery();
+            }
+          } catch (ShutdownSignalException sig) {
+            count.decrementAndGet();
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          } finally {
+            latch.countDown();
+          }
+        }
+      }.start();
     }
 
-    public void testRestart()
-        throws IOException, InterruptedException
-    {
-        declareDurableQueue(Q1);
-        declareDurableQueue(Q2);
-        channel.txSelect();
-        exercisePersister();
-        channel.txCommit();
-        exercisePersister();
-        forceSnapshot();
-        // delivering messages which are in the snapshot
-        channel.txCommit();
-        // Those will be in the incremental snapshot then
-        exercisePersister();
-        // but removed
-        channel.txRollback();
-        // Those will be in the incremental snapshot then
-        exercisePersister();
-        // and hopefully delivered
-        // That's three per queue in the end.
-        channel.txCommit();
+    connection.close();
 
-        restart();
-        
-        assertDelivered(Q1, 3);
-        assertDelivered(Q2, 3);
-        deleteQueue(Q2);
-        deleteQueue(Q1);
-    }
+    // Far longer than this could reasonably take
+    assertTrue(latch.await(5, TimeUnit.SECONDS));
+    assertEquals(0, count.get());
+  }
+
 
 }

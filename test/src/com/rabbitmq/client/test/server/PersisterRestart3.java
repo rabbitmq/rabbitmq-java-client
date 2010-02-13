@@ -18,65 +18,58 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
-public class PersisterRestart5 extends PersisterRestartBase
+public class PersisterRestart3 extends RestartBase
 {
 
-    private static final String Q1 = "Restart5One";
-    private static final String Q2 = "Restart5Two";
-    private static final String X = "Exchange5";
+    private static final String Q1 = "Restart3One";
+    private static final String Q2 = "Restart3Two";
 
-
-    protected void exercisePersister() 
+    protected void exercisePersister(String q) 
       throws IOException
     {
-        basicPublishPersistent(X, "foo.foo");
-        basicPublishVolatile(X, "foo.qux");
+        basicPublishPersistent(q);
+        basicPublishVolatile(q);
     }
 
     public void testRestart()
         throws IOException, InterruptedException
     {
-        declareDurableTopicExchange(X);
-        declareAndBindDurableQueue(Q1, X, "foo.*");
-        declareAndBindDurableQueue(Q2, X, "foo.*");
+        declareDurableQueue(Q1);
+        declareDurableQueue(Q2);
         channel.txSelect();
-        exercisePersister();
-        channel.txCommit();
-        exercisePersister();
+        exercisePersister(Q1);
+        exercisePersister(Q2);
         forceSnapshot();
-        // Delivering messages which are in the snapshot
-        channel.txCommit();
-        // Those will be in the incremental snapshot then
-        exercisePersister();
-        // but removed
+        // removing messages which are in the snapshot
         channel.txRollback();
         // Those will be in the incremental snapshot then
-        exercisePersister();
+        exercisePersister(Q1);
+        exercisePersister(Q2);
         // and hopefully delivered
+        // That's one persistent and one volatile per queue.
         channel.txCommit();
 
         restart();
         
-        assertDelivered(Q1, 3);
-        assertDelivered(Q2, 3);
+        assertDelivered(Q1, 1);
+        assertDelivered(Q2, 1);
         deleteQueue(Q2);
         deleteQueue(Q1);
-        deleteExchange(X);
     }
 
 }

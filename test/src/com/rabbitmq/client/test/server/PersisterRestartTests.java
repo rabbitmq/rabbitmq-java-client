@@ -18,32 +18,31 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test;
+package com.rabbitmq.client.test.server;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-public class AllTest extends TestCase {
+public class PersisterRestartTests extends TestCase {
     public static TestSuite suite() {
-        TestSuite suite = new TestSuite("all");
-        suite.addTest(TableTest.suite());
-        suite.addTest(BlockingCellTest.suite());
-        suite.addTest(TruncatedInputStreamTest.suite());
-        suite.addTest(AMQConnectionTest.suite());
-        suite.addTest(ValueOrExceptionTest.suite());
-        suite.addTest(BrokenFramesTest.suite());
-        suite.addTest(ClonePropertiesTest.suite());
+        TestSuite suite = new TestSuite("persister-restarts");
+        suite.addTestSuite(PersisterRestart1.class);
+        suite.addTestSuite(PersisterRestart2.class);
+        suite.addTestSuite(PersisterRestart3.class);
+        suite.addTestSuite(PersisterRestart4.class);
+        suite.addTestSuite(PersisterRestart5.class);
         return suite;
     }
+
 }

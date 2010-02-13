@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.utility.IntAllocator;
 
 /**
  * Manages a set of channels, indexed by channel number.
@@ -46,25 +47,37 @@ import com.rabbitmq.client.ShutdownSignalException;
 public class ChannelManager {
     /** Mapping from channel number to AMQChannel instance */
     private final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
+    private final IntAllocator channelNumberAllocator;
 
     /** Maximum channel number available on this connection. */
-    public int _channelMax = 0;
+    public final int _channelMax;
 
-    public synchronized int getChannelMax() {
-        return _channelMax;
+    public int getChannelMax(){
+      return _channelMax;
     }
 
-    public synchronized void setChannelMax(int value) {
-        _channelMax = value;
+    public ChannelManager(int channelMax){
+      if(channelMax == 0){
+        // The framing encoding only allows for unsigned 16-bit integers for the channel number
+        channelMax = (1 << 16) - 1;
+      }
+
+      _channelMax = channelMax;
+      channelNumberAllocator = new IntAllocator(1, channelMax);
     }
 
+    
     /**
      * Public API - Looks up an existing channel associated with this connection.
      * @param channelNumber the number of the required channel
      * @return the relevant channel descriptor
+     * @throws UnknownChannelException if there is no Channel associated with the 
+     *         required channel number.
      */
     public ChannelN getChannel(int channelNumber) {
-        return _channelMap.get(channelNumber);
+        ChannelN result = _channelMap.get(channelNumber);
+        if(result == null) throw new UnknownChannelException(channelNumber);
+        return result;
     }
 
     public void handleSignal(ShutdownSignalException signal) {
@@ -79,43 +92,41 @@ public class ChannelManager {
     }
 
     public synchronized ChannelN createChannel(AMQConnection connection) throws IOException {
-        int channelNumber = allocateChannelNumber(getChannelMax());
+        int channelNumber = channelNumberAllocator.allocate();
         if (channelNumber == -1) {
             return null;
         }
-        return createChannel(connection, channelNumber);
+        return createChannelInternal(connection, channelNumber);
     }
 
     public synchronized ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
-        ChannelN ch = new ChannelN(connection, channelNumber);
+        if(channelNumberAllocator.reserve(channelNumber)) 
+            return createChannelInternal(connection, channelNumber);
+        else
+            return null;
+    }
+
+    private synchronized ChannelN createChannelInternal(AMQConnection connection, int channelNumber) throws IOException {
         if (_channelMap.containsKey(channelNumber)) {
-            return null; // That number's already allocated! Can't do it
+            // That number's already allocated! Can't do it
+            // This should never happen unless something has gone
+            // badly wrong with our implementation. 
+            throw new IllegalStateException("We have attempted to"
+              + "create a channel with a number that is already in"
+              + "use. This should never happen. Please report this as a bug."); 
         }
+        ChannelN ch = new ChannelN(connection, channelNumber);
         addChannel(ch);
         ch.open(); // now that it's been added to our internal tables
         return ch;
-    }
-
-    public synchronized int allocateChannelNumber(int maxChannels) {
-        if (maxChannels == 0) {
-            // The framing encoding only allows for unsigned 16-bit integers for the channel number
-            maxChannels = (1 << 16) - 1;
-        }
-        int channelNumber = -1;
-        for (int candidate = 1; candidate <= maxChannels; candidate++) {
-            if (!_channelMap.containsKey(candidate)) {
-                channelNumber = candidate;
-                break;
-            }
-        }
-        return channelNumber;
     }
 
     private void addChannel(ChannelN chan) {
         _channelMap.put(chan.getChannelNumber(), chan);
     }
 
-    public void disconnectChannel(int channelNumber) {
+    public synchronized void disconnectChannel(int channelNumber) {
         _channelMap.remove(channelNumber);
+        channelNumberAllocator.free(channelNumber);
     }
 }

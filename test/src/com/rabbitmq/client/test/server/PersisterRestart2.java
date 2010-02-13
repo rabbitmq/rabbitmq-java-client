@@ -18,26 +18,26 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
-public class PersisterRestart3 extends PersisterRestartBase
+public class PersisterRestart2 extends RestartBase
 {
 
-    private static final String Q1 = "Restart3One";
-    private static final String Q2 = "Restart3Two";
+    private static final String Q1 = "Restart2One";
+    private static final String Q2 = "Restart2Two";
 
     protected void exercisePersister(String q) 
       throws IOException
@@ -51,23 +51,17 @@ public class PersisterRestart3 extends PersisterRestartBase
     {
         declareDurableQueue(Q1);
         declareDurableQueue(Q2);
-        channel.txSelect();
         exercisePersister(Q1);
         exercisePersister(Q2);
         forceSnapshot();
-        // removing messages which are in the snapshot
-        channel.txRollback();
         // Those will be in the incremental snapshot then
         exercisePersister(Q1);
         exercisePersister(Q2);
-        // and hopefully delivered
-        // That's one persistent and one volatile per queue.
-        channel.txCommit();
-
+        
         restart();
         
-        assertDelivered(Q1, 1);
-        assertDelivered(Q2, 1);
+        assertDelivered(Q1, 2);
+        assertDelivered(Q2, 2);
         deleteQueue(Q2);
         deleteQueue(Q1);
     }

@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -109,7 +109,7 @@ public class MulticastMain {
                 if (prefetchCount > 0) channel.basicQos(prefetchCount);
                 channel.basicConsume(queueName, autoAck, consumer);
                 channel.queueBind(queueName, exchangeName, id);
-                Thread t = 
+                Thread t =
                     new Thread(new Consumer(consumer, id,
                                             consumerTxSize, autoAck,
                                             stats, timeLimit));
@@ -125,7 +125,7 @@ public class MulticastMain {
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
-                Thread t = 
+                Thread t =
                     new Thread(new Producer(channel, exchangeName, id,
                                             flags, producerTxSize,
                                             1000L * samplingInterval,
@@ -361,7 +361,7 @@ public class MulticastMain {
                     int msgSeq = d.readInt();
                     long msgNano = d.readLong();
                     long nano = System.nanoTime();
-                    
+
                     Envelope envelope = delivery.getEnvelope();
 
                     if (!autoAck) {
@@ -422,7 +422,7 @@ public class MulticastMain {
 
         public synchronized void collectStats(long now, long latency) {
             msgCount++;
-            
+
             if (latency > 0) {
                 minLatency = Math.min(minLatency, latency);
                 maxLatency = Math.max(maxLatency, latency);
@@ -437,15 +437,15 @@ public class MulticastMain {
                                    " msg/s" +
                                    (latencyCount > 0 ?
                                     ", min/avg/max latency: " +
-                                    minLatency/1000L + "/" + 
+                                    minLatency/1000L + "/" +
                                     cumulativeLatency / (1000L * latencyCount) + "/" +
                                     maxLatency/1000L + " microseconds" :
                                     ""));
                 reset(now);
             }
-            
+
         }
-        
+
     }
 
 }

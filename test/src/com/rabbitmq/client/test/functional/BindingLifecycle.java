@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -37,8 +37,6 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 
-import com.rabbitmq.tools.Host;
-
 import java.io.IOException;
 
 /**
@@ -50,166 +48,7 @@ import java.io.IOException;
  * handler code in the server.
  *
  */
-public class BindingLifecycle extends PersisterRestartBase {
-
-    protected static final byte[] payload =
-        (""+ System.currentTimeMillis()).getBytes();
-
-    private static final int N = 1;
-
-    protected static final String Q = "Q-" + System.currentTimeMillis();
-    protected static final String X = "X-" + System.currentTimeMillis();
-    protected static final String K = "K-" + System.currentTimeMillis();
-
-    public Connection secondaryConnection;
-    public Channel secondaryChannel;
-
-    @Override public void openConnection() throws IOException {
-        super.openConnection();
-        if (secondaryConnection == null) {
-            try {
-                secondaryConnection = connectionFactory.newConnection("localhost", 5673);
-            } catch (IOException e) {
-                // just use a single node
-            }
-        }
-    }
-
-    @Override public void closeConnection() throws IOException {
-        if (secondaryConnection != null) {
-            secondaryConnection.abort();
-            secondaryConnection = null;
-        }
-        super.closeConnection();
-    }
-
-    @Override public void openChannel() throws IOException {
-        if (secondaryConnection != null) {
-            secondaryChannel = secondaryConnection.createChannel();
-        }
-        super.openChannel();
-    }
-
-    @Override public void closeChannel() throws IOException {
-        if (secondaryChannel != null) {
-            secondaryChannel.abort();
-            secondaryChannel = null;
-        }
-        super.closeChannel();
-    }
-
-    @Override protected void restart() throws IOException {
-        if (secondaryConnection != null) {
-            secondaryConnection.abort();
-            secondaryConnection = null;
-            secondaryChannel = null;
-            Host.executeCommand("cd ../rabbitmq-test; make restart-secondary-node");
-        }
-        super.restart();
-    }
-
-    @Override protected void declareDurableQueue(String q) throws IOException {
-        (secondaryChannel == null ? channel : secondaryChannel).
-            queueDeclare(q, true);
-    }
-
-    /**
-     *   Tests whether durable bindings are correctly recovered.
-     */
-    public void testDurableBindingRecovery() throws IOException {
-        declareDurableTopicExchange(X);
-        declareAndBindDurableQueue(Q, X, K);
-
-        restart();
-
-        for (int i = 0; i < N; i++){
-            basicPublishVolatile(X, K);
-        }
-
-        assertDelivered(Q, N);
-
-        deleteQueue(Q);
-        deleteExchange(X);
-    }
-
-    /**
-     * This tests whether the bindings attached to a durable exchange
-     * are correctly blown away when the exhange is nuked.
-     *
-     * This complements a unit test for testing non-durable exhanges.
-     * In that case, an exchange is deleted and you expect any
-     * bindings hanging to it to be deleted as well. To verify this,
-     * the exchange is deleted and then recreated.
-     *
-     * After the recreation, the old bindings should no longer exist
-     * and hence any messages published to that exchange get routed to
-     * /dev/null
-     *
-     * This test exercises the durable variable of that test, so the
-     * main difference is that the broker has to be restarted to
-     * verify that the durable routes have been turfed.
-     */
-    public void testDurableBindingsDeletion() throws IOException {
-        declareDurableTopicExchange(X);
-        declareAndBindDurableQueue(Q, X, K);
-
-        deleteExchange(X);
-
-        restart();
-
-        declareDurableTopicExchange(X);
-
-        for (int i = 0; i < N; i++){
-            basicPublishVolatile(X, K);
-        }
-
-        GetResponse response = channel.basicGet(Q, true);
-        assertNull("The initial response SHOULD BE null", response);
-
-        deleteQueue(Q);
-        deleteExchange(X);
-    }
-
-
-    /**
-     * This tests whether the default bindings for durable queues
-     * are recovered properly.
-     *
-     * The idea is to create a durable queue, nuke the server and then
-     * publish a message to it using the queue name as a routing key
-     */
-    public void testDefaultBindingRecovery() throws IOException {
-        declareDurableQueue(Q);
-
-        restart();
-
-        basicPublishVolatile("", Q);
-
-        GetResponse response = channel.basicGet(Q, true);
-        assertNotNull("The initial response SHOULD NOT be null", response);
-
-        deleteQueue(Q);
-    }
-
-    /**
-     * This tests whether when you delete a queue, that its bindings
-     * are deleted as well.
-     */
-    public void testQueueDelete() throws IOException {
-
-        boolean durable = true;
-        Binding binding = setupExchangeAndRouteMessage(durable);
-
-        // Nuke the queue and repeat this test, this time you expect
-        // nothing to get routed.
-
-        channel.queueDelete(binding.q);
-        channel.queueDeclare(binding.q, durable);
-
-        sendUnroutable(binding);
-
-        deleteExchangeAndQueue(binding);
-    }
+public class BindingLifecycle extends BindingLifecycleBase {
 
     /**
      * This tests that when you purge a queue, all of its messages go.
@@ -308,25 +147,6 @@ public class BindingLifecycle extends PersisterRestartBase {
         doAutoDelete(false, 10);
     }
 
-    /** 
-     * The same thing as testExchangeAutoDelete, but with durable
-     * queues.
-     *
-     * Main difference is restarting the broker to make sure that the
-     * durable queues are blasted away.
-     */
-    public void testExchangeAutoDeleteDurable() throws IOException {
-        doAutoDelete(true, 1);
-    }
-
-    /**
-     * The same thing as testExchangeAutoDeleteManyBindings, but with
-     * durable queues.
-     */
-    public void testExchangeAutoDeleteDurableManyBindings() throws IOException {
-        doAutoDelete(true, 10);
-    }
-
     /**
      * Test the behaviour of queue.unbind
      */
@@ -364,147 +184,6 @@ public class BindingLifecycle extends PersisterRestartBase {
         sendRoutable(b);
         channel.queueUnbind(b.q, b.x, b.k);
         sendUnroutable(b);
-    }
-
-    private void doAutoDelete(boolean durable, int queues) throws IOException {
-
-        String[] queueNames = null;
-
-        Binding binding = Binding.randomBinding();
-
-        channel.exchangeDeclare(binding.x, "direct",
-                                false, durable, true, null);
-        channel.queueDeclare(binding.q,
-                             false, durable, false, true, null);
-        channel.queueBind(binding.q, binding.x, binding.k);
-
-
-        if (queues > 1) {
-            int j = queues - 1;
-            queueNames = new String[j];
-            for (int i = 0 ; i < j ; i++) {
-                queueNames[i] = randomString();
-                channel.queueDeclare(queueNames[i],
-                                     false, durable, false, false, null);
-                channel.queueBind(queueNames[i],
-                                  binding.x, binding.k);
-                channel.basicConsume(queueNames[i], true,
-                                     new QueueingConsumer(channel));
-            }
-        }
-
-        subscribeSendUnsubscribe(binding);
-
-        if (durable) {
-            restart();
-        }
-        
-        if (queues > 1) {
-            for (String s : queueNames) {
-                channel.basicConsume(s, true,
-                                     new QueueingConsumer(channel));
-                Binding tmp = new Binding(s, binding.x, binding.k);
-                sendUnroutable(tmp);
-            }
-        }
-
-        channel.queueDeclare(binding.q,
-                             false, durable, true, true, null);
-
-        // if (queues == 1): Because the exchange does not exist, this
-        // bind should fail
-        try {
-            channel.queueBind(binding.q, binding.x, binding.k);
-            sendRoutable(binding);
-        }
-        catch (Exception e) {
-            // do nothing, this is the correct behaviour
-            channel = null;
-            return;
-        }
-        
-        if (queues == 1) {
-            deleteExchangeAndQueue(binding);
-            fail("Queue bind should have failed");
-        }
-
-
-        // Do some cleanup
-        if (queues > 1) {
-            for (String q : queueNames) {
-                channel.queueDelete(q);
-            }
-        }
-
-    }
-
-    private void subscribeSendUnsubscribe(Binding binding) throws IOException {
-        String tag = channel.basicConsume(binding.q,
-                                          new QueueingConsumer(channel));
-        sendUnroutable(binding);
-        channel.basicCancel(tag);
-    }
-
-    private void sendUnroutable(Binding binding) throws IOException {
-        channel.basicPublish(binding.x, binding.k, null, payload);
-        GetResponse response = channel.basicGet(binding.q, true);
-        assertNull("The response SHOULD BE null", response);
-    }
-
-    private void sendRoutable(Binding binding) throws IOException {
-        channel.basicPublish(binding.x, binding.k, null, payload);
-        GetResponse response = channel.basicGet(binding.q, true);
-        assertNotNull("The response should not be null", response);
-    }
-
-    private static String randomString() {
-        return "-" + System.nanoTime();
-    }
-
-    private static class Binding {
-
-        String q, x, k;
-
-        static Binding randomBinding() {
-            return new Binding(randomString(), randomString(), randomString());
-        }
-
-        private Binding(String q, String x, String k) {
-            this.q = q;
-            this.x = x;
-            this.k = k;
-        }
-    }
-
-    private void createQueueAndBindToExchange(Binding binding, boolean durable)
-        throws IOException {
-
-        channel.exchangeDeclare(binding.x, "direct", durable);
-        channel.queueDeclare(binding.q, durable);
-        channel.queueBind(binding.q, binding.x, binding.k);
-    }
-
-    private void deleteExchangeAndQueue(Binding binding)
-        throws IOException {
-
-        channel.queueDelete(binding.q);
-        channel.exchangeDelete(binding.x);
-    }
-
-    private Binding setupExchangeBindings(boolean durable)
-        throws IOException {
-
-        Binding binding = Binding.randomBinding();
-        createQueueAndBindToExchange(binding, durable);
-        return binding;
-    }
-
-    private Binding setupExchangeAndRouteMessage(boolean durable)
-        throws IOException {
-
-        Binding binding = setupExchangeBindings(durable);
-        sendRoutable(binding);
-        return binding;
     }
 
 }

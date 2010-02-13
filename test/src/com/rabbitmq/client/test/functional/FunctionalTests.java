@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -31,6 +31,8 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.test.Bug20004Test;
+import com.rabbitmq.client.test.server.Permissions;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
@@ -50,7 +52,6 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(NoRequeueOnCancel.class);
         suite.addTestSuite(Bug20004Test.class);
         suite.addTestSuite(QosTests.class);
-        suite.addTestSuite(Permissions.class);
         suite.addTestSuite(AlternateExchange.class);
         return suite;
     }
