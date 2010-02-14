@@ -73,6 +73,19 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Timeout used while waiting for a connection.close-ok (milliseconds) */
     public static final int CONNECTION_CLOSING_TIMEOUT = 10000;
 
+    private static final Object[] DEFAULT_CLIENT_PROPERTIES = new Object[] {
+        "product", LongStringHelper.asLongString("RabbitMQ"),
+        "version", LongStringHelper.asLongString(ClientVersion.VERSION),
+        "platform", LongStringHelper.asLongString("Java"),
+        "copyright", LongStringHelper.asLongString(
+            "Copyright (C) 2007-2008 LShift Ltd., " +
+            "Cohesive Financial Technologies LLC., " +
+            "and Rabbit Technologies Ltd."),
+        "information", LongStringHelper.asLongString(
+            "Licensed under the MPL.  " +
+            "See http://www.rabbitmq.com/")
+    };
+
     private static final Version clientVersion =
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
 
@@ -376,16 +389,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     public Map<String, Object> buildClientPropertiesTable() {
-        return Frame.buildTable(new Object[] {
-            "product", LongStringHelper.asLongString("RabbitMQ"),
-            "version", LongStringHelper.asLongString(ClientVersion.VERSION),
-            "platform", LongStringHelper.asLongString("Java"),
-            "copyright", LongStringHelper.asLongString("Copyright (C) 2007-2008 LShift Ltd., " +
-                                                       "Cohesive Financial Technologies LLC., " +
-                                                       "and Rabbit Technologies Ltd."),
-            "information", LongStringHelper.asLongString("Licensed under the MPL.  " +
-                                                         "See http://www.rabbitmq.com/")
-        });
+        Map<String, Object> props = Frame.buildTable(DEFAULT_CLIENT_PROPERTIES);
+        props.putAll(_params.getClientProperties());
+        return props;
     }
 
     private static int negotiatedMaxValue(int clientValue, int serverValue) {

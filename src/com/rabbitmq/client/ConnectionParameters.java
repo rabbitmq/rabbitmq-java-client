@@ -31,6 +31,8 @@
 package com.rabbitmq.client;
 
 import java.security.AccessControlException;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Properties bean to encapsulate parameters for a Connection.
@@ -65,12 +67,17 @@ public class ConnectionParameters {
     /** Default value for desired heartbeat interval; zero for none */
     public static final int DEFAULT_HEARTBEAT = 0;
 
+    /** Default extra client properties to be sent to the server */
+    public static final Map<String, Object> DEFAULT_CLIENT_PROPERTIES =
+            new HashMap<String, Object>();
+
     private String _userName = DEFAULT_USER;
     private String _password = DEFAULT_PASS;
     private String _virtualHost = DEFAULT_VHOST;
     private int _requestedChannelMax = DEFAULT_CHANNEL_MAX;
     private int _requestedFrameMax = DEFAULT_FRAME_MAX;
     private int _requestedHeartbeat = DEFAULT_HEARTBEAT;
+    private Map<String, Object> _clientProperties = DEFAULT_CLIENT_PROPERTIES;
 
     /**
      * Instantiate a set of parameters with all values set to the defaults
@@ -173,4 +180,19 @@ public class ConnectionParameters {
         _requestedChannelMax = requestedChannelMax;
     }
 
+    /**
+     * Retrieve the map of extra client properties to be sent to the server
+     * @return the map of extra client properties
+     */
+    public Map<String, Object> getClientProperties() {
+        return _clientProperties;
+    }
+
+    /**
+     * Set the extra client properties to be sent to the server
+     * @param clientProperties the map of extra client properties
+     */
+    public void setClientProperties(Map<String, Object> clientProperties) {
+        _clientProperties = clientProperties;
+    }
 }
