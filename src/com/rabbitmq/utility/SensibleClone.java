@@ -28,54 +28,19 @@
 //
 //   Contributor(s): ______________________________________.
 //
+package com.rabbitmq.utility;
 
-package com.rabbitmq.client.test.functional;
+/** 
+ * This interface exists as a workaround for the annoyingness of java.lang.Cloneable.
+ * It is used for generic methods which need to accept something they can actually clone
+ * (Object.clone is protected and java.lang.Cloneable does not define a public clone method)
+ * and want to provide some guarantees of the type of the cloned object. 
+ */
+public interface SensibleClone<T extends SensibleClone<T>> extends Cloneable {
 
-import com.rabbitmq.client.test.BrokerTestCase;
-import java.io.IOException;
-
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.MessageProperties;
-
-public class DurableOnTransient extends BrokerTestCase
-{
-    protected static final String Q = "DurableQueue";
-    protected static final String X = "TransientExchange";
-
-    private GetResponse basicGet()
-        throws IOException
-    {
-        return channel.basicGet(Q, true);
-    }
-
-    private void basicPublish()
-        throws IOException
-    {
-        channel.basicPublish(X, "",
-                             MessageProperties.PERSISTENT_TEXT_PLAIN,
-                             "persistent message".getBytes());
-    }
-
-    protected void createResources() throws IOException {
-        // Transient exchange
-        channel.exchangeDeclare(X, "direct", false);
-        // durable queue
-        channel.queueDeclare(Q, true, false, false, null);
-    }
-
-    protected void releaseResources() throws IOException {
-        channel.queueDelete(Q);
-        channel.exchangeDelete(X);
-    }
-
-    public void testBind()
-        throws IOException
-    {
-        try {
-            channel.queueBind(Q, X, "");
-            fail("Expected exception from queueBind");
-        } catch (IOException ee) {
-            // Pass!
-        }
-    }
+  /**
+   * Like Object.clone but sensible; in particular, public and declared to return
+   * the right type. 
+   */
+  public T sensibleClone();
 }

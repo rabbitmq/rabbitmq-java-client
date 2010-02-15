@@ -18,15 +18,37 @@ public class CloseInMainLoop extends BrokerTestCase{
     }
   
     public SpecialConnection() throws Exception{
-      super(new ConnectionParameters(), new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", 5672)));
-      this.start();
-    }
+      super(
+          new ConnectionParameters(), 
+          new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", 5672)),
+          new DefaultExceptionHandler(){
+            @Override public void handleConsumerException(Channel channel,
+                                                           Throwable exception,
+                                                           Consumer consumer,
+                                                           String consumerTag,
+                                                           String methodName){
+                try {
+                  ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
+                                                                  "Internal error in Consumer " +
+                                                                    consumerTag,
+                                                                  false,
+                                                                  exception);
+                } catch (IOException ioe) {
+                    // Man, this clearly isn't our day.
+                    // Ignore the exception? TODO: Log the nested failure
+                }
+            }
+        });
+
+        this.start();
+      }
 
     @Override
     public boolean processControlCommand(Command c) throws IOException{
       if(c.getMethod() instanceof AMQP.Connection.CloseOk) validShutdown.set(true);
       return super.processControlCommand(c);
     }
+ 
   }
 
 

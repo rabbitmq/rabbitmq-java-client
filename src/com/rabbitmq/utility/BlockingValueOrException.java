@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -32,7 +32,7 @@ package com.rabbitmq.utility;
 
 import java.util.concurrent.TimeoutException;
 
-public class BlockingValueOrException<V, E extends Throwable>
+public class BlockingValueOrException<V, E extends Throwable & SensibleClone<E>>
     extends BlockingCell<ValueOrException<V, E>>
 {
     public void setValue(V v) {
@@ -46,7 +46,7 @@ public class BlockingValueOrException<V, E extends Throwable>
     public V uninterruptibleGetValue() throws E {
         return uninterruptibleGet().getValue();
     }
-    
+
     public V uninterruptibleGetValue(int timeout) throws E, TimeoutException {
     	return uninterruptibleGet(timeout).getValue();
     }
