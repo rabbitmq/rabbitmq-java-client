@@ -69,11 +69,11 @@ srcdist: distclean
 	(cd build; zip -r $(SRC_ARCHIVE).zip $(SRC_ARCHIVE))
 	(cd build; rm -rf $(SRC_ARCHIVE))
 
-deploy-maven-bundle: maven-bundle
+stage-maven-bundle: maven-bundle
 	( \
 	  cd build/bundle; \
-	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/nexus-username`; \
-	  NEXUS_PASSWORD=`cat $(GNUPG_PATH)/nexus-password`; \
+	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
+	  NEXUS_PASSWORD=`cat $(GNUPG_PATH)/../nexus/password`; \
 	  VERSION=$(VERSION) \
 	  SIGNING_KEY=$(SIGNING_KEY) \
 	  GNUPG_PATH=$(GNUPG_PATH) \
@@ -82,7 +82,7 @@ deploy-maven-bundle: maven-bundle
 	    amqp-client-$(VERSION).pom \
 	    amqp-client-$(VERSION).jar \
 	    amqp-client-$(VERSION)-javadoc.jar \
-	    amqp-client-$(VERSION)-sources.jar; \
+	    amqp-client-$(VERSION)-sources.jar && \
 	  mvn org.sonatype.plugins:nexus-maven-plugin:staging-close \
 	    -Dnexus.url=http://oss.sonatype.org \
 	    -Dnexus.username=$$NEXUS_USERNAME \
