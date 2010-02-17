@@ -88,5 +88,5 @@ stage-maven-bundle: maven-bundle
 	    -Dnexus.username=$$NEXUS_USERNAME \
 	    -Dnexus.password=$$NEXUS_PASSWORD \
 	    -B \
-	    -Dnexus.description="Staging complete" \
+	    -Dnexus.description="Public release of $$VERSION" \
 	)
