@@ -90,3 +90,16 @@ stage-maven-bundle: maven-bundle
 	    -B \
 	    -Dnexus.description="Public release of $$VERSION" \
 	)
+
+promote-maven-bundle:
+	( \
+	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
+	  NEXUS_PASSWORD=`cat $(GNUPG_PATH)/../nexus/password`; \
+	  mvn org.sonatype.plugins:nexus-maven-plugin:staging-promote \
+	    -Dnexus.url=http://oss.sonatype.org \
+	    -Dnexus.username=$$NEXUS_USERNAME \
+	    -Dnexus.password=$$NEXUS_PASSWORD \
+	    -Dnexus.promote.autoSelectOverride=true \
+	    -DtargetRepositoryId=releases \
+	    -B \
+	)
