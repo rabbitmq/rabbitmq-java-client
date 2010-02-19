@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -61,7 +61,7 @@ import com.rabbitmq.client.AMQP.Tx;
  *
  */
 
-public interface Channel extends ShutdownNotifier{
+public interface Channel extends ShutdownNotifier {
     /**
      * Retrieve this channel's channel number.
      * @return the channel number
@@ -77,35 +77,35 @@ public interface Channel extends ShutdownNotifier{
     /**
      * Close this channel with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
      * and message 'OK'.
-     * 
+     *
      * @throws java.io.IOException if an error is encountered
      */
     void close() throws IOException;
-    
+
     /**
      * Close this channel.
-     * 
+     *
      * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
      * @param closeMessage a message indicating the reason for closing the connection
      * @throws java.io.IOException if an error is encountered
      */
     void close(int closeCode, String closeMessage) throws IOException;
-    
+
     /**
      * Abort this channel with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
      * and message 'OK'.
-     * 
+     *
      * Forces the channel to close and waits for the close operation to complete.
      * Any encountered exceptions in the close operation are silently discarded.
      */
     void abort() throws IOException;
-    
+
     /**
      * Abort this channel.
-     * 
+     *
      * Forces the channel to close and waits for the close operation to complete.
      * Any encountered exceptions in the close operation are silently discarded.
-     */    
+     */
     void abort(int closeCode, String closeMessage) throws IOException;
 
     /**
@@ -254,7 +254,7 @@ public interface Channel extends ShutdownNotifier{
      * @throws java.io.IOException if an error is encountered
      */
     Queue.DeclareOk queueDeclare(String queue) throws IOException;
-    
+
     /**
      * Actively declare a non-exclusive, non-autodelete queue
      * The name of the new queue is held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk} result.
@@ -329,7 +329,7 @@ public interface Channel extends ShutdownNotifier{
      * @throws java.io.IOException if an error is encountered
      */
     Queue.BindOk queueBind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
-    
+
     /**
      * Unbinds a queue from an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Queue.Unbind
@@ -370,7 +370,7 @@ public interface Channel extends ShutdownNotifier{
      * @see com.rabbitmq.client.AMQP.Queue.Purge
      * @see com.rabbitmq.client.AMQP.Queue.PurgeOk
      * @param queue the name of the queue
-     * @param nowait whether to await completion of the purge 
+     * @param nowait whether to await completion of the purge
      * @return a purge-confirm method if the purge was executed succesfully
      * @throws java.io.IOException if an error is encountered
      */

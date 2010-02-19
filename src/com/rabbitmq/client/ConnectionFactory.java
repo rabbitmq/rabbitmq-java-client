@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -35,6 +35,9 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+
+import java.net.Socket;
+import java.net.InetSocketAddress;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
@@ -305,7 +308,26 @@ public class ConnectionFactory {
 
         String hostName = addr.getHost();
         int portNumber = portOrDefault(addr.getPort());
-        return new SocketFrameHandler(factory, hostName, portNumber);
+        Socket socket = factory.createSocket();
+        configureSocket(socket);
+        socket.connect(new InetSocketAddress(hostName, portNumber));
+        return new SocketFrameHandler(socket);
+    }
+
+    /**
+     *  Provides a hook to insert custom configuration of the sockets used
+     *  to connect to an AMQP server before they connect. 
+     *
+     *  The default behaviour of this method is to disable Nagle's algorithm to get
+     *  more consistently low latency.
+     *  However it may be overridden freely and there is no requirement to retain
+     *  this behaviour. 
+     *
+     *  @param socket The socket that is to be used for the Connection
+     */
+    protected void configureSocket(Socket socket) throws IOException{
+        // disable Nagle's algorithm, for more consistently low latency
+        socket.setTcpNoDelay(true);
     }
 
     private Connection newConnection(Address[] addresses,

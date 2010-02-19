@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -39,6 +39,49 @@ import java.io.PrintStream;
  */
 
 public class Utility {
+    static class ThrowableCreatedElsewhere extends Throwable {
+        public ThrowableCreatedElsewhere(Throwable throwable) {
+          super(throwable.getClass() + " created elsewhere");
+          this.setStackTrace(throwable.getStackTrace());
+        }
+
+        @Override public Throwable fillInStackTrace(){ 
+            return this; 
+        } 
+    }
+
+    public static <T extends Throwable & SensibleClone<T>> T fixStackTrace(T throwable) {
+      throwable = throwable.sensibleClone();
+
+      if(throwable.getCause() == null) {
+        // We'd like to preserve the original stack trace in the cause.
+        // Unfortunately Java doesn't let you set the cause once it's been
+        // set once. This means we have to choose between either 
+        //  - not preserving the type
+        //  - sometimes losing the original stack trace
+        //  - performing nasty reflective voodoo which may or may not work
+        // We only lose the original stack trace when there's a root cause
+        // which will hopefully be enlightening enough on its own that it 
+        // doesn't matter too much. 
+        try {
+          throwable.initCause(new ThrowableCreatedElsewhere(throwable));
+        } catch(IllegalStateException e) {
+          // This exception was explicitly initialised with a null cause. 
+          // Alas this means we can't set the cause even though it has none. 
+          // Thanks. 
+        }
+      }
+
+
+      throwable.fillInStackTrace();
+      // We want to remove fixStackTrace from the trace.
+      StackTraceElement[] existing = throwable.getStackTrace();
+      StackTraceElement[] newTrace = new StackTraceElement[existing.length - 1];
+      System.arraycopy(existing, 1, newTrace, 0, newTrace.length);
+      throwable.setStackTrace(newTrace);
+      return throwable;
+    }
+
   
     public static String makeStackTrace(Throwable throwable) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -49,7 +92,7 @@ public class Utility {
         try {
             outputStream.close();
         } catch (IOException ex) {
-            // Closing the output stream won't generate an error, and in 
+            // Closing the output stream won't generate an error, and in
             // fact does nothing - just being tidy
             ex.printStackTrace();
         }

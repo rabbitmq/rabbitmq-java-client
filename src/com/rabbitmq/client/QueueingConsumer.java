@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -37,28 +37,37 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.utility.ValueOrException;
+import com.rabbitmq.utility.Utility;
 
 /**
  * Convenience class: an implementation of {@link Consumer} with straightforward blocking semantics
  */
 public class QueueingConsumer extends DefaultConsumer {
-    public BlockingQueue<ValueOrException<Delivery, ShutdownSignalException>> _queue;
+    private final BlockingQueue<Delivery> _queue;
+
+    // When this is non-null the queue is in shutdown mode and nextDelivery should
+    // throw a shutdown signal exception.
+    private volatile ShutdownSignalException _shutdown;
+
+    // Marker object used to signal the queue is in shutdown mode. 
+    // It is only there to wake up consumers. The canonical representation
+    // of shutting down is the presence of _shutdown. 
+    // Invariant: This is never on _queue unless _shutdown != null.
+    private static final Delivery POISON = new Delivery(null, null, null);
 
     public QueueingConsumer(Channel ch) {
-        this(ch,
-             new LinkedBlockingQueue<ValueOrException<Delivery, ShutdownSignalException>>());
+        this(ch, new LinkedBlockingQueue<Delivery>());
     }
 
-    public QueueingConsumer(Channel ch,
-                            BlockingQueue<ValueOrException<Delivery, ShutdownSignalException>> q)
+    public QueueingConsumer(Channel ch, BlockingQueue<Delivery> q)
     {
         super(ch);
         this._queue = q;
     }
 
     @Override public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
-        this._queue.add(ValueOrException. <Delivery, ShutdownSignalException> makeException(sig));
+        _shutdown = sig; 
+        _queue.add(POISON);
     }
 
     @Override public void handleDelivery(String consumerTag,
@@ -67,8 +76,8 @@ public class QueueingConsumer extends DefaultConsumer {
                                byte[] body)
         throws IOException
     {
-        this._queue.add(ValueOrException. <Delivery, ShutdownSignalException> makeValue
-                        (new Delivery(envelope, properties, body)));
+        checkShutdown();
+        this._queue.add(new Delivery(envelope, properties, body));
     }
 
     /**
@@ -111,6 +120,27 @@ public class QueueingConsumer extends DefaultConsumer {
     }
 
     /**
+     * Check if we are in shutdown mode and if so throw an exception.
+     */
+    private void checkShutdown(){
+      if(_shutdown != null) throw Utility.fixStackTrace(_shutdown);
+    }
+
+    /**
+     * If this is a non-POISON non-null delivery simply return it.
+     * If this is POISON we are in shutdown mode, throw _shutdown
+     * If this is null, we may be in shutdown mode. Check and see.
+     */
+    private Delivery handle(Delivery delivery)
+    {
+      if(delivery == POISON || (delivery == null && _shutdown != null)){
+        if(delivery == POISON) _queue.add(POISON);
+        throw Utility.fixStackTrace(_shutdown);
+      }
+      return delivery;
+    }
+
+    /**
      * Main application-side API: wait for the next message delivery and return it.
      * @return the next message
      * @throws InterruptedException if an interrupt is received while waiting
@@ -119,7 +149,7 @@ public class QueueingConsumer extends DefaultConsumer {
     public Delivery nextDelivery()
         throws InterruptedException, ShutdownSignalException
     {
-        return _queue.take().getValue();
+        return handle(_queue.take());
     }
 
     /**
@@ -132,16 +162,7 @@ public class QueueingConsumer extends DefaultConsumer {
     public Delivery nextDelivery(long timeout)
         throws InterruptedException, ShutdownSignalException
     {
-        ValueOrException<Delivery, ShutdownSignalException> r =
-            _queue.poll(timeout, TimeUnit.MILLISECONDS);
-        return r == null ? null : r.getValue();
-    }
-
-    /**
-     * Retrieve the underlying blocking queue.
-     * @return the queue where incoming messages are stored
-     */
-    public BlockingQueue<ValueOrException<Delivery, ShutdownSignalException>> getQueue() {
-        return _queue;
+        checkShutdown();
+        return handle(_queue.poll(timeout, TimeUnit.MILLISECONDS));
     }
 }
