@@ -40,6 +40,7 @@ import java.net.Socket;
 import java.net.InetSocketAddress;
 
 import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
@@ -52,41 +53,194 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory {
-    private final ConnectionParameters _params;
+    /** Default user name */
+    public static final String DEFAULT_USER = "guest";
+
+    /** Default password */
+    public static final String DEFAULT_PASS = "guest";
+
+    /** Default virtual host */
+    public static final String DEFAULT_VHOST = "/";
+
+    /** Default value for the desired maximum channel number; zero for
+     * unlimited */
+    public static final int DEFAULT_CHANNEL_MAX = 0;
+
+    /** Default value for the desired maximum frame size; zero for
+     * unlimited */
+    public static final int DEFAULT_FRAME_MAX = 0;
+
+    /** Default value for desired heartbeat interval; zero for none */
+    public static final int DEFAULT_HEARTBEAT = 0;
+
+    /** The default host to connect to */
+    public static final String DEFAULT_HOST = "localhost";
+
+    /** A constant that when passed as a port number causes the connection to use the default port */
+    public static final int USE_DEFAULT_PORT = -1;
+
+    /** The default port to use for AMQP connections when not using SSL */
+    public static final int DEFAULT_AMQP_PORT = 5672;
+
+    /** The default port to use for AMQP connections when using SSL */
+    public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
 
     /**
-     * Holds the SocketFactory used to manufacture outbound sockets.
+     * The default SSL protocol (currently "SSLv3").
      */
-    private SocketFactory _factory = SocketFactory.getDefault();
-    
+    public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
+
+    private String userName               = DEFAULT_USER;
+    private String password               = DEFAULT_PASS;
+    private String virtualHost            = DEFAULT_VHOST;
+    private String host                   = DEFAULT_HOST;
+    private int port                      = USE_DEFAULT_PORT;
+    private int requestedChannelMax       = DEFAULT_CHANNEL_MAX;
+    private int requestedFrameMax         = DEFAULT_FRAME_MAX;
+    private int requestedHeartbeat        = DEFAULT_HEARTBEAT;
+    private SocketFactory factory         = SocketFactory.getDefault();
+
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
     public ConnectionFactory() {
-        _params = new ConnectionParameters();
     }
 
     /**
-     * Instantiate a ConnectionFactory with the given connection parameters.
-     * @param params the relevant parameters for instantiating the broker connection
+     *  @return the default host to use for connections
      */
-    public ConnectionFactory(ConnectionParameters params) {
-        _params = params;
+    public String getHost() {
+        return host;
     }
 
     /**
-     * Retrieve the connection parameters.
-     * @return the initialization parameters used to open the connection
+     *  @param host the default host to use for connections
      */
-    public ConnectionParameters getParameters() {
-        return _params;
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    private int portOrDefault(int port){
+        if(port != USE_DEFAULT_PORT) return port;
+        else if(isSSL()) return DEFAULT_AMQP_OVER_SSL_PORT;
+        else return DEFAULT_AMQP_PORT;
+    }
+
+    /**
+     *  @return the default port to use for connections
+     */
+    public int getPort() {
+        return portOrDefault(port);
+    }
+
+    /**
+     *  @return the default port to use for connections
+     */
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    /**
+     * Retrieve the user name.
+     * @return the AMQP user name to use when connecting to the broker
+     */
+    public String getUserName() {
+        return this.userName;
+    }
+
+    /**
+     * Set the user name.
+     * @param userName the AMQP user name to use when connecting to the broker
+     */
+    public void setUsername(String userName) {
+        this.userName = userName;
+    }
+
+    /**
+     * Retrieve the password.
+     * @return the password to use when connecting to the broker
+     */
+    public String getPassword() {
+        return this.password;
+    }
+
+    /**
+     * Set the password.
+     * @param password the password to use when connecting to the broker
+     */
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    /**
+     * Retrieve the virtual host.
+     * @return the virtual host to use when connecting to the broker
+     */
+    public String getVirtualHost() {
+        return this.virtualHost;
+    }
+
+    /**
+     * Set the virtual host.
+     * @param virtualHost the virtual host to use when connecting to the broker
+     */
+    public void setVirtualHost(String virtualHost) {
+        this.virtualHost = virtualHost;
+    }
+
+    /**
+     * Retrieve the requested maximum channel number
+     * @return the initially requested maximum channel number; zero for unlimited
+     */
+    public int getRequestedChannelMax() {
+        return this.requestedChannelMax;
+    }
+
+    /**
+     * Set the requested maximum channel number
+     * @param requestedChannelMax initially requested maximum channel number; zero for unlimited
+     */
+    public void setRequestedChannelMax(int requestedChannelMax) {
+        this.requestedChannelMax = requestedChannelMax;
+    }
+
+    /**
+     * Retrieve the requested maximum frame size
+     * @return the initially requested maximum frame size, in octets; zero for unlimited
+     */
+    public int getRequestedFrameMax() {
+        return this.requestedFrameMax;
+    }
+
+    /**
+     * Set the requested maximum frame size
+     * @param requestedFrameMax initially requested maximum frame size, in octets; zero for unlimited
+     */
+    public void setRequestedFrameMax(int requestedFrameMax) {
+        this.requestedFrameMax = requestedFrameMax;
+    }
+
+    /**
+     * Retrieve the requested heartbeat interval.
+     * @return the initially requested heartbeat interval, in seconds; zero for none
+     */
+    public int getRequestedHeartbeat() {
+        return this.requestedHeartbeat;
+    }
+
+    /**
+     * Set the requested heartbeat.
+     * @param requestedHeartbeat the initially requested heartbeat interval, in seconds; zero for none
+     */
+    public void setRequestedHeartbeat(int requestedHeartbeat) {
+        this.requestedHeartbeat = requestedHeartbeat;
     }
 
     /**
      * Retrieve the socket factory used to make connections with.
      */
     public SocketFactory getSocketFactory() {
-        return _factory;
+        return this.factory;
     }
 
     /**
@@ -97,7 +251,11 @@ public class ConnectionFactory {
      * @see #useSslProtocol
      */
     public void setSocketFactory(SocketFactory factory) {
-        _factory = factory;
+        this.factory = factory;
+    }
+
+    public boolean isSSL(){
+        return getSocketFactory() instanceof SSLSocketFactory;
     }
 
     /**
@@ -145,18 +303,12 @@ public class ConnectionFactory {
         setSocketFactory(context.getSocketFactory());
     }
 
-    /**
-     * The default SSL protocol (currently "SSLv3").
-     */
-    public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
-
     protected FrameHandler createFrameHandler(Address addr)
         throws IOException {
 
         String hostName = addr.getHost();
-        int portNumber = addr.getPort();
-        if (portNumber == -1) portNumber = AMQP.PROTOCOL.PORT;
-        Socket socket = _factory.createSocket();
+        int portNumber = portOrDefault(addr.getPort());
+        Socket socket = factory.createSocket();
         configureSocket(socket);
         socket.connect(new InetSocketAddress(hostName, portNumber));
         return new SocketFrameHandler(socket);
@@ -178,24 +330,23 @@ public class ConnectionFactory {
         socket.setTcpNoDelay(true);
     }
 
-    private Connection newConnection(Address[] addrs,
+    private Connection newConnection(Address[] addresses,
                                      int maxRedirects,
                                      Map<Address,Integer> redirectAttempts)
         throws IOException
     {
         IOException lastException = null;
-
-        for (Address addr : addrs) {
+        for (Address address : addresses) {
             Address[] lastKnownAddresses = new Address[0];
             try {
                 while(true) {
-                    FrameHandler frameHandler = createFrameHandler(addr);
-                    Integer redirectCount = redirectAttempts.get(addr);
+                    FrameHandler frameHandler = createFrameHandler(address);
+                    Integer redirectCount = redirectAttempts.get(address);
                     if (redirectCount == null)
                         redirectCount = 0;
                     boolean allowRedirects = redirectCount < maxRedirects;
                     try {
-                        AMQConnection conn = new AMQConnection(_params,
+                        AMQConnection conn = new AMQConnection(this,
                                     frameHandler);
                         conn.start(!allowRedirects);
                         return conn;
@@ -204,9 +355,9 @@ public class ConnectionFactory {
                             //this should never happen with a well-behaved server
                             throw new IOException("server ignored 'insist'");
                         } else {
-                            redirectAttempts.put(addr, redirectCount+1);
+                            redirectAttempts.put(address, redirectCount+1);
                             lastKnownAddresses = e.getKnownAddresses();
-                            addr = e.getAddress();
+                            address = e.getAddress();
                             //TODO: we may want to log redirection attempts.
                         }
                     }
@@ -238,51 +389,14 @@ public class ConnectionFactory {
 
     /**
      * Create a new broker connection
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @param maxRedirects the maximum allowable number of redirects
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(Address[] addrs, int maxRedirects)
-        throws IOException
-    {
-        return newConnection(addrs,
-                             maxRedirects,
-                             new HashMap<Address,Integer>());
-    }
-
-    /**
-     * Create a new broker connection (no redirects allowed)
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection(Address[] addrs)
-        throws IOException
-    {
-        return newConnection(addrs, 0);
-    }
-
-    /**
-     * Instantiates a connection and return an interface to it.
-     * @param hostName the host to connect to
-     * @param portNumber the port number to use
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection(String hostName, int portNumber) throws IOException {
+    public Connection newConnection() throws IOException {
         return newConnection(new Address[] {
-                                 new Address(hostName, portNumber)
-                             });
-    }
-
-    /**
-     * Create a new broker connection, using the default AMQP port
-     * @param hostName the host to connect to
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection(String hostName) throws IOException {
-        return newConnection(hostName, -1);
+                                 new Address(getHost(), getPort())
+                             },
+                             0,
+                             new HashMap<Address,Integer>());
     }
 }

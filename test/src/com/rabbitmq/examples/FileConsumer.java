@@ -79,7 +79,9 @@ public class FileConsumer {
 	    }
 
             ConnectionFactory connFactory = new ConnectionFactory();
-            Connection conn = connFactory.newConnection(hostName, portNumber);
+            connFactory.setHost(hostName);
+            connFactory.setPort(portNumber);
+            Connection conn = connFactory.newConnection();
 
             final Channel ch = conn.createChannel();
 

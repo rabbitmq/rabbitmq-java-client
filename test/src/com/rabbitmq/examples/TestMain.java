@@ -39,7 +39,6 @@ import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
@@ -62,10 +61,10 @@ public class TestMain {
         System.out.println(clazz.getName() + " : javac v" + getCompilerVersion(clazz) + " on " + javaVersion);
         try {
             boolean silent = Boolean.getBoolean("silent");
-            String hostName = (args.length > 0) ? args[0] : "localhost";
-            int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
+            final String hostName = (args.length > 0) ? args[0] : "localhost";
+            final int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
             runConnectionNegotiationTest(hostName, portNumber);
-            final Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            final Connection conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
             if (!silent) {
                 System.out.println("Channel 0 fully open.");
             }
@@ -90,9 +89,11 @@ public class TestMain {
         private final int protocolMajor;
         private final int protocolMinor;
 
-        public TestConnectionFactory(int major, int minor) {
+        public TestConnectionFactory(int major, int minor, String hostName, int port) {
             this.protocolMajor = major;
             this.protocolMinor = minor;
+            setHost(hostName);
+            setPort(port);
         }
 
         protected FrameHandler createFrameHandler(Address addr)
@@ -109,52 +110,58 @@ public class TestMain {
         }
     }
 
-    public static void runConnectionNegotiationTest(String hostName, int portNumber) throws IOException {
+    public static void runConnectionNegotiationTest(final String hostName, final int portNumber) throws IOException {
 
         Connection conn;
 
         try {
-            conn = new TestConnectionFactory(0, 1).newConnection(hostName, portNumber);
+            conn = new TestConnectionFactory(0, 1, hostName, portNumber).newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
 
         //should succeed IF the highest version supported by the
         //server is a version supported by this client
-        conn = new TestConnectionFactory(100, 0).newConnection(hostName, portNumber);
+        conn = new TestConnectionFactory(100, 0, hostName, portNumber).newConnection();
         conn.close();
 
-        ConnectionParameters params;
-        params = new ConnectionParameters();
-        params.setUsername("invalid");
-        params.setPassword("invalid");
+        ConnectionFactory factory;
+        factory = new ConnectionFactory();
+        factory.setUsername("invalid");
+        factory.setPassword("invalid");
         try {
-            conn = new ConnectionFactory(params).newConnection(hostName, portNumber);
+            factory.setHost(hostName);
+            factory.setPort(portNumber);
+            conn = factory.newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
 
-        params = new ConnectionParameters();
-        params.setRequestedChannelMax(10);
-        params.setRequestedFrameMax(8192);
-        params.setRequestedHeartbeat(1);
-        conn = new ConnectionFactory(params).newConnection(hostName, portNumber);
+        factory = new ConnectionFactory();
+        factory.setRequestedChannelMax(10);
+        factory.setRequestedFrameMax(8192);
+        factory.setRequestedHeartbeat(1);
+        factory.setHost(hostName);
+        factory.setPort(portNumber);
+        conn = factory.newConnection();
         checkNegotiatedMaxValue("channel-max", 10, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 8192, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 1, conn.getHeartbeat());
         conn.close();
 
-        params = new ConnectionParameters();
-        params.setRequestedChannelMax(0);
-        params.setRequestedFrameMax(0);
-        params.setRequestedHeartbeat(0);
-        conn = new ConnectionFactory(params).newConnection(hostName, portNumber);
+        factory = new ConnectionFactory();
+        factory.setRequestedChannelMax(0);
+        factory.setRequestedFrameMax(0);
+        factory.setRequestedHeartbeat(0);
+        factory.setHost(hostName);
+        factory.setPort(portNumber);
+        conn = factory.newConnection();
         checkNegotiatedMaxValue("channel-max", 0, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 0, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 0, conn.getHeartbeat());
         conn.close();
 
-        conn = new ConnectionFactory().newConnection(hostName, portNumber);
+        conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
         conn.close();
     }
 
@@ -168,16 +175,16 @@ public class TestMain {
         }
     }
 
-    public static void runConnectionShutdownTests(String hostName, int portNumber) throws IOException {
+    public static void runConnectionShutdownTests(final String hostName, final int portNumber) throws IOException {
         Connection conn;
         Channel ch;
         // Test what happens when a connection is shut down w/o first
         // closing the channels.
-        conn = new ConnectionFactory().newConnection(hostName, portNumber);
+        conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
         ch = conn.createChannel();
         conn.close();
         // Test what happens when we provoke an error
-        conn = new ConnectionFactory().newConnection(hostName, portNumber);
+        conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
         ch = conn.createChannel();
         try {
             ch.exchangeDeclare("mumble", "invalid");
@@ -185,16 +192,22 @@ public class TestMain {
         } catch (IOException e) {
         }
         // Test what happens when we just kill the connection
-        conn = new ConnectionFactory().newConnection(hostName, portNumber);
+        conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
         ch = conn.createChannel();
-        ((SocketFrameHandler)((AMQConnection)conn)._frameHandler).close();
+        ((SocketFrameHandler)((AMQConnection)conn).getFrameHandler()).close();
     }
 
     public static void runProducerConsumerTest(String hostName, int portNumber, int commitEvery) throws IOException {
-        Connection connp = new ConnectionFactory().newConnection(hostName, portNumber);
+        ConnectionFactory cfconnp = new ConnectionFactory(); 
+        cfconnp.setHost(hostName); 
+        cfconnp.setPort(portNumber);
+        Connection connp = cfconnp.newConnection();
         ProducerMain p = new ProducerMain(connp, 2000, 10000, false, commitEvery, true);
         new Thread(p).start();
-        Connection connc = new ConnectionFactory().newConnection(hostName, portNumber);
+        ConnectionFactory cfconnc = new ConnectionFactory(); 
+        cfconnc.setHost(hostName); 
+        cfconnc.setPort(portNumber);
+        Connection connc = cfconnc.newConnection();
         ConsumerMain c = new ConsumerMain(connc, false, true);
         c.run();
     }

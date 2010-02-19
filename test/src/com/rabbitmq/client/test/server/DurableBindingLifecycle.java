@@ -31,11 +31,7 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.QueueingConsumer;
 
 import com.rabbitmq.client.test.functional.BindingLifecycleBase;
 
