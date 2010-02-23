@@ -52,7 +52,7 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
  */
 
-public class ConnectionFactory {
+public class ConnectionFactory implements Cloneable {
     /** Default user name */
     public static final String DEFAULT_USER = "guest";
 
@@ -398,5 +398,14 @@ public class ConnectionFactory {
                              },
                              0,
                              new HashMap<Address,Integer>());
+    }
+
+
+    @Override public ConnectionFactory clone(){
+        try {
+            return (ConnectionFactory)super.clone(); 
+        } catch (CloneNotSupportedException e) {
+            throw new Error(e);
+        }
     }
 }
