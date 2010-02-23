@@ -90,7 +90,7 @@ public class ConnectionFactory implements Cloneable {
      */
     public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
-    private String userName               = DEFAULT_USER;
+    private String username               = DEFAULT_USER;
     private String password               = DEFAULT_PASS;
     private String virtualHost            = DEFAULT_VHOST;
     private String host                   = DEFAULT_HOST;
@@ -144,16 +144,16 @@ public class ConnectionFactory implements Cloneable {
      * Retrieve the user name.
      * @return the AMQP user name to use when connecting to the broker
      */
-    public String getUserName() {
-        return this.userName;
+    public String getUsername() {
+        return this.username;
     }
 
     /**
      * Set the user name.
-     * @param userName the AMQP user name to use when connecting to the broker
+     * @param username the AMQP user name to use when connecting to the broker
      */
-    public void setUsername(String userName) {
-        this.userName = userName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     /**
