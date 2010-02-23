@@ -57,7 +57,7 @@ import com.rabbitmq.utility.Utility;
  *
  * <pre>
  * AMQConnection conn = new AMQConnection(hostName, portNumber);
- * conn.open(userName, portNumber, virtualHost);
+ * conn.open(username, portNumber, virtualHost);
  * </pre>
  *
  * <pre>
@@ -144,7 +144,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Hosts retrieved from the connection.open-ok */
     private Address[] _knownHosts;
 
-    private final String _userName, _password, _virtualHost;
+    private final String _username, _password, _virtualHost;
     private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
 
     /** {@inheritDoc} */
@@ -188,7 +188,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     {
         checkPreconditions();
 
-        _userName = factory.getUserName();
+        _username = factory.getUsername();
         _password = factory.getPassword();
         _virtualHost = factory.getVirtualHost();
         _requestedChannelMax = factory.getRequestedChannelMax();
@@ -258,7 +258,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             throw AMQChannel.wrap(sse);
         }
         
-        LongString saslResponse = LongStringHelper.asLongString("\0" + _userName +
+        LongString saslResponse = LongStringHelper.asLongString("\0" + _username +
                                                                 "\0" + _password);
         AMQImpl.Connection.StartOk startOk =
             new AMQImpl.Connection.StartOk(buildClientPropertiesTable(),
@@ -716,6 +716,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     @Override public String toString() {
-        return "amqp://" + _userName + "@" + getHost() + ":" + getPort() + _virtualHost;
+        return "amqp://" + _username + "@" + getHost() + ":" + getPort() + _virtualHost;
     }
 }

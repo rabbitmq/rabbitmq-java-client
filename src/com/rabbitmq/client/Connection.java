@@ -41,7 +41,7 @@ import java.io.IOException;
  * ConnectionFactory factory = new ConnectionFactory();
  * factory.setHostName(hostName);
  * factory.setVirtualHost(virtualHost);
- * factory.setUsername(userName);
+ * factory.setUsername(username);
  * factory.setPassword(password);
  * Connection conn = factory.newConnection();
  *
