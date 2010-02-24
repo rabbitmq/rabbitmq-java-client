@@ -400,10 +400,10 @@
     <mkdir dir="${bundle.out}"/>
     <copy file="${lib.out}/rabbitmq-client.jar"
           tofile="${bundle.out}/amqp-client-${impl.version}.jar"/>
-    <jar destfile="${bundle.out}/amqp-client-sources-${impl.version}.jar">
+    <jar destfile="${bundle.out}/amqp-client-${impl.version}-sources.jar">
         <fileset dir="src"/>
     </jar>
-    <jar destfile="${bundle.out}/amqp-client-javadoc-${impl.version}.jar">
+    <jar destfile="${bundle.out}/amqp-client-${impl.version}-javadoc.jar">
         <fileset dir="${javadoc.out}"/>
     </jar>
     <copy file="pom.xml" tofile="${bundle.out}/amqp-client-${impl.version}.pom"/>
