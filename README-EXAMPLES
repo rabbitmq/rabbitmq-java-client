@@ -1,0 +1,25 @@
+A number of examples are packaged with the source distribution and with the 
+tests jar in the binary distribution. These examples vary in complexity from 
+simple clients and servers through to complex test harnesses that are used for 
+testing the RabbitMQ server.
+
+The source code for the examples can be found in the test/src/com/rabbitmq/examples directory of the source distribution.
+
+SIMPLE EXAMPLES
+
+SimpleProducer - Sends a message to an exchange.
+SimpleConsumer - Reads a message from a queue.
+SimpleTopicProducer - Sends a message to a topic exchange.
+SimpleTopicConsumer - Reads a message from a topic queue.
+SendString - Send a string to an exchange.
+FileProducer - Sends a file to an exchange.
+FileConsumer - Reads a file from a queue.
+HelloClient - Performs a simple RPC call over AMQP.
+HelloServer - Acts as an RPC server over AMQP.
+HelloJsonClient - Performs a simple JSON-RPC call over AMQP.
+HelloJsonServer - Acts as a JSON-RPC server over AMQP.
+LogTail - ??
+
+MORE COMPLEX EXAMPLES
+
+
