@@ -1,0 +1,83 @@
+There are multiple test suites in the RabbitMQ Java client library; the source
+for all of the suites can be found in the test/src directory.
+
+The suites are:
+
+  Client tests
+  Funtional tests
+
+To run any of these test suites you need to first satisfy the following
+preconditions:
+
+  1. Ensure that you are running a RabbitMQ server locally on the standard 
+port.
+  2. Ensure that you have successfully built the javas client using ANT.
+
+All the test suites can be run with the command ant test-suite. To run 
+specific test suites see the instructions below.
+
+
+RUNNING CLIENT TESTS
+
+To run these tests, from the command line in the project directory execute
+the command ant test-client. For example:
+
+----------------- Example shell session -------------------------------------
+rabbitmq-java-client$ ant test-client
+Buildfile: build.xml
+
+test-prepare:
+
+test-build:
+
+amqp-generate-check:
+
+amqp-generate:
+
+build:
+
+test-build-param:
+
+test-client:
+    [junit] Running com.rabbitmq.client.test.ClientTests
+    [junit] Tests run: 31, Failures: 0, Errors: 0, Time elapsed: 2.388 sec
+
+BUILD SUCCESSFUL
+-----------------------------------------------------------------------------
+
+If any tests are broken details can be found by viewing this file:
+	build/TEST-com.rabbitmq.client.test.ClientTests.txt
+
+
+RUNNING FUNCTIONAL TESTS
+
+To run these tests, from the command line in the project directory execute
+the command ant test-functional.
+
+----------------- Example shell session -------------------------------------
+rabbitmq-java-client$ ant test-functional
+Buildfile: build.xml
+
+test-prepare:
+
+test-build:
+
+amqp-generate-check:
+
+amqp-generate:
+
+build:
+
+test-build-param:
+
+test-functional:
+    [junit] Running com.rabbitmq.client.test.functional.FunctionalTests
+    [junit] Tests run: 69, Failures: 0, Errors: 0, Time elapsed: 10.621 sec
+
+BUILD SUCCESSFUL
+Total time: 11 seconds
+-----------------------------------------------------------------------------
+
+If any tests are broken details can be found by viewing this file:
+	build/TEST-com.rabbitmq.client.test.functional.FunctionalTests.txt
+
