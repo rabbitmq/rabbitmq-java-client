@@ -5,6 +5,28 @@ testing the RabbitMQ server.
 
 The source code for the examples can be found in the test/src/com/rabbitmq/examples directory of the source distribution.
 
+RUNNING EXAMPLES
+
+The script runjava.sh or runjava.bat can be found in the top level directory of
+the binary distribution or in the scripts directory of the source distribution.
+This script can be used to run the examples, for example if you have a RabbitMQ
+broker running and you open two shell or console windows you can test basic 
+connectivity like this:
+
+shell-1$ ./runjava.sh com.rabbitmq.examples.SimpleConsumer
+
+shell-2$ ./runjava.sh com.rabbitmq.examples.SimpleProducer
+
+shell-1$ ./runjava.sh com.rabbitmq.examples.SimpleConsumer
+Message: the time is Fri Feb 26 08:28:58 GMT 2010
+
+The more complex examples will require additional command line arguments and 
+it is best to examine the source of the examples to determine what arguments
+are available.
+
+All examples live in the com.rabbitmq.examples package so add that package name
+to the examples described below to produce the full classname that is required as the first argument to the runjava script.
+ 
 SIMPLE EXAMPLES
 
 SimpleProducer - Sends a message to an exchange.
@@ -18,8 +40,22 @@ HelloClient - Performs a simple RPC call over AMQP.
 HelloServer - Acts as an RPC server over AMQP.
 HelloJsonClient - Performs a simple JSON-RPC call over AMQP.
 HelloJsonServer - Acts as a JSON-RPC server over AMQP.
-LogTail - ??
+LogTail - Tails the server logs.
+SendString - Sends a user supplied message over AMQP.
 
 MORE COMPLEX EXAMPLES
+
+Most of these examples are used in testing and tuning the RabbitMQ server.
+
+BufferPerformanceMetrics - Tests buffer sizing.
+ChannelCreationPerformance - Test different Channel creation strategies.
+ConsumerMain - Measures performance of Consumers.
+ManyConnections - Tests many connections.
+MulticastMain - Measures performance of multiple consumers and producers.
+ProducerMain - Measures performance of Producers.
+SpammyTopicProducer - Sends lots of different topic messages over AMQP.
+StressPersister - Stress test for persister.
+TestMain - RabbitMQ server regression tests.
+TracerConcurrencyTest - Tests correct concurrency behaviour of RabbitMQ tracer.
 
 
