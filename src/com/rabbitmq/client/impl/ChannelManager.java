@@ -66,12 +66,12 @@ public class ChannelManager {
       channelNumberAllocator = new IntAllocator(1, channelMax);
     }
 
-    
+
     /**
      * Public API - Looks up an existing channel associated with this connection.
      * @param channelNumber the number of the required channel
      * @return the relevant channel descriptor
-     * @throws UnknownChannelException if there is no Channel associated with the 
+     * @throws UnknownChannelException if there is no Channel associated with the
      *         required channel number.
      */
     public ChannelN getChannel(int channelNumber) {
@@ -100,7 +100,7 @@ public class ChannelManager {
     }
 
     public synchronized ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
-        if(channelNumberAllocator.reserve(channelNumber)) 
+        if(channelNumberAllocator.reserve(channelNumber))
             return createChannelInternal(connection, channelNumber);
         else
             return null;
@@ -110,10 +110,10 @@ public class ChannelManager {
         if (_channelMap.containsKey(channelNumber)) {
             // That number's already allocated! Can't do it
             // This should never happen unless something has gone
-            // badly wrong with our implementation. 
+            // badly wrong with our implementation.
             throw new IllegalStateException("We have attempted to"
               + "create a channel with a number that is already in"
-              + "use. This should never happen. Please report this as a bug."); 
+              + "use. This should never happen. Please report this as a bug.");
         }
         ChannelN ch = new ChannelN(connection, channelNumber);
         addChannel(ch);
@@ -126,7 +126,12 @@ public class ChannelManager {
     }
 
     public synchronized void disconnectChannel(int channelNumber) {
-        _channelMap.remove(channelNumber);
+        if (_channelMap.remove(channelNumber) == null)
+            throw new IllegalStateException(
+                "We have attempted to "
+                + "create a disconnect a channel that's no longer in "
+                + "use. This should never happen. Please report this as a bug.");
+        System.err.println("DISCONN CH" + channelNumber);
         channelNumberAllocator.free(channelNumber);
     }
 }
