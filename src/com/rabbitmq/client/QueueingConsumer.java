@@ -49,9 +49,9 @@ public class QueueingConsumer extends DefaultConsumer {
     // throw a shutdown signal exception.
     private volatile ShutdownSignalException _shutdown;
 
-    // Marker object used to signal the queue is in shutdown mode. 
+    // Marker object used to signal the queue is in shutdown mode.
     // It is only there to wake up consumers. The canonical representation
-    // of shutting down is the presence of _shutdown. 
+    // of shutting down is the presence of _shutdown.
     // Invariant: This is never on _queue unless _shutdown != null.
     private static final Delivery POISON = new Delivery(null, null, null);
 
@@ -66,7 +66,7 @@ public class QueueingConsumer extends DefaultConsumer {
     }
 
     @Override public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
-        _shutdown = sig; 
+        _shutdown = sig;
         _queue.add(POISON);
     }
 
@@ -162,7 +162,6 @@ public class QueueingConsumer extends DefaultConsumer {
     public Delivery nextDelivery(long timeout)
         throws InterruptedException, ShutdownSignalException
     {
-        checkShutdown();
         return handle(_queue.poll(timeout, TimeUnit.MILLISECONDS));
     }
 }
