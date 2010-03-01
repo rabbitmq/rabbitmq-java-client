@@ -111,8 +111,8 @@ public class ChannelManager {
             // That number's already allocated! Can't do it
             // This should never happen unless something has gone
             // badly wrong with our implementation.
-            throw new IllegalStateException("We have attempted to"
-              + "create a channel with a number that is already in"
+            throw new IllegalStateException("We have attempted to "
+              + "create a channel with a number that is already in "
               + "use. This should never happen. Please report this as a bug.");
         }
         ChannelN ch = new ChannelN(connection, channelNumber);
