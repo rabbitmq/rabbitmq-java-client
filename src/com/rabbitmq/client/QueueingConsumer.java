@@ -59,13 +59,13 @@ public class QueueingConsumer extends DefaultConsumer {
         this(ch, new LinkedBlockingQueue<Delivery>());
     }
 
-    public QueueingConsumer(Channel ch, BlockingQueue<Delivery> q)
-    {
+    public QueueingConsumer(Channel ch, BlockingQueue<Delivery> q) {
         super(ch);
         this._queue = q;
     }
 
-    @Override public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
+    @Override public void handleShutdownSignal(String consumerTag,
+                                               ShutdownSignalException sig) {
         _shutdown = sig;
         _queue.add(POISON);
     }
@@ -122,8 +122,9 @@ public class QueueingConsumer extends DefaultConsumer {
     /**
      * Check if we are in shutdown mode and if so throw an exception.
      */
-    private void checkShutdown(){
-      if(_shutdown != null) throw Utility.fixStackTrace(_shutdown);
+    private void checkShutdown() {
+        if (_shutdown != null)
+            throw Utility.fixStackTrace(_shutdown);
     }
 
     /**
@@ -131,13 +132,16 @@ public class QueueingConsumer extends DefaultConsumer {
      * If this is POISON we are in shutdown mode, throw _shutdown
      * If this is null, we may be in shutdown mode. Check and see.
      */
-    private Delivery handle(Delivery delivery)
-    {
-      if(delivery == POISON || (delivery == null && _shutdown != null)){
-        if(delivery == POISON) _queue.add(POISON);
-        throw Utility.fixStackTrace(_shutdown);
-      }
-      return delivery;
+    private Delivery handle(Delivery delivery) {
+        if (delivery == POISON ||
+            delivery == null && _shutdown != null) {
+            if (delivery == POISON) {
+                _queue.add(POISON);
+                assert _shutdown != null;
+            }
+            throw Utility.fixStackTrace(_shutdown);
+        }
+        return delivery;
     }
 
     /**
