@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -136,7 +136,9 @@ public class QosScaling {
     }
 
     public long run() throws IOException {
-        connection = connectionFactory.newConnection(params.host, params.port);
+        connectionFactory.setHost(params.host);
+        connectionFactory.setPort(params.port);
+        connection = connectionFactory.newConnection();
         channel = connection.createChannel();
         channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);

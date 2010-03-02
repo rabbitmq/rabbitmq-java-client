@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -81,14 +81,14 @@ public class ProducerMain implements Runnable {
 
     public static void main(String[] args) {
         try {
-            String hostName = optArg("hostName", args, 0, "localhost");
-            int portNumber = optArg("portNumber", args, 1, AMQP.PROTOCOL.PORT);
+            final String hostName = optArg("hostName", args, 0, "localhost");
+            final int portNumber = optArg("portNumber", args, 1, AMQP.PROTOCOL.PORT);
             int rateLimit = optArg("rateLimit", args, 2, SEND_RATE);
             int messageCount = optArg("messageCount", args, 3, LATENCY_MESSAGE_COUNT);
             boolean sendCompletion = optArg("sendCompletion", args, 4, false);
             int commitEvery = optArg("commitEvery", args, 5, -1);
             boolean sendLatencyInfo = optArg("sendLatencyInfo", args, 6, true);
-            final Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            final Connection conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
             //if (commitEvery > 0) { conn.getSocket().setTcpNoDelay(true); }
             System.out.println("Channel 0 fully open.");
             new ProducerMain(conn, rateLimit, messageCount, sendCompletion, commitEvery, sendLatencyInfo).run();

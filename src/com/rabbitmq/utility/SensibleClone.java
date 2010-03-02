@@ -28,18 +28,19 @@
 //
 //   Contributor(s): ______________________________________.
 //
+package com.rabbitmq.utility;
 
-package com.rabbitmq.client.test.functional;
+/** 
+ * This interface exists as a workaround for the annoyingness of java.lang.Cloneable.
+ * It is used for generic methods which need to accept something they can actually clone
+ * (Object.clone is protected and java.lang.Cloneable does not define a public clone method)
+ * and want to provide some guarantees of the type of the cloned object. 
+ */
+public interface SensibleClone<T extends SensibleClone<T>> extends Cloneable {
 
-import com.rabbitmq.client.AMQP.BasicProperties;
-
-public class Transactions
-    extends TransactionsBase
-{
-
-    protected BasicProperties getMessageProperties()
-    {
-        return null;
-    }
-
+  /**
+   * Like Object.clone but sensible; in particular, public and declared to return
+   * the right type. 
+   */
+  public T sensibleClone();
 }

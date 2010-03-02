@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -46,7 +46,8 @@ import com.rabbitmq.utility.IntAllocator;
 
 public class ChannelManager {
     /** Mapping from channel number to AMQChannel instance */
-    private final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
+    private final Map<Integer, ChannelN> _channelMap =
+        Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
     private final IntAllocator channelNumberAllocator;
 
     /** Maximum channel number available on this connection. */
@@ -56,22 +57,22 @@ public class ChannelManager {
       return _channelMax;
     }
 
-    public ChannelManager(int channelMax){
-      if(channelMax == 0){
-        // The framing encoding only allows for unsigned 16-bit integers for the channel number
-        channelMax = (1 << 16) - 1;
-      }
-
-      _channelMax = channelMax;
-      channelNumberAllocator = new IntAllocator(1, channelMax);
+    public ChannelManager(int channelMax) {
+        if (channelMax == 0) {
+            // The framing encoding only allows for unsigned 16-bit integers
+            // for the channel number
+            channelMax = (1 << 16) - 1;
+        }
+        _channelMax = channelMax;
+        channelNumberAllocator = new IntAllocator(1, channelMax);
     }
 
-    
+
     /**
      * Public API - Looks up an existing channel associated with this connection.
      * @param channelNumber the number of the required channel
      * @return the relevant channel descriptor
-     * @throws UnknownChannelException if there is no Channel associated with the 
+     * @throws UnknownChannelException if there is no Channel associated with the
      *         required channel number.
      */
     public ChannelN getChannel(int channelNumber) {
@@ -101,7 +102,7 @@ public class ChannelManager {
     }
 
     public synchronized ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
-        if(channelNumberAllocator.reserve(channelNumber)) 
+        if(channelNumberAllocator.reserve(channelNumber))
             return createChannelInternal(connection, channelNumber);
         else
             return null;
@@ -111,10 +112,10 @@ public class ChannelManager {
         if (_channelMap.containsKey(channelNumber)) {
             // That number's already allocated! Can't do it
             // This should never happen unless something has gone
-            // badly wrong with our implementation. 
-            throw new IllegalStateException("We have attempted to"
-              + "create a channel with a number that is already in"
-              + "use. This should never happen. Please report this as a bug."); 
+            // badly wrong with our implementation.
+            throw new IllegalStateException("We have attempted to "
+              + "create a channel with a number that is already in "
+              + "use. This should never happen. Please report this as a bug.");
         }
         ChannelN ch = new ChannelN(connection, channelNumber);
         addChannel(ch);
@@ -127,7 +128,11 @@ public class ChannelManager {
     }
 
     public synchronized void disconnectChannel(int channelNumber) {
-        _channelMap.remove(channelNumber);
+        if (_channelMap.remove(channelNumber) == null)
+            throw new IllegalStateException(
+                "We have attempted to "
+                + "create a disconnect a channel that's no longer in "
+                + "use. This should never happen. Please report this as a bug.");
         channelNumberAllocator.free(channelNumber);
     }
 }

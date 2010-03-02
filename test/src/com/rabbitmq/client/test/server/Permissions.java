@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -32,7 +32,6 @@
 package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.test.functional.*;
 import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
@@ -42,7 +41,6 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ConnectionParameters;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -57,11 +55,11 @@ public class Permissions extends BrokerTestCase
 
     public Permissions()
     {
-        ConnectionParameters params = new ConnectionParameters();
-        params.setUsername("test");
-        params.setPassword("test");
-        params.setVirtualHost("/test");
-        connectionFactory = new ConnectionFactory(params);
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setUsername("test");
+        factory.setPassword("test");
+        factory.setVirtualHost("/test");
+        connectionFactory = factory;
     }
 
     protected void setUp()
@@ -108,12 +106,11 @@ public class Permissions extends BrokerTestCase
     protected void createResources()
         throws IOException
     {
-        ConnectionParameters params = new ConnectionParameters();
-        params.setUsername("testadmin");
-        params.setPassword("test");
-        params.setVirtualHost("/test");
-        ConnectionFactory factory = new ConnectionFactory(params);
-        Connection connection = factory.newConnection("localhost");
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setUsername("testadmin");
+        factory.setPassword("test");
+        factory.setVirtualHost("/test");
+        Connection connection = factory.newConnection();
         adminCh = connection.createChannel();
         withNames(new WithName() {
                 public void with(String name) throws IOException {

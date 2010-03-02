@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -144,7 +144,7 @@ public class ScalabilityTest {
             s.close();
             s = open(prefix, "deletion");
             print(s, base, deletionTimes);
-            s.close(); 
+            s.close();
             s = open(prefix, "routing");
             print(s, base, transpose(routingTimes));
             s.close();
@@ -214,7 +214,7 @@ public class ScalabilityTest {
 
 
     public Results run() throws Exception{
-        Connection con = new ConnectionFactory().newConnection(params.host, params.port);
+        Connection con = new ConnectionFactory(){{setHost(params.host); setPort(params.port);}}.newConnection();
         Channel channel = con.createChannel();
 
         Results r = new Results(params.maxBindingExp);

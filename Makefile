@@ -4,8 +4,11 @@ PACKAGE_NAME=rabbitmq-java-client
 
 JAVADOC_ARCHIVE=$(PACKAGE_NAME)-javadoc-$(VERSION)
 SRC_ARCHIVE=$(PACKAGE_NAME)-$(VERSION)
+SIGNING_KEY=056E8E56
+GNUPG_PATH=~
 
 WEB_URL=http://stage.rabbitmq.com/
+NEXUS_STAGE_URL=http://oss.sonatype.org/service/local/staging/deploy/maven2
 
 AMQP_CODEGEN_DIR=$(shell fgrep sibling.codegen.dir build.properties | sed -e 's:sibling\.codegen\.dir=::')
 
@@ -66,5 +69,37 @@ srcdist: distclean
 	(cd build; zip -r $(SRC_ARCHIVE).zip $(SRC_ARCHIVE))
 	(cd build; rm -rf $(SRC_ARCHIVE))
 
-deploy-maven-bundle: maven-bundle
-	rsync -r build/bundle/* $(MAVEN_RSYNC_DESTINATION)
+stage-maven-bundle: maven-bundle
+	( \
+	  cd build/bundle; \
+	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
+	  NEXUS_PASSWORD=`cat $(GNUPG_PATH)/../nexus/password`; \
+	  VERSION=$(VERSION) \
+	  SIGNING_KEY=$(SIGNING_KEY) \
+	  GNUPG_PATH=$(GNUPG_PATH) \
+	  CREDS="$$NEXUS_USERNAME:$$NEXUS_PASSWORD" \
+	  ../../nexus-upload.sh \
+	    amqp-client-$(VERSION).pom \
+	    amqp-client-$(VERSION).jar \
+	    amqp-client-$(VERSION)-javadoc.jar \
+	    amqp-client-$(VERSION)-sources.jar && \
+	  mvn org.sonatype.plugins:nexus-maven-plugin:staging-close \
+	    -Dnexus.url=http://oss.sonatype.org \
+	    -Dnexus.username=$$NEXUS_USERNAME \
+	    -Dnexus.password=$$NEXUS_PASSWORD \
+	    -B \
+	    -Dnexus.description="Public release of $$VERSION" \
+	)
+
+promote-maven-bundle:
+	( \
+	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
+	  NEXUS_PASSWORD=`cat $(GNUPG_PATH)/../nexus/password`; \
+	  mvn org.sonatype.plugins:nexus-maven-plugin:staging-promote \
+	    -Dnexus.url=http://oss.sonatype.org \
+	    -Dnexus.username=$$NEXUS_USERNAME \
+	    -Dnexus.password=$$NEXUS_PASSWORD \
+	    -Dnexus.promote.autoSelectOverride=true \
+	    -DtargetRepositoryId=releases \
+	    -B \
+	)

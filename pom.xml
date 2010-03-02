@@ -4,6 +4,66 @@
     <groupId>com.rabbitmq</groupId>
     <artifactId>amqp-client</artifactId>
     <version>VERSION</version>
+    <packaging>jar</packaging>
+    <name>RabbitMQ Java Client</name>
+    <description>RabbitMQ AMQP Java Client</description>
+    <url>http://www.rabbitmq.com</url>
+    
+    <licenses>
+      <license>
+        <name>GPL v2</name>
+        <url>http://www.gnu.org/licenses/gpl-2.0.txt</url>
+        <distribution>repo</distribution>
+      </license>
+      <license>
+        <name>MPL 1.1</name>
+        <url>http://www.mozilla.org/MPL/MPL-1.1.txt</url>
+        <distribution>repo</distribution>
+      </license>
+    </licenses>
+
+    <scm>
+      <url>http://hg.rabbitmq.com/rabbitmq-java-client</url>
+      <connection>scm:hg:http://hg.rabbitmq.com/rabbitmq-java-client</connection> 
+    </scm>
+
+    <developers>
+      <developer>
+        <id>matthias.radestock</id>
+        <name>Matthias Radestock</name>
+        <roles>
+          <role>Developer</role>
+        </roles>
+      </developer>
+     <developer>
+        <id>tonyg</id>
+        <name>Tony Garnock-Jones</name>
+        <roles>
+          <role>Developer</role>
+        </roles>
+      </developer>
+      <developer>
+        <id>matthew.sackman</id>
+        <name>Matthias Sackman</name>
+        <roles>
+          <role>Developer</role>
+        </roles>
+      </developer>
+      <developer>
+        <id>david.maciver</id>
+        <name>David MacIver</name>
+        <roles>
+          <role>Developer</role>
+        </roles>
+      </developer>
+      <developer>
+        <id>paul.jones</id>
+        <name>Paul Jones</name>
+        <roles>
+          <role>Developer</role>
+        </roles>
+      </developer>
+    </developers>
 
     <dependencies>
 
@@ -27,4 +87,12 @@
         </dependency>
 
     </dependencies>
+
+    <distributionManagement>
+      <repository>
+        <id>sonatype-nexus-staging</id>
+        <name>Nexus Release Repository</name>
+        <url>http://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+      </repository>
+    </distributionManagement>
 </project>

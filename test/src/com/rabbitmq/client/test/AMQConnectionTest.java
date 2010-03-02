@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -45,7 +45,7 @@ import junit.framework.TestSuite;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.impl.AMQConnection;
@@ -72,7 +72,7 @@ public class AMQConnectionTest extends TestCase {
 
     /** The mock frame handler used to test connection behaviour. */
     private MockFrameHandler _mockFrameHandler;
-    private ConnectionParameters _params;
+    private ConnectionFactory factory;
 
     /** Setup the environment for this test
      * @see junit.framework.TestCase#setUp()
@@ -81,7 +81,7 @@ public class AMQConnectionTest extends TestCase {
     @Override protected void setUp() throws Exception {
         super.setUp();
         _mockFrameHandler = new MockFrameHandler();
-        _params = new ConnectionParameters();
+        factory = new ConnectionFactory();
     }
 
     /** Tear down the environment for this test
@@ -89,7 +89,7 @@ public class AMQConnectionTest extends TestCase {
      * @throws Exception if anything goes wrong
      */
     @Override protected void tearDown() throws Exception {
-        _params = null;
+        factory = null;
         _mockFrameHandler = null;
         super.tearDown();
     }
@@ -103,7 +103,7 @@ public class AMQConnectionTest extends TestCase {
         MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, _mockFrameHandler.countHeadersSent());
         try {
-            new AMQConnection(_params, _mockFrameHandler, handler).start(false);
+            new AMQConnection(factory, _mockFrameHandler, handler).start(false);
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
            // As expected 

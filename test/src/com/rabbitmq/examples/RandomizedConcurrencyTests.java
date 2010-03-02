@@ -32,7 +32,10 @@ class RandomizedConcurrencyTests{
   public void run(){
     final Connection conn;
     try {
-      conn = new ConnectionFactory().newConnection(host, port);
+      conn = new ConnectionFactory(){{
+        setHost(host);
+        setPort(port);
+      }}.newConnection();
       Channel setup = conn.createChannel();
 
       for(int i = 0; i < queueExchangeCount; i++){
