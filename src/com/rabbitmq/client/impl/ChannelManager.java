@@ -86,8 +86,8 @@ public class ChannelManager {
         synchronized(_channelMap) {
             channels = new HashSet<ChannelN>(_channelMap.values());
         }
-        for (AMQChannel channel : channels) {
-            disconnectChannel(channel.getChannelNumber());
+        for (ChannelN channel : channels) {
+            disconnectChannel(channel);
             channel.processShutdownSignal(signal, true, true);
         }
     }
@@ -126,13 +126,13 @@ public class ChannelManager {
         _channelMap.put(chan.getChannelNumber(), chan);
     }
 
-    public synchronized void disconnectChannel(int channelNumber) {
-        if (_channelMap.remove(channelNumber) == null)
+    public synchronized void disconnectChannel(ChannelN channel) {
+        int channelNumber = channel.getChannelNumber();
+        if (_channelMap.remove(channelNumber) != channel)
             throw new IllegalStateException(
                 "We have attempted to "
                 + "create a disconnect a channel that's no longer in "
                 + "use. This should never happen. Please report this as a bug.");
-        System.err.println("DISCONN CH" + channelNumber);
         channelNumberAllocator.free(channelNumber);
     }
 }
