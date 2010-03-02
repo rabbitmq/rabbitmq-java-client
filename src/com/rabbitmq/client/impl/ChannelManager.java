@@ -46,7 +46,8 @@ import com.rabbitmq.utility.IntAllocator;
 
 public class ChannelManager {
     /** Mapping from channel number to AMQChannel instance */
-    private final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
+    private final Map<Integer, ChannelN> _channelMap =
+        Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
     private final IntAllocator channelNumberAllocator;
 
     /** Maximum channel number available on this connection. */
@@ -56,14 +57,14 @@ public class ChannelManager {
       return _channelMax;
     }
 
-    public ChannelManager(int channelMax){
-      if(channelMax == 0){
-        // The framing encoding only allows for unsigned 16-bit integers for the channel number
-        channelMax = (1 << 16) - 1;
-      }
-
-      _channelMax = channelMax;
-      channelNumberAllocator = new IntAllocator(1, channelMax);
+    public ChannelManager(int channelMax) {
+        if (channelMax == 0) {
+            // The framing encoding only allows for unsigned 16-bit integers
+            // for the channel number
+            channelMax = (1 << 16) - 1;
+        }
+        _channelMax = channelMax;
+        channelNumberAllocator = new IntAllocator(1, channelMax);
     }
 
 
