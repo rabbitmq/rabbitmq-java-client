@@ -116,4 +116,10 @@ public class Utility {
     public static void emptyStatement() {
         use(null);
     }
+
+    public static Error panic(String message){
+        return new AssertionError(message + 
+          "This should never happen. Please report it as a bug"
+        );
+    }
 }

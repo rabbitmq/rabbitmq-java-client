@@ -39,6 +39,7 @@ import java.util.Set;
 
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.IntAllocator;
+import com.rabbitmq.utility.Utility;
 
 /**
  * Manages a set of channels, indexed by channel number.
@@ -111,9 +112,9 @@ public class ChannelManager {
             // That number's already allocated! Can't do it
             // This should never happen unless something has gone
             // badly wrong with our implementation. 
-            throw new IllegalStateException("We have attempted to"
+            throw Utility.panic("We have attempted to"
               + "create a channel with a number that is already in"
-              + "use. This should never happen. Please report this as a bug."); 
+              + "use");
         }
         ChannelN ch = new ChannelN(connection, channelNumber);
         addChannel(ch);

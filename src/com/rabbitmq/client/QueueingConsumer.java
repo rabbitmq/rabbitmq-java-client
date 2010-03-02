@@ -138,9 +138,8 @@ public class QueueingConsumer extends DefaultConsumer {
             if (delivery == POISON) {
                 _queue.add(POISON);
                 if (_shutdown == null) {
-                    throw new IllegalStateException(
-                        "POISON in queue, but null _shutdown. " +
-                        "This should never happen, please report as a BUG");
+                    throw Utility.panic(
+                        "POISON in queue, but null _shutdown."); 
                 }
             }
             throw Utility.fixStackTrace(_shutdown);
