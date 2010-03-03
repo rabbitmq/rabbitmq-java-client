@@ -73,6 +73,10 @@ public class ConnectionFactory implements Cloneable {
     /** Default value for desired heartbeat interval; zero for none */
     public static final int DEFAULT_HEARTBEAT = 0;
 
+    /** Default extra client properties to be sent to the server */
+    public static final Map<String, Object> DEFAULT_CLIENT_PROPERTIES =
+            new HashMap<String, Object>();
+
     /** The default host to connect to */
     public static final String DEFAULT_HOST = "localhost";
 
@@ -90,15 +94,16 @@ public class ConnectionFactory implements Cloneable {
      */
     public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
-    private String username               = DEFAULT_USER;
-    private String password               = DEFAULT_PASS;
-    private String virtualHost            = DEFAULT_VHOST;
-    private String host                   = DEFAULT_HOST;
-    private int port                      = USE_DEFAULT_PORT;
-    private int requestedChannelMax       = DEFAULT_CHANNEL_MAX;
-    private int requestedFrameMax         = DEFAULT_FRAME_MAX;
-    private int requestedHeartbeat        = DEFAULT_HEARTBEAT;
-    private SocketFactory factory         = SocketFactory.getDefault();
+    private String username                       = DEFAULT_USER;
+    private String password                       = DEFAULT_PASS;
+    private String virtualHost                    = DEFAULT_VHOST;
+    private String host                           = DEFAULT_HOST;
+    private int port                              = USE_DEFAULT_PORT;
+    private int requestedChannelMax               = DEFAULT_CHANNEL_MAX;
+    private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
+    private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
+    private Map<String, Object> _clientProperties = DEFAULT_CLIENT_PROPERTIES;
+    private SocketFactory factory                 = SocketFactory.getDefault();
 
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
@@ -234,6 +239,22 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setRequestedHeartbeat(int requestedHeartbeat) {
         this.requestedHeartbeat = requestedHeartbeat;
+    }
+
+    /**
+     * Retrieve the map of extra client properties to be sent to the server
+     * @return the map of extra client properties
+     */
+    public Map<String, Object> getClientProperties() {
+        return _clientProperties;
+    }
+
+    /**
+     * Set the extra client properties to be sent to the server
+     * @param clientProperties the map of extra client properties
+     */
+    public void setClientProperties(Map<String, Object> clientProperties) {
+        _clientProperties = clientProperties;
     }
 
     /**

@@ -72,18 +72,19 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Timeout used while waiting for a connection.close-ok (milliseconds) */
     public static final int CONNECTION_CLOSING_TIMEOUT = 10000;
 
-    private static final Object[] DEFAULT_CLIENT_PROPERTIES = new Object[] {
-        "product", LongStringHelper.asLongString("RabbitMQ"),
-        "version", LongStringHelper.asLongString(ClientVersion.VERSION),
-        "platform", LongStringHelper.asLongString("Java"),
-        "copyright", LongStringHelper.asLongString(
-            "Copyright (C) 2007-2008 LShift Ltd., " +
-            "Cohesive Financial Technologies LLC., " +
-            "and Rabbit Technologies Ltd."),
-        "information", LongStringHelper.asLongString(
-            "Licensed under the MPL.  " +
-            "See http://www.rabbitmq.com/")
-    };
+    private static final Object[] DEFAULT_CLIENT_PROPERTIES_ARRAY =
+        new Object[] {
+            "product", LongStringHelper.asLongString("RabbitMQ"),
+            "version", LongStringHelper.asLongString(ClientVersion.VERSION),
+            "platform", LongStringHelper.asLongString("Java"),
+            "copyright", LongStringHelper.asLongString(
+                "Copyright (C) 2007-2008 LShift Ltd., " +
+                "Cohesive Financial Technologies LLC., " +
+                "and Rabbit Technologies Ltd."),
+            "information", LongStringHelper.asLongString(
+                "Licensed under the MPL.  " +
+                "See http://www.rabbitmq.com/")
+        };
 
     private static final Version clientVersion =
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
@@ -159,6 +160,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     private final String _username, _password, _virtualHost;
     private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
+    private final Map<String, Object> _clientProperties;
 
     /** {@inheritDoc} */
     public String getHost() {
@@ -207,6 +209,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _requestedChannelMax = factory.getRequestedChannelMax();
         _requestedFrameMax = factory.getRequestedFrameMax();
         _requestedHeartbeat = factory.getRequestedHeartbeat();
+        _clientProperties =
+                buildClientPropertiesTable(factory.getClientProperties());
 
         this.factory = factory;
         _frameHandler = frameHandler;
@@ -274,10 +278,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         LongString saslResponse = LongStringHelper.asLongString("\0" + _username +
                                                                 "\0" + _password);
         AMQImpl.Connection.StartOk startOk =
-            new AMQImpl.Connection.StartOk(buildClientPropertiesTable(),
-                                           "PLAIN",
-                                           saslResponse,
-                                           "en_US");
+            new AMQImpl.Connection.StartOk(_clientProperties, "PLAIN",
+                                           saslResponse, "en_US");
         
         AMQP.Connection.Tune connTune =
             (AMQP.Connection.Tune) _channel0.exnWrappingRpc(startOk).getMethod();
@@ -397,9 +399,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _lastActivityTime = System.nanoTime();
     }
 
-    public Map<String, Object> buildClientPropertiesTable() {
-        Map<String, Object> props = Frame.buildTable(DEFAULT_CLIENT_PROPERTIES);
-        props.putAll(_params.getClientProperties());
+    private static Map<String, Object> buildClientPropertiesTable(
+                                    Map<String, Object> extraClientProperties) {
+        Map<String, Object> props =
+                Frame.buildTable(DEFAULT_CLIENT_PROPERTIES_ARRAY);
+        props.putAll(extraClientProperties);
         return props;
     }
 
