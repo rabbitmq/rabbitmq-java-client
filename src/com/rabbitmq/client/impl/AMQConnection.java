@@ -364,6 +364,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
+    public Map<String, Object> getClientProperties() {
+        return _clientProperties;
+    }
+
     /**
      * Protected API - retrieve the current ExceptionHandler
      */

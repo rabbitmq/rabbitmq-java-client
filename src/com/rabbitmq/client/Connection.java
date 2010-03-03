@@ -31,6 +31,7 @@
 package com.rabbitmq.client;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Public API: Interface to an AMQ connection. See the see the <a href="http://www.amqp.org/">spec</a> for details.
@@ -88,6 +89,13 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * @return the heartbeat interval, in seconds; zero if none
      */
     int getHeartbeat();
+
+    /**
+     * Get the map of client properties sent to the server
+     *
+     * @return map of client properties
+     */
+    Map<String, Object> getClientProperties();
 
     /**
      * Retrieve the known hosts.
