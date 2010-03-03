@@ -145,13 +145,13 @@ public class ChannelManager {
         // a way as to cause disconnectChannel on the old channel to try to 
         // remove the new one. Ideally we would fix this race at the source,
         // but it's much easier to just catch it here.   
-        synchronized(_channelMap){
+        synchronized (_channelMap) {
           ChannelN existing = _channelMap.remove(channelNumber);
           // Nothing to do here. Move along. 
-          if(existing == null) return;
+          if (existing == null) return;
           // Oops, we've gone and stomped on someone else's channel. Put it back
           // and pretend we didn't touch it. 
-          else if(existing != channel){
+          else if (existing != channel) {
             _channelMap.put(channelNumber, existing);
             return;
           }
