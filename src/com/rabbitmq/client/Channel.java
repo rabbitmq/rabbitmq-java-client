@@ -95,7 +95,7 @@ public interface Channel extends ShutdownNotifier {
     /**
      * Set flow on the channel
      * 
-     * @param active is flow active
+     * @param active if true, the server is asked to start sending. If false, the server is asked to stop sending.
      * @throws IOException
      */
     FlowOk flow(boolean active) throws IOException;
