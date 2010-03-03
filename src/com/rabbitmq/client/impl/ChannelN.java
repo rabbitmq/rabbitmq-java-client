@@ -166,7 +166,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     public void releaseChannelNumber() {
-        _connection.disconnectChannel(_channelNumber);
+        _connection.disconnectChannel(this);
     }
 
     /**

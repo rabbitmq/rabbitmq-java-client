@@ -113,8 +113,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
      * @param channelNumber the number of the channel to disconnect
      */
-    public final void disconnectChannel(int channelNumber) {
-        _channelManager.disconnectChannel(channelNumber);
+    public final void disconnectChannel(ChannelN channel) {
+        _channelManager.disconnectChannel(channel);
     }
 
     public void ensureIsOpen()
