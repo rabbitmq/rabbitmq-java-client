@@ -695,4 +695,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     {
         return (Tx.RollbackOk) exnWrappingRpc(new Tx.Rollback()).getMethod();
     }
+
+    /** Public API - {@inheritDoc} */
+    public Channel.FlowOk flow(final boolean a) throws IOException {
+        return (Channel.FlowOk) exnWrappingRpc(new Channel.Flow() {{active = a;}}).getMethod();        
+    }
 }
