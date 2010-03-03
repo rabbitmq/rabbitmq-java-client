@@ -136,7 +136,9 @@ public class QosScaling {
     }
 
     public long run() throws IOException {
-        connection = connectionFactory.newConnection(params.host, params.port);
+        connectionFactory.setHost(params.host);
+        connectionFactory.setPort(params.port);
+        connection = connectionFactory.newConnection();
         channel = connection.createChannel();
         channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);

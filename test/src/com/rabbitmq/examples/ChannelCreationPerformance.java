@@ -36,9 +36,8 @@ import java.util.*;
 
 class ChannelCreationPerformance {
     static Connection connect() throws Exception{
-      return new ConnectionFactory(new ConnectionParameters(){{
-        setRequestedChannelMax(CHANNEL_MAX);
-      }}).newConnection("localhost");
+      return new ConnectionFactory()
+          {{setRequestedChannelMax(CHANNEL_MAX);}}.newConnection();
     }
 
     static int CHANNEL_MAX = 10000;

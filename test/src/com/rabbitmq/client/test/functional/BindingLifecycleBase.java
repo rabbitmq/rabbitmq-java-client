@@ -38,6 +38,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ConnectionFactory;
 import java.io.IOException;
 
 /**
@@ -75,7 +76,10 @@ public class BindingLifecycleBase extends BrokerTestCase {
     super.openConnection();
     if (secondaryConnection == null) {
       try {
-        secondaryConnection = connectionFactory.newConnection("localhost", 5673);
+        ConnectionFactory cf2 = connectionFactory.clone();
+        cf2.setHost("localhost");
+        cf2.setPort(5673);
+        secondaryConnection = cf2.newConnection();
       }
       catch (IOException e) {
       }

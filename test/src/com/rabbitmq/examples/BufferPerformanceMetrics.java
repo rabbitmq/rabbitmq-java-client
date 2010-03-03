@@ -28,7 +28,7 @@ public class BufferPerformanceMetrics {
     public static double NANOSECONDS_PER_SECOND = 1000 * 1000 * 1000;
 
     public static void main(String[] args) throws Exception {
-        String hostName = args.length > 0 ? args[0] : "localhost";
+        final String hostName = args.length > 0 ? args[0] : "localhost";
 
         Random rnd = new Random();
 
@@ -49,6 +49,8 @@ public class BufferPerformanceMetrics {
 
             for(final boolean useNagle : new boolean[] { false, true }) {
                 ConnectionFactory factory = new ConnectionFactory() {
+                    { setHost(hostName); }
+                    
                         public void configureSocket(Socket socket)
                             throws IOException {
                             socket.setTcpNoDelay(!useNagle);
@@ -57,7 +59,7 @@ public class BufferPerformanceMetrics {
                         }
                     };
 
-                Connection connection = factory.newConnection(hostName);
+                Connection connection = factory.newConnection();
                 Channel channel = connection.createChannel();
                 Queue.DeclareOk res = channel.queueDeclare();
                 String queueName = res.getQueue();
