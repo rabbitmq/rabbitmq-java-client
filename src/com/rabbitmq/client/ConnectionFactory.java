@@ -73,10 +73,6 @@ public class ConnectionFactory implements Cloneable {
     /** Default value for desired heartbeat interval; zero for none */
     public static final int DEFAULT_HEARTBEAT = 0;
 
-    /** Default extra client properties to be sent to the server */
-    public static final Map<String, Object> DEFAULT_CLIENT_PROPERTIES =
-            new HashMap<String, Object>();
-
     /** The default host to connect to */
     public static final String DEFAULT_HOST = "localhost";
 
@@ -102,7 +98,7 @@ public class ConnectionFactory implements Cloneable {
     private int requestedChannelMax               = DEFAULT_CHANNEL_MAX;
     private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
     private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
-    private Map<String, Object> _clientProperties = DEFAULT_CLIENT_PROPERTIES;
+    private Map<String, Object> _clientProperties = getDefaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
 
     /**
@@ -239,6 +235,15 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setRequestedHeartbeat(int requestedHeartbeat) {
         this.requestedHeartbeat = requestedHeartbeat;
+    }
+
+    /**
+     * Retrieve the default table of extra client properties to be sent to the
+     * server.
+     * @return the map of extra client properties
+     */
+    public static Map<String, Object> getDefaultClientProperties() {
+        return new HashMap<String, Object>();
     }
 
     /**

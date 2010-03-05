@@ -35,6 +35,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -365,7 +366,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     public Map<String, Object> getClientProperties() {
-        return _clientProperties;
+        return new HashMap<String, Object>(_clientProperties);
     }
 
     /**

@@ -91,9 +91,9 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     int getHeartbeat();
 
     /**
-     * Get the map of client properties sent to the server
+     * Get a copy of the map of client properties sent to the server
      *
-     * @return map of client properties
+     * @return a copy of the map of client properties
      */
     Map<String, Object> getClientProperties();
 
