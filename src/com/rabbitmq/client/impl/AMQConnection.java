@@ -147,6 +147,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final String _username, _password, _virtualHost;
     private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
 
+    /** Saved server properties field from connection.start */
+    public Map<String, Object> _serverProperties;
+
     /** {@inheritDoc} */
     public String getHost() {
         return _frameHandler.getHost();
@@ -164,6 +167,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     public FrameHandler getFrameHandler(){
         return _frameHandler;
+    }
+
+    /** {@inheritDoc} */
+    public Map<String, Object> getServerProperties() {
+        return _serverProperties;
     }
 
     /**
@@ -243,6 +251,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         try {
             AMQP.Connection.Start connStart =
                 (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
+
+            _serverProperties = connStart.getServerProperties();
         
             Version serverVersion =
                 new Version(connStart.getVersionMajor(),
