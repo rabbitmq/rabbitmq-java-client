@@ -46,7 +46,8 @@ import com.rabbitmq.utility.IntAllocator;
 
 public class ChannelManager {
     /** Mapping from channel number to AMQChannel instance */
-    private final Map<Integer, ChannelN> _channelMap = Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
+    private final Map<Integer, ChannelN> _channelMap =
+        Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
     private final IntAllocator channelNumberAllocator;
 
     /** Maximum channel number available on this connection. */
@@ -56,22 +57,22 @@ public class ChannelManager {
       return _channelMax;
     }
 
-    public ChannelManager(int channelMax){
-      if(channelMax == 0){
-        // The framing encoding only allows for unsigned 16-bit integers for the channel number
-        channelMax = (1 << 16) - 1;
-      }
-
-      _channelMax = channelMax;
-      channelNumberAllocator = new IntAllocator(1, channelMax);
+    public ChannelManager(int channelMax) {
+        if (channelMax == 0) {
+            // The framing encoding only allows for unsigned 16-bit integers
+            // for the channel number
+            channelMax = (1 << 16) - 1;
+        }
+        _channelMax = channelMax;
+        channelNumberAllocator = new IntAllocator(1, channelMax);
     }
 
-    
+
     /**
      * Public API - Looks up an existing channel associated with this connection.
      * @param channelNumber the number of the required channel
      * @return the relevant channel descriptor
-     * @throws UnknownChannelException if there is no Channel associated with the 
+     * @throws UnknownChannelException if there is no Channel associated with the
      *         required channel number.
      */
     public ChannelN getChannel(int channelNumber) {
@@ -85,8 +86,8 @@ public class ChannelManager {
         synchronized(_channelMap) {
             channels = new HashSet<ChannelN>(_channelMap.values());
         }
-        for (AMQChannel channel : channels) {
-            disconnectChannel(channel.getChannelNumber());
+        for (ChannelN channel : channels) {
+            disconnectChannel(channel);
             channel.processShutdownSignal(signal, true, true);
         }
     }
@@ -100,7 +101,7 @@ public class ChannelManager {
     }
 
     public synchronized ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
-        if(channelNumberAllocator.reserve(channelNumber)) 
+        if(channelNumberAllocator.reserve(channelNumber))
             return createChannelInternal(connection, channelNumber);
         else
             return null;
@@ -110,10 +111,10 @@ public class ChannelManager {
         if (_channelMap.containsKey(channelNumber)) {
             // That number's already allocated! Can't do it
             // This should never happen unless something has gone
-            // badly wrong with our implementation. 
-            throw new IllegalStateException("We have attempted to"
-              + "create a channel with a number that is already in"
-              + "use. This should never happen. Please report this as a bug."); 
+            // badly wrong with our implementation.
+            throw new IllegalStateException("We have attempted to "
+              + "create a channel with a number that is already in "
+              + "use. This should never happen. Please report this as a bug.");
         }
         ChannelN ch = new ChannelN(connection, channelNumber);
         addChannel(ch);
@@ -125,8 +126,36 @@ public class ChannelManager {
         _channelMap.put(chan.getChannelNumber(), chan);
     }
 
-    public synchronized void disconnectChannel(int channelNumber) {
-        _channelMap.remove(channelNumber);
-        channelNumberAllocator.free(channelNumber);
+    /**
+     * Remove the argument channel from the channel map. 
+     * This method must be safe to call multiple times on the same channel. If 
+     * it is not then things go badly wrong.
+     */
+    public synchronized void disconnectChannel(ChannelN channel) {
+        int channelNumber = channel.getChannelNumber();
+       
+        // Warning, here be dragons. Not great big ones, but little baby ones
+        // which will nibble on your toes and occasionally trip you up when 
+        // you least expect it. 
+        // Basically, there's a race that can end us up here. It almost never 
+        // happens, but it's easier to repair it when it does than prevent it 
+        // from happening in the first place. 
+        // If we end up doing a Channel.close in one thread and a Channel.open
+        // with the same channel number in another, the two can overlap in such
+        // a way as to cause disconnectChannel on the old channel to try to 
+        // remove the new one. Ideally we would fix this race at the source,
+        // but it's much easier to just catch it here.   
+        synchronized (_channelMap) {
+          ChannelN existing = _channelMap.remove(channelNumber);
+          // Nothing to do here. Move along. 
+          if (existing == null) return;
+          // Oops, we've gone and stomped on someone else's channel. Put it back
+          // and pretend we didn't touch it. 
+          else if (existing != channel) {
+            _channelMap.put(channelNumber, existing);
+            return;
+          }
+          channelNumberAllocator.free(channelNumber);
+        } 
     }
 }

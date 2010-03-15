@@ -104,6 +104,12 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     Address[] getKnownHosts();
 
     /**
+     * Retrieve the server properties.
+     * @return a map of the server properties. This typically includes the product name and version of the server.
+     */
+    Map<String, Object> getServerProperties();
+
+    /**
      * Create a new channel, using an internally allocated channel number.
      * @return a new channel descriptor, or null if none is available
      * @throws IOException if an I/O problem is encountered

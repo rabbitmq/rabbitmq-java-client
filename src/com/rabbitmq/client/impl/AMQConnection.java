@@ -128,8 +128,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
      * @param channelNumber the number of the channel to disconnect
      */
-    public final void disconnectChannel(int channelNumber) {
-        _channelManager.disconnectChannel(channelNumber);
+    public final void disconnectChannel(ChannelN channel) {
+        _channelManager.disconnectChannel(channel);
     }
 
     public void ensureIsOpen()
@@ -163,6 +163,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
     private final Map<String, Object> _clientProperties;
 
+    /** Saved server properties field from connection.start */
+    public Map<String, Object> _serverProperties;
+
     /** {@inheritDoc} */
     public String getHost() {
         return _frameHandler.getHost();
@@ -180,6 +183,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     public FrameHandler getFrameHandler(){
         return _frameHandler;
+    }
+
+    /** {@inheritDoc} */
+    public Map<String, Object> getServerProperties() {
+        return _serverProperties;
     }
 
     /**
@@ -261,6 +269,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         try {
             AMQP.Connection.Start connStart =
                 (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
+
+            _serverProperties = connStart.getServerProperties();
         
             Version serverVersion =
                 new Version(connStart.getVersionMajor(),
