@@ -98,7 +98,7 @@ public class ConnectionFactory implements Cloneable {
     private int requestedChannelMax               = DEFAULT_CHANNEL_MAX;
     private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
     private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
-    private Map<String, Object> _clientProperties = getDefaultClientProperties();
+    private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
 
     /**
@@ -238,25 +238,23 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Retrieve the default table of extra client properties to be sent to the
-     * server.
-     * @return the map of extra client properties
-     */
-    public static Map<String, Object> getDefaultClientProperties() {
-        return new HashMap<String, Object>();
-    }
-
-    /**
-     * Retrieve the map of extra client properties to be sent to the server
-     * @return the map of extra client properties
+     * Retrieve the currently-configured table of client properties
+     * that will be sent to the server during connection
+     * startup. Clients may add, delete, and alter keys in this
+     * table. Such changes will take effect when the next new
+     * connection is started using this factory.
+     * @return the map of client properties
+     * @see setClientProperties()
      */
     public Map<String, Object> getClientProperties() {
         return _clientProperties;
     }
 
     /**
-     * Set the extra client properties to be sent to the server
+     * Replace the table of client properties that will be sent to the
+     * server during subsequent connection startups.
      * @param clientProperties the map of extra client properties
+     * @see getClientProperties()
      */
     public void setClientProperties(Map<String, Object> clientProperties) {
         _clientProperties = clientProperties;

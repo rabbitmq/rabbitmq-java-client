@@ -73,19 +73,27 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Timeout used while waiting for a connection.close-ok (milliseconds) */
     public static final int CONNECTION_CLOSING_TIMEOUT = 10000;
 
-    private static final Object[] DEFAULT_CLIENT_PROPERTIES_ARRAY =
-        new Object[] {
-            "product", LongStringHelper.asLongString("RabbitMQ"),
-            "version", LongStringHelper.asLongString(ClientVersion.VERSION),
-            "platform", LongStringHelper.asLongString("Java"),
-            "copyright", LongStringHelper.asLongString(
-                "Copyright (C) 2007-2008 LShift Ltd., " +
-                "Cohesive Financial Technologies LLC., " +
-                "and Rabbit Technologies Ltd."),
-            "information", LongStringHelper.asLongString(
-                "Licensed under the MPL.  " +
-                "See http://www.rabbitmq.com/")
-        };
+    /**
+     * Retrieve a copy of the default table of client properties that
+     * will be sent to the server during connection startup. This
+     * method is called when each new ConnectionFactory instance is
+     * constructed.
+     * @return a map of client properties
+     * @see Connection.getClientProperties()
+     */
+    public static Map<String, Object> defaultClientProperties() {
+        return Frame.buildTable(new Object[] {
+                "product", LongStringHelper.asLongString("RabbitMQ"),
+                "version", LongStringHelper.asLongString(ClientVersion.VERSION),
+                "platform", LongStringHelper.asLongString("Java"),
+                "copyright", LongStringHelper.asLongString(
+                    "Copyright (C) 2007-2008 LShift Ltd., " +
+                    "Cohesive Financial Technologies LLC., " +
+                    "and Rabbit Technologies Ltd."),
+                "information", LongStringHelper.asLongString(
+                    "Licensed under the MPL. See http://www.rabbitmq.com/")
+            });
+    }
 
     private static final Version clientVersion =
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
@@ -218,8 +226,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _requestedChannelMax = factory.getRequestedChannelMax();
         _requestedFrameMax = factory.getRequestedFrameMax();
         _requestedHeartbeat = factory.getRequestedHeartbeat();
-        _clientProperties =
-                buildClientPropertiesTable(factory.getClientProperties());
+        _clientProperties = new HashMap<String, Object>(factory.getClientProperties());
 
         this.factory = factory;
         _frameHandler = frameHandler;
@@ -412,14 +419,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void writeFrame(Frame f) throws IOException {
         _frameHandler.writeFrame(f);
         _lastActivityTime = System.nanoTime();
-    }
-
-    private static Map<String, Object> buildClientPropertiesTable(
-                                    Map<String, Object> extraClientProperties) {
-        Map<String, Object> props =
-                Frame.buildTable(DEFAULT_CLIENT_PROPERTIES_ARRAY);
-        props.putAll(extraClientProperties);
-        return props;
     }
 
     private static int negotiatedMaxValue(int clientValue, int serverValue) {
