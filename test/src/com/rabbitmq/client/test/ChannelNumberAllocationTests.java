@@ -17,7 +17,7 @@ public class ChannelNumberAllocationTests extends TestCase{
   Connection connection;
 
   public void setUp() throws Exception{
-    connection = new ConnectionFactory().newConnection("localhost");
+    connection = new ConnectionFactory().newConnection();
   }
 
   public void tearDown() throws Exception{

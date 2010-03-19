@@ -35,6 +35,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -43,10 +44,9 @@ import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.impl.AMQChannel.SimpleBlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
@@ -57,7 +57,7 @@ import com.rabbitmq.utility.Utility;
  *
  * <pre>
  * AMQConnection conn = new AMQConnection(hostName, portNumber);
- * conn.open(userName, portNumber, virtualHost);
+ * conn.open(username, portNumber, virtualHost);
  * </pre>
  *
  * <pre>
@@ -72,14 +72,36 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Timeout used while waiting for a connection.close-ok (milliseconds) */
     public static final int CONNECTION_CLOSING_TIMEOUT = 10000;
 
+    /**
+     * Retrieve a copy of the default table of client properties that
+     * will be sent to the server during connection startup. This
+     * method is called when each new ConnectionFactory instance is
+     * constructed.
+     * @return a map of client properties
+     * @see Connection.getClientProperties()
+     */
+    public static Map<String, Object> defaultClientProperties() {
+        return Frame.buildTable(new Object[] {
+                "product", LongStringHelper.asLongString("RabbitMQ"),
+                "version", LongStringHelper.asLongString(ClientVersion.VERSION),
+                "platform", LongStringHelper.asLongString("Java"),
+                "copyright", LongStringHelper.asLongString(
+                    "Copyright (C) 2007-2008 LShift Ltd., " +
+                    "Cohesive Financial Technologies LLC., " +
+                    "and Rabbit Technologies Ltd."),
+                "information", LongStringHelper.asLongString(
+                    "Licensed under the MPL. See http://www.rabbitmq.com/")
+            });
+    }
+
     private static final Version clientVersion =
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
 
     /** Initialization parameters */
-    public final ConnectionParameters _params;
+    private final ConnectionFactory factory;
 
     /** The special channel 0 */
-    public final AMQChannel _channel0 = new AMQChannel(this, 0) {
+    private final AMQChannel _channel0 = new AMQChannel(this, 0) {
             @Override public boolean processAsync(Command c) throws IOException {
                 return _connection.processControlCommand(c);
             }
@@ -89,32 +111,32 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public ChannelManager _channelManager = new ChannelManager(0);
 
     /** Frame source/sink */
-    public final FrameHandler _frameHandler;
+    private final FrameHandler _frameHandler;
 
     /** Flag controlling the main driver loop's termination */
-    public volatile boolean _running = false;
+    private volatile boolean _running = false;
 
     /** Maximum frame length, or zero if no limit is set */
-    public int _frameMax;
+    private int _frameMax;
 
     /** Handler for (otherwise-unhandled) exceptions that crop up in the mainloop. */
-    public final ExceptionHandler _exceptionHandler;
+    private final ExceptionHandler _exceptionHandler;
 
     /**
      * Object used for blocking main application thread when doing all the necessary
      * connection shutdown operations
      */
-    public BlockingCell<Object> _appContinuation = new BlockingCell<Object>();
+    private BlockingCell<Object> _appContinuation = new BlockingCell<Object>();
 
     /** Flag indicating whether the client received Connection.Close message from the broker */
-    public boolean _brokerInitiatedShutdown = false;
-    
+    private boolean _brokerInitiatedShutdown = false;
+
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
      * @param channelNumber the number of the channel to disconnect
      */
-    public final void disconnectChannel(int channelNumber) {
-        _channelManager.disconnectChannel(channelNumber);
+    public final void disconnectChannel(ChannelN channel) {
+        _channelManager.disconnectChannel(channel);
     }
 
     public void ensureIsOpen()
@@ -129,17 +151,24 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Timestamp of last time we wrote a frame - used for deciding when to
      * send a heartbeat
      */
-    public volatile long _lastActivityTime = Long.MAX_VALUE;
+    private volatile long _lastActivityTime = Long.MAX_VALUE;
 
     /**
      * Count of socket-timeouts that have happened without any incoming frames
      */
-    public int _missedHeartbeats;
+    private int _missedHeartbeats;
 
     /**
      * Currently-configured heartbeat interval, in seconds. 0 meaning none.
      */
-    public int _heartbeat;
+    private int _heartbeat;
+
+    private final String _username, _password, _virtualHost;
+    private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
+    private final Map<String, Object> _clientProperties;
+
+    /** Saved server properties field from connection.start */
+    public Map<String, Object> _serverProperties;
 
     /** {@inheritDoc} */
     public String getHost() {
@@ -151,38 +180,47 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _frameHandler.getPort();
     }
 
+    public FrameHandler getFrameHandler(){
+        return _frameHandler;
+    }
+
     /** {@inheritDoc} */
-    public ConnectionParameters getParameters() {
-        return _params;
+    public Map<String, Object> getServerProperties() {
+        return _serverProperties;
     }
+
 
     /**
      * Construct a new connection to a broker.
-     * @param params the initialization parameters for a connection
+     * @param factory the initialization parameters for a connection
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
-     * @throws java.io.IOException if an error is encountered
      */
-    public AMQConnection(ConnectionParameters params, FrameHandler frameHandler)
-	throws IOException
-    {
-        this(params, frameHandler, new DefaultExceptionHandler());
+    public AMQConnection(ConnectionFactory factory,
+                         FrameHandler frameHandler) {
+        this(factory, frameHandler, new DefaultExceptionHandler());
     }
-
 
     /**
      * Construct a new connection to a broker.
-     * @param params the initialization parameters for a connection
+     * @param factory the initialization parameters for a connection
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      * @param exceptionHandler interface to an object that will handle any special exceptions encountered while using this connection
-     * @throws java.io.IOException if an error is encountered
      */
-    public AMQConnection(ConnectionParameters params,
+    public AMQConnection(ConnectionFactory factory,
                          FrameHandler frameHandler,
                          ExceptionHandler exceptionHandler)
-        throws IOException
     {
         checkPreconditions();
-        _params = params;
+
+        _username = factory.getUsername();
+        _password = factory.getPassword();
+        _virtualHost = factory.getVirtualHost();
+        _requestedChannelMax = factory.getRequestedChannelMax();
+        _requestedFrameMax = factory.getRequestedFrameMax();
+        _requestedHeartbeat = factory.getRequestedHeartbeat();
+        _clientProperties = new HashMap<String, Object>(factory.getClientProperties());
+
+        this.factory = factory;
         _frameHandler = frameHandler;
         _running = true;
         _frameMax = 0;
@@ -228,6 +266,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         try {
             AMQP.Connection.Start connStart =
                 (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
+
+            _serverProperties = connStart.getServerProperties();
         
             Version serverVersion =
                 new Version(connStart.getVersionMajor(),
@@ -243,29 +283,27 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             throw AMQChannel.wrap(sse);
         }
         
-        LongString saslResponse = LongStringHelper.asLongString("\0" + _params.getUserName() +
-                                                                "\0" + _params.getPassword());
+        LongString saslResponse = LongStringHelper.asLongString("\0" + _username +
+                                                                "\0" + _password);
         AMQImpl.Connection.StartOk startOk =
-            new AMQImpl.Connection.StartOk(buildClientPropertiesTable(),
-                                           "PLAIN",
-                                           saslResponse,
-                                           "en_US");
+            new AMQImpl.Connection.StartOk(_clientProperties, "PLAIN",
+                                           saslResponse, "en_US");
         
         AMQP.Connection.Tune connTune =
             (AMQP.Connection.Tune) _channel0.exnWrappingRpc(startOk).getMethod();
-        
+
         int channelMax =
-            negotiatedMaxValue(getParameters().getRequestedChannelMax(),
+            negotiatedMaxValue(factory.getRequestedChannelMax(),
                                connTune.getChannelMax());
         _channelManager = new ChannelManager(channelMax);
         
         int frameMax =
-            negotiatedMaxValue(getParameters().getRequestedFrameMax(),
+            negotiatedMaxValue(factory.getRequestedFrameMax(),
                                connTune.getFrameMax());
         setFrameMax(frameMax);
-        
+
         int heartbeat =
-            negotiatedMaxValue(getParameters().getRequestedHeartbeat(),
+            negotiatedMaxValue(factory.getRequestedHeartbeat(),
                                connTune.getHeartbeat());
         setHeartbeat(heartbeat);
         
@@ -274,7 +312,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                                          heartbeat));
         // 0.9.1: insist [on not being redirected] is deprecated, but
         // still in generated code; just pass a dummy value here
-        Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_params.getVirtualHost(),
+        Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
                                                                           "",
                                                                           true)).getMethod();
         AMQP.Connection.OpenOk openOk = (AMQP.Connection.OpenOk) res;
@@ -328,6 +366,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
+    public Map<String, Object> getClientProperties() {
+        return new HashMap<String, Object>(_clientProperties);
+    }
+
     /**
      * Protected API - retrieve the current ExceptionHandler
      */
@@ -361,19 +403,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void writeFrame(Frame f) throws IOException {
         _frameHandler.writeFrame(f);
         _lastActivityTime = System.nanoTime();
-    }
-
-    public Map<String, Object> buildClientPropertiesTable() {
-        return Frame.buildTable(new Object[] {
-            "product", LongStringHelper.asLongString("RabbitMQ"),
-            "version", LongStringHelper.asLongString(ClientVersion.VERSION),
-            "platform", LongStringHelper.asLongString("Java"),
-            "copyright", LongStringHelper.asLongString("Copyright (C) 2007-2008 LShift Ltd., " +
-                                                       "Cohesive Financial Technologies LLC., " +
-                                                       "and Rabbit Technologies Ltd."),
-            "information", LongStringHelper.asLongString("Licensed under the MPL.  " +
-                                                         "See http://www.rabbitmq.com/")
-        });
     }
 
     private static int negotiatedMaxValue(int clientValue, int serverValue) {
@@ -695,6 +724,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     @Override public String toString() {
-        return "amqp://" + _params.getUserName() + "@" + getHost() + ":" + getPort() + _params.getVirtualHost();
+        return "amqp://" + _username + "@" + getHost() + ":" + getPort() + _virtualHost;
     }
 }

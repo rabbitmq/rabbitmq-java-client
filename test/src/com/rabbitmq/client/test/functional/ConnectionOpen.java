@@ -41,7 +41,6 @@ import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.impl.AMQCommand;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ConnectionParameters;
 
 import junit.framework.TestCase;
 
@@ -103,11 +102,10 @@ public class ConnectionOpen extends TestCase
   }
 
   public void testFrameMaxLessThanFrameMinSize() throws IOException {
-    ConnectionParameters params = new ConnectionParameters();
-    params.setRequestedFrameMax(100);
-    ConnectionFactory factory = new ConnectionFactory(params);
+    ConnectionFactory factory = new ConnectionFactory();
+    factory.setRequestedFrameMax(100);
     try {
-      factory.newConnection("localhost");
+      factory.newConnection();
     }
     catch (IOException ioe) {
       return;

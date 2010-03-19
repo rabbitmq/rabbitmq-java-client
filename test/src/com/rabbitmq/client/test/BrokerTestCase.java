@@ -98,7 +98,7 @@ public class BrokerTestCase extends TestCase
         throws IOException
     {
         if (connection == null) {
-            connection = connectionFactory.newConnection("localhost");
+            connection = connectionFactory.newConnection();
         }
     }
 

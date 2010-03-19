@@ -31,20 +31,20 @@
 package com.rabbitmq.client;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Public API: Interface to an AMQ connection. See the see the <a href="http://www.amqp.org/">spec</a> for details.
  * <p>
- * To connect to a broker, fill in a {@link ConnectionParameters} and use a {@link ConnectionFactory} as follows:
+ * To connect to a broker, fill in a {@link ConnectionFactory} and use a {@link ConnectionFactory} as follows:
  *
  * <pre>
- * ConnectionParameters params = new ConnectionParameters();
- * params.setUsername(userName);
- * params.setPassword(password);
- * params.setVirtualHost(virtualHost);
- * params.setRequestedHeartbeat(0);
- * ConnectionFactory factory = new ConnectionFactory(params);
- * Connection conn = factory.newConnection(hostName, AMQP.PROTOCOL.PORT);
+ * ConnectionFactory factory = new ConnectionFactory();
+ * factory.setHostName(hostName);
+ * factory.setVirtualHost(virtualHost);
+ * factory.setUsername(username);
+ * factory.setPassword(password);
+ * Connection conn = factory.newConnection();
  *
  * // Then open a channel:
  *
@@ -69,17 +69,8 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     int getPort();
 
     /**
-     * Retrieve the connection parameters.
-     * @return the initialization parameters used to open this connection.
-     */
-    ConnectionParameters getParameters();
-
-    /**
      * Get the negotiated maximum channel number. Usable channel
      * numbers range from 1 to this number, inclusive.
-     *
-     * Note that this is the <i>current</i> setting, as opposed to the <i>initially-requested</i>
-     * setting available from {@link #getParameters()}.{@link ConnectionParameters#getRequestedChannelMax()}.
      *
      * @return the maximum channel number permitted for this connection.
      */
@@ -88,9 +79,6 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     /**
      * Get the negotiated maximum frame size.
      *
-     * Note that this is the <i>current</i> setting, as opposed to the <i>initially-requested</i>
-     * setting available from {@link #getParameters()}.{@link ConnectionParameters#getRequestedFrameMax()}.
-     *
      * @return the maximum frame size, in octets; zero if unlimited
      */
     int getFrameMax();
@@ -98,12 +86,22 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     /**
      * Get the negotiated heartbeat interval.
      *
-     * Note that this is the <i>current</i> setting, as opposed to the <i>initially-requested</i>
-     * setting available from {@link #getParameters()}.{@link ConnectionParameters#getRequestedHeartbeat()}.
-     *
      * @return the heartbeat interval, in seconds; zero if none
      */
     int getHeartbeat();
+
+    /**
+     * Get a copy of the map of client properties sent to the server
+     *
+     * @return a copy of the map of client properties
+     */
+    Map<String, Object> getClientProperties();
+
+    /**
+     * Retrieve the server properties.
+     * @return a map of the server properties. This typically includes the product name and version of the server.
+     */
+    Map<String, Object> getServerProperties();
 
     /**
      * Create a new channel, using an internally allocated channel number.

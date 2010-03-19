@@ -28,7 +28,8 @@ public class TracerConcurrencyTest{
 
     final Connection conn;
     try {
-      conn = new ConnectionFactory().newConnection(host, port);
+      conn = new ConnectionFactory()
+          {{setHost(host); setPort(port);}}.newConnection();
       Channel setup = conn.createChannel();
 
       setup.exchangeDeclare(EXCHANGE, "direct");

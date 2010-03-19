@@ -40,6 +40,7 @@ import java.net.Socket;
 import java.net.InetSocketAddress;
 
 import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
@@ -51,42 +52,219 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
  */
 
-public class ConnectionFactory {
-    private final ConnectionParameters _params;
+public class ConnectionFactory implements Cloneable {
+    /** Default user name */
+    public static final String DEFAULT_USER = "guest";
+
+    /** Default password */
+    public static final String DEFAULT_PASS = "guest";
+
+    /** Default virtual host */
+    public static final String DEFAULT_VHOST = "/";
+
+    /** Default value for the desired maximum channel number; zero for
+     * unlimited */
+    public static final int DEFAULT_CHANNEL_MAX = 0;
+
+    /** Default value for the desired maximum frame size; zero for
+     * unlimited */
+    public static final int DEFAULT_FRAME_MAX = 0;
+
+    /** Default value for desired heartbeat interval; zero for none */
+    public static final int DEFAULT_HEARTBEAT = 0;
+
+    /** The default host to connect to */
+    public static final String DEFAULT_HOST = "localhost";
+
+    /** A constant that when passed as a port number causes the connection to use the default port */
+    public static final int USE_DEFAULT_PORT = -1;
+
+    /** The default port to use for AMQP connections when not using SSL */
+    public static final int DEFAULT_AMQP_PORT = 5672;
+
+    /** The default port to use for AMQP connections when using SSL */
+    public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
 
     /**
-     * Holds the SocketFactory used to manufacture outbound sockets.
+     * The default SSL protocol (currently "SSLv3").
      */
-    private SocketFactory _factory = SocketFactory.getDefault();
-    
+    public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
+
+    private String username                       = DEFAULT_USER;
+    private String password                       = DEFAULT_PASS;
+    private String virtualHost                    = DEFAULT_VHOST;
+    private String host                           = DEFAULT_HOST;
+    private int port                              = USE_DEFAULT_PORT;
+    private int requestedChannelMax               = DEFAULT_CHANNEL_MAX;
+    private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
+    private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
+    private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
+    private SocketFactory factory                 = SocketFactory.getDefault();
+
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
     public ConnectionFactory() {
-        _params = new ConnectionParameters();
     }
 
     /**
-     * Instantiate a ConnectionFactory with the given connection parameters.
-     * @param params the relevant parameters for instantiating the broker connection
+     *  @return the default host to use for connections
      */
-    public ConnectionFactory(ConnectionParameters params) {
-        _params = params;
+    public String getHost() {
+        return host;
     }
 
     /**
-     * Retrieve the connection parameters.
-     * @return the initialization parameters used to open the connection
+     *  @param host the default host to use for connections
      */
-    public ConnectionParameters getParameters() {
-        return _params;
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    private int portOrDefault(int port){
+        if(port != USE_DEFAULT_PORT) return port;
+        else if(isSSL()) return DEFAULT_AMQP_OVER_SSL_PORT;
+        else return DEFAULT_AMQP_PORT;
+    }
+
+    /**
+     *  @return the default port to use for connections
+     */
+    public int getPort() {
+        return portOrDefault(port);
+    }
+
+    /**
+     *  @return the default port to use for connections
+     */
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    /**
+     * Retrieve the user name.
+     * @return the AMQP user name to use when connecting to the broker
+     */
+    public String getUsername() {
+        return this.username;
+    }
+
+    /**
+     * Set the user name.
+     * @param username the AMQP user name to use when connecting to the broker
+     */
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    /**
+     * Retrieve the password.
+     * @return the password to use when connecting to the broker
+     */
+    public String getPassword() {
+        return this.password;
+    }
+
+    /**
+     * Set the password.
+     * @param password the password to use when connecting to the broker
+     */
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    /**
+     * Retrieve the virtual host.
+     * @return the virtual host to use when connecting to the broker
+     */
+    public String getVirtualHost() {
+        return this.virtualHost;
+    }
+
+    /**
+     * Set the virtual host.
+     * @param virtualHost the virtual host to use when connecting to the broker
+     */
+    public void setVirtualHost(String virtualHost) {
+        this.virtualHost = virtualHost;
+    }
+
+    /**
+     * Retrieve the requested maximum channel number
+     * @return the initially requested maximum channel number; zero for unlimited
+     */
+    public int getRequestedChannelMax() {
+        return this.requestedChannelMax;
+    }
+
+    /**
+     * Set the requested maximum channel number
+     * @param requestedChannelMax initially requested maximum channel number; zero for unlimited
+     */
+    public void setRequestedChannelMax(int requestedChannelMax) {
+        this.requestedChannelMax = requestedChannelMax;
+    }
+
+    /**
+     * Retrieve the requested maximum frame size
+     * @return the initially requested maximum frame size, in octets; zero for unlimited
+     */
+    public int getRequestedFrameMax() {
+        return this.requestedFrameMax;
+    }
+
+    /**
+     * Set the requested maximum frame size
+     * @param requestedFrameMax initially requested maximum frame size, in octets; zero for unlimited
+     */
+    public void setRequestedFrameMax(int requestedFrameMax) {
+        this.requestedFrameMax = requestedFrameMax;
+    }
+
+    /**
+     * Retrieve the requested heartbeat interval.
+     * @return the initially requested heartbeat interval, in seconds; zero for none
+     */
+    public int getRequestedHeartbeat() {
+        return this.requestedHeartbeat;
+    }
+
+    /**
+     * Set the requested heartbeat.
+     * @param requestedHeartbeat the initially requested heartbeat interval, in seconds; zero for none
+     */
+    public void setRequestedHeartbeat(int requestedHeartbeat) {
+        this.requestedHeartbeat = requestedHeartbeat;
+    }
+
+    /**
+     * Retrieve the currently-configured table of client properties
+     * that will be sent to the server during connection
+     * startup. Clients may add, delete, and alter keys in this
+     * table. Such changes will take effect when the next new
+     * connection is started using this factory.
+     * @return the map of client properties
+     * @see setClientProperties()
+     */
+    public Map<String, Object> getClientProperties() {
+        return _clientProperties;
+    }
+
+    /**
+     * Replace the table of client properties that will be sent to the
+     * server during subsequent connection startups.
+     * @param clientProperties the map of extra client properties
+     * @see getClientProperties()
+     */
+    public void setClientProperties(Map<String, Object> clientProperties) {
+        _clientProperties = clientProperties;
     }
 
     /**
      * Retrieve the socket factory used to make connections with.
      */
     public SocketFactory getSocketFactory() {
-        return _factory;
+        return this.factory;
     }
 
     /**
@@ -97,7 +275,11 @@ public class ConnectionFactory {
      * @see #useSslProtocol
      */
     public void setSocketFactory(SocketFactory factory) {
-        _factory = factory;
+        this.factory = factory;
+    }
+
+    public boolean isSSL(){
+        return getSocketFactory() instanceof SSLSocketFactory;
     }
 
     /**
@@ -145,18 +327,12 @@ public class ConnectionFactory {
         setSocketFactory(context.getSocketFactory());
     }
 
-    /**
-     * The default SSL protocol (currently "SSLv3").
-     */
-    public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
-
     protected FrameHandler createFrameHandler(Address addr)
         throws IOException {
 
         String hostName = addr.getHost();
-        int portNumber = addr.getPort();
-        if (portNumber == -1) portNumber = AMQP.PROTOCOL.PORT;
-        Socket socket = _factory.createSocket();
+        int portNumber = portOrDefault(addr.getPort());
+        Socket socket = factory.createSocket();
         configureSocket(socket);
         socket.connect(new InetSocketAddress(hostName, portNumber));
         return new SocketFrameHandler(socket);
@@ -188,11 +364,10 @@ public class ConnectionFactory {
         throws IOException
     {
         IOException lastException = null;
-
         for (Address addr : addrs) {
             try {
               FrameHandler frameHandler = createFrameHandler(addr);
-              AMQConnection conn = new AMQConnection(_params,
+              AMQConnection conn = new AMQConnection(this,
                                                      frameHandler);
               conn.start();
               return conn;
@@ -207,26 +382,16 @@ public class ConnectionFactory {
         }
     }
 
-    /**
-     * Instantiates a connection and return an interface to it.
-     * @param hostName the host to connect to
-     * @param portNumber the port number to use
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection(String hostName, int portNumber) throws IOException {
+    public Connection newConnection() throws IOException {
         return newConnection(new Address[] {
-                                 new Address(hostName, portNumber)
-                             });
+                                 new Address(getHost(), getPort())});
     }
-
-    /**
-     * Create a new broker connection, using the default AMQP port
-     * @param hostName the host to connect to
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection(String hostName) throws IOException {
-        return newConnection(hostName, -1);
+  
+    @Override public ConnectionFactory clone(){
+        try {
+            return (ConnectionFactory)super.clone(); 
+        } catch (CloneNotSupportedException e) {
+            throw new Error(e);
+        }
     }
 }

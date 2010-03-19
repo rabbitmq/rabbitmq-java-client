@@ -97,7 +97,7 @@ public class BadVerifiedConnection extends UnverifiedConnection {
 
         if (connection == null) {
             try {
-                connection = connectionFactory.newConnection("localhost", 5671);
+                connection = connectionFactory.newConnection();
                 fail();
             } catch (SSLHandshakeException e) {
             } catch (IOException e) {

@@ -59,7 +59,10 @@ public class SimpleTopicConsumer {
             String exchange = (args.length > 3) ? args[3] : null;
             String queue = (args.length > 4) ? args[4] : null;
 
-            Connection conn = new ConnectionFactory().newConnection(hostName, portNumber);
+            ConnectionFactory cfconn = new ConnectionFactory(); 
+            cfconn.setHost(hostName); 
+            cfconn.setPort(portNumber);
+            Connection conn = cfconn.newConnection();
 
             final Channel channel = conn.createChannel();
 

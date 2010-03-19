@@ -53,7 +53,7 @@ public class QueueExclusivity extends BrokerTestCase
   String q = "exclusiveQ";
   
   protected void createResources() throws IOException {
-    altConnection = connectionFactory.newConnection("localhost");
+    altConnection = connectionFactory.newConnection();
     altChannel = altConnection.createChannel();
     AMQP.Queue.DeclareOk ok = altChannel.queueDeclare(q, 
                                                       // not durable, exclusive, not auto-delete

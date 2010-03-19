@@ -41,7 +41,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.UnexpectedFrameError;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.Frame;
@@ -56,18 +56,18 @@ public class BrokenFramesTest extends TestCase {
     }
 
     private MyFrameHandler myFrameHandler;
-    private ConnectionParameters params;
+    private ConnectionFactory factory;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         myFrameHandler = new MyFrameHandler();
-        params = new ConnectionParameters();
+        factory = new ConnectionFactory();
     }
 
     @Override
     protected void tearDown() throws Exception {
-        params = null;
+        factory = null;
         myFrameHandler = null;
         super.tearDown();
     }
@@ -77,7 +77,7 @@ public class BrokenFramesTest extends TestCase {
         frames.add(new Frame(AMQP.FRAME_HEADER, 0));
         myFrameHandler.setFrames(frames.iterator());
 
-        AMQConnection conn = new AMQConnection(params, myFrameHandler);
+        AMQConnection conn = new AMQConnection(factory, myFrameHandler);
         try {
             conn.start();
         } catch (IOException e) {
@@ -109,7 +109,7 @@ public class BrokenFramesTest extends TestCase {
         myFrameHandler.setFrames(frames.iterator());
  
         try {
-            new AMQConnection(params, myFrameHandler).start();
+            new AMQConnection(factory, myFrameHandler).start();
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);

@@ -45,7 +45,7 @@ import junit.framework.TestSuite;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ExceptionHandler;
@@ -71,7 +71,7 @@ public class AMQConnectionTest extends TestCase {
 
     /** The mock frame handler used to test connection behaviour. */
     private MockFrameHandler _mockFrameHandler;
-    private ConnectionParameters _params;
+    private ConnectionFactory factory;
 
     /** Setup the environment for this test
      * @see junit.framework.TestCase#setUp()
@@ -80,7 +80,7 @@ public class AMQConnectionTest extends TestCase {
     @Override protected void setUp() throws Exception {
         super.setUp();
         _mockFrameHandler = new MockFrameHandler();
-        _params = new ConnectionParameters();
+        factory = new ConnectionFactory();
     }
 
     /** Tear down the environment for this test
@@ -88,7 +88,7 @@ public class AMQConnectionTest extends TestCase {
      * @throws Exception if anything goes wrong
      */
     @Override protected void tearDown() throws Exception {
-        _params = null;
+        factory = null;
         _mockFrameHandler = null;
         super.tearDown();
     }
@@ -102,7 +102,7 @@ public class AMQConnectionTest extends TestCase {
         MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, _mockFrameHandler.countHeadersSent());
         try {
-            new AMQConnection(_params, _mockFrameHandler, handler).start();
+            new AMQConnection(factory, _mockFrameHandler, handler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
            // As expected 

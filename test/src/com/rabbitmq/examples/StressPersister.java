@@ -96,10 +96,12 @@ public class StressPersister {
         sampleGranularity = intArg(cmd, 's', Math.max(5, repeatCount / 250));
 
         connectionFactory = new ConnectionFactory();
+        connectionFactory.setHost(hostName);
+        connectionFactory.setPort(portNumber);
     }
 
     public Connection newConnection() throws IOException {
-        return connectionFactory.newConnection(hostName, portNumber);
+        return connectionFactory.newConnection();
     }
 
     public void run() throws IOException, InterruptedException {
