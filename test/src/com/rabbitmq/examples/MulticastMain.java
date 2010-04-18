@@ -340,7 +340,7 @@ public class MulticastMain {
             long now;
             long startTime;
             startTime = now = System.currentTimeMillis();
-            int totalMsgCount = 0;
+            int totalMsgCount = 1;
 
             Channel channel = q.getChannel();
 
