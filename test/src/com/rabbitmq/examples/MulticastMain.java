@@ -236,7 +236,7 @@ public class MulticastMain {
             long now;
             now = startTime = lastStatsTime = System.currentTimeMillis();
             msgCount = 0;
-            int totalMsgCount = 0;
+            int totalMsgCount = 1;
 
             try {
 
