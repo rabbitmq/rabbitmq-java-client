@@ -50,7 +50,7 @@ import com.rabbitmq.utility.BlockingValueOrException;
  */
 public abstract class AMQChannel extends ShutdownNotifierComponent {
     /**
-     * Private; used instead of synchronizing on the channel itself,
+     * Protected; used instead of synchronizing on the channel itself,
      * so that clients can themselves use the channel to synchronize
      * on.
      */
@@ -217,7 +217,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             quiescingRpc(m, k);
         }
     }
-    
+
     public void quiescingRpc(Method m, RpcContinuation k)
         throws IOException
     {
@@ -239,7 +239,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     @Override public String toString() {
         return "AMQChannel(" + _connection + "," + _channelNumber + ")";
     }
-    
+
     /**
      * Protected API - respond, in the driver thread, to a {@link ShutdownSignalException}.
      * @param signal the signal to handle
@@ -257,7 +257,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                     ensureIsOpen(); // invariant: we should never be shut down more than once per instance
                 if (isOpen())
                     _shutdownCause = signal;
-                
+
                 _channelMutex.notifyAll();
             }
         } finally {
@@ -265,7 +265,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                 notifyOutstandingRpc(signal);
         }
     }
-    
+
     public void notifyOutstandingRpc(ShutdownSignalException signal) {
         RpcContinuation k = nextOutstandingRpc();
         if (k != null) {

@@ -91,6 +91,13 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     int getHeartbeat();
 
     /**
+     * Get a copy of the map of client properties sent to the server
+     *
+     * @return a copy of the map of client properties
+     */
+    Map<String, Object> getClientProperties();
+
+    /**
      * Retrieve the known hosts.
      * @return an array of addresses for all hosts that came back in the initial {@link com.rabbitmq.client.AMQP.Connection.OpenOk} open-ok method
      */

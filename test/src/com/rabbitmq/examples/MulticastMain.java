@@ -240,10 +240,12 @@ public class MulticastMain {
 
             try {
 
-                for (; timeLimit == 0 || now < startTime + timeLimit;
-                     totalMsgCount++, msgCount++) {
+                while (timeLimit == 0 || now < startTime + timeLimit) {
                     delay(now);
                     publish(createMessage(totalMsgCount));
+		    totalMsgCount++;
+		    msgCount++;
+
                     if (txSize != 0 && totalMsgCount % txSize == 0) {
                         channel.txCommit();
                     }
@@ -346,8 +348,7 @@ public class MulticastMain {
 
             try {
 
-                for (; timeLimit == 0 || now < startTime + timeLimit;
-                     totalMsgCount++) {
+                while (timeLimit == 0 || now < startTime + timeLimit) {
                     Delivery delivery;
                     if (timeLimit == 0) {
                         delivery = q.nextDelivery();
@@ -355,6 +356,7 @@ public class MulticastMain {
                         delivery = q.nextDelivery(startTime + timeLimit - now);
                         if (delivery == null) break;
                     }
+		    totalMsgCount++;
 
                     DataInputStream d = new DataInputStream(new ByteArrayInputStream(delivery.getBody()));
                     int msgSeq = d.readInt();
