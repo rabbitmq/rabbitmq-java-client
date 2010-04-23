@@ -85,6 +85,7 @@ public class MulticastMain {
             int maxRedirects     = intArg(cmd, 'd', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
             List flags           = lstArg(cmd, 'f');
+            int frameMax         = intArg(cmd, 'M', 0);
 
             //setup
             String id = UUID.randomUUID().toString();
@@ -92,6 +93,7 @@ public class MulticastMain {
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(hostName);
             factory.setPort(portNumber);
+            factory.setRequestedFrameMax(frameMax);
 
             Thread[] consumerThreads = new Thread[consumerCount];
             Connection[] consumerConnections = new Connection[consumerCount];
@@ -175,6 +177,7 @@ public class MulticastMain {
         Option flag =     new Option("f", "flag",      true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(flag);
+        options.addOption(new Option("M", "framemax",  true, "frame max"));
         return options;
     }
 
