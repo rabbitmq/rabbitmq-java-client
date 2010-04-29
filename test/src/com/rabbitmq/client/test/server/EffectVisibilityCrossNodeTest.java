@@ -60,19 +60,14 @@ public class EffectVisibilityCrossNodeTest extends BrokerTestCase {
     protected void createResources() throws IOException {
         channel.exchangeDeclare(exchange, "fanout");
         for (int i = 0; i < queues.length ; i++) {
-            queues[i] = "queue-" + System.nanoTime();
-            secondaryChannel.queueDeclare(queues[i]);
+            queues[i] = secondaryChannel.queueDeclare().getQueue();
             secondaryChannel.queueBind(queues[i], exchange, "");
-            secondaryChannel.queuePurge(queues[i]);
         }
     }
 
     @Override
     protected void releaseResources() throws IOException {
         channel.exchangeDelete(exchange);
-        for (int i = 0; i < queues.length ; i++) {
-            secondaryChannel.queueDelete(queues[i]);
-        }
     }
 
     private static final int QUEUES = 5;
