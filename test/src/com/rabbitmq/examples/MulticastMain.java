@@ -262,7 +262,7 @@ public class MulticastMain {
             }
 
             System.out.println("sending rate avg: " +
-                               (totalMsgCount * 1000 / (now - startTime)) +
+                               (totalMsgCount * 1000L / (now - startTime)) +
                                " msg/s");
 
         }
@@ -291,7 +291,7 @@ public class MulticastMain {
             }
             if (elapsed > interval) {
                 System.out.println("sending rate: " +
-                                   (msgCount * 1000 / elapsed) +
+                                   (msgCount * 1000L / elapsed) +
                                    " msg/s");
                 msgCount = 0;
                 lastStatsTime = now;
@@ -392,7 +392,7 @@ public class MulticastMain {
             long elapsed = now - startTime;
             if (elapsed > 0) {
                 System.out.println("recving rate avg: " +
-                                   (totalMsgCount * 1000 / elapsed) +
+                                   (totalMsgCount * 1000L / elapsed) +
                                    " msg/s");
             }
         }
