@@ -84,6 +84,7 @@ public class MulticastMain {
             int minMsgSize       = intArg(cmd, 's', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
             List flags           = lstArg(cmd, 'f');
+            int frameMax         = intArg(cmd, 'M', 0);
 
             //setup
             String id = UUID.randomUUID().toString();
@@ -91,6 +92,7 @@ public class MulticastMain {
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(hostName);
             factory.setPort(portNumber);
+            factory.setRequestedFrameMax(frameMax);
 
             Thread[] consumerThreads = new Thread[consumerCount];
             Connection[] consumerConnections = new Connection[consumerCount];
@@ -174,6 +176,7 @@ public class MulticastMain {
         Option flag =     new Option("f", "flag",      true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(flag);
+        options.addOption(new Option("M", "framemax",  true, "frame max"));
         return options;
     }
 
@@ -239,10 +242,12 @@ public class MulticastMain {
 
             try {
 
-                for (; timeLimit == 0 || now < startTime + timeLimit;
-                     totalMsgCount++, msgCount++) {
+                while (timeLimit == 0 || now < startTime + timeLimit) {
                     delay(now);
                     publish(createMessage(totalMsgCount));
+		    totalMsgCount++;
+		    msgCount++;
+
                     if (txSize != 0 && totalMsgCount % txSize == 0) {
                         channel.txCommit();
                     }
@@ -256,7 +261,7 @@ public class MulticastMain {
             }
 
             System.out.println("sending rate avg: " +
-                               (totalMsgCount * 1000 / (now - startTime)) +
+                               (totalMsgCount * 1000L / (now - startTime)) +
                                " msg/s");
 
         }
@@ -285,7 +290,7 @@ public class MulticastMain {
             }
             if (elapsed > interval) {
                 System.out.println("sending rate: " +
-                                   (msgCount * 1000 / elapsed) +
+                                   (msgCount * 1000L / elapsed) +
                                    " msg/s");
                 msgCount = 0;
                 lastStatsTime = now;
@@ -345,8 +350,7 @@ public class MulticastMain {
 
             try {
 
-                for (; timeLimit == 0 || now < startTime + timeLimit;
-                     totalMsgCount++) {
+                while (timeLimit == 0 || now < startTime + timeLimit) {
                     Delivery delivery;
                     if (timeLimit == 0) {
                         delivery = q.nextDelivery();
@@ -354,6 +358,7 @@ public class MulticastMain {
                         delivery = q.nextDelivery(startTime + timeLimit - now);
                         if (delivery == null) break;
                     }
+		    totalMsgCount++;
 
                     DataInputStream d = new DataInputStream(new ByteArrayInputStream(delivery.getBody()));
                     int msgSeq = d.readInt();
@@ -386,7 +391,7 @@ public class MulticastMain {
             long elapsed = now - startTime;
             if (elapsed > 0) {
                 System.out.println("recving rate avg: " +
-                                   (totalMsgCount * 1000 / elapsed) +
+                                   (totalMsgCount * 1000L / elapsed) +
                                    " msg/s");
             }
         }
