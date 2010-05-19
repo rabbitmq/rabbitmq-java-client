@@ -49,11 +49,15 @@ public class QueueingConsumer extends DefaultConsumer {
     // throw a shutdown signal exception.
     private volatile ShutdownSignalException _shutdown;
 
+    // When this is true we have seen recover_ok but not had a delivery to
+    // attach it to
+    private boolean _nextDeliveryRecoverOk = false;
+
     // Marker object used to signal the queue is in shutdown mode.
     // It is only there to wake up consumers. The canonical representation
     // of shutting down is the presence of _shutdown.
     // Invariant: This is never on _queue unless _shutdown != null.
-    private static final Delivery POISON = new Delivery(null, null, null);
+    private static final Delivery POISON = new Delivery(null, null, null, false);
 
     public QueueingConsumer(Channel ch) {
         this(ch, new LinkedBlockingQueue<Delivery>());
@@ -77,7 +81,15 @@ public class QueueingConsumer extends DefaultConsumer {
         throws IOException
     {
         checkShutdown();
-        this._queue.add(new Delivery(envelope, properties, body));
+        this._queue.add(new Delivery(envelope, properties, body,
+                _nextDeliveryRecoverOk));
+        _nextDeliveryRecoverOk = false;
+    }
+
+    @Override
+    public void handleRecoverOk() {
+        checkShutdown();
+        _nextDeliveryRecoverOk = true;
     }
 
     /**
@@ -87,11 +99,14 @@ public class QueueingConsumer extends DefaultConsumer {
         private final Envelope _envelope;
         private final AMQP.BasicProperties _properties;
         private final byte[] _body;
+        private final boolean _recoverOk;
 
-        public Delivery(Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
+        public Delivery(Envelope envelope, AMQP.BasicProperties properties,
+                        byte[] body, boolean recoverOk) {
             _envelope = envelope;
             _properties = properties;
             _body = body;
+            _recoverOk = recoverOk;
         }
 
         /**
@@ -116,6 +131,19 @@ public class QueueingConsumer extends DefaultConsumer {
          */
         public byte[] getBody() {
             return _body;
+        }
+
+        /**
+         * Have we seen recover_ok immediately before this message?
+         * If true, then all messages <b>before</b> this one that have not been
+         * acked will be recovered, but this one and subsequent ones will not.
+         *
+         * NB: this method does <b>not</b> tell you whether this message, or
+         * any other, actually is recovered - for that, see Envelope.isRedeliver().
+         * @return whether we have seen recover_ok immediately before this message
+         */
+        public boolean getRecoverOk() {
+            return _recoverOk;
         }
     }
 

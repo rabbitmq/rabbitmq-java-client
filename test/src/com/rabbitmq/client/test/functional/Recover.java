@@ -52,6 +52,7 @@ public class Recover extends BrokerTestCase {
 
     static interface RecoverCallback {
         void recover(Channel channel) throws IOException;
+        void checkRecover(QueueingConsumer.Delivery delivery, boolean expected) throws IOException;
     }
 
     // The AMQP specification under-specifies the behaviour when
@@ -64,11 +65,13 @@ public class Recover extends BrokerTestCase {
         channel.basicConsume(queue, false, consumer); // require acks.
         channel.basicPublish("", queue, new AMQP.BasicProperties(), body);
         QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+        call.checkRecover(delivery, false);
         assertTrue("consumed message body not as sent",
                    Arrays.equals(body, delivery.getBody()));
         // Don't ack it, and get it redelivered to the same consumer
         call.recover(channel);
         QueueingConsumer.Delivery secondDelivery = consumer.nextDelivery(5000);
+        call.checkRecover(secondDelivery, true);
         assertNotNull("timed out waiting for redelivered message", secondDelivery);
         assertTrue("consumed (redelivered) message body not as sent",
                    Arrays.equals(body, delivery.getBody()));        
@@ -80,6 +83,7 @@ public class Recover extends BrokerTestCase {
         channel.basicConsume(queue, true, consumer); // auto ack.
         channel.basicPublish("", queue, new AMQP.BasicProperties(), body);
         QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+        call.checkRecover(delivery, false);
         assertTrue("consumed message body not as sent",
                    Arrays.equals(body, delivery.getBody()));
         call.recover(channel);
@@ -92,11 +96,19 @@ public class Recover extends BrokerTestCase {
             public void recover(Channel channel) throws IOException {
                 channel.basicRecoverAsync(true);
             }
+
+            public void checkRecover(QueueingConsumer.Delivery delivery, boolean expected) throws IOException {
+                // We make no guarantees
+            }
         };
 
     RecoverCallback recoverSync = new RecoverCallback() {
             public void recover(Channel channel) throws IOException {
                 channel.basicRecover(true);
+            }
+
+            public void checkRecover(QueueingConsumer.Delivery delivery, boolean expected) throws IOException {
+                assertEquals(expected, delivery.getRecoverOk());
             }
         };
 
