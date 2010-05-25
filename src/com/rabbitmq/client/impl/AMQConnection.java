@@ -299,8 +299,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             new AMQImpl.Connection.StartOk(_clientProperties, "PLAIN",
                                            saslResponse, "en_US");
         
-        AMQP.Connection.Tune connTune =
-            (AMQP.Connection.Tune) _channel0.exnWrappingRpc(startOk).getMethod();
+        AMQP.Connection.Tune connTune = null;
+
+        try {
+            connTune = (AMQP.Connection.Tune) _channel0.rpc(startOk).getMethod();
+        } catch (ShutdownSignalException e) {
+            throw AMQChannel.wrap(e, "Possibly caused by authentication failure");
+        }
 
         int channelMax =
             negotiatedMaxValue(factory.getRequestedChannelMax(),

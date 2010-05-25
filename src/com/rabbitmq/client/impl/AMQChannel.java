@@ -123,6 +123,11 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         return ioe;
     }
 
+    public static IOException wrap(ShutdownSignalException ex, String message) {
+        IOException ioe = new IOException(message, ex);
+        return ioe;
+    }
+
     /**
      * Placeholder until we address bug 15786 (implementing a proper exception hierarchy).
      */
