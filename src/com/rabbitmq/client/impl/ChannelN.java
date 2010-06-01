@@ -258,6 +258,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     _channelMutex.notifyAll();
                 }
                 return true;
+            } else if (method instanceof Basic.RecoverOk) {
+                for (Consumer callback: _consumers.values()) {
+                    callback.handleRecoverOk();
+                }
+
+                // Unlike all the other cases we still want this RecoverOk to
+                // be handled by whichever RPC continuation invoked Recover,
+                // so return false
+                return false;
             } else {
                 return false;
             }
