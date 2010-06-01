@@ -138,6 +138,21 @@ public class Permissions extends BrokerTestCase
         action.with("read");
     }
 
+    public void testAuth()
+    {
+        ConnectionFactory unAuthFactory = new ConnectionFactory();
+        unAuthFactory.setUsername("test");
+        unAuthFactory.setPassword("tset");
+
+        try {
+            unAuthFactory.newConnection();
+            fail("Exception expected if password is wrong");
+        } catch (IOException e) {
+            String msg = e.getMessage();
+            assertTrue("Exception message should contain auth", msg.toLowerCase().contains("auth"));
+        }
+    }
+
     public void testExchangeConfiguration()
         throws IOException
     {
