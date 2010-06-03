@@ -56,6 +56,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
@@ -89,7 +90,7 @@ public class MulticastMain {
 
             //setup
             String id = UUID.randomUUID().toString();
-            Stats stats = new Stats(1000L * samplingInterval);            
+            final Stats stats = new Stats(1000L * samplingInterval);            
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(hostName);
             factory.setPort(portNumber);
@@ -126,6 +127,17 @@ public class MulticastMain {
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
+                channel.setReturnListener(new ReturnListener() {
+                        public void handleBasicReturn(int replyCode,
+                                                      String replyText,
+                                                      String exchange,
+                                                      String routingKey,
+                                                      AMQP.BasicProperties properties,
+                                                      byte[] body)
+                            throws IOException {
+                            stats.logBasicReturn();
+                        }
+                    });
                 Thread t =
                     new Thread(new Producer(channel, exchangeName, id,
                                             flags, producerTxSize,
@@ -409,6 +421,7 @@ public class MulticastMain {
         private long    minLatency;
         private long    maxLatency;
         private long    cumulativeLatency;
+        private long    numBasicReturns;
 
         public Stats(long interval) {
             this.interval = interval;
@@ -422,6 +435,11 @@ public class MulticastMain {
             minLatency        = Long.MAX_VALUE;
             maxLatency        = Long.MIN_VALUE;
             cumulativeLatency = 0L;
+            numBasicReturns   = 0L;
+        }
+
+        public synchronized void logBasicReturn() {
+            ++numBasicReturns;
         }
 
         public synchronized void collectStats(long now, long latency) {
@@ -444,7 +462,8 @@ public class MulticastMain {
                                     minLatency/1000L + "/" +
                                     cumulativeLatency / (1000L * latencyCount) + "/" +
                                     maxLatency/1000L + " microseconds" :
-                                    ""));
+                                    "") +
+                                   ", basic returns: " + numBasicReturns);
                 reset(now);
             }
 
