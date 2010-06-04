@@ -135,6 +135,18 @@ public interface Channel extends ShutdownNotifier {
     void setReturnListener(ReturnListener listener);
 
     /**
+     * Return the current {@link FlowListener}.
+     * @return an interface to the current flow listener.
+     */
+    FlowListener getFlowListener();
+
+    /**
+     * Set the current {@link FlowListener}.
+     * @param listener the listener to use, or null indicating "don't use one".
+     */
+    void setFlowListener(FlowListener listener);
+
+    /**
      * Request specific "quality of service" settings.
      *
      * These settings impose limits on the amount of data the server

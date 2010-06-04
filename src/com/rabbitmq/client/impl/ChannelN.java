@@ -37,6 +37,7 @@ import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.FlowListener;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ReturnListener;
@@ -93,6 +94,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile ReturnListener returnListener = null;
 
+    /** Reference to the currently-active FlowListener, or null if there is none.
+     */
+    public volatile FlowListener flowListener = null;
+
     /**
      * Construct a new channel on the given connection with the given
      * channel number. Usually not called directly - call
@@ -128,6 +133,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public void setReturnListener(ReturnListener listener) {
         returnListener = listener;
+    }
+
+    /** Returns the current FlowListener. */
+    public FlowListener getFlowListener() {
+        return flowListener;
+    }
+
+    /**
+     * Sets the current FlowListener.
+     * A null argument is interpreted to mean "do not use a flow listener".
+     */
+    public void setFlowListener(FlowListener listener) {
+        flowListener = listener;
     }
 
     /**
@@ -256,6 +274,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     _blockContent = !channelFlow.active;
                     transmit(new Channel.FlowOk(channelFlow.active));
                     _channelMutex.notifyAll();
+                }
+                FlowListener l = getFlowListener();
+                if (l != null) {
+                    try {
+                        l.handleFlow(channelFlow.active);
+                    } catch (Throwable ex) {
+                        _connection.getExceptionHandler().handleFlowListenerException(this, ex);
+                    }
                 }
                 return true;
             } else {

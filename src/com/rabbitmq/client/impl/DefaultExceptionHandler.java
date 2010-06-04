@@ -63,6 +63,22 @@ public class DefaultExceptionHandler implements ExceptionHandler {
         }
     }
 
+    public void handleFlowListenerException(Channel channel, Throwable exception) {
+        // TODO: Convert to logging framework
+        System.err.println("FlowListener.handleFlow threw an exception for channel " +
+                           channel + ":");
+        exception.printStackTrace();
+        try {
+            ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
+                                                            "Internal error in FlowListener",
+                                                            false,
+                                                            exception);
+        } catch (IOException ioe) {
+            // Man, this clearly isn't our day.
+            // Ignore the exception? TODO: Log the nested failure
+        }
+    }
+
     public void handleConsumerException(Channel channel,
                                         Throwable exception,
                                         Consumer consumer,
