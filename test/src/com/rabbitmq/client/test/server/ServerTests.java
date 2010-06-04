@@ -41,7 +41,7 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(DurableBindingLifecycle.class);
         suite.addTestSuite(EffectVisibilityCrossNodeTest.class);
         suite.addTest(PersisterRestartTests.suite());
+        suite.addTestSuite(ExclusiveQueueDurability.class);
         return suite;
     }
-
 }
