@@ -101,6 +101,13 @@ public interface Channel extends ShutdownNotifier {
     FlowOk flow(boolean active) throws IOException;
 
     /**
+     * Return the current Channel.Flow settings
+     *
+     * @throws IOException
+     */
+    FlowOk getFlow();
+
+    /**
      * Abort this channel with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
      * and message 'OK'.
      *
