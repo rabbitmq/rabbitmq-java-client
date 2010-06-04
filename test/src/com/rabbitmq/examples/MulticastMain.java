@@ -90,7 +90,7 @@ public class MulticastMain {
 
             //setup
             String id = UUID.randomUUID().toString();
-            final Stats stats = new Stats(1000L * samplingInterval);            
+            Stats stats = new Stats(1000L * samplingInterval);            
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(hostName);
             factory.setPort(portNumber);
@@ -127,6 +127,10 @@ public class MulticastMain {
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
+                final Producer p = new Producer(channel, exchangeName, id,
+                                          flags, producerTxSize,
+                                          1000L * samplingInterval,
+                                          rateLimit, minMsgSize, timeLimit);
                 channel.setReturnListener(new ReturnListener() {
                         public void handleBasicReturn(int replyCode,
                                                       String replyText,
@@ -135,14 +139,10 @@ public class MulticastMain {
                                                       AMQP.BasicProperties properties,
                                                       byte[] body)
                             throws IOException {
-                            stats.logBasicReturn();
+                            p.logBasicReturn();
                         }
                     });
-                Thread t =
-                    new Thread(new Producer(channel, exchangeName, id,
-                                            flags, producerTxSize,
-                                            1000L * samplingInterval,
-                                            rateLimit, minMsgSize, timeLimit));
+                Thread t = new Thread(p);
                 producerThreads[i] = t;
                 t.start();
             }
@@ -227,6 +227,7 @@ public class MulticastMain {
         private long    startTime;
         private long    lastStatsTime;
         private int     msgCount;
+        private int     basicReturnCount;
 
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
@@ -244,6 +245,14 @@ public class MulticastMain {
             this.rateLimit    = rateLimit;
             this.timeLimit    = 1000L * timeLimit;
             this.message      = new byte[minMsgSize];
+        }
+
+        public synchronized void logBasicReturn() {
+            basicReturnCount++;
+        }
+
+        public synchronized void resetBasicReturns() {
+            basicReturnCount = 0;
         }
 
         public void run() {
@@ -304,7 +313,11 @@ public class MulticastMain {
             if (elapsed > interval) {
                 System.out.println("sending rate: " +
                                    (msgCount * 1000L / elapsed) +
-                                   " msg/s");
+                                   " msg/s" +
+                                   ", basic returns: " +
+                                   (basicReturnCount * 1000L / elapsed) +
+                                   " ret/s");
+                resetBasicReturns();
                 msgCount = 0;
                 lastStatsTime = now;
             }
@@ -421,7 +434,6 @@ public class MulticastMain {
         private long    minLatency;
         private long    maxLatency;
         private long    cumulativeLatency;
-        private long    numBasicReturns;
 
         public Stats(long interval) {
             this.interval = interval;
@@ -435,11 +447,6 @@ public class MulticastMain {
             minLatency        = Long.MAX_VALUE;
             maxLatency        = Long.MIN_VALUE;
             cumulativeLatency = 0L;
-            numBasicReturns   = 0L;
-        }
-
-        public synchronized void logBasicReturn() {
-            ++numBasicReturns;
         }
 
         public synchronized void collectStats(long now, long latency) {
@@ -462,8 +469,7 @@ public class MulticastMain {
                                     minLatency/1000L + "/" +
                                     cumulativeLatency / (1000L * latencyCount) + "/" +
                                     maxLatency/1000L + " microseconds" :
-                                    "") +
-                                   ", basic returns: " + numBasicReturns);
+                                    ""));
                 reset(now);
             }
 
