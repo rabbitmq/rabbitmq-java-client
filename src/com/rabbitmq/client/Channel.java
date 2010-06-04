@@ -101,9 +101,7 @@ public interface Channel extends ShutdownNotifier {
     FlowOk flow(boolean active) throws IOException;
 
     /**
-     * Return the current Channel.Flow settings
-     *
-     * @throws IOException
+     * Return the current Channel.Flow settings.
      */
     FlowOk getFlow();
 
