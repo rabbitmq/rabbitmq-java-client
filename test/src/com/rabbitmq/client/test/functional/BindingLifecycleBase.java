@@ -106,12 +106,13 @@ public class BindingLifecycleBase extends BrokerTestCase {
 
   protected void createQueueAndBindToExchange(Binding binding, boolean durable) throws IOException {
     channel.exchangeDeclare(binding.x, "direct", durable);
-    channel.queueDeclare(binding.q, durable);
+    channel.queueDeclare(binding.q, durable, false, false, null);
     channel.queueBind(binding.q, binding.x, binding.k);
   }
 
   protected void declareDurableQueue(String q) throws IOException {
-    (secondaryChannel == null ? channel : secondaryChannel).queueDeclare(q, true);
+    (secondaryChannel == null ? channel : secondaryChannel)
+      .queueDeclare(q, true, false, false, null);
   }
 
   protected void deleteExchangeAndQueue(Binding binding) throws IOException {
@@ -122,15 +123,15 @@ public class BindingLifecycleBase extends BrokerTestCase {
   protected void doAutoDelete(boolean durable, int queues) throws IOException {
     String[] queueNames = null;
     Binding binding = Binding.randomBinding();
-    channel.exchangeDeclare(binding.x, "direct", false, durable, true, null);
-    channel.queueDeclare(binding.q, false, durable, false, true, null);
+    channel.exchangeDeclare(binding.x, "direct", durable, true, null);
+    channel.queueDeclare(binding.q, durable, false, true, null);
     channel.queueBind(binding.q, binding.x, binding.k);
     if (queues > 1) {
       int j = queues - 1;
       queueNames = new String[j];
       for (int i = 0; i < j; i++) {
         queueNames[i] = randomString();
-        channel.queueDeclare(queueNames[i], false, durable, false, false, null);
+        channel.queueDeclare(queueNames[i], durable, false, false, null);
         channel.queueBind(queueNames[i], binding.x, binding.k);
         channel.basicConsume(queueNames[i], true, new QueueingConsumer(channel));
       }
@@ -146,7 +147,7 @@ public class BindingLifecycleBase extends BrokerTestCase {
         sendUnroutable(tmp);
       }
     }
-    channel.queueDeclare(binding.q, false, durable, true, true, null);
+    channel.queueDeclare(binding.q, durable, true, true, null);
     // if (queues == 1): Because the exchange does not exist, this
     // bind should fail
     try {
@@ -169,6 +170,7 @@ public class BindingLifecycleBase extends BrokerTestCase {
       }
     }
   }
+
 
   protected void restart() throws IOException {
   }
@@ -196,7 +198,7 @@ public class BindingLifecycleBase extends BrokerTestCase {
     createQueueAndBindToExchange(binding, durable);
     return binding;
   }
-  
+
   protected void subscribeSendUnsubscribe(Binding binding) throws IOException {
     String tag = channel.basicConsume(binding.q, new QueueingConsumer(channel));
     sendUnroutable(binding);
@@ -220,6 +222,7 @@ public class BindingLifecycleBase extends BrokerTestCase {
     }
   }
 
+
   // A couple of tests that are common to the subclasses (which differ on
   // whether the broker is restarted)
 
@@ -242,5 +245,4 @@ public class BindingLifecycleBase extends BrokerTestCase {
   public void testExchangeAutoDeleteDurableManyBindings() throws IOException {
     doAutoDelete(true, 10);
   }
-
 }

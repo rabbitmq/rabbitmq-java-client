@@ -46,15 +46,15 @@ public class SimpleProducer {
             String exchange = (args.length > 3) ? args[3] : "";
             String routingKey = (args.length > 4) ? args[4] : "SimpleQueue";
 
-            ConnectionFactory cfconn = new ConnectionFactory(); 
-            cfconn.setHost(hostName); 
+            ConnectionFactory cfconn = new ConnectionFactory();
+            cfconn.setHost(hostName);
             cfconn.setPort(portNumber);
             Connection conn = cfconn.newConnection();
 
             Channel ch = conn.createChannel();
 
             if (exchange.equals("")) {
-                ch.queueDeclare(routingKey);
+                ch.queueDeclare(routingKey, false, false, false, null);
             }
             ch.basicPublish(exchange, routingKey, null, message.getBytes());
             ch.close();

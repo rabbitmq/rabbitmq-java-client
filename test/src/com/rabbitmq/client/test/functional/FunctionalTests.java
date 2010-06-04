@@ -32,7 +32,6 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.test.Bug20004Test;
-import com.rabbitmq.client.test.server.Permissions;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
@@ -48,7 +47,6 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(PersistentTransactions.class);
         suite.addTestSuite(RequeueOnConnectionClose.class);
         suite.addTestSuite(RequeueOnChannelClose.class);
-        suite.addTestSuite(DurableOnTransient.class);
         suite.addTestSuite(NoRequeueOnCancel.class);
         suite.addTestSuite(Bug20004Test.class);
         suite.addTestSuite(QosTests.class);

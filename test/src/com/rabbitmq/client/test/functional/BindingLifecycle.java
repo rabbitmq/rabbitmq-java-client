@@ -33,6 +33,9 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.Method;
+import com.rabbitmq.client.Command;
 
 import java.io.IOException;
 
@@ -142,6 +145,32 @@ public class BindingLifecycle extends BindingLifecycleBase {
      */
     public void testExchangeAutoDeleteManyBindings() throws IOException {
         doAutoDelete(false, 10);
+    }
+
+    /**
+     *
+     */
+    public void testExchangePassiveDeclare() throws IOException {
+        channel.exchangeDeclare("testPassive", "direct");
+        channel.exchangeDeclarePassive("testPassive", "direct");
+
+        try {
+            channel.exchangeDeclarePassive("unknown_exchange", "direct");
+            fail("Passive declare of an unknown exchange should fail");
+        }
+        catch (IOException ioe) {
+            Throwable t = ioe.getCause();
+            String msg = "Passive declare of an unknown exchange should send a 404";
+            assertTrue(msg, t instanceof ShutdownSignalException);
+            Object r = ((ShutdownSignalException)t).getReason();
+            assertTrue(msg, r instanceof Command);
+            Method m = ((Command)r).getMethod();
+            assertTrue(msg, m instanceof AMQP.Channel.Close);
+            assertEquals(msg,
+                         AMQP.NOT_FOUND,
+                         ((AMQP.Channel.Close)m).getReplyCode());
+            return;
+        }
     }
 
     /**
