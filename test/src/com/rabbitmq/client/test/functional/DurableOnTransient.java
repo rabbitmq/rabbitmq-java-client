@@ -60,7 +60,7 @@ public class DurableOnTransient extends BrokerTestCase
         // Transient exchange
         channel.exchangeDeclare(X, "direct", false);
         // durable queue
-        channel.queueDeclare(Q, true);
+        channel.queueDeclare(Q, true, false, false, null);
     }
 
     protected void releaseResources() throws IOException {

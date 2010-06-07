@@ -16,10 +16,10 @@ public class CloseInMainLoop extends BrokerTestCase{
       if(isOpen()) throw new IllegalStateException("hadValidShutdown called while connection is still open");
       return validShutdown.get();
     }
-  
+
     public SpecialConnection() throws Exception{
       super(
-          new ConnectionFactory(), 
+          new ConnectionFactory(),
           new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", 5672)),
           new DefaultExceptionHandler(){
             @Override public void handleConsumerException(Channel channel,
@@ -48,7 +48,7 @@ public class CloseInMainLoop extends BrokerTestCase{
       if(c.getMethod() instanceof AMQP.Connection.CloseOk) validShutdown.set(true);
       return super.processControlCommand(c);
     }
- 
+
   }
 
 
@@ -57,19 +57,17 @@ public class CloseInMainLoop extends BrokerTestCase{
     connection.close();
     assertTrue(connection.hadValidShutdown());
   }
-  
+
   // The thrown runtime exception should get intercepted by the
   // consumer exception handler, and result in a clean shut down.
   public void testCloseWithFaultyConsumer() throws Exception{
     SpecialConnection connection = new SpecialConnection();
     Channel channel = connection.createChannel();
     channel.exchangeDeclare("x", "direct");
-    channel.queueDeclare("q");
-    channel.queueDelete("q");
-    channel.queueDeclare("q");
+    channel.queueDeclare("q", false, false, false, null);
     channel.queueBind("q", "x", "k");
 
-    final CountDownLatch latch = new CountDownLatch(1);    
+    final CountDownLatch latch = new CountDownLatch(1);
 
     channel.basicConsume("q", true, new DefaultConsumer(channel){
       public void handleDelivery(String consumerTag,
@@ -87,5 +85,5 @@ public class CloseInMainLoop extends BrokerTestCase{
     Thread.sleep(200);
     assertTrue(connection.hadValidShutdown());
   }
-  
+
 }

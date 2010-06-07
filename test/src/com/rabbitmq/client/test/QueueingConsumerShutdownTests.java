@@ -42,7 +42,7 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
   public void testNThreadShutdown() throws Exception{
     Channel channel = connection.createChannel();
     final QueueingConsumer c = new QueueingConsumer(channel);
-    channel.queueDeclare(QUEUE);
+    channel.queueDeclare(QUEUE, false, true, true, null);
     channel.basicConsume(QUEUE, c);
     final AtomicInteger count = new AtomicInteger(THREADS);
     final CountDownLatch latch = new CountDownLatch(THREADS);

@@ -201,7 +201,7 @@ public class BrokerTestCase extends TestCase
   }
 
   protected void declareDurableQueue(String q) throws IOException {
-    channel.queueDeclare(q, true);
+    channel.queueDeclare(q, true, false, false, null);
   }
 
   protected void declareDurableTopicExchange(String x) throws IOException {
