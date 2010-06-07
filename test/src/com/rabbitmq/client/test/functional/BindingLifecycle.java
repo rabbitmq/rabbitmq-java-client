@@ -65,6 +65,38 @@ public class BindingLifecycle extends BindingLifecycleBase {
     }
 
     /**
+     * See bug 21854:
+     * "When Queue.Purge is called, sent-but-unacknowledged messages are no
+     * longer purged, even if the channel they were sent down is not
+     * (Tx-)transacted."
+     */
+    public void testUnackedPurge() throws IOException {
+        Binding binding = setupExchangeBindings(false);
+        channel.basicPublish(binding.x, binding.k, null, payload);
+
+        GetResponse response = channel.basicGet(binding.q, false);
+        assertNotNull("The response SHOULD NOT BE null", response);
+
+        // If we purge the queue the unacked message should still be there on
+        // recover.
+        channel.queuePurge(binding.q);
+        response = channel.basicGet(binding.q, true);
+        assertNull("The response SHOULD BE null", response);
+
+        channel.basicRecoverAsync(true);
+        response = channel.basicGet(binding.q, false);
+        assertNotNull("The response SHOULD NOT BE null", response);
+
+        // If we recover then purge the message should go away
+        channel.basicRecoverAsync(true);
+        channel.queuePurge(binding.q);
+        response = channel.basicGet(binding.q, true);
+        assertNull("The response SHOULD BE null", response);
+
+        deleteExchangeAndQueue(binding);
+    }
+
+    /**
      * This tests whether when you delete an exchange, that any
      * bindings attached to it are deleted as well.
      */
