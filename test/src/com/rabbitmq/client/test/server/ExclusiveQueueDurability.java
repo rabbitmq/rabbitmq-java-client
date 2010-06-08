@@ -45,36 +45,35 @@ public class ExclusiveQueueDurability extends RestartBase {
 	HashMap<String, Object> noArgs = new HashMap<String, Object>();
 
 	void verifyQueueMissing(Channel channel, String queueName)
-			throws IOException {
-		try {
-			channel.queueDeclare(queueName, false, false, false, null);
-		} catch (IOException ioe) {
-			// FIXME check that it's specifically resource locked
-			fail("Declaring the queue resulted in a channel exception, probably meaning that it already exists");
-		}
-	}
+	        throws IOException {
+        try {
+            channel.queueDeclare(queueName, false, false, false, null);
+        } catch (IOException ioe) {
+            // FIXME check that it's specifically resource locked
+            fail("Declaring the queue resulted in a channel exception, probably meaning that it already exists");
+        }
+    }
 
-	// 1) connection and queue are on same node, node restarts -> queue
-	// should no longer exist
-	public void testConnectionQueueSameNode() throws Exception {
-		channel.queueDeclare("scenario1", true, true, false, noArgs);
-		restartAbruptly();
-		verifyQueueMissing(channel, "scenario1");
-	}
+    // 1) connection and queue are on same node, node restarts -> queue
+    // should no longer exist
+    public void testConnectionQueueSameNode() throws Exception {
+        channel.queueDeclare("scenario1", true, true, false, noArgs);
+        restartAbruptly();
+        verifyQueueMissing(channel, "scenario1");
+    }
 
-	/*
-	 * The other scenarios:
-	 * 
-	 * 2) connection and queue are on different nodes, queue's node restarts,
-	 * connection is still alive -> queue should exist
-	 * 
-	 * 3) connection and queue are on different nodes, queue's node restarts,
-	 * connection has been terminated in the meantime -> queue should no longer
-	 * exist
-	 * 
-	 * There's no way to test these, as things stand; connections and queues are
-	 * tied to nodes, so one can't engineer a situation in which a connection
-	 * and its exclusive queue are on different nodes.
-	 */
-
+    /*
+     * The other scenarios:
+     *
+     * 2) connection and queue are on different nodes, queue's node restarts,
+     * connection is still alive -> queue should exist
+     *
+     * 3) connection and queue are on different nodes, queue's node restarts,
+     * connection has been terminated in the meantime -> queue should no longer
+     * exist
+     *
+     * There's no way to test these, as things stand; connections and queues are
+     * tied to nodes, so one can't engineer a situation in which a connection
+     * and its exclusive queue are on different nodes.
+     */
 }
