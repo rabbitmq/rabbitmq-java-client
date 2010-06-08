@@ -125,11 +125,11 @@ public class ConsumerMain implements Runnable {
 
         LatencyExperimentConsumer callback = new LatencyExperimentConsumer(channel, queueName);
         callback._noAck = this._noAck;
-        
+
         channel.basicConsume(queueName, _noAck, callback);
         channel.basicConsume(completionQueue, true, "completion", callback);
         callback.report(_writeStats);
-       
+
         System.out.println("Deleting test queue.");
         channel.queueDelete(queueName);
 
@@ -138,10 +138,10 @@ public class ConsumerMain implements Runnable {
 
         System.out.println("Closing the channel.");
         channel.close();
-        
+
         System.out.println("Closing the connection.");
         _connection.close();
-        
+
         System.out.println("Leaving ConsumerMain.run().");
     }
 

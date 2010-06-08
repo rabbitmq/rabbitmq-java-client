@@ -45,5 +45,4 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(ExchangeEquivalence.class);
         return suite;
     }
-
 }

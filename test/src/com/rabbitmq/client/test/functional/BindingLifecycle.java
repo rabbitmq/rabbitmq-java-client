@@ -114,7 +114,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
     }
 
     /**
-     * 
+     *
      */
     public void testExchangePassiveDeclare() throws IOException {
         channel.exchangeDeclare("testPassive", "direct");
@@ -138,7 +138,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
             return;
         }
     }
-  
+
     /**
      * Test the behaviour of queue.unbind
      */

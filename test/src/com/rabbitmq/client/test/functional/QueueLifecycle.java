@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -31,142 +31,135 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
-
 import com.rabbitmq.client.test.BrokerTestCase;
 
 // Test queue auto-delete and exclusive semantics.
-public class QueueLifecycle extends BrokerTestCase
-{
+public class QueueLifecycle extends BrokerTestCase {
 
-  void verifyQueueExists(String name) throws IOException {
-    channel.queueDeclarePassive(name);
-  }
-
-  void verifyQueueMissing(String name) throws IOException {
-    // we can't in general check with a passive declare, since that
-    // may return an IOException because of exclusivity.  But we can
-    // check that we can happily declare another with the same name:
-    // the only circumstance in which this won't result in an error is
-    // if it doesn't exist.
-    try {
-      channel.queueDeclare(name, false, false, false, null);
+    void verifyQueueExists(String name) throws IOException {
+        channel.queueDeclarePassive(name);
     }
-    catch (IOException ioe) {
-      fail("Queue.Declare threw an exception, probably meaning that the queue already exists");
+
+    void verifyQueueMissing(String name) throws IOException {
+        // we can't in general check with a passive declare, since that
+        // may return an IOException because of exclusivity. But we can
+        // check that we can happily declare another with the same name:
+        // the only circumstance in which this won't result in an error is
+        // if it doesn't exist.
+        try {
+            channel.queueDeclare(name, false, false, false, null);
+        } catch (IOException ioe) {
+            fail("Queue.Declare threw an exception, probably meaning that the queue already exists");
+        }
+        // clean up
+        channel.queueDelete(name);
     }
-    // clean up
-    channel.queueDelete(name);
-  }
 
-  
-  /** Verify that a queue both exists and has the properties as given
-   * @throws IOException if one of these conditions is not true
-   */
-  void verifyQueue(String name,
-                   boolean durable,
-                   boolean exclusive,
-                   boolean autoDelete,
-                   Map<String,Object> args) throws IOException {
-    verifyQueueExists(name);
-    // use passive/equivalent rule to check that it has the same properties
-    channel.queueDeclare(name, durable, exclusive, autoDelete, args);
-  }
-
-  // NB the exception will close the connection
-  void verifyNotEquivalent(boolean durable,
-                           boolean exclusive,
-                           boolean autoDelete) throws IOException {
-    String q = "queue";
-    AMQP.Queue.DeclareOk qok = channel.queueDeclare(q, false, false, false, null);
-    try {
-      verifyQueue(q, durable, exclusive, autoDelete, null);
+    /**
+     * Verify that a queue both exists and has the properties as given
+     *
+     * @throws IOException
+     *             if one of these conditions is not true
+     */
+    void verifyQueue(String name, boolean durable, boolean exclusive,
+            boolean autoDelete, Map<String, Object> args) throws IOException {
+        verifyQueueExists(name);
+        // use passive/equivalent rule to check that it has the same properties
+        channel.queueDeclare(name, durable, exclusive, autoDelete, args);
     }
-    catch (IOException ioe) {
-      return;
+
+    // NB the exception will close the connection
+    void verifyNotEquivalent(boolean durable, boolean exclusive,
+            boolean autoDelete) throws IOException {
+        String q = "queue";
+        channel.queueDeclare(q, false, false, false, null);
+        try {
+            verifyQueue(q, durable, exclusive, autoDelete, null);
+        } catch (IOException ioe) {
+            return;
+        }
+        fail("Queue.declare should have been rejected as not equivalent");
     }
-    fail("Queue.declare should have been rejected as not equivalent");
-  }
-  
-  // From amqp-0-9-1.xml, for "passive" property, "equivalent" rule:
-  // "If not set and the queue exists, the server MUST check that the
-  // existing queue has the same values for durable, exclusive,
-  // auto-delete, and arguments fields.  The server MUST respond with
-  // Declare-Ok if the requested queue matches these fields, and MUST
-  // raise a channel exception if not."
-  public void testQueueEquivalence() throws IOException {
-    String q = "queue";
-    AMQP.Queue.DeclareOk qok = channel.queueDeclare(q, false, false, false, null);
-    // equivalent
-    verifyQueue(q, false, false, false, null);
 
-    // the spec says that the arguments table is matched on
-    // being semantically equivalent.
-    HashMap<String,Object> args = new HashMap();
-    args.put("assumed-to-be-semantically-void", "bar");
-    verifyQueue(q, false, false, false, args);
-    
-  }
+    // From amqp-0-9-1.xml, for "passive" property, "equivalent" rule:
+    // "If not set and the queue exists, the server MUST check that the
+    // existing queue has the same values for durable, exclusive,
+    // auto-delete, and arguments fields. The server MUST respond with
+    // Declare-Ok if the requested queue matches these fields, and MUST
+    // raise a channel exception if not."
+    public void testQueueEquivalence() throws IOException {
+        String q = "queue";
+        channel.queueDeclare(q, false, false, false, null);
+        // equivalent
+        verifyQueue(q, false, false, false, null);
 
-  // not equivalent in various ways
-  public void testQueueNonEquivalenceDurable() throws IOException {
-    verifyNotEquivalent(true, false, false);    
-  }
+        // the spec says that the arguments table is matched on
+        // being semantically equivalent.
+        HashMap<String, Object> args = new HashMap<String, Object>();
+        args.put("assumed-to-be-semantically-void", "bar");
+        verifyQueue(q, false, false, false, args);
 
-  public void testQueueNonEquivalenceExclusive() throws IOException {
-    verifyNotEquivalent(false, true, false);    
-  }
-
-  public void testQueueNonEquivalenceAutoDelete() throws IOException {
-    verifyNotEquivalent(false, false, true);
-  }
-
-  // Note that this assumes that auto-deletion is synchronous with basic.cancel,
-  // which is not actually in the spec. (If it isn't, there's a race here).
-  public void testQueueAutoDelete() throws IOException {
-    String name = "tempqueue";
-    AMQP.Queue.DeclareOk qok = channel.queueDeclare(name, false, false, true, null);
-    // now it's there
-    verifyQueue(name, false, false, true, null);
-    QueueingConsumer consumer = new QueueingConsumer(channel);
-    channel.basicConsume(name, consumer);
-    channel.basicCancel(consumer.getConsumerTag());
-    // now it's not .. we hope
-    try {
-      verifyQueueExists(name);
     }
-    catch (IOException ioe) {
-      return;
+
+    // not equivalent in various ways
+    public void testQueueNonEquivalenceDurable() throws IOException {
+        verifyNotEquivalent(true, false, false);
     }
-    fail("Queue should have been auto-deleted after we removed its only consumer");
-  }
 
-  public void testExclusiveNotAutoDelete() throws IOException {
-    String name = "exclusivequeue";
-    AMQP.Queue.DeclareOk qok = channel.queueDeclare(name, false, true, false, null);
-    // now it's there
-    verifyQueue(name, false, true, false, null);
-    QueueingConsumer consumer = new QueueingConsumer(channel);
-    channel.basicConsume(name, consumer);
-    channel.basicCancel(consumer.getConsumerTag());
-    // and still there, because exclusive no longer implies autodelete
-    verifyQueueExists(name);
-  }
+    public void testQueueNonEquivalenceExclusive() throws IOException {
+        verifyNotEquivalent(false, true, false);
+    }
 
-  public void testExclusiveGoesWithConnection() throws IOException {
-    String name = "exclusivequeue2";
-    AMQP.Queue.DeclareOk qok = channel.queueDeclare(name, false, true, false, null);
-    // now it's there
-    verifyQueue(name, false, true, false, null);
-    closeConnection();
-    openConnection();
-    openChannel();
-    verifyQueueMissing(name);
-  }
-  
+    public void testQueueNonEquivalenceAutoDelete() throws IOException {
+        verifyNotEquivalent(false, false, true);
+    }
+
+    // Note that this assumes that auto-deletion is synchronous with
+    // basic.cancel,
+    // which is not actually in the spec. (If it isn't, there's a race here).
+    public void testQueueAutoDelete() throws IOException {
+        String name = "tempqueue";
+        channel.queueDeclare(name, false, false, true, null);
+        // now it's there
+        verifyQueue(name, false, false, true, null);
+        QueueingConsumer consumer = new QueueingConsumer(channel);
+        channel.basicConsume(name, consumer);
+        channel.basicCancel(consumer.getConsumerTag());
+        // now it's not .. we hope
+        try {
+            verifyQueueExists(name);
+        } catch (IOException ioe) {
+            return;
+        }
+        fail("Queue should have been auto-deleted after we removed its only consumer");
+    }
+
+    public void testExclusiveNotAutoDelete() throws IOException {
+        String name = "exclusivequeue";
+        channel.queueDeclare(name, false, true, false, null);
+        // now it's there
+        verifyQueue(name, false, true, false, null);
+        QueueingConsumer consumer = new QueueingConsumer(channel);
+        channel.basicConsume(name, consumer);
+        channel.basicCancel(consumer.getConsumerTag());
+        // and still there, because exclusive no longer implies autodelete
+        verifyQueueExists(name);
+    }
+
+    public void testExclusiveGoesWithConnection() throws IOException {
+        String name = "exclusivequeue2";
+        channel.queueDeclare(name, false, true, false, null);
+        // now it's there
+        verifyQueue(name, false, true, false, null);
+        closeConnection();
+        openConnection();
+        openChannel();
+        verifyQueueMissing(name);
+    }
+
 }

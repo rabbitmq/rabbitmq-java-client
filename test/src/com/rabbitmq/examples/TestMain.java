@@ -193,14 +193,14 @@ public class TestMain {
     }
 
     public static void runProducerConsumerTest(String hostName, int portNumber, int commitEvery) throws IOException {
-        ConnectionFactory cfconnp = new ConnectionFactory(); 
-        cfconnp.setHost(hostName); 
+        ConnectionFactory cfconnp = new ConnectionFactory();
+        cfconnp.setHost(hostName);
         cfconnp.setPort(portNumber);
         Connection connp = cfconnp.newConnection();
         ProducerMain p = new ProducerMain(connp, 2000, 10000, false, commitEvery, true);
         new Thread(p).start();
-        ConnectionFactory cfconnc = new ConnectionFactory(); 
-        cfconnc.setHost(hostName); 
+        ConnectionFactory cfconnc = new ConnectionFactory();
+        cfconnc.setHost(hostName);
         cfconnc.setPort(portNumber);
         Connection connc = cfconnc.newConnection();
         ConsumerMain c = new ConsumerMain(connc, false, true);

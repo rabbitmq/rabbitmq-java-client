@@ -92,10 +92,10 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      */
     void close(int closeCode, String closeMessage) throws IOException;
-    
+
     /**
      * Set flow on the channel
-     * 
+     *
      * @param active if true, the server is asked to start sending. If false, the server is asked to stop sending.
      * @throws IOException
      */
@@ -227,7 +227,7 @@ public interface Channel extends ShutdownNotifier {
      * @throws IOException the server will raise a 404 channel exception if the named exchange does not exist.
      */
     Exchange.DeclareOk exchangeDeclarePassive(String name) throws IOException;
-    
+
     /**
      * Delete an exchange
      * @see com.rabbitmq.client.AMQP.Exchange.Delete

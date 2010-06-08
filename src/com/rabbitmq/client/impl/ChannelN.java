@@ -294,21 +294,21 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     {
         close(AMQP.REPLY_SUCCESS, "OK");
     }
-    
+
     /** Public API - {@inheritDoc} */
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
         close(closeCode, closeMessage, true, null, false);
     }
-    
+
     /** Public API - {@inheritDoc} */
     public void abort()
         throws IOException
     {
         abort(AMQP.REPLY_SUCCESS, "OK");
     }
-    
+
     /** Public API - {@inheritDoc} */
     public void abort(int closeCode, String closeMessage)
         throws IOException
@@ -340,7 +340,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (cause != null) {
             signal.initCause(cause);
         }
-        
+
         BlockingRpcContinuation<AMQCommand> k = new SimpleBlockingRpcContinuation();
         boolean notify = false;
         try {
@@ -350,7 +350,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 processShutdownSignal(signal, !initiatedByApplication, true);
                 quiescingRpc(reason, k);
             }
-            
+
             // Now that we're in quiescing state, channel.close was sent and
             // we wait for the reply. We ignore the result. (It's always
             // close-ok.)
@@ -375,7 +375,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 notifyListeners();
             }
         }
-    }    
+    }
 
     /** Public API - {@inheritDoc} */
     public void basicQos(int prefetchSize, int prefetchCount, boolean global)
@@ -499,7 +499,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return (Queue.DeleteOk)
             exnWrappingRpc(new Queue.Delete(TICKET, queue, ifUnused, ifEmpty, false)).getMethod();
     }
-    
+
     /** Public API - {@inheritDoc} */
     public Queue.DeleteOk queueDelete(String queue)
         throws IOException
@@ -694,7 +694,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     {
         transmit(new Basic.RecoverAsync(requeue));
     }
-  
+
     /** Public API - {@inheritDoc} */
     public Tx.SelectOk txSelect()
         throws IOException
@@ -718,6 +718,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Public API - {@inheritDoc} */
     public Channel.FlowOk flow(final boolean a) throws IOException {
-        return (Channel.FlowOk) exnWrappingRpc(new Channel.Flow() {{active = a;}}).getMethod();        
+        return (Channel.FlowOk) exnWrappingRpc(new Channel.Flow() {{active = a;}}).getMethod();
     }
 }

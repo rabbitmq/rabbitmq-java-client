@@ -151,7 +151,7 @@ public class ProducerMain implements Runnable {
 
         String queueName = "test queue";
         _channel.queueDeclare(queueName, true, false, false, null);
-        
+
         if (shouldCommit()) {
             _channel.txSelect();
         }

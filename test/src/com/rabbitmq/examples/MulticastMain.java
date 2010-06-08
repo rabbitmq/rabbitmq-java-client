@@ -56,6 +56,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
@@ -125,11 +126,22 @@ public class MulticastMain {
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
-                Thread t =
-                    new Thread(new Producer(channel, exchangeName, id,
-                                            flags, producerTxSize,
-                                            1000L * samplingInterval,
-                                            rateLimit, minMsgSize, timeLimit));
+                final Producer p = new Producer(channel, exchangeName, id,
+                                          flags, producerTxSize,
+                                          1000L * samplingInterval,
+                                          rateLimit, minMsgSize, timeLimit);
+                channel.setReturnListener(new ReturnListener() {
+                        public void handleBasicReturn(int replyCode,
+                                                      String replyText,
+                                                      String exchange,
+                                                      String routingKey,
+                                                      AMQP.BasicProperties properties,
+                                                      byte[] body)
+                            throws IOException {
+                            p.logBasicReturn();
+                        }
+                    });
+                Thread t = new Thread(p);
                 producerThreads[i] = t;
                 t.start();
             }
@@ -214,6 +226,7 @@ public class MulticastMain {
         private long    startTime;
         private long    lastStatsTime;
         private int     msgCount;
+        private int     basicReturnCount;
 
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
@@ -231,6 +244,14 @@ public class MulticastMain {
             this.rateLimit    = rateLimit;
             this.timeLimit    = 1000L * timeLimit;
             this.message      = new byte[minMsgSize];
+        }
+
+        public synchronized void logBasicReturn() {
+            basicReturnCount++;
+        }
+
+        public synchronized void resetBasicReturns() {
+            basicReturnCount = 0;
         }
 
         public void run() {
@@ -291,7 +312,11 @@ public class MulticastMain {
             if (elapsed > interval) {
                 System.out.println("sending rate: " +
                                    (msgCount * 1000L / elapsed) +
-                                   " msg/s");
+                                   " msg/s" +
+                                   ", basic returns: " +
+                                   (basicReturnCount * 1000L / elapsed) +
+                                   " ret/s");
+                resetBasicReturns();
                 msgCount = 0;
                 lastStatsTime = now;
             }

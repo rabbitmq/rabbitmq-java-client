@@ -120,6 +120,7 @@ public class BindingLifecycleBase extends BrokerTestCase {
     channel.exchangeDelete(binding.x);
   }
 
+
   protected void restart() throws IOException {
   }
 
@@ -146,7 +147,7 @@ public class BindingLifecycleBase extends BrokerTestCase {
     createQueueAndBindToExchange(binding, durable);
     return binding;
   }
-  
+
   protected void subscribeSendUnsubscribe(Binding binding) throws IOException {
     String tag = channel.basicConsume(binding.q, new QueueingConsumer(channel));
     sendUnroutable(binding);
@@ -169,5 +170,6 @@ public class BindingLifecycleBase extends BrokerTestCase {
       this.k = k;
     }
   }
+
 
 }

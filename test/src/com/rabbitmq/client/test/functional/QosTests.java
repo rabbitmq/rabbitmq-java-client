@@ -206,7 +206,7 @@ public class QosTests extends BrokerTestCase
             AMQP.Queue.DeclareOk ok = channel.queueDeclare(q, false, false, false, null);
             assertTrue(ok.getMessageCount() < messageCount);
         }
-            
+
     }
 
     public void testSingleChannelAndQueueFairness()
@@ -358,7 +358,7 @@ public class QosTests extends BrokerTestCase
         fill(2);
         drain(c, 1);
     }
-    
+
     public void testFlow() throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
@@ -371,7 +371,7 @@ public class QosTests extends BrokerTestCase
         channel.flow(true);
         drain(c, 1);
     }
-    
+
     protected void runLimitTests(int limit,
                                  boolean multiAck,
                                  boolean txMode,

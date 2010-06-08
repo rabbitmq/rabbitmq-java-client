@@ -98,9 +98,9 @@ public class ManyConnections {
             int delayLen = (int) (1000 / rate);
             long startTime = System.currentTimeMillis();
 
-	    int msgCount = 0;
-	    String queueName = "ManyConnections";
-	    ch.queueDeclare(queueName, false, false, false, null);
+	        int msgCount = 0;
+	        String queueName = "ManyConnections";
+	        ch.queueDeclare(queueName, false, false, false, null);
 
             QueueingConsumer consumer = new QueueingConsumer(ch);
             ch.basicConsume(queueName, true, consumer);

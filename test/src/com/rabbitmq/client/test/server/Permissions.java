@@ -175,11 +175,11 @@ public class Permissions extends BrokerTestCase
     {
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                  channel.queueDeclare(name, false, false, false, null);
+                    channel.queueDeclare(name, false, false, false, null);
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                  channel.queueDeclarePassive(name);
+                    channel.queueDeclarePassive(name);
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {

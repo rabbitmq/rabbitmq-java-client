@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -31,59 +31,49 @@
 
 package com.rabbitmq.client.test.server;
 
+import java.io.IOException;
 import java.util.HashMap;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.QueueingConsumer;
-
-import com.rabbitmq.client.test.server.RestartBase;
-
-import com.rabbitmq.tools.Host;
-
-import java.io.IOException;
 
 /**
- * This tests whether exclusive, durable queues are deleted when
- * appropriate (following the scenarios given in bug 20578).
+ * This tests whether exclusive, durable queues are deleted when appropriate
+ * (following the scenarios given in bug 20578).
  */
 public class ExclusiveQueueDurability extends RestartBase {
 
-  HashMap<String,Object> noArgs = new HashMap();
+	HashMap<String, Object> noArgs = new HashMap<String, Object>();
 
-  void verifyQueueMissing(Channel channel, String queueName) throws IOException {
-    try {
-      channel.queueDeclare(queueName, false, false, false, null);
+	void verifyQueueMissing(Channel channel, String queueName)
+	        throws IOException {
+        try {
+            channel.queueDeclare(queueName, false, false, false, null);
+        } catch (IOException ioe) {
+            // FIXME check that it's specifically resource locked
+            fail("Declaring the queue resulted in a channel exception, probably meaning that it already exists");
+        }
     }
-    catch (IOException ioe) {
-      // FIXME check that it's specifically resource locked
-      fail("Declaring the queue resulted in a channel exception, probably meaning that it already exists");
-    }
-  }
-  
-  // 1) connection and queue are on same node, node restarts -> queue
-  // should no longer exist
-  public void testConnectionQueueSameNode() throws Exception {
-    AMQP.Queue.DeclareOk ok = channel.queueDeclare("scenario1", true, true, false, noArgs);
-    restartAbruptly();
-    verifyQueueMissing(channel, "scenario1");
-  }
 
-  /* The other scenarios:
-   *
-   * 2) connection and queue are on different nodes, queue's node
-   * restarts, connection is still alive -> queue should exist
-   *
-   * 3) connection and queue are on different nodes, queue's node
-   * restarts, connection has been terminated in the meantime -> queue
-   * should no longer exist
-   * 
-   * There's no way to test these, as things stand; connections and
-   * queues are tied to nodes, so one can't engineer a situation in
-   * which a connection and its exclusive queue are on different
-   * nodes.
-   */
-  
+    // 1) connection and queue are on same node, node restarts -> queue
+    // should no longer exist
+    public void testConnectionQueueSameNode() throws Exception {
+        channel.queueDeclare("scenario1", true, true, false, noArgs);
+        restartAbruptly();
+        verifyQueueMissing(channel, "scenario1");
+    }
+
+    /*
+     * The other scenarios:
+     *
+     * 2) connection and queue are on different nodes, queue's node restarts,
+     * connection is still alive -> queue should exist
+     *
+     * 3) connection and queue are on different nodes, queue's node restarts,
+     * connection has been terminated in the meantime -> queue should no longer
+     * exist
+     *
+     * There's no way to test these, as things stand; connections and queues are
+     * tied to nodes, so one can't engineer a situation in which a connection
+     * and its exclusive queue are on different nodes.
+     */
 }

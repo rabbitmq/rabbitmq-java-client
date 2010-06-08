@@ -64,7 +64,7 @@ public abstract class RequeueOnClose
     public void injectMessage()
         throws IOException
     {
-      channel.queueDeclare(Q, false, false, false, null);
+        channel.queueDeclare(Q, false, false, false, null);
         channel.queueDelete(Q);
         channel.queueDeclare(Q, false, false, false, null);
         channel.basicPublish("", Q, null, "RequeueOnClose message".getBytes());
