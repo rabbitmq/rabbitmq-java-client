@@ -37,7 +37,6 @@ import java.io.DataInputStream;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.impl.Method;
-import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.impl.AMQCommand;
 import com.rabbitmq.client.ConnectionFactory;
@@ -48,69 +47,67 @@ import junit.framework.TestCase;
 /**
  * Check that protocol negotiation works
  */
-public class ConnectionOpen extends TestCase
-{
-  public void testCorrectProtocolHeader() throws IOException {
-    ConnectionFactory factory = new ConnectionFactory();
-    SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
-    fh.sendHeader();
-    AMQCommand.Assembler a = AMQCommand.newAssembler();
-    AMQCommand command = null;
-    while (command==null) {
-      command = a.handleFrame(fh.readFrame());
+public class ConnectionOpen extends TestCase {
+    public void testCorrectProtocolHeader() throws IOException {
+        ConnectionFactory factory = new ConnectionFactory();
+        SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
+        fh.sendHeader();
+        AMQCommand.Assembler a = AMQCommand.newAssembler();
+        AMQCommand command = null;
+        while (command == null) {
+            command = a.handleFrame(fh.readFrame());
+        }
+        Method m = command.getMethod();
+        //    System.out.println(m.getClass());
+        assertTrue("First command must be Connection.start",
+                m instanceof AMQP.Connection.Start);
+        AMQP.Connection.Start start = (AMQP.Connection.Start) m;
+        assertTrue("Version in Connection.start is <= what we sent",
+                start.getVersionMajor() < AMQP.PROTOCOL.MAJOR ||
+                        (start.getVersionMajor() == AMQP.PROTOCOL.MAJOR &&
+                                start.getVersionMinor() <= AMQP.PROTOCOL.MINOR));
     }
-    Method m = command.getMethod();
-    //    System.out.println(m.getClass());
-    assertTrue("First command must be Connection.start",
-               m instanceof AMQP.Connection.Start);
-    AMQP.Connection.Start start = (AMQP.Connection.Start) m;
-    assertTrue("Version in Connection.start is <= what we sent",
-               start.getVersionMajor() < AMQP.PROTOCOL.MAJOR ||
-               (start.getVersionMajor() == AMQP.PROTOCOL.MAJOR &&
-                start.getVersionMinor() <= AMQP.PROTOCOL.MINOR));
-  }
 
-  public void testCrazyProtocolHeader() throws IOException {
-    ConnectionFactory factory = new ConnectionFactory();
-    SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
-    fh.sendHeader(100, 3); // major, minor
-    DataInputStream in = fh._inputStream;
-    // we should get a valid protocol header back
-    byte[] header = new byte[4];
-    in.read(header);
-    // The protocol header is "AMQP" plus a version that the server
-    // supports.  We can really only test for the first bit.
-    assertEquals("AMQP", new String(header));
-    in.read(header);
-    assertEquals(in.available(), 0);
-    // At this point the socket should have been closed.  We can't
-    // directly test for this, since Socket.isClosed isn't very
-    // reliable, but we can test whether trying to read more bytes
-    // gives an error.
-    fh._socket.setSoTimeout(500);
-    // NB the frame handler will return null if the socket times out
-    try {
-      fh.readFrame();
-      fail("Expected socket read to fail due to socket being closed");
+    public void testCrazyProtocolHeader() throws IOException {
+        ConnectionFactory factory = new ConnectionFactory();
+        SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
+        fh.sendHeader(100, 3); // major, minor
+        DataInputStream in = fh._inputStream;
+        // we should get a valid protocol header back
+        byte[] header = new byte[4];
+        in.read(header);
+        // The protocol header is "AMQP" plus a version that the server
+        // supports.  We can really only test for the first bit.
+        assertEquals("AMQP", new String(header));
+        in.read(header);
+        assertEquals(in.available(), 0);
+        // At this point the socket should have been closed.  We can't
+        // directly test for this, since Socket.isClosed isn't very
+        // reliable, but we can test whether trying to read more bytes
+        // gives an error.
+        fh._socket.setSoTimeout(500);
+        // NB the frame handler will return null if the socket times out
+        try {
+            fh.readFrame();
+            fail("Expected socket read to fail due to socket being closed");
+        }
+        catch (MalformedFrameException mfe) {
+            fail("Expected nothing, rather than a badly-formed something");
+        }
+        catch (IOException ioe) {
+            return;
+        }
     }
-    catch (MalformedFrameException mfe) {
-      fail("Expected nothing, rather than a badly-formed something");
-    }
-    catch (IOException ioe) {
-      return;
-    }
-  }
 
-  public void testFrameMaxLessThanFrameMinSize() throws IOException {
-    ConnectionFactory factory = new ConnectionFactory();
-    factory.setRequestedFrameMax(100);
-    try {
-      factory.newConnection();
+    public void testFrameMaxLessThanFrameMinSize() throws IOException {
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setRequestedFrameMax(100);
+        try {
+            factory.newConnection();
+        }
+        catch (IOException ioe) {
+            return;
+        }
+        fail("Broker should have closed the connection since our frame max < frame_min_size");
     }
-    catch (IOException ioe) {
-      return;
-    }
-    fail("Broker should have closed the connection since our frame max < frame_min_size");
-  }
-  
 }
