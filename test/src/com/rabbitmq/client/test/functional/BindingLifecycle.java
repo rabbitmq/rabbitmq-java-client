@@ -75,6 +75,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
         channel.basicPublish(binding.x, binding.k, null, payload);
 
         GetResponse response = channel.basicGet(binding.q, false);
+        assertFalse(response.getEnvelope().isRedeliver());
         assertNotNull("The response SHOULD NOT BE null", response);
 
         // If we purge the queue the unacked message should still be there on
@@ -85,6 +86,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
 
         channel.basicRecoverAsync(true);
         response = channel.basicGet(binding.q, false);
+        assertTrue(response.getEnvelope().isRedeliver());
         assertNotNull("The response SHOULD NOT BE null", response);
 
         // If we recover then purge the message should go away
