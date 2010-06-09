@@ -90,7 +90,7 @@ public class MulticastMain {
 
             //setup
             String id = UUID.randomUUID().toString();
-            Stats stats = new Stats(1000L * samplingInterval);            
+            Stats stats = new Stats(1000L * samplingInterval);
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(hostName);
             factory.setPort(portNumber);
@@ -128,20 +128,10 @@ public class MulticastMain {
                 if (producerTxSize > 0) channel.txSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
                 final Producer p = new Producer(channel, exchangeName, id,
-                                          flags, producerTxSize,
-                                          1000L * samplingInterval,
-                                          rateLimit, minMsgSize, timeLimit);
-                channel.setReturnListener(new ReturnListener() {
-                        public void handleBasicReturn(int replyCode,
-                                                      String replyText,
-                                                      String exchange,
-                                                      String routingKey,
-                                                      AMQP.BasicProperties properties,
-                                                      byte[] body)
-                            throws IOException {
-                            p.logBasicReturn();
-                        }
-                    });
+                                                   flags, producerTxSize,
+                                                   1000L * samplingInterval,
+                                                   rateLimit, minMsgSize, timeLimit);
+                channel.setReturnListener(p);                
                 Thread t = new Thread(p);
                 producerThreads[i] = t;
                 t.start();
@@ -209,7 +199,7 @@ public class MulticastMain {
         return Arrays.asList(vals);
     }
 
-    public static class Producer implements Runnable {
+    public static class Producer implements Runnable, ReturnListener {
 
         private Channel channel;
         private String  exchangeName;
@@ -245,6 +235,15 @@ public class MulticastMain {
             this.rateLimit    = rateLimit;
             this.timeLimit    = 1000L * timeLimit;
             this.message      = new byte[minMsgSize];
+        }
+
+        public void handleBasicReturn(int replyCode,
+                                      String replyText,
+                                      String exchange,
+                                      String routingKey,
+                                      AMQP.BasicProperties properties,
+                                      byte[] body) throws IOException {
+            logBasicReturn();
         }
 
         public synchronized void logBasicReturn() {
