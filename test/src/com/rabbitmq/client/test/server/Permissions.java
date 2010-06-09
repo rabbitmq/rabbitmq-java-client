@@ -162,7 +162,7 @@ public class Permissions extends BrokerTestCase
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                    channel.exchangeDeclarePassive(name, "direct");
+                    channel.exchangeDeclarePassive(name);
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {

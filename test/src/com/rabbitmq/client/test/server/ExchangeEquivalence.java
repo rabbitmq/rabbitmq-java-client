@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -31,18 +31,28 @@
 
 package com.rabbitmq.client.test.server;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import java.util.Map;
+import java.util.HashMap;
+import java.io.IOException;
 
-public class ServerTests extends TestCase {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("server-tests");
-        suite.addTestSuite(Permissions.class);
-        suite.addTestSuite(DurableBindingLifecycle.class);
-        suite.addTestSuite(EffectVisibilityCrossNodeTest.class);
-        suite.addTest(PersisterRestartTests.suite());
-        suite.addTestSuite(ExclusiveQueueDurability.class);
-        suite.addTestSuite(ExchangeEquivalence.class);
-        return suite;
+import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.functional.ExchangeDeclare;
+
+public class ExchangeEquivalence extends BrokerTestCase {
+    static Map<String, Object> args = new HashMap<String, Object>();
+    {
+        args.put("alternate-exchange", "UME");
+    }
+
+    public void testAlternateExchangeEquivalence() throws IOException {
+        channel.exchangeDeclare("alternate", "direct", false, false, args);
+        ExchangeDeclare.verifyEquivalent(channel, "alternate", "direct", false, false, args);
+    }
+
+    public void testAlternateExchangeNonEquivalence() throws IOException {
+        channel.exchangeDeclare("alternate", "direct", false, false, args);
+        Map<String, Object> altargs = new HashMap<String, Object>();
+        altargs.put("alternate-exchange", "somewhere");
+        ExchangeDeclare.verifyNotEquivalent(channel, "alternate", "direct", false, false, altargs);
     }
 }

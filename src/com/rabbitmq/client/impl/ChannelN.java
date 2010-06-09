@@ -433,11 +433,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public Exchange.DeclareOk exchangeDeclarePassive(String exchange, String type)
+    public Exchange.DeclareOk exchangeDeclarePassive(String exchange)
         throws IOException
     {
         return (Exchange.DeclareOk)
-            exnWrappingRpc(new Exchange.Declare(TICKET, exchange, type,
+            exnWrappingRpc(new Exchange.Declare(TICKET, exchange, "",
                                                 true, false, false,
                                                 false, false, null)).getMethod();
     }

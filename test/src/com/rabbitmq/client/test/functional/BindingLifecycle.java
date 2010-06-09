@@ -186,10 +186,10 @@ public class BindingLifecycle extends BindingLifecycleBase {
      */
     public void testExchangePassiveDeclare() throws IOException {
         channel.exchangeDeclare("testPassive", "direct");
-        channel.exchangeDeclarePassive("testPassive", "direct");
+        channel.exchangeDeclarePassive("testPassive");
 
         try {
-            channel.exchangeDeclarePassive("unknown_exchange", "direct");
+            channel.exchangeDeclarePassive("unknown_exchange");
             fail("Passive declare of an unknown exchange should fail");
         }
         catch (IOException ioe) {
