@@ -31,6 +31,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 
@@ -319,4 +320,27 @@ public abstract class TransactionsBase
         closeChannel();
     }
 
+    public void testNonTransactedCommit()
+        throws IOException
+    {
+        openChannel();
+        try {
+            txCommit();
+            fail("Expected channel error");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
+    }
+
+    public void testNonTransactedRollback()
+        throws IOException
+    {
+        openChannel();
+        try {
+            txRollback();
+            fail("Expected channel error");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
+    }
 }
