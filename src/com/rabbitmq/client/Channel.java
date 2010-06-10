@@ -225,10 +225,9 @@ public interface Channel extends ShutdownNotifier {
     /**
      * Declare an exchange passively; that is, check if the named exchange exists.
      * @param name check the existence of an exchange named this
-     * @param type the exchange type
      * @throws IOException the server will raise a 404 channel exception if the named exchange does not exist.
      */
-    Exchange.DeclareOk exchangeDeclarePassive(String name, String type) throws IOException;
+    Exchange.DeclareOk exchangeDeclarePassive(String name) throws IOException;
 
     /**
      * Delete an exchange

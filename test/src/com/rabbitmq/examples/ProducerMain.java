@@ -159,7 +159,7 @@ public class ProducerMain implements Runnable {
 
         if (_sendCompletion) {
             String exchangeName = "test completion";
-            _channel.exchangeDeclarePassive(exchangeName, "fanout");
+            _channel.exchangeDeclarePassive(exchangeName);
             _channel.basicPublish(exchangeName, "", MessageProperties.BASIC, new byte[0]);
             if (shouldCommit())
                 _channel.txCommit();

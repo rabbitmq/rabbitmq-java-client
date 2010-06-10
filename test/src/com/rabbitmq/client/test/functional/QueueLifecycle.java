@@ -107,19 +107,17 @@ public class QueueLifecycle extends BrokerTestCase {
     }
 
     // not equivalent in various ways
-    // We don't enforce this for 0-8
-    // public void testQueueNonEquivalenceDurable() throws IOException {
-    // verifyNotEquivalent(true, false, false);
-    // }
+    public void testQueueNonEquivalenceDurable() throws IOException {
+        verifyNotEquivalent(true, false, false);
+    }
 
     public void testQueueNonEquivalenceExclusive() throws IOException {
         verifyNotEquivalent(false, true, false);
     }
 
-    // We don't enforce this for 0-8
-    // public void testQueueNonEquivalenceAutoDelete() throws IOException {
-    // verifyNotEquivalent(false, false, true);
-    // }
+    public void testQueueNonEquivalenceAutoDelete() throws IOException {
+        verifyNotEquivalent(false, false, true);
+    }
 
     // Note that this assumes that auto-deletion is synchronous with
     // basic.cancel,
