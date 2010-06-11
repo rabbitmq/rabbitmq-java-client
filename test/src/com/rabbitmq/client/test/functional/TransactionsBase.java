@@ -229,22 +229,6 @@ public abstract class TransactionsBase
     }
 
     /*
-      it is legal to ack the same message twice
-    */
-    public void testDuplicateAck()
-        throws IOException
-    {
-        openChannel();
-        basicPublish();
-        txSelect();
-        basicGet();
-        basicAck();
-        basicAck();
-        txCommit();
-        closeChannel();
-    }
-
-    /*
       it is illegal to ack with an unknown delivery tag
     */
     public void testUnknownTagAck()
