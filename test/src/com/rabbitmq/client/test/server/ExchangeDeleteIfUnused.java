@@ -65,11 +65,10 @@ public class ExchangeDeleteIfUnused extends BrokerTestCase {
             channel.exchangeDelete(ExchangeName, true);
             fail("Exception expected if exchange in use");
         } catch (IOException e) {
-            assertTrue("Should be com.rabbitmq.client.ShutdownSignalException",
-                       e.getCause() instanceof ShutdownSignalException);
-            String msg = e.getCause().getMessage();
-            assertTrue("Exception should contain ``in use''", msg.toLowerCase().contains("in use"));
-            // ok
+            Throwable t = e.getCause();
+            assertTrue("Exception should be a ShutdownSignalException",
+                       t instanceof ShutdownSignalException);
+            assertTrue("Exception should contain ``in use''", t.getMessage().toLowerCase().contains("in use"));
         }
     }
 }
