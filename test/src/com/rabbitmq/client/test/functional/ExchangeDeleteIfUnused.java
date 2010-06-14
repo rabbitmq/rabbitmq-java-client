@@ -29,7 +29,7 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.server;
+package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 
@@ -37,24 +37,22 @@ import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class ExchangeDeleteIfUnused extends BrokerTestCase {
-    private final static String ExchangeName = "xchg1";
-    private final static String QueueName = "myQueue";
-    private final static String RoutingKey = "something";
+    private final static String EXCHANGE_NAME = "xchg1";
+    private final static String ROUTING_KEY = "something";
 
     protected void createResources()
         throws IOException
     {
         super.createResources();
-        channel.exchangeDeclare(ExchangeName, "direct");
-        channel.queueDeclare(QueueName);
-        channel.queueBind(QueueName, ExchangeName, RoutingKey);
+        channel.exchangeDeclare(EXCHANGE_NAME, "direct");
+        String queueName = channel.queueDeclare().getQueue();
+        channel.queueBind(queueName, EXCHANGE_NAME, ROUTING_KEY);
     }
 
     protected void releaseResources()
         throws IOException
     {
-        channel.queueDelete(QueueName);
-        channel.exchangeDelete(ExchangeName);
+        channel.exchangeDelete(EXCHANGE_NAME);
         super.releaseResources();
     }
 
@@ -62,7 +60,7 @@ public class ExchangeDeleteIfUnused extends BrokerTestCase {
         try {
             // exchange.delete(ifUnused = true)
             // should throw a channel exception if the exchange is being used
-            channel.exchangeDelete(ExchangeName, true);
+            channel.exchangeDelete(EXCHANGE_NAME, true);
             fail("Exception expected if exchange in use");
         } catch (IOException e) {
             Throwable t = e.getCause();

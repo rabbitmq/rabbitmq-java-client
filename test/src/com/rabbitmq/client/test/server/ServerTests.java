@@ -40,7 +40,6 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(Permissions.class);
         suite.addTestSuite(DurableBindingLifecycle.class);
         suite.addTestSuite(EffectVisibilityCrossNodeTest.class);
-        suite.addTestSuite(ExchangeDeleteIfUnused.class);
         suite.addTest(PersisterRestartTests.suite());
         return suite;
     }

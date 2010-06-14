@@ -51,6 +51,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(DurableOnTransient.class);
         suite.addTestSuite(NoRequeueOnCancel.class);
         suite.addTestSuite(Bug20004Test.class);
+        suite.addTestSuite(ExchangeDeleteIfUnused.class);
         suite.addTestSuite(QosTests.class);
         suite.addTestSuite(AlternateExchange.class);
         return suite;
