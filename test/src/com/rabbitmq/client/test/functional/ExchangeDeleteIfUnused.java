@@ -36,6 +36,8 @@ import java.io.IOException;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
+/* Declare an exchange, bind a queue to it, then try to delete it,
+ * setting if-unused to true.  This should throw an exception. */
 public class ExchangeDeleteIfUnused extends BrokerTestCase {
     private final static String EXCHANGE_NAME = "xchg1";
     private final static String ROUTING_KEY = "something";
@@ -56,17 +58,14 @@ public class ExchangeDeleteIfUnused extends BrokerTestCase {
         super.releaseResources();
     }
 
+    /* Attempt to Exchange.Delete(ifUnused = true) a used exchange.
+     * Should throw an exception. */
     public void testExchangeDelete() {
         try {
-            // exchange.delete(ifUnused = true)
-            // should throw a channel exception if the exchange is being used
             channel.exchangeDelete(EXCHANGE_NAME, true);
             fail("Exception expected if exchange in use");
         } catch (IOException e) {
-            Throwable t = e.getCause();
-            assertTrue("Exception should be a ShutdownSignalException",
-                       t instanceof ShutdownSignalException);
-            assertTrue("Exception should contain ``in use''", t.getMessage().toLowerCase().contains("in use"));
+            checkShutdownSignal(406, e);
         }
     }
 }
