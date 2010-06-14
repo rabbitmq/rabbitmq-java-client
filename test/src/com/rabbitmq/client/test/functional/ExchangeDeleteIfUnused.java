@@ -33,6 +33,7 @@ package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
@@ -65,7 +66,7 @@ public class ExchangeDeleteIfUnused extends BrokerTestCase {
             channel.exchangeDelete(EXCHANGE_NAME, true);
             fail("Exception expected if exchange in use");
         } catch (IOException e) {
-            checkShutdownSignal(406, e);
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
     }
 }
