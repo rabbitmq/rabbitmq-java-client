@@ -31,33 +31,42 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.Bug20004Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import java.io.IOException;
 
-public class FunctionalTests extends TestCase {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("functional");
-        suite.addTestSuite(Tables.class);
-        suite.addTestSuite(DoubleDeletion.class);
-        suite.addTestSuite(Routing.class);
-        suite.addTestSuite(BindingLifecycle.class);
-        suite.addTestSuite(Recover.class);
-        suite.addTestSuite(Transactions.class);
-        suite.addTestSuite(PersistentTransactions.class);
-        suite.addTestSuite(RequeueOnConnectionClose.class);
-        suite.addTestSuite(RequeueOnChannelClose.class);
-        suite.addTestSuite(DurableOnTransient.class);
-        suite.addTestSuite(NoRequeueOnCancel.class);
-        suite.addTestSuite(Bug20004Test.class);
-        suite.addTestSuite(ExchangeDeleteIfUnused.class);
-        suite.addTestSuite(QosTests.class);
-        suite.addTestSuite(AlternateExchange.class);
-        suite.addTestSuite(ExchangeDeclare.class);
-        suite.addTestSuite(QueueLifecycle.class);
-        suite.addTestSuite(QueueExclusivity.class);
-        suite.addTestSuite(InvalidAcks.class);
-        suite.addTestSuite(InvalidAcksTx.class);
-        return suite;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.test.BrokerTestCase;
+
+/* Declare an exchange, bind a queue to it, then try to delete it,
+ * setting if-unused to true.  This should throw an exception. */
+public class ExchangeDeleteIfUnused extends BrokerTestCase {
+    private final static String EXCHANGE_NAME = "xchg1";
+    private final static String ROUTING_KEY = "something";
+
+    protected void createResources()
+        throws IOException
+    {
+        super.createResources();
+        channel.exchangeDeclare(EXCHANGE_NAME, "direct");
+        String queueName = channel.queueDeclare().getQueue();
+        channel.queueBind(queueName, EXCHANGE_NAME, ROUTING_KEY);
+    }
+
+    protected void releaseResources()
+        throws IOException
+    {
+        channel.exchangeDelete(EXCHANGE_NAME);
+        super.releaseResources();
+    }
+
+    /* Attempt to Exchange.Delete(ifUnused = true) a used exchange.
+     * Should throw an exception. */
+    public void testExchangeDelete() {
+        try {
+            channel.exchangeDelete(EXCHANGE_NAME, true);
+            fail("Exception expected if exchange in use");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
     }
 }
