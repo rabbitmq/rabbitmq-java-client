@@ -50,11 +50,14 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(RequeueOnChannelClose.class);
         suite.addTestSuite(NoRequeueOnCancel.class);
         suite.addTestSuite(Bug20004Test.class);
+        suite.addTestSuite(ExchangeDeleteIfUnused.class);
         suite.addTestSuite(QosTests.class);
         suite.addTestSuite(AlternateExchange.class);
         suite.addTestSuite(ExchangeDeclare.class);
         suite.addTestSuite(QueueLifecycle.class);
         suite.addTestSuite(QueueExclusivity.class);
+        suite.addTestSuite(InvalidAcks.class);
+        suite.addTestSuite(InvalidAcksTx.class);
         return suite;
     }
 }

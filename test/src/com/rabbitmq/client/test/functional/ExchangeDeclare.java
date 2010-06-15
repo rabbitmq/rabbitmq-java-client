@@ -35,9 +35,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.io.IOException;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.QueueingConsumer;
 
 import com.rabbitmq.client.test.BrokerTestCase;
 
@@ -50,26 +48,27 @@ public class ExchangeDeclare extends BrokerTestCase {
     public void releaseResources() throws IOException {
         channel.exchangeDelete(NAME);
     }
-    
-    public static void verifyEquivalent(Channel channel, String name, String type, boolean durable, Map<String, Object> args)
-        throws IOException {
+
+    public static void verifyEquivalent(Channel channel, String name,
+            String type, boolean durable,
+            Map<String, Object> args) throws IOException {
         channel.exchangeDeclarePassive(name);
         channel.exchangeDeclare(name, type, durable, args);
     }
 
     // Note: this will close the channel
-    public static void verifyNotEquivalent(Channel channel, String name, String type, boolean durable, Map<String, Object> args)
-        throws IOException {
+    public static void verifyNotEquivalent(Channel channel, String name,
+            String type, boolean durable,
+            Map<String, Object> args) throws IOException {
         channel.exchangeDeclarePassive(name);
         try {
             channel.exchangeDeclare(name, type, durable, args);
             fail("Exchange was supposed to be not equivalent");
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             return;
         }
     }
-    
+
     public void testExchangeNoArgsEquivalence() throws IOException {
         channel.exchangeDeclare(NAME, TYPE, false, null);
         verifyEquivalent(channel, NAME, TYPE, false, null);
