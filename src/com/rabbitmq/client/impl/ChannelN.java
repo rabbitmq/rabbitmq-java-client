@@ -180,7 +180,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // If we are not, however, then we are in a quiescing, or
         // shutting-down state as the result of an application
         // decision to close this channel, and we are to discard all
-        // incoming commands except for a close-ok.
+        // incoming commands except for close and close-ok.
 
         Method method = command.getMethod();
 
