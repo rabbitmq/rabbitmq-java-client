@@ -184,29 +184,26 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
         Method method = command.getMethod();
 
-        if (method instanceof Channel.Close) {
-            // Channel should always respond to Channel.Close
-            // from the server
-            releaseChannelNumber();
-            ShutdownSignalException signal = new ShutdownSignalException(false,
-                                                                         false,
-                                                                         command,
-                                                                         this);
-            synchronized (_channelMutex) {
-                try {
-                    processShutdownSignal(signal, true, false);
-                    quiescingTransmit(new Channel.CloseOk());
-                } finally {
-                    notifyOutstandingRpc(signal);
-                }
-            }
-            notifyListeners();
-            return true;
-        }
         if (isOpen()) {
             // We're in normal running mode.
 
-            if (method instanceof Basic.Deliver) {
+            if (method instanceof Channel.Close) {
+                releaseChannelNumber();
+                ShutdownSignalException signal = new ShutdownSignalException(false,
+                                                                             false,
+                                                                             command,
+                                                                             this);
+                synchronized (_channelMutex) {
+                    try {
+                        processShutdownSignal(signal, true, false);
+                        quiescingTransmit(new Channel.CloseOk());
+                    } finally {
+                        notifyOutstandingRpc(signal);
+                    }
+                }
+                notifyListeners();
+                return true;
+            } else if (method instanceof Basic.Deliver) {
                 Basic.Deliver m = (Basic.Deliver) method;
 
                 Consumer callback = _consumers.get(m.consumerTag);
@@ -273,7 +270,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         } else {
             // We're in quiescing mode.
 
-            if (method instanceof Channel.CloseOk) {
+            if (method instanceof Channel.Close) {
+                // We're already shutting down, so just send back an ok.
+                synchronized (_channelMutex) {
+                    quiescingTransmit(new Channel.CloseOk());
+                }
+                return true;
+            } else if (method instanceof Channel.CloseOk) {
                 // We're quiescing, and we see a channel.close-ok:
                 // this is our signal to leave quiescing mode and
                 // finally shut down for good. Let it be handled as an
