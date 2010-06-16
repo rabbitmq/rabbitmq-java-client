@@ -528,9 +528,18 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         // See the detailed comments in ChannelN.processAsync.
 
         Method method = c.getMethod();
-        
+
         if (method instanceof AMQP.Connection.Close) {
-            handleConnectionClose(c);
+            if (!_brokerInitiatedShutdown) {
+                handleConnectionClose(c);
+            } else {
+                // Already shutting down, so just send back a CloseOk.
+                try {
+                    _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
+                } catch (IOException ioe) {
+                    Utility.emptyStatement();
+                }
+            }
             return true;
         } else {
             if (isOpen()) {
