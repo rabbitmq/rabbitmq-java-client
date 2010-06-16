@@ -29,27 +29,44 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.server;
-
-import com.rabbitmq.client.test.BrokerTestCase;
+package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 
-import com.rabbitmq.tools.Host;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.test.BrokerTestCase;
 
-public class RestartBase extends BrokerTestCase
-{
-    protected void restart()
+/* Declare an exchange, bind a queue to it, then try to delete it,
+ * setting if-unused to true.  This should throw an exception. */
+public class ExchangeDeleteIfUnused extends BrokerTestCase {
+    private final static String EXCHANGE_NAME = "xchg1";
+    private final static String ROUTING_KEY = "something";
+
+    protected void createResources()
         throws IOException
     {
-        tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
-        setUp();
+        super.createResources();
+        channel.exchangeDeclare(EXCHANGE_NAME, "direct");
+        String queueName = channel.queueDeclare().getQueue();
+        channel.queueBind(queueName, EXCHANGE_NAME, ROUTING_KEY);
     }
 
-    protected void forceSnapshot()
-        throws IOException, InterruptedException
+    protected void releaseResources()
+        throws IOException
     {
-        Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
+        channel.exchangeDelete(EXCHANGE_NAME);
+        super.releaseResources();
+    }
+
+    /* Attempt to Exchange.Delete(ifUnused = true) a used exchange.
+     * Should throw an exception. */
+    public void testExchangeDelete() {
+        try {
+            channel.exchangeDelete(EXCHANGE_NAME, true);
+            fail("Exception expected if exchange in use");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
     }
 }
