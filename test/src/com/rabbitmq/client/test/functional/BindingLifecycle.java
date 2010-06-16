@@ -148,6 +148,40 @@ public class BindingLifecycle extends BindingLifecycleBase {
     }
 
     /**
+     * This tests whether the server checks that an auto_delete
+     * exchange actually deletes the bindings attached to it when it
+     * is deleted.
+     *
+     * To test this, you declare and auto_delete exchange and bind an
+     * auto_delete queue to it.
+     *
+     * Start a consumer on this queue, send a message, let it get
+     * consumed and then cancel the consumer
+     *
+     * The unsubscribe should cause the queue to auto_delete, which in
+     * turn should cause the exchange to auto_delete.
+     *
+     * Then re-declare the queue again and try to rebind it to the same exhange.
+     *
+     * Because the exchange has been auto-deleted, the bind operation
+     * should fail.
+     */
+    public void testExchangeAutoDelete() throws IOException {
+        doAutoDelete(false, 1);
+    }
+
+    /**
+     * Runs something similar to testExchangeAutoDelete, but adds
+     * different queues with the same binding to the same exchange.
+     *
+     * The difference should be that the original exchange should not
+     * get auto-deleted
+     */
+    public void testExchangeAutoDeleteManyBindings() throws IOException {
+        doAutoDelete(false, 10);
+    }
+
+    /**
      *
      */
     public void testExchangePassiveDeclare() throws IOException {

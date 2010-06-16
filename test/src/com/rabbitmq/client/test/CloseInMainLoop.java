@@ -63,7 +63,7 @@ public class CloseInMainLoop extends BrokerTestCase{
   public void testCloseWithFaultyConsumer() throws Exception{
     SpecialConnection connection = new SpecialConnection();
     Channel channel = connection.createChannel();
-    channel.exchangeDeclare("x", "direct", false, null);
+    channel.exchangeDeclare("x", "direct");
     channel.queueDeclare("q", false, false, false, null);
     channel.queueBind("q", "x", "k");
 

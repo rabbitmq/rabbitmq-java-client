@@ -45,16 +45,16 @@ public class ExchangeEquivalence extends BrokerTestCase {
     }
 
     public void testAlternateExchangeEquivalence() throws IOException {
-        channel.exchangeDeclare("alternate", "direct", false, args);
+        channel.exchangeDeclare("alternate", "direct", false, false, args);
         ExchangeDeclare.verifyEquivalent(channel, "alternate", "direct", false,
-                args);
+                false, args);
     }
 
     public void testAlternateExchangeNonEquivalence() throws IOException {
-        channel.exchangeDeclare("alternate", "direct", false, args);
+        channel.exchangeDeclare("alternate", "direct", false, false, args);
         Map<String, Object> altargs = new HashMap<String, Object>();
         altargs.put("alternate-exchange", "somewhere");
         ExchangeDeclare.verifyNotEquivalent(channel, "alternate", "direct",
-                false, altargs);
+                false, false, altargs);
     }
 }
