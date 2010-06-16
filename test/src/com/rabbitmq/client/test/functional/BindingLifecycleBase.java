@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -38,6 +38,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ConnectionFactory;
 import java.io.IOException;
 
 /**
@@ -75,7 +76,10 @@ public class BindingLifecycleBase extends BrokerTestCase {
     super.openConnection();
     if (secondaryConnection == null) {
       try {
-        secondaryConnection = connectionFactory.newConnection("localhost", 5673);
+        ConnectionFactory cf2 = connectionFactory.clone();
+        cf2.setHost("localhost");
+        cf2.setPort(5673);
+        secondaryConnection = cf2.newConnection();
       }
       catch (IOException e) {
       }

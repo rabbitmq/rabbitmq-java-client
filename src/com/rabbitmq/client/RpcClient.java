@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -110,7 +110,11 @@ public class RpcClient {
      * receiving replies to RPC requests.
      * @return the name of the reply queue
      */
+<<<<<<< local
     private String setupReplyQueue() {
+=======
+    protected String setupReplyQueue() throws IOException {
+>>>>>>> other
         return _channel.queueDeclare("", false, false, true, true, null).getQueue();
     }
 
@@ -118,7 +122,11 @@ public class RpcClient {
      * Registers a consumer on the reply queue.
      * @return the newly created and registered consumer
      */
+<<<<<<< local
     private DefaultConsumer setupConsumer()  {
+=======
+    protected DefaultConsumer setupConsumer() throws IOException {
+>>>>>>> other
         DefaultConsumer consumer = new DefaultConsumer(_channel) {
             @Override
             public void handleShutdownSignal(String consumerTag,

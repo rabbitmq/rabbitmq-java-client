@@ -13,10 +13,11 @@
 //   The Initial Developers of the Original Code are LShift Ltd.,
 //   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -28,6 +29,7 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.AMQP.Exchange;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.AMQP.Tx;
+import com.rabbitmq.client.AMQP.Channel.FlowOk;
 
 import java.util.Map;
 
@@ -70,16 +72,60 @@ public interface Channel extends ShutdownNotifier {
     /**
      * Close this channel with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
      * and message 'OK'.
+<<<<<<< local
+=======
+     *
+     * @throws java.io.IOException if an error is encountered
+>>>>>>> other
      */
+<<<<<<< local
     void close();
     
+=======
+    void close() throws IOException;
+
+>>>>>>> other
     /**
      * Close this channel.
-     * 
+     *
      * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
      * @param closeMessage a message indicating the reason for closing the connection
      */
+<<<<<<< local
     void close(int closeCode, String closeMessage);
+=======
+    void close(int closeCode, String closeMessage) throws IOException;
+    
+    /**
+     * Set flow on the channel
+     * 
+     * @param active if true, the server is asked to start sending. If false, the server is asked to stop sending.
+     * @throws IOException
+     */
+    FlowOk flow(boolean active) throws IOException;
+
+    /**
+     * Return the current Channel.Flow settings.
+     */
+    FlowOk getFlow();
+
+    /**
+     * Abort this channel with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
+     * and message 'OK'.
+     *
+     * Forces the channel to close and waits for the close operation to complete.
+     * Any encountered exceptions in the close operation are silently discarded.
+     */
+    void abort() throws IOException;
+
+    /**
+     * Abort this channel.
+     *
+     * Forces the channel to close and waits for the close operation to complete.
+     * Any encountered exceptions in the close operation are silently discarded.
+     */
+    void abort(int closeCode, String closeMessage) throws IOException;
+>>>>>>> other
 
     /**
      * Return the current {@link ReturnListener}.
@@ -94,6 +140,50 @@ public interface Channel extends ShutdownNotifier {
     void setReturnListener(ReturnListener listener);
 
     /**
+<<<<<<< local
+=======
+     * Return the current {@link FlowListener}.
+     * @return an interface to the current flow listener.
+     */
+    FlowListener getFlowListener();
+
+    /**
+     * Set the current {@link FlowListener}.
+     * @param listener the listener to use, or null indicating "don't use one".
+     */
+    void setFlowListener(FlowListener listener);
+
+    /**
+     * Request specific "quality of service" settings.
+     *
+     * These settings impose limits on the amount of data the server
+     * will deliver to consumers before requiring the receipt of
+     * acknowledgements.
+     * Thus they provide a means of consumer-initiated flow control.
+     * @see com.rabbitmq.client.AMQP.Basic.Qos
+     * @param prefetchSize maximum amount of content (measured in
+     * octets) that the server will deliver, 0 if unlimited
+     * @param prefetchCount maximum number of messages that the server
+     * will deliver, 0 if unlimited
+     * @param global true if the settings should be applied to the
+     * entire connection rather than just the current channel
+     * @throws java.io.IOException if an error is encountered
+     */
+    void basicQos(int prefetchSize, int prefetchCount, boolean global) throws IOException;
+
+    /**
+     * Request a specific prefetchCount "quality of service" settings
+     * for this channel.
+     *
+     * @see #basicQos(int, int, boolean)
+     * @param prefetchCount maximum number of messages that the server
+     * will deliver, 0 if unlimited
+     * @throws java.io.IOException if an error is encountered
+     */
+    void basicQos(int prefetchCount) throws IOException;
+
+    /**
+>>>>>>> other
      * Publish a message with both "mandatory" and "immediate" flags set to false
      * @see com.rabbitmq.client.AMQP.Basic.Publish
      * @param exchange the exchange to publish the message to
@@ -190,8 +280,13 @@ public interface Channel extends ShutdownNotifier {
      * @param queue the name of the queue
      * @return a declaration-confirm method to indicate the queue was successfully declared
      */
+<<<<<<< local
     Queue.DeclareOk queueDeclare(String queue);
     
+=======
+    Queue.DeclareOk queueDeclare(String queue) throws IOException;
+
+>>>>>>> other
     /**
      * Actively declare a non-exclusive, non-autodelete queue
      * The name of the new queue is held in the "queue" field of the
@@ -260,8 +355,13 @@ public interface Channel extends ShutdownNotifier {
      * @param arguments other properties (binding parameters)
      * @return a binding-confirm method if the binding was successfully created
      */
+<<<<<<< local
     Queue.BindOk queueBind(String queue, String exchange, String routingKey, Map<String, Object> arguments);
     
+=======
+    Queue.BindOk queueBind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
+
+>>>>>>> other
     /**
      * Unbinds a queue from an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Queue.Unbind
@@ -300,7 +400,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Queue.Purge
      * @see com.rabbitmq.client.AMQP.Queue.PurgeOk
      * @param queue the name of the queue
-     * @param nowait whether to await completion of the purge 
+     * @param nowait whether to await completion of the purge
      * @return a purge-confirm method if the purge was executed succesfully
      * @throws java.io.IOException if an error is encountered
      */

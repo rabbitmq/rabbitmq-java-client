@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -38,7 +38,8 @@ import com.rabbitmq.utility.SensibleClone;
 
 
 public class ValueOrExceptionTest extends TestCase {
-    public static class InsufficientMagicException extends Exception implements SensibleClone<InsufficientMagicException> {
+    public static class InsufficientMagicException extends Exception 
+      implements SensibleClone<InsufficientMagicException> {
       public InsufficientMagicException(String message) {
         super(message);
       }
@@ -58,15 +59,19 @@ public class ValueOrExceptionTest extends TestCase {
 
     public void testStoresValue() throws InsufficientMagicException {
         Integer value = new Integer(3);
-        ValueOrException<Integer, InsufficientMagicException> valueOrEx = ValueOrException.<Integer, InsufficientMagicException>makeValue(value);
+
+        ValueOrException<Integer, InsufficientMagicException> valueOrEx = 
+            ValueOrException.<Integer, InsufficientMagicException>makeValue(value);
         
         Integer returnedValue = valueOrEx.getValue();
         assertTrue(returnedValue == value);
     }
 
     public void testClonesException() {
-        InsufficientMagicException exception = new InsufficientMagicException("dummy message");
-        ValueOrException<Integer, InsufficientMagicException> valueOrEx = ValueOrException.<Integer, InsufficientMagicException>makeException(exception);
+        InsufficientMagicException exception = 
+            new InsufficientMagicException("dummy message");
+        ValueOrException<Integer, InsufficientMagicException> valueOrEx 
+            = ValueOrException.makeException(exception);
 
         try {
             valueOrEx.getValue();
@@ -74,6 +79,10 @@ public class ValueOrExceptionTest extends TestCase {
         } catch(InsufficientMagicException returnedException) {
             assertTrue(returnedException != exception);
             assertEquals(returnedException.getMessage(), exception.getMessage());
+            boolean inGetValue = false;
+            for(StackTraceElement elt : returnedException.getStackTrace())
+              inGetValue |= "getValue".equals(elt.getMethodName());
+            assertTrue(inGetValue);
         }
     }
 }

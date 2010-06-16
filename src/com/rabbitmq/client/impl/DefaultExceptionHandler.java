@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -56,6 +56,22 @@ public class DefaultExceptionHandler implements ExceptionHandler {
                                                             false,
                                                             exception);
         } catch (Exception e) {
+            // Man, this clearly isn't our day.
+            // Ignore the exception? TODO: Log the nested failure
+        }
+    }
+
+    public void handleFlowListenerException(Channel channel, Throwable exception) {
+        // TODO: Convert to logging framework
+        System.err.println("FlowListener.handleFlow threw an exception for channel " +
+                           channel + ":");
+        exception.printStackTrace();
+        try {
+            ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
+                                                            "Internal error in FlowListener",
+                                                            false,
+                                                            exception);
+        } catch (IOException ioe) {
             // Man, this clearly isn't our day.
             // Ignore the exception? TODO: Log the nested failure
         }

@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -31,12 +31,11 @@
 
 package com.rabbitmq.tools;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.concurrent.*;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.AMQCommand;
@@ -44,6 +43,8 @@ import com.rabbitmq.client.impl.AMQContentHeader;
 import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.utility.BlockingCell;
+import com.rabbitmq.utility.Utility;
+
 
 /**
  * AMQP Protocol Analyzer program. Listens on a configurable port and when a
@@ -52,18 +53,68 @@ import com.rabbitmq.utility.BlockingCell;
  * printed to stdout.
  */
 public class Tracer implements Runnable {
+    private static boolean property(String property) {
+        return Boolean.parseBoolean(System.getProperty(
+            "com.rabbitmq.tools.Tracer." + property));
+    }
+
     public static final boolean WITHHOLD_INBOUND_HEARTBEATS =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_INBOUND_HEARTBEATS"))
-        .booleanValue();
+        property("WITHHOLD_INBOUND_HEARTBEATS");
     public static final boolean WITHHOLD_OUTBOUND_HEARTBEATS =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.WITHHOLD_OUTBOUND_HEARTBEATS"))
-        .booleanValue();
+        property("WITHHOLD_OUTBOUND_HEARTBEATS");
     public static final boolean NO_ASSEMBLE_FRAMES =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES"))
-        .booleanValue();
+        property("NO_ASSEMBLE_FRAMES");
     public static final boolean NO_DECODE_FRAMES =
-        new Boolean(System.getProperty("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES"))
-        .booleanValue();
+        property("NO_DECODE_FRAMES");
+    public static final boolean SUPPRESS_COMMAND_BODIES =
+       property("SUPPRESS_COMMAND_BODIES");
+    public static final boolean SILENT_MODE =
+        property("SILENT_MODE");
+
+    final static int LOG_QUEUE_SIZE = 1024 * 1024;
+    final static int BUFFER_SIZE = 10 * 1024 * 1024;
+    final static int MAX_TIME_BETWEEN_FLUSHES = 1000;
+    final static Object FLUSH = new Object();
+
+    private static class AsyncLogger extends Thread {
+        final PrintStream ps;
+        final BlockingQueue<Object> queue = new ArrayBlockingQueue<Object>(LOG_QUEUE_SIZE, true);
+        AsyncLogger(PrintStream ps) {
+            this.ps = new PrintStream(new BufferedOutputStream(ps, BUFFER_SIZE), false);
+            start();
+
+            new Thread() {
+                @Override public void run() {
+                    while(true) {
+                        try {
+                            Thread.sleep(MAX_TIME_BETWEEN_FLUSHES);
+                            queue.add(FLUSH);
+                        } catch(InterruptedException e) { }
+                    }
+
+                }
+            }.start();
+        }
+
+        @Override public void run() {
+            try {
+                while(true) {
+                    Object message = queue.take();
+                    if(message == FLUSH) ps.flush();
+                    else ps.println(message);
+                }
+            } catch (InterruptedException interrupt) {
+            }
+        }
+
+        void log(String message) {
+            try {
+              queue.put(message);
+            } catch(InterruptedException ex) {
+              throw new RuntimeException(ex);
+            }
+        }
+    }
 
     public static void main(String[] args) {
         int listenPort = args.length > 0 ? Integer.parseInt(args[0]) : 5673;
@@ -80,13 +131,16 @@ public class Tracer implements Runnable {
                            com.rabbitmq.tools.Tracer.NO_ASSEMBLE_FRAMES);
         System.out.println("com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES = " +
                            com.rabbitmq.tools.Tracer.NO_DECODE_FRAMES);
+        System.out.println("com.rabbitmq.tools.Tracer.SUPPRESS_COMMAND_BODIES = " +
+                           com.rabbitmq.tools.Tracer.SUPPRESS_COMMAND_BODIES);
 
         try {
             ServerSocket server = new ServerSocket(listenPort);
             int counter = 0;
+            AsyncLogger logger = new AsyncLogger(System.out);
             while (true) {
                 Socket conn = server.accept();
-                new Tracer(conn, counter++, connectHost, connectPort);
+                new Tracer(conn, counter++, connectHost, connectPort, logger);
             }
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -108,7 +162,9 @@ public class Tracer implements Runnable {
 
     public DataOutputStream oos;
 
-    public Tracer(Socket sock, int id, String host, int port) throws IOException {
+    public AsyncLogger logger;
+
+    public Tracer(Socket sock, int id, String host, int port, AsyncLogger logger) throws IOException {
         this.inSock = sock;
         this.outSock = new Socket(host, port);
         this.id = id;
@@ -117,6 +173,7 @@ public class Tracer implements Runnable {
         this.ios = new DataOutputStream(inSock.getOutputStream());
         this.ois = new DataInputStream(outSock.getInputStream());
         this.oos = new DataOutputStream(outSock.getOutputStream());
+        this.logger = logger;
 
         new Thread(this).start();
     }
@@ -134,20 +191,29 @@ public class Tracer implements Runnable {
             new Thread(outHandler).start();
             Object result = w.uninterruptibleGet();
             if (result instanceof Exception) {
-                ((Exception) result).printStackTrace();
+                logException((Exception)result);
             }
         } catch (EOFException eofe) {
-            eofe.printStackTrace();
+            logException((Exception)eofe);
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            logException((Exception)ioe);
         } finally {
             try {
                 inSock.close();
                 outSock.close();
             } catch (IOException ioe2) {
-                ioe2.printStackTrace();
+                logException((Exception)ioe2);
             }
         }
+    }
+
+    public void log(String message) {
+        logger.log("" + System.currentTimeMillis() + ": conn#"
+                      + id + " " + message);
+    }
+
+    public void logException(Exception e) {
+        log("uncaught " + Utility.makeStackTrace(e));
     }
 
     public class DirectionHandler implements Runnable {
@@ -159,14 +225,13 @@ public class Tracer implements Runnable {
 
         public DataOutputStream o;
 
-        public AMQCommand.Assembler c;
+        public HashMap<Integer, AMQCommand.Assembler> assemblers = new HashMap();
 
         public DirectionHandler(BlockingCell<Object> waitCell, boolean inBound, DataInputStream i, DataOutputStream o) {
             this.waitCell = waitCell;
             this.inBound = inBound;
             this.i = i;
             this.o = o;
-            this.c = AMQCommand.newAssembler();
         }
 
         public Frame readFrame() throws IOException {
@@ -174,7 +239,9 @@ public class Tracer implements Runnable {
         }
 
         public void report(int channel, Object object) {
-            System.out.println("" + System.currentTimeMillis() + ": conn#" + id + " ch#" + channel + (inBound ? " -> " : " <- ") + object);
+            Tracer.this.log("ch#" + channel
+                                  + (inBound ? " -> " : " <- ")
+                                  + object);
         }
 
         public void reportFrame(Frame f)
@@ -200,9 +267,16 @@ public class Tracer implements Runnable {
             }
         }
 
+
         public void doFrame() throws IOException {
             Frame f = readFrame();
+
             if (f != null) {
+
+                if(SILENT_MODE) {
+                  f.writeTo(o);
+                  return;
+                }
                 if (f.type == AMQP.FRAME_HEARTBEAT) {
                     if ((inBound && !WITHHOLD_INBOUND_HEARTBEATS) ||
                         (!inBound && !WITHHOLD_OUTBOUND_HEARTBEATS))
@@ -221,10 +295,15 @@ public class Tracer implements Runnable {
                             reportFrame(f);
                         }
                     } else {
+                        AMQCommand.Assembler c = assemblers.get(f.channel);
+                        if(c == null) {
+                          c = AMQCommand.newAssembler();
+                          assemblers.put(f.channel, c);
+                        }
                         AMQCommand cmd = c.handleFrame(f);
                         if (cmd != null) {
-                            report(f.channel, cmd);
-                            c = AMQCommand.newAssembler();
+                            report(f.channel, cmd.toString(SUPPRESS_COMMAND_BODIES));
+                            assemblers.remove(f.channel);
                         }
                     }
                 }

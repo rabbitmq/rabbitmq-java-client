@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -76,7 +76,7 @@ public class Utility {
       throwable.fillInStackTrace();
       // We want to remove fixStackTrace from the trace.
       StackTraceElement[] existing = throwable.getStackTrace();
-      StackTraceElement[] newTrace = new StackTraceElement[existing.length - 1];      
+      StackTraceElement[] newTrace = new StackTraceElement[existing.length - 1];
       System.arraycopy(existing, 1, newTrace, 0, newTrace.length);
       throwable.setStackTrace(newTrace);
       return throwable;
@@ -92,7 +92,7 @@ public class Utility {
         try {
             outputStream.close();
         } catch (IOException ex) {
-            // Closing the output stream won't generate an error, and in 
+            // Closing the output stream won't generate an error, and in
             // fact does nothing - just being tidy
             ex.printStackTrace();
         }

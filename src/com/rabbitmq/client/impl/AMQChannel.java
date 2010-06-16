@@ -13,10 +13,23 @@
 //   The Initial Developers of the Original Code are LShift Ltd.,
 //   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
 //
+<<<<<<< local
 //   Portions created by LShift Ltd., Cohesive Financial Technologies
 //   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
 //   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
 //   Technologies Ltd.;
+=======
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2010 Rabbit Technologies Ltd.
+>>>>>>> other
 //
 //   All Rights Reserved.
 //
@@ -43,6 +56,16 @@ import com.rabbitmq.utility.BlockingValueOrException;
  * @see Connection
  */
 public abstract class AMQChannel extends ShutdownNotifierComponent {
+<<<<<<< local
+=======
+    /**
+     * Protected; used instead of synchronizing on the channel itself,
+     * so that clients can themselves use the channel to synchronize
+     * on.
+     */
+    public final Object _channelMutex = new Object();
+
+>>>>>>> other
     /** The connection this channel is associated with. */
     public final AMQConnection _connection;
 
@@ -99,6 +122,44 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     /**
+<<<<<<< local
+=======
+     * Placeholder until we address bug 15786 (implementing a proper exception hierarchy).
+     * In the meantime, this at least won't throw away any information from the wrapped exception.
+     * @param ex the exception to wrap
+     * @return the wrapped exception
+     */
+    public static IOException wrap(ShutdownSignalException ex) {
+        IOException ioe = new IOException();
+        ioe.initCause(ex);
+        return ioe;
+    }
+
+    public static IOException wrap(ShutdownSignalException ex, String message) {
+        IOException ioe = new IOException(message);
+        ioe.initCause(ex);
+        return ioe;
+    }
+
+    /**
+     * Placeholder until we address bug 15786 (implementing a proper exception hierarchy).
+     */
+    public AMQCommand exnWrappingRpc(Method m)
+        throws IOException
+    {
+        try {
+            return rpc(m);
+        } catch (AlreadyClosedException ace) {
+            // Do not wrap it since it means that connection/channel
+            // was closed in some action in the past
+            throw ace;
+        } catch (ShutdownSignalException ex) {
+            throw wrap(ex);
+        }
+    }
+
+    /**
+>>>>>>> other
      * Private API - handle a command which has been assembled
      *
      * @param command the incoming command
@@ -163,10 +224,21 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         ensureIsOpen();
         quiescingRpc(m, k);
     }
+<<<<<<< local
     
     public synchronized void quiescingRpc(Method m, RpcContinuation k) {
         enqueueRpc(k);
         quiescingTransmit(m);
+=======
+
+    public void quiescingRpc(Method m, RpcContinuation k)
+        throws IOException
+    {
+        synchronized (_channelMutex) {
+            enqueueRpc(k);
+            quiescingTransmit(m);
+        }
+>>>>>>> other
     }
 
     /**
@@ -181,7 +253,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     @Override public String toString() {
         return "AMQChannel(" + _connection + "," + _channelNumber + ")";
     }
-    
+
     /**
      * Protected API - respond, in the driver thread, to a {@link ShutdownSignalException}.
      * @param signal the signal to handle
@@ -199,15 +271,20 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                     ensureIsOpen(); // invariant: we should never be shut down more than once per instance
                 if (isOpen())
                     _shutdownCause = signal;
+<<<<<<< local
                 
                 notifyAll();
+=======
+
+                _channelMutex.notifyAll();
+>>>>>>> other
             }
         } finally {
             if (notifyRpc)
                 notifyOutstandingRpc(signal);
         }
     }
-    
+
     public void notifyOutstandingRpc(ShutdownSignalException signal) {
         RpcContinuation k = nextOutstandingRpc();
         if (k != null) {

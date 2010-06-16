@@ -13,10 +13,23 @@
 //   The Initial Developers of the Original Code are LShift Ltd.,
 //   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
 //
+<<<<<<< local
 //   Portions created by LShift Ltd., Cohesive Financial Technologies
 //   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
 //   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
 //   Technologies Ltd.;
+=======
+//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
+//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
+//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
+//   Technologies LLC, and Rabbit Technologies Ltd.
+//
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
+//   Ltd. Portions created by Cohesive Financial Technologies LLC are
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
+//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
+//   (C) 2007-2010 Rabbit Technologies Ltd.
+>>>>>>> other
 //
 //   All Rights Reserved.
 //
@@ -28,7 +41,19 @@ package com.rabbitmq.client.impl;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Connection;
+<<<<<<< local
 import com.rabbitmq.client.impl.AMQImpl.*;
+=======
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.FlowListener;
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.ReturnListener;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.UnexpectedMethodError;
+import com.rabbitmq.client.impl.AMQImpl.Basic;
+>>>>>>> other
 import com.rabbitmq.client.impl.AMQImpl.Channel;
 import com.rabbitmq.utility.Utility;
 
@@ -75,6 +100,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile ReturnListener returnListener = null;
 
+    /** Reference to the currently-active FlowListener, or null if there is none.
+     */
+    public volatile FlowListener flowListener = null;
+
     /**
      * Construct a new channel on the given connection with the given
      * channel number. Usually not called directly - call
@@ -109,6 +138,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public void setReturnListener(ReturnListener listener) {
         returnListener = listener;
+    }
+
+    /** Returns the current FlowListener. */
+    public FlowListener getFlowListener() {
+        return flowListener;
+    }
+
+    /**
+     * Sets the current FlowListener.
+     * A null argument is interpreted to mean "do not use a flow listener".
+     */
+    public void setFlowListener(FlowListener listener) {
+        flowListener = listener;
     }
 
     /**
@@ -147,7 +189,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     public void releaseChannelNumber() {
-        _connection.disconnectChannel(_channelNumber);
+        _connection.disconnectChannel(this);
     }
 
     /**
@@ -233,6 +275,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     _blockContent = !channelFlow.active;
                     transmit(new Channel.FlowOk(channelFlow.active));
                     notifyAll();
+                }
+                FlowListener l = getFlowListener();
+                if (l != null) {
+                    try {
+                        l.handleFlow(channelFlow.active);
+                    } catch (Throwable ex) {
+                        _connection.getExceptionHandler().handleFlowListenerException(this, ex);
+                    }
                 }
                 return true;
             } else {
@@ -665,5 +715,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public Tx.RollbackOk txRollback() {
         return (Tx.RollbackOk) rpc(new Tx.Rollback()).getMethod();
+    }
+
+    /** Public API - {@inheritDoc} */
+    public Channel.FlowOk flow(final boolean a) throws IOException {
+        return (Channel.FlowOk) exnWrappingRpc(new Channel.Flow() {{active = a;}}).getMethod();
+    }
+
+    /** Public API - {@inheritDoc} */
+    public Channel.FlowOk getFlow() {
+        return new Channel.FlowOk(!_blockContent);
     }
 }

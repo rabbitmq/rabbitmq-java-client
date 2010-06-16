@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -34,7 +34,7 @@ public class ValueOrException<V, E extends Throwable & SensibleClone<E>> {
     private final boolean _useValue;
     private final V _value;
     private final E _exception;
-    
+
     /**
      * dual-purpose private constructor: one will be null, and the flag tells which to use
      * @param value the value to wrap, if applicable
@@ -69,7 +69,7 @@ public class ValueOrException<V, E extends Throwable & SensibleClone<E>> {
     public static <V, E extends Throwable & SensibleClone<E>> ValueOrException<V, E> makeException(E exception) {
         return new ValueOrException<V, E>(null, exception, false);
     }
-    
+
     /** Retrieve value or throw exception
      * @return the wrapped value, if it's a value
      * @throws E the wrapped exception, if it's an exception

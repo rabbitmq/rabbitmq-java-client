@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -86,7 +86,7 @@ public class BrokerTestCase extends TestCase
 
     public void openConnection() {
         if (connection == null) {
-            connection = connectionFactory.newConnection("localhost");
+            connection = connectionFactory.newConnection();
         }
     }
 
@@ -141,19 +141,36 @@ public class BrokerTestCase extends TestCase
   }
 
   protected void basicPublishPersistent(String q) throws IOException {
-    channel.basicPublish("", q, MessageProperties.PERSISTENT_TEXT_PLAIN, "persistent message".getBytes());
+      basicPublishPersistent("persistent message".getBytes(), q);
+  }
+
+  protected void basicPublishPersistent(byte[] msg, String q) throws IOException {
+      basicPublishPersistent(msg, "", q);
   }
 
   protected void basicPublishPersistent(String x, String routingKey) throws IOException {
-    channel.basicPublish(x, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, "persistent message".getBytes());
-  }
+      basicPublishPersistent("persistent message".getBytes(), x, routingKey);
+    }
+
+
+  protected void basicPublishPersistent(byte[] msg, String x, String routingKey) throws IOException {
+      channel.basicPublish(x, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, msg);
+    }
 
   protected void basicPublishVolatile(String q) throws IOException {
-    channel.basicPublish("", q, MessageProperties.TEXT_PLAIN, "not persistent message".getBytes());
+      basicPublishVolatile("not persistent message".getBytes(), q);
+  }
+
+  protected void basicPublishVolatile(byte[] msg, String q) throws IOException {
+      basicPublishVolatile(msg, "", q);
   }
 
   protected void basicPublishVolatile(String x, String routingKey) throws IOException {
-    channel.basicPublish(x, routingKey, MessageProperties.TEXT_PLAIN, "not persistent message".getBytes());
+      basicPublishVolatile("not persistent message".getBytes(), x, routingKey);
+  }
+
+  protected void basicPublishVolatile(byte[] msg, String x, String routingKey) throws IOException {
+      channel.basicPublish(x, routingKey, MessageProperties.TEXT_PLAIN, msg);
   }
 
   protected void declareAndBindDurableQueue(String q, String x, String r) throws IOException {

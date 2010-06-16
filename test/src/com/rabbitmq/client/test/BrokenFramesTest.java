@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -41,7 +41,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.ConnectionParameters;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.UnexpectedFrameError;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.Frame;
@@ -56,18 +56,18 @@ public class BrokenFramesTest extends TestCase {
     }
 
     private MyFrameHandler myFrameHandler;
-    private ConnectionParameters params;
+    private ConnectionFactory factory;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         myFrameHandler = new MyFrameHandler();
-        params = new ConnectionParameters();
+        factory = new ConnectionFactory();
     }
 
     @Override
     protected void tearDown() throws Exception {
-        params = null;
+        factory = null;
         myFrameHandler = null;
         super.tearDown();
     }
@@ -77,6 +77,10 @@ public class BrokenFramesTest extends TestCase {
         frames.add(new Frame(AMQP.FRAME_HEADER, 0));
         myFrameHandler.setFrames(frames.iterator());
 
+<<<<<<< local
+=======
+        AMQConnection conn = new AMQConnection(factory, myFrameHandler);
+>>>>>>> other
         try {
             new AMQConnection(params, false, myFrameHandler);
         } catch (Exception e) {
@@ -104,8 +108,13 @@ public class BrokenFramesTest extends TestCase {
         myFrameHandler.setFrames(frames.iterator());
  
         try {
+<<<<<<< local
             new AMQConnection(params, false, myFrameHandler);
         } catch (Exception e) {
+=======
+            new AMQConnection(factory, myFrameHandler).start(false);
+        } catch (IOException e) {
+>>>>>>> other
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
             assertEquals(AMQP.FRAME_BODY, unexpectedFrameError.getReceivedFrame().type);

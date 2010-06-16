@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -347,6 +347,31 @@ public class QosTests extends BrokerTestCase
         ch2.close();
     }
 
+    public void testLimitInheritsUnackedCount()
+        throws IOException
+    {
+        QueueingConsumer c = new QueueingConsumer(channel);
+        declareBindConsume(c);
+        fill(1);
+        drain(c, 1);
+        channel.basicQos(2);
+        fill(2);
+        drain(c, 1);
+    }
+    
+    public void testFlow() throws IOException
+    {
+        QueueingConsumer c = new QueueingConsumer(channel);
+        declareBindConsume(c);
+        fill(1);
+        drain(c, 1);
+        channel.flow(false);
+        fill(1);
+        drain(c, 0);
+        channel.flow(true);
+        drain(c, 1);
+    }
+    
     protected void runLimitTests(int limit,
                                  boolean multiAck,
                                  boolean txMode,

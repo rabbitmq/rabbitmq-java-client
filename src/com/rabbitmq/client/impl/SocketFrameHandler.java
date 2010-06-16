@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -47,12 +47,6 @@ import com.rabbitmq.client.AMQP;
  */
 
 public class SocketFrameHandler implements FrameHandler {
-    /** Host we connect to */
-    public final String _host;
-
-    /** Port number we connect to */
-    public final int _port;
-
     /** The underlying socket */
     public final Socket _socket;
 
@@ -62,10 +56,11 @@ public class SocketFrameHandler implements FrameHandler {
     /** Socket's outputstream - data to the broker */
     public final DataOutputStream _outputStream;
 
-    // Note, we use each of these to synchronize on to make sure we don't try to use them
-    // twice simultaneously.
+    // Note, we use each of these to synchronize on to make sure we
+    // don't try to use them twice simultaneously.
 
     /**
+<<<<<<< local
      * Instantiate a SocketFrameHandler.
      * @param factory the socket factory to use to build our Socket - may be SSLSocketFactory etc
      * @param hostName the host name
@@ -73,7 +68,11 @@ public class SocketFrameHandler implements FrameHandler {
      * @throws java.io.IOException if there is a problem buffering the input or output stream
      * @throws java.net.UnknownHostException If the host is not known
      * @throws java.net.SocketException If the Nagle flag cannot be set
+=======
+     * @param socket the socket to use
+>>>>>>> other
      */
+<<<<<<< local
     public SocketFrameHandler(SocketFactory factory,
                               String hostName,
                               int portNumber) {
@@ -83,6 +82,10 @@ public class SocketFrameHandler implements FrameHandler {
             _socket = factory.createSocket(_host, _port);
             //disable Nagle's algorithm, for more consistently low latency
             _socket.setTcpNoDelay(true);
+=======
+    public SocketFrameHandler(Socket socket) throws IOException {
+        _socket = socket;
+>>>>>>> other
 
             _inputStream = new DataInputStream(new BufferedInputStream(_socket.getInputStream()));
             _outputStream = new DataOutputStream(new BufferedOutputStream(_socket.getOutputStream()));
@@ -93,11 +96,11 @@ public class SocketFrameHandler implements FrameHandler {
     }
 
     public String getHost() {
-        return _host;
+        return _socket.getInetAddress().getHostName();
     }
 
     public int getPort() {
-        return _port;
+        return _socket.getPort();
     }
 
     public void setTimeout(int timeoutMs)
