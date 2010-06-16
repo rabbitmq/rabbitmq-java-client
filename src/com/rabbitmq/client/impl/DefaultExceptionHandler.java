@@ -48,56 +48,39 @@ public class DefaultExceptionHandler implements ExceptionHandler {
     }
 
     public void handleReturnListenerException(Channel channel, Throwable exception) {
-        // TODO: Convert to logging framework
-        System.err.println("ReturnListener.handleBasicReturn threw an exception for channel " +
-                           channel + ":");
-        exception.printStackTrace();
-        try {
-            ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
-                                                            "Internal error in ReturnListener",
-                                                            false,
-                                                            exception);
-        } catch (IOException ioe) {
-            // Man, this clearly isn't our day.
-            // Ignore the exception? TODO: Log the nested failure
-        }
+        handleChannelKiller(channel, exception, "ReturnListener.handleBasicReturn");
     }
 
     public void handleFlowListenerException(Channel channel, Throwable exception) {
+        handleChannelKiller(channel, exception, "FlowListener.handleFlow");
+    }
+
+    public void handleConsumerException(Channel channel, Throwable exception,
+                                        Consumer _consumer, String consumerTag,
+                                        String methodName)
+    {
+        handleChannelKiller(channel, exception, "Consumer " + consumerTag
+                                              + " method " + methodName
+                                              + " for channel " + channel);
+    }
+
+    protected void handleChannelKiller(Channel channel,
+                                       Throwable exception,
+                                       String what)
+    {
         // TODO: Convert to logging framework
-        System.err.println("FlowListener.handleFlow threw an exception for channel " +
+        System.err.println(what + " threw an exception for channel " +
                            channel + ":");
         exception.printStackTrace();
         try {
             ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
-                                                            "Internal error in FlowListener",
+                                                            "Internal error in " + what,
                                                             false,
                                                             exception);
         } catch (IOException ioe) {
             // Man, this clearly isn't our day.
             // Ignore the exception? TODO: Log the nested failure
         }
-    }
 
-    public void handleConsumerException(Channel channel,
-                                        Throwable exception,
-                                        Consumer consumer,
-                                        String consumerTag,
-                                        String methodName)
-    {
-        // TODO: Convert to logging framework
-        System.err.println("Consumer " + consumer + " method " + methodName + " for channel " +
-                           channel + " threw an exception:");
-        exception.printStackTrace();
-        try {
-            ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
-                                                            "Internal error in Consumer " +
-                                                              consumerTag,
-                                                            false,
-                                                            exception);
-        } catch (IOException ioe) {
-            // Man, this clearly isn't our day.
-            // Ignore the exception? TODO: Log the nested failure
-        }
     }
 }
