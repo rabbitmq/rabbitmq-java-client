@@ -171,7 +171,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /**
      * Protected API - Filters the inbound command stream, processing
-     * Basic.Deliver, Basic.Return and Channel.Close specially.
+     * Basic.Deliver, Basic.Return and Channel.Close specially.  If
+     * we're in quiescing mode, all inbound commands are ignored,
+     * except for Channel.Close and Channel.CloseOk.
      */
     @Override public boolean processAsync(Command command) throws IOException
     {
