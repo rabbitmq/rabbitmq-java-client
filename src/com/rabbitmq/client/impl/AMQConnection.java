@@ -530,7 +530,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         Method method = c.getMethod();
 
         if (method instanceof AMQP.Connection.Close) {
-            if (!_brokerInitiatedShutdown) {
+            if (!isOpen()) {
                 handleConnectionClose(c);
             } else {
                 // Already shutting down, so just send back a CloseOk.
