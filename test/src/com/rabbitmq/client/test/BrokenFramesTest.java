@@ -77,14 +77,15 @@ public class BrokenFramesTest extends TestCase {
         frames.add(new Frame(AMQP.FRAME_HEADER, 0));
         myFrameHandler.setFrames(frames.iterator());
 
-<<<<<<< local
-=======
         AMQConnection conn = new AMQConnection(factory, myFrameHandler);
->>>>>>> other
         try {
-            new AMQConnection(params, false, myFrameHandler);
-        } catch (Exception e) {
+            conn.start();
+        } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
+            if (unexpectedFrameError==null) {
+              e.printStackTrace();
+              conn.getCloseReason().printStackTrace();
+            }
             assertNotNull(unexpectedFrameError);
             assertEquals(AMQP.FRAME_HEADER, unexpectedFrameError.getReceivedFrame().type);
             assertEquals(AMQP.FRAME_METHOD, unexpectedFrameError.getExpectedFrameType());
@@ -108,13 +109,8 @@ public class BrokenFramesTest extends TestCase {
         myFrameHandler.setFrames(frames.iterator());
  
         try {
-<<<<<<< local
-            new AMQConnection(params, false, myFrameHandler);
-        } catch (Exception e) {
-=======
-            new AMQConnection(factory, myFrameHandler).start(false);
+            new AMQConnection(factory, myFrameHandler).start();
         } catch (IOException e) {
->>>>>>> other
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
             assertEquals(AMQP.FRAME_BODY, unexpectedFrameError.getReceivedFrame().type);

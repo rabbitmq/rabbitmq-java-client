@@ -1,5 +1,3 @@
-<<<<<<< local
-=======
 //   The contents of this file are subject to the Mozilla Public License
 //   Version 1.1 (the "License"); you may not use this file except in
 //   compliance with the License. You may obtain a copy of the License at
@@ -31,131 +29,26 @@
 //   Contributor(s): ______________________________________.
 //
 
->>>>>>> other
 package com.rabbitmq.client.test.functional;
 
-<<<<<<< local
-=======
 import com.rabbitmq.client.AMQP;
->>>>>>> other
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.Method;
+import com.rabbitmq.client.Command;
+
+import java.io.IOException;
 
 /**
  * This tests whether bindings are created and nuked properly.
  *
- * TODO: Adjust this test when Queue.Unbind is implemented in the
- * server
+ * The tests attempt to declare durable queues on a secondary node, if
+ * present, and that node is restarted as part of the tests while the
+ * primary node is still running. That way we exercise any node-down
+ * handler code in the server.
+ *
  */
-public class BindingLifecycle extends PersisterRestartBase {
-
-    protected static final byte[] payload =
-        (""+ System.currentTimeMillis()).getBytes();
-
-    private static final int N = 1;
-
-    protected static final String Q = "Q-" + System.currentTimeMillis();
-    protected static final String X = "X-" + System.currentTimeMillis();
-    protected static final String K = "K-" + System.currentTimeMillis();
-
-    /**
-     *   Tests whether durable bindings are correctly recovered.
-     */
-    public void testDurableBindingRecovery() {
-        declareDurableTopicExchange(X);
-        declareAndBindDurableQueue(Q, X, K);
-
-        restart();
-
-        for (int i = 0; i < N; i++){
-            basicPublishVolatile(X, K);
-        }
-
-        assertDelivered(Q, N);
-
-        deleteQueue(Q);
-        deleteExchange(X);
-    }
-
-    /**
-     * This tests whether the bindings attached to a durable exchange
-     * are correctly blown away when the exhange is nuked.
-     *
-     * This complements a unit test for testing non-durable exhanges.
-     * In that case, an exchange is deleted and you expect any
-     * bindings hanging to it to be deleted as well. To verify this,
-     * the exchange is deleted and then recreated.
-     *
-     * After the recreation, the old bindings should no longer exist
-     * and hence any messages published to that exchange get routed to
-     * /dev/null
-     *
-     * This test exercises the durable variable of that test, so the
-     * main difference is that the broker has to be restarted to
-     * verify that the durable routes have been turfed.
-     */
-    public void testDurableBindingsDeletion() {
-        declareDurableTopicExchange(X);
-        declareAndBindDurableQueue(Q, X, K);
-
-        deleteExchange(X);
-
-        restart();
-
-        declareDurableTopicExchange(X);
-
-        for (int i = 0; i < N; i++){
-            basicPublishVolatile(X, K);
-        }
-
-        GetResponse response = channel.basicGet(Q, true);
-        assertNull("The initial response SHOULD BE null", response);
-
-        deleteQueue(Q);
-        deleteExchange(X);
-    }
-
-
-    /**
-     * This tests whether the default bindings for persistent queues
-     * are recovered properly.
-     *
-     * The idea is to create a durable queue, nuke the server and then
-     * publish a message to it using the queue name as a routing key
-     */
-    public void testDefaultBindingRecovery() {
-        declareDurableQueue(Q);
-
-        restart();
-
-        basicPublishVolatile("", Q);
-
-        GetResponse response = channel.basicGet(Q, true);
-        assertNotNull("The initial response SHOULD NOT be null", response);
-
-        deleteQueue(Q);
-    }
-
-    /**
-     * This tests whether when you delete a queue, that its bindings
-     * are deleted as well.
-     */
-    public void testQueueDelete() {
-
-        boolean durable = true;
-        Binding binding = setupExchangeAndRouteMessage(durable);
-
-        // Nuke the queue and repeat this test, this time you expect
-        // nothing to get routed.
-        //
-        // TODO: When unbind is implemented, use that instead of
-        // deleting and re-creating the queue
-        channel.queueDelete(binding.q);
-        channel.queueDeclare(binding.q, durable);
-
-        sendUnroutable(binding);
-
-        deleteExchangeAndQueue(binding);
-    }
+public class BindingLifecycle extends BindingLifecycleBase {
 
     /**
      * This tests that when you purge a queue, all of its messages go.
@@ -175,10 +68,44 @@ public class BindingLifecycle extends PersisterRestartBase {
     }
 
     /**
+     * See bug 21854:
+     * "When Queue.Purge is called, sent-but-unacknowledged messages are no
+     * longer purged, even if the channel they were sent down is not
+     * (Tx-)transacted."
+     */
+    public void testUnackedPurge() throws IOException {
+        Binding binding = setupExchangeBindings(false);
+        channel.basicPublish(binding.x, binding.k, null, payload);
+
+        GetResponse response = channel.basicGet(binding.q, false);
+        assertFalse(response.getEnvelope().isRedeliver());
+        assertNotNull("The response SHOULD NOT BE null", response);
+
+        // If we purge the queue the unacked message should still be there on
+        // recover.
+        channel.queuePurge(binding.q);
+        response = channel.basicGet(binding.q, true);
+        assertNull("The response SHOULD BE null", response);
+
+        channel.basicRecoverAsync(true);
+        response = channel.basicGet(binding.q, false);
+        assertTrue(response.getEnvelope().isRedeliver());
+        assertNotNull("The response SHOULD NOT BE null", response);
+
+        // If we recover then purge the message should go away
+        channel.basicRecoverAsync(true);
+        channel.queuePurge(binding.q);
+        response = channel.basicGet(binding.q, true);
+        assertNull("The response SHOULD BE null", response);
+
+        deleteExchangeAndQueue(binding);
+    }
+
+    /**
      * This tests whether when you delete an exchange, that any
      * bindings attached to it are deleted as well.
      */
-    public void testExchangeDelete() {
+    public void testExchangeDelete() throws IOException {
 
         boolean durable = true;
         Binding binding = setupExchangeAndRouteMessage(durable);
@@ -202,7 +129,7 @@ public class BindingLifecycle extends PersisterRestartBase {
      * To test this, you try to delete an exchange with a queue still
      * bound to it and expect the delete operation to fail.
      */
-    public void testExchangeIfUnused() {
+    public void testExchangeIfUnused() throws IOException {
 
         boolean durable = true;
         Binding binding = setupExchangeBindings(durable);
@@ -221,193 +148,68 @@ public class BindingLifecycle extends PersisterRestartBase {
     }
 
     /**
-     * This tests whether the server checks that an auto_delete
-     * exchange actually deletes the bindings attached to it when it
-     * is deleted.
      *
-     * To test this, you declare and auto_delete exchange and bind an
-     * auto_delete queue to it.
-     *
-     * Start a consumer on this queue, send a message, let it get
-     * consumed and then cancel the consumer
-     *
-     * The unsubscribe should cause the queue to auto_delete, which in
-     * turn should cause the exchange to auto_delete.
-     *
-     * Then re-declare the queue again and try to rebind it to the same exhange.
-     *
-     * Because the exchange has been auto-deleted, the bind operation
-     * should fail.
      */
-    public void testExchangeAutoDelete() {
-        doAutoDelete(false, 1);
-    }
+    public void testExchangePassiveDeclare() throws IOException {
+        channel.exchangeDeclare("testPassive", "direct");
+        channel.exchangeDeclarePassive("testPassive");
 
-    /**
-     * Runs something similar to testExchangeAutoDelete, but adds
-     * different queues with the same binding to the same exchange.
-     *
-     * The difference should be that the original exchange should not
-     * get auto-deleted
-     */
-    public void testExchangeAutoDeleteManyBindings() {
-        doAutoDelete(false, 10);
-    }
-
-    /** 
-     * The same thing as testExchangeAutoDelete, but with durable
-     * queues.
-     *
-     * Main difference is restarting the broker to make sure that the
-     * durable queues are blasted away.
-     */
-    public void testExchangeAutoDeleteDurable() {
-        doAutoDelete(true, 1);
-    }
-
-    /**
-     * The same thing as testExchangeAutoDeleteManyBindings, but with
-     * durable queues.
-     */
-    public void testExchangeAutoDeleteDurableManyBindings() {
-        doAutoDelete(true, 10);
-    }
-
-    private void doAutoDelete(boolean durable, int queues) {
-
-        String[] queueNames = null;
-
-        Binding binding = Binding.randomBinding();
-
-        channel.exchangeDeclare(binding.x, "direct",
-                                false, durable, true, null);
-        channel.queueDeclare(binding.q,
-                             false, durable, false, true, null);
-        channel.queueBind(binding.q, binding.x, binding.k);
-
-
-        if (queues > 1) {
-            int j = queues - 1;
-            queueNames = new String[j];
-            for (int i = 0 ; i < j ; i++) {
-                queueNames[i] = randomString();
-                channel.queueDeclare(queueNames[i],
-                                     false, durable, false, false, null);
-                channel.queueBind(queueNames[i],
-                                  binding.x, binding.k);
-                channel.basicConsume(queueNames[i], true,
-                                     new QueueingConsumer(channel));
-            }
-        }
-
-        subscribeSendUnsubscribe(binding);
-
-        if (durable) {
-            restart();
-        }
-        
-        if (queues > 1) {
-            for (String s : queueNames) {
-                channel.basicConsume(s, true,
-                                     new QueueingConsumer(channel));
-                Binding tmp = new Binding(binding.x, s, binding.k);
-                sendUnroutable(tmp);
-            }
-        }
-
-        channel.queueDeclare(binding.q,
-                             false, durable, true, true, null);
-
-        // if (queues == 1): Because the exchange does not exist, this
-        // bind should fail
         try {
-            channel.queueBind(binding.q, binding.x, binding.k);
-            sendRoutable(binding);
+            channel.exchangeDeclarePassive("unknown_exchange");
+            fail("Passive declare of an unknown exchange should fail");
         }
-        catch (Exception e) {
-            // do nothing, this is the correct behaviour
-            channel = null;
+        catch (IOException ioe) {
+            Throwable t = ioe.getCause();
+            String msg = "Passive declare of an unknown exchange should send a 404";
+            assertTrue(msg, t instanceof ShutdownSignalException);
+            Object r = ((ShutdownSignalException)t).getReason();
+            assertTrue(msg, r instanceof Command);
+            Method m = ((Command)r).getMethod();
+            assertTrue(msg, m instanceof AMQP.Channel.Close);
+            assertEquals(msg,
+                         AMQP.NOT_FOUND,
+                         ((AMQP.Channel.Close)m).getReplyCode());
             return;
         }
-        
-        if (queues == 1) {
-            deleteExchangeAndQueue(binding);
-            fail("Queue bind should have failed");
-        }
+    }
 
+    /**
+     * Test the behaviour of queue.unbind
+     */
+    public void testUnbind() throws Exception {
 
-        // Do some cleanup
-        if (queues > 1) {
-            for (String q : queueNames) {
-                channel.queueDelete(q);
+        Binding b = new Binding(channel.queueDeclare().getQueue(),
+                                "amq.direct",
+                                "quay");
+
+        // failure cases
+
+        Binding[] tests = new Binding[] {
+            new Binding("unknown_queue", b.x, b.k),
+            new Binding(b.q, "unknown_exchange", b.k),
+            new Binding("unknown_unknown", "exchange_queue", b.k),
+            new Binding(b.q, b.x, "unknown_rk"),
+            new Binding("unknown_queue", "unknown_exchange", "unknown_rk")
+        };
+
+        for (int i = 0; i < tests.length; i++) {
+
+            Binding test = tests[i];
+            try {
+                channel.queueUnbind(test.q, test.x, test.k);
+                fail("expected not_found in test " + i);
+            } catch (IOException ee) {
+                checkShutdownSignal(AMQP.NOT_FOUND, ee);
+                openChannel();
             }
         }
 
-    }
+        // success case
 
-    private void subscribeSendUnsubscribe(Binding binding) {
-        String tag = channel.basicConsume(binding.q,
-                                          new QueueingConsumer(channel));
-        sendUnroutable(binding);
-        channel.basicCancel(tag);
-    }
-
-    private void sendUnroutable(Binding binding) {
-        channel.basicPublish(binding.x, binding.k, null, payload);
-        GetResponse response = channel.basicGet(binding.q, true);
-        assertNull("The response SHOULD BE null", response);
-    }
-
-    private void sendRoutable(Binding binding) {
-        channel.basicPublish(binding.x, binding.k, null, payload);
-        GetResponse response = channel.basicGet(binding.q, true);
-        assertNotNull("The response should not be null", response);
-    }
-
-    private static String randomString() {
-        return "-" + System.nanoTime();
-    }
-
-    private static class Binding {
-
-        String x, q, k;
-
-        static Binding randomBinding() {
-            return new Binding(randomString(), randomString(), randomString());
-        }
-
-        private Binding(String x, String q, String k) {
-            this.x = x;
-            this.q = q;
-            this.k = k;
-        }
-    }
-
-    private void createQueueAndBindToExchange(Binding binding, boolean durable) {
-
-        channel.exchangeDeclare(binding.x, "direct", durable);
-        channel.queueDeclare(binding.q, durable);
-        channel.queueBind(binding.q, binding.x, binding.k);
-    }
-
-    private void deleteExchangeAndQueue(Binding binding) {
-
-        channel.queueDelete(binding.q);
-        channel.exchangeDelete(binding.x);
-    }
-
-    private Binding setupExchangeBindings(boolean durable) {
-
-        Binding binding = Binding.randomBinding();
-        createQueueAndBindToExchange(binding, durable);
-        return binding;
-    }
-
-    private Binding setupExchangeAndRouteMessage(boolean durable) {
-
-        Binding binding = setupExchangeBindings(durable);
-        sendRoutable(binding);
-        return binding;
+        channel.queueBind(b.q, b.x, b.k);
+        sendRoutable(b);
+        channel.queueUnbind(b.q, b.x, b.k);
+        sendUnroutable(b);
     }
 
 }

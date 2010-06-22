@@ -36,6 +36,7 @@ import java.io.IOException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.Channel;
 
 import com.rabbitmq.client.test.BrokerTestCase;
 
@@ -49,7 +50,16 @@ public class Recover extends BrokerTestCase {
         queue = ok.getQueue();
     }
 
-    public void testRedeliverOnRecover() throws IOException, InterruptedException {
+    static interface RecoverCallback {
+        void recover(Channel channel) throws IOException;
+    }
+
+    // The AMQP specification under-specifies the behaviour when
+    // requeue=false.  So we can't really test any scenarios for
+    // requeue=false.
+  
+    void verifyRedeliverOnRecover(RecoverCallback call)
+        throws IOException, InterruptedException {
         QueueingConsumer consumer = new QueueingConsumer(channel);
         channel.basicConsume(queue, false, consumer); // require acks.
         channel.basicPublish("", queue, new AMQP.BasicProperties(), body);
@@ -57,27 +67,55 @@ public class Recover extends BrokerTestCase {
         assertTrue("consumed message body not as sent",
                    Arrays.equals(body, delivery.getBody()));
         // Don't ack it, and get it redelivered to the same consumer
-        channel.basicRecoverAsync(true);
+        call.recover(channel);
         QueueingConsumer.Delivery secondDelivery = consumer.nextDelivery(5000);
         assertNotNull("timed out waiting for redelivered message", secondDelivery);
         assertTrue("consumed (redelivered) message body not as sent",
                    Arrays.equals(body, delivery.getBody()));        
     }
 
-    public void testNoRedeliveryWithAutoAck() throws IOException, InterruptedException {
+    void verifyNoRedeliveryWithAutoAck(RecoverCallback call)
+        throws IOException, InterruptedException {
         QueueingConsumer consumer = new QueueingConsumer(channel);
         channel.basicConsume(queue, true, consumer); // auto ack.
         channel.basicPublish("", queue, new AMQP.BasicProperties(), body);
         QueueingConsumer.Delivery delivery = consumer.nextDelivery();
         assertTrue("consumed message body not as sent",
                    Arrays.equals(body, delivery.getBody()));
-        channel.basicRecoverAsync(true);
+        call.recover(channel);
         // there's a race here between our recover finishing and the basic.get;
         Thread.sleep(500);
         assertNull("should be no message available", channel.basicGet(queue, true));
     }
 
-    // The AMQP specification under-specifies the behaviour when
-    // requeue=false.  So we can't really test any scenarios for
-    // requeue=false.
+    RecoverCallback recoverAsync = new RecoverCallback() {
+            public void recover(Channel channel) throws IOException {
+                channel.basicRecoverAsync(true);
+            }
+        };
+
+    RecoverCallback recoverSync = new RecoverCallback() {
+            public void recover(Channel channel) throws IOException {
+                channel.basicRecover(true);
+            }
+        };
+
+    public void testRedeliverOnRecoverAsync() throws IOException, InterruptedException {
+        verifyRedeliverOnRecover(recoverAsync);
+    }
+    
+    public void testRedeliveryOnRecover() throws IOException, InterruptedException {
+        verifyRedeliverOnRecover(recoverSync);
+    }
+
+    public void testNoRedeliveryWithAutoAckAsync()
+        throws IOException, InterruptedException {
+        verifyNoRedeliveryWithAutoAck(recoverAsync);
+    }
+
+    public void testNoRedeliveryWithAutoAck()
+        throws IOException, InterruptedException {
+        verifyNoRedeliveryWithAutoAck(recoverSync);
+    }
+  
 }

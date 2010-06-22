@@ -10,15 +10,9 @@
 //
 //   The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd.,
-//   Cohesive Financial Technologies LLC., and Rabbit Technologies Ltd.
+//   The Initial Developers of the Original Code are LShift Ltd,
+//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
 //
-<<<<<<< local
-//   Portions created by LShift Ltd., Cohesive Financial Technologies
-//   LLC., and Rabbit Technologies Ltd. are Copyright (C) 2007-2008
-//   LShift Ltd., Cohesive Financial Technologies LLC., and Rabbit
-//   Technologies Ltd.;
-=======
 //   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
 //   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
@@ -29,7 +23,6 @@
 //   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
 //   (C) 2007-2010 Rabbit Technologies Ltd.
->>>>>>> other
 //
 //   All Rights Reserved.
 //
@@ -53,7 +46,6 @@ import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MissedHeartbeatException;
-import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
@@ -109,13 +101,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final ConnectionFactory factory;
 
     /** The special channel 0 */
-<<<<<<< local
-    public final AMQChannel _channel0 = new AMQChannel(this, 0) {
-            @Override public boolean processAsync(Command c) {
-=======
     private final AMQChannel _channel0 = new AMQChannel(this, 0) {
             @Override public boolean processAsync(Command c) throws IOException {
->>>>>>> other
                 return _connection.processControlCommand(c);
             }
         };
@@ -176,9 +163,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     private int _heartbeat;
 
-    /** Hosts retrieved from the connection.open-ok */
-    private Address[] _knownHosts;
-
     private final String _username, _password, _virtualHost;
     private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
     private final Map<String, Object> _clientProperties;
@@ -186,39 +170,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Saved server properties field from connection.start */
     public Map<String, Object> _serverProperties;
 
+    /** {@inheritDoc} */
     public String getHost() {
         return _frameHandler.getHost();
     }
 
+    /** {@inheritDoc} */
     public int getPort() {
         return _frameHandler.getPort();
     }
 
-<<<<<<< local
-    public ConnectionParameters getParameters() {
-        return _params;
-    }
-
-=======
-    /** {@inheritDoc} */
->>>>>>> other
-    public Address[] getKnownHosts() {
-        return _knownHosts;
-    }
-
-<<<<<<< local
-    /**
-     * Construct a new connection to a broker.
-     * @param params the initialization parameters for a connection
-     * @param insist true if broker redirects are disallowed
-     * @param frameHandler interface to an object that will handle the frame I/O for this connection
-     * @throws RedirectException if the server is redirecting us to a different host/port
-     */
-    public AMQConnection(ConnectionParameters params,
-                         boolean insist,
-                         FrameHandler frameHandler) throws RedirectException {
-        this(params, insist, frameHandler, new DefaultExceptionHandler());
-=======
     public FrameHandler getFrameHandler(){
         return _frameHandler;
     }
@@ -226,15 +187,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** {@inheritDoc} */
     public Map<String, Object> getServerProperties() {
         return _serverProperties;
->>>>>>> other
     }
+
 
     /**
      * Construct a new connection to a broker.
-<<<<<<< local
-     * @param params the initialization parameters for a connection
-     * @param insist true if broker redirects are disallowed
-=======
      * @param factory the initialization parameters for a connection
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      */
@@ -246,20 +203,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * Construct a new connection to a broker.
      * @param factory the initialization parameters for a connection
->>>>>>> other
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      * @param exceptionHandler interface to an object that will handle any special exceptions encountered while using this connection
-     * @throws RedirectException if the server is redirecting us to a different host/port
      */
-<<<<<<< local
-    public AMQConnection(ConnectionParameters params,
-                         boolean insist,
-=======
     public AMQConnection(ConnectionFactory factory,
->>>>>>> other
                          FrameHandler frameHandler,
                          ExceptionHandler exceptionHandler)
-        throws RedirectException
     {
         checkPreconditions();
 
@@ -279,12 +228,36 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _heartbeat = 0;
         _exceptionHandler = exceptionHandler;
         _brokerInitiatedShutdown = false;
+    }
 
-        new MainLoop(); // start the main loop going
+    /**
+     * Start up the connection, including the MainLoop thread.
+     * Sends the protocol
+     * version negotiation header, and runs through
+     * Connection.Start/.StartOk, Connection.Tune/.TuneOk, and then
+     * calls Connection.Open and waits for the OpenOk. Sets heartbeat
+     * and frame max values after tuning has taken place.
+     * @throws java.io.IOException if an error is encountered
+     */
+    public void start()
+        throws IOException
+    {
+        // Make sure that the first thing we do is to send the header,
+        // which should cause any socket errors to show up for us, rather
+        // than risking them pop out in the MainLoop
+        AMQChannel.SimpleBlockingRpcContinuation connStartBlocker =
+            new AMQChannel.SimpleBlockingRpcContinuation();
+        // We enqueue an RPC continuation here without sending an RPC
+        // request, since the protocol specifies that after sending
+        // the version negotiation header, the client (connection
+        // initiator) is to wait for a connection.start method to
+        // arrive.
+        _channel0.enqueueRpc(connStartBlocker);
+        // The following two lines are akin to AMQChannel's
+        // transmit() method for this pseudo-RPC.
+        _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
+        _frameHandler.sendHeader();
 
-<<<<<<< local
-        _knownHosts = open(_params, insist);
-=======
         // start the main loop going
         Thread ml = new MainLoop();
         ml.setName("AMQP Connection " + getHost() + ":" + getPort());
@@ -342,21 +315,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _channel0.transmit(new AMQImpl.Connection.TuneOk(channelMax,
                                                          frameMax,
                                                          heartbeat));
-        
+        // 0.9.1: insist [on not being redirected] is deprecated, but
+        // still in generated code; just pass a dummy value here
         Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
                                                                           "",
-                                                                          insist)).getMethod();
-        if (res instanceof AMQP.Connection.Redirect) {
-            AMQP.Connection.Redirect redirect = (AMQP.Connection.Redirect) res;
-            throw new RedirectException(Address.parseAddress(redirect.getHost()),
-                                        Address.parseAddresses(redirect.getKnownHosts()));
-        } else {
-            AMQP.Connection.OpenOk openOk = (AMQP.Connection.OpenOk) res;
-            _knownHosts = Address.parseAddresses(openOk.getKnownHosts());
-        }
-        
+                                                                          true)).getMethod();
+        AMQP.Connection.OpenOk openOk = (AMQP.Connection.OpenOk) res;
+                
         return;
->>>>>>> other
     }
 
     /**
@@ -366,27 +332,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         AMQCommand.checkEmptyContentBodyFrameSize();
     }
 
-    /**
-     * @see com.rabbitmq.client.Connection#getChannelMax()
-     */
+    /** {@inheritDoc} */
     public int getChannelMax() {
         return _channelManager.getChannelMax();
     }
 
-<<<<<<< local
-    /**
-     * Protected API - set the max <b>number</b> of channels available
-     */
-    public void setChannelMax(int value) {
-        _channelManager.setChannelMax(value);
-    }
-
-    /**
-     * @see com.rabbitmq.client.Connection#getFrameMax()
-     */
-=======
     /** {@inheritDoc} */
->>>>>>> other
     public int getFrameMax() {
         return _frameMax;
     }
@@ -399,9 +350,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _frameMax = value;
     }
 
-    /**
-     * @see com.rabbitmq.client.Connection#getHeartbeat()
-     */
+    /** {@inheritDoc} */
     public int getHeartbeat() {
         return _heartbeat;
     }
@@ -433,19 +382,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _exceptionHandler;
     }
 
-    /**
-     * Public API - creates a new channel using the specified channel number.
-     */
-
-    public Channel createChannel(int channelNumber) {
+    /** Public API - {@inheritDoc} */
+    public Channel createChannel(int channelNumber) throws IOException {
         ensureIsOpen();
         return _channelManager.createChannel(this, channelNumber);
     }
 
-    /**
-     * Public API - creates a new channel using an internally allocated channel number.
-     */
-    public Channel createChannel() {
+    /** Public API - {@inheritDoc} */
+    public Channel createChannel() throws IOException {
         ensureIsOpen();
         return _channelManager.createChannel(this);
     }
@@ -466,123 +410,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _lastActivityTime = System.nanoTime();
     }
 
-<<<<<<< local
-    public Map<String, Object> buildClientPropertiesTable() {
-        return Frame.buildTable(new Object[] {
-            "product", LongStringHelper.asLongString("RabbitMQ"),
-            "version", LongStringHelper.asLongString(ClientVersion.VERSION),
-            "platform", LongStringHelper.asLongString("Java"),
-            "copyright", LongStringHelper.asLongString("Copyright (C) 2007-2008 LShift Ltd., " +
-                                                       "Cohesive Financial Technologies LLC., " +
-                                                       "and Rabbit Technologies Ltd."),
-            "information", LongStringHelper.asLongString("Licensed under the MPL.  " +
-                                                         "See http://www.rabbitmq.com/")
-        });
-    }
-
-    /**
-     * Called by the connection's constructor. Sends the protocol
-     * version negotiation header, and runs through
-     * Connection.Start/.StartOk, Connection.Tune/.TuneOk, and then
-     * calls Connection.Open and waits for the OpenOk. Sets heartbeat
-     * and frame max values after tuning has taken place.
-     * @param params the construction parameters for a Connection
-     * @return the known hosts that came back in the connection.open-ok
-     * @throws RedirectException if the server asks us to redirect to
-     *                           a different host/port.
-     * @throws java.net.SocketException If the socket timeout cannot be set
-     * @throws java.io.IOException if the header cannot be sent
-     */
-    public Address[] open(final ConnectionParameters params, boolean insist)
-        throws RedirectException
-    {
-
-        AMQChannel.SimpleBlockingRpcContinuation connStartBlocker =
-                new AMQChannel.SimpleBlockingRpcContinuation();
-        // We enqueue an RPC continuation here without sending an RPC
-        // request, since the protocol specifies that after sending
-        // the version negotiation header, the client (connection
-        // initiator) is to wait for a connection.start method to
-        // arrive.
-        _channel0.enqueueRpc(connStartBlocker);
-        // The following two lines are akin to AMQChannel's
-        // transmit() method for this pseudo-RPC.
-        try {
-            _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
-            _frameHandler.sendHeader();
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        // See bug 17389. The MainLoop could have shut down already in
-        // which case we don't want to wait forever for a reply.
-
-        // There is no race if the MainLoop shuts down after enqueuing
-        // the RPC because if that happens the channel will correctly
-        // pass the exception into RPC, waking it up.
-        ensureIsOpen();
-
-        AMQP.Connection.Start connStart =
-                (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
-
-        Version serverVersion =
-                new Version(connStart.getVersionMajor(),
-                        connStart.getVersionMinor());
-
-        if (!Version.checkVersion(clientVersion, serverVersion)) {
-            _frameHandler.close(); //this will cause mainLoop to terminate
-            //TODO: throw a more specific exception see 15786
-            throw new RuntimeException("protocol version mismatch: expected " +
-                    clientVersion + ", got " + serverVersion);
-        }
-
-
-        LongString saslResponse = LongStringHelper.asLongString("\0" + params.getUserName() +
-                                                                "\0" + params.getPassword());
-        AMQImpl.Connection.StartOk startOk =
-            new AMQImpl.Connection.StartOk(buildClientPropertiesTable(),
-                                           "PLAIN",
-                                           saslResponse,
-                                           "en_US");
-
-        AMQP.Connection.Tune connTune =
-            (AMQP.Connection.Tune) _channel0.rpc(startOk).getMethod();
-
-        int channelMax =
-            negotiatedMaxValue(getParameters().getRequestedChannelMax(),
-                               connTune.getChannelMax());
-        setChannelMax(channelMax);
-
-        int frameMax =
-            negotiatedMaxValue(getParameters().getRequestedFrameMax(),
-                               connTune.getFrameMax());
-        setFrameMax(frameMax);
-
-        int heartbeat =
-            negotiatedMaxValue(getParameters().getRequestedHeartbeat(),
-                               connTune.getHeartbeat());
-        setHeartbeat(heartbeat);
-
-        _channel0.transmit(new AMQImpl.Connection.TuneOk(channelMax,
-                                                         frameMax,
-                                                         heartbeat));
-
-        Method res = _channel0.rpc(new AMQImpl.Connection.Open(params.getVirtualHost(),
-                                                                          "",
-                                                                          insist)).getMethod();
-        if (res instanceof AMQP.Connection.Redirect) {
-            AMQP.Connection.Redirect redirect = (AMQP.Connection.Redirect) res;
-            throw new RedirectException(Address.parseAddress(redirect.getHost()),
-                                        Address.parseAddresses(redirect.getKnownHosts()));
-        } else {
-            AMQP.Connection.OpenOk openOk = (AMQP.Connection.OpenOk) res;
-            return Address.parseAddresses(openOk.getKnownHosts());
-        }
-    }
-
-=======
->>>>>>> other
     private static int negotiatedMaxValue(int clientValue, int serverValue) {
         return (clientValue == 0 || serverValue == 0) ?
             Math.max(clientValue, serverValue) :
@@ -590,11 +417,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     private class MainLoop extends Thread {
-
-        /** Start the main loop going. */
-        public MainLoop() {
-            start();
-        }
 
         /**
          * Channel reader thread main loop. Reads a frame, and if it is
@@ -697,16 +519,27 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * Handles incoming control commands on channel zero.
      */
-    public boolean processControlCommand(Command c) {
+    public boolean processControlCommand(Command c)
+        throws IOException
+    {
         // Similar trick to ChannelN.processAsync used here, except
         // we're interested in whole-connection quiescing.
 
         // See the detailed comments in ChannelN.processAsync.
 
         Method method = c.getMethod();
-        
+
         if (method instanceof AMQP.Connection.Close) {
-            handleConnectionClose(c);
+            if (!isOpen()) {
+                handleConnectionClose(c);
+            } else {
+                // Already shutting down, so just send back a CloseOk.
+                try {
+                    _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
+                } catch (IOException ioe) {
+                    Utility.emptyStatement();
+                }
+            }
             return true;
         } else {
             if (isOpen()) {
@@ -733,12 +566,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ShutdownSignalException sse = shutdown(closeCommand, false, null, false);
         try {
             _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
-        } catch (Throwable t) {
+        } catch (IOException ioe) {
             Utility.emptyStatement();
         }
         _heartbeat = 0; // Do not try to send heartbeats after CloseOk
         _brokerInitiatedShutdown = true;
-        new SocketCloseWait(sse);
+        Thread scw = new SocketCloseWait(sse);
+        scw.setName("AMQP Connection Closing Monitor " +
+                    getHost() + ":" + getPort());
+        scw.start();
     }
     
     private class SocketCloseWait extends Thread {
@@ -746,7 +582,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         
         public SocketCloseWait(ShutdownSignalException sse) {
             cause = sse;
-            start();
         }
         
         @Override public void run() {
@@ -789,50 +624,74 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return sse;
     }
 
-    public void close() {
+    /** Public API - {@inheritDoc} */
+    public void close()
+        throws IOException
+    {
         close(-1);
     }
 
-    public void close(int timeout) {
+    /** Public API - {@inheritDoc} */
+    public void close(int timeout)
+        throws IOException
+    {
         close(AMQP.REPLY_SUCCESS, "OK", timeout);
     }
 
-    public void close(int closeCode, String closeMessage) {
+    /** Public API - {@inheritDoc} */
+    public void close(int closeCode, String closeMessage)
+        throws IOException
+    {
         close(closeCode, closeMessage, -1);
     }
 
-    public void close(int closeCode, String closeMessage, int timeout) {
+    /** Public API - {@inheritDoc} */
+    public void close(int closeCode, String closeMessage, int timeout)
+        throws IOException
+    {
         close(closeCode, closeMessage, true, null, timeout, false);
     }
 
+    /** Public API - {@inheritDoc} */
     public void abort()
     {
         abort(-1);
     }
 
+    /** Public API - {@inheritDoc} */
     public void abort(int closeCode, String closeMessage)
     {
        abort(closeCode, closeMessage, -1);
     }
 
+    /** Public API - {@inheritDoc} */
     public void abort(int timeout)
     {
         abort(AMQP.REPLY_SUCCESS, "OK", timeout);
     }
 
+    /** Public API - {@inheritDoc} */
     public void abort(int closeCode, String closeMessage, int timeout)
     {
         try {
             close(closeCode, closeMessage, true, null, timeout, true);
-        } catch (Exception e) {
+        } catch (IOException e) {
             Utility.emptyStatement();
         }
     }
-    
+
+    /** 
+     * Protected API - Delegates to {@link
+     * #close(int,String,boolean,Throwable,int,boolean) the
+     * six-argument close method}, passing 0 for the timeout, and
+     * false for the abort flag.
+     */
     public void close(int closeCode,
                       String closeMessage,
                       boolean initiatedByApplication,
-                      Throwable cause) {
+                      Throwable cause)
+        throws IOException
+    {
         close(closeCode, closeMessage, initiatedByApplication, cause, 0, false);
     }
 
@@ -846,15 +705,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                       boolean initiatedByApplication,
                       Throwable cause,
                       int timeout,
-<<<<<<< local
-                      boolean abort) {
-=======
                       boolean abort)
         throws IOException
     {
         final boolean sync = !(Thread.currentThread() instanceof MainLoop);
 
->>>>>>> other
         try {
             AMQImpl.Connection.Close reason =
                 new AMQImpl.Connection.Close(closeCode, closeMessage, 0, 0);
@@ -874,9 +729,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (ShutdownSignalException sse) {
             if (!abort)
                 throw sse;
-        } catch (Throwable t) {
+        } catch (IOException ioe) {
             if (!abort)
-                throw new RuntimeException(t);
+                throw ioe;
         } finally {
             if(sync) _frameHandler.close();
         }

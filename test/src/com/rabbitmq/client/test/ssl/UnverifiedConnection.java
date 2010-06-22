@@ -74,7 +74,7 @@ public class UnverifiedConnection extends BrokerTestCase {
 
     public void testSSL() throws IOException
     {
-        channel.queueDeclare("Bug19356Test", false, false, true, true, null);
+        channel.queueDeclare("Bug19356Test", false, true, true, null);
         channel.basicPublish("", "Bug19356Test", null, "SSL".getBytes());
 
         GetResponse chResponse = channel.basicGet("Bug19356Test", false);

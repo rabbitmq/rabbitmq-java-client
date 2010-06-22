@@ -115,33 +115,33 @@ public class ConsumerMain implements Runnable {
         Channel channel = _connection.createChannel();
 
         String queueName = "test queue";
-        channel.queueDeclare(queueName, true);
+        channel.queueDeclare(queueName, true, false, false, null);
 
         String exchangeName = "test completion";
-        channel.exchangeDeclare(exchangeName, "fanout", false, false, true, null);
+        channel.exchangeDeclare(exchangeName, "fanout", false, null);
 
         String completionQueue = channel.queueDeclare().getQueue();
         channel.queueBind(completionQueue, exchangeName, "");
 
         LatencyExperimentConsumer callback = new LatencyExperimentConsumer(channel, queueName);
         callback._noAck = this._noAck;
-        
+
         channel.basicConsume(queueName, _noAck, callback);
         channel.basicConsume(completionQueue, true, "completion", callback);
         callback.report(_writeStats);
-       
+
         System.out.println("Deleting test queue.");
         channel.queueDelete(queueName);
 
         System.out.println("Deleting completion queue.");
         channel.queueDelete(completionQueue);
-        
+
         System.out.println("Closing the channel.");
         channel.close();
-        
+
         System.out.println("Closing the connection.");
         _connection.close();
-        
+
         System.out.println("Leaving ConsumerMain.run().");
     }
 
@@ -212,9 +212,9 @@ public class ConsumerMain implements Runnable {
             System.out.println("Max latency, milliseconds: " + maxL);
 
             if (writeStats) {
-                PrintStream o = new PrintStream(new FileOutputStream("simple-latency-experiment.dat"));
+                PrintStream o = new PrintStream(new FileOutputStream("simple-latency-experiment.csv"));
                 for (int i = 0; i < messageCount; i++) {
-                    o.println(i + " " + _deltas[i]);
+                    o.println(i + "," + _deltas[i]);
                 }
                 o.close();
 
@@ -225,9 +225,9 @@ public class ConsumerMain implements Runnable {
                     }
                 }
 
-                o = new PrintStream(new FileOutputStream("simple-latency-bins.dat"));
+                o = new PrintStream(new FileOutputStream("simple-latency-bins.csv"));
                 for (int i = 0; i < bins.length; i++) {
-                    o.println(i + " " + bins[i]);
+                    o.println(i + "," + bins[i]);
                 }
                 o.close();
             }

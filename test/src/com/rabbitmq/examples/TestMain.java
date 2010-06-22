@@ -123,11 +123,6 @@ public class TestMain {
             throw new RuntimeException("expected socket close");
         } catch (Exception e) {}
 
-        //should succeed IF the highest version supported by the
-        //server is a version supported by this client
-        conn = new TestConnectionFactory(100, 0, hostName, portNumber).newConnection();
-        conn.close();
-
         ConnectionFactory factory;
         factory = new ConnectionFactory();
         factory.setUsername("invalid");
@@ -208,15 +203,15 @@ public class TestMain {
         Connection connp = new ConnectionFactory().newConnection(hostName, portNumber);
 =======
     public static void runProducerConsumerTest(String hostName, int portNumber, int commitEvery) throws IOException {
-        ConnectionFactory cfconnp = new ConnectionFactory(); 
-        cfconnp.setHost(hostName); 
+        ConnectionFactory cfconnp = new ConnectionFactory();
+        cfconnp.setHost(hostName);
         cfconnp.setPort(portNumber);
         Connection connp = cfconnp.newConnection();
 >>>>>>> other
         ProducerMain p = new ProducerMain(connp, 2000, 10000, false, commitEvery, true);
         new Thread(p).start();
-        ConnectionFactory cfconnc = new ConnectionFactory(); 
-        cfconnc.setHost(hostName); 
+        ConnectionFactory cfconnc = new ConnectionFactory();
+        cfconnc.setHost(hostName);
         cfconnc.setPort(portNumber);
         Connection connc = cfconnc.newConnection();
         ConsumerMain c = new ConsumerMain(connc, false, true);
@@ -437,10 +432,10 @@ public class TestMain {
         String q2 = "tryTopicsQueue2";
         String q3 = "tryTopicsQueue3";
         String x = "tryTopicsExch";
-        _ch1.queueDeclare(q1);
-        _ch1.queueDeclare(q2);
-        _ch1.queueDeclare(q3);
-        _ch1.exchangeDeclare(x, "topic", false, false, true, null);
+        _ch1.queueDeclare(q1, false, false, false, null);
+        _ch1.queueDeclare(q2, false, false, false, null);
+        _ch1.queueDeclare(q3, false, false, false, null);
+        _ch1.exchangeDeclare(x, "topic", false, null);
         _ch1.queueBind(q1, x, "test.#");
         _ch1.queueBind(q2, x, "test.test");
         _ch1.queueBind(q3, x, "*.test.#");
@@ -461,8 +456,7 @@ public class TestMain {
         _ch1.queueDelete(q3, true, true);
         _ch1.queueDelete(q2, true, true);
         _ch1.queueDelete(q1, true, true);
-        // We created the exchange auto_delete - it should be gone by this point.
-        // ch1.exchangeDelete(x);
+        _ch1.exchangeDelete(x);
     }
 
     public void doBasicReturn(BlockingCell cell, int expectedCode) {
@@ -481,34 +475,34 @@ public class TestMain {
         log("About to try mandatory/immediate publications");
 
         String mx = "mandatoryTestExchange";
-        _ch1.exchangeDeclare(mx, "fanout", false, false, true, null);
+        _ch1.exchangeDeclare(mx, "fanout", false, null);
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());
-        // %%% FIXME: 312 and 313 should be replaced with symbolic constants when we move to >=0-9
-        doBasicReturn(returnCell, 312);
+        doBasicReturn(returnCell, AMQP.NO_ROUTE);
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, true, null, "two".getBytes());
-        doBasicReturn(returnCell, 312);
+        doBasicReturn(returnCell, AMQP.NO_ROUTE);
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", false, true, null, "three".getBytes());
-        doBasicReturn(returnCell, 313);
+        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
 
         String mq = "mandatoryTestQueue";
-        _ch1.queueDeclare(mq, false, false, false, true, null);
+        _ch1.queueDeclare(mq, false, false, true, null);
         _ch1.queueBind(mq, mx, "");
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, true, null, "four".getBytes());
-        doBasicReturn(returnCell, 313);
+        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, false, null, "five".getBytes());
         drain(1, mq, true);
         _ch1.queueDelete(mq, true, true);
 
+	_ch1.exchangeDelete(mx);
         log("Completed basic.return testing.");
     }
 
@@ -533,10 +527,10 @@ public class TestMain {
         _ch1.basicPublish("", queueName, false, false, null, "normal".getBytes());
         _ch1.basicPublish("", queueName, true, false, null, "mandatory".getBytes());
         _ch1.basicPublish("", "bogus", true, false, null, "mandatory".getBytes());
-        doBasicReturn(returnCell, 312);
+        doBasicReturn(returnCell, AMQP.NO_ROUTE);
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish("", "bogus", false, true, null, "immediate".getBytes());
-        doBasicReturn(returnCell, 313);
+        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
         returnCell = new BlockingCell<Object>();
         _ch1.txCommit();
         expect(2, drain(10, queueName, false));

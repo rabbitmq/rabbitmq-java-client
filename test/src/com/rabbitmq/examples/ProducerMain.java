@@ -85,7 +85,7 @@ public class ProducerMain implements Runnable {
             final int portNumber = optArg("portNumber", args, 1, AMQP.PROTOCOL.PORT);
             int rateLimit = optArg("rateLimit", args, 2, SEND_RATE);
             int messageCount = optArg("messageCount", args, 3, LATENCY_MESSAGE_COUNT);
-            boolean sendCompletion = optArg("sendCompletion", args, 4, false);
+            boolean sendCompletion = optArg("sendCompletion", args, 4, true);
             int commitEvery = optArg("commitEvery", args, 5, -1);
             boolean sendLatencyInfo = optArg("sendLatencyInfo", args, 6, true);
             final Connection conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
@@ -150,26 +150,20 @@ public class ProducerMain implements Runnable {
         _channel = _connection.createChannel();
 
         String queueName = "test queue";
-        _channel.queueDeclare(queueName, true);
-        
+        _channel.queueDeclare(queueName, true, false, false, null);
+
         if (shouldCommit()) {
             _channel.txSelect();
         }
         sendBatch(queueName);
 
         if (_sendCompletion) {
-            // Declaring this exchange as auto-delete is a bit dodgy because of a
-            // race condition with the consumer declaring the same exchange to be
-            // auto-delete and hence pulling the rug out from underneath the producer's
-            // feet.
-            // Hence we're delaying a possible re-declaration until as late as possible.
-            // Ideally you would use a global lock around both critical sections,
-            // but thread safety has gone out of fashion these days.
             String exchangeName = "test completion";
-            _channel.exchangeDeclare(exchangeName, "fanout", false, false, true, null);
+            _channel.exchangeDeclarePassive(exchangeName);
             _channel.basicPublish(exchangeName, "", MessageProperties.BASIC, new byte[0]);
             if (shouldCommit())
                 _channel.txCommit();
+            _channel.exchangeDelete(exchangeName);
         }
 
         _channel.close();

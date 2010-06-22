@@ -54,8 +54,8 @@ public class Routing extends BrokerTestCase
 
     protected void createResources() {
         channel.exchangeDeclare(E, "direct");
-        channel.queueDeclare(Q1);
-        channel.queueDeclare(Q2);
+        channel.queueDeclare(Q1, false, false, false, null);
+        channel.queueDeclare(Q2, false, false, false, null);
     }
 
     protected void releaseResources() {
@@ -124,7 +124,7 @@ public class Routing extends BrokerTestCase
 
         for (int i = 0; i < 2; i++) {
             String q = "Q-" + System.nanoTime();
-            channel.queueDeclare(q);
+            channel.queueDeclare(q, false, true, true, null);
             channel.queueBind(q, "amq.fanout", "");
             queues.add(q);
         }

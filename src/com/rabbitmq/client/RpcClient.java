@@ -31,15 +31,20 @@
 
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.MethodArgumentReader;
-import com.rabbitmq.client.impl.MethodArgumentWriter;
-import com.rabbitmq.utility.BlockingCell;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import com.rabbitmq.client.impl.MethodArgumentReader;
+import com.rabbitmq.client.impl.MethodArgumentWriter;
+import com.rabbitmq.utility.BlockingCell;
 
 /**
  * Convenience class which manages a temporary reply queue for simple RPC-style communication.
@@ -73,9 +78,10 @@ public class RpcClient {
      * @param channel the channel to use for communication
      * @param exchange the exchange to connect to
      * @param routingKey the routing key
+     * @throws IOException if an error is encountered
      * @see #setupReplyQueue
      */
-    public RpcClient(Channel channel, String exchange, String routingKey) {
+    public RpcClient(Channel channel, String exchange, String routingKey) throws IOException {
         _channel = channel;
         _exchange = exchange;
         _routingKey = routingKey;
@@ -87,18 +93,19 @@ public class RpcClient {
 
     /**
      * Private API - ensures the RpcClient is correctly open.
+     * @throws IOException if an error is encountered
      */
-    public void checkConsumer() {
+    public void checkConsumer() throws IOException {
         if (_consumer == null) {
-            // TODO See 15786: uninformative exception
-            throw new RuntimeException("RpcClient is closed");
+            throw new EOFException("RpcClient is closed");
         }
     }
 
     /**
      * Public API - cancels the consumer, thus deleting the temporary queue, and marks the RpcClient as closed.
+     * @throws IOException if an error is encountered
      */
-    public void close() {
+    public void close() throws IOException {
         if (_consumer != null) {
             _channel.basicCancel(_consumer.getConsumerTag());
             _consumer = null;
@@ -108,25 +115,19 @@ public class RpcClient {
     /**
      * Creates a server-named exclusive autodelete queue to use for
      * receiving replies to RPC requests.
+     * @throws IOException if an error is encountered
      * @return the name of the reply queue
      */
-<<<<<<< local
-    private String setupReplyQueue() {
-=======
     protected String setupReplyQueue() throws IOException {
->>>>>>> other
-        return _channel.queueDeclare("", false, false, true, true, null).getQueue();
+        return _channel.queueDeclare("", false, true, true, null).getQueue();
     }
 
     /**
      * Registers a consumer on the reply queue.
+     * @throws IOException if an error is encountered
      * @return the newly created and registered consumer
      */
-<<<<<<< local
-    private DefaultConsumer setupConsumer()  {
-=======
     protected DefaultConsumer setupConsumer() throws IOException {
->>>>>>> other
         DefaultConsumer consumer = new DefaultConsumer(_channel) {
             @Override
             public void handleShutdownSignal(String consumerTag,
@@ -143,7 +144,8 @@ public class RpcClient {
             public void handleDelivery(String consumerTag,
                                        Envelope envelope,
                                        AMQP.BasicProperties properties,
-                                       byte[] body) {
+                                       byte[] body)
+                    throws IOException {
                 synchronized (_continuationMap) {
                     String replyId = properties.getCorrelationId();
                     BlockingCell<Object> blocker = _continuationMap.get(replyId);
@@ -156,11 +158,15 @@ public class RpcClient {
         return consumer;
     }
 
-    public void publish(AMQP.BasicProperties props, byte[] message) {
+    public void publish(AMQP.BasicProperties props, byte[] message)
+        throws IOException
+    {
         _channel.basicPublish(_exchange, _routingKey, props, message);
     }
 
-    public byte[] primitiveCall(AMQP.BasicProperties props, byte[] message) throws ShutdownSignalException {
+    public byte[] primitiveCall(AMQP.BasicProperties props, byte[] message)
+        throws IOException, ShutdownSignalException
+    {
         checkConsumer();
         BlockingCell<Object> k = new BlockingCell<Object>();
         synchronized (_continuationMap) {
@@ -199,8 +205,10 @@ public class RpcClient {
      * @param message the byte array request message to send
      * @return the byte array response received
      * @throws ShutdownSignalException if the connection dies during our wait
+     * @throws IOException if an error is encountered
      */
-    public byte[] primitiveCall(byte[] message) throws ShutdownSignalException {
+    public byte[] primitiveCall(byte[] message)
+        throws IOException, ShutdownSignalException {
         return primitiveCall(null, message);
     }
 
@@ -209,8 +217,11 @@ public class RpcClient {
      * @param message the string request message to send
      * @return the string response received
      * @throws ShutdownSignalException if the connection dies during our wait
+     * @throws IOException if an error is encountered
      */
-    public String stringCall(String message) throws ShutdownSignalException {
+    public String stringCall(String message)
+        throws IOException, ShutdownSignalException
+    {
         return new String(primitiveCall(message.getBytes()));
     }
 
@@ -224,22 +235,19 @@ public class RpcClient {
      * @param message the table to send
      * @return the table received
      * @throws ShutdownSignalException if the connection dies during our wait
+     * @throws IOException if an error is encountered
      */
     public Map<String, Object> mapCall(Map<String, Object> message)
-        throws ShutdownSignalException
+        throws IOException, ShutdownSignalException
     {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         MethodArgumentWriter writer = new MethodArgumentWriter(new DataOutputStream(buffer));
-        try {
-            writer.writeTable(message);
-            writer.flush();
-            byte[] reply = primitiveCall(buffer.toByteArray());
-            MethodArgumentReader reader =
-                    new MethodArgumentReader(new DataInputStream(new ByteArrayInputStream(reply)));
-            return reader.readTable();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        writer.writeTable(message);
+        writer.flush();
+        byte[] reply = primitiveCall(buffer.toByteArray());
+        MethodArgumentReader reader =
+            new MethodArgumentReader(new DataInputStream(new ByteArrayInputStream(reply)));
+        return reader.readTable();
     }
 
     /**
@@ -252,8 +260,11 @@ public class RpcClient {
      * @param keyValuePairs alternating {key, value, key, value, ...} data to send
      * @return the table received
      * @throws ShutdownSignalException if the connection dies during our wait
+     * @throws IOException if an error is encountered
      */
-    public Map<String, Object> mapCall(Object[] keyValuePairs) throws ShutdownSignalException {
+    public Map<String, Object> mapCall(Object[] keyValuePairs)
+        throws IOException, ShutdownSignalException
+    {
         Map<String, Object> message = new HashMap<String, Object>();
         for (int i = 0; i < keyValuePairs.length; i += 2) {
             message.put((String) keyValuePairs[i], keyValuePairs[i + 1]);

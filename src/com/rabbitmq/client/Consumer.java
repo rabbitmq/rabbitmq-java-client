@@ -69,6 +69,11 @@ public interface Consumer {
     void handleShutdownSignal(String consumerTag, ShutdownSignalException sig);
 
     /**
+     *
+     */
+    void handleRecoverOk();
+
+    /**
      * Called when a delivery appears for this consumer.
      * @param consumerTag the defined consumerTag (either client- or server-generated)
      * @param envelope packaging data for the message

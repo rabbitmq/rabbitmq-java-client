@@ -38,7 +38,7 @@ public class NoRequeueOnCancel extends BrokerTestCase
     protected final String Q = "NoRequeueOnCancel";
 
     protected void createResources() {
-        channel.queueDeclare(Q);
+      channel.queueDeclare(Q, false, false, false, null);
     }
 
     protected void releaseResources() {

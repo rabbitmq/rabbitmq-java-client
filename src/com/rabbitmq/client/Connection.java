@@ -101,12 +101,6 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     Map<String, Object> getClientProperties();
 
     /**
-     * Retrieve the known hosts.
-     * @return an array of addresses for all hosts that came back in the initial {@link com.rabbitmq.client.AMQP.Connection.OpenOk} open-ok method
-     */
-    Address[] getKnownHosts();
-
-    /**
      * Retrieve the server properties.
      * @return a map of the server properties. This typically includes the product name and version of the server.
      */

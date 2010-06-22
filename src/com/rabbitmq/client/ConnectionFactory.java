@@ -30,20 +30,12 @@
 //
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.SocketFrameHandler;
-
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
+import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
-<<<<<<< local
-=======
 import java.net.Socket;
 import java.net.InetSocketAddress;
 
@@ -56,16 +48,10 @@ import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 
->>>>>>> other
 /**
  * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
  */
 
-<<<<<<< local
-public class ConnectionFactory {
-    private final ConnectionParameters _params;
-    private final EndpointDescriptor _endpoints;
-=======
 public class ConnectionFactory implements Cloneable {
     /** Default user name */
     public static final String DEFAULT_USER = "guest";
@@ -98,7 +84,6 @@ public class ConnectionFactory implements Cloneable {
 
     /** The default port to use for AMQP connections when using SSL */
     public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
->>>>>>> other
 
     /**
      * The default SSL protocol (currently "SSLv3").
@@ -120,27 +105,13 @@ public class ConnectionFactory implements Cloneable {
      * Instantiate a ConnectionFactory with a default set of parameters.
      */
     public ConnectionFactory() {
-<<<<<<< local
-        this(new ConnectionParameters());
-=======
->>>>>>> other
     }
 
     /**
      *  @return the default host to use for connections
      */
-<<<<<<< local
-    public ConnectionFactory(ConnectionParameters params) {
-        this(params, EndpointDescriptor.DEFAULT);
-    }
-
-    public ConnectionFactory(ConnectionParameters params, EndpointDescriptor descriptor) {
-        _params = params;
-        _endpoints = descriptor;
-=======
     public String getHost() {
         return host;
->>>>>>> other
     }
 
     /**
@@ -356,17 +327,8 @@ public class ConnectionFactory implements Cloneable {
         setSocketFactory(context.getSocketFactory());
     }
 
-<<<<<<< local
-    /**
-     * The default SSL protocol (currently "SSLv3").
-     */
-    public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
-
-    protected FrameHandler createFrameHandler(Address addr) {
-=======
     protected FrameHandler createFrameHandler(Address addr)
         throws IOException {
->>>>>>> other
 
         String hostName = addr.getHost();
         int portNumber = portOrDefault(addr.getPort());
@@ -392,131 +354,44 @@ public class ConnectionFactory implements Cloneable {
         socket.setTcpNoDelay(true);
     }
 
-    private Connection newConnection(Address[] addresses,
-                                     int maxRedirects,
-                                     Map<Address,Integer> redirectAttempts)
-
-    {
-<<<<<<< local
-        Exception lastException = null;
-
-        for (Address addr : addrs) {
-=======
-        IOException lastException = null;
-        for (Address address : addresses) {
->>>>>>> other
-            Address[] lastKnownAddresses = new Address[0];
-            try {
-                while(true) {
-                    FrameHandler frameHandler = createFrameHandler(address);
-                    Integer redirectCount = redirectAttempts.get(address);
-                    if (redirectCount == null)
-                        redirectCount = 0;
-                    boolean allowRedirects = redirectCount < maxRedirects;
-                    try {
-                        AMQConnection conn = new AMQConnection(this,
-                                    frameHandler);
-                        conn.start(!allowRedirects);
-                        return conn;
-                    } catch (RedirectException e) {
-                        if (!allowRedirects) {
-                            //this should never happen with a well-behaved server
-                            // TODO See 15786 -  come up with a better exception for this
-                            throw new RuntimeException("server ignored 'insist'");
-                        } else {
-                            redirectAttempts.put(address, redirectCount+1);
-                            lastKnownAddresses = e.getKnownAddresses();
-                            address = e.getAddress();
-                            //TODO: we may want to log redirection attempts.
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                lastException = e;
-                if (lastKnownAddresses.length > 0) {
-                    // If there aren't any, don't bother trying, since
-                    // a recursive call with empty lastKnownAddresses
-                    // will cause our lastException to be stomped on
-                    // by an uninformative IOException. See bug 16273. And 15786.
-                    try {
-                        return newConnection(lastKnownAddresses,
-                                             maxRedirects,
-                                             redirectAttempts);
-                    } catch (Exception e1) {
-                        lastException = e1;
-                    }
-                }
-            }
-        }
-
-        if (lastException == null) {
-            throw new RuntimeException("failed to connect");
-        } else {
-            throw new RuntimeException(lastException);
-        }
-    }
-
     /**
      * Create a new broker connection
-     * @return an interface to the connection
-     */
-<<<<<<< local
-    public Connection newConnection(Address[] addrs, int maxRedirects) {
-        return newConnection(addrs,
-                             maxRedirects,
-=======
-    public Connection newConnection() throws IOException {
-        return newConnection(new Address[] {
-                                 new Address(getHost(), getPort())
-                             },
-                             0,
->>>>>>> other
-                             new HashMap<Address,Integer>());
-    }
-
-<<<<<<< local
-    /**
-     * Create a new broker connection (no redirects allowed)
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @return an interface to the connection
+     * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(Address[] addrs) {
-        return newConnection(addrs, 0);
+    public Connection newConnection(Address[] addrs)
+        throws IOException
+    {
+        IOException lastException = null;
+        for (Address addr : addrs) {
+            try {
+              FrameHandler frameHandler = createFrameHandler(addr);
+              AMQConnection conn = new AMQConnection(this,
+                                                     frameHandler);
+              conn.start();
+              return conn;
+            } catch (IOException e) {
+              lastException = e;
+            }
+        }
+        if (lastException == null) {
+            throw new IOException("failed to connect");
+        } else {
+            throw lastException;
+        }
     }
-=======
->>>>>>> other
 
-<<<<<<< local
-    /**
-     * Instantiates a connection and return an interface to it.
-     * @param hostName the host to connect to
-     * @param portNumber the port number to use
-     * @return an interface to the connection
-     */
-    public Connection newConnection(String hostName, int portNumber) {
+    public Connection newConnection() throws IOException {
         return newConnection(new Address[] {
-                                 new Address(hostName, portNumber)
-                             });
+                                 new Address(getHost(), getPort())});
     }
-
-    /**
-     * Create a new broker connection, using the default AMQP port
-     * @param hostName the host to connect to
-     * @return an interface to the connection
-     */
-    public Connection newConnection(String hostName) {
-        return newConnection(hostName, -1);
-=======
+  
     @Override public ConnectionFactory clone(){
         try {
             return (ConnectionFactory)super.clone(); 
         } catch (CloneNotSupportedException e) {
             throw new Error(e);
         }
->>>>>>> other
-    }
-
-    public Connection newConnection() throws IOException {
-        return newConnection(_endpoints.getAddresses());
     }
 }

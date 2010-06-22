@@ -29,45 +29,44 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client;
+package com.rabbitmq.client.test.functional;
 
-/**
- * Encapsulates an exception requiring redirection to the next from a list of "known addresses"
- */
-public class RedirectException extends Exception {
-    /** Standard serialization ID. */
-    private static final long serialVersionUID = 1L;
+import java.io.IOException;
 
-    /** The address to redirect to **/
-    private final Address _address;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.test.BrokerTestCase;
 
-    /** Known cluster addresses **/
-    private final Address[] _knownAddresses;
+/* Declare an exchange, bind a queue to it, then try to delete it,
+ * setting if-unused to true.  This should throw an exception. */
+public class ExchangeDeleteIfUnused extends BrokerTestCase {
+    private final static String EXCHANGE_NAME = "xchg1";
+    private final static String ROUTING_KEY = "something";
 
-    /**
-     * Construct a RedirectException from the given initialization parameters.
-     * @param address the address we are redirecting to
-     * @param knownAddresses the list of all known addresses
-     */
-    public RedirectException(Address address, Address[] knownAddresses) {
-        super("redirect to " + address);
-        _address = address;
-        _knownAddresses = knownAddresses;
+    protected void createResources()
+        throws IOException
+    {
+        super.createResources();
+        channel.exchangeDeclare(EXCHANGE_NAME, "direct");
+        String queueName = channel.queueDeclare().getQueue();
+        channel.queueBind(queueName, EXCHANGE_NAME, ROUTING_KEY);
     }
 
-    /**
-     * Returns the address to redirect to
-     * @return the redirection address
-     */
-    public Address getAddress() {
-        return _address;
+    protected void releaseResources()
+        throws IOException
+    {
+        channel.exchangeDelete(EXCHANGE_NAME);
+        super.releaseResources();
     }
 
-    /**
-     * Returns the known cluster addresses
-     * @return an array of the known cluster addresses (each a hostname/port pair)
-     */
-    public Address[] getKnownAddresses() {
-        return _knownAddresses;
+    /* Attempt to Exchange.Delete(ifUnused = true) a used exchange.
+     * Should throw an exception. */
+    public void testExchangeDelete() {
+        try {
+            channel.exchangeDelete(EXCHANGE_NAME, true);
+            fail("Exception expected if exchange in use");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
     }
 }

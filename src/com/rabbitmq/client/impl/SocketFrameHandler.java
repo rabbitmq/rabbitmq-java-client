@@ -116,9 +116,9 @@ public class SocketFrameHandler implements FrameHandler {
     }
 
     /**
-     * Write a connection header to the underlying socket, containing
-     * the specified version information, kickstarting the AMQP
-     * protocol version negotiation process.
+     * Write a 0-8-style connection header to the underlying socket,
+     * containing the specified version information, kickstarting the
+     * AMQP protocol version negotiation process.
      *
      * @param major major protocol version number
      * @param minor minor protocol version number
@@ -136,6 +136,28 @@ public class SocketFrameHandler implements FrameHandler {
         }
     }
 
+   /**
+     * Write a 0-9-1-style connection header to the underlying socket,
+     * containing the specified version information, kickstarting the
+     * AMQP protocol version negotiation process.
+     *
+     * @param major major protocol version number
+     * @param minor minor protocol version number
+     * @param revision protocol revision number
+     * @throws IOException if there is a problem accessing the connection
+     * @see com.rabbitmq.client.impl.FrameHandler#sendHeader()
+     */
+  public void sendHeader(int major, int minor, int revision) throws IOException {
+        synchronized (_outputStream) {
+            _outputStream.write("AMQP".getBytes("US-ASCII"));
+            _outputStream.write(0);
+            _outputStream.write(major);
+            _outputStream.write(minor);
+            _outputStream.write(revision);
+            _outputStream.flush();
+        }
+    }
+
     /**
      * Write a connection header to the underlying socket, containing
      * the protocol version supported by this code, kickstarting the
@@ -145,7 +167,7 @@ public class SocketFrameHandler implements FrameHandler {
      * @see com.rabbitmq.client.impl.FrameHandler#sendHeader()
      */
     public void sendHeader() throws IOException {
-        sendHeader(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
+        sendHeader(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR, AMQP.PROTOCOL.REVISION);
     }
 
     /**
