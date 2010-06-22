@@ -120,6 +120,57 @@ public class BindingLifecycleBase extends BrokerTestCase {
     channel.exchangeDelete(binding.x);
   }
 
+  protected void doAutoDelete(boolean durable, int queues) throws IOException {
+    String[] queueNames = null;
+    Binding binding = Binding.randomBinding();
+    channel.exchangeDeclare(binding.x, "direct", durable, true, null);
+    channel.queueDeclare(binding.q, durable, false, true, null);
+    channel.queueBind(binding.q, binding.x, binding.k);
+    if (queues > 1) {
+      int j = queues - 1;
+      queueNames = new String[j];
+      for (int i = 0; i < j; i++) {
+        queueNames[i] = randomString();
+        channel.queueDeclare(queueNames[i], durable, false, false, null);
+        channel.queueBind(queueNames[i], binding.x, binding.k);
+        channel.basicConsume(queueNames[i], true, new QueueingConsumer(channel));
+      }
+    }
+    subscribeSendUnsubscribe(binding);
+    if (durable) {
+      restart();
+    }
+    if (queues > 1) {
+      for (String s : queueNames) {
+        channel.basicConsume(s, true, new QueueingConsumer(channel));
+        Binding tmp = new Binding(s, binding.x, binding.k);
+        sendUnroutable(tmp);
+      }
+    }
+    channel.queueDeclare(binding.q, durable, true, true, null);
+    // if (queues == 1): Because the exchange does not exist, this
+    // bind should fail
+    try {
+      channel.queueBind(binding.q, binding.x, binding.k);
+      sendRoutable(binding);
+    }
+    catch (Exception e) {
+      // do nothing, this is the correct behaviour
+      channel = null;
+      return;
+    }
+    if (queues == 1) {
+      deleteExchangeAndQueue(binding);
+      fail("Queue bind should have failed");
+    }
+    // Do some cleanup
+    if (queues > 1) {
+      for (String q : queueNames) {
+        channel.queueDelete(q);
+      }
+    }
+  }
+
 
   protected void restart() throws IOException {
   }
@@ -172,4 +223,26 @@ public class BindingLifecycleBase extends BrokerTestCase {
   }
 
 
+  // A couple of tests that are common to the subclasses (which differ on
+  // whether the broker is restarted)
+
+  /**
+   *
+   * The same thing as testExchangeAutoDelete, but with durable
+   * queues.
+   *
+   * Main difference is restarting the broker to make sure that the
+   * durable queues are blasted away.
+   */
+  public void testExchangeAutoDeleteDurable() throws IOException {
+    doAutoDelete(true, 1);
+  }
+
+  /**
+   * The same thing as testExchangeAutoDeleteManyBindings, but with
+   * durable queues.
+   */
+  public void testExchangeAutoDeleteDurableManyBindings() throws IOException {
+    doAutoDelete(true, 10);
+  }
 }

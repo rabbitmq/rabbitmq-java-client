@@ -421,13 +421,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Public API - {@inheritDoc} */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
-                                              boolean durable,
+                                              boolean durable, boolean autoDelete,
                                               Map<String, Object> arguments)
         throws IOException
     {
         return (Exchange.DeclareOk)
             exnWrappingRpc(new Exchange.Declare(TICKET, exchange, type,
-                                                false, durable, false,
+                                                false, durable, autoDelete,
                                                 false, false, arguments)).getMethod();
     }
 
@@ -436,14 +436,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                               boolean durable)
         throws IOException
     {
-        return exchangeDeclare(exchange, type, durable, null);
+        return exchangeDeclare(exchange, type, durable, false, null);
     }
 
     /** Public API - {@inheritDoc} */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type)
         throws IOException
     {
-        return exchangeDeclare(exchange, type, false, null);
+        return exchangeDeclare(exchange, type, false, false, null);
     }
 
     /** Public API - {@inheritDoc} */

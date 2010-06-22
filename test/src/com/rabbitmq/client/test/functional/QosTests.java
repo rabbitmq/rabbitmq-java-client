@@ -203,7 +203,7 @@ public class QosTests extends BrokerTestCase
         //behind" - a notion of fairness somewhat short of perfect but
         //probably good enough.
         for (String q : queues) {
-            AMQP.Queue.DeclareOk ok = channel.queueDeclare(q, false, false, false, null);
+            AMQP.Queue.DeclareOk ok = channel.queueDeclarePassive(q);
             assertTrue(ok.getMessageCount() < messageCount);
         }
 
@@ -480,7 +480,7 @@ public class QosTests extends BrokerTestCase
                                         boolean noAck)
         throws IOException
     {
-        AMQP.Queue.DeclareOk ok = ch.queueDeclare("", false, false, false, null);
+        AMQP.Queue.DeclareOk ok = ch.queueDeclare();
         String queue = ok.getQueue();
         ch.queueBind(queue, "amq.fanout", "");
         ch.basicConsume(queue, noAck, c);

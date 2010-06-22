@@ -50,19 +50,19 @@ public class ExchangeDeclare extends BrokerTestCase {
     }
 
     public static void verifyEquivalent(Channel channel, String name,
-            String type, boolean durable,
+            String type, boolean durable, boolean autoDelete,
             Map<String, Object> args) throws IOException {
         channel.exchangeDeclarePassive(name);
-        channel.exchangeDeclare(name, type, durable, args);
+        channel.exchangeDeclare(name, type, durable, autoDelete, args);
     }
 
     // Note: this will close the channel
     public static void verifyNotEquivalent(Channel channel, String name,
-            String type, boolean durable,
+            String type, boolean durable, boolean autoDelete,
             Map<String, Object> args) throws IOException {
         channel.exchangeDeclarePassive(name);
         try {
-            channel.exchangeDeclare(name, type, durable, args);
+            channel.exchangeDeclare(name, type, durable, autoDelete, args);
             fail("Exchange was supposed to be not equivalent");
         } catch (IOException ioe) {
             return;
@@ -70,24 +70,29 @@ public class ExchangeDeclare extends BrokerTestCase {
     }
 
     public void testExchangeNoArgsEquivalence() throws IOException {
-        channel.exchangeDeclare(NAME, TYPE, false, null);
-        verifyEquivalent(channel, NAME, TYPE, false, null);
+        channel.exchangeDeclare(NAME, TYPE, false, false, null);
+        verifyEquivalent(channel, NAME, TYPE, false, false, null);
     }
 
     public void testExchangeNonsenseArgsEquivalent() throws IOException {
-        channel.exchangeDeclare(NAME, TYPE, false, null);
+        channel.exchangeDeclare(NAME, TYPE, false, false, null);
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("nonsensical-argument-surely-not-in-use", "foo");
-        verifyEquivalent(channel, NAME, TYPE, false, args);
+        verifyEquivalent(channel, NAME, TYPE, false, false, args);
     }
 
     public void testExchangeDurableNotEquivalent() throws IOException {
-        channel.exchangeDeclare(NAME, TYPE, false, null);
-        verifyNotEquivalent(channel, NAME, TYPE, true, null);
+        channel.exchangeDeclare(NAME, TYPE, false, false, null);
+        verifyNotEquivalent(channel, NAME, TYPE, true, false, null);
     }
 
     public void testExchangeTypeNotEquivalent() throws IOException {
-        channel.exchangeDeclare(NAME, "direct", false, null);
-        verifyNotEquivalent(channel, NAME, "fanout", false, null);
+        channel.exchangeDeclare(NAME, "direct", false, false, null);
+        verifyNotEquivalent(channel, NAME, "fanout", false, false, null);
+    }
+
+    public void testExchangeAutoDeleteNotEquivalent() throws IOException {
+        channel.exchangeDeclare(NAME, "direct", false, false, null);
+        verifyNotEquivalent(channel, NAME, "direct", false, true, null);
     }
 }
