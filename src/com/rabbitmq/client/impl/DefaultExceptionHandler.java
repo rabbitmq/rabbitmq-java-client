@@ -56,10 +56,11 @@ public class DefaultExceptionHandler implements ExceptionHandler {
     }
 
     public void handleConsumerException(Channel channel, Throwable exception,
-                                        Consumer _consumer, String consumerTag,
+                                        Consumer consumer, String consumerTag,
                                         String methodName)
     {
-        handleChannelKiller(channel, exception, "Consumer " + consumerTag
+        handleChannelKiller(channel, exception, "Consumer " + consumer
+                                              + " (" + consumerTag + ")"
                                               + " method " + methodName
                                               + " for channel " + channel);
     }
