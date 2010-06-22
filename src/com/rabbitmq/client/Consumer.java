@@ -71,7 +71,15 @@ public interface Consumer {
     void handleShutdownSignal(String consumerTag, ShutdownSignalException sig);
 
     /**
-     * Called when the 
+     * Called to notify the consumer that we've received a basic.recover-ok
+     * in reply to a basic.recover some other thread sent. All messages
+     * received before this is invoked that haven't been ack'ed will be
+     * redelivered. All messages received afterwards won't be.
+     *
+     * This method exists since all the Consumer callbacks are invoked by the
+     * connection main loop thread - so it's sometimes useful to allow that
+     * thread to know that the recover-ok has been received, rather than the
+     * thread which invoked basicRecover().
      */
     void handleRecoverOk();
 
