@@ -54,6 +54,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(QosTests.class);
         suite.addTestSuite(AlternateExchange.class);
         suite.addTestSuite(ExchangeDeclare.class);
+        suite.addTestSuite(FrameMax.class);
         suite.addTestSuite(QueueLifecycle.class);
         suite.addTestSuite(QueueExclusivity.class);
         suite.addTestSuite(InvalidAcks.class);
