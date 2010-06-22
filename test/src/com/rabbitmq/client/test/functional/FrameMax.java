@@ -34,10 +34,18 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
+import java.net.Socket;
+import java.net.InetSocketAddress;
 
+import com.rabbitmq.client.Address;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.Frame;
+import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.SocketFrameHandler;
 
 /* Publish a message of size FRAME_MAX.  The broker should split this
  * into two frames before sending back. */
@@ -45,11 +53,16 @@ public class FrameMax extends BrokerTestCase {
     /* This value for FrameMax is larger than the minimum and less
      * than what Rabbit suggests. */
     final static int FRAME_MAX = 131008;
+    final static int REAL_FRAME_MAX = FRAME_MAX - 8;
     final static int TIMEOUT = 3000; /* Time to wait for messages. */
     final static String EXCHANGE_NAME = "xchg1";
     final static String ROUTING_KEY = "something";
 
     QueueingConsumer consumer;
+
+    public FrameMax() {
+        connectionFactory = new MyConnectionFactory();
+    }
 
     @Override
     protected void setUp()
@@ -82,14 +95,17 @@ public class FrameMax extends BrokerTestCase {
     public void testFrameSizes()
         throws IOException, InterruptedException
     {
-        int howMuch = FRAME_MAX;
+        /* This should result in at least 3 frames. */
+        int howMuch = 2*FRAME_MAX;
         produce(howMuch);
         /* Receive everything that was sent out. */
         while (howMuch > 0) {
-            Delivery delivery = consumer.nextDelivery(TIMEOUT);
-            int received = delivery.getBody().length;
-            assertTrue(received <= FRAME_MAX - 8);
-            howMuch -= received;
+            try {
+                Delivery delivery = consumer.nextDelivery(TIMEOUT);
+                howMuch -= delivery.getBody().length;
+            } catch (RuntimeException e) {
+                fail(e.toString());
+            }
         }
     }
 
@@ -98,9 +114,9 @@ public class FrameMax extends BrokerTestCase {
         throws IOException
     {
         while (howMuch > 0) {
-            int size = (howMuch <= (FRAME_MAX-8)) ? howMuch : (FRAME_MAX-8);
+            int size = (howMuch <= (REAL_FRAME_MAX)) ? howMuch : (REAL_FRAME_MAX);
             publish(new byte[size]);
-            howMuch -= (FRAME_MAX-8);
+            howMuch -= (REAL_FRAME_MAX);
         }
     }
 
@@ -112,5 +128,62 @@ public class FrameMax extends BrokerTestCase {
                              false, false,
                              MessageProperties.MINIMAL_BASIC,
                              msg);
+    }
+
+    /* ConnectionFactory that uses MyFrameHandler rather than
+     * SocketFrameHandler. */
+    private static class MyConnectionFactory extends ConnectionFactory {
+        protected FrameHandler createFrameHandler(Address addr)
+            throws IOException
+        {
+            String hostName = addr.getHost();
+            int portNumber = portOrDefault(addr.getPort());
+            Socket socket = getSocketFactory().createSocket();
+            configureSocket(socket);
+            socket.connect(new InetSocketAddress(hostName, portNumber));
+            return new MyFrameHandler(socket);
+        }
+
+        /* Copy-pasted from ConnectionFactory. Should be protected,
+         * rather than private. */
+        private int portOrDefault(int port){
+            if (port != USE_DEFAULT_PORT) return port;
+            else if (isSSL()) return DEFAULT_AMQP_OVER_SSL_PORT;
+            else return DEFAULT_AMQP_PORT;
+        }
+    }
+
+    /* FrameHandler with added frame-max error checking. */
+    private static class MyFrameHandler extends SocketFrameHandler {
+        public MyFrameHandler(Socket socket)
+            throws IOException
+        {
+            super(socket);
+        }
+
+        public Frame readFrame() throws IOException {
+            Frame f = super.readFrame();
+            int size = f.getPayload().length;
+            if (size > REAL_FRAME_MAX)
+                throw new FrameTooLargeException(size, REAL_FRAME_MAX);
+            //System.out.printf("Received a frame of size %d.\n", f.getPayload().length);
+            return f;
+        }
+    }
+
+    private static class FrameTooLargeException extends RuntimeException {
+        private int _frameSize;
+        private int _maxSize;
+
+        public FrameTooLargeException(int frameSize, int maxSize) {
+            _frameSize = frameSize;
+            _maxSize = maxSize;
+        }
+
+        @Override
+        public String toString() {
+            return "Received frame of size " + _frameSize
+                 + ", which exceeds " + _maxSize + ".";
+        }
     }
 }
