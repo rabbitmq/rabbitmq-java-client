@@ -285,6 +285,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     }
                 }
                 return true;
+            } else if (method instanceof Basic.RecoverOk) {
+                for (Consumer callback: _consumers.values()) {
+                    callback.handleRecoverOk();
+                }
+
+                // Unlike all the other cases we still want this RecoverOk to
+                // be handled by whichever RPC continuation invoked Recover,
+                // so return false
+                return false;
             } else {
                 return false;
             }
@@ -699,11 +708,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
+     /** Public API - {@inheritDoc} */
+    public Basic.RecoverOk basicRecover(boolean requeue)
+        throws IOException
+    {
+        return (Basic.RecoverOk) exnWrappingRpc(new Basic.Recover(requeue)).getMethod();
+    }
+
+
     /** Public API - {@inheritDoc} */
     public void basicRecoverAsync(boolean requeue)
         throws IOException
     {
-        transmit(new Basic.Recover(requeue));
+        transmit(new Basic.RecoverAsync(requeue));
     }
 
     /** Public API - {@inheritDoc} */
