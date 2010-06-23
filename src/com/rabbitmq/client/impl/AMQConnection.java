@@ -46,7 +46,6 @@ import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MissedHeartbeatException;
-import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
@@ -164,9 +163,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     private int _heartbeat;
 
-    /** Hosts retrieved from the connection.open-ok */
-    private Address[] _knownHosts;
-
     private final String _username, _password, _virtualHost;
     private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
     private final Map<String, Object> _clientProperties;
@@ -182,11 +178,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** {@inheritDoc} */
     public int getPort() {
         return _frameHandler.getPort();
-    }
-
-    /** {@inheritDoc} */
-    public Address[] getKnownHosts() {
-        return _knownHosts;
     }
 
     public FrameHandler getFrameHandler(){
@@ -245,12 +236,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Connection.Start/.StartOk, Connection.Tune/.TuneOk, and then
      * calls Connection.Open and waits for the OpenOk. Sets heartbeat
      * and frame max values after tuning has taken place.
-     * @param insist true if broker redirects are disallowed
-     * @throws RedirectException if the server is redirecting us to a different host/port
      * @throws java.io.IOException if an error is encountered
      */
-    public void start(boolean insist)
-        throws IOException, RedirectException
+    public void start()
+        throws IOException
     {
         // Make sure that the first thing we do is to send the header,
         // which should cause any socket errors to show up for us, rather
@@ -325,20 +314,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _channel0.transmit(new AMQImpl.Connection.TuneOk(channelMax,
                                                          frameMax,
                                                          heartbeat));
-        
-        Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
-                                                                          "",
-                                                                          insist)).getMethod();
-        if (res instanceof AMQP.Connection.Redirect) {
-            AMQP.Connection.Redirect redirect = (AMQP.Connection.Redirect) res;
-            throw new RedirectException(Address.parseAddress(redirect.getHost()),
-                                        Address.parseAddresses(redirect.getKnownHosts()));
-        } else {
-            AMQP.Connection.OpenOk openOk = (AMQP.Connection.OpenOk) res;
-            _knownHosts = Address.parseAddresses(openOk.getKnownHosts());
-        }
-        
-        return;
+
+        // 0.9.1: insist [on not being redirected] is deprecated, but
+        // still in generated code; just pass a dummy value here
+        _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
+                                                             "",
+                                                             true)).getMethod();
     }
 
     /**

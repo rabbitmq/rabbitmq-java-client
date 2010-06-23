@@ -634,12 +634,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                Consumer callback)
         throws IOException
     {
-        return basicConsume(queue, noAck, consumerTag, false, false, callback);
+        return basicConsume(queue, noAck, consumerTag, false, false, null, callback);
     }
 
     /** Public API - {@inheritDoc} */
     public String basicConsume(String queue, boolean noAck, String consumerTag,
-                               boolean noLocal, boolean exclusive,
+                               boolean noLocal, boolean exclusive, Map<String, Object> filter,
                                final Consumer callback)
         throws IOException
     {
@@ -664,7 +664,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
         rpc(new Basic.Consume(TICKET, queue, consumerTag,
                               noLocal, noAck, exclusive,
-                              false),
+                              false, filter),
             k);
 
         try {
