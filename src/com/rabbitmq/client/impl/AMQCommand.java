@@ -179,7 +179,7 @@ public class AMQCommand implements Command {
         int channelNumber = channel.getChannelNumber();
         AMQConnection connection = channel.getAMQConnection();
 
-        connection.writeFrame(_method.toFrame(channelNumber));
+        connection.writeFrame(_method.to08().toFrame(channelNumber));
 
         if (this._method.hasContent()) {
             byte[] body = getContentBody();
@@ -277,7 +277,7 @@ public class AMQCommand implements Command {
               case STATE_EXPECTING_METHOD:
                   switch (f.type) {
                     case AMQP.FRAME_METHOD: {
-                        _method = AMQImpl.readMethodFrom(f.getInputStream());
+                        _method = AMQImpl.readMethodFrom(f.getInputStream()).from08();
                         state = _method.hasContent() ? STATE_EXPECTING_CONTENT_HEADER : STATE_COMPLETE;
                         return completedCommand();
                     }
