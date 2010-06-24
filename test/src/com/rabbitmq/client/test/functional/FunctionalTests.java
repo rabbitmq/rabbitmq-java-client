@@ -44,6 +44,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(Routing.class);
         suite.addTestSuite(BindingLifecycle.class);
         suite.addTestSuite(Recover.class);
+        suite.addTestSuite(TransactionalRecover.class);
         suite.addTestSuite(Transactions.class);
         suite.addTestSuite(PersistentTransactions.class);
         suite.addTestSuite(RequeueOnConnectionClose.class);
@@ -54,6 +55,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(QosTests.class);
         suite.addTestSuite(AlternateExchange.class);
         suite.addTestSuite(ExchangeDeclare.class);
+        suite.addTestSuite(FrameMax.class);
         suite.addTestSuite(QueueLifecycle.class);
         suite.addTestSuite(QueueExclusivity.class);
         suite.addTestSuite(InvalidAcks.class);

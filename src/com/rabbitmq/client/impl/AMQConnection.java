@@ -189,7 +189,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _serverProperties;
     }
 
-
     /**
      * Construct a new connection to a broker.
      * @param factory the initialization parameters for a connection
@@ -315,14 +314,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _channel0.transmit(new AMQImpl.Connection.TuneOk(channelMax,
                                                          frameMax,
                                                          heartbeat));
+
         // 0.9.1: insist [on not being redirected] is deprecated, but
         // still in generated code; just pass a dummy value here
-        Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
-                                                                          "",
-                                                                          true)).getMethod();
-        AMQP.Connection.OpenOk openOk = (AMQP.Connection.OpenOk) res;
-                
-        return;
+        _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
+                                                             "",
+                                                             true)).getMethod();
     }
 
     /**
@@ -528,18 +525,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         // See the detailed comments in ChannelN.processAsync.
 
         Method method = c.getMethod();
-
+        
         if (method instanceof AMQP.Connection.Close) {
-            if (!isOpen()) {
-                handleConnectionClose(c);
-            } else {
-                // Already shutting down, so just send back a CloseOk.
-                try {
-                    _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
-                } catch (IOException ioe) {
-                    Utility.emptyStatement();
-                }
-            }
+            handleConnectionClose(c);
             return true;
         } else {
             if (isOpen()) {

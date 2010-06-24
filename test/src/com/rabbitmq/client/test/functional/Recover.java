@@ -44,7 +44,7 @@ public class Recover extends BrokerTestCase {
 
     String queue;
     byte[] body = "message".getBytes();
-    
+
     public void createResources() throws IOException {
         AMQP.Queue.DeclareOk ok = channel.queueDeclare();
         queue = ok.getQueue();
@@ -57,7 +57,7 @@ public class Recover extends BrokerTestCase {
     // The AMQP specification under-specifies the behaviour when
     // requeue=false.  So we can't really test any scenarios for
     // requeue=false.
-  
+
     void verifyRedeliverOnRecover(RecoverCallback call)
         throws IOException, InterruptedException {
         QueueingConsumer consumer = new QueueingConsumer(channel);
@@ -71,7 +71,7 @@ public class Recover extends BrokerTestCase {
         QueueingConsumer.Delivery secondDelivery = consumer.nextDelivery(5000);
         assertNotNull("timed out waiting for redelivered message", secondDelivery);
         assertTrue("consumed (redelivered) message body not as sent",
-                   Arrays.equals(body, delivery.getBody()));        
+                   Arrays.equals(body, delivery.getBody()));
     }
 
     void verifyNoRedeliveryWithAutoAck(RecoverCallback call)
@@ -103,7 +103,7 @@ public class Recover extends BrokerTestCase {
     public void testRedeliverOnRecoverAsync() throws IOException, InterruptedException {
         verifyRedeliverOnRecover(recoverAsync);
     }
-    
+
     public void testRedeliveryOnRecover() throws IOException, InterruptedException {
         verifyRedeliverOnRecover(recoverSync);
     }
@@ -117,5 +117,4 @@ public class Recover extends BrokerTestCase {
         throws IOException, InterruptedException {
         verifyNoRedeliveryWithAutoAck(recoverSync);
     }
-  
 }

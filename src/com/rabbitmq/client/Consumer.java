@@ -31,6 +31,8 @@
 
 package com.rabbitmq.client;
 
+import java.io.IOException;
+
 /**
  * Interface for application callback objects to receive notifications and messages from
  * a queue by subscription.
@@ -69,7 +71,15 @@ public interface Consumer {
     void handleShutdownSignal(String consumerTag, ShutdownSignalException sig);
 
     /**
+     * Called to notify the consumer that we've received a basic.recover-ok
+     * in reply to a basic.recover some other thread sent. All messages
+     * received before this is invoked that haven't been ack'ed will be
+     * redelivered. All messages received afterwards won't be.
      *
+     * This method exists since all the Consumer callbacks are invoked by the
+     * connection main loop thread - so it's sometimes useful to allow that
+     * thread to know that the recover-ok has been received, rather than the
+     * thread which invoked basicRecover().
      */
     void handleRecoverOk();
 
@@ -79,9 +89,11 @@ public interface Consumer {
      * @param envelope packaging data for the message
      * @param properties content header data for the message
      * @param body the message body (opaque client-specific byte array)
+     * @throws IOException if the consumer hits an I/O error while processing the message
      */
     void handleDelivery(String consumerTag,
                         Envelope envelope,
                         AMQP.BasicProperties properties,
-                        byte[] body);
+                        byte[] body)
+        throws IOException;
 }

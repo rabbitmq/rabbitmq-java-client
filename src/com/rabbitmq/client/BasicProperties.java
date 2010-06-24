@@ -113,7 +113,7 @@ public interface BasicProperties {
      * @return appId field, or null if the field has not been set.
      */
     public abstract String getAppId();
-    
+
     /**
      * Set the contentType field, or null indicating the field is not set
      * @param contentType the value to set the field to
@@ -191,5 +191,4 @@ public interface BasicProperties {
      * @param appId the value to set the field to
      */
     public abstract void setAppId(String appId);
-    
 }

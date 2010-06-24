@@ -175,33 +175,27 @@ public class AMQCommand implements Command {
      * @param channel the channel on which to transmit the command
      * @throws IOException if an error is encountered
      */
-    public void transmit(AMQChannel channel) {
+    public void transmit(AMQChannel channel) throws IOException {
         int channelNumber = channel.getChannelNumber();
         AMQConnection connection = channel.getAMQConnection();
 
-        try {
+        connection.writeFrame(_method.to08().toFrame(channelNumber));
 
-            connection.writeFrame(_method.toFrame(channelNumber));
+        if (this._method.hasContent()) {
+            byte[] body = getContentBody();
 
-            if (this._method.hasContent()) {
-                byte[] body = getContentBody();
+            connection.writeFrame(_contentHeader.toFrame(channelNumber, body.length));
 
-                connection.writeFrame(_contentHeader.toFrame(channelNumber, body.length));
+            int frameMax = connection.getFrameMax();
+            int bodyPayloadMax = (frameMax == 0) ? body.length : frameMax - EMPTY_CONTENT_BODY_FRAME_SIZE;
 
-                int frameMax = connection.getFrameMax();
-                int bodyPayloadMax = (frameMax == 0) ? body.length : frameMax - EMPTY_CONTENT_BODY_FRAME_SIZE;
+            for (int offset = 0; offset < body.length; offset += bodyPayloadMax) {
+                int remaining = body.length - offset;
 
-                for (int offset = 0; offset < body.length; offset += bodyPayloadMax) {
-                    int remaining = body.length - offset;
-
-                    int fragmentLength = (remaining < bodyPayloadMax) ? remaining : bodyPayloadMax;
-                    Frame frame = Frame.fromBodyFragment(channelNumber, body, offset, fragmentLength);
-                    connection.writeFrame(frame);
-                }
+                int fragmentLength = (remaining < bodyPayloadMax) ? remaining : bodyPayloadMax;
+                Frame frame = Frame.fromBodyFragment(channelNumber, body, offset, fragmentLength);
+                connection.writeFrame(frame);
             }
-        }
-        catch (IOException io) {
-            throw new RuntimeException(io);
         }
     }
 
@@ -283,7 +277,7 @@ public class AMQCommand implements Command {
               case STATE_EXPECTING_METHOD:
                   switch (f.type) {
                     case AMQP.FRAME_METHOD: {
-                        _method = AMQImpl.readMethodFrom(f.getInputStream());
+                        _method = AMQImpl.readMethodFrom(f.getInputStream()).from08();
                         state = _method.hasContent() ? STATE_EXPECTING_CONTENT_HEADER : STATE_COMPLETE;
                         return completedCommand();
                     }

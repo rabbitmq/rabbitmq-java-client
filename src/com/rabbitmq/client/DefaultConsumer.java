@@ -72,6 +72,13 @@ public class DefaultConsumer implements Consumer {
         // no work to do
     }
 
+     /**
+     * No-op implementation of {@link Consumer#handleRecoverOk}.
+     */
+    public void handleRecoverOk() {
+        // no work to do
+    }
+
     /**
      * No-op implementation of {@link Consumer#handleRecoverOk}.
      */

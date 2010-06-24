@@ -102,6 +102,11 @@ public interface Channel extends ShutdownNotifier {
     FlowOk flow(boolean active) throws IOException;
 
     /**
+     * Return the current Channel.Flow settings.
+     */
+    FlowOk getFlow();
+
+    /**
      * Abort this channel with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
      * and message 'OK'.
      *
@@ -129,6 +134,18 @@ public interface Channel extends ShutdownNotifier {
      * @param listener the listener to use, or null indicating "don't use one".
      */
     void setReturnListener(ReturnListener listener);
+
+    /**
+     * Return the current {@link FlowListener}.
+     * @return an interface to the current flow listener.
+     */
+    FlowListener getFlowListener();
+
+    /**
+     * Set the current {@link FlowListener}.
+     * @param listener the listener to use, or null indicating "don't use one".
+     */
+    void setFlowListener(FlowListener listener);
 
     /**
      * Request specific "quality of service" settings.

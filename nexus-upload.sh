@@ -9,6 +9,9 @@ set -e
 #   GNUPG_PATH -- the path to the home directory for gnupg
 
 NEXUS_ROOT="http://$CREDS@oss.sonatype.org/service/local/staging/deploy/maven2/com/rabbitmq/amqp-client/$VERSION"
+unset http_proxy
+unset https_proxy
+unset no_proxy
 
 for artifact in $@; do
   echo "Uploading $artifact"

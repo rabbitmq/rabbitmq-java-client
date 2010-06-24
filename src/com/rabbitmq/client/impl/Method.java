@@ -33,6 +33,7 @@ package com.rabbitmq.client.impl;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.AMQImpl.MethodVisitor;
@@ -104,5 +105,60 @@ public abstract class Method implements com.rabbitmq.client.Method {
         writeArgumentsTo(argWriter);
         argWriter.flush();
         return frame;
+    }
+
+    public Method to08() {
+        if (this instanceof AMQP.Connection.Close) {
+            AMQP.Connection.Close close = (AMQP.Connection.Close) this;
+            return new AMQImpl.Connection.Close08(close.getReplyCode(),
+                                                  close.getReplyText(),
+                                                  close.getClassId(),
+                                                  close.getMethodId());
+        }
+        else if (this instanceof AMQP.Connection.CloseOk) {
+            return new AMQImpl.Connection.Close08Ok();
+        }
+        else if (this instanceof AMQP.Basic.Consume) {
+            AMQP.Basic.Consume consume = (AMQP.Basic.Consume) this;
+            return new AMQImpl.Basic.Consume(consume.getDeprecatedTicket(),
+                    consume.getQueue(),
+                    consume.getConsumerTag(),
+                    consume.getNoLocal(),
+                    consume.getNoAck(),
+                    consume.getExclusive(),
+                    consume.getNowait(),
+                    consume.getFilter()) {
+                @Override
+                public void writeArgumentsTo(MethodArgumentWriter writer) throws IOException {
+                    writer.writeShort(this.deprecatedTicket);
+                    writer.writeShortstr(this.queue);
+                    writer.writeShortstr(this.consumerTag);
+                    writer.writeBit(this.noLocal);
+                    writer.writeBit(this.noAck);
+                    writer.writeBit(this.exclusive);
+                    writer.writeBit(this.nowait);
+                    // Do not write filter
+                }
+            };
+        }
+        else {
+            return this;
+        }
+    }
+
+    public Method from08() {
+        if (this instanceof AMQP.Connection.Close08) {
+            AMQP.Connection.Close08 close08 = (AMQP.Connection.Close08) this;
+            return new AMQImpl.Connection.Close(close08.getReplyCode(),
+                                                close08.getReplyText(),
+                                                close08.getClassId(),
+                                                close08.getMethodId());
+        }
+        else if (this instanceof AMQP.Connection.Close08Ok) {
+            return new AMQImpl.Connection.CloseOk();
+        }
+        else {
+            return this;
+        }
     }
 }
