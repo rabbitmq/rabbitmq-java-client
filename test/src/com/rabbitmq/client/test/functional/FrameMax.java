@@ -35,14 +35,9 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.net.InetSocketAddress;
 
-import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.QueueingConsumer.Delivery;
-import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.SocketFrameHandler;
@@ -52,23 +47,14 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
 public class FrameMax extends BrokerTestCase {
     /* This value for FrameMax is larger than the minimum and less
      * than what Rabbit suggests. */
-    final static int FRAME_MAX = 131008;
+    final static int FRAME_MAX = 70000;
     final static int REAL_FRAME_MAX = FRAME_MAX - 8;
-    final static int TIMEOUT = 3000; /* Time to wait for messages. */
-    final static String EXCHANGE_NAME = "xchg1";
     final static String ROUTING_KEY = "something";
 
-    QueueingConsumer consumer;
+    private String queueName;
 
     public FrameMax() {
         connectionFactory = new MyConnectionFactory();
-    }
-
-    @Override
-    protected void setUp()
-        throws IOException
-    {
-        super.setUp();
         connectionFactory.setRequestedFrameMax(FRAME_MAX);
     }
 
@@ -76,19 +62,8 @@ public class FrameMax extends BrokerTestCase {
     protected void createResources()
         throws IOException
     {
-        channel.exchangeDeclare(EXCHANGE_NAME, "direct");
-        consumer = new QueueingConsumer(channel);
-        String queueName = channel.queueDeclare().getQueue();
-        channel.basicConsume(queueName, consumer);
-        channel.queueBind(queueName, EXCHANGE_NAME, ROUTING_KEY);
-    }
-
-    @Override
-    protected void releaseResources()
-        throws IOException
-    {
-        consumer = null;
-        channel.exchangeDelete(EXCHANGE_NAME);
+        queueName = channel.queueDeclare().getQueue();
+        channel.queueBind(queueName, "", ROUTING_KEY);
     }
 
     /* Frame content should be less or equal to frame-max - 8. */
@@ -97,59 +72,25 @@ public class FrameMax extends BrokerTestCase {
     {
         /* This should result in at least 3 frames. */
         int howMuch = 2*FRAME_MAX;
-        produce(howMuch);
+        basicPublishVolatile(new byte[howMuch], ROUTING_KEY);
         /* Receive everything that was sent out. */
         while (howMuch > 0) {
             try {
-                Delivery delivery = consumer.nextDelivery(TIMEOUT);
-                howMuch -= delivery.getBody().length;
-            } catch (RuntimeException e) {
-                fail(e.toString());
+                GetResponse response = channel.basicGet(queueName, false);
+                howMuch -= response.getBody().length;
+            } catch (Exception e) {
+                fail(e.getCause().toString());
             }
         }
-    }
-
-    /* Send out howMuch worth of gibberish */
-    protected void produce(int howMuch)
-        throws IOException
-    {
-        while (howMuch > 0) {
-            int size = (howMuch <= (REAL_FRAME_MAX)) ? howMuch : (REAL_FRAME_MAX);
-            publish(new byte[size]);
-            howMuch -= (REAL_FRAME_MAX);
-        }
-    }
-
-    /* Publish a non-persistant, non-immediate message. */
-    private void publish(byte[] msg)
-        throws IOException
-    {
-        channel.basicPublish(EXCHANGE_NAME, ROUTING_KEY,
-                             false, false,
-                             MessageProperties.MINIMAL_BASIC,
-                             msg);
     }
 
     /* ConnectionFactory that uses MyFrameHandler rather than
      * SocketFrameHandler. */
     private static class MyConnectionFactory extends ConnectionFactory {
-        protected FrameHandler createFrameHandler(Address addr)
+        protected FrameHandler createFrameHandler(Socket sock)
             throws IOException
         {
-            String hostName = addr.getHost();
-            int portNumber = portOrDefault(addr.getPort());
-            Socket socket = getSocketFactory().createSocket();
-            configureSocket(socket);
-            socket.connect(new InetSocketAddress(hostName, portNumber));
-            return new MyFrameHandler(socket);
-        }
-
-        /* Copy-pasted from ConnectionFactory. Should be protected,
-         * rather than private. */
-        private int portOrDefault(int port){
-            if (port != USE_DEFAULT_PORT) return port;
-            else if (isSSL()) return DEFAULT_AMQP_OVER_SSL_PORT;
-            else return DEFAULT_AMQP_PORT;
+            return new MyFrameHandler(sock);
         }
     }
 
@@ -165,25 +106,10 @@ public class FrameMax extends BrokerTestCase {
             Frame f = super.readFrame();
             int size = f.getPayload().length;
             if (size > REAL_FRAME_MAX)
-                throw new FrameTooLargeException(size, REAL_FRAME_MAX);
+                fail("Received frame of size " + size
+                     + ", which exceeds " + REAL_FRAME_MAX + ".");
             //System.out.printf("Received a frame of size %d.\n", f.getPayload().length);
             return f;
-        }
-    }
-
-    private static class FrameTooLargeException extends RuntimeException {
-        private int _frameSize;
-        private int _maxSize;
-
-        public FrameTooLargeException(int frameSize, int maxSize) {
-            _frameSize = frameSize;
-            _maxSize = maxSize;
-        }
-
-        @Override
-        public String toString() {
-            return "Received frame of size " + _frameSize
-                 + ", which exceeds " + _maxSize + ".";
         }
     }
 }
