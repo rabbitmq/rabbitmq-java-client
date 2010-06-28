@@ -105,8 +105,8 @@ public class MulticastMain {
                 Channel channel = conn.createChannel();
                 if (consumerTxSize > 0) channel.txSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
-                Queue.DeclareOk res = channel.queueDeclare();
-                String queueName = res.getQueue();
+                String queueName = "consumer-" + i;
+                channel.queueDeclare(queueName, true, false, false, null);
                 QueueingConsumer consumer = new QueueingConsumer(channel);
                 if (prefetchCount > 0) channel.basicQos(prefetchCount);
                 channel.basicConsume(queueName, autoAck, consumer);
