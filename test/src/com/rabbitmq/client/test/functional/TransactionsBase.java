@@ -55,7 +55,11 @@ public abstract class TransactionsBase
     }
 
     protected void createResources() throws IOException {
-        channel.queueDeclare(Q, false, false, false, null);
+        channel.queueDeclare(Q, declareDurableQueues(), false, false, null);
+    }
+
+    protected boolean declareDurableQueues() {
+        return false;
     }
 
     protected void releaseResources() throws IOException {
