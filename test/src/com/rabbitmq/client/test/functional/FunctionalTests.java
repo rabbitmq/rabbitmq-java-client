@@ -61,6 +61,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(InvalidAcks.class);
         suite.addTestSuite(InvalidAcksTx.class);
         suite.addTestSuite(BindToDefaultExchange.class);
+        suite.addTestSuite(UnbindAutoDeleteExchange.class);
         return suite;
     }
 }
