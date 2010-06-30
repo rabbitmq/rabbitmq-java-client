@@ -247,8 +247,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 Consumer callback = _consumers.get(m.consumerTag);
                 if (callback == null) {
                     if (defaultConsumer == null) {
-                        // No handler set, ignore.
-                        return true;
+                        // No handler set. We should blow up as this message
+                        // needs acking, just dropping it is not enough. See bug
+                        // 22587 for discussion.
+                        throw new IllegalStateException("Unsolicited delivery -" +
+                                " see Channel.setDefaultConsumer to handle this" +
+                                " case.");
                     }
                     else {
                         callback = defaultConsumer;
