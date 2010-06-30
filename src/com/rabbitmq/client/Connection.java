@@ -41,6 +41,7 @@ import java.util.Map;
  * <pre>
  * ConnectionFactory factory = new ConnectionFactory();
  * factory.setHostName(hostName);
+ * factory.setPortNumber(portNumber);
  * factory.setVirtualHost(virtualHost);
  * factory.setUsername(username);
  * factory.setPassword(password);

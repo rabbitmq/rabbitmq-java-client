@@ -57,14 +57,20 @@ import com.rabbitmq.utility.Utility;
  * To connect to a broker,
  *
  * <pre>
- * AMQConnection conn = new AMQConnection(hostName, portNumber);
- * conn.open(username, portNumber, virtualHost);
+ * ConnectionFactory factory = new {@link ConnectionFactory ConnectionFactory}();
+ * factory.setHost(hostName);
+ * factory.setPort(portNumber);
+ * factory.setVirtualHost(virtualHost);
+ * AMQConnection conn = new AMQConnection(factory, factory.{@link ConnectionFactory#createFrameHandler createFrameHandler}(new {@link Address Address}(hostName, portNumber));
+ * conn.{@link AMQConnection#start start}(false);
  * </pre>
  *
  * <pre>
- * ChannelN ch1 = conn.createChannel(1);
- * ch1.open(&quot;&quot;);
+ * {@link ChannelN ChannelN} ch1 = new {@link ChannelN ChannelN}(conn, 1);
+ * ch1.open();
  * </pre>
+ *
+ * For a saner way of connecting to a broker, see {@link Connection}.
  */
 public class AMQConnection extends ShutdownNotifierComponent implements Connection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
