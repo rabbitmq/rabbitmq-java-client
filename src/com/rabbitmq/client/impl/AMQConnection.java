@@ -70,7 +70,7 @@ import com.rabbitmq.utility.Utility;
  * ch1.open();
  * </pre>
  *
- * For a saner way of connecting to a broker, see {@link Connection}.
+ * For a better way of connecting to a broker, see {@link Connection}.
  */
 public class AMQConnection extends ShutdownNotifierComponent implements Connection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
@@ -85,7 +85,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * method is called when each new ConnectionFactory instance is
      * constructed.
      * @return a map of client properties
-     * @see Connection.getClientProperties()
+     * @see Connection#getClientProperties
      */
     public static Map<String, Object> defaultClientProperties() {
         return Frame.buildTable(new Object[] {
@@ -140,7 +140,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
-     * @param channelNumber the number of the channel to disconnect
+     * @param channel the channel to disconnect
      */
     public final void disconnectChannel(ChannelN channel) {
         _channelManager.disconnectChannel(channel);

@@ -134,9 +134,6 @@ public class ConnectionFactory implements Cloneable {
         return portOrDefault(port);
     }
 
-    /**
-     *  @return the default port to use for connections
-     */
     public void setPort(int port) {
         this.port = port;
     }
@@ -244,7 +241,7 @@ public class ConnectionFactory implements Cloneable {
      * table. Such changes will take effect when the next new
      * connection is started using this factory.
      * @return the map of client properties
-     * @see setClientProperties()
+     * @see #setClientProperties
      */
     public Map<String, Object> getClientProperties() {
         return _clientProperties;
@@ -254,7 +251,7 @@ public class ConnectionFactory implements Cloneable {
      * Replace the table of client properties that will be sent to the
      * server during subsequent connection startups.
      * @param clientProperties the map of extra client properties
-     * @see getClientProperties()
+     * @see #getClientProperties
      */
     public void setClientProperties(Map<String, Object> clientProperties) {
         _clientProperties = clientProperties;
