@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.io.IOException;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -57,7 +58,7 @@ public class ExchangeDeclare extends BrokerTestCase {
     }
 
     // Note: this will close the channel
-    public static void verifyNotEquivalent(Channel channel, String name,
+    public void verifyNotEquivalent(Channel channel, String name,
             String type, boolean durable, boolean autoDelete,
             Map<String, Object> args) throws IOException {
         channel.exchangeDeclarePassive(name);
@@ -65,6 +66,7 @@ public class ExchangeDeclare extends BrokerTestCase {
             channel.exchangeDeclare(name, type, durable, autoDelete, args);
             fail("Exchange was supposed to be not equivalent");
         } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.NOT_ALLOWED, ioe);
             return;
         }
     }
