@@ -98,6 +98,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile FlowListener flowListener = null;
 
+    /** Reference to the currently-active default consumer, or null if there is
+     *  none.
+     */
+    public volatile Consumer defaultConsumer = null;
+
     /**
      * Construct a new channel on the given connection with the given
      * channel number. Usually not called directly - call
@@ -146,6 +151,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public void setFlowListener(FlowListener listener) {
         flowListener = listener;
+    }
+
+    /** Returns the current default consumer. */
+    public Consumer getDefaultConsumer() {
+        return defaultConsumer;
+    }
+
+    /**
+     * Sets the current default consumer.
+     * A null argument is interpreted to mean "do not use a default consumer".
+     */
+    public void setDefaultConsumer(Consumer consumer) {
+        defaultConsumer = consumer;
     }
 
     /**
@@ -228,8 +246,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
                 Consumer callback = _consumers.get(m.consumerTag);
                 if (callback == null) {
-                    // FIXME: what to do when we get such an unsolicited delivery?
-                    throw new UnsupportedOperationException("FIXME unsolicited delivery");
+                    if (defaultConsumer == null) {
+                        // No handler set. We should blow up as this message
+                        // needs acking, just dropping it is not enough. See bug
+                        // 22587 for discussion.
+                        throw new IllegalStateException("Unsolicited delivery -" +
+                                " see Channel.setDefaultConsumer to handle this" +
+                                " case.");
+                    }
+                    else {
+                        callback = defaultConsumer;
+                    }
                 }
 
                 Envelope envelope = new Envelope(m.deliveryTag,
