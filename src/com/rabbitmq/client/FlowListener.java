@@ -29,20 +29,15 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client;
 
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.AMQP.BasicProperties;
+import java.io.IOException;
 
-public class PersistentTransactions extends TransactionsBase {
-
-    protected BasicProperties getMessageProperties() {
-        return MessageProperties.PERSISTENT_TEXT_PLAIN;
-    }
-
-    @Override
-    protected boolean declareDurableQueues() {
-        return true;
-    }
-
+/**
+ * Implement this interface in order to be notified of Channel.Flow
+ * events.
+ */
+public interface FlowListener {
+    void handleFlow(boolean active)
+        throws IOException;
 }

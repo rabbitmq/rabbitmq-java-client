@@ -37,6 +37,7 @@ import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.FlowListener;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ReturnListener;
@@ -93,6 +94,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile ReturnListener returnListener = null;
 
+    /** Reference to the currently-active FlowListener, or null if there is none.
+     */
+    public volatile FlowListener flowListener = null;
+
+    /** Reference to the currently-active default consumer, or null if there is
+     *  none.
+     */
+    public volatile Consumer defaultConsumer = null;
+
     /**
      * Construct a new channel on the given connection with the given
      * channel number. Usually not called directly - call
@@ -128,6 +138,32 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public void setReturnListener(ReturnListener listener) {
         returnListener = listener;
+    }
+
+    /** Returns the current FlowListener. */
+    public FlowListener getFlowListener() {
+        return flowListener;
+    }
+
+    /**
+     * Sets the current FlowListener.
+     * A null argument is interpreted to mean "do not use a flow listener".
+     */
+    public void setFlowListener(FlowListener listener) {
+        flowListener = listener;
+    }
+
+    /** Returns the current default consumer. */
+    public Consumer getDefaultConsumer() {
+        return defaultConsumer;
+    }
+
+    /**
+     * Sets the current default consumer.
+     * A null argument is interpreted to mean "do not use a default consumer".
+     */
+    public void setDefaultConsumer(Consumer consumer) {
+        defaultConsumer = consumer;
     }
 
     /**
@@ -182,7 +218,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // If we are not, however, then we are in a quiescing, or
         // shutting-down state as the result of an application
         // decision to close this channel, and we are to discard all
-        // incoming commands except for close and close-ok.
+        // incoming commands except for a close and close-ok.
 
         Method method = command.getMethod();
 
@@ -210,8 +246,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
                 Consumer callback = _consumers.get(m.consumerTag);
                 if (callback == null) {
-                    // FIXME: what to do when we get such an unsolicited delivery?
-                    throw new UnsupportedOperationException("FIXME unsolicited delivery");
+                    if (defaultConsumer == null) {
+                        // No handler set. We should blow up as this message
+                        // needs acking, just dropping it is not enough. See bug
+                        // 22587 for discussion.
+                        throw new IllegalStateException("Unsolicited delivery -" +
+                                " see Channel.setDefaultConsumer to handle this" +
+                                " case.");
+                    }
+                    else {
+                        callback = defaultConsumer;
+                    }
                 }
 
                 Envelope envelope = new Envelope(m.deliveryTag,
@@ -255,6 +300,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     _blockContent = !channelFlow.active;
                     transmit(new Channel.FlowOk(channelFlow.active));
                     _channelMutex.notifyAll();
+                }
+                FlowListener l = getFlowListener();
+                if (l != null) {
+                    try {
+                        l.handleFlow(channelFlow.active);
+                    } catch (Throwable ex) {
+                        _connection.getExceptionHandler().handleFlowListenerException(this, ex);
+                    }
                 }
                 return true;
             } else if (method instanceof Basic.RecoverOk) {
@@ -686,12 +739,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    /** Public API - {@inheritDoc} */
+     /** Public API - {@inheritDoc} */
     public Basic.RecoverOk basicRecover(boolean requeue)
         throws IOException
     {
         return (Basic.RecoverOk) exnWrappingRpc(new Basic.Recover(requeue)).getMethod();
     }
+
 
     /** Public API - {@inheritDoc} */
     public void basicRecoverAsync(boolean requeue)
@@ -725,4 +779,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Channel.FlowOk flow(final boolean a) throws IOException {
         return (Channel.FlowOk) exnWrappingRpc(new Channel.Flow() {{active = a;}}).getMethod();
     }
+
+    /** Public API - {@inheritDoc} */
+    public Channel.FlowOk getFlow() {
+        return new Channel.FlowOk(!_blockContent);
+    }
+
 }

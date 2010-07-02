@@ -197,6 +197,10 @@ public class AMQConnectionTest extends TestCase {
             fail("handleReturnListenerException: " + ex);
         }
 
+        public void handleFlowListenerException(Channel ch, Throwable ex) {
+            fail("handleFlowListenerException: " + ex);
+        }
+
         public void handleConsumerException(Channel ch,
                                             Throwable ex,
                                             Consumer c,

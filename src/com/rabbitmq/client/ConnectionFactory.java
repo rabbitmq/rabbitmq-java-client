@@ -335,7 +335,13 @@ public class ConnectionFactory implements Cloneable {
         Socket socket = factory.createSocket();
         configureSocket(socket);
         socket.connect(new InetSocketAddress(hostName, portNumber));
-        return new SocketFrameHandler(socket);
+        return createFrameHandler(socket);
+    }
+
+    protected FrameHandler createFrameHandler(Socket sock)
+        throws IOException
+    {
+        return new SocketFrameHandler(sock);
     }
 
     /**
