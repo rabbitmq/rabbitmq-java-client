@@ -26,7 +26,7 @@
     <pathelement path="${test.javac.out}"/>
   </path>
 
-  <property name="AMQP_SPEC_JSON_PATH" value="${codegen.dir}/amqp-${spec.version}.json ${codegen.dir}/rabbitmq-0.8-extensions.json"/>
+  <property name="AMQP_SPEC_JSON_PATH" value="${codegen.dir}/amqp-rabbitmq-${spec.version}.json"/>
   
   <target name="amqp-generate-check" description="check if codegen needs to be run">
     <uptodate property="amqp.generate.notRequired">
