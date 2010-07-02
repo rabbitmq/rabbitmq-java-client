@@ -54,23 +54,8 @@ import com.rabbitmq.utility.Utility;
 /**
  * Concrete class representing and managing an AMQP connection to a broker.
  * <p>
- * To connect to a broker,
- *
- * <pre>
- * ConnectionFactory factory = new {@link ConnectionFactory ConnectionFactory}();
- * factory.setHost(hostName);
- * factory.setPort(portNumber);
- * factory.setVirtualHost(virtualHost);
- * AMQConnection conn = new AMQConnection(factory, factory.{@link ConnectionFactory#createFrameHandler createFrameHandler}(new {@link Address Address}(hostName, portNumber));
- * conn.{@link AMQConnection#start start}(false);
- * </pre>
- *
- * <pre>
- * {@link ChannelN ChannelN} ch1 = new {@link ChannelN ChannelN}(conn, 1);
- * ch1.open();
- * </pre>
- *
- * For a better way of connecting to a broker, see {@link Connection}.
+ * To create a broker connection, use {@link ConnectionFactory}.  See {@link Connection}
+ * for an example.
  */
 public class AMQConnection extends ShutdownNotifierComponent implements Connection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */

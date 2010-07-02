@@ -134,6 +134,10 @@ public class ConnectionFactory implements Cloneable {
         return portOrDefault(port);
     }
 
+    /**
+     * Set the target port.
+     * @param port the default port to use for connections
+     */
     public void setPort(int port) {
         this.port = port;
     }
