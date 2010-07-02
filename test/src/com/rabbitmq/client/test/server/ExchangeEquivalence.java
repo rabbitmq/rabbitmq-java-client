@@ -46,7 +46,7 @@ public class ExchangeEquivalence extends BrokerTestCase {
 
     public void testAlternateExchangeEquivalence() throws IOException {
         channel.exchangeDeclare("alternate", "direct", false, false, args);
-        ExchangeDeclare.verifyEquivalent(channel, "alternate", "direct", false,
+        ExchangeDeclare.verifyEquivalent(this, "alternate", "direct", false,
                 false, args);
     }
 
@@ -54,7 +54,7 @@ public class ExchangeEquivalence extends BrokerTestCase {
         channel.exchangeDeclare("alternate", "direct", false, false, args);
         Map<String, Object> altargs = new HashMap<String, Object>();
         altargs.put("alternate-exchange", "somewhere");
-        ExchangeDeclare.verifyNotEquivalent(channel, "alternate", "direct",
+        ExchangeDeclare.verifyNotEquivalent(this, "alternate", "direct",
                 false, false, altargs);
     }
 }
