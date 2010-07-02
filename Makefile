@@ -7,7 +7,7 @@ SRC_ARCHIVE=$(PACKAGE_NAME)-$(VERSION)
 SIGNING_KEY=056E8E56
 GNUPG_PATH=~
 
-WEB_URL=http://stage.rabbitmq.com/
+WEB_URL=http://www.rabbitmq.com/
 NEXUS_STAGE_URL=http://oss.sonatype.org/service/local/staging/deploy/maven2
 
 AMQP_CODEGEN_DIR=$(shell fgrep sibling.codegen.dir build.properties | sed -e 's:sibling\.codegen\.dir=::')
@@ -103,3 +103,4 @@ promote-maven-bundle:
 	    -DtargetRepositoryId=releases \
 	    -B \
 	)
+

@@ -148,6 +148,40 @@ public interface Channel extends ShutdownNotifier {
     void setFlowListener(FlowListener listener);
 
     /**
+     * Get the current default consumer. @see setDefaultConsumer for rationale.
+     * @return an interface to the current default consumer.
+     */
+    Consumer getDefaultConsumer();
+
+    /**
+     * Set the current default consumer.
+     *
+     * Under certain circumstances it is possible for a channel to receive a
+     * message delivery which does not match any consumer which is currently
+     * set up via basicConsume(). This will occur after the following sequence
+     * of events:
+     *
+     * ctag = basicConsume(queue, consumer); // i.e. with explicit acks
+     * // some deliveries take place but are not acked
+     * basicCancel(ctag);
+     * basicRecover(false);
+     *
+     * Since requeue is specified to be false in the basicRecover, the spec
+     * states that the message must be redelivered to "the original recipient"
+     * - i.e. the same channel / consumer-tag. But the consumer is no longer
+     * active.
+     *
+     * In these circumstances, you can register a default consumer to handle
+     * such deliveries. If no default consumer is registered an
+     * IllegalStateException will be thrown when such a delivery arrives.
+     *
+     * Most people will not need to use this.
+     *
+     * @param consumer the consumer to use, or null indicating "don't use one".
+     */
+    void setDefaultConsumer(Consumer consumer);
+
+    /**
      * Request specific "quality of service" settings.
      *
      * These settings impose limits on the amount of data the server

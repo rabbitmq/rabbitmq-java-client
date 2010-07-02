@@ -117,4 +117,5 @@ public class Recover extends BrokerTestCase {
         throws IOException, InterruptedException {
         verifyNoRedeliveryWithAutoAck(recoverSync);
     }
+  
 }

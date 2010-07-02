@@ -335,7 +335,13 @@ public class ConnectionFactory implements Cloneable {
         Socket socket = factory.createSocket();
         configureSocket(socket);
         socket.connect(new InetSocketAddress(hostName, portNumber));
-        return new SocketFrameHandler(socket);
+        return createFrameHandler(socket);
+    }
+
+    protected FrameHandler createFrameHandler(Socket sock)
+        throws IOException
+    {
+        return new SocketFrameHandler(sock);
     }
 
     /**
@@ -356,27 +362,25 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Create a new broker connection
-     * @param addresses an array of known broker addresses (hostname/port pairs) to try in order
+     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(Address[] addresses)
+    public Connection newConnection(Address[] addrs)
         throws IOException
     {
         IOException lastException = null;
-        for (Address address : addresses) {
+        for (Address addr : addrs) {
             try {
-                FrameHandler frameHandler = createFrameHandler(address);
-                AMQConnection conn = new AMQConnection(this,
+              FrameHandler frameHandler = createFrameHandler(addr);
+              AMQConnection conn = new AMQConnection(this,
                                                      frameHandler);
-                conn.start();
-                return conn;
-
+              conn.start();
+              return conn;
             } catch (IOException e) {
-                lastException = e;
+              lastException = e;
             }
         }
-
         if (lastException == null) {
             throw new IOException("failed to connect");
         } else {
@@ -384,17 +388,11 @@ public class ConnectionFactory implements Cloneable {
         }
     }
 
-    /**
-     * Create a new broker connection
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
     public Connection newConnection() throws IOException {
         return newConnection(new Address[] {
-                                 new Address(getHost(), getPort())
-                             });
+                                 new Address(getHost(), getPort())});
     }
-
+  
     @Override public ConnectionFactory clone(){
         try {
             return (ConnectionFactory)super.clone(); 

@@ -75,7 +75,7 @@ public class TestMain {
             runProducerConsumerTest(hostName, portNumber, 0);
             runProducerConsumerTest(hostName, portNumber, -1);
 
-            //runConnectionShutdownTests(hostName, portNumber);
+            runConnectionShutdownTests(hostName, portNumber);
 
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
@@ -96,7 +96,8 @@ public class TestMain {
             setPort(port);
         }
 
-        protected FrameHandler createFrameHandler(Address addr) {
+        protected FrameHandler createFrameHandler(Address addr)
+            throws IOException {
 
             String hostName = addr.getHost();
             int portNumber = addr.getPort();
@@ -109,11 +110,7 @@ public class TestMain {
         }
     }
 
-<<<<<<< local
-    public static void runConnectionNegotiationTest(String hostName, int portNumber) {
-=======
     public static void runConnectionNegotiationTest(final String hostName, final int portNumber) throws IOException {
->>>>>>> other
 
         Connection conn;
 
@@ -121,7 +118,7 @@ public class TestMain {
             conn = new TestConnectionFactory(0, 1, hostName, portNumber).newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
-        } catch (Exception e) {}
+        } catch (IOException e) {}
 
         ConnectionFactory factory;
         factory = new ConnectionFactory();
@@ -133,7 +130,7 @@ public class TestMain {
             conn = factory.newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
-        } catch (Exception e) {}
+        } catch (IOException e) {}
 
         factory = new ConnectionFactory();
         factory.setRequestedChannelMax(10);
@@ -173,11 +170,7 @@ public class TestMain {
         }
     }
 
-<<<<<<< local
-    public static void runConnectionShutdownTests(String hostName, int portNumber) {
-=======
     public static void runConnectionShutdownTests(final String hostName, final int portNumber) throws IOException {
->>>>>>> other
         Connection conn;
         Channel ch;
         // Test what happens when a connection is shut down w/o first
@@ -188,9 +181,10 @@ public class TestMain {
         // Test what happens when we provoke an error
         conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
         ch = conn.createChannel();
-        AMQP.Exchange.DeclareOk ok = ch.exchangeDeclare("mumble", "invalid");
-        if (ok != null) {
+        try {
+            ch.exchangeDeclare("mumble", "invalid");
             throw new RuntimeException("expected shutdown");
+        } catch (IOException e) {
         }
         // Test what happens when we just kill the connection
         conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
@@ -198,16 +192,11 @@ public class TestMain {
         ((SocketFrameHandler)((AMQConnection)conn).getFrameHandler()).close();
     }
 
-<<<<<<< local
-    public static void runProducerConsumerTest(String hostName, int portNumber, int commitEvery) {
-        Connection connp = new ConnectionFactory().newConnection(hostName, portNumber);
-=======
     public static void runProducerConsumerTest(String hostName, int portNumber, int commitEvery) throws IOException {
         ConnectionFactory cfconnp = new ConnectionFactory();
         cfconnp.setHost(hostName);
         cfconnp.setPort(portNumber);
         Connection connp = cfconnp.newConnection();
->>>>>>> other
         ProducerMain p = new ProducerMain(connp, 2000, 10000, false, commitEvery, true);
         new Thread(p).start();
         ConnectionFactory cfconnc = new ConnectionFactory();
@@ -241,7 +230,7 @@ public class TestMain {
         _silent = silent;
     }
 
-    public Channel createChannel() {
+    public Channel createChannel() throws IOException {
         return _connection.createChannel();
     }
 
@@ -250,14 +239,14 @@ public class TestMain {
             System.out.println(s);
     }
 
-    public void run() {
+    public void run() throws IOException {
         final int batchSize = 5;
 
         _ch1 = createChannel();
 
         _ch1.setReturnListener(new ReturnListener() {
-            public void handleBasicReturn(int replyCode, String replyText, String exchange, String routingKey,
-                                          AMQP.BasicProperties properties, byte[] body) {
+            public void handleBasicReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body)
+                    throws IOException {
                 Method method = new AMQImpl.Basic.Return(replyCode, replyText, exchange, routingKey);
                 log("Handling return with body " + new String(body));
                 returnCell.set(new Object[] { method, properties, body });
@@ -301,7 +290,7 @@ public class TestMain {
         log("Leaving TestMain.run().");
     }
 
-    public class UnexpectedSuccessException {
+    public class UnexpectedSuccessException extends IOException {
         /**
          * Default version UID for serializable class
          */
@@ -350,8 +339,7 @@ public class TestMain {
             _counter = 0;
         }
 
-        @Override public void handleDelivery(String consumer_Tag, Envelope envelope, AMQP.BasicProperties properties,
-                                             byte[] body) {
+        @Override public void handleDelivery(String consumer_Tag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
             log("Async message (" + _counter + "," + (_noAck ? "noack" : "ack") + "): " + new String(body));
             _counter++;
             if (_counter == _batchSize) {
@@ -364,7 +352,7 @@ public class TestMain {
         }
     }
 
-    public void sendLotsOfTrivialMessages(int batchSize, String routingKey) {
+    public void sendLotsOfTrivialMessages(int batchSize, String routingKey) throws IOException {
         for (int i = 0; i < batchSize; i++) {
             String messageText = "(" + _messageId + ") On the third tone, the time will be " + new java.util.Date();
             _messageId++;
@@ -391,7 +379,7 @@ public class TestMain {
         }
     }
 
-    public int drain(int batchSize, String queueName, boolean noAck) {
+    public int drain(int batchSize, String queueName, boolean noAck) throws IOException {
         long latestTag = 0;
         boolean notEmpty = true;
         int remaining = batchSize;
@@ -419,15 +407,15 @@ public class TestMain {
         return count;
     }
 
-    public void publish1(String x, String routingKey, String body) {
+    public void publish1(String x, String routingKey, String body) throws IOException {
         _ch1.basicPublish(x, routingKey, MessageProperties.TEXT_PLAIN, body.getBytes());
     }
 
-    public void publish2(String x, String routingKey, String body) {
+    public void publish2(String x, String routingKey, String body) throws IOException {
         _ch1.basicPublish(x, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, body.getBytes());
     }
 
-    public void tryTopics() {
+    public void tryTopics() throws IOException {
         String q1 = "tryTopicsQueue1";
         String q2 = "tryTopicsQueue2";
         String q3 = "tryTopicsQueue3";
@@ -435,7 +423,7 @@ public class TestMain {
         _ch1.queueDeclare(q1, false, false, false, null);
         _ch1.queueDeclare(q2, false, false, false, null);
         _ch1.queueDeclare(q3, false, false, false, null);
-        _ch1.exchangeDeclare(x, "topic", false, null);
+        _ch1.exchangeDeclare(x, "topic", false, true, null);
         _ch1.queueBind(q1, x, "test.#");
         _ch1.queueBind(q2, x, "test.test");
         _ch1.queueBind(q3, x, "*.test.#");
@@ -456,7 +444,8 @@ public class TestMain {
         _ch1.queueDelete(q3, true, true);
         _ch1.queueDelete(q2, true, true);
         _ch1.queueDelete(q1, true, true);
-        _ch1.exchangeDelete(x);
+        // We created the exchange auto_delete - it should be gone by this point.
+        // ch1.exchangeDelete(x);
     }
 
     public void doBasicReturn(BlockingCell cell, int expectedCode) {
@@ -471,11 +460,11 @@ public class TestMain {
         }
     }
 
-    public void tryBasicReturn() {
+    public void tryBasicReturn() throws IOException {
         log("About to try mandatory/immediate publications");
 
         String mx = "mandatoryTestExchange";
-        _ch1.exchangeDeclare(mx, "fanout", false, null);
+        _ch1.exchangeDeclare(mx, "fanout", false, true, null);
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());
@@ -502,7 +491,6 @@ public class TestMain {
         drain(1, mq, true);
         _ch1.queueDelete(mq, true, true);
 
-	_ch1.exchangeDelete(mx);
         log("Completed basic.return testing.");
     }
 
@@ -516,7 +504,7 @@ public class TestMain {
         }
     }
 
-    public void tryTransaction(String queueName) {
+    public void tryTransaction(String queueName) throws IOException {
 
         GetResponse c;
 
