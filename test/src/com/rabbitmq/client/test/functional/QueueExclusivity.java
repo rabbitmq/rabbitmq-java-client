@@ -34,6 +34,7 @@ package com.rabbitmq.client.test.functional;
 import java.io.IOException;
 import java.util.HashMap;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
