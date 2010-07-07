@@ -67,6 +67,7 @@ public class QueueExclusivity extends BrokerTestCase {
         try {
             channel.queueDeclarePassive(q);
         } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             return;
         }
         fail("Passive queue declaration of an exclusive queue from another connection should fail");
@@ -78,6 +79,7 @@ public class QueueExclusivity extends BrokerTestCase {
         try {
             channel.queueDeclare(q, false, true, false, noArgs);
         } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             return;
         }
         fail("Active queue declaration of an exclusive queue from another connection should fail");
@@ -88,6 +90,7 @@ public class QueueExclusivity extends BrokerTestCase {
         try {
             channel.basicConsume(q, c);
         } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             return;
         }
         fail("Exclusive queue should be locked for basic consume from another connection");
@@ -97,6 +100,7 @@ public class QueueExclusivity extends BrokerTestCase {
         try {
             channel.queuePurge(q);
         } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             return;
         }
         fail("Exclusive queue should be locked for queue purge from another connection");
@@ -106,6 +110,7 @@ public class QueueExclusivity extends BrokerTestCase {
         try {
             channel.queueDelete(q);
         } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             return;
         }
         fail("Exclusive queue should be locked for queue delete from another connection");
@@ -115,6 +120,7 @@ public class QueueExclusivity extends BrokerTestCase {
         try {
             channel.queueBind(q, "", ""); // NB uses default exchange
         } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             return;
         }
         fail("Exclusive queue should be locked for queue bind from another connection");
@@ -132,6 +138,7 @@ public class QueueExclusivity extends BrokerTestCase {
         try {
             channel.queueUnbind(q, "", "");
         } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             return;
         }
         fail("Exclusive queue should be locked for queue unbind from another connection");
@@ -141,6 +148,7 @@ public class QueueExclusivity extends BrokerTestCase {
         try {
             channel.basicGet(q, true);
         } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             return;
         }
         fail("Exclusive queue should be locked for basic get from another connection");
