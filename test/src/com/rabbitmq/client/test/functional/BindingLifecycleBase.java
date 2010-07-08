@@ -154,8 +154,8 @@ public class BindingLifecycleBase extends BrokerTestCase {
       channel.queueBind(binding.q, binding.x, binding.k);
       sendRoutable(binding);
     }
-    catch (Exception e) {
-      // do nothing, this is the correct behaviour
+    catch (IOException e) {
+      checkShutdownSignal(AMQP.NOT_FOUND, e);
       channel = null;
       return;
     }

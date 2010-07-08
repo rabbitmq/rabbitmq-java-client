@@ -137,8 +137,8 @@ public class BindingLifecycle extends BindingLifecycleBase {
         try {
             channel.exchangeDelete(binding.x, true);
         }
-        catch (Exception e) {
-            // do nothing, this is the correct behaviour
+        catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
             openChannel();
             deleteExchangeAndQueue(binding);
             return;
