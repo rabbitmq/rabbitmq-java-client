@@ -287,16 +287,7 @@ public class Permissions extends BrokerTestCase
             test.with(name);
             assertTrue(msg, exp);
         } catch (IOException e) {
-            assertFalse(msg, exp);
-            Throwable t = e.getCause();
-            assertTrue(msg, t instanceof ShutdownSignalException);
-            Object r = ((ShutdownSignalException)t).getReason();
-            assertTrue(msg, r instanceof Command);
-            Method m = ((Command)r).getMethod();
-            assertTrue(msg, m instanceof AMQP.Channel.Close);
-            assertEquals(msg,
-                         AMQP.ACCESS_REFUSED,
-                         ((AMQP.Channel.Close)m).getReplyCode());
+            checkShutdownSignal(AMQP.ACCESS_REFUSED, e);
             //This fails due to bug 20296
             //openChannel();
             channel = connection.createChannel(channel.getChannelNumber() + 1);
