@@ -248,8 +248,9 @@ public abstract class TransactionsBase
             txCommit();
             fail("expected exception");
         }
-        catch (IOException e) {}
-        catch (AlreadyClosedException e) {}
+        catch (IOException e) {
+            checkShutdownSignal(AMQP.NOT_FOUND, e);
+        }
         connection = null;
         openConnection();
     }
