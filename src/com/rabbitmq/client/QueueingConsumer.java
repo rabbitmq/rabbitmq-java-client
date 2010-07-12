@@ -49,9 +49,9 @@ public class QueueingConsumer extends DefaultConsumer {
     // throw a shutdown signal exception.
     private volatile ShutdownSignalException _shutdown;
 
-    // Marker object used to signal the queue is in shutdown mode. 
+    // Marker object used to signal the queue is in shutdown mode.
     // It is only there to wake up consumers. The canonical representation
-    // of shutting down is the presence of _shutdown. 
+    // of shutting down is the presence of _shutdown.
     // Invariant: This is never on _queue unless _shutdown != null.
     private static final Delivery POISON = new Delivery(null, null, null);
 
@@ -59,14 +59,14 @@ public class QueueingConsumer extends DefaultConsumer {
         this(ch, new LinkedBlockingQueue<Delivery>());
     }
 
-    public QueueingConsumer(Channel ch, BlockingQueue<Delivery> q)
-    {
+    public QueueingConsumer(Channel ch, BlockingQueue<Delivery> q) {
         super(ch);
         this._queue = q;
     }
 
-    @Override public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
-        _shutdown = sig; 
+    @Override public void handleShutdownSignal(String consumerTag,
+                                               ShutdownSignalException sig) {
+        _shutdown = sig;
         _queue.add(POISON);
     }
 
@@ -122,8 +122,9 @@ public class QueueingConsumer extends DefaultConsumer {
     /**
      * Check if we are in shutdown mode and if so throw an exception.
      */
-    private void checkShutdown(){
-      if(_shutdown != null) throw Utility.fixStackTrace(_shutdown);
+    private void checkShutdown() {
+        if (_shutdown != null)
+            throw Utility.fixStackTrace(_shutdown);
     }
 
     /**
@@ -131,13 +132,20 @@ public class QueueingConsumer extends DefaultConsumer {
      * If this is POISON we are in shutdown mode, throw _shutdown
      * If this is null, we may be in shutdown mode. Check and see.
      */
-    private Delivery handle(Delivery delivery)
-    {
-      if(delivery == POISON || (delivery == null && _shutdown != null)){
-        if(delivery == POISON) _queue.add(POISON);
-        throw Utility.fixStackTrace(_shutdown);
-      }
-      return delivery;
+    private Delivery handle(Delivery delivery) {
+        if (delivery == POISON ||
+            delivery == null && _shutdown != null) {
+            if (delivery == POISON) {
+                _queue.add(POISON);
+                if (_shutdown == null) {
+                    throw new IllegalStateException(
+                        "POISON in queue, but null _shutdown. " +
+                        "This should never happen, please report as a BUG");
+                }
+            }
+            throw Utility.fixStackTrace(_shutdown);
+        }
+        return delivery;
     }
 
     /**
@@ -162,7 +170,6 @@ public class QueueingConsumer extends DefaultConsumer {
     public Delivery nextDelivery(long timeout)
         throws InterruptedException, ShutdownSignalException
     {
-        checkShutdown();
         return handle(_queue.poll(timeout, TimeUnit.MILLISECONDS));
     }
 }

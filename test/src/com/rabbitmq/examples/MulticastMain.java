@@ -56,6 +56,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
@@ -85,13 +86,15 @@ public class MulticastMain {
             int maxRedirects     = intArg(cmd, 'd', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
             List flags           = lstArg(cmd, 'f');
+            int frameMax         = intArg(cmd, 'M', 0);
 
             //setup
             String id = UUID.randomUUID().toString();
-            Stats stats = new Stats(1000L * samplingInterval);            
+            Stats stats = new Stats(1000L * samplingInterval);
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(hostName);
             factory.setPort(portNumber);
+            factory.setRequestedFrameMax(frameMax);
 
             Thread[] consumerThreads = new Thread[consumerCount];
             Connection[] consumerConnections = new Connection[consumerCount];
@@ -102,8 +105,9 @@ public class MulticastMain {
                 Channel channel = conn.createChannel();
                 if (consumerTxSize > 0) channel.txSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
-                Queue.DeclareOk res = channel.queueDeclare();
-                String queueName = res.getQueue();
+                String queueName =
+                        channel.queueDeclare("", flags.contains("persistent"),
+                                             true, false, null).getQueue();
                 QueueingConsumer consumer = new QueueingConsumer(channel);
                 if (prefetchCount > 0) channel.basicQos(prefetchCount);
                 channel.basicConsume(queueName, autoAck, consumer);
@@ -124,11 +128,12 @@ public class MulticastMain {
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
-                Thread t =
-                    new Thread(new Producer(channel, exchangeName, id,
-                                            flags, producerTxSize,
-                                            1000L * samplingInterval,
-                                            rateLimit, minMsgSize, timeLimit));
+                final Producer p = new Producer(channel, exchangeName, id,
+                                                   flags, producerTxSize,
+                                                   1000L * samplingInterval,
+                                                   rateLimit, minMsgSize, timeLimit);
+                channel.setReturnListener(p);                
+                Thread t = new Thread(p);
                 producerThreads[i] = t;
                 t.start();
             }
@@ -175,6 +180,7 @@ public class MulticastMain {
         Option flag =     new Option("f", "flag",      true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(flag);
+        options.addOption(new Option("M", "framemax",  true, "frame max"));
         return options;
     }
 
@@ -194,7 +200,7 @@ public class MulticastMain {
         return Arrays.asList(vals);
     }
 
-    public static class Producer implements Runnable {
+    public static class Producer implements Runnable, ReturnListener {
 
         private Channel channel;
         private String  exchangeName;
@@ -212,6 +218,7 @@ public class MulticastMain {
         private long    startTime;
         private long    lastStatsTime;
         private int     msgCount;
+        private int     basicReturnCount;
 
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
@@ -231,6 +238,23 @@ public class MulticastMain {
             this.message      = new byte[minMsgSize];
         }
 
+        public void handleBasicReturn(int replyCode,
+                                      String replyText,
+                                      String exchange,
+                                      String routingKey,
+                                      AMQP.BasicProperties properties,
+                                      byte[] body) throws IOException {
+            logBasicReturn();
+        }
+
+        public synchronized void logBasicReturn() {
+            basicReturnCount++;
+        }
+
+        public synchronized void resetBasicReturns() {
+            basicReturnCount = 0;
+        }
+
         public void run() {
 
             long now;
@@ -240,10 +264,12 @@ public class MulticastMain {
 
             try {
 
-                for (; timeLimit == 0 || now < startTime + timeLimit;
-                     totalMsgCount++, msgCount++) {
+                while (timeLimit == 0 || now < startTime + timeLimit) {
                     delay(now);
                     publish(createMessage(totalMsgCount));
+		    totalMsgCount++;
+		    msgCount++;
+
                     if (txSize != 0 && totalMsgCount % txSize == 0) {
                         channel.txCommit();
                     }
@@ -257,7 +283,7 @@ public class MulticastMain {
             }
 
             System.out.println("sending rate avg: " +
-                               (totalMsgCount * 1000 / (now - startTime)) +
+                               (totalMsgCount * 1000L / (now - startTime)) +
                                " msg/s");
 
         }
@@ -286,8 +312,12 @@ public class MulticastMain {
             }
             if (elapsed > interval) {
                 System.out.println("sending rate: " +
-                                   (msgCount * 1000 / elapsed) +
-                                   " msg/s");
+                                   (msgCount * 1000L / elapsed) +
+                                   " msg/s" +
+                                   ", basic returns: " +
+                                   (basicReturnCount * 1000L / elapsed) +
+                                   " ret/s");
+                resetBasicReturns();
                 msgCount = 0;
                 lastStatsTime = now;
             }
@@ -346,8 +376,7 @@ public class MulticastMain {
 
             try {
 
-                for (; timeLimit == 0 || now < startTime + timeLimit;
-                     totalMsgCount++) {
+                while (timeLimit == 0 || now < startTime + timeLimit) {
                     Delivery delivery;
                     if (timeLimit == 0) {
                         delivery = q.nextDelivery();
@@ -355,6 +384,7 @@ public class MulticastMain {
                         delivery = q.nextDelivery(startTime + timeLimit - now);
                         if (delivery == null) break;
                     }
+		    totalMsgCount++;
 
                     DataInputStream d = new DataInputStream(new ByteArrayInputStream(delivery.getBody()));
                     int msgSeq = d.readInt();
@@ -387,7 +417,7 @@ public class MulticastMain {
             long elapsed = now - startTime;
             if (elapsed > 0) {
                 System.out.println("recving rate avg: " +
-                                   (totalMsgCount * 1000 / elapsed) +
+                                   (totalMsgCount * 1000L / elapsed) +
                                    " msg/s");
             }
         }

@@ -32,7 +32,6 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.test.Bug20004Test;
-import com.rabbitmq.client.test.server.Permissions;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
@@ -44,6 +43,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(Routing.class);
         suite.addTestSuite(BindingLifecycle.class);
         suite.addTestSuite(Recover.class);
+        suite.addTestSuite(TransactionalRecover.class);
         suite.addTestSuite(Transactions.class);
         suite.addTestSuite(PersistentTransactions.class);
         suite.addTestSuite(RequeueOnConnectionClose.class);
@@ -51,8 +51,18 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(DurableOnTransient.class);
         suite.addTestSuite(NoRequeueOnCancel.class);
         suite.addTestSuite(Bug20004Test.class);
+        suite.addTestSuite(ExchangeDeleteIfUnused.class);
         suite.addTestSuite(QosTests.class);
         suite.addTestSuite(AlternateExchange.class);
+        suite.addTestSuite(ExchangeDeclare.class);
+        suite.addTestSuite(FrameMax.class);
+        suite.addTestSuite(QueueLifecycle.class);
+        suite.addTestSuite(QueueExclusivity.class);
+        suite.addTestSuite(InvalidAcks.class);
+        suite.addTestSuite(InvalidAcksTx.class);
+        suite.addTestSuite(BindToDefaultExchange.class);
+        suite.addTestSuite(UnbindAutoDeleteExchange.class);
+        suite.addTestSuite(RecoverAfterCancel.class);
         return suite;
     }
 }

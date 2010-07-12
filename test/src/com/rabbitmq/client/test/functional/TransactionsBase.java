@@ -31,6 +31,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 
@@ -54,7 +55,11 @@ public abstract class TransactionsBase
     }
 
     protected void createResources() throws IOException {
-        channel.queueDeclare(Q);
+        channel.queueDeclare(Q, declareQueuesDurable(), false, false, null);
+    }
+
+    protected boolean declareQueuesDurable() {
+        return false;
     }
 
     protected void releaseResources() throws IOException {
@@ -228,22 +233,6 @@ public abstract class TransactionsBase
     }
 
     /*
-      it is legal to ack the same message twice
-    */
-    public void testDuplicateAck()
-        throws IOException
-    {
-        openChannel();
-        basicPublish();
-        txSelect();
-        basicGet();
-        basicAck();
-        basicAck();
-        txCommit();
-        closeChannel();
-    }
-
-    /*
       it is illegal to ack with an unknown delivery tag
     */
     public void testUnknownTagAck()
@@ -319,4 +308,27 @@ public abstract class TransactionsBase
         closeChannel();
     }
 
+    public void testNonTransactedCommit()
+        throws IOException
+    {
+        openChannel();
+        try {
+            txCommit();
+            fail("Expected channel error");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
+    }
+
+    public void testNonTransactedRollback()
+        throws IOException
+    {
+        openChannel();
+        try {
+            txRollback();
+            fail("Expected channel error");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
+    }
 }

@@ -90,15 +90,16 @@ public class ConnectionFactory implements Cloneable {
      */
     public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
-    private String username               = DEFAULT_USER;
-    private String password               = DEFAULT_PASS;
-    private String virtualHost            = DEFAULT_VHOST;
-    private String host                   = DEFAULT_HOST;
-    private int port                      = USE_DEFAULT_PORT;
-    private int requestedChannelMax       = DEFAULT_CHANNEL_MAX;
-    private int requestedFrameMax         = DEFAULT_FRAME_MAX;
-    private int requestedHeartbeat        = DEFAULT_HEARTBEAT;
-    private SocketFactory factory         = SocketFactory.getDefault();
+    private String username                       = DEFAULT_USER;
+    private String password                       = DEFAULT_PASS;
+    private String virtualHost                    = DEFAULT_VHOST;
+    private String host                           = DEFAULT_HOST;
+    private int port                              = USE_DEFAULT_PORT;
+    private int requestedChannelMax               = DEFAULT_CHANNEL_MAX;
+    private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
+    private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
+    private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
+    private SocketFactory factory                 = SocketFactory.getDefault();
 
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
@@ -134,7 +135,8 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     *  @return the default port to use for connections
+     * Set the target port.
+     * @param port the default port to use for connections
      */
     public void setPort(int port) {
         this.port = port;
@@ -237,6 +239,29 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
+     * Retrieve the currently-configured table of client properties
+     * that will be sent to the server during connection
+     * startup. Clients may add, delete, and alter keys in this
+     * table. Such changes will take effect when the next new
+     * connection is started using this factory.
+     * @return the map of client properties
+     * @see #setClientProperties
+     */
+    public Map<String, Object> getClientProperties() {
+        return _clientProperties;
+    }
+
+    /**
+     * Replace the table of client properties that will be sent to the
+     * server during subsequent connection startups.
+     * @param clientProperties the map of extra client properties
+     * @see #getClientProperties
+     */
+    public void setClientProperties(Map<String, Object> clientProperties) {
+        _clientProperties = clientProperties;
+    }
+
+    /**
      * Retrieve the socket factory used to make connections with.
      */
     public SocketFactory getSocketFactory() {
@@ -311,7 +336,13 @@ public class ConnectionFactory implements Cloneable {
         Socket socket = factory.createSocket();
         configureSocket(socket);
         socket.connect(new InetSocketAddress(hostName, portNumber));
-        return new SocketFrameHandler(socket);
+        return createFrameHandler(socket);
+    }
+
+    protected FrameHandler createFrameHandler(Socket sock)
+        throws IOException
+    {
+        return new SocketFrameHandler(sock);
     }
 
     /**

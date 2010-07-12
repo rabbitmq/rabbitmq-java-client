@@ -86,7 +86,7 @@ public class AlternateExchange extends BrokerTestCase
 
     @Override protected void createResources() throws IOException {
         for (String q : resources) {
-            channel.queueDeclare(q);
+          channel.queueDeclare(q, false, false, false, null);
         }
     }
 
@@ -109,7 +109,7 @@ public class AlternateExchange extends BrokerTestCase
     protected void setupRouting(String name, String ae) throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         if (ae != null) args.put("alternate-exchange", ae);
-        channel.exchangeDeclare(name, "direct", false, false, false, args);
+        channel.exchangeDeclare(name, "direct", false, false, args);
         channel.queueBind(name, name, name);
     }
 

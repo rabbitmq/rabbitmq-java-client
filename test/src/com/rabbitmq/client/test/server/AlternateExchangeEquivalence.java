@@ -18,54 +18,40 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
+//   Copyright (C) 2007-2009 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
+//   (C) 2007-2009 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.BrokerTestCase;
+import java.util.Map;
+import java.util.HashMap;
 import java.io.IOException;
 
-import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.test.functional.ExchangeEquivalenceBase;
 
-public class NoRequeueOnCancel extends BrokerTestCase
-{
-    protected final String Q = "NoRequeueOnCancel";
-
-    protected void createResources() throws IOException {
-      channel.queueDeclare(Q, false, false, false, null);
-    }
-
-    protected void releaseResources() throws IOException {
-        channel.queueDelete(Q);
-    }
-
-    public void testNoRequeueOnCancel()
-        throws IOException, InterruptedException
+public class AlternateExchangeEquivalence extends ExchangeEquivalenceBase {
+    static Map<String, Object> args = new HashMap<String, Object>();
     {
-        channel.basicPublish("", Q, null, "1".getBytes());
+        args.put("alternate-exchange", "UME");
+    }
 
-        QueueingConsumer c;
-        QueueingConsumer.Delivery d;
+    public void testAlternateExchangeEquivalence() throws IOException {
+        channel.exchangeDeclare("alternate", "direct", false, false, args);
+        verifyEquivalent("alternate", "direct", false, false, args);
+    }
 
-        c = new QueueingConsumer(channel);
-        String consumerTag = channel.basicConsume(Q, false, c);
-        d = c.nextDelivery();
-        channel.basicCancel(consumerTag);
-
-        assertNull(channel.basicGet(Q, true));
-
-        closeChannel();
-        openChannel();
-
-        assertNotNull(channel.basicGet(Q, true));
+    public void testAlternateExchangeNonEquivalence() throws IOException {
+        channel.exchangeDeclare("alternate", "direct", false, false, args);
+        Map<String, Object> altargs = new HashMap<String, Object>();
+        altargs.put("alternate-exchange", "somewhere");
+        verifyNotEquivalent("alternate", "direct", false, false, altargs);
     }
 }

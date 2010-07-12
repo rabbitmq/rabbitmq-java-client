@@ -29,50 +29,15 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client;
 
-import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.MessageProperties;
-
-public class DurableOnTransient extends BrokerTestCase
-{
-    protected static final String Q = "DurableQueue";
-    protected static final String X = "TransientExchange";
-
-    private GetResponse basicGet()
-        throws IOException
-    {
-        return channel.basicGet(Q, true);
-    }
-
-    private void basicPublish()
-        throws IOException
-    {
-        channel.basicPublish(X, "",
-                             MessageProperties.PERSISTENT_TEXT_PLAIN,
-                             "persistent message".getBytes());
-    }
-
-    protected void createResources() throws IOException {
-        // Transient exchange
-        channel.exchangeDeclare(X, "direct", false);
-        // durable queue
-        channel.queueDeclare(Q, true, false, false, null);
-    }
-
-    protected void releaseResources() throws IOException {
-        channel.queueDelete(Q);
-        channel.exchangeDelete(X);
-    }
-
-    public void testBindDurableToTransient()
-        throws IOException
-    {
-        channel.queueBind(Q, X, "");
-        basicPublish();
-        assertNotNull(basicGet());
-    }
+/**
+ * Implement this interface in order to be notified of Channel.Flow
+ * events.
+ */
+public interface FlowListener {
+    void handleFlow(boolean active)
+        throws IOException;
 }

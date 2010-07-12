@@ -115,7 +115,7 @@ public class Permissions extends BrokerTestCase
         withNames(new WithName() {
                 public void with(String name) throws IOException {
                     adminCh.exchangeDeclare(name, "direct");
-                    adminCh.queueDeclare(name);
+                    adminCh.queueDeclare(name, false, false, false, null);
                 }});
     }
 
@@ -138,6 +138,21 @@ public class Permissions extends BrokerTestCase
         action.with("read");
     }
 
+    public void testAuth()
+    {
+        ConnectionFactory unAuthFactory = new ConnectionFactory();
+        unAuthFactory.setUsername("test");
+        unAuthFactory.setPassword("tset");
+
+        try {
+            unAuthFactory.newConnection();
+            fail("Exception expected if password is wrong");
+        } catch (IOException e) {
+            String msg = e.getMessage();
+            assertTrue("Exception message should contain auth", msg.toLowerCase().contains("auth"));
+        }
+    }
+
     public void testExchangeConfiguration()
         throws IOException
     {
@@ -147,7 +162,7 @@ public class Permissions extends BrokerTestCase
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                    channel.exchangeDeclare(name, "direct", true, false, false, null);
+                    channel.exchangeDeclarePassive(name);
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
@@ -160,11 +175,11 @@ public class Permissions extends BrokerTestCase
     {
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                    channel.queueDeclare(name);
+                    channel.queueDeclare(name, false, false, false, null);
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                    channel.queueDeclare(name, true, false, false, false, null);
+                    channel.queueDeclarePassive(name);
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
@@ -242,7 +257,7 @@ public class Permissions extends BrokerTestCase
             public void with(String ae) throws IOException {
                 Map<String, Object> args = new HashMap<String, Object>();
                 args.put("alternate-exchange", ae);
-                channel.exchangeDeclare(exchange, "direct", false, false, false, args);
+                channel.exchangeDeclare(exchange, "direct", false, false, args);
                 channel.exchangeDelete(exchange);
             }};
     }

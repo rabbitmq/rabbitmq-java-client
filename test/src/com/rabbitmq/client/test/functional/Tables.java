@@ -84,7 +84,7 @@ public class Tables extends BrokerTestCase
 
         //sending as part of method arguments - we are relying on
         //exchange.declare ignoring the arguments table.
-        channel.exchangeDeclare("x", "direct", false, false, false, table);
+        channel.exchangeDeclare("x", "direct", false, false, table);
         channel.exchangeDelete("x");
     }
 
@@ -101,7 +101,7 @@ public class Tables extends BrokerTestCase
                            Arrays.equals((byte[])va, (byte[])vb));
             }
             else if (va instanceof List && vb instanceof List) {
-                Iterator vbi = ((List)vb).iterator(); 
+                Iterator vbi = ((List)vb).iterator();
                 for (Object vaEntry : (List)va) {
                     Object vbEntry = vbi.next();
                     assertEquals("arrays unequal at key " + k, vaEntry, vbEntry);

@@ -18,11 +18,11 @@
 //   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
 //   Technologies LLC, and Rabbit Technologies Ltd.
 //
-//   Portions created by LShift Ltd are Copyright (C) 2007-2009 LShift
+//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
 //   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2009 Cohesive Financial Technologies
+//   Copyright (C) 2007-2010 Cohesive Financial Technologies
 //   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2009 Rabbit Technologies Ltd.
+//   (C) 2007-2010 Rabbit Technologies Ltd.
 //
 //   All Rights Reserved.
 //
@@ -42,7 +42,7 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
   public void testNThreadShutdown() throws Exception{
     Channel channel = connection.createChannel();
     final QueueingConsumer c = new QueueingConsumer(channel);
-    channel.queueDeclare(QUEUE);
+    channel.queueDeclare(QUEUE, false, true, true, null);
     channel.basicConsume(QUEUE, c);
     final AtomicInteger count = new AtomicInteger(THREADS);
     final CountDownLatch latch = new CountDownLatch(THREADS);

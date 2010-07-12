@@ -61,7 +61,7 @@ public class Bug20004Test extends BrokerTestCase {
                 public void run() {
                     try {
                         synchronized (channel) {
-                            channel.queueDeclare("Bug20004Test");
+                          channel.queueDeclare("Bug20004Test", false, false, false, null);
                             testInstance.created = true;
                         }
                     } catch (Exception e) {

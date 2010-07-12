@@ -37,6 +37,8 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.AMQP.Exchange;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.AMQP.Tx;
+import com.rabbitmq.client.AMQP.Basic;
+import com.rabbitmq.client.AMQP.Channel.FlowOk;
 
 /**
  * Public API: Interface to an AMQ channel. See the <a href="http://www.amqp.org/">spec</a> for details.
@@ -92,6 +94,19 @@ public interface Channel extends ShutdownNotifier {
     void close(int closeCode, String closeMessage) throws IOException;
 
     /**
+     * Set flow on the channel
+     *
+     * @param active if true, the server is asked to start sending. If false, the server is asked to stop sending.
+     * @throws IOException
+     */
+    FlowOk flow(boolean active) throws IOException;
+
+    /**
+     * Return the current Channel.Flow settings.
+     */
+    FlowOk getFlow();
+
+    /**
      * Abort this channel with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
      * and message 'OK'.
      *
@@ -119,6 +134,52 @@ public interface Channel extends ShutdownNotifier {
      * @param listener the listener to use, or null indicating "don't use one".
      */
     void setReturnListener(ReturnListener listener);
+
+    /**
+     * Return the current {@link FlowListener}.
+     * @return an interface to the current flow listener.
+     */
+    FlowListener getFlowListener();
+
+    /**
+     * Set the current {@link FlowListener}.
+     * @param listener the listener to use, or null indicating "don't use one".
+     */
+    void setFlowListener(FlowListener listener);
+
+    /**
+     * Get the current default consumer. @see setDefaultConsumer for rationale.
+     * @return an interface to the current default consumer.
+     */
+    Consumer getDefaultConsumer();
+
+    /**
+     * Set the current default consumer.
+     *
+     * Under certain circumstances it is possible for a channel to receive a
+     * message delivery which does not match any consumer which is currently
+     * set up via basicConsume(). This will occur after the following sequence
+     * of events:
+     *
+     * ctag = basicConsume(queue, consumer); // i.e. with explicit acks
+     * // some deliveries take place but are not acked
+     * basicCancel(ctag);
+     * basicRecover(false);
+     *
+     * Since requeue is specified to be false in the basicRecover, the spec
+     * states that the message must be redelivered to "the original recipient"
+     * - i.e. the same channel / consumer-tag. But the consumer is no longer
+     * active.
+     *
+     * In these circumstances, you can register a default consumer to handle
+     * such deliveries. If no default consumer is registered an
+     * IllegalStateException will be thrown when such a delivery arrives.
+     *
+     * Most people will not need to use this.
+     *
+     * @param consumer the consumer to use, or null indicating "don't use one".
+     */
+    void setDefaultConsumer(Consumer consumer);
 
     /**
      * Request specific "quality of service" settings.
@@ -175,36 +236,15 @@ public interface Channel extends ShutdownNotifier {
             throws IOException;
 
     /**
-     * Delete an exchange, without regard for whether it is in use or not
-     * @see com.rabbitmq.client.AMQP.Exchange.Delete
-     * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
-     * @param exchange the name of the exchange
-     * @return a deletion-confirm method to indicate the exchange was successfully deleted
-     * @throws java.io.IOException if an error is encountered
-     */
-    Exchange.DeleteOk exchangeDelete(String exchange) throws IOException;
-
-    /**
      * Actively declare a non-autodelete, non-durable exchange with no extra arguments
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
      * @param exchange the name of the exchange
      * @param type the exchange type
-     * @return a deletion-confirm method to indicate the exchange was successfully deleted
+     * @return a declaration-confirm method to indicate the exchange was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
     Exchange.DeclareOk exchangeDeclare(String exchange, String type) throws IOException;
-
-    /**
-     * Delete an exchange
-     * @see com.rabbitmq.client.AMQP.Exchange.Delete
-     * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
-     * @param exchange the name of the exchange
-     * @param ifUnused true to indicate that the exchange is only to be deleted if it is unused
-     * @return a deletion-confirm method to indicate the exchange was successfully deleted
-     * @throws java.io.IOException if an error is encountered
-     */
-    Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException;
 
     /**
      * Actively declare a non-autodelete exchange with no extra arguments
@@ -219,69 +259,86 @@ public interface Channel extends ShutdownNotifier {
     Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable) throws IOException;
 
     /**
-     * Declare an exchange, via an interface that allows the complete set of arguments
-     * The name of the new queue is held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk} result.
+     * Declare an exchange, via an interface that allows the complete set of arguments.
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
      * @param exchange the name of the exchange
      * @param type the exchange type
-     * @param passive true if we are passively declaring a exchange (asserting the exchange already exists)
      * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
      * @param autoDelete true if the server should delete the exchange when it is no longer in use
      * @param arguments other properties (construction arguments) for the exchange
      * @return a declaration-confirm method to indicate the exchange was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
-    Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean passive, boolean durable, boolean autoDelete,
+    Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable, boolean autoDelete,
                                        Map<String, Object> arguments) throws IOException;
+
+    /**
+     * Declare an exchange passively; that is, check if the named exchange exists.
+     * @param name check the existence of an exchange named this
+     * @throws IOException the server will raise a 404 channel exception if the named exchange does not exist.
+     */
+    Exchange.DeclareOk exchangeDeclarePassive(String name) throws IOException;
+
+    /**
+     * Delete an exchange
+     * @see com.rabbitmq.client.AMQP.Exchange.Delete
+     * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
+     * @param exchange the name of the exchange
+     * @param ifUnused true to indicate that the exchange is only to be deleted if it is unused
+     * @return a deletion-confirm method to indicate the exchange was successfully deleted
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException;
+
+    /**
+     * Delete an exchange, without regard for whether it is in use or not
+     * @see com.rabbitmq.client.AMQP.Exchange.Delete
+     * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
+     * @param exchange the name of the exchange
+     * @return a deletion-confirm method to indicate the exchange was successfully deleted
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.DeleteOk exchangeDelete(String exchange) throws IOException;
 
     /**
      * Actively declare a server-named exclusive, autodelete, non-durable queue.
      * The name of the new queue is held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk} result.
      * @see com.rabbitmq.client.AMQP.Queue.Declare
      * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
-     * @return a declaration-confirm method to indicate the exchange was successfully declared
-     * @throws java.io.IOException if an error is encountered
-     */
-    Queue.DeclareOk queueDeclare() throws IOException;
-
-    /**
-     * Actively declare a non-exclusive, non-autodelete, non-durable queue
-     * @see com.rabbitmq.client.AMQP.Queue.Declare
-     * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
-     * @param queue the name of the queue
      * @return a declaration-confirm method to indicate the queue was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
-    Queue.DeclareOk queueDeclare(String queue) throws IOException;
-
-    /**
-     * Actively declare a non-exclusive, non-autodelete queue
-     * The name of the new queue is held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk} result.
-     * @see com.rabbitmq.client.AMQP.Queue.Declare
-     * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
-     * @param queue the name of the queue
-     * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
-     * @return a declaration-confirm method to indicate the exchange was successfully declared
-     * @throws java.io.IOException if an error is encountered
-     */
-    Queue.DeclareOk queueDeclare(String queue, boolean durable) throws IOException;
+    Queue.DeclareOk queueDeclare() throws IOException;
 
     /**
      * Declare a queue
      * @see com.rabbitmq.client.AMQP.Queue.Declare
      * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
      * @param queue the name of the queue
-     * @param passive true if we are passively declaring a queue (asserting the queue already exists)
      * @param durable true if we are declaring a durable queue (the queue will survive a server restart)
-     * @param exclusive true if we are declaring an exclusive queue
+     * @param exclusive true if we are declaring an exclusive queue (restricted to this connection)
      * @param autoDelete true if we are declaring an autodelete queue (server will delete it when no longer in use)
      * @param arguments other properties (construction arguments) for the queue
      * @return a declaration-confirm method to indicate the queue was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
-    Queue.DeclareOk queueDeclare(String queue, boolean passive, boolean durable, boolean exclusive, boolean autoDelete,
+    Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive, boolean autoDelete,
                                  Map<String, Object> arguments) throws IOException;
+
+    /**
+     * Declare a queue passively; i.e., check if it exists.  In AMQP
+     * 0-9-1, all arguments aside from nowait are ignored; and sending
+     * nowait makes this method a no-op, so we default it to false.
+     * @see com.rabbitmq.client.AMQP.Queue.Declare
+     * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
+     * @param queue the name of the queue
+     * @return a declaration-confirm method to indicate the queue exists
+     * @throws java.io.IOException if an error is encountered,
+     * including if the queue does not exist and if the queue is
+     * exclusively owned by another connection.
+     */
+    Queue.DeclareOk queueDeclarePassive(String queue) throws IOException;
 
     /**
      * Delete a queue, without regard for whether it is in use or has messages on it
@@ -472,12 +529,22 @@ public interface Channel extends ShutdownNotifier {
      * Ask the broker to resend unacknowledged messages.  In 0-8
      * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
      * the new, deprecated method basic.recover_async is asynchronous.
-     * To avoid this API changing, this is named for the latter, and
-     * will be deprecated.
      * @param requeue If true, messages will be requeued and possibly
      * delivered to a different consumer. If false, messages will be
      * redelivered to the same consumer.
      */
+    Basic.RecoverOk basicRecover(boolean requeue) throws IOException;
+
+    /**
+     * Ask the broker to resend unacknowledged messages.  In 0-8
+     * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
+     * the new, deprecated method basic.recover_async is asynchronous
+     * and deprecated.
+     * @param requeue If true, messages will be requeued and possibly
+     * delivered to a different consumer. If false, messages will be
+     * redelivered to the same consumer.
+     */
+    @Deprecated
     void basicRecoverAsync(boolean requeue) throws IOException;
 
     /**

@@ -33,6 +33,9 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.Method;
+import com.rabbitmq.client.Command;
 
 import java.io.IOException;
 
@@ -59,6 +62,40 @@ public class BindingLifecycle extends BindingLifecycleBase {
         channel.queuePurge(binding.q);
 
         GetResponse response = channel.basicGet(binding.q, true);
+        assertNull("The response SHOULD BE null", response);
+
+        deleteExchangeAndQueue(binding);
+    }
+
+    /**
+     * See bug 21854:
+     * "When Queue.Purge is called, sent-but-unacknowledged messages are no
+     * longer purged, even if the channel they were sent down is not
+     * (Tx-)transacted."
+     */
+    public void testUnackedPurge() throws IOException {
+        Binding binding = setupExchangeBindings(false);
+        channel.basicPublish(binding.x, binding.k, null, payload);
+
+        GetResponse response = channel.basicGet(binding.q, false);
+        assertFalse(response.getEnvelope().isRedeliver());
+        assertNotNull("The response SHOULD NOT BE null", response);
+
+        // If we purge the queue the unacked message should still be there on
+        // recover.
+        channel.queuePurge(binding.q);
+        response = channel.basicGet(binding.q, true);
+        assertNull("The response SHOULD BE null", response);
+
+        channel.basicRecoverAsync(true);
+        response = channel.basicGet(binding.q, false);
+        assertTrue(response.getEnvelope().isRedeliver());
+        assertNotNull("The response SHOULD NOT BE null", response);
+
+        // If we recover then purge the message should go away
+        channel.basicRecoverAsync(true);
+        channel.queuePurge(binding.q);
+        response = channel.basicGet(binding.q, true);
         assertNull("The response SHOULD BE null", response);
 
         deleteExchangeAndQueue(binding);
@@ -142,6 +179,32 @@ public class BindingLifecycle extends BindingLifecycleBase {
      */
     public void testExchangeAutoDeleteManyBindings() throws IOException {
         doAutoDelete(false, 10);
+    }
+
+    /**
+     *
+     */
+    public void testExchangePassiveDeclare() throws IOException {
+        channel.exchangeDeclare("testPassive", "direct");
+        channel.exchangeDeclarePassive("testPassive");
+
+        try {
+            channel.exchangeDeclarePassive("unknown_exchange");
+            fail("Passive declare of an unknown exchange should fail");
+        }
+        catch (IOException ioe) {
+            Throwable t = ioe.getCause();
+            String msg = "Passive declare of an unknown exchange should send a 404";
+            assertTrue(msg, t instanceof ShutdownSignalException);
+            Object r = ((ShutdownSignalException)t).getReason();
+            assertTrue(msg, r instanceof Command);
+            Method m = ((Command)r).getMethod();
+            assertTrue(msg, m instanceof AMQP.Channel.Close);
+            assertEquals(msg,
+                         AMQP.NOT_FOUND,
+                         ((AMQP.Channel.Close)m).getReplyCode());
+            return;
+        }
     }
 
     /**

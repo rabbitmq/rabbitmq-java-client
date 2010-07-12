@@ -9,19 +9,20 @@ set -e
 #   GNUPG_PATH -- the path to the home directory for gnupg
 
 NEXUS_ROOT="http://$CREDS@oss.sonatype.org/service/local/staging/deploy/maven2/com/rabbitmq/amqp-client/$VERSION"
+unset http_proxy
+unset https_proxy
+unset no_proxy
 
-for ARTIFACT_NAME in $@; do
-  echo "Uploading $ARTIFACT_NAME"
+for artifact in $@; do
+  echo "Uploading $artifact"
 
-  rm -f $ARTIFACT_NAME.asc
-  gpg --homedir $GNUPG_PATH/.gnupg --local-user $SIGNING_KEY --no-tty --armor --detach-sign --output $ARTIFACT_NAME.asc $ARTIFACT_NAME
-  md5sum $ARTIFACT_NAME | cut -f1 -d' ' >$ARTIFACT_NAME.md5
-  md5sum $ARTIFACT_NAME.asc | cut -f1 -d' ' >$ARTIFACT_NAME.asc.md5
-  sha1sum $ARTIFACT_NAME | cut -f1 -d' ' >$ARTIFACT_NAME.sha1
-  sha1sum $ARTIFACT_NAME.asc | cut -f1 -d' ' >$ARTIFACT_NAME.asc.sha1
-  curl -XPUT --data-binary @$ARTIFACT_NAME $NEXUS_ROOT/$ARTIFACT_NAME
-
-  for EXT in md5 sha1 asc asc.md5 asc.sha1; do
-    curl -XPUT --data-binary @$ARTIFACT_NAME.$EXT $NEXUS_ROOT/$ARTIFACT_NAME.$EXT
+  rm -f $artifact.asc
+  gpg --homedir $GNUPG_PATH/.gnupg --local-user $SIGNING_KEY --no-tty --armor --detach-sign --output $artifact.asc $artifact
+  for ext in '' .asc ; do
+    curl -XPUT --data-binary @$artifact$ext $NEXUS_ROOT/$artifact$ext
+    for sum in md5 sha1 ; do
+      ${sum}sum $artifact$ext | (read a rest ; echo -n "$a") >$artifact$ext.$sum
+      curl -XPUT --data-binary @$artifact$ext.$sum $NEXUS_ROOT/$artifact$ext.$sum
+    done
   done
 done

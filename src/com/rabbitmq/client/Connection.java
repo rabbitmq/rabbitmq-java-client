@@ -31,6 +31,7 @@
 package com.rabbitmq.client;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Public API: Interface to an AMQ connection. See the see the <a href="http://www.amqp.org/">spec</a> for details.
@@ -39,7 +40,8 @@ import java.io.IOException;
  *
  * <pre>
  * ConnectionFactory factory = new ConnectionFactory();
- * factory.setHostName(hostName);
+ * factory.setHost(hostName);
+ * factory.setPort(portNumber);
  * factory.setVirtualHost(virtualHost);
  * factory.setUsername(username);
  * factory.setPassword(password);
@@ -90,10 +92,23 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     int getHeartbeat();
 
     /**
+     * Get a copy of the map of client properties sent to the server
+     *
+     * @return a copy of the map of client properties
+     */
+    Map<String, Object> getClientProperties();
+
+    /**
      * Retrieve the known hosts.
      * @return an array of addresses for all hosts that came back in the initial {@link com.rabbitmq.client.AMQP.Connection.OpenOk} open-ok method
      */
     Address[] getKnownHosts();
+
+    /**
+     * Retrieve the server properties.
+     * @return a map of the server properties. This typically includes the product name and version of the server.
+     */
+    Map<String, Object> getServerProperties();
 
     /**
      * Create a new channel, using an internally allocated channel number.

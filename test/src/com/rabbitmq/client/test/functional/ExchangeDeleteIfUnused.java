@@ -31,48 +31,42 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.test.BrokerTestCase;
 
-public class DurableOnTransient extends BrokerTestCase
-{
-    protected static final String Q = "DurableQueue";
-    protected static final String X = "TransientExchange";
+/* Declare an exchange, bind a queue to it, then try to delete it,
+ * setting if-unused to true.  This should throw an exception. */
+public class ExchangeDeleteIfUnused extends BrokerTestCase {
+    private final static String EXCHANGE_NAME = "xchg1";
+    private final static String ROUTING_KEY = "something";
 
-    private GetResponse basicGet()
+    protected void createResources()
         throws IOException
     {
-        return channel.basicGet(Q, true);
+        super.createResources();
+        channel.exchangeDeclare(EXCHANGE_NAME, "direct");
+        String queueName = channel.queueDeclare().getQueue();
+        channel.queueBind(queueName, EXCHANGE_NAME, ROUTING_KEY);
     }
 
-    private void basicPublish()
+    protected void releaseResources()
         throws IOException
     {
-        channel.basicPublish(X, "",
-                             MessageProperties.PERSISTENT_TEXT_PLAIN,
-                             "persistent message".getBytes());
+        channel.exchangeDelete(EXCHANGE_NAME);
+        super.releaseResources();
     }
 
-    protected void createResources() throws IOException {
-        // Transient exchange
-        channel.exchangeDeclare(X, "direct", false);
-        // durable queue
-        channel.queueDeclare(Q, true, false, false, null);
-    }
-
-    protected void releaseResources() throws IOException {
-        channel.queueDelete(Q);
-        channel.exchangeDelete(X);
-    }
-
-    public void testBindDurableToTransient()
-        throws IOException
-    {
-        channel.queueBind(Q, X, "");
-        basicPublish();
-        assertNotNull(basicGet());
+    /* Attempt to Exchange.Delete(ifUnused = true) a used exchange.
+     * Should throw an exception. */
+    public void testExchangeDelete() {
+        try {
+            channel.exchangeDelete(EXCHANGE_NAME, true);
+            fail("Exception expected if exchange in use");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
     }
 }

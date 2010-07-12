@@ -33,7 +33,7 @@ public class TracerConcurrencyTest{
       Channel setup = conn.createChannel();
 
       setup.exchangeDeclare(EXCHANGE, "direct");
-      setup.queueDeclare(QUEUE);
+      setup.queueDeclare(QUEUE, false, false, false, null);
       setup.queueBind(QUEUE,EXCHANGE, "");
       
       setup.close();

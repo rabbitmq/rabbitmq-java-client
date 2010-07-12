@@ -88,7 +88,8 @@ public class FileConsumer {
             String queueName =
 		(requestedQueueName.equals("")
 		 ? ch.queueDeclare()
-		 : ch.queueDeclare(requestedQueueName)).getQueue();
+		 : ch.queueDeclare(requestedQueueName,
+                                   false, false, false, null)).getQueue();
 
 	    if (exchange != null || routingKey != null) {
 		if (exchange == null) {

@@ -26,7 +26,7 @@
     <pathelement path="${test.javac.out}"/>
   </path>
 
-  <property name="AMQP_SPEC_JSON_PATH" value="${codegen.dir}/amqp-${spec.version}.json"/>
+  <property name="AMQP_SPEC_JSON_PATH" value="${codegen.dir}/amqp-${spec.version}.json ${codegen.dir}/rabbitmq-0.8-extensions.json"/>
   
   <target name="amqp-generate-check" description="check if codegen needs to be run">
     <uptodate property="amqp.generate.notRequired">
@@ -389,6 +389,19 @@
       <formatter type="xml"/>
       <test todir="${build.out}"
         name="com.rabbitmq.client.test.server.ServerTests"/>
+    </junit>
+  </target>
+
+  <target name="test-single" depends="test-build">
+    <junit printSummary="withOutAndErr"
+        haltOnFailure="${haltOnFailureJunit}"
+        failureproperty="test.failure"
+        fork="yes">
+      <classpath refid="test.classpath"/>
+
+      <formatter type="plain"/>
+      <formatter type="xml"/>
+      <test todir="${build.out}" name="${test}"/>
     </junit>
   </target>
 
