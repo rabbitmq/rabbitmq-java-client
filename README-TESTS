@@ -10,11 +10,11 @@ The suites are:
   Client tests
   Functional tests
   Server tests
-  Performance tests
   SSL tests
 
-All the tests require a RabbitMQ server listening on localhost:5672
-(the default settings).
+All the tests require a conforming server listening on localhost:5672
+(the default settings).  For details on running specific tests, see
+below.
 
 All the test suites can be run with the command ant test-suite. To run
 specific test suites see the instructions below.
@@ -33,6 +33,11 @@ one of the following in the top-level directory of the source tree:
 
 Note that to run the SSL tests, the RabbitMQ server should be
 configured to use SSL as per the SSL with RabbitMQ guide.
+
+The server tests are meant to test a RabbitMQ broker.  Broadly, they
+require a running RabbitMQ broker on the default host/port, the source
+code for rabbitmq-server in ../rabbitmq-server, and a test directory
+../rabbitmq-test.  Running them manually is a tricky business.
 
 For example, to run the client tests:
 
