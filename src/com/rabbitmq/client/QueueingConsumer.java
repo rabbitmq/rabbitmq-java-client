@@ -53,21 +53,24 @@ import com.rabbitmq.utility.Utility;
  *
  * // Declare a queue and bind it to an exchange.
  * String queueName = ch1.queueDeclare().{@link AMQP.Queue.DeclareOk#getQueue getQueue}();
- * ch1.{@link Channel#queueBind queueBind}(queueName, "amq.direct", queueName);
+ * ch1.{@link Channel#queueBind queueBind}(queueName, exchangeName, queueName);
  *
  * // Create the QueueingConsumer and have it consume from the queue
  * QueueingConsumer consumer = new {@link QueueingConsumer#QueueingConsumer QueueingConsumer}(ch1);
- * ch1.{@link Channel#basicConsume basicConsume}(queueName, true, consumer);
+ * ch1.{@link Channel#basicConsume basicConsume}(queueName, false, consumer);
  *
  * // Process deliveries
- * while (true) {
+ * while (/* some condition * /) {
  *     {@link QueueingConsumer.Delivery} delivery = consumer.{@link QueueingConsumer#nextDelivery nextDelivery}();
+ *     ch1.{@link Channel#basicAck basicAck}(delivery.{@link QueueingConsumer.Delivery#getEnvelope getEnvelope}().{@link Envelope#getDeliveryTag getDeliveryTag}(), false);
  *     // process delivery
  * }
  * </pre>
  *
- * For a more complete example, see LogTail in the test/src/com/rabbitmq/examples
- * directory of the source distribution.
+ * <p>For a more detailed explanation, see <a href="http://www.rabbitmq.com/api-guide.html#consuming">the java api guide</a>.</p>
+ *
+ * <p>For a more complete example, see LogTail in the test/src/com/rabbitmq/examples
+ * directory of the source distribution.</p>
  */
 public class QueueingConsumer extends DefaultConsumer {
     private final BlockingQueue<Delivery> _queue;
