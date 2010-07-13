@@ -52,6 +52,8 @@ public class Permissions extends BrokerTestCase
 {
 
     protected Channel adminCh;
+    protected Connection noAccessConn;
+    protected Channel noAccessCh;
 
     public Permissions()
     {
@@ -81,17 +83,21 @@ public class Permissions extends BrokerTestCase
     {
         runCtl("add_user test test");
         runCtl("add_user testadmin test");
+        runCtl("add_user noaccess test");
         runCtl("add_vhost /test");
         runCtl("set_permissions -p /test test configure write read");
         runCtl("set_permissions -p /test testadmin \".*\" \".*\" \".*\"");
+        runCtl("set_permissions -p /test noaccess \"\" \"\" \"\"");
     }
 
     protected void deleteRestrictedAccount()
         throws IOException
     {
+        runCtl("clear_permissions -p /test noaccess");
         runCtl("clear_permissions -p /test testadmin");
         runCtl("clear_permissions -p /test test");
         runCtl("delete_vhost /test");
+        runCtl("delete_user noaccess");
         runCtl("delete_user testadmin");
         runCtl("delete_user test");
     }
@@ -117,6 +123,13 @@ public class Permissions extends BrokerTestCase
                     adminCh.exchangeDeclare(name, "direct");
                     adminCh.queueDeclare(name, false, false, false, null);
                 }});
+
+        factory = new ConnectionFactory();
+        factory.setUsername("noaccess");
+        factory.setPassword("test");
+        factory.setVirtualHost("/test");
+        noAccessConn = factory.newConnection();
+        noAccessCh = noAccessConn.createChannel();
     }
 
     protected void releaseResources()
@@ -248,6 +261,77 @@ public class Permissions extends BrokerTestCase
                 createAltExchConfigTest("configure-and-write-me"));
         runTest(false, true, false,
                 createAltExchConfigTest("configure-and-read-me"));
+    }
+
+    public void testNoAccess()
+        throws IOException
+    {
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.queueDeclare("justaqueue", false, false, true, null);
+                    fail("user noaccess should not be able to declare a queue");
+                }
+        });
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.queueDelete("configure");
+                    fail("user noaccess should not be able to delete a queue");
+                }
+        });
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.queueBind("write", "write", "write");
+                    fail("user noaccess should not be able to bind a queue");
+                }
+        });
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.queuePurge("read");
+                    fail("user noaccess should not be able to purge a queue");
+                }
+        });
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.exchangeDeclare("justanexchange", "direct");
+                    fail("user noaccess should not be able to declare an exchange");
+                }
+        });
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.exchangeDeclare("configure", "direct");
+                    fail("user noaccess should not be able to delete an exchange");
+                }
+        });
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.basicPublish("write", "", null, "foo".getBytes());
+                    noAccessCh.queueDeclare();
+                    fail("user noaccess should not be able to publish");
+                }
+        });
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.basicGet("read", false);
+                    fail("user noaccess should not be able to get");
+                }
+        });
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.basicConsume("read", null);
+                    fail("user noaccess should not be able to consume");
+                }
+        });
+    }
+
+    protected void expectExceptionRun(int exceptionCode, WithName action)
+        throws IOException
+    {
+        try {
+            action.with("");
+        } catch (IOException e) {
+            noAccessCh = noAccessConn.createChannel();
+            checkShutdownSignal(exceptionCode, e);
+        }
     }
 
     protected WithName createAltExchConfigTest(final String exchange)
