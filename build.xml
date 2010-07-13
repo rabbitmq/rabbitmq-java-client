@@ -117,7 +117,7 @@
   </target>
 
   <target  name="detect-umbrella">
-    <available property="UMBRELLA_AVAIALBLE" file="../rabbitmq-test"/>
+    <available property="UMBRELLA_AVAILABLE" file="../rabbitmq-test"/>
   </target>
 
   <target name="detect-tmpdir">
@@ -379,7 +379,7 @@
     </junit>
   </target>
 
-  <target name="test-server" depends="test-build" if="UMBRELLA_AVAILABLE">
+  <target name="test-server" depends="detect-umbrella, test-build" if="UMBRELLA_AVAILABLE">
     <junit printSummary="withOutAndErr"
         haltOnFailure="${haltOnFailureJunit}"
         failureproperty="test.failure"
