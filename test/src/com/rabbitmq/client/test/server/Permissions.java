@@ -269,66 +269,57 @@ public class Permissions extends BrokerTestCase
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.queueDeclare("justaqueue", false, false, true, null);
-                }},
-            "user noaccess should not be able to declare a queue"
+                }}
         );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.queueDelete("configure");
                 }}
-                , "user noaccess should not be able to delete a queue"
         );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.queueBind("write", "write", "write");
-                }},
-            "user noaccess should not be able to bind a queue"
+                }}
         );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.queuePurge("read");
-                }},
-            "user noaccess should not be able to purge a queue"
+                }}
         );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.exchangeDeclare("justanexchange", "direct");
-                }},
-            "user noaccess should not be able to declare an exchange"
+                }}
         );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.exchangeDeclare("configure", "direct");
-                }},
-            "user noaccess should not be able to delete an exchange"
+                }}
         );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.basicPublish("write", "", null, "foo".getBytes());
                     noAccessCh.queueDeclare();
-                }},
-            "user noaccess should not be able to publish"
+                }}
         );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.basicGet("read", false);
-                }},
-            "user noaccess should not be able to get"
+                }}
         );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.basicConsume("read", null);
-                }},
-            "user noaccess should not be able to consume"
+                }}
         );
     }
 
-    protected void expectExceptionRun(int exceptionCode, WithName action, String failMsg)
+    protected void expectExceptionRun(int exceptionCode, WithName action)
         throws IOException
     {
         try {
             action.with("");
-            fail(failMsg);
+            fail();
         } catch (IOException e) {
             noAccessCh = noAccessConn.createChannel();
             checkShutdownSignal(exceptionCode, e);
