@@ -269,65 +269,66 @@ public class Permissions extends BrokerTestCase
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.queueDeclare("justaqueue", false, false, true, null);
-                    fail("user noaccess should not be able to declare a queue");
-                }
-        });
+                }},
+            "user noaccess should not be able to declare a queue"
+        );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.queueDelete("configure");
-                    fail("user noaccess should not be able to delete a queue");
-                }
-        });
+                }}
+                , "user noaccess should not be able to delete a queue"
+        );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.queueBind("write", "write", "write");
-                    fail("user noaccess should not be able to bind a queue");
-                }
-        });
+                }},
+            "user noaccess should not be able to bind a queue"
+        );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.queuePurge("read");
-                    fail("user noaccess should not be able to purge a queue");
-                }
-        });
+                }},
+            "user noaccess should not be able to purge a queue"
+        );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.exchangeDeclare("justanexchange", "direct");
-                    fail("user noaccess should not be able to declare an exchange");
-                }
-        });
+                }},
+            "user noaccess should not be able to declare an exchange"
+        );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.exchangeDeclare("configure", "direct");
-                    fail("user noaccess should not be able to delete an exchange");
-                }
-        });
+                }},
+            "user noaccess should not be able to delete an exchange"
+        );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.basicPublish("write", "", null, "foo".getBytes());
                     noAccessCh.queueDeclare();
-                    fail("user noaccess should not be able to publish");
-                }
-        });
+                }},
+            "user noaccess should not be able to publish"
+        );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.basicGet("read", false);
-                    fail("user noaccess should not be able to get");
-                }
-        });
+                }},
+            "user noaccess should not be able to get"
+        );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.basicConsume("read", null);
-                    fail("user noaccess should not be able to consume");
-                }
-        });
+                }},
+            "user noaccess should not be able to consume"
+        );
     }
 
-    protected void expectExceptionRun(int exceptionCode, WithName action)
+    protected void expectExceptionRun(int exceptionCode, WithName action, String failMsg)
         throws IOException
     {
         try {
             action.with("");
+            fail(failMsg);
         } catch (IOException e) {
             noAccessCh = noAccessConn.createChannel();
             checkShutdownSignal(exceptionCode, e);
