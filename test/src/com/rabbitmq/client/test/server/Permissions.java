@@ -52,6 +52,8 @@ public class Permissions extends BrokerTestCase
 {
 
     protected Channel adminCh;
+    protected Connection noAccessConn;
+    protected Channel noAccessCh;
 
     public Permissions()
     {
@@ -81,17 +83,21 @@ public class Permissions extends BrokerTestCase
     {
         runCtl("add_user test test");
         runCtl("add_user testadmin test");
+        runCtl("add_user noaccess test");
         runCtl("add_vhost /test");
         runCtl("set_permissions -p /test test configure write read");
         runCtl("set_permissions -p /test testadmin \".*\" \".*\" \".*\"");
+        runCtl("set_permissions -p /test noaccess \"\" \"\" \"\"");
     }
 
     protected void deleteRestrictedAccount()
         throws IOException
     {
+        runCtl("clear_permissions -p /test noaccess");
         runCtl("clear_permissions -p /test testadmin");
         runCtl("clear_permissions -p /test test");
         runCtl("delete_vhost /test");
+        runCtl("delete_user noaccess");
         runCtl("delete_user testadmin");
         runCtl("delete_user test");
     }
@@ -117,6 +123,13 @@ public class Permissions extends BrokerTestCase
                     adminCh.exchangeDeclare(name, "direct");
                     adminCh.queueDeclare(name, false, false, false, null);
                 }});
+
+        factory = new ConnectionFactory();
+        factory.setUsername("noaccess");
+        factory.setPassword("test");
+        factory.setVirtualHost("/test");
+        noAccessConn = factory.newConnection();
+        noAccessCh = noAccessConn.createChannel();
     }
 
     protected void releaseResources()
@@ -248,6 +261,69 @@ public class Permissions extends BrokerTestCase
                 createAltExchConfigTest("configure-and-write-me"));
         runTest(false, true, false,
                 createAltExchConfigTest("configure-and-read-me"));
+    }
+
+    public void testNoAccess()
+        throws IOException
+    {
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.queueDeclare("justaqueue", false, false, true, null);
+                }}
+        );
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.queueDelete("configure");
+                }}
+        );
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.queueBind("write", "write", "write");
+                }}
+        );
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.queuePurge("read");
+                }}
+        );
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.exchangeDeclare("justanexchange", "direct");
+                }}
+        );
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.exchangeDeclare("configure", "direct");
+                }}
+        );
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.basicPublish("write", "", null, "foo".getBytes());
+                    noAccessCh.queueDeclare();
+                }}
+        );
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.basicGet("read", false);
+                }}
+        );
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.basicConsume("read", null);
+                }}
+        );
+    }
+
+    protected void expectExceptionRun(int exceptionCode, WithName action)
+        throws IOException
+    {
+        try {
+            action.with("");
+            fail();
+        } catch (IOException e) {
+            noAccessCh = noAccessConn.createChannel();
+            checkShutdownSignal(exceptionCode, e);
+        }
     }
 
     protected WithName createAltExchConfigTest(final String exchange)
