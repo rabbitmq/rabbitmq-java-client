@@ -52,7 +52,6 @@ public class Permissions extends BrokerTestCase
 {
 
     protected Channel adminCh;
-    protected Connection noAccessConn;
     protected Channel noAccessCh;
 
     public Permissions()
@@ -128,8 +127,7 @@ public class Permissions extends BrokerTestCase
         factory.setUsername("noaccess");
         factory.setPassword("test");
         factory.setVirtualHost("/test");
-        noAccessConn = factory.newConnection();
-        noAccessCh = noAccessConn.createChannel();
+        noAccessCh = factory.newConnection().createChannel();
     }
 
     protected void releaseResources()
@@ -141,7 +139,7 @@ public class Permissions extends BrokerTestCase
                     adminCh.exchangeDelete(name);
                 }});
         adminCh.getConnection().abort();
-        noAccessConn.abort();
+        noAccessCh.getConnection().abort();
     }
 
     protected void withNames(WithName action)
@@ -327,8 +325,15 @@ public class Permissions extends BrokerTestCase
             action.with("");
             fail();
         } catch (IOException e) {
-            noAccessCh = noAccessConn.createChannel();
-            checkShutdownSignal(exceptionCode, e);
+            ShutdownSignalException sse = (ShutdownSignalException)e.getCause();
+            if (sse.isHardError()) {
+                fail("Got a hard-error.  Was expecting soft-error: " + exceptionCode);
+            } else {
+                AMQP.Channel.Close closeMethod =
+                    (AMQP.Channel.Close) ((Command)sse.getReason()).getMethod();
+                assertEquals(exceptionCode, closeMethod.getReplyCode());
+            }
+            noAccessCh = noAccessCh.getConnection().createChannel();
         }
     }
 
