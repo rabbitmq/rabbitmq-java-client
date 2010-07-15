@@ -35,26 +35,23 @@ import java.util.Map;
 import java.util.HashMap;
 import java.io.IOException;
 
-import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.test.functional.ExchangeDeclare;
+import com.rabbitmq.client.test.functional.ExchangeEquivalenceBase;
 
-public class ExchangeEquivalence extends BrokerTestCase {
+public class AlternateExchangeEquivalence extends ExchangeEquivalenceBase {
     static Map<String, Object> args = new HashMap<String, Object>();
     {
         args.put("alternate-exchange", "UME");
     }
 
     public void testAlternateExchangeEquivalence() throws IOException {
-        channel.exchangeDeclare("alternate", "direct", false, args);
-        ExchangeDeclare.verifyEquivalent(channel, "alternate", "direct", false,
-                args);
+        channel.exchangeDeclare("alternate", "direct", false, false, args);
+        verifyEquivalent("alternate", "direct", false, false, args);
     }
 
     public void testAlternateExchangeNonEquivalence() throws IOException {
-        channel.exchangeDeclare("alternate", "direct", false, args);
+        channel.exchangeDeclare("alternate", "direct", false, false, args);
         Map<String, Object> altargs = new HashMap<String, Object>();
         altargs.put("alternate-exchange", "somewhere");
-        ExchangeDeclare.verifyNotEquivalent(channel, "alternate", "direct",
-                false, altargs);
+        verifyNotEquivalent("alternate", "direct", false, false, altargs);
     }
 }

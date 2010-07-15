@@ -185,7 +185,7 @@ public class QosTests extends BrokerTestCase
     {
         QueueingConsumer c = new QueueingConsumer(channel);
         final int queueCount = 3;
-        final int messageCount = 10;
+        final int messageCount = 100;
         List<String> queues = configure(c, 1, queueCount, messageCount);
 
         for (int i = 0; i < messageCount - 1; i++) {

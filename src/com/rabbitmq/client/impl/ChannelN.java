@@ -64,8 +64,8 @@ import java.util.concurrent.TimeoutException;
  * To open a channel,
  * <pre>
  * {@link Connection} conn = ...;
- * {@link ChannelN} ch1 = conn.{@link Connection#createChannel createChannel}(1);
- * ch1.{@link ChannelN#open open}("");
+ * {@link ChannelN} ch1 = conn.{@link Connection#createChannel createChannel}();
+ * ch1.{@link ChannelN#open open}();
  * </pre>
  */
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {

@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 
@@ -81,6 +82,10 @@ public class QueueLifecycle extends BrokerTestCase {
         try {
             verifyQueue(q, durable, exclusive, autoDelete, null);
         } catch (IOException ioe) {
+            if (exclusive)
+                checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
+            else
+                checkShutdownSignal(AMQP.NOT_ALLOWED, ioe);
             return;
         }
         fail("Queue.declare should have been rejected as not equivalent");
