@@ -139,7 +139,7 @@ public class Permissions extends BrokerTestCase
                     adminCh.exchangeDelete(name);
                 }});
         adminCh.getConnection().abort();
-        noAccessCh.geConnection().abort();
+        noAccessCh.getConnection().abort();
     }
 
     protected void withNames(WithName action)
