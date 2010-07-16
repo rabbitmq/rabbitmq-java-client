@@ -62,7 +62,7 @@ import com.rabbitmq.utility.Utility;
  * // Process deliveries
  * while (/* some condition * /) {
  *     {@link QueueingConsumer.Delivery} delivery = consumer.{@link QueueingConsumer#nextDelivery nextDelivery}();
- *     // process delivery... and ack it
+ *     // process delivery
  *     ch1.{@link Channel#basicAck basicAck}(delivery.{@link QueueingConsumer.Delivery#getEnvelope getEnvelope}().{@link Envelope#getDeliveryTag getDeliveryTag}(), false);
  * }
  * </pre>
