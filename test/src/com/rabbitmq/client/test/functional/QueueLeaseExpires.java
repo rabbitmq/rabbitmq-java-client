@@ -32,11 +32,9 @@
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
-import java.lang.InterruptedException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class QueueLeaseExpires extends BrokerTestCase {
@@ -47,12 +45,12 @@ public class QueueLeaseExpires extends BrokerTestCase {
 
     // Currently the expiration timer is very responsive but this may
     // very well change in the future, so tweak accordingly.
-    private final static long QUEUE_EXPIRES = 1000L;  // msecs
+    private final static long QUEUE_EXPIRES = 1000L; // msecs
     private final static int SHOULD_EXPIRE_WITHIN = 2000;
 
     /**
-     * Verify that a queue with the 'x-expires` flag is actually
-     * deleted within a sensible period of time after expiry.
+     * Verify that a queue with the 'x-expires` flag is actually deleted within
+     * a sensible period of time after expiry.
      */
     public void testQueueExpires() throws IOException, InterruptedException {
         verifyQueueExpires(TEST_EXPIRE_QUEUE, true);
@@ -62,23 +60,25 @@ public class QueueLeaseExpires extends BrokerTestCase {
      * Verify that the server does not delete normal queues... ;)
      */
     public void testDoesNotExpireOthers() throws IOException,
-                                                 InterruptedException {
+            InterruptedException {
         verifyQueueExpires(TEST_NORMAL_QUEUE, false);
     }
 
     /**
-     * Verify that the server throws an error if the type of x-expires
-     * is not long.
+     * Verify that the server throws an error if the type of x-expires is not
+     * long.
      */
     public void testExpireMustBeLong() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-expires", 100);
 
         try {
-            channel.queueDeclare("expiresMustBeLong",
-                                 false, false, false, args);
+            channel
+                    .queueDeclare("expiresMustBeLong", false, false, false,
+                            args);
             fail("server accepted x-expires not of type long");
-        } catch (IOException e) { }
+        } catch (IOException e) {
+        }
     }
 
     public void testExpireMustBeGtZero() throws IOException {
@@ -86,10 +86,11 @@ public class QueueLeaseExpires extends BrokerTestCase {
         args.put("x-expires", 0L);
 
         try {
-            channel.queueDeclare("expiresMustBeGtZero",
-                                 false, false, false, args);
+            channel.queueDeclare("expiresMustBeGtZero", false, false, false,
+                    args);
             fail("server accepted x-expires of zero ms.");
-        } catch (IOException e) { }
+        } catch (IOException e) {
+        }
     }
 
     public void testExpireMustBePositive() throws IOException {
@@ -97,15 +98,16 @@ public class QueueLeaseExpires extends BrokerTestCase {
         args.put("x-expires", -10L);
 
         try {
-            channel.queueDeclare("expiresMustBePositive",
-                                 false, false, false, args);
+            channel.queueDeclare("expiresMustBePositive", false, false, false,
+                    args);
             fail("server accepted negative x-expires.");
-        } catch (IOException e) { }
+        } catch (IOException e) {
+        }
     }
 
     /**
-     * Verify that the server throws an error if the client redeclares
-     * a queue with mismatching 'x-expires' values.
+     * Verify that the server throws an error if the client redeclares a queue
+     * with mismatching 'x-expires' values.
      */
     public void testQueueRedeclareEquivalence() throws IOException {
         Map<String, Object> args1 = new HashMap<String, Object>();
@@ -113,24 +115,26 @@ public class QueueLeaseExpires extends BrokerTestCase {
         Map<String, Object> args2 = new HashMap<String, Object>();
         args2.put("x-expires", 20000L);
 
-        channel.queueDeclare(TEST_EXPIRE_REDECLARE_QUEUE,
-                             false, false, false, args1);
+        channel.queueDeclare(TEST_EXPIRE_REDECLARE_QUEUE, false, false, false,
+                args1);
 
         try {
-            channel.queueDeclare(TEST_EXPIRE_REDECLARE_QUEUE,
-                                 false, false, false, args2);
+            channel.queueDeclare(TEST_EXPIRE_REDECLARE_QUEUE, false, false,
+                    false, args2);
             fail("Able to redeclare queue with mismatching expire flags.");
-        } catch (IOException e) { }
+        } catch (IOException e) {
+        }
     }
 
-    void verifyQueueExpires(String name, boolean expire)
-            throws IOException, InterruptedException {
+    void verifyQueueExpires(String name, boolean expire) throws IOException,
+            InterruptedException {
         int interval = SHOULD_EXPIRE_WITHIN / 4;
 
         Map<String, Object> args = new HashMap<String, Object>();
         if (expire) {
             args.put("x-expires", QUEUE_EXPIRES);
-        };
+        }
+        ;
 
         channel.queueDeclare(name, false, false, false, args);
 
@@ -161,7 +165,8 @@ public class QueueLeaseExpires extends BrokerTestCase {
             channel.queueDelete(TEST_NORMAL_QUEUE);
             channel.queueDelete(TEST_EXPIRE_QUEUE);
             channel.queueDelete(TEST_EXPIRE_REDECLARE_QUEUE);
-        } catch (IOException e) { }
+        } catch (IOException e) {
+        }
 
         super.releaseResources();
     }
