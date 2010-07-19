@@ -128,17 +128,14 @@ public class QueueLeaseExpires extends BrokerTestCase {
 
     void verifyQueueExpires(String name, boolean expire) throws IOException,
             InterruptedException {
-        int interval = SHOULD_EXPIRE_WITHIN / 4;
-
         Map<String, Object> args = new HashMap<String, Object>();
         if (expire) {
             args.put("x-expires", QUEUE_EXPIRES);
         }
-        ;
 
         channel.queueDeclare(name, false, false, false, args);
 
-        Thread.sleep(interval);
+        Thread.sleep(SHOULD_EXPIRE_WITHIN / 4);
 
         try {
             channel.queueDeclarePassive(name);
@@ -146,7 +143,7 @@ public class QueueLeaseExpires extends BrokerTestCase {
             fail("Queue expired before deadline.");
         }
 
-        Thread.sleep(interval * 3);
+        Thread.sleep(SHOULD_EXPIRE_WITHIN); // be on the safe side
 
         try {
             channel.queueDeclarePassive(name);
