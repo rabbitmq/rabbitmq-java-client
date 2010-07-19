@@ -37,7 +37,7 @@ import java.util.Map;
 
 import com.rabbitmq.client.test.BrokerTestCase;
 
-public class QueueLeaseExpires extends BrokerTestCase {
+public class QueueLease extends BrokerTestCase {
 
     private final static String TEST_EXPIRE_QUEUE = "leaseq";
     private final static String TEST_NORMAL_QUEUE = "noleaseq";
