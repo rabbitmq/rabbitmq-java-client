@@ -64,8 +64,8 @@ import java.util.concurrent.TimeoutException;
  * To open a channel,
  * <pre>
  * {@link Connection} conn = ...;
- * {@link ChannelN} ch1 = conn.{@link Connection#createChannel createChannel}(1);
- * ch1.{@link ChannelN#open open}("");
+ * {@link ChannelN} ch1 = conn.{@link Connection#createChannel createChannel}();
+ * ch1.{@link ChannelN#open open}();
  * </pre>
  */
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
@@ -97,6 +97,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Reference to the currently-active FlowListener, or null if there is none.
      */
     public volatile FlowListener flowListener = null;
+
+    /** Reference to the currently-active default consumer, or null if there is
+     *  none.
+     */
+    public volatile Consumer defaultConsumer = null;
 
     /**
      * Construct a new channel on the given connection with the given
@@ -148,6 +153,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         flowListener = listener;
     }
 
+    /** Returns the current default consumer. */
+    public Consumer getDefaultConsumer() {
+        return defaultConsumer;
+    }
+
+    /**
+     * Sets the current default consumer.
+     * A null argument is interpreted to mean "do not use a default consumer".
+     */
+    public void setDefaultConsumer(Consumer consumer) {
+        defaultConsumer = consumer;
+    }
+
     /**
      * Protected API - sends a ShutdownSignal to all active consumers.
      * @param signal an exception signalling channel shutdown
@@ -189,8 +207,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /**
      * Protected API - Filters the inbound command stream, processing
-     * Basic.Deliver, Basic.Return, Channel.Flow and Channel.Close
-     * specially.
+     * Basic.Deliver, Basic.Return and Channel.Close specially.  If
+     * we're in quiescing mode, all inbound commands are ignored,
+     * except for Channel.Close and Channel.CloseOk.
      */
     @Override public boolean processAsync(Command command) throws IOException
     {
@@ -199,39 +218,45 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // If we are not, however, then we are in a quiescing, or
         // shutting-down state as the result of an application
         // decision to close this channel, and we are to discard all
-        // incoming commands except for a close-ok.
+        // incoming commands except for a close and close-ok.
 
         Method method = command.getMethod();
 
-        if (method instanceof Channel.Close) {
-            // Channel should always respond to Channel.Close
-            // from the server
-            releaseChannelNumber();
-            ShutdownSignalException signal = new ShutdownSignalException(false,
-                                                                         false,
-                                                                         command,
-                                                                         this);
-            synchronized (_channelMutex) {
-                try {
-                    processShutdownSignal(signal, true, false);
-                    quiescingTransmit(new Channel.CloseOk());
-                } finally {
-                    notifyOutstandingRpc(signal);
-                }
-            }
-            notifyListeners();
-            return true;
-        }
         if (isOpen()) {
             // We're in normal running mode.
 
-            if (method instanceof Basic.Deliver) {
+            if (method instanceof Channel.Close) {
+                releaseChannelNumber();
+                ShutdownSignalException signal = new ShutdownSignalException(false,
+                                                                             false,
+                                                                             command,
+                                                                             this);
+                synchronized (_channelMutex) {
+                    try {
+                        processShutdownSignal(signal, true, false);
+                        quiescingTransmit(new Channel.CloseOk());
+                    } finally {
+                        notifyOutstandingRpc(signal);
+                    }
+                }
+                notifyListeners();
+                return true;
+            } else if (method instanceof Basic.Deliver) {
                 Basic.Deliver m = (Basic.Deliver) method;
 
                 Consumer callback = _consumers.get(m.consumerTag);
                 if (callback == null) {
-                    // FIXME: what to do when we get such an unsolicited delivery?
-                    throw new UnsupportedOperationException("FIXME unsolicited delivery");
+                    if (defaultConsumer == null) {
+                        // No handler set. We should blow up as this message
+                        // needs acking, just dropping it is not enough. See bug
+                        // 22587 for discussion.
+                        throw new IllegalStateException("Unsolicited delivery -" +
+                                " see Channel.setDefaultConsumer to handle this" +
+                                " case.");
+                    }
+                    else {
+                        callback = defaultConsumer;
+                    }
                 }
 
                 Envelope envelope = new Envelope(m.deliveryTag,
@@ -285,13 +310,28 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     }
                 }
                 return true;
+            } else if (method instanceof Basic.RecoverOk) {
+                for (Consumer callback: _consumers.values()) {
+                    callback.handleRecoverOk();
+                }
+
+                // Unlike all the other cases we still want this RecoverOk to
+                // be handled by whichever RPC continuation invoked Recover,
+                // so return false
+                return false;
             } else {
                 return false;
             }
         } else {
             // We're in quiescing mode.
 
-            if (method instanceof Channel.CloseOk) {
+            if (method instanceof Channel.Close) {
+                // We're already shutting down, so just send back an ok.
+                synchronized (_channelMutex) {
+                    quiescingTransmit(new Channel.CloseOk());
+                }
+                return true;
+            } else if (method instanceof Channel.CloseOk) {
                 // We're quiescing, and we see a channel.close-ok:
                 // this is our signal to leave quiescing mode and
                 // finally shut down for good. Let it be handled as an
@@ -699,11 +739,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
+     /** Public API - {@inheritDoc} */
+    public Basic.RecoverOk basicRecover(boolean requeue)
+        throws IOException
+    {
+        return (Basic.RecoverOk) exnWrappingRpc(new Basic.Recover(requeue)).getMethod();
+    }
+
+
     /** Public API - {@inheritDoc} */
     public void basicRecoverAsync(boolean requeue)
         throws IOException
     {
-        transmit(new Basic.Recover(requeue));
+        transmit(new Basic.RecoverAsync(requeue));
     }
 
     /** Public API - {@inheritDoc} */

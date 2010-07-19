@@ -42,7 +42,7 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(EffectVisibilityCrossNodeTest.class);
         suite.addTest(PersisterRestartTests.suite());
         suite.addTestSuite(ExclusiveQueueDurability.class);
-        suite.addTestSuite(ExchangeEquivalence.class);
+        suite.addTestSuite(AlternateExchangeEquivalence.class);
         return suite;
     }
 }
