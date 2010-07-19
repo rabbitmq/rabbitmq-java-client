@@ -193,17 +193,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
             fail("Passive declare of an unknown exchange should fail");
         }
         catch (IOException ioe) {
-            Throwable t = ioe.getCause();
-            String msg = "Passive declare of an unknown exchange should send a 404";
-            assertTrue(msg, t instanceof ShutdownSignalException);
-            Object r = ((ShutdownSignalException)t).getReason();
-            assertTrue(msg, r instanceof Command);
-            Method m = ((Command)r).getMethod();
-            assertTrue(msg, m instanceof AMQP.Channel.Close);
-            assertEquals(msg,
-                         AMQP.NOT_FOUND,
-                         ((AMQP.Channel.Close)m).getReplyCode());
-            return;
+            checkShutdownSignal(AMQP.NOT_FOUND, ioe);
         }
     }
 

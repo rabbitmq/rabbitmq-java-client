@@ -148,8 +148,7 @@ public class Permissions extends BrokerTestCase
             unAuthFactory.newConnection();
             fail("Exception expected if password is wrong");
         } catch (IOException e) {
-            String msg = e.getMessage();
-            assertTrue("Exception message should contain auth", msg.toLowerCase().contains("auth"));
+            checkShutdownSignal(AMQP.NOT_ALLOWED, e);
         }
     }
 
