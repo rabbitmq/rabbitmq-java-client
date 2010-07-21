@@ -177,6 +177,13 @@ public class Frame {
             int transportLow = is.readUnsignedByte();
             int serverMajor = is.readUnsignedByte();
             int serverMinor = is.readUnsignedByte();
+
+            // 0-8 gets these the wrong way round
+            if (serverMajor == 8 && serverMinor == 0) {
+                serverMajor = 0;
+                serverMinor = 8;
+            }
+
             x = new MalformedFrameException("AMQP protocol version mismatch; we are version " + AMQP.PROTOCOL.MAJOR + "-" + AMQP.PROTOCOL.MINOR
                     + ", server is " + serverMajor + "-" + serverMinor + " with transport " + transportHigh + "." + transportLow);
         } catch (IOException ex) {
