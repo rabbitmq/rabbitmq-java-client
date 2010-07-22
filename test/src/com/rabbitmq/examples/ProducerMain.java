@@ -151,19 +151,15 @@ public class ProducerMain implements Runnable {
         _channel = _connection.createChannel();
 
         String queueName = "test queue";
-        String exchangeName = "test exchange";
-        
         _channel.queueDeclare(queueName, true, false, false, null);
-        _channel.exchangeDeclare(exchangeName, "fanout");
-        _channel.queueBind(queueName, exchangeName, "");
 
         if (shouldCommit()) {
             _channel.txSelect();
         }
-        sendBatch(exchangeName, queueName);
+        sendBatch(queueName);
 
         if (_sendCompletion) {
-            exchangeName = "test completion";
+            String exchangeName = "test completion";
             _channel.exchangeDeclarePassive(exchangeName);
             _channel.basicPublish(exchangeName, "", MessageProperties.BASIC, new byte[0]);
             if (shouldCommit())
@@ -186,7 +182,7 @@ public class ProducerMain implements Runnable {
         System.out.println("...starting.");
     }
 
-    public void sendBatch(String exchangeName, String queueName) throws IOException {
+    public void sendBatch(String queueName) throws IOException {
         //primeServer(queueName);
 
         long startTime = System.currentTimeMillis();
@@ -213,8 +209,7 @@ public class ProducerMain implements Runnable {
             acc.flush();
             byte[] message0 = acc.toByteArray();
             System.arraycopy(message0, 0, message, 0, message0.length);
-            _channel.basicPublish(exchangeName, queueName, props,
-                    message);
+            _channel.basicPublish("", queueName, props, message);
             sent++;
             if (shouldCommit()) {
                 if ((sent % _commitEvery) == 0) {
