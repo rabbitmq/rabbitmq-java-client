@@ -132,7 +132,7 @@ public class MulticastMain {
                                                    flags, producerTxSize,
                                                    1000L * samplingInterval,
                                                    rateLimit, minMsgSize, timeLimit);
-                channel.setReturnListener(p);                
+                channel.setReturnListener(p);
                 Thread t = new Thread(p);
                 producerThreads[i] = t;
                 t.start();
