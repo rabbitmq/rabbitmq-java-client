@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class QueueLease extends BrokerTestCase {
@@ -78,6 +79,7 @@ public class QueueLease extends BrokerTestCase {
                             args);
             fail("server accepted x-expires not of type long");
         } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
     }
 
@@ -90,6 +92,7 @@ public class QueueLease extends BrokerTestCase {
                     args);
             fail("server accepted x-expires of zero ms.");
         } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
     }
 
@@ -102,6 +105,7 @@ public class QueueLease extends BrokerTestCase {
                     args);
             fail("server accepted negative x-expires.");
         } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
     }
 
@@ -123,6 +127,7 @@ public class QueueLease extends BrokerTestCase {
                     false, args2);
             fail("Able to redeclare queue with mismatching expire flags.");
         } catch (IOException e) {
+            checkShutdownSignal(AMQP.NOT_ALLOWED, e);
         }
     }
 
@@ -151,7 +156,9 @@ public class QueueLease extends BrokerTestCase {
                 fail("Queue should have been expired by now.");
             }
         } catch (IOException e) {
-            if (!expire) {
+            if (expire) {
+                checkShutdownSignal(AMQP.NOT_FOUND, e);
+            } else {
                 fail("Queue without expire flag deleted.");
             }
         }
