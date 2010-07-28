@@ -34,6 +34,9 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 
@@ -43,12 +46,45 @@ import java.util.Arrays;
 public class Reject extends BrokerTestCase
 {
 
+    protected Channel secondaryChannel;
+
+    protected void setUp()
+        throws IOException
+    {
+        super.setUp();
+        secondaryChannel = connection.createChannel();
+
+    }
+
+    protected void tearDown()
+        throws IOException
+    {
+        if (secondaryChannel != null) {
+            secondaryChannel.abort();
+            secondaryChannel = null;
+        }
+        super.tearDown();
+    }
+
     protected long checkDelivery(Delivery d, byte[] msg, boolean redelivered)
     {
         assertNotNull(d);
-        assertTrue(Arrays.equals(msg, d.getBody()));
-        assertEquals(d.getEnvelope().isRedeliver(), redelivered);
-        return d.getEnvelope().getDeliveryTag();
+        return checkDelivery(d.getEnvelope(), d.getBody(), msg, redelivered);
+    }
+
+    protected long checkDelivery(GetResponse r, byte[] msg, boolean redelivered)
+    {
+        assertNotNull(r);
+        return checkDelivery(r.getEnvelope(), r.getBody(), msg, redelivered);
+    }
+
+    protected long checkDelivery(Envelope e, byte[] m,
+                                 byte[] msg, boolean redelivered)
+    {
+        assertNotNull(e);
+        assertTrue(Arrays.equals(m, msg));
+        assertEquals(e.isRedeliver(), redelivered);
+        return e.getDeliveryTag();
     }
 
     public void testReject()
@@ -56,17 +92,16 @@ public class Reject extends BrokerTestCase
     {
         String q = channel.queueDeclare("", false, true, false, null).getQueue();
 
-        QueueingConsumer c = new QueueingConsumer(channel);
-        String consumerTag = channel.basicConsume(q, false, c);
-
         byte[] m1 = "1".getBytes();
         byte[] m2 = "2".getBytes();
 
         basicPublishVolatile(m1, q);
         basicPublishVolatile(m2, q);
 
-        long tag1 = checkDelivery(c.nextDelivery(), m1, false);
-        long tag2 = checkDelivery(c.nextDelivery(), m2, false);
+        long tag1 = checkDelivery(channel.basicGet(q, false), m1, false);
+        long tag2 = checkDelivery(channel.basicGet(q, false), m2, false);
+        QueueingConsumer c = new QueueingConsumer(secondaryChannel);
+        String consumerTag = channel.basicConsume(q, false, c);
         channel.basicReject(tag2, true);
         long tag3 = checkDelivery(c.nextDelivery(), m2, true);
         channel.basicCancel(consumerTag);
