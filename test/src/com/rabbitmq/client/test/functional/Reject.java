@@ -78,7 +78,7 @@ public class Reject extends BrokerTestCase
             channel.basicQos(0); //some synchronous command
             fail();
         } catch (IOException ioe) {
-            checkShutdownSignal(AMQP.NOT_FOUND, ioe);
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
         }
     }
 }
