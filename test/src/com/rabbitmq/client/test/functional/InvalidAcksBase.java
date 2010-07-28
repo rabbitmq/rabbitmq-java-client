@@ -1,7 +1,6 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
@@ -30,15 +29,6 @@ public abstract class InvalidAcksBase extends BrokerTestCase {
         channel.basicAck(tag, false);
 
         expectChannelError(AMQP.PRECONDITION_FAILED);
-    }
-
-    private void expectChannelError(int error) {
-        try {
-            channel.queueDeclare();
-            fail("Expected channel error " + error);
-        } catch (IOException e) {
-            checkShutdownSignal(error, e);
-        }
     }
 
     public void testCrazyAck()

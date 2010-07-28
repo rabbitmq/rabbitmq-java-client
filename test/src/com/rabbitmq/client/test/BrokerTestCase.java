@@ -42,7 +42,8 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ShutdownSignalException;
-
+import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.impl.ShutdownNotifierComponent;
 import com.rabbitmq.client.AMQP;
 
 public class BrokerTestCase extends TestCase
@@ -128,6 +129,16 @@ public class BrokerTestCase extends TestCase
 
     public void checkShutdownSignal(int expectedCode, IOException ioe) {
         ShutdownSignalException sse = (ShutdownSignalException) ioe.getCause();
+        checkShutdownSignal(expectedCode, sse);
+    }
+
+    public void checkShutdownSignal(int expectedCode, AlreadyClosedException ace) {
+        ShutdownNotifierComponent snc = (ShutdownNotifierComponent) ace.getReference();
+        ShutdownSignalException sse = snc.getCloseReason();
+        checkShutdownSignal(expectedCode, sse);
+    }
+
+    public void checkShutdownSignal(int expectedCode, ShutdownSignalException sse) {
         Command closeCommand = (Command) sse.getReason();
         channel = null;
         if (sse.isHardError()) {
@@ -137,6 +148,20 @@ public class BrokerTestCase extends TestCase
         } else {
             AMQP.Channel.Close closeMethod = (AMQP.Channel.Close) closeCommand.getMethod();
             assertEquals(expectedCode, closeMethod.getReplyCode());
+        }
+    }
+
+    public void expectChannelError(int error) {
+        try {
+            channel.basicQos(0);
+            fail("Expected channel error " + error);
+        } catch (IOException ioe) {
+            // If we immediately provoke the channel to close after flushing
+            // it with the sync basicQos above.
+            checkShutdownSignal(error, ioe);
+        } catch (AlreadyClosedException ace) {
+            // If it has already closed of its own accord before we got there.
+            checkShutdownSignal(error, ace);
         }
     }
 
