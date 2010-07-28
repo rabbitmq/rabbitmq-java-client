@@ -76,11 +76,17 @@ public class BlockingCell<T> {
      * @throws InterruptedException if this thread is interrupted
      */
     public synchronized T get(long timeout) throws InterruptedException, TimeoutException {
-        if (timeout < 0 && timeout != INFINITY)
+        if (timeout == INFINITY) return get();
+
+        if (timeout < 0)
             throw new AssertionError("Timeout cannot be less than zero");
         
         if (!_filled && timeout != 0) {
-            wait(timeout == INFINITY ? 0 : timeout);
+            long maxTime = System.currentTimeMillis() + timeout;
+            long now;
+            while ((now = System.currentTimeMillis()) < maxTime) {
+                wait(maxTime - now);
+            }
         }
         
         if (!_filled)
