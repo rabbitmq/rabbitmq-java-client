@@ -109,11 +109,6 @@ public class Reject extends BrokerTestCase
         assertNull(channel.basicGet(q, false));
         channel.basicAck(tag1, false);
         channel.basicReject(tag3, false);
-        try {
-            channel.basicQos(0); //some synchronous command
-            fail();
-        } catch (IOException ioe) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
-        }
+        expectChannelError(AMQP.PRECONDITION_FAILED);
     }
 }
