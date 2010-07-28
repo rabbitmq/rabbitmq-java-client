@@ -156,8 +156,8 @@ public class BrokerTestCase extends TestCase
             channel.basicQos(0);
             fail("Expected channel error " + error);
         } catch (IOException ioe) {
-            // If we immediately provoke the channel to close after flushing
-            // it with the sync basicQos above.
+            // If we get a channel close back when flushing it with the
+            // synchronous basicQos above.
             checkShutdownSignal(error, ioe);
         } catch (AlreadyClosedException ace) {
             // If it has already closed of its own accord before we got there.
