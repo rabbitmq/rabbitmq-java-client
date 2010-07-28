@@ -33,6 +33,7 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.test.BrokerTestCase;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 
@@ -72,5 +73,12 @@ public class Reject extends BrokerTestCase
         channel.basicReject(tag3, false);
         assertNull(channel.basicGet(q, false));
         channel.basicAck(tag1, false);
+        channel.basicReject(tag3, false);
+        try {
+            channel.basicQos(0); //some synchronous command
+            fail();
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.NOT_FOUND, ioe);
+        }
     }
 }
