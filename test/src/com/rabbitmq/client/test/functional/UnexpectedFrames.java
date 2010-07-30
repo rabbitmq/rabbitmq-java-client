@@ -90,9 +90,7 @@ public class UnexpectedFrames extends BrokerTestCase {
             fail("We should have seen an UNEXPECTED_FRAME by now");
         }
         catch (IOException e) {
-            // todo: use AMQP.UNEXPECTED_FRAME as soon as
-            // 0.9.1 codegen becomes available
-            checkShutdownSignal(505, e);
+            checkShutdownSignal(AMQP.UNEXPECTED_FRAME, e);
         }
     }
 
