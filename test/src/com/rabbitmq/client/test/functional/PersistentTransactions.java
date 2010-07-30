@@ -41,7 +41,7 @@ public class PersistentTransactions extends TransactionsBase {
     }
 
     @Override
-    protected boolean declareDurableQueues() {
+    protected boolean declareQueuesDurable() {
         return true;
     }
 

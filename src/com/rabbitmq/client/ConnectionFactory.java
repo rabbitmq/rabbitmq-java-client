@@ -135,7 +135,8 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     *  @return the default port to use for connections
+     * Set the target port.
+     * @param port the default port to use for connections
      */
     public void setPort(int port) {
         this.port = port;
@@ -244,7 +245,7 @@ public class ConnectionFactory implements Cloneable {
      * table. Such changes will take effect when the next new
      * connection is started using this factory.
      * @return the map of client properties
-     * @see setClientProperties()
+     * @see #setClientProperties
      */
     public Map<String, Object> getClientProperties() {
         return _clientProperties;
@@ -254,7 +255,7 @@ public class ConnectionFactory implements Cloneable {
      * Replace the table of client properties that will be sent to the
      * server during subsequent connection startups.
      * @param clientProperties the map of extra client properties
-     * @see getClientProperties()
+     * @see #getClientProperties
      */
     public void setClientProperties(Map<String, Object> clientProperties) {
         _clientProperties = clientProperties;
@@ -345,13 +346,13 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     *  Provides a hook to insert custom configuration of the sockets used
-     *  to connect to an AMQP server before they connect. 
+     *  Provides a hook to insert custom configuration of the sockets
+     *  used to connect to an AMQP server before they connect.
      *
-     *  The default behaviour of this method is to disable Nagle's algorithm to get
-     *  more consistently low latency.
-     *  However it may be overridden freely and there is no requirement to retain
-     *  this behaviour. 
+     *  The default behaviour of this method is to disable Nagle's
+     *  algorithm to get more consistently low latency.  However it
+     *  may be overridden freely and there is no requirement to retain
+     *  this behaviour.
      *
      *  @param socket The socket that is to be used for the Connection
      */

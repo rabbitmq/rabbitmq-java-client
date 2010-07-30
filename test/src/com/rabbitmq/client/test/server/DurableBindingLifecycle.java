@@ -49,13 +49,15 @@ import java.io.IOException;
  *
  */
 public class DurableBindingLifecycle extends BindingLifecycleBase {
-
     @Override
     protected void restart() throws IOException {
-        if (secondaryConnection != null) {
-            secondaryConnection.abort();
-            secondaryConnection = null;
-            secondaryChannel = null;
+        if (clusteredConnection != null) {
+            clusteredConnection.abort();
+            clusteredConnection = null;
+            clusteredChannel = null;
+            alternateConnection = null;
+            alternateChannel = null;
+
             Host.executeCommand("cd ../rabbitmq-test; make restart-secondary-node");
         }
         tearDown();
