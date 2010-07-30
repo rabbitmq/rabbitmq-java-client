@@ -65,6 +65,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(BindToDefaultExchange.class);
         suite.addTestSuite(UnbindAutoDeleteExchange.class);
         suite.addTestSuite(RecoverAfterCancel.class);
+        suite.addTestSuite(UnexpectedFrames.class);
         return suite;
     }
 }
