@@ -38,6 +38,7 @@ import junit.framework.TestSuite;
 public class FunctionalTests extends TestCase {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("functional");
+        suite.addTestSuite(Heartbeat.class);
         suite.addTestSuite(Tables.class);
         suite.addTestSuite(DoubleDeletion.class);
         suite.addTestSuite(Routing.class);
