@@ -647,6 +647,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public void basicReject(long deliveryTag, boolean requeue)
+        throws IOException
+    {
+        transmit(new Basic.Reject(deliveryTag, requeue));
+    }
+
+    /** Public API - {@inheritDoc} */
     public String basicConsume(String queue, Consumer callback)
         throws IOException
     {

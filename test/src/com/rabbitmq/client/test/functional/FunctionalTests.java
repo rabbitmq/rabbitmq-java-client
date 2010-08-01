@@ -44,6 +44,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(Routing.class);
         suite.addTestSuite(BindingLifecycle.class);
         suite.addTestSuite(Recover.class);
+        suite.addTestSuite(Reject.class);
         suite.addTestSuite(TransactionalRecover.class);
         suite.addTestSuite(Transactions.class);
         suite.addTestSuite(PersistentTransactions.class);
