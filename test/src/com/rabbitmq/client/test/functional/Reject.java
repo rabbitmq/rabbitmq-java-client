@@ -101,11 +101,11 @@ public class Reject extends BrokerTestCase
         long tag1 = checkDelivery(channel.basicGet(q, false), m1, false);
         long tag2 = checkDelivery(channel.basicGet(q, false), m2, false);
         QueueingConsumer c = new QueueingConsumer(secondaryChannel);
-        String consumerTag = channel.basicConsume(q, false, c);
+        String consumerTag = secondaryChannel.basicConsume(q, false, c);
         channel.basicReject(tag2, true);
         long tag3 = checkDelivery(c.nextDelivery(), m2, true);
-        channel.basicCancel(consumerTag);
-        channel.basicReject(tag3, false);
+        secondaryChannel.basicCancel(consumerTag);
+        secondaryChannel.basicReject(tag3, false);
         assertNull(channel.basicGet(q, false));
         channel.basicAck(tag1, false);
         channel.basicReject(tag3, false);
