@@ -120,6 +120,13 @@ public class TestMain {
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
 
+        //should succeed IF the highest version supported by the
+        //server is a version supported by this client
+        /* TODO: re-enable this test once the client speaks 0-9-1
+        conn = new TestConnectionFactory(100, 0, hostName, portNumber).newConnection();
+        conn.close();
+        */
+
         ConnectionFactory factory;
         factory = new ConnectionFactory();
         factory.setUsername("invalid");

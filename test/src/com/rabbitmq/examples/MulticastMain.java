@@ -86,6 +86,7 @@ public class MulticastMain {
             int timeLimit        = intArg(cmd, 'z', 0);
             List flags           = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);
+            int heartbeat        = intArg(cmd, 'b', 0);
 
             //setup
             String id = UUID.randomUUID().toString();
@@ -94,6 +95,7 @@ public class MulticastMain {
             factory.setHost(hostName);
             factory.setPort(portNumber);
             factory.setRequestedFrameMax(frameMax);
+            factory.setRequestedHeartbeat(heartbeat);
 
             Thread[] consumerThreads = new Thread[consumerCount];
             Connection[] consumerConnections = new Connection[consumerCount];
@@ -131,7 +133,7 @@ public class MulticastMain {
                                                    flags, producerTxSize,
                                                    1000L * samplingInterval,
                                                    rateLimit, minMsgSize, timeLimit);
-                channel.setReturnListener(p);                
+                channel.setReturnListener(p);
                 Thread t = new Thread(p);
                 producerThreads[i] = t;
                 t.start();
@@ -180,6 +182,7 @@ public class MulticastMain {
         flag.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(flag);
         options.addOption(new Option("M", "framemax",  true, "frame max"));
+        options.addOption(new Option("b", "heartbeat", true, "heartbeat interval"));
         return options;
     }
 

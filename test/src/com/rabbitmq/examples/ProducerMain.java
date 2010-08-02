@@ -40,6 +40,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.AMQP.BasicProperties;
 
 public class ProducerMain implements Runnable {
     public static final int SUMMARY_EVERY_MS = 1000;
@@ -191,6 +192,9 @@ public class ProducerMain implements Runnable {
 
         long nextSummaryTime = startTime + SUMMARY_EVERY_MS;
         byte[] message = new byte[256];
+        BasicProperties props = shouldPersist() ?
+                MessageProperties.MINIMAL_PERSISTENT_BASIC :
+                    MessageProperties.MINIMAL_BASIC;
         for (int i = 0; i < _messageCount; i++) {
             ByteArrayOutputStream acc = new ByteArrayOutputStream();
             DataOutputStream d = new DataOutputStream(acc);
@@ -205,8 +209,7 @@ public class ProducerMain implements Runnable {
             acc.flush();
             byte[] message0 = acc.toByteArray();
             System.arraycopy(message0, 0, message, 0, message0.length);
-            _channel.basicPublish("", queueName, shouldPersist() ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
-                    message);
+            _channel.basicPublish("", queueName, props, message);
             sent++;
             if (shouldCommit()) {
                 if ((sent % _commitEvery) == 0) {
