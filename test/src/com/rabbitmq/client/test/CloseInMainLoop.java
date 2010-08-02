@@ -40,7 +40,7 @@ public class CloseInMainLoop extends BrokerTestCase{
             }
         });
 
-        this.start(true);
+        this.start();
       }
 
     @Override

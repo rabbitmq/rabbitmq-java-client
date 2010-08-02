@@ -83,7 +83,6 @@ public class MulticastMain {
             boolean autoAck      = cmd.hasOption('a');
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
-            int maxRedirects     = intArg(cmd, 'd', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
             List flags           = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);

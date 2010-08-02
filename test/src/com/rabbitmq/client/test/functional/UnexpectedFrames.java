@@ -75,9 +75,7 @@ public class UnexpectedFrames extends BrokerTestCase {
                 AMQP.PROTOCOL.PORT);
         ConfusedFrameHandler handler = new ConfusedFrameHandler(socket);
         AMQConnection connection = new AMQConnection(factory, handler);
-        try {
-            connection.start(false);
-        } catch (RedirectException e) {}
+        connection.start();
         Channel channel = connection.createChannel();
 
         handler.confuser = confuser;

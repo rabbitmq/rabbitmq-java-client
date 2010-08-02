@@ -478,7 +478,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicAck
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Consumer)
+     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
      */
     String basicConsume(String queue, Consumer callback) throws IOException;
 
@@ -492,7 +492,7 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Consumer)
+     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
      */
     String basicConsume(String queue, boolean noAck, Consumer callback) throws IOException;
 
@@ -506,7 +506,7 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Consumer)
+     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
      */
     String basicConsume(String queue, boolean noAck, String consumerTag, Consumer callback) throws IOException;
 
@@ -524,7 +524,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      */
-    String basicConsume(String queue, boolean noAck, String consumerTag, boolean noLocal, boolean exclusive, Consumer callback) throws IOException;
+    String basicConsume(String queue, boolean noAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> filter, Consumer callback) throws IOException;
 
     /**
      * Cancel a consumer. Calls the consumer's {@link Consumer#handleCancelOk}
