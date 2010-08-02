@@ -48,6 +48,7 @@ public class Reject extends BrokerTestCase
 
     protected Channel secondaryChannel;
 
+    @Override
     protected void setUp()
         throws IOException
     {
@@ -56,6 +57,7 @@ public class Reject extends BrokerTestCase
 
     }
 
+    @Override
     protected void tearDown()
         throws IOException
     {
