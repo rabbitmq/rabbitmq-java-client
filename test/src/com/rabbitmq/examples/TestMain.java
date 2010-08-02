@@ -423,7 +423,7 @@ public class TestMain {
         _ch1.queueDeclare(q1, false, false, false, null);
         _ch1.queueDeclare(q2, false, false, false, null);
         _ch1.queueDeclare(q3, false, false, false, null);
-        _ch1.exchangeDeclare(x, "topic", false, true, null);
+        _ch1.exchangeDeclare(x, "topic", false, false, null);
         _ch1.queueBind(q1, x, "test.#");
         _ch1.queueBind(q2, x, "test.test");
         _ch1.queueBind(q3, x, "*.test.#");

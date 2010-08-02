@@ -86,7 +86,7 @@ public class ProducerMain implements Runnable {
             final int portNumber = optArg("portNumber", args, 1, AMQP.PROTOCOL.PORT);
             int rateLimit = optArg("rateLimit", args, 2, SEND_RATE);
             int messageCount = optArg("messageCount", args, 3, LATENCY_MESSAGE_COUNT);
-            boolean sendCompletion = optArg("sendCompletion", args, 4, true);
+            boolean sendCompletion = optArg("sendCompletion", args, 4, false);
             int commitEvery = optArg("commitEvery", args, 5, -1);
             boolean sendLatencyInfo = optArg("sendLatencyInfo", args, 6, true);
             final Connection conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();

@@ -373,15 +373,16 @@ public class ConnectionFactory implements Cloneable {
         IOException lastException = null;
         for (Address addr : addrs) {
             try {
-              FrameHandler frameHandler = createFrameHandler(addr);
-              AMQConnection conn = new AMQConnection(this,
+                FrameHandler frameHandler = createFrameHandler(addr);
+                AMQConnection conn = new AMQConnection(this,
                                                      frameHandler);
-              conn.start();
-              return conn;
+                conn.start();
+                return conn;
             } catch (IOException e) {
-              lastException = e;
+                lastException = e;
             }
         }
+
         if (lastException == null) {
             throw new IOException("failed to connect");
         } else {
@@ -389,11 +390,17 @@ public class ConnectionFactory implements Cloneable {
         }
     }
 
+    /**
+     * Create a new broker connection
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
     public Connection newConnection() throws IOException {
         return newConnection(new Address[] {
                                  new Address(getHost(), getPort())});
     }
-  
+
+
     @Override public ConnectionFactory clone(){
         try {
             return (ConnectionFactory)super.clone(); 

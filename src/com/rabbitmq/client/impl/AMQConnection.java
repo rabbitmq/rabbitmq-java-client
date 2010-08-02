@@ -180,7 +180,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _serverProperties;
     }
 
-
     /**
      * Construct a new connection to a broker.
      * @param factory the initialization parameters for a connection
@@ -311,8 +310,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
                                                                           "",
                                                                           true)).getMethod();
-        AMQP.Connection.OpenOk openOk = (AMQP.Connection.OpenOk) res;
-                
         return;
     }
 

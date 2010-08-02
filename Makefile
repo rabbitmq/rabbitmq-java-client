@@ -103,4 +103,3 @@ promote-maven-bundle:
 	    -DtargetRepositoryId=releases \
 	    -B \
 	)
-
