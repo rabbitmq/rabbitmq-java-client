@@ -173,19 +173,31 @@ public class Frame {
         }
 
         try {
-            int transportHigh = is.readUnsignedByte();
-            int transportLow = is.readUnsignedByte();
-            int serverMajor = is.readUnsignedByte();
-            int serverMinor = is.readUnsignedByte();
+            int[] signature = new int[4];
 
-            // 0-8 gets these the wrong way round
-            if (serverMajor == 8 && serverMinor == 0) {
-                serverMajor = 0;
-                serverMinor = 8;
+            for (int i = 0; i < 4; i++) {
+                signature[i] = is.readUnsignedByte();
             }
 
-            x = new MalformedFrameException("AMQP protocol version mismatch; we are version " + AMQP.PROTOCOL.MAJOR + "-" + AMQP.PROTOCOL.MINOR
-                    + ", server is " + serverMajor + "-" + serverMinor + " with transport " + transportHigh + "." + transportLow);
+            if (signature[0] == 1 &&
+                signature[1] == 1 &&
+                signature[2] == 8 &&
+                signature[3] == 0) {
+                x = new MalformedFrameException("AMQP protocol version mismatch; we are version " +
+                        AMQP.PROTOCOL.MAJOR + "-" + AMQP.PROTOCOL.MINOR + "-" + AMQP.PROTOCOL.REVISION +
+                        ", server is 0-8");
+            }
+            else {
+                String sig = "";
+                for (int i = 0; i < 4; i++) {
+                    sig += signature[i];
+                }
+
+                x = new MalformedFrameException("AMQP protocol version mismatch; we are version " +
+                        AMQP.PROTOCOL.MAJOR + "-" + AMQP.PROTOCOL.MINOR + "-" + AMQP.PROTOCOL.REVISION +
+                        ", server sent signature " + sig);
+            }
+
         } catch (IOException ex) {
             x = new MalformedFrameException("Invalid AMQP protocol header from server");
         }
