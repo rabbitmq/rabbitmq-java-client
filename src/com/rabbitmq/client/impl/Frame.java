@@ -190,6 +190,7 @@ public class Frame {
             else {
                 String sig = "";
                 for (int i = 0; i < 4; i++) {
+                    if (i != 0) sig += ",";
                     sig += signature[i];
                 }
 
