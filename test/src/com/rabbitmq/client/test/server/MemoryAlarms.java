@@ -53,6 +53,7 @@ public class MemoryAlarms extends BrokerTestCase {
     protected void setUp()
         throws IOException
     {
+        connectionFactory.setRequestedHeartbeat(1);
         super.setUp();
         if (connection2 == null) {
             connection2 = connectionFactory.newConnection();
@@ -73,6 +74,7 @@ public class MemoryAlarms extends BrokerTestCase {
             connection2 = null;
         }
         super.tearDown();
+        connectionFactory.setRequestedHeartbeat(0);
     }
 
     @Override
@@ -113,6 +115,8 @@ public class MemoryAlarms extends BrokerTestCase {
         //publishes after an alarm should not go through
         basicPublishVolatile(Q);
         assertNull(c.nextDelivery(10)); //the publish is async, so this is racy
+        //heartbeat monitoring should be disabled
+        Thread.sleep(3100); //3x heartbeat interval + epsilon
         //once the alarm has cleared the publishes should go through
         clearMemoryAlarm();
         assertNotNull(c.nextDelivery());
