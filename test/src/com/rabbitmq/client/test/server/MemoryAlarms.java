@@ -32,15 +32,11 @@ package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
-import junit.framework.TestCase;
-
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
-
 import com.rabbitmq.tools.Host;
-
 
 public class MemoryAlarms extends BrokerTestCase {
 
@@ -50,9 +46,7 @@ public class MemoryAlarms extends BrokerTestCase {
     private Channel channel2;
 
     @Override
-    protected void setUp()
-        throws IOException
-    {
+    protected void setUp() throws IOException {
         connectionFactory.setRequestedHeartbeat(1);
         super.setUp();
         if (connection2 == null) {
@@ -62,9 +56,7 @@ public class MemoryAlarms extends BrokerTestCase {
     }
 
     @Override
-    protected void tearDown()
-        throws IOException
-    {
+    protected void tearDown() throws IOException {
         if (channel2 != null) {
             channel2.abort();
             channel2 = null;
@@ -78,49 +70,39 @@ public class MemoryAlarms extends BrokerTestCase {
     }
 
     @Override
-    protected void createResources()
-        throws IOException
-    {
+    protected void createResources() throws IOException {
         channel.queueDeclare(Q, false, false, false, null);
     }
 
     @Override
-    protected void releaseResources()
-        throws IOException
-    {
+    protected void releaseResources() throws IOException {
         channel.queueDelete(Q);
     }
 
-    protected void setMemoryAlarm()
-        throws IOException, InterruptedException
-    {
+    protected void setMemoryAlarm() throws IOException, InterruptedException {
         Host.executeCommand("cd ../rabbitmq-test; make set-memory-alarm");
     }
 
-    protected void clearMemoryAlarm()
-        throws IOException, InterruptedException
-    {
+    protected void clearMemoryAlarm() throws IOException, InterruptedException {
         Host.executeCommand("cd ../rabbitmq-test; make clear-memory-alarm");
     }
 
-    public void testFlowControl()
-        throws IOException, InterruptedException
-    {
+    public void testFlowControl() throws IOException, InterruptedException {
         basicPublishVolatile(Q);
         setMemoryAlarm();
-        //non-publish actions only after an alarm should be fine
+        // non-publish actions only after an alarm should be fine
         assertNotNull(basicGet(Q));
         QueueingConsumer c = new QueueingConsumer(channel);
         String consumerTag = channel.basicConsume(Q, true, c);
-        //publishes after an alarm should not go through
+        // publishes after an alarm should not go through
         basicPublishVolatile(Q);
-        assertNull(c.nextDelivery(10)); //the publish is async, so this is racy
-        //heartbeat monitoring should be disabled
-        Thread.sleep(3100); //3x heartbeat interval + epsilon
-        //once the alarm has cleared the publishes should go through
+        assertNull(c.nextDelivery(10)); // the publish is async, so this is racy
+        // heartbeat monitoring should be disabled
+        Thread.sleep(3100); // 3x heartbeat interval + epsilon
+        // once the alarm has cleared the publishes should go through
         clearMemoryAlarm();
         assertNotNull(c.nextDelivery());
-        //everything should be back to normal
+        // everything should be back to normal
         channel.basicCancel(consumerTag);
         basicPublishVolatile(Q);
         assertNotNull(basicGet(Q));
