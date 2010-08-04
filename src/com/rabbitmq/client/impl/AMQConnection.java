@@ -309,7 +309,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         // still in generated code; just pass a dummy value here
         Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
                                                                           "",
-                                                                          true)).getMethod();
+                                                                          false)).getMethod();
         return;
     }
 

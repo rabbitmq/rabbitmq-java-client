@@ -86,7 +86,7 @@ public class Permissions extends BrokerTestCase
         runCtl("add_vhost /test");
         runCtl("set_permissions -p /test test configure write read");
         runCtl("set_permissions -p /test testadmin \".*\" \".*\" \".*\"");
-        runCtl("set_permissions -p /test noaccess \"\" \"\" \"\"");
+        runCtl("set_permissions -p /test -s all noaccess \"\" \"\" \"\"");
     }
 
     protected void deleteRestrictedAccount()
@@ -268,6 +268,11 @@ public class Permissions extends BrokerTestCase
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     noAccessCh.queueDeclare("justaqueue", false, false, true, null);
+                }}
+        );
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    noAccessCh.queueDeclare();
                 }}
         );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
