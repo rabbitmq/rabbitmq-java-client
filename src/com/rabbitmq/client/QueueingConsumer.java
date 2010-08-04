@@ -40,7 +40,37 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.utility.Utility;
 
 /**
- * Convenience class: an implementation of {@link Consumer} with straightforward blocking semantics
+ * Convenience class: an implementation of {@link Consumer} with
+ * straightforward blocking semantics.
+ *
+ * The general pattern for using QueueingConsumer is as follows:
+ *
+ * <pre>
+ * // Create connection and channel.
+ * {@link ConnectionFactory} factory = new ConnectionFactory();
+ * Connection conn = factory.newConnection();
+ * {@link Channel} ch1 = conn.createChannel();
+ *
+ * // Declare a queue and bind it to an exchange.
+ * String queueName = ch1.queueDeclare().{@link AMQP.Queue.DeclareOk#getQueue getQueue}();
+ * ch1.{@link Channel#queueBind queueBind}(queueName, exchangeName, queueName);
+ *
+ * // Create the QueueingConsumer and have it consume from the queue
+ * QueueingConsumer consumer = new {@link QueueingConsumer#QueueingConsumer QueueingConsumer}(ch1);
+ * ch1.{@link Channel#basicConsume basicConsume}(queueName, false, consumer);
+ *
+ * // Process deliveries
+ * while (/* some condition * /) {
+ *     {@link QueueingConsumer.Delivery} delivery = consumer.{@link QueueingConsumer#nextDelivery nextDelivery}();
+ *     // process delivery
+ *     ch1.{@link Channel#basicAck basicAck}(delivery.{@link QueueingConsumer.Delivery#getEnvelope getEnvelope}().{@link Envelope#getDeliveryTag getDeliveryTag}(), false);
+ * }
+ * </pre>
+ *
+ * <p>For a more detailed explanation, see <a href="http://www.rabbitmq.com/api-guide.html#consuming">the java api guide</a>.</p>
+ *
+ * <p>For a more complete example, see LogTail in the test/src/com/rabbitmq/examples
+ * directory of the source distribution.</p>
  */
 public class QueueingConsumer extends DefaultConsumer {
     private final BlockingQueue<Delivery> _queue;

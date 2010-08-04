@@ -458,6 +458,17 @@ public interface Channel extends ShutdownNotifier {
     void basicAck(long deliveryTag, boolean multiple) throws IOException;
 
     /**
+     * Reject a message. Supply the deliveryTag from the {@link com.rabbitmq.client.AMQP.Basic.GetOk}
+     * or {@link com.rabbitmq.client.AMQP.Basic.Deliver} method
+     * containing the received message being rejected.
+     * @see com.rabbitmq.client.AMQP.Basic.Reject
+     * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk} or {@link com.rabbitmq.client.AMQP.Basic.Deliver}
+     * @param requeue true if the rejected message should be requeued rather than discarded/dead-lettered
+     * @throws java.io.IOException if an error is encountered
+     */
+    void basicReject(long deliveryTag, boolean requeue) throws IOException;
+
+    /**
      * Start a non-nolocal, non-exclusive consumer, with
      * explicit acknowledgements required and a server-generated consumerTag.
      * @param queue the name of the queue
