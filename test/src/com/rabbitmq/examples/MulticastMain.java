@@ -83,7 +83,6 @@ public class MulticastMain {
             boolean autoAck      = cmd.hasOption('a');
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
-            int maxRedirects     = intArg(cmd, 'd', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
             List flags           = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);
@@ -177,7 +176,6 @@ public class MulticastMain {
         options.addOption(new Option("a", "autoack",   false,"auto ack"));
         options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
         options.addOption(new Option("s", "size",      true, "message size"));
-        options.addOption(new Option("d", "redirects", true, "max redirects"));
         options.addOption(new Option("z", "time",      true, "time limit"));
         Option flag =     new Option("f", "flag",      true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);

@@ -115,12 +115,6 @@ public interface BasicProperties {
     public abstract String getAppId();
     
     /**
-     * Retrieve the value in the clusterId field.
-     * @return clusterId field, or null if the field has not been set.
-     */
-    public abstract String getClusterId();
-
-    /**
      * Set the contentType field, or null indicating the field is not set
      * @param contentType the value to set the field to
      */
@@ -198,9 +192,4 @@ public interface BasicProperties {
      */
     public abstract void setAppId(String appId);
     
-    /**
-     * Set the clusterId field, or null indicating the field is not set
-     * @param clusterId the value to set the field to
-     */
-    public abstract void setClusterId(String clusterId);
 }
