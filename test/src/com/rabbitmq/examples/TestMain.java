@@ -427,10 +427,10 @@ public class TestMain {
         String q2 = "tryTopicsQueue2";
         String q3 = "tryTopicsQueue3";
         String x = "tryTopicsExch";
-        _ch1.queueDeclare(q1, false, false, false, null);
-        _ch1.queueDeclare(q2, false, false, false, null);
-        _ch1.queueDeclare(q3, false, false, false, null);
-        _ch1.exchangeDeclare(x, "topic", false, false, null);
+        _ch1.queueDeclare(q1, false, true, true, null);
+        _ch1.queueDeclare(q2, false, true, true, null);
+        _ch1.queueDeclare(q3, false, true, true, null);
+        _ch1.exchangeDeclare(x, "topic", false, true, null);
         _ch1.queueBind(q1, x, "test.#");
         _ch1.queueBind(q2, x, "test.test");
         _ch1.queueBind(q3, x, "*.test.#");
@@ -447,12 +447,6 @@ public class TestMain {
         expect(1, drain(10, q2, true));
         log("About to drain q3");
         expect(2, drain(10, q3, true));
-
-        _ch1.queueDelete(q3, true, true);
-        _ch1.queueDelete(q2, true, true);
-        _ch1.queueDelete(q1, true, true);
-        // We created the exchange auto_delete - it should be gone by this point.
-        // ch1.exchangeDelete(x);
     }
 
     public void doBasicReturn(BlockingCell cell, int expectedCode) {
