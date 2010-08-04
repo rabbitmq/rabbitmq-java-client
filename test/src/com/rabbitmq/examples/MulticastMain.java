@@ -176,7 +176,6 @@ public class MulticastMain {
         options.addOption(new Option("a", "autoack",   false,"auto ack"));
         options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
         options.addOption(new Option("s", "size",      true, "message size"));
-        options.addOption(new Option("d", "redirects", true, "max redirects"));
         options.addOption(new Option("z", "time",      true, "time limit"));
         Option flag =     new Option("f", "flag",      true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);
