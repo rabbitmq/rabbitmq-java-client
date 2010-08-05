@@ -77,7 +77,7 @@
   	</fail>
   </target>
 
-  <target name="build" depends="amqp-generate">
+  <target name="build" depends="amqp-generate" description="Build the client library.">
     <mkdir dir="${javac.out}"/>
     <copy file="src/com/rabbitmq/client/impl/ClientVersion.java.in"
 	  tofile="${src.generated}/com/rabbitmq/client/impl/ClientVersion.java">
@@ -114,6 +114,10 @@
     <property name="CLIENT_KEYSTORE_PHRASE" value="bunnies"/>
     <property environment="env"/>
     <property name="SSL_P12_PASSWORD" value="${env.PASSWORD}"/>
+  </target>
+
+  <target  name="detect-umbrella">
+    <available property="UMBRELLA_AVAILABLE" file="../rabbitmq-test"/>
   </target>
 
   <target name="detect-tmpdir">
@@ -317,7 +321,7 @@
   	<property name="haltOnFailureJava" value="false" />	
   </target>
 	
-  <target name="test-suite" depends="test-suite-prepare, test-suite-run">
+  <target name="test-suite" depends="test-suite-prepare, test-suite-run" description="Run all test suites.">
   	<fail message="Errors occured in tests">
   	    <condition>
             <not>
@@ -329,7 +333,7 @@
 
   <target name="test-suite-run" depends="test-client, test-ssl, test-server, test-functional, test-main-silent"/>
     
-  <target name="test-client" depends="test-build">
+  <target name="test-client" depends="test-build" description="Run the client test suites.">
     <junit printSummary="withOutAndErr"
         haltOnFailure="${haltOnFailureJunit}"
         failureproperty="test.failure"
@@ -362,7 +366,7 @@
     <antcall target="remove-client-keystore"/>
   </target>
 
-  <target name="test-functional" depends="test-build">
+  <target name="test-functional" depends="test-build" description="Run the functional test suite.">
     <junit printSummary="withOutAndErr"
         haltOnFailure="${haltOnFailureJunit}"
         failureproperty="test.failure"
@@ -375,7 +379,7 @@
     </junit>
   </target>
 
-  <target name="test-server" depends="test-build">
+  <target name="test-server" depends="detect-umbrella, test-build" if="UMBRELLA_AVAILABLE">
     <junit printSummary="withOutAndErr"
         haltOnFailure="${haltOnFailureJunit}"
         failureproperty="test.failure"

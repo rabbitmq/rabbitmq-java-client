@@ -114,8 +114,6 @@ public interface BasicProperties {
      */
     public abstract String getAppId();
 
-    
-    /**
      * Set the contentType field, or null indicating the field is not set
      * @param contentType the value to set the field to
      */

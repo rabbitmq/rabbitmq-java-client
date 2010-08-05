@@ -173,12 +173,32 @@ public class Frame {
         }
 
         try {
-            int transportHigh = is.readUnsignedByte();
-            int transportLow = is.readUnsignedByte();
-            int serverMajor = is.readUnsignedByte();
-            int serverMinor = is.readUnsignedByte();
-            x = new MalformedFrameException("AMQP protocol version mismatch; we are version " + AMQP.PROTOCOL.MAJOR + "-" + AMQP.PROTOCOL.MINOR
-                    + ", server is " + serverMajor + "-" + serverMinor + " with transport " + transportHigh + "." + transportLow);
+            int[] signature = new int[4];
+
+            for (int i = 0; i < 4; i++) {
+                signature[i] = is.readUnsignedByte();
+            }
+
+            if (signature[0] == 1 &&
+                signature[1] == 1 &&
+                signature[2] == 8 &&
+                signature[3] == 0) {
+                x = new MalformedFrameException("AMQP protocol version mismatch; we are version " +
+                        AMQP.PROTOCOL.MAJOR + "-" + AMQP.PROTOCOL.MINOR + "-" + AMQP.PROTOCOL.REVISION +
+                        ", server is 0-8");
+            }
+            else {
+                String sig = "";
+                for (int i = 0; i < 4; i++) {
+                    if (i != 0) sig += ",";
+                    sig += signature[i];
+                }
+
+                x = new MalformedFrameException("AMQP protocol version mismatch; we are version " +
+                        AMQP.PROTOCOL.MAJOR + "-" + AMQP.PROTOCOL.MINOR + "-" + AMQP.PROTOCOL.REVISION +
+                        ", server sent signature " + sig);
+            }
+
         } catch (IOException ex) {
             x = new MalformedFrameException("Invalid AMQP protocol header from server");
         }

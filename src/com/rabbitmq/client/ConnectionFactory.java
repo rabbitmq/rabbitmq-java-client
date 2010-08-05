@@ -346,13 +346,13 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     *  Provides a hook to insert custom configuration of the sockets used
-     *  to connect to an AMQP server before they connect. 
+     *  Provides a hook to insert custom configuration of the sockets
+     *  used to connect to an AMQP server before they connect.
      *
-     *  The default behaviour of this method is to disable Nagle's algorithm to get
-     *  more consistently low latency.
-     *  However it may be overridden freely and there is no requirement to retain
-     *  this behaviour. 
+     *  The default behaviour of this method is to disable Nagle's
+     *  algorithm to get more consistently low latency.  However it
+     *  may be overridden freely and there is no requirement to retain
+     *  this behaviour.
      *
      *  @param socket The socket that is to be used for the Connection
      */
@@ -373,14 +373,13 @@ public class ConnectionFactory implements Cloneable {
         IOException lastException = null;
         for (Address addr : addrs) {
             try {
-              FrameHandler frameHandler = createFrameHandler(addr);
-              AMQConnection conn = new AMQConnection(this,
+                FrameHandler frameHandler = createFrameHandler(addr);
+                AMQConnection conn = new AMQConnection(this,
                                                      frameHandler);
-              conn.start();
-              return conn;
+                conn.start();
+                return conn;
             } catch (IOException e) {
               lastException = e;
-            }
         }
         if (lastException == null) {
             throw new IOException("failed to connect");
