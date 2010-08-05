@@ -96,9 +96,9 @@ public class MemoryAlarms extends BrokerTestCase {
         String consumerTag = channel.basicConsume(Q, true, c);
         // publishes after an alarm should not go through
         basicPublishVolatile(Q);
-        assertNull(c.nextDelivery(10)); // the publish is async, so this is racy
-        // heartbeat monitoring should be disabled
-        Thread.sleep(3100); // 3x heartbeat interval + epsilon
+        // the publish is async, so this is racy. This also tests we don't die
+        // by heartbeat (3x heartbeat interval + epsilon)
+        assertNull(c.nextDelivery(3100));
         // once the alarm has cleared the publishes should go through
         clearMemoryAlarm();
         assertNotNull(c.nextDelivery());
