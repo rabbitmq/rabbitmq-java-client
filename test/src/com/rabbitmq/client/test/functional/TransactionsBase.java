@@ -351,4 +351,24 @@ public abstract class TransactionsBase
         closeChannel();
     }
 
+    public void testCommitWithDeletedQueue()
+        throws IOException
+    {
+        openChannel();
+        txSelect();
+        basicPublish();
+        releaseResources();
+        try {
+            txCommit();
+        } catch (IOException e) {
+            closeConnection();
+            openConnection();
+            openChannel();
+            fail("commit failed");
+        } finally {
+            createResources();
+            closeChannel();
+        }
+    }
+
 }
