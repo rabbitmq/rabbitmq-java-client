@@ -27,7 +27,7 @@
   </path>
 
   <property name="AMQP_SPEC_JSON_PATH" value="${codegen.dir}/amqp-rabbitmq-${spec.version}.json"/>
-  
+
   <target name="amqp-generate-check" description="check if codegen needs to be run">
     <uptodate property="amqp.generate.notRequired">
       <srcfiles file="codegen.py"/>
@@ -40,7 +40,7 @@
       </compositemapper>
     </uptodate>
   </target>
-  
+
   <target name="amqp-generate" depends="amqp-generate-check"
     unless="amqp.generate.notRequired" description="generate AMQP.java and AMQImpl.java from AMQP spec">
     <mkdir dir="${src.generated}/com/rabbitmq/client/"/>
@@ -171,12 +171,12 @@
       <arg value="${CLIENT_KEYSTORE_PHRASE}"/>
     </exec>
   </target>
-  
+
   <target name="remove-client-keystore" if="SSL_AVAILABLE">
     <delete file="${CLIENT_KEYSTORE}" failonerror="false"/>
     <delete file="${CLIENT_KEYSTORE_EMPTY}" failonerror="false"/>
   </target>
-  
+
   <target name="test-prepare">
 	<property name="haltOnFailureJunit" value="yes" />
   	<property name="haltOnFailureJava" value="true" />
@@ -318,9 +318,9 @@
 
   <target name="test-suite-prepare">
   	<property name="haltOnFailureJunit" value="no" />
-  	<property name="haltOnFailureJava" value="false" />	
+  	<property name="haltOnFailureJava" value="false" />
   </target>
-	
+
   <target name="test-suite" depends="test-suite-prepare, test-suite-run" description="Run all test suites.">
   	<fail message="Errors occured in tests">
   	    <condition>
@@ -332,7 +332,7 @@
   </target>
 
   <target name="test-suite-run" depends="test-client, test-ssl, test-server, test-functional, test-main-silent"/>
-    
+
   <target name="test-client" depends="test-build" description="Run the client test suites.">
     <junit printSummary="withOutAndErr"
         haltOnFailure="${haltOnFailureJunit}"
@@ -355,7 +355,7 @@
       <jvmarg value="-Dkeystore.path=${CLIENT_KEYSTORE}"/>
       <jvmarg value="-Dkeystore.empty.path=${CLIENT_KEYSTORE_EMPTY}"/>
       <jvmarg value="-Dkeystore.passwd=${CLIENT_KEYSTORE_PHRASE}"/>
-      
+
       <jvmarg value="-Dp12.path=${SSL_CERTS_DIR}/client/keycert.p12"/>
       <jvmarg value="-Dp12.passwd=${SSL_P12_PASSWORD}"/>
 
@@ -479,16 +479,16 @@
       <fileset dir="lib">
         <include name="**/*.jar"/>
       </fileset>
-      
+
       <fileset dir="${lib.out}">
         <include name="**/*.jar"/>
       </fileset>
-      
+
       <fileset dir="scripts">
         <include name="**/*.sh"/>
         <include name="**/*.bat"/>
       </fileset>
-      
+
       <fileset file="${retrotranslator}/retrotranslator-runtime-1.2.1.jar"/>
       <fileset file="${retrotranslator}/backport-util-concurrent-3.0.jar"/>
     </copy>
