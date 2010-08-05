@@ -333,7 +333,7 @@ public abstract class TransactionsBase
     }
 
     public void testRedeliverAckedUncommitted()
-        throws IOException, InterruptedException
+        throws IOException
     {
         openChannel();
         txSelect();
