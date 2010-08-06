@@ -17,6 +17,10 @@ public class UnexpectedFrames extends BrokerTestCase {
         public Frame confuse(Frame frame) throws IOException;
     }
 
+    @Override protected void setUp() throws IOException {}
+
+    @Override protected void tearDown() throws IOException {}
+
     public void testMissingHeader() throws IOException {
         expectUnexpectedFrameError(new Confuser() {
             public Frame confuse(Frame frame) {
