@@ -76,7 +76,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * and this field can be deleted.
      */
     @Deprecated
-    private static final int TICKET = 1;
+    private static final int TICKET = 0;
 
     /**
      * Map from consumer tag to {@link Consumer} instance.
@@ -647,6 +647,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public void basicReject(long deliveryTag, boolean requeue)
+        throws IOException
+    {
+        transmit(new Basic.Reject(deliveryTag, requeue));
+    }
+
+    /** Public API - {@inheritDoc} */
     public String basicConsume(String queue, Consumer callback)
         throws IOException
     {
@@ -665,12 +672,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                Consumer callback)
         throws IOException
     {
-        return basicConsume(queue, noAck, consumerTag, false, false, callback);
+        return basicConsume(queue, noAck, consumerTag, false, false, null, callback);
     }
 
     /** Public API - {@inheritDoc} */
     public String basicConsume(String queue, boolean noAck, String consumerTag,
-                               boolean noLocal, boolean exclusive,
+                               boolean noLocal, boolean exclusive, Map<String, Object> filter,
                                final Consumer callback)
         throws IOException
     {
@@ -695,7 +702,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
         rpc(new Basic.Consume(TICKET, queue, consumerTag,
                               noLocal, noAck, exclusive,
-                              false),
+                              false, filter),
             k);
 
         try {

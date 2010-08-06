@@ -331,4 +331,44 @@ public abstract class TransactionsBase
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
     }
+
+    public void testRedeliverAckedUncommitted()
+        throws IOException
+    {
+        openChannel();
+        txSelect();
+        basicPublish();
+        txCommit();
+        basicGet();
+        // Ack the message but do not commit the channel. The message
+        // should not get redelivered (see
+        // https://bugzilla.rabbitmq.com/show_bug.cgi?id=21845#c3)
+        basicAck();
+        channel.basicRecover(true);
+
+        assertNull("Acked uncommitted message redelivered",
+                   basicGet(true));
+        closeChannel();
+    }
+
+    public void testCommitWithDeletedQueue()
+        throws IOException
+    {
+        openChannel();
+        txSelect();
+        basicPublish();
+        releaseResources();
+        try {
+            txCommit();
+        } catch (IOException e) {
+            closeConnection();
+            openConnection();
+            openChannel();
+            fail("commit failed");
+        } finally {
+            createResources();
+            closeChannel();
+        }
+    }
+
 }

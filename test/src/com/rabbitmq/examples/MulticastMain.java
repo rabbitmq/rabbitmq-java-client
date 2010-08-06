@@ -83,10 +83,10 @@ public class MulticastMain {
             boolean autoAck      = cmd.hasOption('a');
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
-            int maxRedirects     = intArg(cmd, 'd', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
             List flags           = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);
+            int heartbeat        = intArg(cmd, 'b', 0);
 
             //setup
             String id = UUID.randomUUID().toString();
@@ -95,6 +95,7 @@ public class MulticastMain {
             factory.setHost(hostName);
             factory.setPort(portNumber);
             factory.setRequestedFrameMax(frameMax);
+            factory.setRequestedHeartbeat(heartbeat);
 
             Thread[] consumerThreads = new Thread[consumerCount];
             Connection[] consumerConnections = new Connection[consumerCount];
@@ -175,12 +176,12 @@ public class MulticastMain {
         options.addOption(new Option("a", "autoack",   false,"auto ack"));
         options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
         options.addOption(new Option("s", "size",      true, "message size"));
-        options.addOption(new Option("d", "redirects", true, "max redirects"));
         options.addOption(new Option("z", "time",      true, "time limit"));
         Option flag =     new Option("f", "flag",      true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(flag);
         options.addOption(new Option("M", "framemax",  true, "frame max"));
+        options.addOption(new Option("b", "heartbeat", true, "heartbeat interval"));
         return options;
     }
 
