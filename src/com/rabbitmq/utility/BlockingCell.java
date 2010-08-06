@@ -80,15 +80,13 @@ public class BlockingCell<T> {
 
         if (timeout < 0)
             throw new AssertionError("Timeout cannot be less than zero");
-        
-        if (!_filled && timeout != 0) {
-            long maxTime = System.currentTimeMillis() + timeout;
-            long now;
-            while ((now = System.currentTimeMillis()) < maxTime) {
-                wait(maxTime - now);
-            }
+
+        long maxTime = System.currentTimeMillis() + timeout;
+        long now;
+        while (!_filled && (now = System.currentTimeMillis()) < maxTime) {
+            wait(maxTime - now);
         }
-        
+
         if (!_filled)
             throw new TimeoutException();
         
