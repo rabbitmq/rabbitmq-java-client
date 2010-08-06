@@ -81,10 +81,10 @@ public class UnexpectedFrames extends BrokerTestCase {
         handler.confuser = confuser;
 
         try {
-            String queue = channel.queueDeclare().getQueue();
-            channel.basicPublish("", queue, null, "Hello".getBytes());
-            GetResponse result = channel.basicGet(queue, false);
-            channel.basicAck(result.getEnvelope().getDeliveryTag(), false);
+            //NB: the frame confuser relies on the encoding of the
+            //method field to be at least 8 bytes long
+            channel.basicPublish("", "routing key", null, "Hello".getBytes());
+            channel.basicQos(0);
             fail("We should have seen an UNEXPECTED_FRAME by now");
         }
         catch (IOException e) {
