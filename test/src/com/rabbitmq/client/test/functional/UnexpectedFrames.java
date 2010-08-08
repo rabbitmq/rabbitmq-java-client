@@ -13,13 +13,50 @@ import java.net.Socket;
  * Test that the server correctly handles us when we send it bad frames
  */
 public class UnexpectedFrames extends BrokerTestCase {
+
     private interface Confuser {
         public Frame confuse(Frame frame) throws IOException;
     }
 
-    @Override protected void setUp() throws IOException {}
+    private static class ConfusedFrameHandler extends SocketFrameHandler {
+        public ConfusedFrameHandler(Socket socket) throws IOException {
+            super(socket);
+        }
 
-    @Override protected void tearDown() throws IOException {}
+        @Override
+        public void writeFrame(Frame frame) throws IOException {
+            Frame confusedFrame = new Frame();
+            confusedFrame.accumulator = frame.accumulator;
+            confusedFrame.channel = frame.channel;
+            confusedFrame.type = frame.type;
+
+            confusedFrame = confuser.confuse(confusedFrame);
+            if (confusedFrame != null) {
+                super.writeFrame(confusedFrame);
+            }
+        }
+
+        public Confuser confuser = new Confuser() {
+            public Frame confuse(Frame frame) {
+                // Do nothing to start with, we need to negotiate before the
+                // server will send us unexpected_frame errors
+                return frame;
+            }
+        };
+    }
+
+    private static class ConfusedConnectionFactory extends ConnectionFactory {
+
+        @Override protected FrameHandler createFrameHandler(Socket sock)
+            throws IOException {
+            return new ConfusedFrameHandler(sock);
+        }
+    }
+
+    public UnexpectedFrames() {
+        super();
+        connectionFactory = new ConfusedConnectionFactory();
+    }
 
     public void testMissingHeader() throws IOException {
         expectUnexpectedFrameError(new Confuser() {
@@ -73,53 +110,16 @@ public class UnexpectedFrames extends BrokerTestCase {
         });
     }
 
-    private void expectUnexpectedFrameError(Confuser confuser) throws IOException {
-        ConnectionFactory factory = new ConnectionFactory();
-        Socket socket = factory.getSocketFactory().createSocket("localhost",
-                AMQP.PROTOCOL.PORT);
-        ConfusedFrameHandler handler = new ConfusedFrameHandler(socket);
-        AMQConnection connection = new AMQConnection(factory, handler);
-        connection.start();
-        Channel channel = connection.createChannel();
+    private void expectUnexpectedFrameError(Confuser confuser)
+        throws IOException {
 
-        handler.confuser = confuser;
+        ((ConfusedFrameHandler)((AMQConnection)connection).getFrameHandler()).
+            confuser = confuser;
 
-        try {
-            //NB: the frame confuser relies on the encoding of the
-            //method field to be at least 8 bytes long
-            channel.basicPublish("", "routing key", null, "Hello".getBytes());
-            channel.basicQos(0);
-            fail("We should have seen an UNEXPECTED_FRAME by now");
-        }
-        catch (IOException e) {
-            checkShutdownSignal(AMQP.UNEXPECTED_FRAME, e);
-        }
+        //NB: the frame confuser relies on the encoding of the
+        //method field to be at least 8 bytes long
+        channel.basicPublish("", "routing key", null, "Hello".getBytes());
+        expectError(AMQP.UNEXPECTED_FRAME);
     }
 
-    private static class ConfusedFrameHandler extends SocketFrameHandler {
-        public ConfusedFrameHandler(Socket socket) throws IOException {
-            super(socket);
-        }
-
-        @Override
-        public void writeFrame(Frame frame) throws IOException {
-            Frame confusedFrame = new Frame();
-            confusedFrame.accumulator = frame.accumulator;
-            confusedFrame.channel = frame.channel;
-            confusedFrame.type = frame.type;
-
-            confusedFrame = confuser.confuse(confusedFrame);
-            if (confusedFrame != null) {
-                super.writeFrame(confusedFrame);
-            }
-        }
-
-        public Confuser confuser = new Confuser() {
-            public Frame confuse(Frame frame) {
-                // Do nothing to start with, we need to negotiate before the
-                // server will send us unexpected_frame errors
-                return frame;
-            }
-        };
-    }
 }
