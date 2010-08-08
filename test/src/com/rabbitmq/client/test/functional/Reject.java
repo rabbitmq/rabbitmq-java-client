@@ -111,6 +111,6 @@ public class Reject extends BrokerTestCase
         assertNull(channel.basicGet(q, false));
         channel.basicAck(tag1, false);
         channel.basicReject(tag3, false);
-        expectChannelError(AMQP.PRECONDITION_FAILED);
+        expectError(AMQP.PRECONDITION_FAILED);
     }
 }

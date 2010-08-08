@@ -28,7 +28,7 @@ public abstract class InvalidAcksBase extends BrokerTestCase {
         channel.basicAck(tag, false);
         channel.basicAck(tag, false);
 
-        expectChannelError(AMQP.PRECONDITION_FAILED);
+        expectError(AMQP.PRECONDITION_FAILED);
     }
 
     public void testCrazyAck()
@@ -36,6 +36,6 @@ public abstract class InvalidAcksBase extends BrokerTestCase {
     {
         select();
         channel.basicAck(123456, false);
-        expectChannelError(AMQP.PRECONDITION_FAILED);
+        expectError(AMQP.PRECONDITION_FAILED);
     }
 }

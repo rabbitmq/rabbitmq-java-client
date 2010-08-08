@@ -151,7 +151,7 @@ public class BrokerTestCase extends TestCase
         }
     }
 
-    public void expectChannelError(int error) {
+    public void expectError(int error) {
         try {
             channel.basicQos(0);
             fail("Expected channel error " + error);
