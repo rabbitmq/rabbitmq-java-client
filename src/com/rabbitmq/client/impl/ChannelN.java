@@ -48,6 +48,7 @@ import com.rabbitmq.client.impl.AMQImpl.Channel;
 import com.rabbitmq.client.impl.AMQImpl.Exchange;
 import com.rabbitmq.client.impl.AMQImpl.Queue;
 import com.rabbitmq.client.impl.AMQImpl.Tx;
+import com.rabbitmq.client.impl.AMQImpl.PubAck;
 import com.rabbitmq.utility.Utility;
 
 import java.io.IOException;
@@ -780,6 +781,20 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return (Tx.RollbackOk) exnWrappingRpc(new Tx.Rollback()).getMethod();
+    }
+
+    /** Public API - {@inheritDoc} */
+    public void pubAckSelect(boolean many)
+        throws IOException
+    {
+        transmit(new PubAck.Select(many));
+    }
+
+    /** Public API - {@inheritDoc} */
+    public PubAck.DeselectOk pubAckDeselect()
+        throws IOException
+    {
+        return (PubAck.DeselectOk) exnWrappingRpc(new PubAck.Deselect()).getMethod();
     }
 
     /** Public API - {@inheritDoc} */
