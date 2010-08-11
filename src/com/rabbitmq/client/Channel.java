@@ -38,7 +38,7 @@ import com.rabbitmq.client.AMQP.Exchange;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.AMQP.Tx;
 import com.rabbitmq.client.AMQP.Basic;
-import com.rabbitmq.client.AMQP.PubAck;
+import com.rabbitmq.client.AMQP.Confirm;
 import com.rabbitmq.client.AMQP.Channel.FlowOk;
 
 /**
@@ -602,16 +602,19 @@ public interface Channel extends ShutdownNotifier {
      * Enables publisher acknowledgements on this channel.
      * @param many determines whether the broker can acknowledge
      * multiple messages at the same time
-     * @see com.rabbitmq.client.AMQP.PubAck.Select
+     * @see com.rabbitmq.client.AMQP.Confirm.Select
      * @throws java.io.IOException if an error is encountered
      */
-    void pubAckSelect(boolean many) throws IOException;
+    Confirm.SelectOk confirmSelect(boolean multiple) throws IOException;
 
     /**
-     * Disables publisher acknowledgements on this channel.
-     * @see com.rabbitmq.client.AMQP.PubAck.Deselect
-     * @see com.rabbitmq.client.AMQP.PubAck.DeselectOk
+     * Enables publisher acknowledgements on this channel.
+     * @param many determines whether the broker can acknowledge
+     * multiple messages at the same time
+     * @param nowait whether to await completion of the request
+     * @see com.rabbitmq.client.AMQP.Confirm.Select
      * @throws java.io.IOException if an error is encountered
      */
-    PubAck.DeselectOk pubAckDeselect() throws IOException;
+    Confirm.SelectOk confirmSelect(boolean multiple, boolean nowait)
+        throws IOException;
 }

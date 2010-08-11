@@ -46,10 +46,10 @@ import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.UnexpectedMethodError;
 import com.rabbitmq.client.impl.AMQImpl.Basic;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
+import com.rabbitmq.client.impl.AMQImpl.Confirm;
 import com.rabbitmq.client.impl.AMQImpl.Exchange;
 import com.rabbitmq.client.impl.AMQImpl.Queue;
 import com.rabbitmq.client.impl.AMQImpl.Tx;
-import com.rabbitmq.client.impl.AMQImpl.PubAck;
 import com.rabbitmq.utility.Utility;
 
 import java.io.IOException;
@@ -813,17 +813,18 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public void pubAckSelect(boolean many)
+    public Confirm.SelectOk confirmSelect(boolean multiple)
         throws IOException
     {
-        transmit(new PubAck.Select(many));
+        return confirmSelect(multiple, false);
     }
 
     /** Public API - {@inheritDoc} */
-    public PubAck.DeselectOk pubAckDeselect()
+    public Confirm.SelectOk confirmSelect(boolean multiple, boolean nowait)
         throws IOException
     {
-        return (PubAck.DeselectOk) exnWrappingRpc(new PubAck.Deselect()).getMethod();
+        return (Confirm.SelectOk)
+            exnWrappingRpc(new Confirm.Select(multiple, nowait)).getMethod();
     }
 
     /** Public API - {@inheritDoc} */
