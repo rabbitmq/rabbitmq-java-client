@@ -375,9 +375,8 @@ public class Permissions extends BrokerTestCase
             assertTrue(msg, exp);
         } catch (IOException e) {
             checkShutdownSignal(AMQP.ACCESS_REFUSED, e);
-            //This fails due to bug 20296
-            //openChannel();
-            channel = connection.createChannel(channel.getChannelNumber() + 1);
+            openConnection();
+            openChannel();
         }
     }
 
