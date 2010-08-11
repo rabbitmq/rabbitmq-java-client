@@ -45,7 +45,7 @@ public class DefaultConsumer implements Consumer {
 
     /**
      * Constructs a new instance and records its association to the passed-in channel.
-     * @param channel the channel on which the
+     * @param channel the channel to which this consumer is attached
      */
     public DefaultConsumer(Channel channel) {
         _channel = channel;

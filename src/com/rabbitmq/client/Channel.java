@@ -458,6 +458,17 @@ public interface Channel extends ShutdownNotifier {
     void basicAck(long deliveryTag, boolean multiple) throws IOException;
 
     /**
+     * Reject a message. Supply the deliveryTag from the {@link com.rabbitmq.client.AMQP.Basic.GetOk}
+     * or {@link com.rabbitmq.client.AMQP.Basic.Deliver} method
+     * containing the received message being rejected.
+     * @see com.rabbitmq.client.AMQP.Basic.Reject
+     * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk} or {@link com.rabbitmq.client.AMQP.Basic.Deliver}
+     * @param requeue true if the rejected message should be requeued rather than discarded/dead-lettered
+     * @throws java.io.IOException if an error is encountered
+     */
+    void basicReject(long deliveryTag, boolean requeue) throws IOException;
+
+    /**
      * Start a non-nolocal, non-exclusive consumer, with
      * explicit acknowledgements required and a server-generated consumerTag.
      * @param queue the name of the queue
@@ -467,7 +478,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicAck
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Consumer)
+     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
      */
     String basicConsume(String queue, Consumer callback) throws IOException;
 
@@ -481,7 +492,7 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Consumer)
+     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
      */
     String basicConsume(String queue, boolean noAck, Consumer callback) throws IOException;
 
@@ -495,7 +506,7 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Consumer)
+     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
      */
     String basicConsume(String queue, boolean noAck, String consumerTag, Consumer callback) throws IOException;
 
@@ -513,7 +524,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      */
-    String basicConsume(String queue, boolean noAck, String consumerTag, boolean noLocal, boolean exclusive, Consumer callback) throws IOException;
+    String basicConsume(String queue, boolean noAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> filter, Consumer callback) throws IOException;
 
     /**
      * Cancel a consumer. Calls the consumer's {@link Consumer#handleCancelOk}

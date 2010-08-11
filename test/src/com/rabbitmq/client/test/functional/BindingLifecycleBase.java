@@ -31,14 +31,8 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ConnectionFactory;
 import java.io.IOException;
 
 /**
@@ -50,7 +44,7 @@ import java.io.IOException;
  * handler code in the server.
  *
  */
-public class BindingLifecycleBase extends BrokerTestCase {
+public class BindingLifecycleBase extends ClusteredTestBase {
   protected static final String K = "K-" + System.currentTimeMillis();
   protected static final int N = 1;
   protected static final String Q = "Q-" + System.currentTimeMillis();
@@ -60,49 +54,6 @@ public class BindingLifecycleBase extends BrokerTestCase {
   protected static String randomString() {
     return "-" + System.nanoTime();
   }
-  public Channel secondaryChannel;
-  public Connection secondaryConnection;
-
-    @Override
-  public void openChannel() throws IOException {
-    if (secondaryConnection != null) {
-      secondaryChannel = secondaryConnection.createChannel();
-    }
-    super.openChannel();
-  }
-
-  @Override
-  public void openConnection() throws IOException {
-    super.openConnection();
-    if (secondaryConnection == null) {
-      try {
-        ConnectionFactory cf2 = connectionFactory.clone();
-        cf2.setHost("localhost");
-        cf2.setPort(5673);
-        secondaryConnection = cf2.newConnection();
-      }
-      catch (IOException e) {
-      }
-    }
-  }
-
-  @Override
-  public void closeChannel() throws IOException {
-    if (secondaryChannel != null) {
-      secondaryChannel.abort();
-      secondaryChannel = null;
-    }
-    super.closeChannel();
-  }
-
-  @Override
-  public void closeConnection() throws IOException {
-    if (secondaryConnection != null) {
-      secondaryConnection.abort();
-      secondaryConnection = null;
-    }
-    super.closeConnection();
-  }
 
   protected void createQueueAndBindToExchange(Binding binding, boolean durable) throws IOException {
     channel.exchangeDeclare(binding.x, "direct", durable);
@@ -111,8 +62,7 @@ public class BindingLifecycleBase extends BrokerTestCase {
   }
 
   protected void declareDurableQueue(String q) throws IOException {
-    (secondaryChannel == null ? channel : secondaryChannel)
-      .queueDeclare(q, true, false, false, null);
+    alternateChannel.queueDeclare(q, true, false, false, null);
   }
 
   protected void deleteExchangeAndQueue(Binding binding) throws IOException {

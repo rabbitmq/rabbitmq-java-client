@@ -29,45 +29,30 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client;
+package com.rabbitmq.client.test.functional;
 
-/**
- * Encapsulates an exception requiring redirection to the next from a list of "known addresses"
- */
-public class RedirectException extends Exception {
-    /** Standard serialization ID. */
-    private static final long serialVersionUID = 1L;
+import java.io.IOException;
 
-    /** The address to redirect to **/
-    private final Address _address;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.test.BrokerTestCase;
 
-    /** Known cluster addresses **/
-    private final Address[] _knownAddresses;
+public class Heartbeat extends BrokerTestCase {
 
-    /**
-     * Construct a RedirectException from the given initialization parameters.
-     * @param address the address we are redirecting to
-     * @param knownAddresses the list of all known addresses
-     */
-    public RedirectException(Address address, Address[] knownAddresses) {
-        super("redirect to " + address);
-        _address = address;
-        _knownAddresses = knownAddresses;
+    public Heartbeat()
+    {
+        super();
+        connectionFactory.setRequestedHeartbeat(1);
     }
 
-    /**
-     * Returns the address to redirect to
-     * @return the redirection address
-     */
-    public Address getAddress() {
-        return _address;
+    public void testHeartbeat()
+        throws IOException, InterruptedException
+    {
+        Thread.sleep(3100);
+        assertTrue(connection.isOpen());
+        ((AMQConnection)connection).setHeartbeat(0);
+        Thread.sleep(3100);
+        assertFalse(connection.isOpen());
+
     }
 
-    /**
-     * Returns the known cluster addresses
-     * @return an array of the known cluster addresses (each a hostname/port pair)
-     */
-    public Address[] getKnownAddresses() {
-        return _knownAddresses;
-    }
 }

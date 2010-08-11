@@ -79,7 +79,7 @@ public class BrokenFramesTest extends TestCase {
 
         AMQConnection conn = new AMQConnection(factory, myFrameHandler);
         try {
-            conn.start(false);
+            conn.start();
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
@@ -105,7 +105,7 @@ public class BrokenFramesTest extends TestCase {
         myFrameHandler.setFrames(frames.iterator());
  
         try {
-            new AMQConnection(factory, myFrameHandler).start(false);
+            new AMQConnection(factory, myFrameHandler).start();
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);

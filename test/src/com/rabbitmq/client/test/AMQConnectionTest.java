@@ -47,7 +47,6 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.RedirectException;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ExceptionHandler;
 import com.rabbitmq.client.impl.Frame;
@@ -103,12 +102,10 @@ public class AMQConnectionTest extends TestCase {
         MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, _mockFrameHandler.countHeadersSent());
         try {
-            new AMQConnection(factory, _mockFrameHandler, handler).start(false);
+            new AMQConnection(factory, _mockFrameHandler, handler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
            // As expected 
-        } catch(RedirectException e) {
-            fail("Unexpected redirect");
         }
         assertEquals(1, _mockFrameHandler.countHeadersSent());
         // _connection.close(0, CLOSE_MESSAGE);

@@ -346,13 +346,13 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     *  Provides a hook to insert custom configuration of the sockets used
-     *  to connect to an AMQP server before they connect. 
+     *  Provides a hook to insert custom configuration of the sockets
+     *  used to connect to an AMQP server before they connect.
      *
-     *  The default behaviour of this method is to disable Nagle's algorithm to get
-     *  more consistently low latency.
-     *  However it may be overridden freely and there is no requirement to retain
-     *  this behaviour. 
+     *  The default behaviour of this method is to disable Nagle's
+     *  algorithm to get more consistently low latency.  However it
+     *  may be overridden freely and there is no requirement to retain
+     *  this behaviour.
      *
      *  @param socket The socket that is to be used for the Connection
      */
@@ -361,53 +361,25 @@ public class ConnectionFactory implements Cloneable {
         socket.setTcpNoDelay(true);
     }
 
-    private Connection newConnection(Address[] addresses,
-                                     int maxRedirects,
-                                     Map<Address,Integer> redirectAttempts)
+    /**
+     * Create a new broker connection
+     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newConnection(Address[] addrs)
         throws IOException
     {
         IOException lastException = null;
-        for (Address address : addresses) {
-            Address[] lastKnownAddresses = new Address[0];
+        for (Address addr : addrs) {
             try {
-                while(true) {
-                    FrameHandler frameHandler = createFrameHandler(address);
-                    Integer redirectCount = redirectAttempts.get(address);
-                    if (redirectCount == null)
-                        redirectCount = 0;
-                    boolean allowRedirects = redirectCount < maxRedirects;
-                    try {
-                        AMQConnection conn = new AMQConnection(this,
-                                    frameHandler);
-                        conn.start(!allowRedirects);
-                        return conn;
-                    } catch (RedirectException e) {
-                        if (!allowRedirects) {
-                            //this should never happen with a well-behaved server
-                            throw new IOException("server ignored 'insist'");
-                        } else {
-                            redirectAttempts.put(address, redirectCount+1);
-                            lastKnownAddresses = e.getKnownAddresses();
-                            address = e.getAddress();
-                            //TODO: we may want to log redirection attempts.
-                        }
-                    }
-                }
+                FrameHandler frameHandler = createFrameHandler(addr);
+                AMQConnection conn = new AMQConnection(this,
+                                                     frameHandler);
+                conn.start();
+                return conn;
             } catch (IOException e) {
                 lastException = e;
-                if (lastKnownAddresses.length > 0) {
-                    // If there aren't any, don't bother trying, since
-                    // a recursive call with empty lastKnownAddresses
-                    // will cause our lastException to be stomped on
-                    // by an uninformative IOException. See bug 16273.
-                    try {
-                        return newConnection(lastKnownAddresses,
-                                             maxRedirects,
-                                             redirectAttempts);
-                    } catch (IOException e1) {
-                        lastException = e1;
-                    }
-                }
             }
         }
 
@@ -425,10 +397,7 @@ public class ConnectionFactory implements Cloneable {
      */
     public Connection newConnection() throws IOException {
         return newConnection(new Address[] {
-                                 new Address(getHost(), getPort())
-                             },
-                             0,
-                             new HashMap<Address,Integer>());
+                                 new Address(getHost(), getPort())});
     }
 
 
