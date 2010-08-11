@@ -249,7 +249,7 @@ public abstract class TransactionsBase
             fail("expected exception");
         }
         catch (IOException e) {
-            checkShutdownSignal(AMQP.NOT_FOUND, e);
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
         connection = null;
         openConnection();
