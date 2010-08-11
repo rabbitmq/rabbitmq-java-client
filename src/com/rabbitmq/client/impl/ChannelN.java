@@ -31,6 +31,7 @@
 
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.AckListener;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
@@ -99,6 +100,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile FlowListener flowListener = null;
 
+    /** Reference to the currently-active AckListener, or null if there is none.
+     */
+    public volatile AckListener ackListener = null;
+
     /** Reference to the currently-active default consumer, or null if there is
      *  none.
      */
@@ -152,6 +157,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public void setFlowListener(FlowListener listener) {
         flowListener = listener;
+    }
+
+    /** Returns the current AckListener. */
+    public AckListener getAckListener() {
+        return ackListener;
+    }
+
+    /**
+     * Sets the current AckListener.
+     * A null argument is interpreted to mean "do not use an ack listener".
+     */
+    public void setAckListener(AckListener listener) {
+        ackListener = listener;
     }
 
     /** Returns the current default consumer. */
@@ -308,6 +326,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                         l.handleFlow(channelFlow.active);
                     } catch (Throwable ex) {
                         _connection.getExceptionHandler().handleFlowListenerException(this, ex);
+                    }
+                }
+                return true;
+            } else if (method instanceof Basic.Ack) {
+                Basic.Ack ack = (Basic.Ack) method;
+                AckListener l = getAckListener();
+                if (l != null) {
+                    try {
+                        l.handleAck(ack.getDeliveryTag());
+                    } catch (Throwable ex) {
+                        _connection.getExceptionHandler().handleAckListenerException(this, ex);
                     }
                 }
                 return true;

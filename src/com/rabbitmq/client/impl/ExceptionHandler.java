@@ -59,13 +59,23 @@ public interface ExceptionHandler {
 
     /**
      * Perform any required exception processing for the situation
-     * when the driver thread for the connection has called a 
+     * when the driver thread for the connection has called a
      * FlowListener's handleFlow method, and that method has
      * thrown an exeption.
      * @param channel the ChannelN that held the FlowListener
      * @param exception the exception thrown by FlowListener.handleFlow
      */
     void handleFlowListenerException(Channel channel, Throwable exception);
+
+    /**
+     * Perform any required exception processing for the situation
+     * when the driver thread for the connection has called an
+     * AckListener's handleAck method, and that method has
+     * thrown an exeption.
+     * @param channel the ChannelN that held the AckListener
+     * @param exception the exception thrown by AckListener.handleAck
+     */
+    void handleAckListenerException(Channel channel, Throwable exception);
 
     /**
      * Perform any required exception processing for the situation
