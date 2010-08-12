@@ -38,6 +38,6 @@ import java.io.IOException;
  * events.
  */
 public interface AckListener {
-    void handleAck(long sequenceNumber)
+    void handleAck(long deliveryTag, boolean multiple)
         throws IOException;
 }

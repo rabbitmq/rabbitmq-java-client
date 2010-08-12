@@ -334,7 +334,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 AckListener l = getAckListener();
                 if (l != null) {
                     try {
-                        l.handleAck(ack.getDeliveryTag());
+                        l.handleAck(ack.getDeliveryTag(), ack.getMultiple());
                     } catch (Throwable ex) {
                         _connection.getExceptionHandler().handleAckListenerException(this, ex);
                     }
