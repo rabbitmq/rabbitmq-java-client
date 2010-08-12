@@ -31,6 +31,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import java.io.IOException;
@@ -104,8 +105,8 @@ public class BindingLifecycleBase extends ClusteredTestBase {
       channel.queueBind(binding.q, binding.x, binding.k);
       sendRoutable(binding);
     }
-    catch (Exception e) {
-      // do nothing, this is the correct behaviour
+    catch (IOException e) {
+      checkShutdownSignal(AMQP.NOT_FOUND, e);
       channel = null;
       return;
     }

@@ -139,6 +139,7 @@ public class QueueLifecycle extends BrokerTestCase {
         try {
             verifyQueueExists(name);
         } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.NOT_FOUND, ioe);
             return;
         }
         fail("Queue should have been auto-deleted after we removed its only consumer");
