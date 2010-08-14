@@ -19,15 +19,23 @@ public class UnexpectedFrames extends BrokerTestCase {
     }
 
     private static class ConfusedFrameHandler extends SocketFrameHandler {
+
+        private boolean confusedOnce = false;
+
         public ConfusedFrameHandler(Socket socket) throws IOException {
             super(socket);
         }
 
         @Override
         public void writeFrame(Frame frame) throws IOException {
-            Frame confusedFrame = confuser.confuse(frame);
-            if (confusedFrame != null) {
-                super.writeFrame(confusedFrame);
+            if (confusedOnce) {
+                super.writeFrame(frame);
+            } else {
+                Frame confusedFrame = confuser.confuse(frame);
+                if (confusedFrame != frame) confusedOnce = true;
+                if (confusedFrame != null) {
+                    super.writeFrame(confusedFrame);
+                }
             }
         }
 
@@ -70,7 +78,11 @@ public class UnexpectedFrames extends BrokerTestCase {
                 if (frame.type == AMQP.FRAME_METHOD) {
                     // We can't just skip the method as that will lead us to
                     // send 0 bytes and hang waiting for a response.
-                    frame.type = AMQP.FRAME_HEADER;
+                    Frame confusedFrame = new Frame(AMQP.FRAME_HEADER,
+                                                    frame.channel,
+                                                    frame.payload);
+                    confusedFrame.accumulator = frame.accumulator;
+                    return confusedFrame;
                 }
                 return frame;
             }
