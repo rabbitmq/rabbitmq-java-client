@@ -25,12 +25,7 @@ public class UnexpectedFrames extends BrokerTestCase {
 
         @Override
         public void writeFrame(Frame frame) throws IOException {
-            Frame confusedFrame = new Frame();
-            confusedFrame.accumulator = frame.accumulator;
-            confusedFrame.channel = frame.channel;
-            confusedFrame.type = frame.type;
-
-            confusedFrame = confuser.confuse(confusedFrame);
+            Frame confusedFrame = confuser.confuse(frame);
             if (confusedFrame != null) {
                 super.writeFrame(confusedFrame);
             }
