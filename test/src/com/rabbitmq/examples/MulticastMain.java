@@ -48,6 +48,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import com.rabbitmq.client.AckListener;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
@@ -80,6 +81,8 @@ public class MulticastMain {
             int consumerCount    = intArg(cmd, 'y', 1);
             int producerTxSize   = intArg(cmd, 'm', 0);
             int consumerTxSize   = intArg(cmd, 'n', 0);
+            boolean pubAck       = cmd.hasOption('c');
+            int pubAckCount      = intArg(cmd, 'k', 0);
             boolean autoAck      = cmd.hasOption('a');
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
@@ -87,6 +90,11 @@ public class MulticastMain {
             List flags           = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
+
+            if ((producerTxSize + consumerTxSize > 0) && pubAck) {
+                throw new ParseException("Cannot select both producerTxSize"+
+                                         "/consumerTxSize and pubAck.");
+            }
 
             //setup
             String id = UUID.randomUUID().toString();
@@ -128,12 +136,14 @@ public class MulticastMain {
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
+                if (pubAck) channel.confirmSelect(true);
                 channel.exchangeDeclare(exchangeName, exchangeType);
                 final Producer p = new Producer(channel, exchangeName, id,
                                                    flags, producerTxSize,
                                                    1000L * samplingInterval,
                                                    rateLimit, minMsgSize, timeLimit);
                 channel.setReturnListener(p);
+                channel.setAckListener(p);
                 Thread t = new Thread(p);
                 producerThreads[i] = t;
                 t.start();
@@ -172,7 +182,9 @@ public class MulticastMain {
         options.addOption(new Option("x", "producers", true, "producer count"));
         options.addOption(new Option("y", "consumers", true, "consumer count"));
         options.addOption(new Option("m", "ptxsize",   true, "producer tx size"));
+        options.addOption(new Option("k", "pubackcnt", true, "max unack'd publishes"));
         options.addOption(new Option("n", "ctxsize",   true, "consumer tx size"));
+        options.addOption(new Option("c", "puback",    false,"publisher acks"));
         options.addOption(new Option("a", "autoack",   false,"auto ack"));
         options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
         options.addOption(new Option("s", "size",      true, "message size"));
@@ -201,7 +213,7 @@ public class MulticastMain {
         return Arrays.asList(vals);
     }
 
-    public static class Producer implements Runnable, ReturnListener {
+    public static class Producer implements Runnable, ReturnListener, AckListener {
 
         private Channel channel;
         private String  exchangeName;
@@ -254,6 +266,10 @@ public class MulticastMain {
 
         public synchronized void resetBasicReturns() {
             basicReturnCount = 0;
+        }
+
+        public void handleAck(long sequenceNumber, boolean multiple) {
+            System.out.printf("got an ack for %d\n", sequenceNumber);
         }
 
         public void run() {
