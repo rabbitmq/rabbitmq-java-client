@@ -104,6 +104,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile AckListener ackListener = null;
 
+    /** Current published message count (used by publisher acknowledgements)
+     */
+    private long publishedMessageCount;
+
     /** Reference to the currently-active default consumer, or null if there is
      *  none.
      */
@@ -493,6 +497,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
+        synchronized (_channelMutex) {
+            if (publishedMessageCount >= 0)
+                ++publishedMessageCount;
+        }
         BasicProperties useProps = props;
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
@@ -823,6 +831,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Confirm.SelectOk confirmSelect(boolean multiple, boolean nowait)
         throws IOException
     {
+        synchronized (_channelMutex) {
+            if (publishedMessageCount == -1)
+                publishedMessageCount = 0;
+        }
         return (Confirm.SelectOk)
             exnWrappingRpc(new Confirm.Select(multiple, nowait)).getMethod();
     }
@@ -837,4 +849,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return new Channel.FlowOk(!_blockContent);
     }
 
+    /** Public API - {@inheritDoc} */
+    public long getPublishedMessageCount() {
+        return publishedMessageCount;
+    }
 }

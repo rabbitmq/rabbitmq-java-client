@@ -82,7 +82,7 @@ public class MulticastMain {
             int producerTxSize   = intArg(cmd, 'm', 0);
             int consumerTxSize   = intArg(cmd, 'n', 0);
             boolean pubAck       = cmd.hasOption('c');
-            int pubAckCount      = intArg(cmd, 'k', 0);
+            long pubAckCount     = intArg(cmd, 'k', 0);
             boolean autoAck      = cmd.hasOption('a');
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
@@ -139,9 +139,10 @@ public class MulticastMain {
                 if (pubAck) channel.confirmSelect(true);
                 channel.exchangeDeclare(exchangeName, exchangeType);
                 final Producer p = new Producer(channel, exchangeName, id,
-                                                   flags, producerTxSize,
-                                                   1000L * samplingInterval,
-                                                   rateLimit, minMsgSize, timeLimit);
+                                                flags, producerTxSize,
+                                                1000L * samplingInterval,
+                                                rateLimit, minMsgSize, timeLimit,
+                                                pubAckCount);
                 channel.setReturnListener(p);
                 channel.setAckListener(p);
                 Thread t = new Thread(p);
@@ -233,9 +234,13 @@ public class MulticastMain {
         private int     msgCount;
         private int     basicReturnCount;
 
+        private long    pubAckCount;
+        private long    mostRecentAcked;
+
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
-                        long interval, int rateLimit, int minMsgSize, int timeLimit)
+                        long interval, int rateLimit, int minMsgSize, int timeLimit,
+                        long pubAckCount)
             throws IOException {
 
             this.channel      = channel;
@@ -248,6 +253,7 @@ public class MulticastMain {
             this.interval     = interval;
             this.rateLimit    = rateLimit;
             this.timeLimit    = 1000L * timeLimit;
+            this.pubAckCount  = pubAckCount;
             this.message      = new byte[minMsgSize];
         }
 
@@ -269,7 +275,16 @@ public class MulticastMain {
         }
 
         public void handleAck(long sequenceNumber, boolean multiple) {
-            System.out.printf("got an ack for %d\n", sequenceNumber);
+            if (multiple) {
+                logAck(sequenceNumber);
+                System.out.printf("got an ack all messages up to %d\n", sequenceNumber);
+            } else {
+                System.out.printf("got an ack for message %d\n", sequenceNumber);
+            }
+        }
+
+        private synchronized void logAck(long seqNum) {
+            mostRecentAcked = seqNum;
         }
 
         public void run() {
@@ -282,6 +297,7 @@ public class MulticastMain {
             try {
 
                 while (timeLimit == 0 || now < startTime + timeLimit) {
+                    delayPubAck();
                     delay(now);
                     publish(createMessage(totalMsgCount));
 		    totalMsgCount++;
@@ -312,6 +328,16 @@ public class MulticastMain {
                                  mandatory, immediate,
                                  persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
                                  msg);
+        }
+
+        private void delayPubAck()
+            throws InterruptedException {
+            if (pubAckCount == 0)
+                return;
+            while (channel.getPublishedMessageCount() - mostRecentAcked
+                   > pubAckCount) {
+                Thread.sleep(100);
+            }
         }
 
         private void delay(long now)
