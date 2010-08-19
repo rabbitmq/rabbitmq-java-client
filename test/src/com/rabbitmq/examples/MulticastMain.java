@@ -141,7 +141,7 @@ public class MulticastMain {
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
-                if (pubAck) channel.confirmSelect(true);
+                if (pubAck) channel.confirmSelect(false);
                 channel.exchangeDeclare(exchangeName, exchangeType);
                 final Producer p = new Producer(channel, exchangeName, id,
                                                 flags, producerTxSize,
@@ -289,7 +289,7 @@ public class MulticastMain {
                 logAck(sequenceNumber);
                 System.out.printf("got an ack all messages up to %d\n", sequenceNumber);
             } else {
-                System.out.printf("got an ack for message %d\n", sequenceNumber);
+                logAck(sequenceNumber);
             }
         }
 
@@ -307,14 +307,17 @@ public class MulticastMain {
             try {
 
                 while (timeLimit == 0 || now < startTime + timeLimit) {
-                    delayPubAck();
-                    delay(now);
-                    publish(createMessage(totalMsgCount));
-		    totalMsgCount++;
-		    msgCount++;
+                    if (!throttlePubAck()) {
+                        delay(now);
+                        publish(createMessage(totalMsgCount));
+                        totalMsgCount++;
+                        msgCount++;
 
-                    if (txSize != 0 && totalMsgCount % txSize == 0) {
-                        channel.txCommit();
+                        if (txSize != 0 && totalMsgCount % txSize == 0) {
+                            channel.txCommit();
+                        }
+                    } else {
+                        Thread.sleep(10);
                     }
                     now = System.currentTimeMillis();
                 }
@@ -340,14 +343,8 @@ public class MulticastMain {
                                  msg);
         }
 
-        private void delayPubAck()
-            throws InterruptedException {
-            if (pubAckCount == 0)
-                return;
-            while (channel.getPublishedMessageCount() - mostRecentAcked
-                   > pubAckCount) {
-                Thread.sleep(100);
-            }
+        private boolean throttlePubAck() {
+            return ((pubAckCount > 0) && (channel.getPublishedMessageCount() - mostRecentAcked > pubAckCount));
         }
 
         private void delay(long now)
