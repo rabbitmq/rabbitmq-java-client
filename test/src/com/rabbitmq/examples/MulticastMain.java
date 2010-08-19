@@ -71,6 +71,11 @@ public class MulticastMain {
         try {
             CommandLine cmd = parser.parse(options, args);
 
+            if (cmd.hasOption('?')) {
+                usage(options);
+                System.exit(0);
+            }
+
             String hostName      = strArg(cmd, 'h', "localhost");
             int portNumber       = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
             String exchangeType  = strArg(cmd, 't', "direct");
@@ -163,8 +168,7 @@ public class MulticastMain {
         }
         catch( ParseException exp ) {
             System.err.println("Parsing failed. Reason: " + exp.getMessage());
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("<program>", options);
+            usage(options);
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
             e.printStackTrace();
@@ -172,8 +176,14 @@ public class MulticastMain {
         }
     }
 
+    private static void usage(Options options) {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("<program>", options);
+    }
+
     private static Options getOptions() {
         Options options = new Options();
+        options.addOption(new Option("?", "help",      false,"show usage"));
         options.addOption(new Option("h", "host",      true, "broker host"));
         options.addOption(new Option("p", "port",      true, "broker port"));
         options.addOption(new Option("t", "type",      true, "exchange type"));
