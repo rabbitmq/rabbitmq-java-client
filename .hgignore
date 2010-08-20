@@ -9,3 +9,5 @@ syntax: glob
 
 syntax: regexp
 ^build/
+^out/
+^.idea/
