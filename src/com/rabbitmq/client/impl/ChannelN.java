@@ -597,15 +597,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Queue.PurgeOk queuePurge(String queue)
         throws IOException
     {
-        return queuePurge(queue, false);
-    }
-
-    /** Public API - {@inheritDoc} */
-    public Queue.PurgeOk queuePurge(String queue, boolean nowait)
-        throws IOException
-    {
         return (Queue.PurgeOk)
-            exnWrappingRpc(new Queue.Purge(TICKET, queue, nowait)).getMethod();
+            exnWrappingRpc(new Queue.Purge(TICKET, queue, false)).getMethod();
     }
 
     /** Public API - {@inheritDoc} */
