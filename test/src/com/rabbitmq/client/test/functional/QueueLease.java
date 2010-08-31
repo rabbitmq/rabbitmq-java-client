@@ -65,21 +65,36 @@ public class QueueLease extends BrokerTestCase {
         verifyQueueExpires(TEST_NORMAL_QUEUE, false);
     }
 
-    /**
-     * Verify that the server throws an error if the type of x-expires is not
-     * int.
-     */
-    public void testExpireMustBeInt() throws IOException {
+    public void testExpireMayBeByte() throws IOException {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-expires", (byte)100);
+
+        try {
+            channel.queueDeclare("expiresMayBeByte", false, true, false, args);
+        } catch (IOException e) {
+            fail("server did not accept x-expires of type byte");
+        }
+    }
+
+    public void testExpireMayBeShort() throws IOException {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-expires", (short)100);
+
+        try {
+            channel.queueDeclare("expiresMayBeShort", false, true, false, args);
+        } catch (IOException e) {
+            fail("server did not accept x-expires of type short");
+        }
+    }
+
+    public void testExpireMayBeLong() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-expires", 100L);
 
         try {
-            channel
-                    .queueDeclare("expiresMustBeLong", false, false, false,
-                            args);
-            fail("server accepted x-expires not of type int");
+            channel.queueDeclare("expiresMayBeLong", false, true, false, args);
         } catch (IOException e) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+            fail("server did not accept x-expires of type long");
         }
     }
 
