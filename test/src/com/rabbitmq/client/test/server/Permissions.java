@@ -262,6 +262,13 @@ public class Permissions extends BrokerTestCase
             channel.queuePurge(queueName);           // read
             channel.queueDelete(queueName);          // configure
         }
+
+        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
+                public void with(String _) throws IOException {
+                    channel.queueDeclare("amq.genbah", false, false, false, null);
+                }}
+        );
+
         commonNoAccessTests();
     }
 
