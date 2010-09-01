@@ -508,13 +508,13 @@ public interface Channel extends ShutdownNotifier {
      * @param noLocal flag set to true unless server local buffering is required
      * @param exclusive true if this is an exclusive consumer
      * @param callback an interface to the consumer object
-     * @param filter a set of arguments for the consume. Currently ignored by rabbitmq-server.
+     * @param arguments a set of arguments for the consume
      * @return the consumerTag associated with the new consumer
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      */
-    String basicConsume(String queue, boolean noAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> filter, Consumer callback) throws IOException;
+    String basicConsume(String queue, boolean noAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments, Consumer callback) throws IOException;
 
     /**
      * Cancel a consumer. Calls the consumer's {@link Consumer#handleCancelOk}
