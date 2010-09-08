@@ -43,6 +43,7 @@ public class ServerTests extends TestCase {
         suite.addTest(PersisterRestartTests.suite());
         suite.addTestSuite(ExclusiveQueueDurability.class);
         suite.addTestSuite(AlternateExchangeEquivalence.class);
+        suite.addTestSuite(MemoryAlarms.class);
         return suite;
     }
 }
