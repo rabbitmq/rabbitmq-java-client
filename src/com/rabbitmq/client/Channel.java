@@ -302,6 +302,56 @@ public interface Channel extends ShutdownNotifier {
     Exchange.DeleteOk exchangeDelete(String exchange) throws IOException;
 
     /**
+     * Bind an exchange to an exchange, with no extra arguments.
+     * @see com.rabbitmq.client.AMQP.Exchange.Bind
+     * @see com.rabbitmq.client.AMQP.Exchange.BindOk
+     * @param destination the name of the exchange to which messages are sent
+     * @param exchange the name of the exchange from which messages are received
+     * @param routingKey the routine key to use for the binding
+     * @return a binding-confirm method if the binding was successfully created
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.BindOk exchangeBind(String destination, String source, String routingKey) throws IOException;
+
+    /**
+     * Bind an exchange to an exchange.
+     * @see com.rabbitmq.client.AMQP.Exchange.Bind
+     * @see com.rabbitmq.client.AMQP.Exchange.BindOk
+     * @param destination the name of the exchange to which messages are sent
+     * @param exchange the name of the exchange from which messages are received
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
+     * @return a binding-confirm method if the binding was successfully created
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.BindOk exchangeBind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
+
+    /**
+     * Unbind an exchange from an exchange, with no extra arguments.
+     * @see com.rabbitmq.client.AMQP.Exchange.Bind
+     * @see com.rabbitmq.client.AMQP.Exchange.BindOk
+     * @param destination the name of the exchange to which messages are sent
+     * @param exchange the name of the exchange from which messages are received
+     * @param routingKey the routine key to use for the binding
+     * @return a binding-confirm method if the binding was successfully created
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey) throws IOException;
+
+    /**
+     * Unbind an exchange from an exchange.
+     * @see com.rabbitmq.client.AMQP.Exchange.Bind
+     * @see com.rabbitmq.client.AMQP.Exchange.BindOk
+     * @param destination the name of the exchange to which messages are sent
+     * @param exchange the name of the exchange from which messages are received
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
+     * @return a binding-confirm method if the binding was successfully created
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
+
+    /**
      * Actively declare a server-named exclusive, autodelete, non-durable queue.
      * The name of the new queue is held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk} result.
      * @see com.rabbitmq.client.AMQP.Queue.Declare
