@@ -46,7 +46,7 @@ public class QueueLease extends BrokerTestCase {
 
     // Currently the expiration timer is very responsive but this may
     // very well change in the future, so tweak accordingly.
-    private final static long QUEUE_EXPIRES = 1000L; // msecs
+    private final static int QUEUE_EXPIRES = 1000; // msecs
     private final static int SHOULD_EXPIRE_WITHIN = 2000;
 
     /**
@@ -65,27 +65,42 @@ public class QueueLease extends BrokerTestCase {
         verifyQueueExpires(TEST_NORMAL_QUEUE, false);
     }
 
-    /**
-     * Verify that the server throws an error if the type of x-expires is not
-     * long.
-     */
-    public void testExpireMustBeLong() throws IOException {
+    public void testExpireMayBeByte() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-expires", 100);
+        args.put("x-expires", (byte)100);
 
         try {
-            channel
-                    .queueDeclare("expiresMustBeLong", false, false, false,
-                            args);
-            fail("server accepted x-expires not of type long");
+            channel.queueDeclare("expiresMayBeByte", false, true, false, args);
         } catch (IOException e) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+            fail("server did not accept x-expires of type byte");
+        }
+    }
+
+    public void testExpireMayBeShort() throws IOException {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-expires", (short)100);
+
+        try {
+            channel.queueDeclare("expiresMayBeShort", false, true, false, args);
+        } catch (IOException e) {
+            fail("server did not accept x-expires of type short");
+        }
+    }
+
+    public void testExpireMayBeLong() throws IOException {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-expires", 100L);
+
+        try {
+            channel.queueDeclare("expiresMayBeLong", false, true, false, args);
+        } catch (IOException e) {
+            fail("server did not accept x-expires of type long");
         }
     }
 
     public void testExpireMustBeGtZero() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-expires", 0L);
+        args.put("x-expires", 0);
 
         try {
             channel.queueDeclare("expiresMustBeGtZero", false, false, false,
@@ -98,7 +113,7 @@ public class QueueLease extends BrokerTestCase {
 
     public void testExpireMustBePositive() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-expires", -10L);
+        args.put("x-expires", -10);
 
         try {
             channel.queueDeclare("expiresMustBePositive", false, false, false,
@@ -115,9 +130,9 @@ public class QueueLease extends BrokerTestCase {
      */
     public void testQueueRedeclareEquivalence() throws IOException {
         Map<String, Object> args1 = new HashMap<String, Object>();
-        args1.put("x-expires", 10000L);
+        args1.put("x-expires", 10000);
         Map<String, Object> args2 = new HashMap<String, Object>();
-        args2.put("x-expires", 20000L);
+        args2.put("x-expires", 20000);
 
         channel.queueDeclare(TEST_EXPIRE_REDECLARE_QUEUE, false, false, false,
                 args1);
@@ -145,6 +160,7 @@ public class QueueLease extends BrokerTestCase {
         try {
             channel.queueDeclarePassive(name);
         } catch (IOException e) {
+            checkShutdownSignal(AMQP.NOT_FOUND, e);
             fail("Queue expired before deadline.");
         }
 

@@ -597,15 +597,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Queue.PurgeOk queuePurge(String queue)
         throws IOException
     {
-        return queuePurge(queue, false);
-    }
-
-    /** Public API - {@inheritDoc} */
-    public Queue.PurgeOk queuePurge(String queue, boolean nowait)
-        throws IOException
-    {
         return (Queue.PurgeOk)
-            exnWrappingRpc(new Queue.Purge(TICKET, queue, nowait)).getMethod();
+            exnWrappingRpc(new Queue.Purge(TICKET, queue, false)).getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -677,7 +670,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Public API - {@inheritDoc} */
     public String basicConsume(String queue, boolean noAck, String consumerTag,
-                               boolean noLocal, boolean exclusive, Map<String, Object> filter,
+                               boolean noLocal, boolean exclusive, Map<String, Object> arguments,
                                final Consumer callback)
         throws IOException
     {
@@ -702,7 +695,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
         rpc(new Basic.Consume(TICKET, queue, consumerTag,
                               noLocal, noAck, exclusive,
-                              false, filter),
+                              false, arguments),
             k);
 
         try {
