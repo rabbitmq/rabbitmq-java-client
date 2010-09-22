@@ -68,6 +68,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(RecoverAfterCancel.class);
         suite.addTestSuite(UnexpectedFrames.class);
         suite.addTestSuite(PerQueueTTL.class);
+        
         return suite;
     }
 }

@@ -62,9 +62,34 @@ public class PerQueueTTL extends BrokerTestCase {
         this.channel.exchangeDelete(TTL_EXCHANGE);
     }
 
-    public void testCreateQueueWithTTL() throws IOException {
-        AMQP.Queue.DeclareOk declareOk = declareQueue(TTL_QUEUE_NAME, 2000L);
-        assertNotNull(declareOk);
+    public void testCreateQueueWithByteTTL() throws IOException {
+        try {
+            declareQueue(TTL_QUEUE_NAME, (byte)200);
+        }   catch(IOException ex) {
+            fail("Should be able to use long for queue TTL");
+        }
+    }
+    public void testCreateQueueWithShortTTL() throws IOException {
+        try {
+            declareQueue(TTL_QUEUE_NAME, (short)200);
+        }   catch(IOException ex) {
+            fail("Should be able to use long for queue TTL");
+        }
+    }
+    public void testCreateQueueWithIntTTL() throws IOException {
+        try {
+            declareQueue(TTL_QUEUE_NAME, 200);
+        }   catch(IOException ex) {
+            fail("Should be able to use long for queue TTL");
+        }
+    }
+
+    public void testCreateQueueWithLongTTL() throws IOException {
+        try {
+            declareQueue(TTL_QUEUE_NAME, 200L);
+        }   catch(IOException ex) {
+            fail("Should be able to use long for queue TTL");
+        }
     }
 
     public void testCreateQueueWithInvalidTTL() throws Exception {
@@ -76,12 +101,30 @@ public class PerQueueTTL extends BrokerTestCase {
         }
     }
 
-    public void testCreateQueueWithZeroTTL() throws Exception {
+    public void testTTLMustBeGtZero() throws Exception {
         try {
             declareQueue(TTL_INVALID_QUEUE_NAME, 0);
             fail("Should not be able to declare a queue with zero for x-message-ttl");
         } catch (IOException e) {
             assertNotNull(e);
+        }
+    }
+
+    public void testTTLMustBePositive() throws Exception {
+        try {
+            declareQueue(TTL_INVALID_QUEUE_NAME, -10);
+            fail("Should not be able to declare a queue with zero for x-message-ttl");
+        } catch (IOException e) {
+            assertNotNull(e);
+        }
+    }
+
+    public void testQueueRedeclareEquivalence() throws Exception {
+        declareQueue(TTL_QUEUE_NAME, 10);
+        try {
+             declareQueue(TTL_QUEUE_NAME, 20);
+        } catch(IOException ex) {
+            checkShutdownSignal(AMQP.NOT_ALLOWED, ex);
         }
     }
 
