@@ -426,7 +426,7 @@ public interface Channel extends ShutdownNotifier {
     Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
 
     /**
-     * Purges the contents of the given queue and awaits a completion.
+     * Purges the contents of the given queue.
      * @see com.rabbitmq.client.AMQP.Queue.Purge
      * @see com.rabbitmq.client.AMQP.Queue.PurgeOk
      * @param queue the name of the queue
@@ -434,17 +434,6 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      */
     Queue.PurgeOk queuePurge(String queue) throws IOException;
-
-    /**
-     * Purges the contents of the given queue.
-     * @see com.rabbitmq.client.AMQP.Queue.Purge
-     * @see com.rabbitmq.client.AMQP.Queue.PurgeOk
-     * @param queue the name of the queue
-     * @param nowait whether to await completion of the purge
-     * @return a purge-confirm method if the purge was executed succesfully
-     * @throws java.io.IOException if an error is encountered
-     */
-    Queue.PurgeOk queuePurge(String queue, boolean nowait) throws IOException;
 
     /**
      * Retrieve a message from a queue using {@link com.rabbitmq.client.AMQP.Basic.Get}
@@ -532,12 +521,13 @@ public interface Channel extends ShutdownNotifier {
      * @param noLocal flag set to true unless server local buffering is required
      * @param exclusive true if this is an exclusive consumer
      * @param callback an interface to the consumer object
+     * @param arguments a set of arguments for the consume
      * @return the consumerTag associated with the new consumer
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      */
-    String basicConsume(String queue, boolean noAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> filter, Consumer callback) throws IOException;
+    String basicConsume(String queue, boolean noAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments, Consumer callback) throws IOException;
 
     /**
      * Cancel a consumer. Calls the consumer's {@link Consumer#handleCancelOk}

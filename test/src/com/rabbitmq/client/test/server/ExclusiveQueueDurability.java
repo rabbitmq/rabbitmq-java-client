@@ -34,6 +34,7 @@ package com.rabbitmq.client.test.server;
 import java.io.IOException;
 import java.util.HashMap;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -55,7 +56,7 @@ public class ExclusiveQueueDurability extends BrokerTestCase {
         try {
             channel.queueDeclare(queueName, false, false, false, null);
         } catch (IOException ioe) {
-            // FIXME check that it's specifically resource locked
+            checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             fail("Declaring the queue resulted in a channel exception, probably meaning that it already exists");
         }
     }
