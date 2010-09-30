@@ -250,44 +250,18 @@ public class Permissions extends BrokerTestCase
                 createAltExchConfigTest("configure-and-read-me"));
     }
 
-    public void testClientNoAccess()
-        throws IOException, InterruptedException
-    {
-        runCtl("set_permissions -p /test test -s client \"\" \"\" amq.direct");
-        Thread.sleep(2000);
-        {
-            String queueName =
-                channel.queueDeclare().getQueue();   // configure
-            channel.queueBind(queueName, "amq.direct", queueName); // write
-            channel.queuePurge(queueName);           // read
-            channel.queueDelete(queueName);          // configure
-        }
-
-        expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
-                public void with(String _) throws IOException {
-                    channel.queueDeclare("amq.genbah", false, false, false, null);
-                }}
-        );
-
-        commonNoAccessTests();
-    }
-
     public void testNoAccess()
         throws IOException, InterruptedException
     {
-        runCtl("set_permissions -p /test -s all test \"\" \"\" \"\"");
+        runCtl("set_permissions -p /test test \"\" \"\" \"\"");
         Thread.sleep(2000);
+
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     channel.queueDeclare();
                 }}
         );
 
-        commonNoAccessTests();
-    }
-
-    private void commonNoAccessTests()
-        throws IOException {
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     channel.queueDeclare("justaqueue", false, false, true, null);
