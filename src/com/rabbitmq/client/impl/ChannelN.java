@@ -103,6 +103,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile Consumer defaultConsumer = null;
 
+    private final ConsumerDispatcher dispatcher;
     /**
      * Construct a new channel on the given connection with the given
      * channel number. Usually not called directly - call
@@ -113,6 +114,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public ChannelN(AMQConnection connection, int channelNumber) {
         super(connection, channelNumber);
+        this.dispatcher = new ConsumerDispatcher(connection, this);
     }
 
     /**
@@ -175,18 +177,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         synchronized (_consumers) {
             snapshotConsumers = new HashMap<String, Consumer>(_consumers);
         }
-        for (Map.Entry<String,Consumer> entry: snapshotConsumers.entrySet()) {
-            Consumer callback = entry.getValue();
-            try {
-                callback.handleShutdownSignal(entry.getKey(), signal);
-            } catch (Throwable ex) {
-                _connection.getExceptionHandler().handleConsumerException(this,
-                                                                          ex,
-                                                                          callback,
-                                                                          entry.getKey(),
-                                                                          "handleShutdownSignal");
-            }
-        }
+        this.dispatcher.handleShutdownSignal(snapshotConsumers, signal);
     }
 
     /**
@@ -263,18 +254,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                  m.redelivered,
                                                  m.exchange,
                                                  m.routingKey);
-                try {
-                    callback.handleDelivery(m.consumerTag,
-                                            envelope,
-                                            (BasicProperties) command.getContentHeader(),
-                                            command.getContentBody());
-                } catch (Throwable ex) {
-                    _connection.getExceptionHandler().handleConsumerException(this,
-                                                                              ex,
-                                                                              callback,
-                                                                              m.consumerTag,
-                                                                              "handleDelivery");
-                }
+
+                this.dispatcher.handleDelivery(callback,
+                        m.consumerTag,
+                        envelope,
+                        (BasicProperties) command.getContentHeader(), 
+                        command.getContentBody());
+
                 return true;
             } else if (method instanceof Basic.Return) {
                 ReturnListener l = getReturnListener();
@@ -312,7 +298,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return true;
             } else if (method instanceof Basic.RecoverOk) {
                 for (Consumer callback: _consumers.values()) {
-                    callback.handleRecoverOk();
+                    this.dispatcher.handleRecoverOk(callback);
                 }
 
                 // Unlike all the other cases we still want this RecoverOk to
@@ -678,17 +664,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).consumerTag;
                 _consumers.put(actualConsumerTag, callback);
-                // We need to call back inside the connection thread
-                // in order avoid races with 'deliver' commands
-                try {
-                    callback.handleConsumeOk(actualConsumerTag);
-                } catch (Throwable ex) {
-                    _connection.getExceptionHandler().handleConsumerException(ChannelN.this,
-                                                                              ex,
-                                                                              callback,
-                                                                              actualConsumerTag,
-                                                                              "handleConsumeOk");
-                }
+                
+                dispatcher.handleConsumeOk(callback, actualConsumerTag);
                 return actualConsumerTag;
             }
         };
@@ -716,15 +693,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 Consumer callback = _consumers.remove(consumerTag);
                 // We need to call back inside the connection thread
                 // in order avoid races with 'deliver' commands
-                try {
-                    callback.handleCancelOk(consumerTag);
-                } catch (Throwable ex) {
-                    _connection.getExceptionHandler().handleConsumerException(ChannelN.this,
-                                                                              ex,
-                                                                              callback,
-                                                                              consumerTag,
-                                                                              "handleCancelOk");
-                }
+                dispatcher.handleCancelOk(callback, consumerTag);
                 return callback;
             }
         };
