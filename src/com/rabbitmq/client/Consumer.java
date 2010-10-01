@@ -38,11 +38,15 @@ import java.io.IOException;
  * a queue by subscription.
  * Most consumers will subclass {@link DefaultConsumer}.
  *
- * Note: all methods of this interface are invoked inside the {@link
- * Connection}'s thread. This means they a) should be non-blocking and
- * generally do little work, b) must not call {@link Channel} or
- * {@link Connection} methods, or a deadlock will ensue. One way of
- * ensuring this is to use/subclass {@link QueueingConsumer}.
+ * Note: all methods of this interface are invoked in a dispatch
+ * thread which is separate from the {@link Connection}'s thread. This
+ * allows <code>Consumers</code> to call {@link Channel} or {@link
+ * Connection} methods without causing a deadlock.
+ *
+ * The dispatch thread is shared by multiple <code>Consumers</code>.
+ * <code>Consumers</code> should avoid executing long-running code
+ * inside the dispatch thread because this may hold up dispatch of
+ * messages to other <code>Consumers</code>.
  *
  * @see Channel#basicConsume
  * @see Channel#basicCancel
