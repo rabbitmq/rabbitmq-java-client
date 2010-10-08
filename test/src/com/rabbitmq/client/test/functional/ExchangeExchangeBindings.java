@@ -52,11 +52,6 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
             null };
 
     @Override
-    protected void setUp() throws IOException {
-        super.setUp();
-    }
-
-    @Override
     protected void createResources() throws IOException {
         for (String q : queues) {
             channel.queueDeclare(q, false, false, false, null);
@@ -162,9 +157,9 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
      */
     public void testExchangeRoutingLoop() throws IOException,
             ShutdownSignalException, InterruptedException {
-        channel.exchangeBind("e1", "e0", "");
-        channel.exchangeBind("e2", "e1", "");
-        channel.exchangeBind("e0", "e2", "");
+        channel.exchangeBind("e0", "e1", "");
+        channel.exchangeBind("e1", "e2", "");
+        channel.exchangeBind("e2", "e0", "");
 
         for (String e : exchanges) {
             basicPublishVolatile(e, "");
@@ -173,8 +168,79 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
             }
         }
 
-        channel.exchangeUnbind("e1", "e0", "");
-        channel.exchangeUnbind("e2", "e1", "");
-        channel.exchangeUnbind("e0", "e2", "");
+        channel.exchangeUnbind("e0", "e1", "");
+        channel.exchangeUnbind("e1", "e2", "");
+        channel.exchangeUnbind("e2", "e0", "");
+    }
+    
+    /* 
+     * build (A -> B) and (B -> A) and then delete one binding and
+     * both exchanges should autodelete
+     */
+    public void testAutoDeleteExchangesSimpleLoop() throws IOException {
+        channel.exchangeDeclare("A", "fanout", false, true, null);
+        channel.exchangeDeclare("B", "fanout", false, true, null);
+        channel.exchangeBind("A", "B", "");
+        channel.exchangeBind("B", "A", "");
+        
+        channel.exchangeUnbind("A", "B", "");
+        // both exchanges should not exist now, so it should not be an
+        // error to redeclare either with different arguments
+        channel.exchangeDeclare("A", "fanout", true, true, null);
+        channel.exchangeDeclare("B", "fanout", true, true, null);
+        channel.exchangeDelete("A");
+        channel.exchangeDelete("B");
+    }
+    
+    /*
+     * build (A -> B) (B -> C) (C -> D) and then delete D.
+     * All should autodelete
+     */
+    public void testTransientAutoDelete() throws IOException {
+        channel.exchangeDeclare("A", "fanout", false, true, null);
+        channel.exchangeDeclare("B", "fanout", false, true, null);
+        channel.exchangeDeclare("C", "fanout", false, true, null);
+        channel.exchangeDeclare("D", "fanout", false, true, null);
+
+        channel.exchangeBind("B", "A", "");
+        channel.exchangeBind("C", "B", "");
+        channel.exchangeBind("D", "C", "");
+        
+        channel.exchangeDelete("D");
+        
+        channel.exchangeDeclare("A", "fanout", true, true, null);
+        channel.exchangeDelete("A");
+    }
+    
+    /*
+     * build (A -> B) (B -> C) (C -> D)
+     * (Source -> A) (Source -> B) (Source -> C) (Source -> D)
+     * On removal of D, all should autodelete
+     */
+    public void testRepeatedTargetAutoDelete() throws IOException {
+        channel.exchangeDeclare("A", "fanout", false, true, null);
+        channel.exchangeDeclare("B", "fanout", false, true, null);
+        channel.exchangeDeclare("C", "fanout", false, true, null);
+        channel.exchangeDeclare("D", "fanout", false, true, null);
+        channel.exchangeDeclare("Source", "fanout", false, true, null);
+        
+        channel.exchangeBind("B", "A", "");
+        channel.exchangeBind("C", "B", "");
+        channel.exchangeBind("D", "C", "");
+
+        channel.exchangeBind("A", "Source", "");
+        channel.exchangeBind("B", "Source", "");
+        channel.exchangeBind("C", "Source", "");
+        channel.exchangeBind("D", "Source", "");
+
+        channel.exchangeDelete("A");
+        // Source should still be there. We'll verify this by redeclaring
+        // it here and verifying it goes away later
+        channel.exchangeDeclare("Source", "fanout", false, true, null);
+
+        channel.exchangeDelete("D");
+
+        channel.exchangeDeclare("Source", "fanout", true, true, null);
+        channel.exchangeDelete("Source");
     }
 }
