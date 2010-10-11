@@ -145,12 +145,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Timestamp of last time we wrote a frame - used for deciding when to
-     * send a heartbeat
-     */
-    private volatile long _lastActivityTime = Long.MAX_VALUE;
-
-    /**
      * Count of socket-timeouts that have happened without any incoming frames
      */
     private int _missedHeartbeats;
@@ -403,7 +397,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public void writeFrame(Frame f) throws IOException {
         _frameHandler.writeFrame(f);
-        _lastActivityTime = System.nanoTime();
+        this.heartbeater.signalActivity();
     }
 
     private static int negotiatedMaxValue(int clientValue, int serverValue) {

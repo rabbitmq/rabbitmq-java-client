@@ -55,8 +55,14 @@ final class Heartbeater {
 
     private ScheduledFuture<?> future;
 
+    private volatile long lastActivityTime;
+
     Heartbeater(FrameHandler frameHandler) {
         this.frameHandler = frameHandler;
+    }
+
+    public void signalActivity() {
+        this.lastActivityTime = System.nanoTime();
     }
 
     /**
@@ -77,7 +83,7 @@ final class Heartbeater {
         if (heartbeatSeconds > 0) {
             ScheduledExecutorService executor = createExecutorIfNecessary();
             ScheduledFuture<?> newFuture = executor.scheduleAtFixedRate(
-                    new HeartbeatRunnable(), heartbeatSeconds,
+                    new HeartbeatRunnable(heartbeatSeconds), heartbeatSeconds,
                     heartbeatSeconds, TimeUnit.SECONDS);
 
             synchronized (this.monitor) {
@@ -121,9 +127,21 @@ final class Heartbeater {
 
     private class HeartbeatRunnable implements Runnable {
 
+        private static final long NANOS_IN_SECOND = 1000 * 1000 * 1000;
+
+        private final long heartbeatNanos;
+
+        private HeartbeatRunnable(int heartbeatSeconds) {
+            this.heartbeatNanos = NANOS_IN_SECOND * heartbeatSeconds;
+        }
+
         public void run() {
             try {
-                frameHandler.writeFrame(new Frame(AMQP.FRAME_HEARTBEAT, 0));
+                long now = System.nanoTime();
+
+                if(now > (lastActivityTime + this.heartbeatNanos)) {
+                    frameHandler.writeFrame(new Frame(AMQP.FRAME_HEARTBEAT, 0));
+                }
             } catch (IOException e) {
                 // ignore
             }
