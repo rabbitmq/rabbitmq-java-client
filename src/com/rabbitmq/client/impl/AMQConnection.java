@@ -37,6 +37,9 @@ import java.net.SocketException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
@@ -121,6 +124,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /** Flag indicating whether the client received Connection.Close message from the broker */
     private boolean _brokerInitiatedShutdown = false;
+
+    /** Manages heartbeats for this connection */
+    private final Heartbeater heartbeater;
 
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
@@ -211,6 +217,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _clientProperties = new HashMap<String, Object>(factory.getClientProperties());
 
         this.factory = factory;
+        this.heartbeater = new Heartbeater(frameHandler);
         _frameHandler = frameHandler;
         _running = true;
         _frameMax = 0;
@@ -349,10 +356,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public void setHeartbeat(int heartbeat) {
         try {
+            this.heartbeater.setHeartbeat(heartbeat);
+
             // Divide by four to make the maximum unwanted delay in
             // sending a timeout be less than a quarter of the
             // timeout setting.
-            _heartbeat = heartbeat;
             _frameHandler.setTimeout(heartbeat * 1000 / 4);
         } catch (SocketException se) {
             // should do more here?
@@ -416,7 +424,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             try {
                 while (_running) {
                     Frame frame = readFrame();
-                    maybeSendHeartbeat();
+
                     if (frame != null) {
                         _missedHeartbeats = 0;
                         if (frame.type == AMQP.FRAME_HEARTBEAT) {
@@ -456,25 +464,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 _appContinuation.set(null);
                 notifyListeners();
             }
-        }
-    }
-
-    private static final long NANOS_IN_SECOND = 1000 * 1000 * 1000;
-
-    /**
-     * Private API - Checks lastActivityTime and heartbeat, sending a
-     * heartbeat frame if conditions are right.
-     */
-    public void maybeSendHeartbeat() throws IOException {
-        if (_heartbeat == 0) {
-            // No heartbeating.
-            return;
-        }
-
-        long now = System.nanoTime();
-        if (now > (_lastActivityTime + (_heartbeat * NANOS_IN_SECOND))) {
-            _lastActivityTime = now;
-            writeFrame(new Frame(AMQP.FRAME_HEARTBEAT, 0));
         }
     }
 
@@ -607,6 +596,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             if (isOpen())
                 _shutdownCause = sse;
         }
+
+        // stop any heartbeating
+        this.heartbeater.shutdown();
+
         _channel0.processShutdownSignal(sse, !initiatedByApplication, notifyRpc);
         _channelManager.handleSignal(sse);
         return sse;
