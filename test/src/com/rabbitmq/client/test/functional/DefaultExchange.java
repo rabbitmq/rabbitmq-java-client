@@ -17,8 +17,8 @@ public class DefaultExchange extends BrokerTestCase {
         queueName = channel.queueDeclare().getQueue();
     }
 
-    // See bug 22101: publish is the only operation permitted on the
-    // default exchange
+    // See bug 22101: publish and declare are the only operations
+    // permitted on the default exchange
 
     public void testDefaultExchangePublish() throws IOException {
         basicPublishVolatile("", queueName); // Implicit binding
@@ -34,8 +34,22 @@ public class DefaultExchange extends BrokerTestCase {
         }
     }
 
-    public void testConfigureDefaultExchange() throws IOException {
+    public void testDeclareDefaultExchange() throws IOException {
         channel.exchangeDeclare("", "direct", true);
-        channel.exchangeDeclare("amq.default", "direct", true);
+    }
+
+    public void testDeleteDefaultExchange() throws IOException {
+        try {
+            channel.exchangeDelete("");
+            fail();
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.ACCESS_REFUSED, ioe);
+        }
+        try {
+            channel.exchangeDelete("amq.default");
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.ACCESS_REFUSED, ioe);
+        }
+
     }
 }
