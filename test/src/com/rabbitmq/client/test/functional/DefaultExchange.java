@@ -44,6 +44,7 @@ public class DefaultExchange extends BrokerTestCase {
             fail();
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.ACCESS_REFUSED, ioe);
+            channel = connection.createChannel();
         }
         try {
             channel.exchangeDelete("amq.default");
