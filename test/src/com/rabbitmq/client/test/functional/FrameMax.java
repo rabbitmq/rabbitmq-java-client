@@ -49,7 +49,6 @@ public class FrameMax extends BrokerTestCase {
      * than what Rabbit suggests. */
     final static int FRAME_MAX = 70000;
     final static int REAL_FRAME_MAX = FRAME_MAX - 8;
-    final static String ROUTING_KEY = "something";
 
     private String queueName;
 
@@ -63,7 +62,6 @@ public class FrameMax extends BrokerTestCase {
         throws IOException
     {
         queueName = channel.queueDeclare().getQueue();
-        channel.queueBind(queueName, "", ROUTING_KEY);
     }
 
     /* Frame content should be less or equal to frame-max - 8. */
@@ -72,7 +70,7 @@ public class FrameMax extends BrokerTestCase {
     {
         /* This should result in at least 3 frames. */
         int howMuch = 2*FRAME_MAX;
-        basicPublishVolatile(new byte[howMuch], ROUTING_KEY);
+        basicPublishVolatile(new byte[howMuch], queueName);
         /* Receive everything that was sent out. */
         while (howMuch > 0) {
             try {
