@@ -39,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
 import java.io.IOException;
 
+import static java.util.concurrent.TimeUnit.*;
+
 /**
  * Manages heartbeats for a {@link AMQConnection}.
  * <p/>
@@ -69,7 +71,7 @@ final class Heartbeater {
      * Sets the heartbeat in seconds.
      */
     public void setHeartbeat(int heartbeatSeconds) {
-        ScheduledFuture<?> previousFuture = null;
+        ScheduledFuture<?> previousFuture;
         synchronized (this.monitor) {
             previousFuture = this.future;
             this.future = null;
@@ -79,12 +81,14 @@ final class Heartbeater {
             previousFuture.cancel(true);
         }
 
-
         if (heartbeatSeconds > 0) {
+            // wake every heartbeatSeconds / 2 to avoid the worst case
+            // where the last activity comes just after the last heartbeat
+            long interval = SECONDS.toMillis(heartbeatSeconds) / 2;
             ScheduledExecutorService executor = createExecutorIfNecessary();
+            Runnable task = new HeartbeatRunnable(interval);
             ScheduledFuture<?> newFuture = executor.scheduleAtFixedRate(
-                    new HeartbeatRunnable(heartbeatSeconds), heartbeatSeconds,
-                    heartbeatSeconds, TimeUnit.SECONDS);
+                    task, interval, interval, TimeUnit.MILLISECONDS);
 
             synchronized (this.monitor) {
                 this.future = newFuture;
@@ -127,19 +131,17 @@ final class Heartbeater {
 
     private class HeartbeatRunnable implements Runnable {
 
-        private static final long NANOS_IN_SECOND = 1000 * 1000 * 1000;
-
         private final long heartbeatNanos;
 
-        private HeartbeatRunnable(int heartbeatSeconds) {
-            this.heartbeatNanos = NANOS_IN_SECOND * heartbeatSeconds;
+        private HeartbeatRunnable(long heartbeatMillis) {
+            this.heartbeatNanos = MILLISECONDS.toNanos(heartbeatMillis);
         }
 
         public void run() {
             try {
                 long now = System.nanoTime();
 
-                if(now > (lastActivityTime + this.heartbeatNanos)) {
+                if (now > (lastActivityTime + this.heartbeatNanos)) {
                     frameHandler.writeFrame(new Frame(AMQP.FRAME_HEARTBEAT, 0));
                 }
             } catch (IOException e) {
