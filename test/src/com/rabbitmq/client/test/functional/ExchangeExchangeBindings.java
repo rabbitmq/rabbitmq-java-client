@@ -53,7 +53,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
     private QueueingConsumer[] consumers = new QueueingConsumer[] { null, null,
             null };
 
-    private void publishWithMarker(String x, String rk) throws IOException {
+    protected void publishWithMarker(String x, String rk) throws IOException {
         basicPublishVolatile(x, rk);
         basicPublishVolatile(MARKER, x, rk);
     }
@@ -86,7 +86,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
         }
     }
 
-    private void consumeNoDuplicates(QueueingConsumer consumer)
+    protected void consumeNoDuplicates(QueueingConsumer consumer)
             throws ShutdownSignalException, InterruptedException {
         assertNotNull(consumer.nextDelivery(TIMEOUT));
         Delivery markerDelivery = consumer.nextDelivery(TIMEOUT);
@@ -217,7 +217,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
         channel.exchangeDelete("e");
     }
 
-    private void publishAndConsumeAll(String exchange)
+    protected void publishAndConsumeAll(String exchange)
         throws IOException, ShutdownSignalException, InterruptedException {
 
         for (String e : exchanges) {

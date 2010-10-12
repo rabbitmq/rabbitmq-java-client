@@ -38,19 +38,19 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
 
-    private void declareExchanges(String[] names) throws IOException {
+    protected void declareExchanges(String[] names) throws IOException {
         for (String e : names) {
             channel.exchangeDeclare(e, "fanout", false, true, null);
         }
     }
 
-    private void assertExchangesNotExist(String[] names) throws IOException {
+    protected void assertExchangesNotExist(String[] names) throws IOException {
         for (String e : names) {
             assertExchangeNotExists(e);
         }
     }
 
-    private void assertExchangeNotExists(String name) throws IOException {
+    protected void assertExchangeNotExists(String name) throws IOException {
         try {
             connection.createChannel().exchangeDeclarePassive(name);
             fail("Exchange " + name + " still exists.");
