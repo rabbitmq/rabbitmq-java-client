@@ -34,40 +34,13 @@ package com.rabbitmq.client.test.functional;
 import java.io.IOException;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
 
-    private Channel secondaryChannel = null;
-
-    @Override
-    protected void createResources() throws IOException {
-        super.createResources();
-        maybeCreateSecondaryChannel();
-    }
-
-    private void maybeCreateSecondaryChannel() throws IOException {
-        if (null != secondaryChannel && ! secondaryChannel.isOpen()) {
-            secondaryChannel = null;
-        }
-        if (null == secondaryChannel) {
-            secondaryChannel = connection.createChannel();
-        }
-    }
-
-    @Override
-    protected void releaseResources() throws IOException {
-        super.releaseResources();
-        if (null != secondaryChannel && secondaryChannel.isOpen()) {
-            secondaryChannel.close();
-        }
-    }
-
     private void assertExchangeNotExists(String name) throws IOException {
-        maybeCreateSecondaryChannel();
         try {
-            secondaryChannel.exchangeDeclarePassive(name);
+            connection.createChannel().exchangeDeclarePassive(name);
             fail("Exchange " + name + " still exists.");
         } catch (IOException e) {
             checkShutdownSignal(AMQP.NOT_FOUND, e);
