@@ -37,7 +37,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
 
-    /* 
+    /*
      * build (A -> B) and (B -> A) and then delete one binding and
      * both exchanges should autodelete
      */
@@ -46,7 +46,7 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
         channel.exchangeDeclare("B", "fanout", false, true, null);
         channel.exchangeBind("A", "B", "");
         channel.exchangeBind("B", "A", "");
-        
+
         channel.exchangeUnbind("A", "B", "");
         // both exchanges should not exist now, so it should not be an
         // error to redeclare either with different arguments
@@ -55,7 +55,7 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
         channel.exchangeDelete("A");
         channel.exchangeDelete("B");
     }
-    
+
     /*
      * build (A -> B) (B -> C) (C -> D) and then delete D.
      * All should autodelete
@@ -69,13 +69,13 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
         channel.exchangeBind("B", "A", "");
         channel.exchangeBind("C", "B", "");
         channel.exchangeBind("D", "C", "");
-        
+
         channel.exchangeDelete("D");
-        
+
         channel.exchangeDeclare("A", "fanout", true, true, null);
         channel.exchangeDelete("A");
     }
-    
+
     /*
      * build (A -> B) (B -> C) (C -> D)
      * (Source -> A) (Source -> B) (Source -> C) (Source -> D)
@@ -87,7 +87,7 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
         channel.exchangeDeclare("C", "fanout", false, true, null);
         channel.exchangeDeclare("D", "fanout", false, true, null);
         channel.exchangeDeclare("Source", "fanout", false, true, null);
-        
+
         channel.exchangeBind("B", "A", "");
         channel.exchangeBind("C", "B", "");
         channel.exchangeBind("D", "C", "");
