@@ -66,10 +66,10 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
      * build (A -> B) (B -> C) (C -> D) and then delete D. All should autodelete
      */
     public void testTransientAutoDelete() throws IOException {
-        channel.exchangeDeclare("A", "fanout", false, true, null);
-        channel.exchangeDeclare("B", "fanout", false, true, null);
-        channel.exchangeDeclare("C", "fanout", false, true, null);
-        channel.exchangeDeclare("D", "fanout", false, true, null);
+        String[] exchanges = new String[] {"A", "B", "C", "D"};
+        for (String e : exchanges) {
+            channel.exchangeDeclare(e, "fanout", false, true, null);
+        }
 
         channel.exchangeBind("B", "A", "");
         channel.exchangeBind("C", "B", "");
@@ -77,10 +77,9 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
 
         channel.exchangeDelete("D");
 
-        assertExchangeNotExists("A");
-        assertExchangeNotExists("B");
-        assertExchangeNotExists("C");
-        assertExchangeNotExists("D");
+        for (String e : exchanges) {
+            assertExchangeNotExists(e);
+        }
     }
 
     /*
@@ -88,20 +87,19 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
      * C) (Source -> D) On removal of D, all should autodelete
      */
     public void testRepeatedTargetAutoDelete() throws IOException {
-        channel.exchangeDeclare("A", "fanout", false, true, null);
-        channel.exchangeDeclare("B", "fanout", false, true, null);
-        channel.exchangeDeclare("C", "fanout", false, true, null);
-        channel.exchangeDeclare("D", "fanout", false, true, null);
+        String[] exchanges = new String[] {"A", "B", "C", "D"};
+        for (String e : exchanges) {
+            channel.exchangeDeclare(e, "fanout", false, true, null);
+        }
         channel.exchangeDeclare("Source", "fanout", false, true, null);
 
         channel.exchangeBind("B", "A", "");
         channel.exchangeBind("C", "B", "");
         channel.exchangeBind("D", "C", "");
 
-        channel.exchangeBind("A", "Source", "");
-        channel.exchangeBind("B", "Source", "");
-        channel.exchangeBind("C", "Source", "");
-        channel.exchangeBind("D", "Source", "");
+        for (String e : exchanges) {
+            channel.exchangeBind(e, "Source", "");
+        }
 
         channel.exchangeDelete("A");
         // Source should still be there. We'll verify this by redeclaring
@@ -110,10 +108,10 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
 
         channel.exchangeDelete("D");
 
+        for (String e : exchanges) {
+            assertExchangeNotExists(e);
+        }
         assertExchangeNotExists("Source");
-        assertExchangeNotExists("A");
-        assertExchangeNotExists("B");
-        assertExchangeNotExists("C");
-        assertExchangeNotExists("D");
     }
+
 }
