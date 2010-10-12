@@ -36,11 +36,13 @@ import java.io.IOException;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class ExchangeExchangeBindings extends BrokerTestCase {
 
     private static final int TIMEOUT = 1000;
+    private static final byte[] MARKER = "MARK".getBytes();
 
     private final String[] queues = new String[] { "q0", "q1", "q2" };
     private final String[] exchanges = new String[] { "e0", "e1", "e2" };
@@ -50,6 +52,11 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
 
     private QueueingConsumer[] consumers = new QueueingConsumer[] { null, null,
             null };
+
+    private void publishWithMarker(String x, String rk) throws IOException {
+        basicPublishVolatile(x, rk);
+        basicPublishVolatile(MARKER, x, rk);
+    }
 
     @Override
     protected void createResources() throws IOException {
@@ -84,7 +91,8 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
         for (; n > 0; --n) {
             assertNotNull(consumer.nextDelivery(TIMEOUT));
         }
-        assertNull(consumer.nextDelivery(0));
+        Delivery markerDelivery = consumer.nextDelivery(TIMEOUT);
+        assertEquals(new String(MARKER), new String(markerDelivery.getBody()));
     }
 
     public void testBindingCreationDeletion() throws IOException {
@@ -108,16 +116,16 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
      */
     public void testSimpleChains() throws IOException, ShutdownSignalException,
             InterruptedException {
-        basicPublishVolatile("e0", "");
+        publishWithMarker("e0", "");
         consumeExactly(consumers[0], 1);
 
         channel.exchangeBind("e0", "e1", "");
-        basicPublishVolatile("e1", "");
+        publishWithMarker("e1", "");
         consumeExactly(consumers[0], 1);
         consumeExactly(consumers[1], 1);
 
         channel.exchangeBind("e1", "e2", "");
-        basicPublishVolatile("e2", "");
+        publishWithMarker("e2", "");
         consumeExactly(consumers[0], 1);
         consumeExactly(consumers[1], 1);
         consumeExactly(consumers[2], 1);
@@ -136,13 +144,13 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
     public void testDuplicateQueueDestinations() throws IOException,
             ShutdownSignalException, InterruptedException {
         channel.queueBind("q1", "e0", "");
-        basicPublishVolatile("e0", "");
+        publishWithMarker("e0", "");
         consumeExactly(consumers[0], 1);
         consumeExactly(consumers[1], 1);
 
         channel.exchangeBind("e0", "e1", "");
 
-        basicPublishVolatile("e1", "");
+        publishWithMarker("e1", "");
         consumeExactly(consumers[0], 1);
         consumeExactly(consumers[1], 1);
 
@@ -162,7 +170,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
         channel.exchangeBind("e2", "e0", "");
 
         for (String e : exchanges) {
-            basicPublishVolatile(e, "");
+            publishWithMarker(e, "");
             for (QueueingConsumer c : consumers) {
                 consumeExactly(c, 1);
             }
