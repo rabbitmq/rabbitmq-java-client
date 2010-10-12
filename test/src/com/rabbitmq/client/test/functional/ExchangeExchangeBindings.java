@@ -178,7 +178,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
         channel.exchangeUnbind("e1", "e2", "");
         channel.exchangeUnbind("e2", "e0", "");
     }
-    
+
     /* pre (eN --> qN) for N in [0..2]
      * create topic e and bind e --> eN with rk eN for N in [0..2]
      * test publish with rk to e
@@ -190,7 +190,8 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
      * Then remove the first set of bindings from e --> eN for N in [0..2]
      * test publish with rk to e
      */
-    public void testTopicExchange() throws IOException, ShutdownSignalException, InterruptedException {
+    public void testTopicExchange() throws IOException, ShutdownSignalException,
+            InterruptedException {
         channel.exchangeDeclare("e", "topic");
         for (String e : exchanges) {
             channel.exchangeBind(e, "e", e);
@@ -214,7 +215,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
         for (QueueingConsumer c : consumers) {
             consumeNoDuplicates(c);
         }
-        
+
         channel.exchangeDelete("ef");
 
         for (String e : exchanges) {
