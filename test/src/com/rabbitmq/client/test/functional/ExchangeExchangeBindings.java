@@ -86,11 +86,9 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
         }
     }
 
-    private void consumeExactly(QueueingConsumer consumer, int n)
+    private void consumeNoDuplicates(QueueingConsumer consumer)
             throws ShutdownSignalException, InterruptedException {
-        for (; n > 0; --n) {
-            assertNotNull(consumer.nextDelivery(TIMEOUT));
-        }
+        assertNotNull(consumer.nextDelivery(TIMEOUT));
         Delivery markerDelivery = consumer.nextDelivery(TIMEOUT);
         assertEquals(new String(MARKER), new String(markerDelivery.getBody()));
     }
@@ -117,18 +115,18 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
     public void testSimpleChains() throws IOException, ShutdownSignalException,
             InterruptedException {
         publishWithMarker("e0", "");
-        consumeExactly(consumers[0], 1);
+        consumeNoDuplicates(consumers[0]);
 
         channel.exchangeBind("e0", "e1", "");
         publishWithMarker("e1", "");
-        consumeExactly(consumers[0], 1);
-        consumeExactly(consumers[1], 1);
+        consumeNoDuplicates(consumers[0]);
+        consumeNoDuplicates(consumers[1]);
 
         channel.exchangeBind("e1", "e2", "");
         publishWithMarker("e2", "");
-        consumeExactly(consumers[0], 1);
-        consumeExactly(consumers[1], 1);
-        consumeExactly(consumers[2], 1);
+        consumeNoDuplicates(consumers[0]);
+        consumeNoDuplicates(consumers[1]);
+        consumeNoDuplicates(consumers[2]);
 
         channel.exchangeUnbind("e0", "e1", "");
         channel.exchangeUnbind("e1", "e2", "");
@@ -145,14 +143,14 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
             ShutdownSignalException, InterruptedException {
         channel.queueBind("q1", "e0", "");
         publishWithMarker("e0", "");
-        consumeExactly(consumers[0], 1);
-        consumeExactly(consumers[1], 1);
+        consumeNoDuplicates(consumers[0]);
+        consumeNoDuplicates(consumers[1]);
 
         channel.exchangeBind("e0", "e1", "");
 
         publishWithMarker("e1", "");
-        consumeExactly(consumers[0], 1);
-        consumeExactly(consumers[1], 1);
+        consumeNoDuplicates(consumers[0]);
+        consumeNoDuplicates(consumers[1]);
 
         channel.exchangeUnbind("e0", "e1", "");
     }
@@ -172,12 +170,63 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
         for (String e : exchanges) {
             publishWithMarker(e, "");
             for (QueueingConsumer c : consumers) {
-                consumeExactly(c, 1);
+                consumeNoDuplicates(c);
             }
         }
 
         channel.exchangeUnbind("e0", "e1", "");
         channel.exchangeUnbind("e1", "e2", "");
         channel.exchangeUnbind("e2", "e0", "");
+    }
+    
+    /* pre (eN --> qN) for N in [0..2]
+     * create topic e and bind e --> eN with rk eN for N in [0..2]
+     * test publish with rk to e
+     * create direct ef and bind e --> ef with rk #
+     * bind ef --> eN with rk eN for N in [0..2]
+     * test publish with rk to e
+     * ( end up with: e -(#)-> ef -(eN)-> eN --> qN;
+     *                e -(eN)-> eN for N in [0..2] )
+     * Then remove the first set of bindings from e --> eN for N in [0..2]
+     * test publish with rk to e
+     */
+    public void testTopicExchange() throws IOException, ShutdownSignalException, InterruptedException {
+        channel.exchangeDeclare("e", "topic");
+        for (String e : exchanges) {
+            channel.exchangeBind(e, "e", e);
+        }
+        for (String e : exchanges) {
+            publishWithMarker(e, e);
+        }
+        for (QueueingConsumer c : consumers) {
+            consumeNoDuplicates(c);
+        }
+
+        channel.exchangeDeclare("ef", "direct");
+        channel.exchangeBind("ef", "e", "#");
+
+        for (String e : exchanges) {
+            channel.exchangeBind(e, "ef", e);
+        }
+        for (String e : exchanges) {
+            publishWithMarker(e, e);
+        }
+        for (QueueingConsumer c : consumers) {
+            consumeNoDuplicates(c);
+        }
+        
+        channel.exchangeDelete("ef");
+
+        for (String e : exchanges) {
+            channel.exchangeUnbind(e, "e", e);
+        }
+        for (String e : exchanges) {
+            publishWithMarker(e, e);
+        }
+        for (QueueingConsumer c : consumers) {
+            consumeNoDuplicates(c);
+        }
+
+        channel.exchangeDelete("e");
     }
 }
