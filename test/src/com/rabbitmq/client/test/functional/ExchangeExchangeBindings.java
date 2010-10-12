@@ -197,7 +197,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
             channel.exchangeBind(e, "e", e);
         }
         for (String e : exchanges) {
-            publishWithMarker(e, e);
+            publishWithMarker("e", e);
         }
         for (QueueingConsumer c : consumers) {
             consumeNoDuplicates(c);
@@ -210,7 +210,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
             channel.exchangeBind(e, "ef", e);
         }
         for (String e : exchanges) {
-            publishWithMarker(e, e);
+            publishWithMarker("e", e);
         }
         for (QueueingConsumer c : consumers) {
             consumeNoDuplicates(c);
@@ -222,7 +222,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
             channel.exchangeUnbind(e, "e", e);
         }
         for (String e : exchanges) {
-            publishWithMarker(e, e);
+            publishWithMarker("e", e);
         }
         for (QueueingConsumer c : consumers) {
             consumeNoDuplicates(c);
