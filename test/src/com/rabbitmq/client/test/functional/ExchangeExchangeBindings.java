@@ -192,16 +192,13 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
      */
     public void testTopicExchange() throws IOException, ShutdownSignalException,
             InterruptedException {
+
         channel.exchangeDeclare("e", "topic");
+
         for (String e : exchanges) {
             channel.exchangeBind(e, "e", e);
         }
-        for (String e : exchanges) {
-            publishWithMarker("e", e);
-        }
-        for (QueueingConsumer c : consumers) {
-            consumeNoDuplicates(c);
-        }
+        publishAndConsumeAll("e");
 
         channel.exchangeDeclare("ef", "direct");
         channel.exchangeBind("ef", "e", "#");
@@ -209,25 +206,26 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
         for (String e : exchanges) {
             channel.exchangeBind(e, "ef", e);
         }
-        for (String e : exchanges) {
-            publishWithMarker("e", e);
-        }
-        for (QueueingConsumer c : consumers) {
-            consumeNoDuplicates(c);
-        }
-
-        channel.exchangeDelete("ef");
+        publishAndConsumeAll("e");
 
         for (String e : exchanges) {
             channel.exchangeUnbind(e, "e", e);
         }
+        publishAndConsumeAll("e");
+
+        channel.exchangeDelete("ef");
+        channel.exchangeDelete("e");
+    }
+
+    private void publishAndConsumeAll(String exchange)
+        throws IOException, ShutdownSignalException, InterruptedException {
+
         for (String e : exchanges) {
-            publishWithMarker("e", e);
+            publishWithMarker(exchange, e);
         }
         for (QueueingConsumer c : consumers) {
             consumeNoDuplicates(c);
         }
-
-        channel.exchangeDelete("e");
     }
+
 }
