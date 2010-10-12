@@ -38,6 +38,18 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
 
+    private void declareExchanges(String[] names) throws IOException {
+        for (String e : names) {
+            channel.exchangeDeclare(e, "fanout", false, true, null);
+        }
+    }
+
+    private void assertExchangesNotExist(String[] names) throws IOException {
+        for (String e : names) {
+            assertExchangeNotExists(e);
+        }
+    }
+
     private void assertExchangeNotExists(String name) throws IOException {
         try {
             connection.createChannel().exchangeDeclarePassive(name);
@@ -52,14 +64,13 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
      * exchanges should autodelete
      */
     public void testAutoDeleteExchangesSimpleLoop() throws IOException {
-        channel.exchangeDeclare("A", "fanout", false, true, null);
-        channel.exchangeDeclare("B", "fanout", false, true, null);
+        String[] exchanges = new String[] {"A", "B"};
+        declareExchanges(exchanges);
         channel.exchangeBind("A", "B", "");
         channel.exchangeBind("B", "A", "");
 
         channel.exchangeUnbind("A", "B", "");
-        assertExchangeNotExists("A");
-        assertExchangeNotExists("B");
+        assertExchangesNotExist(exchanges);
     }
 
     /*
@@ -67,19 +78,13 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
      */
     public void testTransientAutoDelete() throws IOException {
         String[] exchanges = new String[] {"A", "B", "C", "D"};
-        for (String e : exchanges) {
-            channel.exchangeDeclare(e, "fanout", false, true, null);
-        }
-
+        declareExchanges(exchanges);
         channel.exchangeBind("B", "A", "");
         channel.exchangeBind("C", "B", "");
         channel.exchangeBind("D", "C", "");
 
         channel.exchangeDelete("D");
-
-        for (String e : exchanges) {
-            assertExchangeNotExists(e);
-        }
+        assertExchangesNotExist(exchanges);
     }
 
     /*
@@ -88,9 +93,7 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
      */
     public void testRepeatedTargetAutoDelete() throws IOException {
         String[] exchanges = new String[] {"A", "B", "C", "D"};
-        for (String e : exchanges) {
-            channel.exchangeDeclare(e, "fanout", false, true, null);
-        }
+        declareExchanges(exchanges);
         channel.exchangeDeclare("Source", "fanout", false, true, null);
 
         channel.exchangeBind("B", "A", "");
@@ -107,10 +110,7 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
         channel.exchangeDeclare("Source", "fanout", false, true, null);
 
         channel.exchangeDelete("D");
-
-        for (String e : exchanges) {
-            assertExchangeNotExists(e);
-        }
+        assertExchangesNotExist(exchanges);
         assertExchangeNotExists("Source");
     }
 
