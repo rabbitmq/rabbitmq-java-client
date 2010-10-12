@@ -33,13 +33,50 @@ package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
 
+    private Channel secondaryChannel = null;
+
+    @Override
+    protected void createResources() throws IOException {
+        super.createResources();
+        maybeCreateSecondaryChannel();
+    }
+
+    private void maybeCreateSecondaryChannel() throws IOException {
+        if (null != secondaryChannel && ! secondaryChannel.isOpen()) {
+            secondaryChannel = null;
+        }
+        if (null == secondaryChannel) {
+            secondaryChannel = connection.createChannel();
+        }
+    }
+
+    @Override
+    protected void releaseResources() throws IOException {
+        super.releaseResources();
+        if (null != secondaryChannel && secondaryChannel.isOpen()) {
+            secondaryChannel.close();
+        }
+    }
+
+    private void assertExchangeNotExists(String name) throws IOException {
+        maybeCreateSecondaryChannel();
+        try {
+            secondaryChannel.exchangeDeclarePassive(name);
+            fail("Exchange " + name + " still exists.");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.NOT_FOUND, e);
+        }
+    }
+
     /*
-     * build (A -> B) and (B -> A) and then delete one binding and
-     * both exchanges should autodelete
+     * build (A -> B) and (B -> A) and then delete one binding and both
+     * exchanges should autodelete
      */
     public void testAutoDeleteExchangesSimpleLoop() throws IOException {
         channel.exchangeDeclare("A", "fanout", false, true, null);
@@ -48,17 +85,12 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
         channel.exchangeBind("B", "A", "");
 
         channel.exchangeUnbind("A", "B", "");
-        // both exchanges should not exist now, so it should not be an
-        // error to redeclare either with different arguments
-        channel.exchangeDeclare("A", "fanout", true, true, null);
-        channel.exchangeDeclare("B", "fanout", true, true, null);
-        channel.exchangeDelete("A");
-        channel.exchangeDelete("B");
+        assertExchangeNotExists("A");
+        assertExchangeNotExists("B");
     }
 
     /*
-     * build (A -> B) (B -> C) (C -> D) and then delete D.
-     * All should autodelete
+     * build (A -> B) (B -> C) (C -> D) and then delete D. All should autodelete
      */
     public void testTransientAutoDelete() throws IOException {
         channel.exchangeDeclare("A", "fanout", false, true, null);
@@ -72,14 +104,15 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
 
         channel.exchangeDelete("D");
 
-        channel.exchangeDeclare("A", "fanout", true, true, null);
-        channel.exchangeDelete("A");
+        assertExchangeNotExists("A");
+        assertExchangeNotExists("B");
+        assertExchangeNotExists("C");
+        assertExchangeNotExists("D");
     }
 
     /*
-     * build (A -> B) (B -> C) (C -> D)
-     * (Source -> A) (Source -> B) (Source -> C) (Source -> D)
-     * On removal of D, all should autodelete
+     * build (A -> B) (B -> C) (C -> D) (Source -> A) (Source -> B) (Source ->
+     * C) (Source -> D) On removal of D, all should autodelete
      */
     public void testRepeatedTargetAutoDelete() throws IOException {
         channel.exchangeDeclare("A", "fanout", false, true, null);
@@ -104,7 +137,10 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
 
         channel.exchangeDelete("D");
 
-        channel.exchangeDeclare("Source", "fanout", true, true, null);
-        channel.exchangeDelete("Source");
+        assertExchangeNotExists("Source");
+        assertExchangeNotExists("A");
+        assertExchangeNotExists("B");
+        assertExchangeNotExists("C");
+        assertExchangeNotExists("D");
     }
 }
