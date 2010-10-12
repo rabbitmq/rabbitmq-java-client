@@ -77,9 +77,7 @@ public class DefaultExceptionHandler implements ExceptionHandler {
             ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
                                                             "Internal error in " + what,
                                                             false,
-                                                            exception,
-                                                            AMQConnection.CONNECTION_CLOSING_TIMEOUT,
-                                                            false);
+                                                            exception);
         } catch (IOException ioe) {
             // Man, this clearly isn't our day.
             // Ignore the exception? TODO: Log the nested failure

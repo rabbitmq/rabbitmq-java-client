@@ -67,10 +67,12 @@ import com.rabbitmq.utility.Utility;
  * }
  * </pre>
  *
- * <p>For a more detailed explanation, see <a href="http://www.rabbitmq.com/api-guide.html#consuming">the java api guide</a>.</p>
  *
  * <p>For a more complete example, see LogTail in the test/src/com/rabbitmq/examples
  * directory of the source distribution.</p>
+ *
+ * @deprecated implement {@link Consumer} directly or
+ *             extend {@link DefaultConsumer}
  */
 public class QueueingConsumer extends DefaultConsumer {
     private final BlockingQueue<Delivery> _queue;

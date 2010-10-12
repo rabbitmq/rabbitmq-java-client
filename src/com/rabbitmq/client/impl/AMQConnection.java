@@ -671,7 +671,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** 
      * Protected API - Delegates to {@link
      * #close(int,String,boolean,Throwable,int,boolean) the
-     * six-argument close method}, passing 0 for the timeout, and
+     * six-argument close method}, passing
+     * {@link #CONNECTION_CLOSING_TIMEOUT} for the timeout, and
      * false for the abort flag.
      */
     public void close(int closeCode,
@@ -680,7 +681,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                       Throwable cause)
         throws IOException
     {
-        close(closeCode, closeMessage, initiatedByApplication, cause, 0, false);
+        close(closeCode, closeMessage, initiatedByApplication, cause,
+                CONNECTION_CLOSING_TIMEOUT, false);
     }
 
     /**
