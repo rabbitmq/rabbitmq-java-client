@@ -113,5 +113,18 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
         assertExchangesNotExist(exchanges);
         assertExchangeNotExists("Source");
     }
+    
+    /*
+     * build (A -> B) (B -> C) (A -> C). Delete C and they should all vanish
+     */
+    public void testAutoDeleteBindingToVanishedExchange() throws IOException {
+        String[] exchanges = new String[] {"A", "B", "C"};
+        declareExchanges(exchanges);
+        channel.exchangeBind("C", "B", "");
+        channel.exchangeBind("B", "A", "");
+        channel.exchangeBind("C", "A", "");
+        channel.exchangeDelete("C");
+        assertExchangesNotExist(exchanges);
+    }
 
 }
