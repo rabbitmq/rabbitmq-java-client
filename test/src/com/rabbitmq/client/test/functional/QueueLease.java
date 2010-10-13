@@ -146,6 +146,52 @@ public class QueueLease extends BrokerTestCase {
         }
     }
 
+    public void testActiveQueueDeclareExtendsLease()
+            throws InterruptedException, IOException {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-expires", QUEUE_EXPIRES);
+        channel.queueDeclare(TEST_EXPIRE_QUEUE, false, false, false, args);
+
+        Thread.sleep(QUEUE_EXPIRES * 3 / 4);
+        try {
+            channel.queueDeclare(TEST_EXPIRE_QUEUE, false, false, false, args);
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.NOT_FOUND, e);
+            fail("Queue expired before active re-declaration.");
+        }
+
+        Thread.sleep(QUEUE_EXPIRES * 3 / 4);
+        try {
+            channel.queueDeclarePassive(TEST_EXPIRE_QUEUE);
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.NOT_FOUND, e);
+            fail("Queue expired: active re-declaration did not extend lease.");
+        }
+    }
+
+    public void testPassiveQueueDeclareExtendsLease()
+            throws InterruptedException, IOException {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-expires", QUEUE_EXPIRES);
+        channel.queueDeclare(TEST_EXPIRE_QUEUE, false, false, false, args);
+
+        Thread.sleep(QUEUE_EXPIRES * 3 / 4);
+        try {
+            channel.queueDeclarePassive(TEST_EXPIRE_QUEUE);
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.NOT_FOUND, e);
+            fail("Queue expired before before passive re-declaration.");
+        }
+
+        Thread.sleep(QUEUE_EXPIRES * 3 / 4);
+        try {
+            channel.queueDeclarePassive(TEST_EXPIRE_QUEUE);
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.NOT_FOUND, e);
+            fail("Queue expired: passive redeclaration did not extend lease.");
+        }
+    }
+
     void verifyQueueExpires(String name, boolean expire) throws IOException,
             InterruptedException {
         Map<String, Object> args = new HashMap<String, Object>();
