@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class MultiThreadedChannel extends BrokerTestCase {
 
     private static final String DUMMY_QUEUE_NAME = "dummy.queue";
-    
+
     private static final String DUMMY_EXCHANGE_NAME = "dummy.exchange";
 
     public void testInterleavedRpcs() throws Throwable {
