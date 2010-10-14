@@ -258,7 +258,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 this.dispatcher.handleDelivery(callback,
                         m.consumerTag,
                         envelope,
-                        (BasicProperties) command.getContentHeader(), 
+                        (BasicProperties) command.getContentHeader(),
                         command.getContentBody());
 
                 return true;
@@ -694,7 +694,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).consumerTag;
                 _consumers.put(actualConsumerTag, callback);
-                
+
                 dispatcher.handleConsumeOk(callback, actualConsumerTag);
                 return actualConsumerTag;
             }
