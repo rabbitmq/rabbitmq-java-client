@@ -41,7 +41,7 @@ public class DefaultConsumer implements Consumer {
     /** Channel that this consumer is associated with. */
     private final Channel _channel;
     /** Consumer tag for this consumer. */
-    private String _consumerTag;
+    private volatile String _consumerTag;
 
     /**
      * Constructs a new instance and records its association to the passed-in channel.

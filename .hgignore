@@ -6,6 +6,8 @@ syntax: glob
 *.iws
 *.iml
 *.dump
+*.idea
 
 syntax: regexp
 ^build/
+^out/

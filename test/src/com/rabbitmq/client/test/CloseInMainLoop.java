@@ -3,6 +3,7 @@ package com.rabbitmq.client.test;
 import com.rabbitmq.client.impl.*;
 import com.rabbitmq.client.*;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
 
@@ -32,7 +33,7 @@ public class CloseInMainLoop extends BrokerTestCase{
                                                                   "Internal error in Consumer " +
                                                                     consumerTag,
                                                                   false,
-                                                                  exception);
+                                                                  exception, AMQConnection.CONNECTION_CLOSING_TIMEOUT, false);
                 } catch (IOException ioe) {
                     // Man, this clearly isn't our day.
                     // Ignore the exception? TODO: Log the nested failure
