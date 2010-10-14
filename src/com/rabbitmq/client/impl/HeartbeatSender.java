@@ -42,12 +42,12 @@ import java.io.IOException;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
- * Manages heartbeats for a {@link AMQConnection}.
+ * Manages heartbeat sending for a {@link AMQConnection}.
  * <p/>
  * Heartbeats are sent in a dedicated thread that is separate
  * from the main loop thread used for the connection.
  */
-final class Heartbeater {
+final class HeartbeatSender {
 
     private final Object monitor = new Object();
 
@@ -59,7 +59,7 @@ final class Heartbeater {
 
     private volatile long lastActivityTime;
 
-    Heartbeater(FrameHandler frameHandler) {
+    HeartbeatSender(FrameHandler frameHandler) {
         this.frameHandler = frameHandler;
     }
 

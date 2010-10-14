@@ -92,7 +92,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
 
     /** Initialization parameters */
-    private final ConnectionFactory factory;
+    private final ConnectionFactory _factory;
 
     /** The special channel 0 */
     private final AMQChannel _channel0 = new AMQChannel(this, 0) {
@@ -125,8 +125,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Flag indicating whether the client received Connection.Close message from the broker */
     private boolean _brokerInitiatedShutdown = false;
 
-    /** Manages heartbeats for this connection */
-    private final Heartbeater heartbeater;
+    /** Manages heartbeat sending for this connection */
+    private final HeartbeatSender _heartbeatSender;
 
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
@@ -210,8 +210,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _requestedHeartbeat = factory.getRequestedHeartbeat();
         _clientProperties = new HashMap<String, Object>(factory.getClientProperties());
 
-        this.factory = factory;
-        this.heartbeater = new Heartbeater(frameHandler);
+        _factory = factory;
+        _heartbeatSender = new HeartbeatSender(frameHandler);
         _frameHandler = frameHandler;
         _running = true;
         _frameMax = 0;
@@ -289,17 +289,17 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
 
         int channelMax =
-            negotiatedMaxValue(factory.getRequestedChannelMax(),
+            negotiatedMaxValue(_factory.getRequestedChannelMax(),
                                connTune.getChannelMax());
         _channelManager = new ChannelManager(channelMax);
         
         int frameMax =
-            negotiatedMaxValue(factory.getRequestedFrameMax(),
+            negotiatedMaxValue(_factory.getRequestedFrameMax(),
                                connTune.getFrameMax());
         setFrameMax(frameMax);
 
         int heartbeat =
-            negotiatedMaxValue(factory.getRequestedHeartbeat(),
+            negotiatedMaxValue(_factory.getRequestedHeartbeat(),
                                connTune.getHeartbeat());
         setHeartbeat(heartbeat);
         
@@ -350,7 +350,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public void setHeartbeat(int heartbeat) {
         try {
-            this.heartbeater.setHeartbeat(heartbeat);
+            _heartbeatSender.setHeartbeat(heartbeat);
 
             // Divide by four to make the maximum unwanted delay in
             // sending a timeout be less than a quarter of the
@@ -397,7 +397,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public void writeFrame(Frame f) throws IOException {
         _frameHandler.writeFrame(f);
-        this.heartbeater.signalActivity();
+        _heartbeatSender.signalActivity();
     }
 
     private static int negotiatedMaxValue(int clientValue, int serverValue) {
@@ -592,7 +592,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
 
         // stop any heartbeating
-        this.heartbeater.shutdown();
+        _heartbeatSender.shutdown();
 
         _channel0.processShutdownSignal(sse, !initiatedByApplication, notifyRpc);
         _channelManager.handleSignal(sse);
