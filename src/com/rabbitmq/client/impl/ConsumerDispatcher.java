@@ -26,13 +26,7 @@ import java.util.Set;
  */
 final class ConsumerDispatcher {
 
-    // maintain a single thread factory across all consumers
-    // to avoid unnecessary thread name clashes
-    private static final ThreadFactory THREAD_FACTORY
-            = new PrefixingThreadFactory();
-
-    private final ExecutorService dispatchExecutor
-            = Executors.newSingleThreadExecutor(THREAD_FACTORY);
+    private final ExecutorService dispatchExecutor;
 
     private final AMQConnection connection;
 
@@ -43,6 +37,9 @@ final class ConsumerDispatcher {
     public ConsumerDispatcher(AMQConnection connection, Channel channel) {
         this.connection = connection;
         this.channel = channel;
+        this.dispatchExecutor = Executors.newSingleThreadExecutor(
+                new ChannelThreadFactory(channel)
+        );
     }
 
     public void handleConsumeOk(final Consumer delegate,
@@ -168,17 +165,22 @@ final class ConsumerDispatcher {
 
     /**
      * Simple {@link ThreadFactory} implementation that creates threads
-     * with names of the form <code>rabbit-<i>n</i></code>.
+     * with names of the form:
+     * <code>rabbit-dispatcher-<i>channel.toString()</i></code>.
      */
-    private static final class PrefixingThreadFactory implements ThreadFactory {
+    private static final class ChannelThreadFactory implements ThreadFactory {
 
-        private static final String PREFIX = "rabbit-";
+        private static final String PREFIX = "rabbit-dispatcher-";
 
-        private final AtomicInteger _counter = new AtomicInteger();
+        private final Channel channel;
+
+        public ChannelThreadFactory(Channel channel) {
+            this.channel = channel;
+        }
 
         public Thread newThread(Runnable r) {
             Thread thread = new Thread(r);
-            thread.setName(PREFIX + _counter.incrementAndGet());
+            thread.setName(PREFIX + this.channel.toString());
             thread.setDaemon(true);
             return thread;
         }
