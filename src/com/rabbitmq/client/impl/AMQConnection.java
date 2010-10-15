@@ -541,7 +541,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
-        setHeartbeat(0); // Do not try to send heartbeats after CloseOk
+        _heartbeatSender.shutdown(); // Do not try to send heartbeats after CloseOk
         _brokerInitiatedShutdown = true;
         Thread scw = new SocketCloseWait(sse);
         scw.setName("AMQP Connection Closing Monitor " +
