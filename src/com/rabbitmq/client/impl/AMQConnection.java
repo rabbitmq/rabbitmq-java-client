@@ -351,6 +351,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void setHeartbeat(int heartbeat) {
         try {
             _heartbeatSender.setHeartbeat(heartbeat);
+            _heartbeat = heartbeat;
 
             // Divide by four to make the maximum unwanted delay in
             // sending a timeout be less than a quarter of the
@@ -540,7 +541,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
-        _heartbeat = 0; // Do not try to send heartbeats after CloseOk
+        setHeartbeat(0); // Do not try to send heartbeats after CloseOk
         _brokerInitiatedShutdown = true;
         Thread scw = new SocketCloseWait(sse);
         scw.setName("AMQP Connection Closing Monitor " +
