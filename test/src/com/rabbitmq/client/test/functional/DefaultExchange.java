@@ -35,7 +35,12 @@ public class DefaultExchange extends BrokerTestCase {
     }
 
     public void testDeclareDefaultExchange() throws IOException {
-        channel.exchangeDeclare("", "direct", true);
+        try {
+            channel.exchangeDeclare("", "direct", true);
+            fail();
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.ACCESS_REFUSED, ioe);
+        }
     }
 
     public void testDeleteDefaultExchange() throws IOException {
