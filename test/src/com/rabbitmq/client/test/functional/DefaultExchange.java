@@ -5,10 +5,6 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 
-/**
- * See bug 21843. It's not obvious this is the right thing to do, but it's in
- * the spec.
- */
 public class DefaultExchange extends BrokerTestCase {
     String queueName;
 
