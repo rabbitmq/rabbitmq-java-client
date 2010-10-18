@@ -57,6 +57,8 @@ final class HeartbeatSender {
 
     private ScheduledFuture<?> future;
 
+    private boolean shutdown = false;
+
     private volatile long lastActivityTime;
 
     HeartbeatSender(FrameHandler frameHandler) {
@@ -71,30 +73,28 @@ final class HeartbeatSender {
      * Sets the heartbeat in seconds.
      */
     public void setHeartbeat(int heartbeatSeconds) {
-        ScheduledFuture<?> previousFuture;
-        synchronized (this.monitor) {
-            previousFuture = this.future;
-            this.future = null;
-        }
+        synchronized(this.monitor) {
+            if(this.shutdown) {
+                throw new IllegalStateException("HeartbeatSender is shutdown." +
+                                                " Cannot set new interval.");
+            }
 
-        if (previousFuture != null) {
-            previousFuture.cancel(true);
-        }
+            // cancel any existing heartbeat task
+            if(this.future != null) {
+                this.future.cancel(true);
+                this.future = null;
+            }
 
-        if (heartbeatSeconds > 0) {
-            // wake every heartbeatSeconds / 2 to avoid the worst case
-            // where the last activity comes just after the last heartbeat
-            long interval = SECONDS.toMillis(heartbeatSeconds) / 2;
-            ScheduledExecutorService executor = createExecutorIfNecessary();
-            Runnable task = new HeartbeatRunnable(interval);
-            ScheduledFuture<?> newFuture = executor.scheduleAtFixedRate(
+            if (heartbeatSeconds > 0) {
+                // wake every heartbeatSeconds / 2 to avoid the worst case
+                // where the last activity comes just after the last heartbeat
+                long interval = SECONDS.toNanos(heartbeatSeconds) / 2;
+                ScheduledExecutorService executor = createExecutorIfNecessary();
+                Runnable task = new HeartbeatRunnable(interval);
+                this.future = executor.scheduleAtFixedRate(
                     task, interval, interval, TimeUnit.MILLISECONDS);
-
-            synchronized (this.monitor) {
-                this.future = newFuture;
             }
         }
-
     }
 
     private ScheduledExecutorService createExecutorIfNecessary() {
@@ -110,31 +110,33 @@ final class HeartbeatSender {
      * Shutdown the heartbeat process, if any.
      */
     public void shutdown() {
-        ScheduledFuture<?> future;
-        ScheduledExecutorService executor;
-
+        ScheduledExecutorService executorToShutdown = null;
         synchronized (this.monitor) {
-            future = this.future;
-            executor = this.executor;
-            this.future = null;
-            this.executor = null;
-        }
+            if (this.future != null) {
+                this.future.cancel(true);
+                this.future = null;
+            }
 
-        if (future != null) {
-            future.cancel(true);
-        }
+            if (this.executor != null) {
+                // to be safe, we shouldn't call shutdown holding the
+                // monitor.
+                executorToShutdown = this.executor;
 
-        if (executor != null) {
-            executor.shutdown();
+                this.shutdown = true;
+                this.executor = null;
+            }
+        }
+        if(executorToShutdown != null) {
+            executorToShutdown.shutdown();
         }
     }
 
-    private class HeartbeatRunnable implements Runnable {
+    private final class HeartbeatRunnable implements Runnable {
 
         private final long heartbeatNanos;
 
-        private HeartbeatRunnable(long heartbeatMillis) {
-            this.heartbeatNanos = MILLISECONDS.toNanos(heartbeatMillis);
+        private HeartbeatRunnable(long heartbeatNanos) {
+            this.heartbeatNanos = heartbeatNanos;
         }
 
         public void run() {
