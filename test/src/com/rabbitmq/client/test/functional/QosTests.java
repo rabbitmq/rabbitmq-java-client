@@ -31,6 +31,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -372,6 +373,15 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
+    public void testNoConsumers() throws Exception {
+        String q = declareBind(channel);
+        fill(1);
+        channel.flow(false);
+        QueueingConsumer c = new QueueingConsumer(channel);
+        channel.basicConsume(q, c);
+        drain(c, 0);
+    }
+
     protected void runLimitTests(int limit,
                                  boolean multiAck,
                                  boolean txMode,
@@ -480,10 +490,15 @@ public class QosTests extends BrokerTestCase
                                         boolean noAck)
         throws IOException
     {
+        String queue = declareBind(ch);
+        ch.basicConsume(queue, noAck, c);
+        return queue;
+    }
+
+    protected String declareBind(Channel ch) throws IOException {
         AMQP.Queue.DeclareOk ok = ch.queueDeclare();
         String queue = ok.getQueue();
         ch.queueBind(queue, "amq.fanout", "");
-        ch.basicConsume(queue, noAck, c);
         return queue;
     }
 
