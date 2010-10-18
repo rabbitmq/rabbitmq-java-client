@@ -75,8 +75,7 @@ final class HeartbeatSender {
     public void setHeartbeat(int heartbeatSeconds) {
         synchronized(this.monitor) {
             if(this.shutdown) {
-                throw new IllegalStateException("HeartbeatSender is shutdown." +
-                                                " Cannot set new interval.");
+                return;
             }
 
             // cancel any existing heartbeat task
