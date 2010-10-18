@@ -91,7 +91,7 @@ final class HeartbeatSender {
                 ScheduledExecutorService executor = createExecutorIfNecessary();
                 Runnable task = new HeartbeatRunnable(interval);
                 this.future = executor.scheduleAtFixedRate(
-                    task, interval, interval, TimeUnit.MILLISECONDS);
+                    task, interval, interval, TimeUnit.NANOSECONDS);
             }
         }
     }
