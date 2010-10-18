@@ -92,32 +92,43 @@ public class ChannelManager {
         }
     }
 
-    public synchronized ChannelN createChannel(AMQConnection connection) throws IOException {
-        int channelNumber = channelNumberAllocator.allocate();
-        if (channelNumber == -1) {
-            return null;
+    public ChannelN createChannel(AMQConnection connection) throws IOException {
+        int channelNumber;
+        synchronized (this) {
+            channelNumber = channelNumberAllocator.allocate();
+            if (channelNumber == -1) {
+                return null;
+            }
         }
         return createChannelInternal(connection, channelNumber);
     }
 
-    public synchronized ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
-        if(channelNumberAllocator.reserve(channelNumber))
+    public ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
+        boolean reserved;
+        synchronized (this) {
+            reserved = channelNumberAllocator.reserve(channelNumber);
+        }
+        if(reserved)
             return createChannelInternal(connection, channelNumber);
         else
             return null;
     }
 
-    private synchronized ChannelN createChannelInternal(AMQConnection connection, int channelNumber) throws IOException {
-        if (_channelMap.containsKey(channelNumber)) {
-            // That number's already allocated! Can't do it
-            // This should never happen unless something has gone
-            // badly wrong with our implementation.
-            throw new IllegalStateException("We have attempted to "
-              + "create a channel with a number that is already in "
-              + "use. This should never happen. Please report this as a bug.");
+    private ChannelN createChannelInternal(AMQConnection connection, int channelNumber) throws IOException {
+        ChannelN ch;
+        synchronized (this) {
+            if (_channelMap.containsKey(channelNumber)) {
+                // That number's already allocated! Can't do it
+                // This should never happen unless something has gone
+                // badly wrong with our implementation.
+                throw new IllegalStateException("We have attempted to "
+                        + "create a channel with a number that is already in "
+                        + "use. This should never happen. "
+                        + "Please report this as a bug.");
+            }
+            ch = new ChannelN(connection, channelNumber);
+            addChannel(ch);
         }
-        ChannelN ch = new ChannelN(connection, channelNumber);
-        addChannel(ch);
         ch.open(); // now that it's been added to our internal tables
         return ch;
     }
