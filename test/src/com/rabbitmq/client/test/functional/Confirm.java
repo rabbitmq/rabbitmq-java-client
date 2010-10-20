@@ -66,40 +66,56 @@ public class Confirm extends BrokerTestCase
         channel.queueDeclare("confirm-test", true, true, true, null);
         channel.basicConsume("confirm-test", true, new DefaultConsumer(channel));
         channel.queueDeclare("confirm-test-noconsumer", true, true, true, null);
+        channel.queueDeclare("confirm-test-2", true, true, true, null);
+        channel.basicConsume("confirm-test-2", true, new DefaultConsumer(channel));
+        channel.queueBind("confirm-test", "amq.direct", "confirm-multiple-queues");
+        channel.queueBind("confirm-test-2", "amq.direct", "confirm-multiple-queues");
     }
 
     public void testConfirmTransient() throws IOException, InterruptedException {
-        confirmTest("consumer-test", false, false, false);
+        confirmTest("confirm-test", false, false, false);
     }
 
     public void testConfirmPersistentSimple()
         throws IOException, InterruptedException
     {
-        confirmTest("consumer-test", true, false, false);
+        confirmTest("confirm-test", true, false, false);
     }
 
     public void testConfirmPersistentImmediate()
         throws IOException, InterruptedException
     {
-        confirmTest("consumer-test", true, false, true);
+        confirmTest("confirm-test", true, false, true);
     }
 
     public void testConfirmPersistentImmediateNoConsumer()
         throws IOException, InterruptedException
     {
-        confirmTest("consumer-test-noconsumer", true, false, true);
+        confirmTest("confirm-test-noconsumer", true, false, true);
     }
 
     public void testConfirmPersistentMandatory()
         throws IOException, InterruptedException
     {
-        confirmTest("consumer-test", true, true, false);
+        confirmTest("confirm-test", true, true, false);
     }
 
     public void testConfirmPersistentMandatoryReturn()
         throws IOException, InterruptedException
     {
-        confirmTest("consumer-test-doesnotexist", true, true, false);
+        confirmTest("confirm-test-doesnotexist", true, true, false);
+    }
+
+    public void testConfirmMultipleQueues()
+        throws IOException, InterruptedException
+    {
+        for (long i = 0; i < NUM_MESSAGES; i++) {
+            publish("amq.direct", "confirm-multiple-queues", true, false, false);
+            ackSet.add(i);
+        }
+
+        while (ackSet.size() > 0)
+            Thread.sleep(10);
     }
 
     /* Publish NUM_MESSAGES persistent messages and wait for
@@ -121,13 +137,23 @@ public class Confirm extends BrokerTestCase
                          boolean mandatory, boolean immediate)
         throws IOException
     {
-        channel.basicPublish("", queueName, mandatory, immediate,
+        publish("", queueName, persistent, mandatory, immediate);
+    }
+
+    private void publish(String exchangeName, String queueName,
+                         boolean persistent, boolean mandatory,
+                         boolean immediate)
+        throws IOException
+    {
+        channel.basicPublish(exchangeName, queueName, mandatory, immediate,
                              persistent ? MessageProperties.PERSISTENT_BASIC
                                         : MessageProperties.BASIC,
                              "nop".getBytes());
     }
 
     private synchronized void gotAckFor(long msgSeqNo) {
+        if (!ackSet.contains(msgSeqNo))
+            fail("got duplicate ack: " + msgSeqNo);
         ackSet.remove(msgSeqNo);
     }
 }
