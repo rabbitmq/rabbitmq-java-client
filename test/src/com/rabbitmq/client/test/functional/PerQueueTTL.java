@@ -66,21 +66,21 @@ public class PerQueueTTL extends BrokerTestCase {
         try {
             declareQueue(TTL_QUEUE_NAME, (byte)200);
         }   catch(IOException ex) {
-            fail("Should be able to use long for queue TTL");
+            fail("Should be able to use byte for queue TTL");
         }
     }
     public void testCreateQueueWithShortTTL() throws IOException {
         try {
             declareQueue(TTL_QUEUE_NAME, (short)200);
         }   catch(IOException ex) {
-            fail("Should be able to use long for queue TTL");
+            fail("Should be able to use short for queue TTL");
         }
     }
     public void testCreateQueueWithIntTTL() throws IOException {
         try {
             declareQueue(TTL_QUEUE_NAME, 200);
         }   catch(IOException ex) {
-            fail("Should be able to use long for queue TTL");
+            fail("Should be able to use int for queue TTL");
         }
     }
 
@@ -97,7 +97,7 @@ public class PerQueueTTL extends BrokerTestCase {
             declareQueue(TTL_INVALID_QUEUE_NAME, "foobar");
             fail("Should not be able to declare a queue with a non-long value for x-message-ttl");
         } catch (IOException e) {
-            assertNotNull(e);
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
     }
 
@@ -106,7 +106,7 @@ public class PerQueueTTL extends BrokerTestCase {
             declareQueue(TTL_INVALID_QUEUE_NAME, 0);
             fail("Should not be able to declare a queue with zero for x-message-ttl");
         } catch (IOException e) {
-            assertNotNull(e);
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
     }
 
@@ -115,7 +115,7 @@ public class PerQueueTTL extends BrokerTestCase {
             declareQueue(TTL_INVALID_QUEUE_NAME, -10);
             fail("Should not be able to declare a queue with zero for x-message-ttl");
         } catch (IOException e) {
-            assertNotNull(e);
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
     }
 
@@ -140,13 +140,13 @@ public class PerQueueTTL extends BrokerTestCase {
         byte[] msg2 = "two".getBytes();
         byte[] msg3 = "three".getBytes();
 
-        this.channel.basicPublish(TTL_EXCHANGE, TTL_QUEUE_NAME, null, msg1);
+        basicPublishVolatile(msg1, TTL_EXCHANGE, TTL_QUEUE_NAME);
         Thread.sleep(1500);
 
-        this.channel.basicPublish(TTL_EXCHANGE, TTL_QUEUE_NAME, null, msg2);
+        basicPublishVolatile(msg2, TTL_EXCHANGE, TTL_QUEUE_NAME);
         Thread.sleep(1000);
 
-        this.channel.basicPublish(TTL_EXCHANGE, TTL_QUEUE_NAME, null, msg3);
+        basicPublishVolatile(msg3, TTL_EXCHANGE, TTL_QUEUE_NAME);
 
         assertEquals("two", new String(get()));
         assertEquals("three", new String(get()));
@@ -166,10 +166,10 @@ public class PerQueueTTL extends BrokerTestCase {
 
         this.channel.txSelect();
 
-        this.channel.basicPublish(TTL_EXCHANGE, TTL_QUEUE_NAME, null, msg1);
+        basicPublishVolatile(msg1, TTL_EXCHANGE, TTL_QUEUE_NAME);
         Thread.sleep(1500);
 
-        this.channel.basicPublish(TTL_EXCHANGE, TTL_QUEUE_NAME, null, msg2);
+        basicPublishVolatile(msg2, TTL_EXCHANGE, TTL_QUEUE_NAME);
         this.channel.txCommit();
         Thread.sleep(500);
 
@@ -181,7 +181,7 @@ public class PerQueueTTL extends BrokerTestCase {
 
 
     private byte[] get() throws IOException {
-        GetResponse response = this.channel.basicGet(TTL_QUEUE_NAME, false);
+        GetResponse response = basicGet(TTL_QUEUE_NAME);
         if(response == null) {
             return null;
         }
