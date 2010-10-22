@@ -56,6 +56,8 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(ExchangeDeleteIfUnused.class);
         suite.addTestSuite(QosTests.class);
         suite.addTestSuite(AlternateExchange.class);
+        suite.addTestSuite(ExchangeExchangeBindings.class);
+        suite.addTestSuite(ExchangeExchangeBindingsAutoDelete.class);
         suite.addTestSuite(ExchangeDeclare.class);
         suite.addTestSuite(FrameMax.class);
         suite.addTestSuite(QueueLifecycle.class);
@@ -63,7 +65,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(QueueExclusivity.class);
         suite.addTestSuite(InvalidAcks.class);
         suite.addTestSuite(InvalidAcksTx.class);
-        suite.addTestSuite(BindToDefaultExchange.class);
+        suite.addTestSuite(DefaultExchange.class);
         suite.addTestSuite(UnbindAutoDeleteExchange.class);
         suite.addTestSuite(RecoverAfterCancel.class);
         suite.addTestSuite(UnexpectedFrames.class);
