@@ -32,12 +32,22 @@ one of the following in the top-level directory of the source tree:
   ant test-ssl
 
 Note that to run the SSL tests, the RabbitMQ server should be
-configured to use SSL as per the SSL with RabbitMQ guide.
+configured to use SSL as per the SSL with RabbitMQ guide. The
+SSL_CERTS_DIR environment variable must point to a certificate
+folder containing a /client/ subfolder with a client certificate
+and the PASSWORD variable must point to the key password. The
+broker must be configured to validate client certificates.
 
-The server tests are meant to test a RabbitMQ broker.  Broadly, they
-require a running RabbitMQ broker on the default host/port, the source
-code for rabbitmq-server in ../rabbitmq-server, and a test directory
-../rabbitmq-test.  Running them manually is a tricky business.
+The server and functional tests are meant to test a RabbitMQ broker.
+Broadly, they require a running RabbitMQ broker on the default
+host/port, the source code for rabbitmq-server in ../rabbitmq-server,
+and a test directory ../rabbitmq-test.  These folders must each
+contain an appropriate Makefile.  The test source can be scanned for
+instances of "Host.executeCommand" to find required Makefile targets.
+
+Clustering tests require brokers on ports 5672 and 5673.  Tests that
+require a clustered environment will be skipped if the second broker
+is absent.
 
 For example, to run the client tests:
 
