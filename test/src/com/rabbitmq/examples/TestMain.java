@@ -323,7 +323,7 @@ public class TestMain {
     }
 
     public class BatchedTracingConsumer extends TracingConsumer {
-        final boolean _noAck;
+        final boolean _autoAck;
 
         final BlockingCell<Object> _k;
 
@@ -331,19 +331,19 @@ public class TestMain {
 
         int _counter;
 
-        public BatchedTracingConsumer(boolean noAck, BlockingCell<Object> k, int batchSize, Channel ch) {
+        public BatchedTracingConsumer(boolean autoAck, BlockingCell<Object> k, int batchSize, Channel ch) {
             super(ch);
-            _noAck = noAck;
+            _autoAck = autoAck;
             _k = k;
             _batchSize = batchSize;
             _counter = 0;
         }
 
         @Override public void handleDelivery(String consumer_Tag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-            log("Async message (" + _counter + "," + (_noAck ? "noack" : "ack") + "): " + new String(body));
+            log("Async message (" + _counter + "," + (_autoAck ? "autoack" : "ack") + "): " + new String(body));
             _counter++;
             if (_counter == _batchSize) {
-                if (!_noAck) {
+                if (!_autoAck) {
                     log("Acking batch.");
                     getChannel().basicAck(envelope.getDeliveryTag(), true);
                 }
@@ -379,7 +379,7 @@ public class TestMain {
         }
     }
 
-    public int drain(int batchSize, String queueName, boolean noAck) throws IOException {
+    public int drain(int batchSize, String queueName, boolean autoAck) throws IOException {
         long latestTag = 0;
         boolean notEmpty = true;
         int remaining = batchSize;
@@ -387,7 +387,7 @@ public class TestMain {
 
         while (notEmpty && (remaining > 0)) {
             for (int i = 0; (i < 2) && (remaining > 0); i++) {
-                GetResponse c = _ch1.basicGet(queueName, noAck);
+                GetResponse c = _ch1.basicGet(queueName, autoAck);
                 if (c == null) {
                     notEmpty = false;
                 } else {
@@ -398,7 +398,7 @@ public class TestMain {
                     count++;
                 }
             }
-            if (!noAck && latestTag != 0) {
+            if (!autoAck && latestTag != 0) {
                 _ch1.basicAck(latestTag, true);
                 latestTag = 0;
             }
