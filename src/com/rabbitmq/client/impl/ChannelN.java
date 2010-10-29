@@ -525,6 +525,36 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public Exchange.BindOk exchangeBind(String destination, String source,
+            String routingKey, Map<String, Object> arguments)
+            throws IOException {
+        return (Exchange.BindOk) exnWrappingRpc(
+                new Exchange.Bind(TICKET, destination, source, routingKey,
+                        false, arguments)).getMethod();
+    }
+
+    /** Public API - {@inheritDoc} */
+    public Exchange.BindOk exchangeBind(String destination, String source,
+            String routingKey) throws IOException {
+        return exchangeBind(destination, source, routingKey, null);
+    }
+
+    /** Public API - {@inheritDoc} */
+    public Exchange.UnbindOk exchangeUnbind(String destination, String source,
+            String routingKey, Map<String, Object> arguments)
+            throws IOException {
+        return (Exchange.UnbindOk) exnWrappingRpc(
+                new Exchange.Unbind(TICKET, destination, source, routingKey,
+                        false, arguments)).getMethod();
+    }
+
+    /** Public API - {@inheritDoc} */
+    public Exchange.UnbindOk exchangeUnbind(String destination, String source,
+            String routingKey) throws IOException {
+        return exchangeUnbind(destination, source, routingKey, null);
+    }
+    
+    /** Public API - {@inheritDoc} */
     public Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive,
                                         boolean autoDelete, Map<String, Object> arguments)
         throws IOException

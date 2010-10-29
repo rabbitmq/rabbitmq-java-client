@@ -47,9 +47,11 @@ public class Heartbeat extends BrokerTestCase {
     public void testHeartbeat()
         throws IOException, InterruptedException
     {
+        assertEquals(1, connection.getHeartbeat());
         Thread.sleep(3100);
         assertTrue(connection.isOpen());
         ((AMQConnection)connection).setHeartbeat(0);
+        assertEquals(0, connection.getHeartbeat());
         Thread.sleep(3100);
         assertFalse(connection.isOpen());
 

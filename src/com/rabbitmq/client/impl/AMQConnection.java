@@ -37,6 +37,9 @@ import java.net.SocketException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
@@ -89,7 +92,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
 
     /** Initialization parameters */
-    private final ConnectionFactory factory;
+    private final ConnectionFactory _factory;
 
     /** The special channel 0 */
     private final AMQChannel _channel0 = new AMQChannel(this, 0) {
@@ -122,6 +125,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Flag indicating whether the client received Connection.Close message from the broker */
     private boolean _brokerInitiatedShutdown = false;
 
+    /** Manages heartbeat sending for this connection */
+    private final HeartbeatSender _heartbeatSender;
+
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
      * @param channel the channel to disconnect
@@ -137,12 +143,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             throw new AlreadyClosedException("Attempt to use closed connection", this);
         }
     }
-
-    /**
-     * Timestamp of last time we wrote a frame - used for deciding when to
-     * send a heartbeat
-     */
-    private volatile long _lastActivityTime = Long.MAX_VALUE;
 
     /**
      * Count of socket-timeouts that have happened without any incoming frames
@@ -210,7 +210,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _requestedHeartbeat = factory.getRequestedHeartbeat();
         _clientProperties = new HashMap<String, Object>(factory.getClientProperties());
 
-        this.factory = factory;
+        _factory = factory;
+        _heartbeatSender = new HeartbeatSender(frameHandler);
         _frameHandler = frameHandler;
         _running = true;
         _frameMax = 0;
@@ -288,17 +289,17 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
 
         int channelMax =
-            negotiatedMaxValue(factory.getRequestedChannelMax(),
+            negotiatedMaxValue(_factory.getRequestedChannelMax(),
                                connTune.getChannelMax());
         _channelManager = new ChannelManager(channelMax);
         
         int frameMax =
-            negotiatedMaxValue(factory.getRequestedFrameMax(),
+            negotiatedMaxValue(_factory.getRequestedFrameMax(),
                                connTune.getFrameMax());
         setFrameMax(frameMax);
 
         int heartbeat =
-            negotiatedMaxValue(factory.getRequestedHeartbeat(),
+            negotiatedMaxValue(_factory.getRequestedHeartbeat(),
                                connTune.getHeartbeat());
         setHeartbeat(heartbeat);
         
@@ -349,10 +350,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public void setHeartbeat(int heartbeat) {
         try {
+            _heartbeatSender.setHeartbeat(heartbeat);
+            _heartbeat = heartbeat;
+
             // Divide by four to make the maximum unwanted delay in
             // sending a timeout be less than a quarter of the
             // timeout setting.
-            _heartbeat = heartbeat;
             _frameHandler.setTimeout(heartbeat * 1000 / 4);
         } catch (SocketException se) {
             // should do more here?
@@ -395,7 +398,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public void writeFrame(Frame f) throws IOException {
         _frameHandler.writeFrame(f);
-        _lastActivityTime = System.nanoTime();
+        _heartbeatSender.signalActivity();
     }
 
     private static int negotiatedMaxValue(int clientValue, int serverValue) {
@@ -416,7 +419,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             try {
                 while (_running) {
                     Frame frame = readFrame();
-                    maybeSendHeartbeat();
+
                     if (frame != null) {
                         _missedHeartbeats = 0;
                         if (frame.type == AMQP.FRAME_HEARTBEAT) {
@@ -456,25 +459,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 _appContinuation.set(null);
                 notifyListeners();
             }
-        }
-    }
-
-    private static final long NANOS_IN_SECOND = 1000 * 1000 * 1000;
-
-    /**
-     * Private API - Checks lastActivityTime and heartbeat, sending a
-     * heartbeat frame if conditions are right.
-     */
-    public void maybeSendHeartbeat() throws IOException {
-        if (_heartbeat == 0) {
-            // No heartbeating.
-            return;
-        }
-
-        long now = System.nanoTime();
-        if (now > (_lastActivityTime + (_heartbeat * NANOS_IN_SECOND))) {
-            _lastActivityTime = now;
-            writeFrame(new Frame(AMQP.FRAME_HEARTBEAT, 0));
         }
     }
 
@@ -557,7 +541,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
-        _heartbeat = 0; // Do not try to send heartbeats after CloseOk
+        _heartbeatSender.shutdown(); // Do not try to send heartbeats after CloseOk
         _brokerInitiatedShutdown = true;
         Thread scw = new SocketCloseWait(sse);
         scw.setName("AMQP Connection Closing Monitor " +
@@ -607,6 +591,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             if (isOpen())
                 _shutdownCause = sse;
         }
+
+        // stop any heartbeating
+        _heartbeatSender.shutdown();
+
         _channel0.processShutdownSignal(sse, !initiatedByApplication, notifyRpc);
         _channelManager.handleSignal(sse);
         return sse;
