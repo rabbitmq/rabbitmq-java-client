@@ -65,6 +65,9 @@ public class Confirm extends BrokerTestCase
         channel.confirmSelect(true);
         channel.queueDeclare("confirm-test", true, true, true, null);
         channel.basicConsume("confirm-test", true, new DefaultConsumer(channel));
+        channel.queueDeclare("confirm-test-nondurable", false, false, true, null);
+        channel.basicConsume("confirm-test-nondurable", true,
+                             new DefaultConsumer(channel));
         channel.queueDeclare("confirm-test-noconsumer", true, true, true, null);
         channel.queueDeclare("confirm-test-2", true, true, true, null);
         channel.basicConsume("confirm-test-2", true, new DefaultConsumer(channel));
@@ -80,6 +83,12 @@ public class Confirm extends BrokerTestCase
         throws IOException, InterruptedException
     {
         confirmTest("confirm-test", true, false, false);
+    }
+
+    public void testConfirmNonDurable()
+        throws IOException, InterruptedException
+    {
+        confirmTest("confirm-test-nondurable", true, false, false);
     }
 
     public void testConfirmPersistentImmediate()
