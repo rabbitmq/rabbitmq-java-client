@@ -127,6 +127,39 @@ public class Confirm extends BrokerTestCase
             Thread.sleep(10);
     }
 
+    /* For testConfirmQueueDelete and testConfirmQueuePurge to be
+     * relevant, the msg_store must not write the messages to disk
+     * (thus causing a confirm).  I'd manually comment out the line in
+     * internal_sync that notifies the clients. */
+
+    public void testConfirmQueueDelete()
+        throws IOException, InterruptedException
+    {
+        for (long i = 0; i < NUM_MESSAGES; i++) {
+            publish("confirm-test-noconsumer", true, false, false);
+            ackSet.add(i);
+        }
+
+        channel.queueDelete("confirm-test-noconsumer");
+
+        while (ackSet.size() > 0)
+        Thread.sleep(10);
+    }
+
+    public void testConfirmQueuePurge()
+        throws IOException, InterruptedException
+    {
+        for (long i = 0; i < NUM_MESSAGES; i++) {
+            publish("confirm-test-noconsumer", true, false, false);
+            ackSet.add(i);
+        }
+
+        channel.queuePurge("confirm-test-noconsumer");
+
+        while (ackSet.size() > 0)
+        Thread.sleep(10);
+    }
+
     /* Publish NUM_MESSAGES persistent messages and wait for
      * confirmations. */
     public void confirmTest(String queueName, boolean persistent,
