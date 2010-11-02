@@ -1,27 +1,22 @@
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.*;
 import com.rabbitmq.utility.Utility;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Simple help class that dispatches notifications to a {@link Consumer} on an
  * internally-managed thread.
- *
+ * <p/>
  * Each <code>Channel</code> has a single <code>ConsumerDispatcher</code>,
  * which in turn manages a single thread.
- *
+ * <p/>
  * All <code>Consumers</code> for a <code>Channel</code> share the same thread.
  */
 final class ConsumerDispatcher {
@@ -97,9 +92,9 @@ final class ConsumerDispatcher {
             public void run() {
                 try {
                     delegate.handleDelivery(consumerTag,
-                                            envelope,
-                                            properties,
-                                            body);
+                            envelope,
+                            properties,
+                            body);
                 } catch (Throwable ex) {
                     connection.getExceptionHandler().handleConsumerException(
                             channel,
@@ -124,7 +119,7 @@ final class ConsumerDispatcher {
 
     private void notifyConsumersOfShutdown(Map<String, Consumer> consumers,
                                            ShutdownSignalException signal) {
-        Set<Map.Entry<String,Consumer>> entries = consumers.entrySet();
+        Set<Map.Entry<String, Consumer>> entries = consumers.entrySet();
         for (Map.Entry<String, Consumer> consumerEntry : entries) {
             Consumer consumer = consumerEntry.getValue();
             String consumerTag = consumerEntry.getKey();
