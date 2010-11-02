@@ -625,10 +625,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public GetResponse basicGet(String queue, boolean noAck)
+    public GetResponse basicGet(String queue, boolean autoAck)
         throws IOException
     {
-        AMQCommand replyCommand = exnWrappingRpc(new Basic.Get(TICKET, queue, noAck));
+        AMQCommand replyCommand = exnWrappingRpc(new Basic.Get(TICKET, queue, autoAck));
         Method method = replyCommand.getMethod();
 
         if (method instanceof Basic.GetOk) {
@@ -670,22 +670,22 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public String basicConsume(String queue, boolean noAck, Consumer callback)
+    public String basicConsume(String queue, boolean autoAck, Consumer callback)
         throws IOException
     {
-        return basicConsume(queue, noAck, "", callback);
+        return basicConsume(queue, autoAck, "", callback);
     }
 
     /** Public API - {@inheritDoc} */
-    public String basicConsume(String queue, boolean noAck, String consumerTag,
+    public String basicConsume(String queue, boolean autoAck, String consumerTag,
                                Consumer callback)
         throws IOException
     {
-        return basicConsume(queue, noAck, consumerTag, false, false, null, callback);
+        return basicConsume(queue, autoAck, consumerTag, false, false, null, callback);
     }
 
     /** Public API - {@inheritDoc} */
-    public String basicConsume(String queue, boolean noAck, String consumerTag,
+    public String basicConsume(String queue, boolean autoAck, String consumerTag,
                                boolean noLocal, boolean exclusive, Map<String, Object> arguments,
                                final Consumer callback)
         throws IOException
@@ -701,7 +701,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         };
 
         rpc(new Basic.Consume(TICKET, queue, consumerTag,
-                              noLocal, noAck, exclusive,
+                              noLocal, autoAck, exclusive,
                               false, arguments),
             k);
 

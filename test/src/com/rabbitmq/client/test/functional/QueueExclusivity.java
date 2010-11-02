@@ -118,7 +118,7 @@ public class QueueExclusivity extends BrokerTestCase {
 
     public void testQueueExclusiveForBind() throws Exception {
         try {
-            channel.queueBind(q, "", ""); // NB uses default exchange
+            channel.queueBind(q, "amq.direct", "");
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             return;
@@ -134,9 +134,9 @@ public class QueueExclusivity extends BrokerTestCase {
     // *doesn't* make sense to include it.
 
     public void testQueueExclusiveForUnbind() throws Exception {
-        altChannel.queueBind(q, "", ""); // NB uses default exchange
+        altChannel.queueBind(q, "amq.direct", "");
         try {
-            channel.queueUnbind(q, "", "");
+            channel.queueUnbind(q, "amq.direct", "");
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             return;

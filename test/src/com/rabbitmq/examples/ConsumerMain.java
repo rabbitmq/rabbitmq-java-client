@@ -68,10 +68,10 @@ public class ConsumerMain implements Runnable {
             final String hostName = optArg(args, 0, "localhost");
             final int portNumber = optArg(args, 1, AMQP.PROTOCOL.PORT);
             boolean writeStats = optArg(args, 2, true);
-            boolean noAck = optArg(args, 3, true);
+            boolean autoAck = optArg(args, 3, true);
             final Connection conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
             System.out.println("Channel 0 fully open.");
-            new ConsumerMain(conn, writeStats, noAck).run();
+            new ConsumerMain(conn, writeStats, autoAck).run();
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
             e.printStackTrace();
@@ -91,14 +91,14 @@ public class ConsumerMain implements Runnable {
 
     public boolean _writeStats;
 
-    public boolean _noAck;
+    public boolean _autoAck;
 
-    public ConsumerMain(Connection connection, boolean writeStats, boolean noAck) {
+    public ConsumerMain(Connection connection, boolean writeStats, boolean autoAck) {
         _connection = connection;
         _writeStats = writeStats;
-        _noAck = noAck;
+        _autoAck = autoAck;
         System.out.println((_writeStats ? "WILL" : "WON'T") + " write statistics.");
-        System.out.println((_noAck ? "WILL" : "WON'T") + " use server-side auto-acking.");
+        System.out.println((_autoAck ? "WILL" : "WON'T") + " use server-side auto-acking.");
     }
 
     public void run() {
@@ -124,9 +124,9 @@ public class ConsumerMain implements Runnable {
         channel.queueBind(completionQueue, exchangeName, "");
 
         LatencyExperimentConsumer callback = new LatencyExperimentConsumer(channel, queueName);
-        callback._noAck = this._noAck;
+        callback._autoAck = this._autoAck;
 
-        channel.basicConsume(queueName, _noAck, callback);
+        channel.basicConsume(queueName, _autoAck, callback);
         channel.basicConsume(completionQueue, true, "completion", callback);
         callback.report(_writeStats);
 
@@ -165,7 +165,7 @@ public class ConsumerMain implements Runnable {
 
         public long _nextSummaryTime;
 
-        public boolean _noAck = true;
+        public boolean _autoAck = true;
 
         public LatencyExperimentConsumer(Channel ch, String queueName) {
             super(ch);
@@ -277,7 +277,7 @@ public class ConsumerMain implements Runnable {
             if (msgStartTime != -1) {
                 _deltas[_received++] = now - msgStartTime;
 
-                if (!_noAck && ((_received % ACK_BATCH_SIZE) == 0)) {
+                if (!_autoAck && ((_received % ACK_BATCH_SIZE) == 0)) {
                     getChannel().basicAck(0, true);
                 }
             }
@@ -293,7 +293,7 @@ public class ConsumerMain implements Runnable {
         }
 
         public void finish() throws IOException {
-            if (!_noAck)
+            if (!_autoAck)
                 getChannel().basicAck(0, true);
             _blocker.setIfUnset(new Object());
         }
