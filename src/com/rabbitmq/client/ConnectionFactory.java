@@ -375,7 +375,7 @@ public class ConnectionFactory implements Cloneable {
             try {
                 FrameHandler frameHandler = createFrameHandler(addr);
                 AMQConnection conn = new AMQConnection(this,
-                                                     frameHandler);
+                                                       frameHandler);
                 conn.start();
                 return conn;
             } catch (IOException e) {
@@ -403,7 +403,7 @@ public class ConnectionFactory implements Cloneable {
 
     @Override public ConnectionFactory clone(){
         try {
-            return (ConnectionFactory)super.clone(); 
+            return (ConnectionFactory)super.clone();
         } catch (CloneNotSupportedException e) {
             throw new Error(e);
         }
