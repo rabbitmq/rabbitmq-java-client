@@ -55,6 +55,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ExecutorService;
 
 
 /**
@@ -112,9 +113,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @param connection The connection associated with this channel
      * @param channelNumber The channel number to be associated with this channel
      */
-    public ChannelN(AMQConnection connection, int channelNumber) {
+    public ChannelN(AMQConnection connection, int channelNumber,
+                    WorkPool<com.rabbitmq.client.Channel> workPool, ExecutorService executor) {
         super(connection, channelNumber);
-        this.dispatcher = new ConsumerDispatcher(connection, this);
+        this.dispatcher = new ConsumerDispatcher(connection, this, workPool, executor);
+        this.dispatcher.registerChannel(this);
     }
 
     /**

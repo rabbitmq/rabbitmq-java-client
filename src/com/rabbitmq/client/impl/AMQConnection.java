@@ -36,10 +36,7 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
@@ -101,8 +98,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             }
         };
 
+    private final WorkPool<Channel> workPool = new WorkPool<Channel>();
+
+    private final ExecutorService dispatchExecutor;
+
     /** Object that manages a set of channels */
-    public ChannelManager _channelManager = new ChannelManager(0);
+    public ChannelManager _channelManager;
 
     /** Frame source/sink */
     private final FrameHandler _frameHandler;
@@ -186,8 +187,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      */
     public AMQConnection(ConnectionFactory factory,
-                         FrameHandler frameHandler) {
-        this(factory, frameHandler, new DefaultExceptionHandler());
+                         FrameHandler frameHandler,
+                         ExecutorService executorService) {
+        this(factory, frameHandler, executorService, new DefaultExceptionHandler());
     }
 
     /**
@@ -198,6 +200,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public AMQConnection(ConnectionFactory factory,
                          FrameHandler frameHandler,
+                         ExecutorService executorService,
                          ExceptionHandler exceptionHandler)
     {
         checkPreconditions();
@@ -219,6 +222,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _heartbeat = 0;
         _exceptionHandler = exceptionHandler;
         _brokerInitiatedShutdown = false;
+
+        dispatchExecutor  = executorService;
+        _channelManager = new ChannelManager(this.workPool, this.dispatchExecutor, 0);
     }
 
     /**
@@ -291,7 +297,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         int channelMax =
             negotiatedMaxValue(_factory.getRequestedChannelMax(),
                                connTune.getChannelMax());
-        _channelManager = new ChannelManager(channelMax);
+        _channelManager = new ChannelManager(this.workPool,
+                this.dispatchExecutor, channelMax);
         
         int frameMax =
             negotiatedMaxValue(_factory.getRequestedFrameMax(),
@@ -597,6 +604,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         _channel0.processShutdownSignal(sse, !initiatedByApplication, notifyRpc);
         _channelManager.handleSignal(sse);
+
+        this.dispatchExecutor.shutdown();
+        
         return sse;
     }
 

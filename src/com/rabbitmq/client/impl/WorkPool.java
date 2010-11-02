@@ -1,6 +1,10 @@
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.Channel;
+
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * @author robharrop
@@ -14,26 +18,30 @@ public class WorkPool<K> {
 
     private final Set<K> inProgress = new HashSet<K>();
 
-    private final Map<K, Queue<Runnable>> pool = new HashMap<K, Queue<Runnable>>();
+    private final Map<K, BlockingQueue<Runnable>> pool = new HashMap<K, BlockingQueue<Runnable>>();
 
     public void registerKey(K key) {
         synchronized (this.monitor) {
             if (!this.pool.containsKey(key)) {
-                this.pool.put(key, new LinkedList<Runnable>());
+                this.pool.put(key, new LinkedBlockingQueue<Runnable>());
             }
         }
     }
 
-    public WorkBlock<K> nextBlock() throws InterruptedException {
+    public K nextBlock(Collection<Runnable> to, int size) throws InterruptedException {
         synchronized (this.monitor) {
             K nextKey = this.ready.take();
-            Runnable nextRunnable = this.pool.get(nextKey).poll();
             markInProgress(nextKey);
-            return new WorkBlock<K>(nextKey, nextRunnable);
+
+            BlockingQueue<Runnable> queue = this.pool.get(nextKey);
+            queue.drainTo(to, size);
+
+            return nextKey;
         }
     }
 
     public boolean workIn(K key, Runnable runnable) {
+
         synchronized (this.monitor) {
             Queue<Runnable> queue = this.pool.get(key);
             if (queue == null) {
@@ -44,11 +52,9 @@ public class WorkPool<K> {
         }
     }
 
-    public boolean workBlockFinished(WorkBlock<K> workBlock) {
-        synchronized(this.monitor) {
-            K key = workBlock.getKey();
-
-            if(!this.inProgress.contains(key)) {
+    public boolean workBlockFinished(K key) {
+        synchronized (this.monitor) {
+            if (!this.inProgress.contains(key)) {
                 throw new IllegalStateException("WorkBlock already completed.");
             }
 
@@ -59,9 +65,8 @@ public class WorkPool<K> {
 
     private boolean markReadyIfPossible(K key) {
         if (!this.inProgress.contains(key)) {
-            if(!this.pool.get(key).isEmpty()) {
-                this.ready.push(key);
-                return true;
+            if (!this.pool.get(key).isEmpty()) {
+                return this.ready.push(key);
             }
         }
         return false;
@@ -71,21 +76,4 @@ public class WorkPool<K> {
         this.inProgress.add(key);
     }
 
-    public static final class WorkBlock<K> {
-        private final K key;
-        private final Runnable runnable;
-
-        public WorkBlock(K key, Runnable runnable) {
-            this.key = key;
-            this.runnable = runnable;
-        }
-
-        public K getKey() {
-            return key;
-        }
-
-        public Runnable getRunnable() {
-            return runnable;
-        }
-    }
 }

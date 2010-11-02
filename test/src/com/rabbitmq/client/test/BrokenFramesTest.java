@@ -36,6 +36,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -77,7 +78,8 @@ public class BrokenFramesTest extends TestCase {
         frames.add(new Frame(AMQP.FRAME_HEADER, 0));
         myFrameHandler.setFrames(frames.iterator());
 
-        AMQConnection conn = new AMQConnection(factory, myFrameHandler);
+        AMQConnection conn = new AMQConnection(factory, myFrameHandler,
+                Executors.newSingleThreadExecutor());
         try {
             conn.start();
         } catch (IOException e) {
@@ -105,7 +107,8 @@ public class BrokenFramesTest extends TestCase {
         myFrameHandler.setFrames(frames.iterator());
  
         try {
-            new AMQConnection(factory, myFrameHandler).start();
+            new AMQConnection(factory, myFrameHandler,
+                    Executors.newSingleThreadExecutor()).start();
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);

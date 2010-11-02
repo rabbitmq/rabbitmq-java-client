@@ -4,10 +4,11 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.utility.Utility;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -19,7 +20,9 @@ import java.util.concurrent.ThreadFactory;
  * <p/>
  * All <code>Consumers</code> for a <code>Channel</code> share the same thread.
  */
-final class ConsumerDispatcher {
+public final class ConsumerDispatcher {
+
+    private final WorkPool<Channel> workPool;
 
     private final ExecutorService dispatchExecutor;
 
@@ -29,12 +32,14 @@ final class ConsumerDispatcher {
 
     private volatile ShutdownSignalException shutdownSignal;
 
-    public ConsumerDispatcher(AMQConnection connection, Channel channel) {
+    public ConsumerDispatcher(AMQConnection connection,
+                              Channel channel,
+                              WorkPool<Channel> workPool,
+                              ExecutorService executor) {
         this.connection = connection;
         this.channel = channel;
-        this.dispatchExecutor = Executors.newSingleThreadExecutor(
-                new ChannelThreadFactory(channel)
-        );
+        this.workPool = workPool;
+        this.dispatchExecutor = executor;
     }
 
     public void handleConsumeOk(final Consumer delegate,
@@ -144,18 +149,23 @@ final class ConsumerDispatcher {
 
     private void execute(Runnable r) {
         checkShutdown();
-        this.dispatchExecutor.submit(r);
+        if (this.workPool.workIn(this.channel, r)) {
+            this.dispatchExecutor.submit(new WorkPoolProxyRunnable());
+        }
     }
 
     private void shutdown(ShutdownSignalException signal) {
         this.shutdownSignal = signal;
-        this.dispatchExecutor.shutdownNow();
     }
 
     private void checkShutdown() {
         if (this.shutdownSignal != null) {
             throw Utility.fixStackTrace(this.shutdownSignal);
         }
+    }
+
+    public void registerChannel(Channel channel) {
+        this.workPool.registerKey(channel);
     }
 
     /**
@@ -178,6 +188,29 @@ final class ConsumerDispatcher {
             thread.setName(PREFIX + this.channel.toString());
             thread.setDaemon(true);
             return thread;
+        }
+    }
+
+    private final class WorkPoolProxyRunnable implements Runnable {
+
+        public void run() {
+            int size = 16;
+            List<Runnable> block = new ArrayList<Runnable>(size);
+            try {
+                Channel key = workPool.nextBlock(block, size);
+                
+                try {
+                    for (Runnable runnable : block) {
+                        runnable.run();
+                    }
+                } finally {
+                    if (workPool.workBlockFinished(key)) {
+                        dispatchExecutor.execute(new WorkPoolProxyRunnable());
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }
