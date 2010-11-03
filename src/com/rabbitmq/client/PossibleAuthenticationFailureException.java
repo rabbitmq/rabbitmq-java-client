@@ -1,4 +1,4 @@
-package com.rabbitmq.client.impl.exceptions;
+package com.rabbitmq.client;
 
 import java.io.IOException;
 

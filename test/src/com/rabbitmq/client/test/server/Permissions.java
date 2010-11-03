@@ -31,7 +31,7 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.impl.exceptions.PossibleAuthenticationFailureException;
+import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.Map;

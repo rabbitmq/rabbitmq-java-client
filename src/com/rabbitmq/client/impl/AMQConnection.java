@@ -34,8 +34,8 @@ package com.rabbitmq.client.impl;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -45,9 +45,9 @@ import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MissedHeartbeatException;
+import com.rabbitmq.client.PossibleAuthenticationFailureException;
+import com.rabbitmq.client.ProtocolVersionMismatchException;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.impl.exceptions.PossibleAuthenticationFailureException;
-import com.rabbitmq.client.impl.exceptions.ProtocolVersionMismatchException;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
