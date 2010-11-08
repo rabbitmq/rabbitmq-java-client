@@ -38,6 +38,7 @@ import com.rabbitmq.client.AMQP.Exchange;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.AMQP.Tx;
 import com.rabbitmq.client.AMQP.Basic;
+import com.rabbitmq.client.AMQP.Confirm;
 import com.rabbitmq.client.AMQP.Channel.FlowOk;
 
 /**
@@ -146,6 +147,18 @@ public interface Channel extends ShutdownNotifier {
      * @param listener the listener to use, or null indicating "don't use one".
      */
     void setFlowListener(FlowListener listener);
+
+    /**
+     * Return the current {@link AckListener}.
+     * @return an interface to the current ack listener.
+     */
+    AckListener getAckListener();
+
+    /**
+     * Set the current {@link AckListener}.
+     * @param listener the listener to use, or null indicating "don't use one".
+     */
+    void setAckListener(AckListener listener);
 
     /**
      * Get the current default consumer. @see setDefaultConsumer for rationale.
@@ -633,4 +646,20 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      */
     Tx.RollbackOk txRollback() throws IOException;
+
+    /**
+     * Enables publisher acknowledgements on this channel.
+     * @param many determines whether the broker can acknowledge
+     * multiple messages at the same time
+     * @see com.rabbitmq.client.AMQP.Confirm.Select
+     * @throws java.io.IOException if an error is encountered
+     */
+    Confirm.SelectOk confirmSelect(boolean multiple) throws IOException;
+
+    /**
+     * Returns the number of messages published since the channel was
+     * put in confirm mode.
+     * @return the number of messages published since the first
+     * confirm.select */
+    long getPublishedMessageCount();
 }
