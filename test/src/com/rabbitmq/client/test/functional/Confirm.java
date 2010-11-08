@@ -76,55 +76,49 @@ public class Confirm extends BrokerTestCase
     }
 
     public void testConfirmTransient() throws IOException, InterruptedException {
-        confirmTest("confirm-test", false, false, false);
+        confirmTest("", "confirm-test", false, false, false);
     }
 
     public void testConfirmPersistentSimple()
         throws IOException, InterruptedException
     {
-        confirmTest("confirm-test", true, false, false);
+        confirmTest("", "confirm-test", true, false, false);
     }
 
     public void testConfirmNonDurable()
         throws IOException, InterruptedException
     {
-        confirmTest("confirm-test-nondurable", true, false, false);
+        confirmTest("", "confirm-test-nondurable", true, false, false);
     }
 
     public void testConfirmPersistentImmediate()
         throws IOException, InterruptedException
     {
-        confirmTest("confirm-test", true, false, true);
+        confirmTest("", "confirm-test", true, false, true);
     }
 
     public void testConfirmPersistentImmediateNoConsumer()
         throws IOException, InterruptedException
     {
-        confirmTest("confirm-test-noconsumer", true, false, true);
+        confirmTest("", "confirm-test-noconsumer", true, false, true);
     }
 
     public void testConfirmPersistentMandatory()
         throws IOException, InterruptedException
     {
-        confirmTest("confirm-test", true, true, false);
+        confirmTest("", "confirm-test", true, true, false);
     }
 
     public void testConfirmPersistentMandatoryReturn()
         throws IOException, InterruptedException
     {
-        confirmTest("confirm-test-doesnotexist", true, true, false);
+        confirmTest("", "confirm-test-doesnotexist", true, true, false);
     }
 
     public void testConfirmMultipleQueues()
         throws IOException, InterruptedException
     {
-        for (long i = 0; i < NUM_MESSAGES; i++) {
-            publish("amq.direct", "confirm-multiple-queues", true, false, false);
-            ackSet.add(i);
-        }
-
-        while (ackSet.size() > 0)
-            Thread.sleep(10);
+        confirmTest("amq.direct", "confirm-multiple-queues", true, false, false);
     }
 
     /* For testConfirmQueueDelete and testConfirmQueuePurge to be
@@ -136,50 +130,45 @@ public class Confirm extends BrokerTestCase
         throws IOException, InterruptedException
     {
         for (long i = 0; i < NUM_MESSAGES; i++) {
-            publish("confirm-test-noconsumer", true, false, false);
+            publish("", "confirm-test-noconsumer", true, false, false);
             ackSet.add(i);
         }
 
         channel.queueDelete("confirm-test-noconsumer");
 
         while (ackSet.size() > 0)
-        Thread.sleep(10);
+            Thread.sleep(10);
     }
 
     public void testConfirmQueuePurge()
         throws IOException, InterruptedException
     {
         for (long i = 0; i < NUM_MESSAGES; i++) {
-            publish("confirm-test-noconsumer", true, false, false);
+            publish("", "confirm-test-noconsumer", true, false, false);
             ackSet.add(i);
         }
 
         channel.queuePurge("confirm-test-noconsumer");
 
         while (ackSet.size() > 0)
-        Thread.sleep(10);
+            Thread.sleep(10);
     }
 
     /* Publish NUM_MESSAGES persistent messages and wait for
      * confirmations. */
-    public void confirmTest(String queueName, boolean persistent,
-                            boolean mandatory, boolean immediate)
+    public void confirmTest(String exchange, String queueName,
+                            boolean persistent, boolean mandatory,
+                            boolean immediate)
         throws IOException, InterruptedException
     {
         for (long i = 0; i < NUM_MESSAGES; i++) {
-            publish(queueName, persistent, mandatory, immediate);
+            publish(exchange, queueName, persistent,
+                    mandatory, immediate);
             ackSet.add(i);
         }
 
         while (ackSet.size() > 0)
             Thread.sleep(10);
-    }
-
-    private void publish(String queueName, boolean persistent,
-                         boolean mandatory, boolean immediate)
-        throws IOException
-    {
-        publish("", queueName, persistent, mandatory, immediate);
     }
 
     private void publish(String exchangeName, String queueName,
