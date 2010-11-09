@@ -45,7 +45,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ExternalMechanismFactory;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.PlainMechanismFactory;
 import com.rabbitmq.client.impl.SocketFrameHandler;
@@ -89,7 +88,7 @@ public class ConnectionFactory implements Cloneable {
 
     /** The default list of authentication mechanisms to use */
     public static final AuthMechanismFactory[] DEFAULT_AUTH_MECHANISMS =
-        new AuthMechanismFactory[] { new ExternalMechanismFactory() };
+        new AuthMechanismFactory[] { new PlainMechanismFactory() };
 
     /**
      * The default SSL protocol (currently "SSLv3").
