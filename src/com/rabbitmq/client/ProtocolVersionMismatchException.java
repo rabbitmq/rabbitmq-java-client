@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.net.ProtocolException;
 
 /**
- * Thrown to indicate that the peer does not support the wire protocol version
+ * Thrown to indicate that the server does not support the wire protocol version
  * we requested immediately after opening the TCP socket.
  */
 public class ProtocolVersionMismatchException extends ProtocolException
@@ -29,7 +29,7 @@ public class ProtocolVersionMismatchException extends ProtocolException
         return clientVersion;
     }
 
-    /** The peer's AMQP specification version. */
+    /** The server's AMQP specification version. */
     public Version getServerVersion()
     {
         return serverVersion;
@@ -47,7 +47,7 @@ public class ProtocolVersionMismatchException extends ProtocolException
         return clientVersion.getMinor();
     }
 
-    /** The peer's AMQP specification major version. */
+    /** The server's AMQP specification major version. */
     public int getServerMajor()
     {
         return serverVersion.getMajor();
