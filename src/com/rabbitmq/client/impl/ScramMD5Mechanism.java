@@ -23,9 +23,9 @@ import java.util.Arrays;
 */
 
 public class ScramMD5Mechanism implements AuthMechanism {
-    public LongString handleChallenge(int round, LongString challengeStr,
+    public LongString handleChallenge(LongString challengeStr,
                                       ConnectionFactory factory) {
-        if (round == 0) {
+        if (challengeStr == null) {
             return LongStringHelper.asLongString(factory.getUsername());
         } else {
             try {
@@ -41,10 +41,6 @@ public class ScramMD5Mechanism implements AuthMechanism {
                 throw new RuntimeException(e);
             }
         }
-    }
-
-    public String getName() {
-        return "RABBIT-SCRAM-MD5";
     }
 
     private static byte[] digest(byte[] arr1, byte[] arr2) {

@@ -46,7 +46,7 @@ import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.PlainMechanism;
+import com.rabbitmq.client.impl.PlainMechanismFactory;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 
 /**
@@ -87,8 +87,8 @@ public class ConnectionFactory implements Cloneable {
     public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
 
     /** The default list of authentication mechanisms to use */
-    public static final AuthMechanism[] DEFAULT_AUTH_MECHANISMS =
-        new AuthMechanism[] { new PlainMechanism() };
+    public static final AuthMechanismFactory[] DEFAULT_AUTH_MECHANISMS =
+        new AuthMechanismFactory[] { new PlainMechanismFactory() };
 
     /**
      * The default SSL protocol (currently "SSLv3").
@@ -103,9 +103,9 @@ public class ConnectionFactory implements Cloneable {
     private int requestedChannelMax               = DEFAULT_CHANNEL_MAX;
     private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
     private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
-    private AuthMechanism[] authMechanisms        = DEFAULT_AUTH_MECHANISMS;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
+    private AuthMechanismFactory[] authMechanismFactories = DEFAULT_AUTH_MECHANISMS;
 
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
@@ -273,11 +273,11 @@ public class ConnectionFactory implements Cloneable {
      * @param serverMechanisms
      * @return
      */
-    public AuthMechanism getAuthMechanism(List<String> serverMechanisms) {
+    public AuthMechanismFactory getAuthMechanismFactory(List<String> serverMechanisms) {
         // Our list is in order of preference, the server one is not.
-        for (AuthMechanism mechanism : authMechanisms) {
-            if (serverMechanisms.contains(mechanism.getName())) {
-                return mechanism;
+        for (AuthMechanismFactory f : authMechanismFactories) {
+            if (serverMechanisms.contains(f.getName())) {
+                return f;
             }
         }
 
@@ -286,11 +286,11 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Set authentication mechanisms to use (in descending preference order)
-     * @param mechanisms
+     * @param factories
      * @see #DEFAULT_AUTH_MECHANISMS
      */
-    public void setAuthMechanisms(AuthMechanism[] mechanisms) {
-        this.authMechanisms = mechanisms;
+    public void setAuthMechanismFactories(AuthMechanismFactory[] factories) {
+        this.authMechanismFactories = factories;
     }
 
     /**

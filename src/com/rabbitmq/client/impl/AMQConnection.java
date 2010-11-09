@@ -39,14 +39,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Address;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.AuthMechanism;
+import com.rabbitmq.client.AuthMechanismFactory;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
@@ -278,21 +275,21 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         List<String> mechanisms = Arrays.asList(
                     connStart.getMechanisms().toString().split(" "));
-        AuthMechanism mechanism = _factory.getAuthMechanism(mechanisms);
-        if (mechanism == null) {
+        AuthMechanismFactory mechanismFactory = _factory.getAuthMechanismFactory(mechanisms);
+        if (mechanismFactory == null) {
             throw new IOException("No compatible authentication mechanism found - " +
                     "server offered [" + connStart.getMechanisms() + "]");
         }
+        AuthMechanism mechanism = mechanismFactory.getInstance();
 
-        int round = 0;
         LongString challenge = null;
         AMQP.Connection.Tune connTune = null;
         do {
-            LongString response = mechanism.handleChallenge(round, challenge, _factory);
-            Method method = (round == 0)
+            LongString response = mechanism.handleChallenge(challenge, _factory);
+            Method method = (challenge == null)
                 ? new AMQImpl.Connection.StartOk(_clientProperties,
-                                                 mechanism.getName(), response,
-                                                 "en_US")
+                                                 mechanismFactory.getName(),
+                                                 response, "en_US")
                 : new AMQImpl.Connection.SecureOk(response);
 
             try {
@@ -301,7 +298,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     connTune = (AMQP.Connection.Tune) serverResponse;
                 } else {
                     challenge = ((AMQP.Connection.Secure) serverResponse).getChallenge();
-                    round++;
                 }
             } catch (ShutdownSignalException e) {
                 throw AMQChannel.wrap(e, "Possibly caused by authentication failure");
