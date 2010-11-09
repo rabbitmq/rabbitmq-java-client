@@ -33,7 +33,7 @@ package com.rabbitmq.client;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import java.net.Socket;
@@ -46,6 +46,7 @@ import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.PlainMechanism;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 
 /**
@@ -85,6 +86,10 @@ public class ConnectionFactory implements Cloneable {
     /** The default port to use for AMQP connections when using SSL */
     public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
 
+    /** The default list of authentication mechanisms to use */
+    public static final AuthMechanism[] DEFAULT_AUTH_MECHANISMS =
+        new AuthMechanism[] { new PlainMechanism() };
+
     /**
      * The default SSL protocol (currently "SSLv3").
      */
@@ -98,6 +103,7 @@ public class ConnectionFactory implements Cloneable {
     private int requestedChannelMax               = DEFAULT_CHANNEL_MAX;
     private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
     private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
+    private AuthMechanism[] authMechanisms        = DEFAULT_AUTH_MECHANISMS;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
 
@@ -259,6 +265,32 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setClientProperties(Map<String, Object> clientProperties) {
         _clientProperties = clientProperties;
+    }
+
+    /**
+     * Given a list of mechanism names supported by the server, select a
+     * preferred mechanism, or null if we have none in common.
+     * @param serverMechanisms
+     * @return
+     */
+    public AuthMechanism getAuthMechanism(List<String> serverMechanisms) {
+        // Our list is in order of preference, the server one is not.
+        for (AuthMechanism mechanism : authMechanisms) {
+            if (serverMechanisms.contains(mechanism.getName())) {
+                return mechanism;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Set authentication mechanisms to use (in descending preference order)
+     * @param mechanisms
+     * @see #DEFAULT_AUTH_MECHANISMS
+     */
+    public void setAuthMechanisms(AuthMechanism[] mechanisms) {
+        this.authMechanisms = mechanisms;
     }
 
     /**

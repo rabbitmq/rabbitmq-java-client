@@ -34,6 +34,8 @@ package com.rabbitmq.client.impl;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
@@ -44,6 +46,7 @@ import java.util.concurrent.TimeUnit;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.AuthMechanism;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
@@ -154,7 +157,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     private int _heartbeat;
 
-    private final String _username, _password, _virtualHost;
+    private final String _virtualHost;
     private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
     private final Map<String, Object> _clientProperties;
 
@@ -202,8 +205,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     {
         checkPreconditions();
 
-        _username = factory.getUsername();
-        _password = factory.getPassword();
         _virtualHost = factory.getVirtualHost();
         _requestedChannelMax = factory.getRequestedChannelMax();
         _requestedFrameMax = factory.getRequestedFrameMax();
@@ -254,8 +255,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ml.setName("AMQP Connection " + getHost() + ":" + getPort());
         ml.start();
 
+        AMQP.Connection.Start connStart = null;
         try {
-            AMQP.Connection.Start connStart =
+            connStart =
                 (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
 
             _serverProperties = connStart.getServerProperties();
@@ -273,20 +275,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (ShutdownSignalException sse) {
             throw AMQChannel.wrap(sse);
         }
-        
-        LongString saslResponse = LongStringHelper.asLongString("\0" + _username +
-                                                                "\0" + _password);
-        AMQImpl.Connection.StartOk startOk =
-            new AMQImpl.Connection.StartOk(_clientProperties, "PLAIN",
-                                           saslResponse, "en_US");
-        
-        AMQP.Connection.Tune connTune = null;
 
-        try {
-            connTune = (AMQP.Connection.Tune) _channel0.rpc(startOk).getMethod();
-        } catch (ShutdownSignalException e) {
-            throw AMQChannel.wrap(e, "Possibly caused by authentication failure");
+        List<String> mechanisms = Arrays.asList(
+                    connStart.getMechanisms().toString().split(" "));
+        AuthMechanism mechanism = _factory.getAuthMechanism(mechanisms);
+        if (mechanism == null) {
+            throw new IOException("No compatible authentication mechanism found - " +
+                    "server offered [" + connStart.getMechanisms() + "]");
         }
+        AMQP.Connection.Tune connTune = mechanism.doLogin(_channel0, _factory);
 
         int channelMax =
             negotiatedMaxValue(_factory.getRequestedChannelMax(),
@@ -714,6 +711,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     @Override public String toString() {
-        return "amqp://" + _username + "@" + getHost() + ":" + getPort() + _virtualHost;
+        return "amqp://" + _factory.getUsername() + "@" + getHost() + ":" + getPort() + _virtualHost;
     }
 }
