@@ -1,11 +1,9 @@
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AuthMechanism;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ShutdownSignalException;
 
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -25,37 +23,38 @@ import java.util.Arrays;
 */
 
 public class ScramMD5Mechanism implements AuthMechanism {
-    public AMQP.Connection.Tune doLogin(AMQChannel channel,
-                                        ConnectionFactory factory) throws IOException {
-        try {
-            LongString resp1 = LongStringHelper.asLongString(factory.getUsername());
-            AMQImpl.Connection.StartOk startOk =
-                new AMQImpl.Connection.StartOk(factory.getClientProperties(), getName(),
-                                               resp1, "en_US");
-            AMQP.Connection.Secure secure =
-                    (AMQP.Connection.Secure) channel.rpc(startOk).getMethod();
-            byte[] challenge = secure.getChallenge().getBytes();
-            byte[] salt1 = Arrays.copyOfRange(challenge, 0, 4);
-            byte[] salt2 = Arrays.copyOfRange(challenge, 4, 8);
+    public LongString handleChallenge(int round, LongString challengeStr,
+                                      ConnectionFactory factory) {
+        if (round == 0) {
+            return LongStringHelper.asLongString(factory.getUsername());
+        } else {
+            try {
+                byte[] challenge = challengeStr.getBytes();
+                byte[] salt1 = Arrays.copyOfRange(challenge, 0, 4);
+                byte[] salt2 = Arrays.copyOfRange(challenge, 4, 8);
 
-            MessageDigest digest1 = MessageDigest.getInstance("MD5");
-            MessageDigest digest2 = MessageDigest.getInstance("MD5");
-            byte[] d1 = digest1.digest(concat(salt1, factory.getPassword().getBytes("utf-8")));
-            byte[] d2 = digest2.digest(concat(salt2, d1));
+                byte[] pw = factory.getPassword().getBytes("utf-8");
+                byte[] d = digest(salt2, digest(salt1, pw));
 
-            AMQImpl.Connection.SecureOk secureOk =
-                new AMQImpl.Connection.SecureOk(LongStringHelper.asLongString(d2));
-
-            return (AMQP.Connection.Tune) channel.rpc(secureOk).getMethod();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (ShutdownSignalException e) {
-            throw AMQChannel.wrap(e, "Possibly caused by authentication failure");
+                return LongStringHelper.asLongString(d);
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
     public String getName() {
         return "RABBIT-SCRAM-MD5";
+    }
+
+    private static byte[] digest(byte[] arr1, byte[] arr2) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            return digest.digest(concat(arr1, arr2));
+
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static byte[] concat(byte[] first, byte[] second) {

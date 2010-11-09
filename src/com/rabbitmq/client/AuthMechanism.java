@@ -1,23 +1,22 @@
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.AMQChannel;
+import com.rabbitmq.client.impl.LongString;
 
 import java.io.IOException;
 
 /**
- * A pluggable authentication mechanism
+ * A pluggable authentication mechanism. Should be stateless.
  */
 public interface AuthMechanism {
     /**
-     * Send and receive start-ok / secure / secure-ok until a connection is
-     * established or an exception thrown.
-     * 
-     * @param channel to send methods on
+     * Handle one round of challenge-response
+     * @param round zero-based counter of the current round
+     * @param challenge the challenge this round, or null on round 0.
      * @param factory for reference to e.g. username and password.
-     * @return the Connection.Tune method sent by the server after authentication
-     * @throws IOException if the authentication failed or something else went wrong
+     * @return response
+     * @throws IOException
      */
-    AMQP.Connection.Tune doLogin(AMQChannel channel, ConnectionFactory factory) throws IOException;
+    LongString handleChallenge(int round, LongString challenge, ConnectionFactory factory);
 
     /**
      * The name of the authentication mechanism, as negotiated on the wire

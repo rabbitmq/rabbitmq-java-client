@@ -283,7 +283,30 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             throw new IOException("No compatible authentication mechanism found - " +
                     "server offered [" + connStart.getMechanisms() + "]");
         }
-        AMQP.Connection.Tune connTune = mechanism.doLogin(_channel0, _factory);
+
+        int round = 0;
+        LongString challenge = null;
+        AMQP.Connection.Tune connTune = null;
+        do {
+            LongString response = mechanism.handleChallenge(round, challenge, _factory);
+            Method method = (round == 0)
+                ? new AMQImpl.Connection.StartOk(_clientProperties,
+                                                 mechanism.getName(), response,
+                                                 "en_US")
+                : new AMQImpl.Connection.SecureOk(response);
+
+            try {
+                Method serverResponse = _channel0.rpc(method).getMethod();
+                if (serverResponse instanceof AMQP.Connection.Tune) {
+                    connTune = (AMQP.Connection.Tune) serverResponse;
+                } else {
+                    challenge = ((AMQP.Connection.Secure) serverResponse).getChallenge();
+                    round++;
+                }
+            } catch (ShutdownSignalException e) {
+                throw AMQChannel.wrap(e, "Possibly caused by authentication failure");
+            }
+        } while (connTune == null);
 
         int channelMax =
             negotiatedMaxValue(_factory.getRequestedChannelMax(),
