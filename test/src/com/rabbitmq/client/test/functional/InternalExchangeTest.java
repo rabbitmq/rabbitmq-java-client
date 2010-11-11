@@ -31,7 +31,9 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
@@ -45,11 +47,15 @@ import java.util.Arrays;
 //            -------            -------
 //          -/       \-        -/       \-
 //         /           \      /           \           +-------------+
-//         |    e0     +------|    e1     +-----------+    q1       |
+//         |    e0     +------|     e1    +-----------+    q1       |
 //         \           /      \           /           +-------------+
 //          -\       /-        -\       /-
 //            -------            -------
 //                              (internal)
+//
+// Where a non-internal exchange is bound to an internal exchange, which in
+// turn is bound to a queue.  A client should be able to publish to e0, but
+// not to e1, and publications to e0 should be delivered into q1.
 //
 public class InternalExchangeTest extends BrokerTestCase
 {
@@ -94,19 +100,30 @@ public class InternalExchangeTest extends BrokerTestCase
     }
 
 
-    public void testOhForFucksSake() throws IOException, InterruptedException
+    public void testTryPublishingToInternalExchange()
+            throws IOException,
+                   InterruptedException
     {
-        System.out.println("Yes, there is a test here.");
+        byte[] testDataBody = "test-data".getBytes();
 
-        // Create a simple consumer to try to catch stuff we've published...
-        if(false)
-        {
-            QueueingConsumer consumer = new QueueingConsumer(channel);
-            channel.basicConsume("q1", false, consumer);
+        // We should be able to publish to the non-internal exchange as usual
+        // and see our message land in the queue...
+        channel.basicPublish("e0", "", null, testDataBody);
+        assertTrue(channel.isOpen());
+        GetResponse r = channel.basicGet("q1", true);
+        assertTrue(Arrays.equals(r.getBody(), testDataBody));
 
-            QueueingConsumer.Delivery delivery = consumer.nextDelivery();
-            // process delivery
-            channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-        }
+
+        // Publishing to the internal exchange will not be allowed...
+        channel.basicPublish("e1", "", null, testDataBody);
+        Thread.sleep(250L);
+        assertFalse(channel.isOpen());
+        ShutdownSignalException sdse = channel.getCloseReason();
+        assertNotNull(sdse);
+        String message = sdse.getMessage();
+        assertTrue(message.contains("reply-code=403"));
+        assertTrue(message.contains("reply-text=ACCESS_REFUSED"));
+        assertTrue(message.contains("cannot publish to internal exchange"));
     }
+
 }
