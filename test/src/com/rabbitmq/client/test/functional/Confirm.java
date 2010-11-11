@@ -32,18 +32,21 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AckListener;
 import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
 public class Confirm extends BrokerTestCase
 {
     final static int NUM_MESSAGES = 1000;
+    private static final String TTL_ARG = "x-message-ttl";
     volatile Set<Long> ackSet;
 
     @Override
@@ -71,6 +74,8 @@ public class Confirm extends BrokerTestCase
         channel.queueDeclare("confirm-test-noconsumer", true, true, true, null);
         channel.queueDeclare("confirm-test-2", true, true, true, null);
         channel.basicConsume("confirm-test-2", true, new DefaultConsumer(channel));
+        Map<String, Object> argMap = Collections.singletonMap(TTL_ARG, (Object)1);
+        channel.queueDeclare("confirm-ttl", true, true, true, argMap);
         channel.queueBind("confirm-test", "amq.direct", "confirm-multiple-queues");
         channel.queueBind("confirm-test-2", "amq.direct", "confirm-multiple-queues");
     }
@@ -129,10 +134,7 @@ public class Confirm extends BrokerTestCase
     public void testConfirmQueueDelete()
         throws IOException, InterruptedException
     {
-        for (long i = 0; i < NUM_MESSAGES; i++) {
-            publish("", "confirm-test-noconsumer", true, false, false);
-            ackSet.add(i);
-        }
+        publishN("","confirm-test-noconsumer", true, false, false);
 
         channel.queueDelete("confirm-test-noconsumer");
 
@@ -143,12 +145,33 @@ public class Confirm extends BrokerTestCase
     public void testConfirmQueuePurge()
         throws IOException, InterruptedException
     {
-        for (long i = 0; i < NUM_MESSAGES; i++) {
-            publish("", "confirm-test-noconsumer", true, false, false);
-            ackSet.add(i);
-        }
+        publishN("", "confirm-test-noconsumer", true, false, false);
 
         channel.queuePurge("confirm-test-noconsumer");
+
+        while (ackSet.size() > 0)
+            Thread.sleep(10);
+    }
+
+    public void testConfirmBasicReject()
+        throws IOException, InterruptedException
+    {
+        publishN("", "confirm-test-noconsumer", true, false, false);
+
+        for (long i = 0; i < NUM_MESSAGES; i++) {
+            GetResponse resp = channel.basicGet("confirm-test-noconsumer", false);
+            long dtag = resp.getEnvelope().getDeliveryTag();
+            channel.basicReject(dtag, false);
+        }
+
+        while (ackSet.size() > 0)
+            Thread.sleep(10);
+    }
+
+    public void testConfirmQueueTTL()
+        throws IOException, InterruptedException
+    {
+        publishN("", "confirm-ttl", true, false, false);
 
         while (ackSet.size() > 0)
             Thread.sleep(10);
@@ -161,15 +184,23 @@ public class Confirm extends BrokerTestCase
                             boolean immediate)
         throws IOException, InterruptedException
     {
-        for (long i = 0; i < NUM_MESSAGES; i++) {
-            publish(exchange, queueName, persistent,
-                    mandatory, immediate);
-            ackSet.add(i);
-        }
+        publishN(exchange, queueName, persistent, mandatory, immediate);
 
         while (ackSet.size() > 0)
             Thread.sleep(10);
     }
+
+    private void publishN(String exchangeName, String queueName,
+                          boolean persistent, boolean mandatory,
+                          boolean immediate)
+        throws IOException
+    {
+        for (long i = 0; i < NUM_MESSAGES; i++) {
+            publish(exchangeName, queueName, persistent, mandatory, immediate);
+            ackSet.add(i);
+        }
+    }
+
 
     private void publish(String exchangeName, String queueName,
                          boolean persistent, boolean mandatory,
