@@ -138,8 +138,7 @@ public class Confirm extends BrokerTestCase
 
         channel.queueDelete("confirm-test-noconsumer");
 
-        while (ackSet.size() > 0)
-            Thread.sleep(10);
+        waitAcks();
     }
 
     public void testConfirmQueuePurge()
@@ -149,8 +148,7 @@ public class Confirm extends BrokerTestCase
 
         channel.queuePurge("confirm-test-noconsumer");
 
-        while (ackSet.size() > 0)
-            Thread.sleep(10);
+        waitAcks();
     }
 
     public void testConfirmBasicReject()
@@ -158,8 +156,7 @@ public class Confirm extends BrokerTestCase
     {
         basicRejectCommon(false);
 
-        while (ackSet.size() > 0)
-            Thread.sleep(10);
+        waitAcks();
     }
 
     public void testConfirmQueueTTL()
@@ -167,8 +164,7 @@ public class Confirm extends BrokerTestCase
     {
         publishN("", "confirm-ttl", true, false, false);
 
-        while (ackSet.size() > 0)
-            Thread.sleep(10);
+        waitAcks();
     }
 
     public void testConfirmBasicRejectRequeue()
@@ -183,8 +179,7 @@ public class Confirm extends BrokerTestCase
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
-        while (ackSet.size() > 0)
-            Thread.sleep(10);
+        waitAcks();
     }
 
     /* Publish NUM_MESSAGES persistent messages and wait for
@@ -196,8 +191,7 @@ public class Confirm extends BrokerTestCase
     {
         publishN(exchange, queueName, persistent, mandatory, immediate);
 
-        while (ackSet.size() > 0)
-            Thread.sleep(10);
+        waitAcks();
     }
 
     private void publishN(String exchangeName, String queueName,
@@ -241,5 +235,10 @@ public class Confirm extends BrokerTestCase
             long dtag = resp.getEnvelope().getDeliveryTag();
             channel.basicReject(dtag, requeue);
         }
+    }
+
+    private void waitAcks() throws InterruptedException {
+        while (ackSet.size() > 0)
+            Thread.sleep(10);
     }
 }
