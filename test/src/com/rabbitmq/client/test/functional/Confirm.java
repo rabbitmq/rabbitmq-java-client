@@ -66,16 +66,16 @@ public class Confirm extends BrokerTestCase
                 }
             });
         channel.confirmSelect(true);
-        channel.queueDeclare("confirm-test", true, true, true, null);
+        channel.queueDeclare("confirm-test", true, true, false, null);
         channel.basicConsume("confirm-test", true, new DefaultConsumer(channel));
-        channel.queueDeclare("confirm-test-nondurable", false, false, true, null);
+        channel.queueDeclare("confirm-test-nondurable", false, false, false, null);
         channel.basicConsume("confirm-test-nondurable", true,
                              new DefaultConsumer(channel));
-        channel.queueDeclare("confirm-test-noconsumer", true, true, true, null);
-        channel.queueDeclare("confirm-test-2", true, true, true, null);
+        channel.queueDeclare("confirm-test-noconsumer", true, true, false, null);
+        channel.queueDeclare("confirm-test-2", true, true, false, null);
         channel.basicConsume("confirm-test-2", true, new DefaultConsumer(channel));
         Map<String, Object> argMap = Collections.singletonMap(TTL_ARG, (Object)1);
-        channel.queueDeclare("confirm-ttl", true, true, true, argMap);
+        channel.queueDeclare("confirm-ttl", true, true, false, argMap);
         channel.queueBind("confirm-test", "amq.direct", "confirm-multiple-queues");
         channel.queueBind("confirm-test-2", "amq.direct", "confirm-multiple-queues");
     }
@@ -154,9 +154,11 @@ public class Confirm extends BrokerTestCase
     public void testConfirmBasicReject()
         throws IOException, InterruptedException
     {
+        System.out.println("basic.reject test 1");
         basicRejectCommon(false);
 
         waitAcks();
+        System.out.println("basic reject test 1 end");
     }
 
     public void testConfirmQueueTTL()
@@ -176,6 +178,28 @@ public class Confirm extends BrokerTestCase
         Thread.sleep(1000);
 
         /* duplicate confirms mean requeued messages were confirmed */
+        channel.basicConsume("confirm-test-noconsumer", true,
+                             new DefaultConsumer(channel));
+
+        waitAcks();
+    }
+
+    public void testConfirmBasicRecover()
+        throws IOException, InterruptedException
+    {
+        publishN("", "confirm-test-noconsumer", true, false, false);
+
+        for (long i = 0; i < NUM_MESSAGES; i++) {
+            GetResponse resp = channel.basicGet("confirm-test-noconsumer", false);
+            long dtag = resp.getEnvelope().getDeliveryTag();
+            // not acking
+        }
+
+        channel.basicRecover(true);
+
+        Thread.sleep(1000);
+
+        /* duplicate confirms mean recovered messages were confirmed */
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
