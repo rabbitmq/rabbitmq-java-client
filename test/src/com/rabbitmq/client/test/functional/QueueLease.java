@@ -142,7 +142,7 @@ public class QueueLease extends BrokerTestCase {
                     false, args2);
             fail("Able to redeclare queue with mismatching expire flags.");
         } catch (IOException e) {
-            checkShutdownSignal(AMQP.NOT_ALLOWED, e);
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
     }
 

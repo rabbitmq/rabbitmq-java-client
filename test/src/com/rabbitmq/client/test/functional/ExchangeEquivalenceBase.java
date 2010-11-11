@@ -23,7 +23,7 @@ public abstract class ExchangeEquivalenceBase extends BrokerTestCase {
             channel.exchangeDeclare(name, type, durable, autoDelete, args);
             fail("Exchange was supposed to be not equivalent");
         } catch (IOException ioe) {
-            checkShutdownSignal(AMQP.NOT_ALLOWED, ioe);
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
             return;
         }
     }
