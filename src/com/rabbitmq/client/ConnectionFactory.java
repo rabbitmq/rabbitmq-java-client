@@ -33,7 +33,6 @@ package com.rabbitmq.client;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 import java.util.Map;
 
 import java.net.Socket;
@@ -46,7 +45,6 @@ import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.PlainMechanismFactory;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 
 /**
@@ -86,10 +84,6 @@ public class ConnectionFactory implements Cloneable {
     /** The default port to use for AMQP connections when using SSL */
     public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
 
-    /** The default list of authentication mechanisms to use */
-    public static final AuthMechanismFactory[] DEFAULT_AUTH_MECHANISMS =
-        new AuthMechanismFactory[] { new PlainMechanismFactory() };
-
     /**
      * The default SSL protocol (currently "SSLv3").
      */
@@ -105,7 +99,7 @@ public class ConnectionFactory implements Cloneable {
     private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
-    private AuthMechanismFactory[] authMechanismFactories = DEFAULT_AUTH_MECHANISMS;
+    private SaslConfig saslConfig                 = new DefaultSaslConfig(this);
 
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
@@ -268,29 +262,19 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Given a list of mechanism names supported by the server, select a
-     * preferred mechanism, or null if we have none in common.
-     * @param serverMechanisms
+     * Gets the sasl config to use when authenticating
      * @return
      */
-    public AuthMechanismFactory getAuthMechanismFactory(List<String> serverMechanisms) {
-        // Our list is in order of preference, the server one is not.
-        for (AuthMechanismFactory f : authMechanismFactories) {
-            if (serverMechanisms.contains(f.getName())) {
-                return f;
-            }
-        }
-
-        return null;
+    public SaslConfig getSaslConfig() {
+        return saslConfig;
     }
 
     /**
-     * Set authentication mechanisms to use (in descending preference order)
-     * @param factories
-     * @see #DEFAULT_AUTH_MECHANISMS
+     * Sets the sasl config to use when authenticating
+     * @param saslConfig
      */
-    public void setAuthMechanismFactories(AuthMechanismFactory[] factories) {
-        this.authMechanismFactories = factories;
+    public void setSaslConfig(SaslConfig saslConfig) {
+        this.saslConfig = saslConfig;
     }
 
     /**

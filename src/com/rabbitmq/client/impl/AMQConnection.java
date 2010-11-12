@@ -34,16 +34,12 @@ package com.rabbitmq.client.impl;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.AuthMechanism;
-import com.rabbitmq.client.AuthMechanismFactory;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
@@ -52,6 +48,8 @@ import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
+
+import javax.security.sasl.SaslClient;
 
 /**
  * Concrete class representing and managing an AMQP connection to a broker.
@@ -273,22 +271,21 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             throw AMQChannel.wrap(sse);
         }
 
-        List<String> mechanisms = Arrays.asList(
-                    connStart.getMechanisms().toString().split(" "));
-        AuthMechanismFactory mechanismFactory = _factory.getAuthMechanismFactory(mechanisms);
-        if (mechanismFactory == null) {
+        String[] mechanisms = connStart.getMechanisms().toString().split(" ");
+        SaslClient sc = _factory.getSaslConfig().getSaslClient(mechanisms);
+        if (sc == null) {
             throw new IOException("No compatible authentication mechanism found - " +
                     "server offered [" + connStart.getMechanisms() + "]");
         }
-        AuthMechanism mechanism = mechanismFactory.getInstance();
 
         LongString challenge = null;
+        LongString response = LongStringHelper.asLongString(
+                sc.hasInitialResponse() ? sc.evaluateChallenge(new byte[0]) : null);
         AMQP.Connection.Tune connTune = null;
         do {
-            LongString response = mechanism.handleChallenge(challenge, _factory);
             Method method = (challenge == null)
                 ? new AMQImpl.Connection.StartOk(_clientProperties,
-                                                 mechanismFactory.getName(),
+                                                 sc.getMechanismName(),
                                                  response, "en_US")
                 : new AMQImpl.Connection.SecureOk(response);
 
@@ -298,11 +295,19 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     connTune = (AMQP.Connection.Tune) serverResponse;
                 } else {
                     challenge = ((AMQP.Connection.Secure) serverResponse).getChallenge();
+                    response = LongStringHelper.asLongString(sc.evaluateChallenge(challenge.getBytes()));
                 }
             } catch (ShutdownSignalException e) {
                 throw AMQChannel.wrap(e, "Possibly caused by authentication failure");
             }
         } while (connTune == null);
+
+        sc.dispose();
+
+        if (!sc.isComplete()) {
+            throw new RuntimeException(sc.getMechanismName() +
+                    " did not complete, server thought it did");
+        }
 
         int channelMax =
             negotiatedMaxValue(_factory.getRequestedChannelMax(),
