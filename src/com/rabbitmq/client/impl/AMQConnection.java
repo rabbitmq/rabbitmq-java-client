@@ -227,8 +227,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * calls Connection.Open and waits for the OpenOk. Sets heartbeat
      * and frame max values after tuning has taken place.
      * @throws java.io.IOException if an error is encountered; IOException
-     * subtypes ProtocolVersionMismatchException and
-     * PossibleAuthenticationFailureException will be thrown in the
+     * subtypes {@link ProtocolVersionMismatchException} and
+     * {@link PossibleAuthenticationFailureException} will be thrown in the
      * corresponding circumstances.
      */
     public void start()
