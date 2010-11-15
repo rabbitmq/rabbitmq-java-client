@@ -116,14 +116,17 @@ public class InternalExchangeTest extends BrokerTestCase
 
         // Publishing to the internal exchange will not be allowed...
         channel.basicPublish("e1", "", null, testDataBody);
-        Thread.sleep(250L);
-        assertFalse(channel.isOpen());
-        ShutdownSignalException sdse = channel.getCloseReason();
-        assertNotNull(sdse);
-        String message = sdse.getMessage();
-        assertTrue(message.contains("reply-code=403"));
-        assertTrue(message.contains("reply-text=ACCESS_REFUSED"));
-        assertTrue(message.contains("cannot publish to internal exchange"));
+        try
+        {
+            // This blocking operation will fail because our bad attempt to
+            // to the internal exchange...
+            channel.basicGet("q1", true);
+            fail("Channel should have shut down with 403 (access refused).");
+        }
+        catch (IOException e)
+        {
+            // We should get 403, access refused...
+            checkShutdownSignal(403, e);
+        }
     }
-
 }
