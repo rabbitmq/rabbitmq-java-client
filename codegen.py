@@ -364,11 +364,20 @@ public class AMQImpl implements AMQP
 
             def builder():
                 print
+                print "            // Builder for class %s.%s" % (java_class_name(c.name), java_class_name(m.name))
                 print "            public static class Builder"
                 print "            {"
                 print "                 // TODO:  Fields should be here..."
-                # for f in c.fields:
-                #     print "                 private %s %s;" % (java_property_type(spec, f.domain), java_field_name(f.name))
+
+                print "                 public Builder() {}"
+                print
+                print "                 // TODO:  Public methods 'fieldname : val -> Builder' go here..."
+                print
+                print "                 public %s build()" % (java_class_name(m.name))
+                print "                 {"
+                print "                      // TODO:  Return new CTOR'ed whatever..."
+                print "                      return null;"
+                print "                 }"
                 print "            }"
 
             getters()
