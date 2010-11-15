@@ -168,7 +168,7 @@ public interface AMQP
                     print "            %s %s();" % (java_field_type(spec, a.domain), java_getter_name(a.name))
                 print "        }"
             print "    }"
-        
+
     def printReadProperties(c):
         print
         print """        public void readPropertiesFrom(ContentHeaderPropertyReader reader)
@@ -180,7 +180,7 @@ public interface AMQP
         for f in c.fields:
             print "            this.%s = %s_present ? reader.read%s() : null;" % (java_field_name(f.name), java_field_name(f.name),  java_class_name(f.domain))
         print "        }"
-        
+
     def printWriteProperties(c):
         print
         print """        public void writePropertiesTo(ContentHeaderPropertyWriter writer)
@@ -192,7 +192,7 @@ public interface AMQP
         for f in c.fields:
             print "            if (this.%s != null) { writer.write%s(this.%s); } " % (java_field_name(f.name), java_class_name(f.domain), java_field_name(f.name))
         print "        }"
-        
+
     def printPropertyDebug(c):
         print
         print "        public void appendPropertyDebugStringTo(StringBuffer acc) {"
@@ -205,7 +205,7 @@ public interface AMQP
 
         print "            acc.append(\")\");"
         print "        }"
-        
+
     def printClassProperties(c):
         print
         print "    public static class %(className)s extends %(parentClass)s {" % {'className' : java_class_name(c.name) + 'Properties', 'parentClass' : 'com.rabbitmq.client.impl.AMQ' + java_class_name(c.name) + 'Properties'}
@@ -221,7 +221,7 @@ public interface AMQP
                 sys.stdout.write( "            %s %s" % (java_property_type(spec,f.domain),java_field_name(f.name)))
                 if not index == len(c.fields) - 1:
                     print ","
-                
+
             print ")"
             print "        {"
             for f in c.fields:
@@ -233,7 +233,7 @@ public interface AMQP
         print "        public %sProperties() {}" % (java_class_name(c.name))
         print "        public int getClassId() { return %i; }" % (c.index)
         print "        public java.lang.String getClassName() { return \"%s\"; }" % (c.name)
-        
+
         #access functions
         print
         for f in c.fields:
@@ -340,7 +340,7 @@ public class AMQImpl implements AMQP
                 for a in m.arguments:
                     print "                this.%s = reader.read%s();" % (java_field_name(a.name), java_class_name(spec.resolveDomain(a.domain)))
                 print "            }"
-        
+
             def write_arguments():
                 print
                 print "            public void writeArgumentsTo(MethodArgumentWriter writer)"
@@ -348,7 +348,7 @@ public class AMQImpl implements AMQP
                 print "            {"
                 for a in m.arguments:
                     print "                writer.write%s(this.%s);" % (java_class_name(spec.resolveDomain(a.domain)), java_field_name(a.name))
-                print "            }"            
+                print "            }"
 
             #start
             print
@@ -362,6 +362,15 @@ public class AMQImpl implements AMQP
                 for a in m.arguments:
                     print "            public %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
 
+            def builder():
+                print
+                print "            public static class Builder"
+                print "            {"
+                print "                 // TODO:  Fields should be here..."
+                # for f in c.fields:
+                #     print "                 private %s %s;" % (java_property_type(spec, f.domain), java_field_name(f.name))
+                print "            }"
+
             getters()
             constructor()
             others()
@@ -369,6 +378,7 @@ public class AMQImpl implements AMQP
             argument_debug_string()
             read_arguments()
             write_arguments()
+            builder()
             print "        }"
         print "    }"
 
@@ -387,7 +397,7 @@ public class AMQImpl implements AMQP
             for m in c.allMethods():
                print "        public Object visit(%s.%s x) throws IOException { throw new UnexpectedMethodError(x); } " % (java_class_name(c.name), java_class_name(m.name))
         print "    }"
-        
+
     def printMethodArgumentReader():
         print
         print "    public static Method readMethodFrom(DataInputStream in) throws IOException { "
@@ -410,7 +420,7 @@ public class AMQImpl implements AMQP
         print
         print "        throw new UnknownClassOrMethodId(classId, methodId);"
         print "    }"
-        
+
     def printContentHeaderReader(c):
         print
         print """    public static AMQContentHeader readContentHeaderFrom(DataInputStream in)
@@ -427,14 +437,14 @@ public class AMQImpl implements AMQP
         print
         print "        throw new UnknownClassOrMethodId(classId, -1);"
         print "    }"
-    
+
     printHeader()
     for c in spec.allClasses(): printClassMethods(c)
     printMethodVisitor()
     printMethodArgumentReader()
     printContentHeaderReader(c)
     print "}"
-    
+
 #--------------------------------------------------------------------------------
 
 def generateJavaApi(specPath):
