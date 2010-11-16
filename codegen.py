@@ -367,9 +367,13 @@ public class AMQImpl implements AMQP
                 print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
                 print "            public static class Builder"
                 print "            {"
+                print "                // TODO:  Needs default values from JSON!"
                 if m.arguments:
                     for index, a in enumerate(m.arguments):
-                        print "                private %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
+                        if a.defaultvalue != None:
+                            print "                private %s %s;  // default value = %s" % (java_field_type(spec, a.domain), java_field_name(a.name), a.defaultvalue)
+                        else:
+                            print "                private %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
                 print
                 print "                public Builder() {}"
                 print
