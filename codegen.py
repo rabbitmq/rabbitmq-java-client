@@ -400,8 +400,14 @@ public class AMQImpl implements AMQP
                 print
                 print "                public %s build()" % (java_class_name(m.name))
                 print "                {"
-                print "                     // TODO:  Return new CTOR'ed whatever..."
-                print "                     return null;"
+                ctor_call = "return new %s(" % java_class_name(m.name)
+                ctor_arg_list = []
+                if m.arguments:
+                    for index, a in enumerate(m.arguments):
+                        ctor_arg_list.append("{0}".format(java_field_name(a.name)))
+                ctor_call += ", ".join(ctor_arg_list)
+                ctor_call += ");"
+                print "                     %s" % (ctor_call)
                 print "                }"
                 print "           }"
 
