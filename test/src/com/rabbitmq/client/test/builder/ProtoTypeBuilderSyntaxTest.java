@@ -15,23 +15,17 @@ import junit.framework.TestCase;
  */
 public class ProtoTypeBuilderSyntaxTest extends TestCase
 {
-    public void testFoo()
-    {
-        assertTrue("I got here", true);
-    }
-
     public void testExchangeDeclareBuilder()
     {
-//        AMQP.Exchange.Declare ed =
-//                            new AMQImpl.Exchange.Declare.Builder().build();
-//        assertNotNull(ed);
-//
-//        ed = new AMQImpl.Exchange.Declare.Builder().exchange("my_innie_xchg")
-//                                                   .type("direct")
-//                                                   .durable(true)
-//                                                   .internal(true)
-//                                                   .build();
-//        assertNotNull(ed);
-//        System.out.println("Done!");
+        AMQP.Exchange.Declare ed =
+                            new AMQImpl.Exchange.Declare.Builder().build();
+        assertNotNull(ed);
+
+        ed = new AMQImpl.Exchange.Declare.Builder().exchange("my_innie_xchg")
+                                                   .type("direct")
+                                                   .durable(true)
+                                                   .internal(true)
+                                                   .build();
+        assertNotNull(ed);
     }
 }

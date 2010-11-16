@@ -364,21 +364,26 @@ public class AMQImpl implements AMQP
 
             def builder():
                 print
-                print "            // Builder for class %s.%s" % (java_class_name(c.name), java_class_name(m.name))
+                print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
                 print "            public static class Builder"
                 print "            {"
-                print "                 // TODO:  Fields should be here..."
-
-                print "                 public Builder() {}"
+                if m.arguments:
+                    for index, a in enumerate(m.arguments):
+                        print "                private %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
                 print
-                print "                 // TODO:  Public methods 'fieldname : val -> Builder' go here..."
+                print "                public Builder() {}"
                 print
-                print "                 public %s build()" % (java_class_name(m.name))
-                print "                 {"
-                print "                      // TODO:  Return new CTOR'ed whatever..."
-                print "                      return null;"
-                print "                 }"
-                print "            }"
+                if m.arguments:
+                    for index, a in enumerate(m.arguments):
+                        print "                public Builder %s(%s val)" % (java_field_name(a.name), java_field_type(spec, a.domain))
+                        print "                    { %s = val;      return this; }" % (java_field_name(a.name))
+                print
+                print "                public %s build()" % (java_class_name(m.name))
+                print "                {"
+                print "                     // TODO:  Return new CTOR'ed whatever..."
+                print "                     return null;"
+                print "                }"
+                print "           }"
 
             getters()
             constructor()
