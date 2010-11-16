@@ -93,6 +93,22 @@ def java_field_name(name):
 def java_field_type(spec, domain):
     return javaTypeMap[spec.resolveDomain(domain)]
 
+def java_field_default_value(type, value):
+    if type == 'int':
+        return value
+    elif type == 'boolean':
+        return "{0}".format(value).lower()
+    elif type == 'java.lang.String':
+        return "\"{0}\"".format(value)
+    elif type == 'LongString':
+        return "new LongStringHelper.ByteArrayLongString(\"{0}\".getBytes());".format(value)
+    elif type == 'long':
+        return "{0}L".format(value)
+    elif type == 'Map<java.lang.String,Object>':
+        return "new HashMap<java.lang.String,Object>()"
+    elif type == 'Date':
+        return 'DATES_NEVER_HAVE_DEFAULTS_BUT_WHATEVER'
+
 #---------------------------------------------------------------------------
 
 def printFileHeader():
@@ -266,6 +282,7 @@ def genJavaImpl(spec):
 
 import java.io.IOException;
 import java.io.DataInputStream;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.rabbitmq.client.AMQP;
@@ -367,11 +384,10 @@ public class AMQImpl implements AMQP
                 print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
                 print "            public static class Builder"
                 print "            {"
-                print "                // TODO:  Needs default values from JSON!"
                 if m.arguments:
                     for index, a in enumerate(m.arguments):
                         if a.defaultvalue != None:
-                            print "                private %s %s;  // default value = %s" % (java_field_type(spec, a.domain), java_field_name(a.name), a.defaultvalue)
+                            print "                private %s %s = %s;" % (java_field_type(spec, a.domain), java_field_name(a.name), java_field_default_value(java_field_type(spec, a.domain), a.defaultvalue))
                         else:
                             print "                private %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
                 print
