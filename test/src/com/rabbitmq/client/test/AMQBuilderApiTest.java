@@ -28,27 +28,26 @@
 //
 //   Contributor(s): ______________________________________.
 //
-
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.impl.AMQImpl;
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
-public class ClientTests extends TestCase {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("client");
-        suite.addTest(TableTest.suite());
-        suite.addTest(BlockingCellTest.suite());
-        suite.addTest(TruncatedInputStreamTest.suite());
-        suite.addTest(AMQConnectionTest.suite());
-        suite.addTest(ValueOrExceptionTest.suite());
-        suite.addTest(BrokenFramesTest.suite());
-        suite.addTest(ClonePropertiesTest.suite());
-        suite.addTestSuite(Bug20004Test.class);
-        suite.addTestSuite(CloseInMainLoop.class);
-        suite.addTestSuite(ChannelNumberAllocationTests.class);
-        suite.addTestSuite(QueueingConsumerShutdownTests.class);
-//        suite.addTestSuite(AMQBuilderApiTest.class);
-        return suite;
+public class AMQBuilderApiTest extends TestCase
+{
+    // TODO [jerryk]:  This test is currently quite woeful.  Improve it.
+    public void testExchangeDeclareBuilder()
+    {
+        AMQP.Exchange.Declare ed =
+                            new AMQImpl.Exchange.Declare.Builder().build();
+        assertNotNull(ed);
+
+        ed = new AMQImpl.Exchange.Declare.Builder().exchange("my_innie_xchg")
+                                                   .type("direct")
+                                                   .durable(true)
+                                                   .internal(true)
+                                                   .build();
+        assertNotNull(ed);
     }
 }

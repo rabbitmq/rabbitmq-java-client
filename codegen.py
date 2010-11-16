@@ -107,7 +107,7 @@ def java_field_default_value(type, value):
     elif type == 'Map<java.lang.String,Object>':
         return "new HashMap<java.lang.String,Object>()"
     elif type == 'Date':
-        return 'DATES_NEVER_HAVE_DEFAULTS_BUT_WHATEVER'
+        return '## BREAK AND #@!! DO NOT COMPILE THIS JAVA CODE'
 
 #---------------------------------------------------------------------------
 
