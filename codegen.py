@@ -152,9 +152,6 @@ def genJavaApi(spec):
         printFileHeader()
         print """package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.LongString;
-import com.rabbitmq.client.impl.LongStringHelper;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -164,6 +161,7 @@ import com.rabbitmq.client.impl.AMQContentHeader;
 import com.rabbitmq.client.impl.ContentHeaderPropertyWriter;
 import com.rabbitmq.client.impl.ContentHeaderPropertyReader;
 import com.rabbitmq.client.impl.LongString;
+import com.rabbitmq.client.impl.LongStringHelper;
 
 public interface AMQP
 {
@@ -319,7 +317,6 @@ def genJavaImpl(spec):
 
 import java.io.IOException;
 import java.io.DataInputStream;
-import java.util.HashMap;
 import java.util.Map;
 
 import com.rabbitmq.client.AMQP;
