@@ -157,7 +157,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Date;
 
-import com.rabbitmq.client.impl.AMQContentHeader;
 import com.rabbitmq.client.impl.ContentHeaderPropertyWriter;
 import com.rabbitmq.client.impl.ContentHeaderPropertyReader;
 import com.rabbitmq.client.impl.LongString;
