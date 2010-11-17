@@ -31,6 +31,7 @@
 
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.AckListener;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
@@ -45,6 +46,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.UnexpectedMethodError;
 import com.rabbitmq.client.impl.AMQImpl.Basic;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
+import com.rabbitmq.client.impl.AMQImpl.Confirm;
 import com.rabbitmq.client.impl.AMQImpl.Exchange;
 import com.rabbitmq.client.impl.AMQImpl.Queue;
 import com.rabbitmq.client.impl.AMQImpl.Tx;
@@ -97,6 +99,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Reference to the currently-active FlowListener, or null if there is none.
      */
     public volatile FlowListener flowListener = null;
+
+    /** Reference to the currently-active AckListener, or null if there is none.
+     */
+    public volatile AckListener ackListener = null;
+
+    /** Current published message count (used by publisher acknowledgements)
+     */
+    private long publishedMessageCount;
 
     /** Reference to the currently-active default consumer, or null if there is
      *  none.
@@ -151,6 +161,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public void setFlowListener(FlowListener listener) {
         flowListener = listener;
+    }
+
+    /** Returns the current AckListener. */
+    public AckListener getAckListener() {
+        return ackListener;
+    }
+
+    /**
+     * Sets the current AckListener.
+     * A null argument is interpreted to mean "do not use an ack listener".
+     */
+    public void setAckListener(AckListener listener) {
+        ackListener = listener;
     }
 
     /** Returns the current default consumer. */
@@ -310,6 +333,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     }
                 }
                 return true;
+            } else if (method instanceof Basic.Ack) {
+                Basic.Ack ack = (Basic.Ack) method;
+                AckListener l = getAckListener();
+                if (l != null) {
+                    try {
+                        l.handleAck(ack.getDeliveryTag(), ack.getMultiple());
+                    } catch (Throwable ex) {
+                        _connection.getExceptionHandler().handleAckListenerException(this, ex);
+                    }
+                }
+                return true;
             } else if (method instanceof Basic.RecoverOk) {
                 for (Consumer callback: _consumers.values()) {
                     callback.handleRecoverOk();
@@ -463,6 +497,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
+        synchronized (_channelMutex) {
+            if (publishedMessageCount >= 0)
+                ++publishedMessageCount;
+        }
         BasicProperties useProps = props;
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
@@ -806,6 +844,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public Confirm.SelectOk confirmSelect(boolean multiple)
+        throws IOException
+    {
+        synchronized (_channelMutex) {
+            if (publishedMessageCount == -1)
+                publishedMessageCount = 0;
+        }
+        return (Confirm.SelectOk)
+            exnWrappingRpc(new Confirm.Select(multiple, false)).getMethod();
+
+    }
+
+    /** Public API - {@inheritDoc} */
     public Channel.FlowOk flow(final boolean a) throws IOException {
         return (Channel.FlowOk) exnWrappingRpc(new Channel.Flow() {{active = a;}}).getMethod();
     }
@@ -815,4 +866,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return new Channel.FlowOk(!_blockContent);
     }
 
+    /** Public API - {@inheritDoc} */
+    public long getPublishedMessageCount() {
+        return publishedMessageCount;
+    }
 }

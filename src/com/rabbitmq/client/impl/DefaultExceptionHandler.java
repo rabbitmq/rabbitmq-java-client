@@ -55,6 +55,10 @@ public class DefaultExceptionHandler implements ExceptionHandler {
         handleChannelKiller(channel, exception, "FlowListener.handleFlow");
     }
 
+    public void handleAckListenerException(Channel channel, Throwable exception) {
+        handleChannelKiller(channel, exception, "AckListener.handleAck");
+    }
+
     public void handleConsumerException(Channel channel, Throwable exception,
                                         Consumer consumer, String consumerTag,
                                         String methodName)
