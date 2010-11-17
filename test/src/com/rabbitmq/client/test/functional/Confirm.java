@@ -68,7 +68,7 @@ public class Confirm extends BrokerTestCase
         channel.confirmSelect(true);
         channel.queueDeclare("confirm-test", true, true, false, null);
         channel.basicConsume("confirm-test", true, new DefaultConsumer(channel));
-        channel.queueDeclare("confirm-test-nondurable", false, false, false, null);
+        channel.queueDeclare("confirm-test-nondurable", false, true, false, null);
         channel.basicConsume("confirm-test-nondurable", true,
                              new DefaultConsumer(channel));
         channel.queueDeclare("confirm-test-noconsumer", true, true, false, null);
@@ -154,11 +154,9 @@ public class Confirm extends BrokerTestCase
     public void testConfirmBasicReject()
         throws IOException, InterruptedException
     {
-        System.out.println("basic.reject test 1");
         basicRejectCommon(false);
 
         waitAcks();
-        System.out.println("basic reject test 1 end");
     }
 
     public void testConfirmQueueTTL()
@@ -243,8 +241,8 @@ public class Confirm extends BrokerTestCase
 
     private synchronized void gotAckFor(long msgSeqNo) {
         if (!ackSet.contains(msgSeqNo)) {
-            //fail("got duplicate ack: " + msgSeqNo);
-            System.out.println("got duplicate ack: " + msgSeqNo);
+            fail("got duplicate ack: " + msgSeqNo);
+            //System.out.println("got duplicate ack: " + msgSeqNo);
         }
         ackSet.remove(msgSeqNo);
     }
