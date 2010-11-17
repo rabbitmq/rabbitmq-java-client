@@ -31,23 +31,34 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Method;
+import com.rabbitmq.client.impl.AMQChannel;
 import com.rabbitmq.client.impl.AMQImpl;
-import junit.framework.TestCase;
 
-public class AMQBuilderApiTest extends TestCase
+public class AMQBuilderApiTest extends BrokerTestCase
 {
-    // TODO [jerryk]:  This test is currently quite woeful.  Improve it.
-    public void testExchangeDeclareBuilder()
+    private static final String XCHG_NAME = "my_innie_xchg";
+
+    public void testParticularBuilderForBasicSanity()
     {
         AMQP.Exchange.Declare ed =
                             new AMQImpl.Exchange.Declare.Builder().build();
-        assertNotNull(ed);
+        assertEquals("direct", ed.getType());
+        assertEquals(false, ed.getPassive());
+        assertEquals(false, ed.getNowait());
 
-        ed = new AMQImpl.Exchange.Declare.Builder().exchange("my_innie_xchg")
+        ed = new AMQImpl.Exchange.Declare.Builder().exchange(XCHG_NAME)
                                                    .type("direct")
                                                    .durable(true)
-                                                   .internal(true)
                                                    .build();
-        assertNotNull(ed);
+
+        new AMQImpl.Exchange.Declare.Builder().exchange(XCHG_NAME)
+                                              .type("direct")
+                                              .durable(true)
+                                              .build();
+
+        assertEquals(XCHG_NAME, ed.getExchange());
+        assertEquals("direct", ed.getType());
+        assertEquals(true, ed.getDurable());
     }
 }
