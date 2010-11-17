@@ -152,7 +152,11 @@ def genJavaApi(spec):
         printFileHeader()
         print """package com.rabbitmq.client;
 
+import com.rabbitmq.client.impl.LongString;
+import com.rabbitmq.client.impl.LongStringHelper;
+
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Date;
 
@@ -174,6 +178,38 @@ public interface AMQP
         print
         for (c,v,cls) in spec.constants: print "    public static final int %s = %i;" % (java_constant_name(c), v)
 
+    def builder(c,m):
+        print
+        print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
+        print "            public static class Builder"
+        print "            {"
+        if m.arguments:
+            for index, a in enumerate(m.arguments):
+                if a.defaultvalue != None:
+                    print "                private %s %s = %s;" % (java_field_type(spec, a.domain), java_field_name(a.name), java_field_default_value(java_field_type(spec, a.domain), a.defaultvalue))
+                else:
+                    print "                private %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
+        print
+        print "                public Builder() {}"
+        print
+        if m.arguments:
+            for index, a in enumerate(m.arguments):
+                print "                public Builder %s(%s val)" % (java_field_name(a.name), java_field_type(spec, a.domain))
+                print "                    { %s = val;      return this; }" % (java_field_name(a.name))
+        print
+        print "                public %s build()" % (java_class_name(m.name))
+        print "                {"
+        ctor_call = "return new com.rabbitmq.client.impl.AMQImpl.%s.%s(" % (java_class_name(c.name),java_class_name(m.name))
+        ctor_arg_list = []
+        if m.arguments:
+            for index, a in enumerate(m.arguments):
+                ctor_arg_list.append("{0}".format(java_field_name(a.name)))
+        ctor_call += ", ".join(ctor_arg_list)
+        ctor_call += ");"
+        print "                     %s" % (ctor_call)
+        print "                }"
+        print "            }"
+
     def printClassInterfaces():
         for c in spec.classes:
             print
@@ -182,6 +218,7 @@ public interface AMQP
                 print "        public interface %s extends Method {" % ((java_class_name(m.name)))
                 for a in m.arguments:
                     print "            %s %s();" % (java_field_type(spec, a.domain), java_getter_name(a.name))
+                builder(c,m)
                 print "        }"
             print "    }"
 
@@ -379,38 +416,6 @@ public class AMQImpl implements AMQP
                 for a in m.arguments:
                     print "            public %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
 
-            def builder():
-                print
-                print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
-                print "            public static class Builder"
-                print "            {"
-                if m.arguments:
-                    for index, a in enumerate(m.arguments):
-                        if a.defaultvalue != None:
-                            print "                private %s %s = %s;" % (java_field_type(spec, a.domain), java_field_name(a.name), java_field_default_value(java_field_type(spec, a.domain), a.defaultvalue))
-                        else:
-                            print "                private %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
-                print
-                print "                public Builder() {}"
-                print
-                if m.arguments:
-                    for index, a in enumerate(m.arguments):
-                        print "                public Builder %s(%s val)" % (java_field_name(a.name), java_field_type(spec, a.domain))
-                        print "                    { %s = val;      return this; }" % (java_field_name(a.name))
-                print
-                print "                public %s build()" % (java_class_name(m.name))
-                print "                {"
-                ctor_call = "return new %s(" % java_class_name(m.name)
-                ctor_arg_list = []
-                if m.arguments:
-                    for index, a in enumerate(m.arguments):
-                        ctor_arg_list.append("{0}".format(java_field_name(a.name)))
-                ctor_call += ", ".join(ctor_arg_list)
-                ctor_call += ");"
-                print "                     %s" % (ctor_call)
-                print "                }"
-                print "           }"
-
             getters()
             constructor()
             others()
@@ -418,7 +423,7 @@ public class AMQImpl implements AMQP
             argument_debug_string()
             read_arguments()
             write_arguments()
-            builder()
+
             print "        }"
         print "    }"
 
