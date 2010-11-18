@@ -182,53 +182,66 @@ public interface AMQP
         print
         for (c,v,cls) in spec.constants: print "    public static final int %s = %i;" % (java_constant_name(c), v)
 
-    def typeNameDefault(a):
-        return (java_field_type(spec, a.domain),
-                java_field_name(a.name),
-                java_field_default_value(java_field_type(spec, a.domain),
-                                         a.defaultvalue))
-
     def builder(c,m):
+        def typeNameDefault(a):
+            return (java_field_type(spec, a.domain),
+                    java_field_name(a.name),
+                    java_field_default_value(java_field_type(spec, a.domain),
+                                             a.defaultvalue))
+
+        def ctorCall(c,m):
+            ctor_call = "return new com.rabbitmq.client.impl.AMQImpl.%s.%s(" % (java_class_name(c.name),java_class_name(m.name))
+            ctor_arg_list = []
+            if m.arguments:
+                for index, a in enumerate(m.arguments):
+                    ctor_arg_list.append("{0}".format(java_field_name(a.name)))
+            ctor_call += ", ".join(ctor_arg_list)
+            ctor_call += ");"
+            print "                     %s" % (ctor_call)
+
+        def genFields(m):
+            fieldsToNullCheckInBuild = set([])
+            if m.arguments:
+                for index, a in enumerate(m.arguments):
+                    (jfType, jfName, jfDefault) = typeNameDefault(a)
+                    if jfType in javaTypesNeverNullInBuilder:
+                        fieldsToNullCheckInBuild.update([jfName])
+                    if a.defaultvalue != None:
+                        print "                private %s %s = %s;" % (jfType, jfName, jfDefault)
+                    else:
+                        print "                private %s %s;" % (jfType, jfName)
+            return fieldsToNullCheckInBuild
+
+        def genArgMethods(m):
+            if m.arguments:
+                for index, a in enumerate(m.arguments):
+                    (jfType, jfName, jfDefault) = typeNameDefault(a)
+                    print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
+                    print "                    { this.%s = %s;      return this; }" % (jfName, jfName)
+                    if jfType == "boolean":
+                        print "                public Builder %s()" % (jfName)
+                        print "                    { this.%s = true;      return this; }" % (jfName)
+
+        def genBuildMethod(c,m):
+            print "                public %s build()" % (java_class_name(m.name))
+            print "                {"
+            print "                    // I should null check..."
+            for f in fieldsToNullCheckInBuild:
+                print "                    // Field:  %s" % (f)
+            ctorCall(c,m)
+            print "                }"
+
         print
         print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
         print "            public static class Builder"
         print "            {"
-        fieldsToNullCheckInBuild = set([])
-        if m.arguments:
-            for index, a in enumerate(m.arguments):
-                (jfType, jfName, jfDefault) = typeNameDefault(a)
-                if jfType in javaTypesNeverNullInBuilder:
-                    fieldsToNullCheckInBuild.update([jfName])
-                if a.defaultvalue != None:
-                    print "                private %s %s = %s;" % (jfType, jfName, jfDefault)
-                else:
-                    print "                private %s %s;" % (jfType, jfName)
+        fieldsToNullCheckInBuild = genFields(m)
         print
         print "                public Builder() {}"
         print
-        if m.arguments:
-            for index, a in enumerate(m.arguments):
-                (jfType, jfName, jfDefault) = typeNameDefault(a)
-                print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
-                print "                    { this.%s = %s;      return this; }" % (jfName, jfName)
-                if jfType == "boolean":
-                    print "                public Builder %s()" % (jfName)
-                    print "                    { this.%s = true;      return this; }" % (jfName)
+        genArgMethods(m)
         print
-        print "                public %s build()" % (java_class_name(m.name))
-        print "                {"
-        print "                    // I should null check..."
-        for f in fieldsToNullCheckInBuild:
-            print "                    // Field:  %s" % (f)
-        ctor_call = "return new com.rabbitmq.client.impl.AMQImpl.%s.%s(" % (java_class_name(c.name),java_class_name(m.name))
-        ctor_arg_list = []
-        if m.arguments:
-            for index, a in enumerate(m.arguments):
-                ctor_arg_list.append("{0}".format(java_field_name(a.name)))
-        ctor_call += ", ".join(ctor_arg_list)
-        ctor_call += ");"
-        print "                     %s" % (ctor_call)
-        print "                }"
+        genBuildMethod(c,m)
         print "            }"
 
     def printClassInterfaces():
