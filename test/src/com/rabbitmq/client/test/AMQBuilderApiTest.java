@@ -48,14 +48,14 @@ public class AMQBuilderApiTest extends BrokerTestCase
                                                           .durable(false)
                                                           .build()
                                                           .rpc(channel);
-        assertTrue(retVal instanceof AMQP.Exchange.DeclareOk);
         assertTrue("Channel should still be open.", channel.isOpen());
+        assertTrue(retVal instanceof AMQP.Exchange.DeclareOk);
 
         retVal = new AMQImpl.Exchange.Delete.Builder().exchange(XCHG_NAME)
                                                       .build()
                                                       .rpc(channel);
-        assertTrue(retVal instanceof AMQP.Exchange.DeleteOk);
         assertTrue("Channel should still be open.", channel.isOpen());
+        assertTrue(retVal instanceof AMQP.Exchange.DeleteOk);
     }
 
     public void testParticularBuilderForBasicSanityWithCall() throws IOException
@@ -65,11 +65,8 @@ public class AMQBuilderApiTest extends BrokerTestCase
                                               .durable(false)
                                               .build()
                                               .call(channel);
-        System.out.println("Is channel closed?  "
-                           + channel.getCloseReason().getMessage());
         assertTrue("Channel should still be open.", channel.isOpen());
 
-        // The channel appears to be closed by the time we get here...
         new AMQImpl.Exchange.Delete.Builder().exchange(XCHG_NAME)
                                              .build()
                                              .call(channel);
