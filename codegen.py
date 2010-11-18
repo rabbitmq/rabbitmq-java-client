@@ -259,8 +259,6 @@ public interface AMQP
             ctorCall(c,m)
             print "                }"
 
-
-
         print
         print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
         print "            public static class Builder"
