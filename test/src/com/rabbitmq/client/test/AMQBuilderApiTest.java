@@ -69,4 +69,17 @@ public class AMQBuilderApiTest extends BrokerTestCase
                                                    .call(channel);
         assertTrue("Channel should still be open.", channel.isOpen());
     }
+
+    public void testIllFormedBuilder()
+    {
+        try
+        {
+            new AMQP.Exchange.Declare.Builder(null).build();
+            fail("Should have thrown IllegalStateException");
+        }
+        catch (Exception e)
+        {
+            assertTrue(e instanceof IllegalStateException);
+        }
+    }
 }
