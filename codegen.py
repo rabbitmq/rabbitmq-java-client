@@ -225,9 +225,17 @@ public interface AMQP
         def genBuildMethod(c,m):
             print "                public %s build()" % (java_class_name(m.name))
             print "                {"
-            print "                    // I should null check..."
-            for f in fieldsToNullCheckInBuild:
-                print "                    // Field:  %s" % (f)
+
+            if len(fieldsToNullCheckInBuild) != 0:
+                nullCheckClauses = []
+                for f in fieldsToNullCheckInBuild:
+                    nullCheckClauses.append("{0} == null".format(f))
+                nullCheckClause = " ||\n                       ".join(nullCheckClauses) + ")"
+                print "                    if(%s" % (nullCheckClause)
+                print "                    {"
+                print "                        throw new IllegalStateException(\"Invalid configuration.\");"
+                print "                    }"
+                print
             ctorCall(c,m)
             print "                }"
 
