@@ -106,8 +106,8 @@ def java_field_default_value(type, value):
         return "{0}L".format(value)
     elif type == 'Map<java.lang.String,Object>':
         return "new HashMap<java.lang.String,Object>()"
-    elif type == 'Date':
-        return '## BREAK AND #@!! DO NOT COMPILE THIS JAVA CODE'
+    else:
+        sys.exit(1)
 
 #---------------------------------------------------------------------------
 
