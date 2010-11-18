@@ -191,8 +191,8 @@ public interface AMQP
         print
         if m.arguments:
             for index, a in enumerate(m.arguments):
-                print "                public Builder %s(%s val)" % (java_field_name(a.name), java_field_type(spec, a.domain))
-                print "                    { %s = val;      return this; }" % (java_field_name(a.name))
+                print "                public Builder %s(%s %s)" % (java_field_name(a.name), java_field_type(spec, a.domain), java_field_name(a.name))
+                print "                    { this.%s = %s;      return this; }" % (java_field_name(a.name), java_field_name(a.name))
         print
         print "                public %s build()" % (java_class_name(m.name))
         print "                {"
