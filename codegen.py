@@ -207,11 +207,6 @@ public interface AMQP
         print "                }"
         print "            }"
 
-    # def senders(c,m):
-    #     print
-    #     print "            public %s.%s /* TODO proper response type! */ rpc(com.rabbitmq.client.Channel channel) throws IOException;" % (java_class_name(c.name),java_class_name(m.name))
-    #     print "            public void call(com.rabbitmq.client.Channel channel) throws IOException;"
-
     def printClassInterfaces():
         for c in spec.classes:
             print
@@ -221,7 +216,6 @@ public interface AMQP
                 for a in m.arguments:
                     print "            %s %s();" % (java_field_type(spec, a.domain), java_getter_name(a.name))
                 builder(c,m)
-                # senders(c,m)
                 print "        }"
             print "    }"
 
@@ -406,21 +400,6 @@ public class AMQImpl implements AMQP
                     print "                writer.write%s(this.%s);" % (java_class_name(spec.resolveDomain(a.domain)), java_field_name(a.name))
                 print "            }"
 
-            # def senders(c,m):
-            #     print
-            #     print "            public Method rpc(com.rabbitmq.client.Channel channel)"
-            #     print "                   throws IOException"
-            #     print "            {"
-            #     print "                ChannelN channelN = (ChannelN)channel;"
-            #     print "                return channelN.exnWrappingRpc(this).getMethod();"
-            #     print "            }"
-            #     print
-            #     print "            public void call(com.rabbitmq.client.Channel channel)"
-            #     print "                        throws IOException"
-            #     print "            {"
-            #     print "                ((AMQChannel) channel).transmit(this);"
-            #     print "            }"
-
             #start
             print
             print "        public static class %s" % (java_class_name(m.name),)
@@ -440,8 +419,6 @@ public class AMQImpl implements AMQP
             argument_debug_string()
             read_arguments()
             write_arguments()
-
-            # senders(c,m)
 
             print "        }"
         print "    }"
