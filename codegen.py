@@ -187,25 +187,39 @@ public interface AMQP
         print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
         print "            public static class Builder"
         print "            {"
+        fieldsToNullCheckInBuild = set([])
         if m.arguments:
             for index, a in enumerate(m.arguments):
+                (jfType, jfName, jfDefault) = (java_field_type(spec, a.domain),
+                                               java_field_name(a.name),
+                                               java_field_default_value(java_field_type(spec, a.domain),
+                                                                        a.defaultvalue))
+                if jfType in javaTypesNeverNullInBuilder:
+                    fieldsToNullCheckInBuild.update([jfName])
                 if a.defaultvalue != None:
-                    print "                private %s %s = %s;" % (java_field_type(spec, a.domain), java_field_name(a.name), java_field_default_value(java_field_type(spec, a.domain), a.defaultvalue))
+                    print "                private %s %s = %s;" % (jfType, jfName, jfDefault)
                 else:
-                    print "                private %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
+                    print "                private %s %s;" % (jfType, jfName)
         print
         print "                public Builder() {}"
         print
         if m.arguments:
             for index, a in enumerate(m.arguments):
-                print "                public Builder %s(%s %s)" % (java_field_name(a.name), java_field_type(spec, a.domain), java_field_name(a.name))
-                print "                    { this.%s = %s;      return this; }" % (java_field_name(a.name), java_field_name(a.name))
-                if java_field_type(spec, a.domain) == "boolean":
-                    print "                public Builder %s()" % (java_field_name(a.name))
-                    print "                    { this.%s = true;      return this; }" % (java_field_name(a.name))
+                (jfType, jfName, jfDefault) = (java_field_type(spec, a.domain),
+                                               java_field_name(a.name),
+                                               java_field_default_value(java_field_type(spec, a.domain),
+                                                                        a.defaultvalue))
+                print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
+                print "                    { this.%s = %s;      return this; }" % (jfName, jfName)
+                if jfType == "boolean":
+                    print "                public Builder %s()" % (jfName)
+                    print "                    { this.%s = true;      return this; }" % (jfName)
         print
         print "                public %s build()" % (java_class_name(m.name))
         print "                {"
+        print "                    // I should null check..."
+        for f in fieldsToNullCheckInBuild:
+            print "                    // Field:  %s" % (f)
         ctor_call = "return new com.rabbitmq.client.impl.AMQImpl.%s.%s(" % (java_class_name(c.name),java_class_name(m.name))
         ctor_arg_list = []
         if m.arguments:
