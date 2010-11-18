@@ -208,6 +208,7 @@ public interface AMQP
 
         def genFields(m):
             fieldsToNullCheckInBuild = set([])
+            mandatoryFields          = set([])
             if m.arguments:
                 for index, a in enumerate(m.arguments):
                     (jfType, jfName, jfDefault) = typeNameDefault(a)
@@ -217,7 +218,19 @@ public interface AMQP
                         print "                private %s %s = %s;" % (jfType, jfName, jfDefault)
                     else:
                         print "                private %s %s;" % (jfType, jfName)
-            return fieldsToNullCheckInBuild
+                        mandatoryFields.update([(jfType,jfName)])
+            return (fieldsToNullCheckInBuild, mandatoryFields)
+
+        def genBuilderCtor(m, mandatoryFields):
+            ctor_arg_list = []
+            for (argType, argName) in mandatoryFields:
+                ctor_arg_list.append("{0} {1}".format(argType, argName))
+            arg_list_string = ", ".join(ctor_arg_list)
+            print "                public Builder(%s)" % arg_list_string
+            print "                {"
+            for (argType, argName) in mandatoryFields:
+                print "                    this.%s = %s;" % (argName, argName)
+            print "                }"
 
         def genArgMethods(m):
             if m.arguments:
@@ -229,7 +242,7 @@ public interface AMQP
                         print "                public Builder %s()" % (jfName)
                         print "                    { this.%s = true;      return this; }" % (jfName)
 
-        def genBuildMethod(c,m):
+        def genBuildMethod(c,m,fieldsToNullCheckInBuild):
             print "                public %s build()" % (java_class_name(m.name))
             print "                {"
 
@@ -246,17 +259,19 @@ public interface AMQP
             ctorCall(c,m)
             print "                }"
 
+
+
         print
         print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
         print "            public static class Builder"
         print "            {"
-        fieldsToNullCheckInBuild = genFields(m)
+        (fieldsToNullCheckInBuild, mandatoryFields) = genFields(m)
         print
-        print "                public Builder() {}"
+        genBuilderCtor(m, mandatoryFields)
         print
         genArgMethods(m)
         print
-        genBuildMethod(c,m)
+        genBuildMethod(c,m,fieldsToNullCheckInBuild)
         print "            }"
 
     def printClassInterfaces():
