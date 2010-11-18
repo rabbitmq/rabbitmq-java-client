@@ -182,6 +182,12 @@ public interface AMQP
         print
         for (c,v,cls) in spec.constants: print "    public static final int %s = %i;" % (java_constant_name(c), v)
 
+    def typeNameDefault(a):
+        return (java_field_type(spec, a.domain),
+                java_field_name(a.name),
+                java_field_default_value(java_field_type(spec, a.domain),
+                                         a.defaultvalue))
+
     def builder(c,m):
         print
         print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
@@ -190,10 +196,7 @@ public interface AMQP
         fieldsToNullCheckInBuild = set([])
         if m.arguments:
             for index, a in enumerate(m.arguments):
-                (jfType, jfName, jfDefault) = (java_field_type(spec, a.domain),
-                                               java_field_name(a.name),
-                                               java_field_default_value(java_field_type(spec, a.domain),
-                                                                        a.defaultvalue))
+                (jfType, jfName, jfDefault) = typeNameDefault(a)
                 if jfType in javaTypesNeverNullInBuilder:
                     fieldsToNullCheckInBuild.update([jfName])
                 if a.defaultvalue != None:
@@ -205,10 +208,7 @@ public interface AMQP
         print
         if m.arguments:
             for index, a in enumerate(m.arguments):
-                (jfType, jfName, jfDefault) = (java_field_type(spec, a.domain),
-                                               java_field_name(a.name),
-                                               java_field_default_value(java_field_type(spec, a.domain),
-                                                                        a.defaultvalue))
+                (jfType, jfName, jfDefault) = typeNameDefault(a)
                 print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
                 print "                    { this.%s = %s;      return this; }" % (jfName, jfName)
                 if jfType == "boolean":
