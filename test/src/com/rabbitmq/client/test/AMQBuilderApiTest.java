@@ -32,7 +32,6 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Method;
-import com.rabbitmq.client.impl.AMQImpl;
 
 import java.io.IOException;
 
@@ -43,34 +42,33 @@ public class AMQBuilderApiTest extends BrokerTestCase
     public void testParticularBuilderForBasicSanityWithRpc() throws IOException
     {
         Method retVal =
-                    new AMQImpl.Exchange.Declare.Builder().exchange(XCHG_NAME)
-                                                          .type("direct")
-                                                          .durable(false)
-                                                          .build()
-                                                          .rpc(channel);
+                    new AMQP.Exchange.Declare.Builder().exchange(XCHG_NAME)
+                                                       .type("direct")
+                                                       .durable(false)
+                                                       .build()
+                                                       .rpc(channel);
         assertTrue("Channel should still be open.", channel.isOpen());
         assertTrue(retVal instanceof AMQP.Exchange.DeclareOk);
 
-        retVal = new AMQImpl.Exchange.Delete.Builder().exchange(XCHG_NAME)
-                                                      .build()
-                                                      .rpc(channel);
+        retVal = new AMQP.Exchange.Delete.Builder().exchange(XCHG_NAME)
+                                                   .build()
+                                                   .rpc(channel);
         assertTrue("Channel should still be open.", channel.isOpen());
         assertTrue(retVal instanceof AMQP.Exchange.DeleteOk);
     }
 
     public void testParticularBuilderForBasicSanityWithCall() throws IOException
     {
-        new AMQImpl.Exchange.Declare.Builder().exchange(XCHG_NAME)
-                                              .type("direct")
-                                              .durable(false)
-                                              .build()
-                                              .call(channel);
+        new AMQP.Exchange.Declare.Builder().exchange(XCHG_NAME)
+                                           .type("direct")
+                                           .durable(false)
+                                           .build()
+                                           .call(channel);
         assertTrue("Channel should still be open.", channel.isOpen());
 
-        new AMQImpl.Exchange.Delete.Builder().exchange(XCHG_NAME)
-                                             .build()
-                                             .call(channel);
-        System.out.println("Got to here...");
+        new AMQP.Exchange.Delete.Builder().exchange(XCHG_NAME)
+                                          .build()
+                                          .call(channel);
         assertTrue("Channel should still be open.", channel.isOpen());
     }
 }
