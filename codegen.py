@@ -53,6 +53,13 @@ javaTypeMap = {
     'timestamp': 'Date'
     }
 
+javaTypesNeverNullInBuilder = set([
+    'java.lang.String',
+    'LongString',
+    'Map<java.lang.String,Object>',
+    'Date'
+    ])
+
 javaPropertyTypeMap = {
     'octet': 'java.lang.Integer',
     'shortstr': 'java.lang.String',
