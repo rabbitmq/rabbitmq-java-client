@@ -32,33 +32,48 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Method;
-import com.rabbitmq.client.impl.AMQChannel;
 import com.rabbitmq.client.impl.AMQImpl;
+
+import java.io.IOException;
 
 public class AMQBuilderApiTest extends BrokerTestCase
 {
-    private static final String XCHG_NAME = "my_innie_xchg";
+    private static final String XCHG_NAME = "builder_test_xchg";
 
-    public void testParticularBuilderForBasicSanity()
+    public void testParticularBuilderForBasicSanityWithRpc() throws IOException
     {
-        AMQP.Exchange.Declare ed =
-                            new AMQImpl.Exchange.Declare.Builder().build();
-        assertEquals("direct", ed.getType());
-        assertEquals(false, ed.getPassive());
-        assertEquals(false, ed.getNowait());
+        Method retVal =
+                    new AMQImpl.Exchange.Declare.Builder().exchange(XCHG_NAME)
+                                                          .type("direct")
+                                                          .durable(false)
+                                                          .build()
+                                                          .rpc(channel);
+        assertTrue(retVal instanceof AMQP.Exchange.DeclareOk);
+        assertTrue("Channel should still be open.", channel.isOpen());
 
-        ed = new AMQImpl.Exchange.Declare.Builder().exchange(XCHG_NAME)
-                                                   .type("direct")
-                                                   .durable(true)
-                                                   .build();
+        retVal = new AMQImpl.Exchange.Delete.Builder().exchange(XCHG_NAME)
+                                                      .build()
+                                                      .rpc(channel);
+        assertTrue(retVal instanceof AMQP.Exchange.DeleteOk);
+        assertTrue("Channel should still be open.", channel.isOpen());
+    }
 
+    public void testParticularBuilderForBasicSanityWithCall() throws IOException
+    {
         new AMQImpl.Exchange.Declare.Builder().exchange(XCHG_NAME)
                                               .type("direct")
-                                              .durable(true)
-                                              .build();
+                                              .durable(false)
+                                              .build()
+                                              .call(channel);
+        System.out.println("Is channel closed?  "
+                           + channel.getCloseReason().getMessage());
+        assertTrue("Channel should still be open.", channel.isOpen());
 
-        assertEquals(XCHG_NAME, ed.getExchange());
-        assertEquals("direct", ed.getType());
-        assertEquals(true, ed.getDurable());
+        // The channel appears to be closed by the time we get here...
+        new AMQImpl.Exchange.Delete.Builder().exchange(XCHG_NAME)
+                                             .build()
+                                             .call(channel);
+        System.out.println("Got to here...");
+        assertTrue("Channel should still be open.", channel.isOpen());
     }
 }
