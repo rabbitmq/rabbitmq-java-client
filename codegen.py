@@ -38,6 +38,13 @@ sys.path.append("codegen")              # in case we're building from a distribu
 
 from amqp_codegen import *
 
+class BogusDefaultValue(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
+
 def java_constant_name(c):
     return '_'.join(re.split('[- ]', c.upper()))
 
@@ -114,7 +121,7 @@ def java_field_default_value(type, value):
     elif type == 'Map<java.lang.String,Object>':
         return "new HashMap<java.lang.String,Object>()"
     else:
-        sys.exit(1)
+        raise BogusDefaultValue("JSON provided default value {0} for suspicious type {1}".format(value, type))
 
 #---------------------------------------------------------------------------
 
