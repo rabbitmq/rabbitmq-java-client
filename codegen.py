@@ -284,8 +284,18 @@ public interface AMQP
         genBuildMethod(c,m,fieldsToNullCheckInBuild)
         print "            }"
 
+    def genBuilderGetterApi(c):
+        print
+        print "    // Convenience getters for AMQP method builders"
+        for m in c.allMethods():
+            (cName, mName) = (java_class_name(c.name), java_class_name(m.name))
+            (fieldsToNullCheck, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
+            argSignature = builderCtorArgSignature(mandatoryFields)
+            print "    public %s.%s.Builder %s%s(%s);" % (cName, mName, cName.lower(), mName, argSignature)
+
     def printClassInterfaces():
         for c in spec.classes:
+            # genBuilderGetterApi(c)
             print
             print "    public static class %s {" % (java_class_name(c.name))
             for m in c.allMethods():
@@ -401,8 +411,24 @@ import com.rabbitmq.client.UnexpectedMethodError;
 
 public class AMQImpl implements AMQP
 {"""
+    def genBuilderGetterImpl(spec,c):
+        print
+        print "    // Convenience getter methods for AMQP Method builders"
+        for m in c.allMethods():
+            (cName, mName) = (java_class_name(c.name), java_class_name(m.name))
+            (fieldsToNullCheck, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
+            argSignature = builderCtorArgSignature(mandatoryFields)
+            ctorArgList = []
+            for (argType, argName) in mandatoryFields:
+                ctorArgList.append(argName)
+            print "    public static %s.%s.Builder %s%s(%s)" % (cName, mName, cName.lower(), mName, argSignature)
+            print "    {"
+            print "        return new %s.%s.Builder(%s);" % (cName, mName, ", ".join(ctorArgList))
+            print "    }"
+            print
 
-    def printClassMethods(c):
+    def printClassMethods(spec, c):
+        # genBuilderGetterImpl(spec,c)
         print
         print "    public static class %s {" % (java_class_name(c.name))
         print "        public static final int INDEX = %s;" % (c.index)
@@ -413,18 +439,6 @@ public class AMQImpl implements AMQP
                     print
                     for a in m.arguments:
                         print "            public %s %s() { return %s; }" % (java_field_type(spec,a.domain), java_getter_name(a.name), java_field_name(a.name))
-
-            def builderGetter(spec,c,m):
-                print
-                (fieldsToNullCheck, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
-                builder_ctor_arg_signature = builderCtorArgSignature(mandatoryFields)
-                print "            public Builder %s%s(%s)" % (java_class_name(c.name).lower(), java_class_name(m.name), builder_ctor_arg_signature)
-                print "            {"
-                builder_ctor_call_arg_string = []
-                for (argType, argName) in mandatoryFields:
-                    builder_ctor_call_arg_string.append(argName)
-                print "                return new Builder(%s);" % ", ".join(builder_ctor_call_arg_string)
-                print "            }"
 
             def constructor():
                 if m.arguments:
@@ -569,7 +583,7 @@ public class AMQImpl implements AMQP
         print "    }"
 
     printHeader()
-    for c in spec.allClasses(): printClassMethods(c)
+    for c in spec.allClasses(): printClassMethods(spec,c)
     printMethodVisitor()
     printMethodArgumentReader()
     printContentHeaderReader(c)

@@ -46,12 +46,14 @@ public class AMQBuilderApiTest extends BrokerTestCase
                                                             .durable(false)
                                                             .build()
                                                             .rpc(channel);
+
         assertTrue("Channel should still be open.", channel.isOpen());
         assertTrue(retVal instanceof AMQP.Exchange.DeclareOk);
 
         retVal = new AMQP.Exchange.Delete.Builder(XCHG_NAME)
                                                    .build()
                                                    .rpc(channel);
+        
         assertTrue("Channel should still be open.", channel.isOpen());
         assertTrue(retVal instanceof AMQP.Exchange.DeleteOk);
     }
@@ -63,10 +65,12 @@ public class AMQBuilderApiTest extends BrokerTestCase
                                            .durable(false)
                                            .build()
                                            .call(channel);
+
         assertTrue("Channel should still be open.", channel.isOpen());
 
         new AMQP.Exchange.Delete.Builder(XCHG_NAME).build()
                                                    .call(channel);
+
         assertTrue("Channel should still be open.", channel.isOpen());
     }
 
