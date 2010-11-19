@@ -123,6 +123,31 @@ def java_field_default_value(type, value):
     else:
         raise BogusDefaultValue("JSON provided default value {0} for suspicious type {1}".format(value, type))
 
+def typeNameDefault(spec, a):
+    return (java_field_type(spec, a.domain),
+            java_field_name(a.name),
+            java_field_default_value(java_field_type(spec, a.domain),
+                                     a.defaultvalue))
+
+def mandatoryAndNullCheckedFields(spec, m):
+    fieldsToNullCheckInBuild = set([])
+    mandatoryFields          = set([])
+    if m.arguments:
+        for index, a in enumerate(m.arguments):
+            (jfType, jfName, jfDefault) = typeNameDefault(spec,a)
+            if jfType in javaTypesNeverNullInBuilder:
+                fieldsToNullCheckInBuild.update([jfName])
+            if a.defaultvalue == None:
+                mandatoryFields.update([(jfType,jfName)])
+    return (fieldsToNullCheckInBuild, mandatoryFields)
+
+def builderCtorArgSignature(mandatoryFields):
+    ctor_arg_signature_list = []
+    for (argType, argName) in mandatoryFields:
+        ctor_arg_signature_list.append("{0} {1}".format(argType, argName))
+    ctor_arg_signature_string = ", ".join(ctor_arg_signature_list)
+    return ctor_arg_signature_string
+
 #---------------------------------------------------------------------------
 
 def printFileHeader():
@@ -190,12 +215,6 @@ public interface AMQP
         for (c,v,cls) in spec.constants: print "    public static final int %s = %i;" % (java_constant_name(c), v)
 
     def builder(c,m):
-        def typeNameDefault(a):
-            return (java_field_type(spec, a.domain),
-                    java_field_name(a.name),
-                    java_field_default_value(java_field_type(spec, a.domain),
-                                             a.defaultvalue))
-
         def ctorCall(c,m):
             ctor_call = "return new com.rabbitmq.client.impl.AMQImpl.%s.%s(" % (java_class_name(c.name),java_class_name(m.name))
             ctor_arg_list = []
@@ -206,36 +225,28 @@ public interface AMQP
             ctor_call += ");"
             print "                     %s" % (ctor_call)
 
-        def genFields(m):
-            fieldsToNullCheckInBuild = set([])
-            mandatoryFields          = set([])
+        def genFields(spec, m):
+            (fieldsToNullCheckInBuild, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
             if m.arguments:
                 for index, a in enumerate(m.arguments):
-                    (jfType, jfName, jfDefault) = typeNameDefault(a)
-                    if jfType in javaTypesNeverNullInBuilder:
-                        fieldsToNullCheckInBuild.update([jfName])
+                    (jfType, jfName, jfDefault) = typeNameDefault(spec, a)
                     if a.defaultvalue != None:
                         print "                private %s %s = %s;" % (jfType, jfName, jfDefault)
                     else:
                         print "                private %s %s;" % (jfType, jfName)
-                        mandatoryFields.update([(jfType,jfName)])
-            return (fieldsToNullCheckInBuild, mandatoryFields)
 
         def genBuilderCtor(m, mandatoryFields):
-            ctor_arg_list = []
-            for (argType, argName) in mandatoryFields:
-                ctor_arg_list.append("{0} {1}".format(argType, argName))
-            arg_list_string = ", ".join(ctor_arg_list)
-            print "                public Builder(%s)" % arg_list_string
+            ctor_arg_signature_string = builderCtorArgSignature(mandatoryFields)
+            print "                public Builder(%s)" % ctor_arg_signature_string
             print "                {"
             for (argType, argName) in mandatoryFields:
                 print "                    this.%s = %s;" % (argName, argName)
             print "                }"
 
-        def genArgMethods(m):
+        def genArgMethods(spec, m):
             if m.arguments:
                 for index, a in enumerate(m.arguments):
-                    (jfType, jfName, jfDefault) = typeNameDefault(a)
+                    (jfType, jfName, jfDefault) = typeNameDefault(spec, a)
                     print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
                     print "                    { this.%s = %s;      return this; }" % (jfName, jfName)
                     if jfType == "boolean":
@@ -263,11 +274,12 @@ public interface AMQP
         print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
         print "            public static class Builder"
         print "            {"
-        (fieldsToNullCheckInBuild, mandatoryFields) = genFields(m)
+        (fieldsToNullCheckInBuild, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
+        genFields(spec, m)
         print
         genBuilderCtor(m, mandatoryFields)
         print
-        genArgMethods(m)
+        genArgMethods(spec, m)
         print
         genBuildMethod(c,m,fieldsToNullCheckInBuild)
         print "            }"
@@ -401,6 +413,18 @@ public class AMQImpl implements AMQP
                     print
                     for a in m.arguments:
                         print "            public %s %s() { return %s; }" % (java_field_type(spec,a.domain), java_getter_name(a.name), java_field_name(a.name))
+
+            def builderGetter(spec,c,m):
+                print
+                (fieldsToNullCheck, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
+                builder_ctor_arg_signature = builderCtorArgSignature(mandatoryFields)
+                print "            public Builder %s%s(%s)" % (java_class_name(c.name).lower(), java_class_name(m.name), builder_ctor_arg_signature)
+                print "            {"
+                builder_ctor_call_arg_string = []
+                for (argType, argName) in mandatoryFields:
+                    builder_ctor_call_arg_string.append(argName)
+                print "                return new Builder(%s);" % ", ".join(builder_ctor_call_arg_string)
+                print "            }"
 
             def constructor():
                 if m.arguments:
