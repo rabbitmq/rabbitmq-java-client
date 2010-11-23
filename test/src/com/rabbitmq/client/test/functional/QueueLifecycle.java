@@ -85,7 +85,7 @@ public class QueueLifecycle extends BrokerTestCase {
             if (exclusive)
                 checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             else
-                checkShutdownSignal(AMQP.NOT_ALLOWED, ioe);
+                checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
             return;
         }
         fail("Queue.declare should have been rejected as not equivalent");
