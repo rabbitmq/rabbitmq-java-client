@@ -56,6 +56,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.TimeoutException;
 
 
@@ -106,7 +107,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Current published message count (used by publisher acknowledgements)
      */
-    private long publishedMessageCount;
+    private AtomicLong publishedMessageCount = new AtomicLong(-1);
 
     /** Reference to the currently-active default consumer, or null if there is
      *  none.
@@ -497,10 +498,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
-        synchronized (_channelMutex) {
-            if (publishedMessageCount >= 0)
-                ++publishedMessageCount;
-        }
+        if (publishedMessageCount.get() >= 0)
+            publishedMessageCount.incrementAndGet();
         BasicProperties useProps = props;
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
@@ -847,10 +846,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Confirm.SelectOk confirmSelect(boolean multiple)
         throws IOException
     {
-        synchronized (_channelMutex) {
-            if (publishedMessageCount == -1)
-                publishedMessageCount = 0;
-        }
+        if (publishedMessageCount.get() == -1)
+            publishedMessageCount.set(0);
         return (Confirm.SelectOk)
             exnWrappingRpc(new Confirm.Select(multiple, false)).getMethod();
 
@@ -868,6 +865,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Public API - {@inheritDoc} */
     public long getPublishedMessageCount() {
-        return publishedMessageCount;
+        return publishedMessageCount.longValue();
     }
 }

@@ -649,7 +649,7 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Enables publisher acknowledgements on this channel.
-     * @param many determines whether the broker can acknowledge
+     * @param multiple determines whether the broker can acknowledge
      * multiple messages at the same time
      * @see com.rabbitmq.client.AMQP.Confirm.Select
      * @throws java.io.IOException if an error is encountered
@@ -660,6 +660,7 @@ public interface Channel extends ShutdownNotifier {
      * Returns the number of messages published since the channel was
      * put in confirm mode.
      * @return the number of messages published since the first
-     * confirm.select */
+     * confirm.select; if the channel is not in confirm mode, -1 is
+     * returned */
     long getPublishedMessageCount();
 }

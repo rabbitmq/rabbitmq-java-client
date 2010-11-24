@@ -53,15 +53,14 @@ public class Confirm extends BrokerTestCase
     protected void setUp() throws IOException {
         super.setUp();
         ackSet = new TreeSet<Long>();
-        final Confirm This = this;
         channel.setAckListener(new AckListener() {
                 public void handleAck(long seqNo,
                                       boolean multiple) {
                     if (multiple) {
                         for (int i = 0; i <= seqNo; ++i)
-                            This.gotAckFor(i);
+                            Confirm.this.gotAckFor(i);
                     } else {
-                        This.gotAckFor(seqNo);
+                        Confirm.this.gotAckFor(seqNo);
                     }
                 }
             });
