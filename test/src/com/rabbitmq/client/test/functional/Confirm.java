@@ -32,7 +32,9 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AckListener;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
@@ -174,7 +176,6 @@ public class Confirm extends BrokerTestCase
         /* wait confirms to go through the broker */
         Thread.sleep(1000);
 
-        /* duplicate confirms mean requeued messages were confirmed */
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
@@ -196,11 +197,42 @@ public class Confirm extends BrokerTestCase
 
         Thread.sleep(1000);
 
-        /* duplicate confirms mean recovered messages were confirmed */
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
         waitAcks();
+    }
+
+    public void testConfirmSelect()
+        throws IOException
+    {
+        try {
+            Channel ch = connection.createChannel();
+            ch.confirmSelect(false);
+            ch.txSelect();
+            fail();
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
+        }
+        try {
+            Channel ch = connection.createChannel();
+            ch.txSelect();
+            ch.confirmSelect(false);
+            fail();
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
+        }
+        try {
+            Channel ch = connection.createChannel();
+            ch.confirmSelect(true);
+            ch.confirmSelect(false);
+            fail();
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
+        }
+        Channel ch = connection.createChannel();
+        ch.confirmSelect(true);
+        ch.confirmSelect(true);
     }
 
     /* Publish NUM_MESSAGES persistent messages and wait for
