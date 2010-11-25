@@ -107,7 +107,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Current published message count (used by publisher acknowledgements)
      */
-    private AtomicLong publishedMessageCount = new AtomicLong(-1);
+    private final AtomicLong publishedMessageCount = new AtomicLong(-1);
 
     /** Reference to the currently-active default consumer, or null if there is
      *  none.
@@ -590,7 +590,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             String routingKey) throws IOException {
         return exchangeUnbind(destination, source, routingKey, null);
     }
-    
+
     /** Public API - {@inheritDoc} */
     public Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive,
                                         boolean autoDelete, Map<String, Object> arguments)
