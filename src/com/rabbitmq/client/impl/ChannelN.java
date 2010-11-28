@@ -276,6 +276,41 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                               "handleDelivery");
                 }
                 return true;
+            } else if (method instanceof Basic.Receive) {
+                Basic.Receive m = (Basic.Receive) method;
+
+                Consumer callback = _consumers.get(m.consumerTag);
+                if (callback == null) {
+                    if (defaultConsumer == null) {
+                        // No handler set. We should blow up as this message
+                        // needs acking, just dropping it is not enough. See bug
+                        // 22587 for discussion.
+                        throw new IllegalStateException("Unsolicited delivery -" +
+                                " see Channel.setDefaultConsumer to handle this" +
+                                " case.");
+                    }
+                    else {
+                        callback = defaultConsumer;
+                    }
+                }
+
+                Envelope envelope = new Envelope(m.deliveryTag,
+                                                 m.redelivered,
+                                                 m.exchange,
+                                                 m.routingKey);
+                try {
+                    callback.handleDelivery(m.consumerTag,
+                                            envelope,
+                                            MessageProperties.MINIMAL_BASIC,
+                                            m.content.getBytes());
+                } catch (Throwable ex) {
+                    _connection.getExceptionHandler().handleConsumerException(this,
+                                                                              ex,
+                                                                              callback,
+                                                                              m.consumerTag,
+                                                                              "handleDelivery");
+                }
+                return true;
             } else if (method instanceof Basic.Return) {
                 ReturnListener l = getReturnListener();
                 if (l != null) {
@@ -470,6 +505,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         transmit(new AMQCommand(new Basic.Publish(TICKET, exchange, routingKey,
                                                   mandatory, immediate),
                                 useProps, body));
+    }
+
+    /** Public API - {@inheritDoc} */
+    public void basicSend(String exchange, String routingKey,
+                          boolean mandatory, boolean immediate,
+                          byte[] body)
+        throws IOException
+    {
+        transmit(new Basic.Send(TICKET, exchange, routingKey,
+                                mandatory, immediate,
+                                new LongStringHelper.ByteArrayLongString(body)));
     }
 
     /** Public API - {@inheritDoc} */

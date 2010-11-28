@@ -299,13 +299,8 @@ public class MulticastMain {
 
         }
 
-        private void publish(byte[] msg)
-            throws IOException {
-
-            channel.basicPublish(exchangeName, id,
-                                 mandatory, immediate,
-                                 persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
-                                 msg);
+        private void publish(byte[] msg) throws IOException {
+            channel.basicSend(exchangeName, id, mandatory, immediate, msg);
         }
 
         private void delay(long now)

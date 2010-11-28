@@ -235,6 +235,19 @@ public interface Channel extends ShutdownNotifier {
             throws IOException;
 
     /**
+     * Publish a message
+     * @see com.rabbitmq.client.AMQP.Basic.Publish
+     * @param exchange the exchange to publish the message to
+     * @param routingKey the routing key
+     * @param mandatory true if we are requesting a mandatory publish
+     * @param immediate true if we are requesting an immediate publish
+     * @param body the message body
+     * @throws java.io.IOException if an error is encountered
+     */
+    void basicSend(String exchange, String routingKey, boolean mandatory, boolean immediate, byte[] body)
+            throws IOException;
+
+    /**
      * Actively declare a non-autodelete, non-durable exchange with no extra arguments
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
