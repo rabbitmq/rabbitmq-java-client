@@ -55,7 +55,9 @@ public class ConfirmDontLoseMessages {
     {
         connectionFactory = new ConnectionFactory();
 
+        // Publish MSG_COUNT messages and wait for confirms.
         (new Thread(new Consumer())).start();
+        // Consume MSG_COUNT messages.
         (new Thread(new Publisher())).start();
     }
 
@@ -66,6 +68,7 @@ public class ConfirmDontLoseMessages {
             try {
                 long startTime = System.currentTimeMillis();
 
+                // Setup
                 Connection conn = connectionFactory.newConnection();
                 Channel ch = conn.createChannel();
                 ch.queueDeclare(QUEUE_NAME, true, false, true, null);
@@ -82,6 +85,7 @@ public class ConfirmDontLoseMessages {
                         }
                     });
 
+                // Publish
                 for (long i = 0; i < MSG_COUNT; ++i) {
                     ackSet.add(i);
                     ch.basicPublish("", QUEUE_NAME,
@@ -89,9 +93,11 @@ public class ConfirmDontLoseMessages {
                                     "nop".getBytes());
                 }
 
+                // Wait
                 while (ackSet.size() > 0)
                     Thread.sleep(10);
 
+                // Cleanup
                 ch.close();
                 conn.close();
 
@@ -107,14 +113,19 @@ public class ConfirmDontLoseMessages {
     static class Consumer implements Runnable {
         public void run() {
             try {
+                // Setup
                 Connection conn = connectionFactory.newConnection();
                 Channel ch = conn.createChannel();
                 ch.queueDeclare(QUEUE_NAME, true, false, true, null);
+
+                // Consume
                 QueueingConsumer qc = new QueueingConsumer(ch);
                 ch.basicConsume(QUEUE_NAME, true, qc);
                 for (int i = 0; i < MSG_COUNT; ++i) {
                     qc.nextDelivery();
                 }
+
+                // Consume
                 ch.close();
                 conn.close();
             } catch (Throwable e) {
