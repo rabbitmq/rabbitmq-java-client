@@ -42,25 +42,24 @@ import com.rabbitmq.client.MessageProperties;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class Confirm extends BrokerTestCase
 {
     final static int NUM_MESSAGES = 1000;
     private static final String TTL_ARG = "x-message-ttl";
-    volatile Set<Long> ackSet;
+    private SortedSet<Long> ackSet;
 
     @Override
     protected void setUp() throws IOException {
         super.setUp();
-        ackSet = new TreeSet<Long>();
+        ackSet = Collections.synchronizedSortedSet(new TreeSet<Long>());
         channel.setAckListener(new AckListener() {
                 public void handleAck(long seqNo,
                                       boolean multiple) {
                     if (multiple) {
-                        for (int i = 0; i <= seqNo; ++i)
-                            Confirm.this.gotAckFor(i);
+                        Confirm.this.gotAckForMultiple(seqNo);
                     } else {
                         Confirm.this.gotAckFor(seqNo);
                     }
@@ -253,8 +252,8 @@ public class Confirm extends BrokerTestCase
         throws IOException
     {
         for (long i = 0; i < NUM_MESSAGES; i++) {
-            publish(exchangeName, queueName, persistent, mandatory, immediate);
             ackSet.add(i);
+            publish(exchangeName, queueName, persistent, mandatory, immediate);
         }
     }
 
@@ -270,10 +269,14 @@ public class Confirm extends BrokerTestCase
                              "nop".getBytes());
     }
 
+    private void gotAckForMultiple(long msgSeqNo) {
+        for (long i = ackSet.first(); i <= msgSeqNo; ++i)
+            gotAckFor(i);
+    }
+
     private synchronized void gotAckFor(long msgSeqNo) {
         if (!ackSet.contains(msgSeqNo)) {
             fail("got duplicate ack: " + msgSeqNo);
-            //System.out.println("got duplicate ack: " + msgSeqNo);
         }
         ackSet.remove(msgSeqNo);
     }
