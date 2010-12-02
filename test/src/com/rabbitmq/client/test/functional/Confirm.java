@@ -49,7 +49,7 @@ public class Confirm extends BrokerTestCase
 {
     final static int NUM_MESSAGES = 1000;
     private static final String TTL_ARG = "x-message-ttl";
-    private SortedSet<Long> ackSet;
+    private volatile SortedSet<Long> ackSet;
 
     @Override
     protected void setUp() throws IOException {
@@ -67,20 +67,28 @@ public class Confirm extends BrokerTestCase
             });
         channel.confirmSelect(true);
         channel.queueDeclare("confirm-test", true, true, false, null);
-        channel.basicConsume("confirm-test", true, new DefaultConsumer(channel));
-        channel.queueDeclare("confirm-test-nondurable", false, true, false, null);
+        channel.basicConsume("confirm-test", true,
+                             new DefaultConsumer(channel));
+        channel.queueDeclare("confirm-test-nondurable", false, true,
+                             false, null);
         channel.basicConsume("confirm-test-nondurable", true,
                              new DefaultConsumer(channel));
-        channel.queueDeclare("confirm-test-noconsumer", true, true, false, null);
+        channel.queueDeclare("confirm-test-noconsumer", true,
+                             true, false, null);
         channel.queueDeclare("confirm-test-2", true, true, false, null);
-        channel.basicConsume("confirm-test-2", true, new DefaultConsumer(channel));
-        Map<String, Object> argMap = Collections.singletonMap(TTL_ARG, (Object)1);
+        channel.basicConsume("confirm-test-2", true,
+                             new DefaultConsumer(channel));
+        Map<String, Object> argMap =
+            Collections.singletonMap(TTL_ARG, (Object)1);
         channel.queueDeclare("confirm-ttl", true, true, false, argMap);
-        channel.queueBind("confirm-test", "amq.direct", "confirm-multiple-queues");
-        channel.queueBind("confirm-test-2", "amq.direct", "confirm-multiple-queues");
+        channel.queueBind("confirm-test", "amq.direct",
+                          "confirm-multiple-queues");
+        channel.queueBind("confirm-test-2", "amq.direct",
+                          "confirm-multiple-queues");
     }
 
-    public void testConfirmTransient() throws IOException, InterruptedException {
+    public void testConfirmTransient()
+        throws IOException, InterruptedException {
         confirmTest("", "confirm-test", false, false, false);
     }
 
@@ -123,7 +131,8 @@ public class Confirm extends BrokerTestCase
     public void testConfirmMultipleQueues()
         throws IOException, InterruptedException
     {
-        confirmTest("amq.direct", "confirm-multiple-queues", true, false, false);
+        confirmTest("amq.direct", "confirm-multiple-queues",
+                    true, false, false);
     }
 
     /* For testConfirmQueueDelete and testConfirmQueuePurge to be
@@ -187,7 +196,8 @@ public class Confirm extends BrokerTestCase
         publishN("", "confirm-test-noconsumer", true, false, false);
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
-            GetResponse resp = channel.basicGet("confirm-test-noconsumer", false);
+            GetResponse resp =
+                channel.basicGet("confirm-test-noconsumer", false);
             long dtag = resp.getEnvelope().getDeliveryTag();
             // not acking
         }
@@ -287,7 +297,8 @@ public class Confirm extends BrokerTestCase
         publishN("", "confirm-test-noconsumer", true, false, false);
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
-            GetResponse resp = channel.basicGet("confirm-test-noconsumer", false);
+            GetResponse resp =
+                channel.basicGet("confirm-test-noconsumer", false);
             long dtag = resp.getEnvelope().getDeliveryTag();
             channel.basicReject(dtag, requeue);
         }
