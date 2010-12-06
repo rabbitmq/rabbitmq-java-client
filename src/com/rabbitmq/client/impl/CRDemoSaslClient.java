@@ -50,7 +50,7 @@ public class CRDemoSaslClient implements SaslClient {
             } else {
                 PasswordCallback pc = new PasswordCallback("Password:", false);
                 handler.handle(new Callback[]{pc});
-                resp = new String(pc.getPassword()).getBytes("utf-8");
+                resp = ("My password is " + new String(pc.getPassword())).getBytes("utf-8");
             }
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
