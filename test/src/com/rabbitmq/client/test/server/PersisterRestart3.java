@@ -54,7 +54,6 @@ public class PersisterRestart3 extends RestartBase
         channel.txSelect();
         exercisePersister(Q1);
         exercisePersister(Q2);
-        forceSnapshot();
         // removing messages which are in the snapshot
         channel.txRollback();
         // Those will be in the incremental snapshot then

@@ -11,10 +11,8 @@ public class PersisterRestart6 extends RestartBase {
         basicPublishPersistent("a".getBytes(), q);
         basicPublishPersistent("b".getBytes(), q);
         basicPublishPersistent("c".getBytes(), q);
-        forceSnapshot();
         restart();
         assertTrue(new String(basicGet(q).getBody()).equals("a"));
-        forceSnapshot();
         restart();
         restart();
         assertTrue(new String(basicGet(q).getBody()).equals("b"));

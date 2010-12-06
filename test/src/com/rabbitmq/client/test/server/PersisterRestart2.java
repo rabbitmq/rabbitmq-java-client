@@ -53,7 +53,6 @@ public class PersisterRestart2 extends RestartBase
         declareDurableQueue(Q2);
         exercisePersister(Q1);
         exercisePersister(Q2);
-        forceSnapshot();
         // Those will be in the incremental snapshot then
         exercisePersister(Q1);
         exercisePersister(Q2);

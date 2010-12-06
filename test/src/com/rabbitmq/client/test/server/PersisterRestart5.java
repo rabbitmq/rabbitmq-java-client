@@ -58,7 +58,6 @@ public class PersisterRestart5 extends RestartBase
         exercisePersister();
         channel.txCommit();
         exercisePersister();
-        forceSnapshot();
         // Delivering messages which are in the snapshot
         channel.txCommit();
         // Those will be in the incremental snapshot then

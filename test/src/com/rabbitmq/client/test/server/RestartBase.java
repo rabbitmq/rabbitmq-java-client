@@ -44,12 +44,11 @@ public class RestartBase extends BrokerTestCase
     {
         tearDown();
         Host.executeCommand("cd ../rabbitmq-test; make restart-app");
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+        }
         setUp();
     }
 
-    protected void forceSnapshot()
-        throws IOException, InterruptedException
-    {
-        Host.executeCommand("cd ../rabbitmq-test; make force-snapshot");
-    }
 }

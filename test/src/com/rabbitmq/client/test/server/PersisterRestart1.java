@@ -95,7 +95,6 @@ public class PersisterRestart1 extends RestartBase
     {
         declareDurableQueue(Q);
         exercisePersister();
-        forceSnapshot();
         closeChannel();
         openChannel();
         exercisePersister();
