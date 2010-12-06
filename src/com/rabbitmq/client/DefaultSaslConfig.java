@@ -7,7 +7,9 @@ import javax.security.sasl.SaslException;
 import java.util.Map;
 
 /**
- *
+ * Default implementation of SaslConfig that uses the standard Java
+ * algorithm for selecting a sasl client.
+ * @see com.rabbitmq.client.ConnectionFactory
  */
 public class DefaultSaslConfig implements SaslConfig {
     private ConnectionFactory factory;
