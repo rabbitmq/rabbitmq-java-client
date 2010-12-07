@@ -141,7 +141,7 @@ public class MulticastMain {
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
-                if (pubAck) channel.confirmSelect(false);
+                if (pubAck) channel.confirmSelect(0);
                 channel.exchangeDeclare(exchangeName, exchangeType);
                 final Producer p = new Producer(channel, exchangeName, id,
                                                 flags, producerTxSize,
