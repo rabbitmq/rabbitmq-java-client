@@ -31,6 +31,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -62,9 +63,6 @@ public class InternalExchangeTest extends BrokerTestCase
     private final String[] queues = new String[] { "q1" };
     private final String[] exchanges = new String[] { "e0", "e1" };
 
-    private QueueingConsumer[] consumers =
-                                   new QueueingConsumer[] { null, null, null };
-
     protected void createResources() throws IOException
     {
         for (String q : queues)
@@ -72,12 +70,12 @@ public class InternalExchangeTest extends BrokerTestCase
             channel.queueDeclare(q, false, false, false, null);
         }
 
-        // First exchange will be an 'internal' one.
+        // The second exchange, "e1", will be an 'internal' one.
         for ( String e : exchanges )
         {
             channel.exchangeDeclare(e, "direct",
                                     false, false,
-                                    e.equals("e0") ? false : true,
+                                    !e.equals("e0"),
                                     null);
         }
 
@@ -118,9 +116,10 @@ public class InternalExchangeTest extends BrokerTestCase
         channel.basicPublish("e1", "", null, testDataBody);
         try
         {
-            // This blocking operation will fail because our bad attempt to
-            // to the internal exchange...
-            channel.basicGet("q1", true);
+            // The channel should have shut down as a result of the forbidden
+            // attempt to publish to an internal exchange...
+            DefaultConsumer consumer = new DefaultConsumer(channel);
+            channel.basicConsume("q1", consumer);
             fail("Channel should have shut down with 403 (access refused).");
         }
         catch (IOException e)
