@@ -40,7 +40,6 @@ import com.rabbitmq.client.AMQP.Tx;
 import com.rabbitmq.client.AMQP.Basic;
 import com.rabbitmq.client.AMQP.Confirm;
 import com.rabbitmq.client.AMQP.Channel.FlowOk;
-import com.rabbitmq.client.impl.AMQImpl;
 
 /**
  * Public API: Interface to an AMQ channel. See the <a href="http://www.amqp.org/">spec</a> for details.
@@ -301,13 +300,12 @@ public interface Channel extends ShutdownNotifier {
      * @return a declaration-confirm method to indicate the exchange was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
-    public AMQImpl.Exchange.DeclareOk exchangeDeclare(String exchange,
-                                                      String type,
-                                                      boolean durable,
-                                                      boolean autoDelete,
-                                                      boolean internal,
-                                                      Map<String, Object> arguments)
-            throws IOException;
+    public Exchange.DeclareOk exchangeDeclare(String exchange,
+                                              String type,
+                                              boolean durable,
+                                              boolean autoDelete,
+                                              boolean internal,
+                                              Map<String, Object> arguments) throws IOException;
 
     /**
      * Declare an exchange passively; that is, check if the named exchange exists.
