@@ -33,7 +33,6 @@ package com.rabbitmq.client;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.Map;
 
 import java.net.Socket;
@@ -100,6 +99,7 @@ public class ConnectionFactory implements Cloneable {
     private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
+    private SaslConfig saslConfig                 = new DefaultSaslConfig(this);
 
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
@@ -259,6 +259,24 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setClientProperties(Map<String, Object> clientProperties) {
         _clientProperties = clientProperties;
+    }
+
+    /**
+     * Gets the sasl config to use when authenticating
+     * @return
+     * @see com.rabbitmq.client.SaslConfig
+     */
+    public SaslConfig getSaslConfig() {
+        return saslConfig;
+    }
+
+    /**
+     * Sets the sasl config to use when authenticating
+     * @param saslConfig
+     * @see com.rabbitmq.client.SaslConfig
+     */
+    public void setSaslConfig(SaslConfig saslConfig) {
+        this.saslConfig = saslConfig;
     }
 
     /**

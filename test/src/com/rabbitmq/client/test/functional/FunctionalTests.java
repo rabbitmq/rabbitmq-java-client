@@ -70,6 +70,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(Confirm.class);
         suite.addTestSuite(UnexpectedFrames.class);
         suite.addTestSuite(PerQueueTTL.class);
+        suite.addTestSuite(SaslMechanisms.class);
         
         return suite;
     }

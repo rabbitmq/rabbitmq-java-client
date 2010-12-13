@@ -51,6 +51,8 @@ import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
+import javax.security.sasl.SaslClient;
+
 /**
  * Concrete class representing and managing an AMQP connection to a broker.
  * <p>
@@ -152,7 +154,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     private int _heartbeat;
 
-    private final String _username, _password, _virtualHost;
+    private final String _virtualHost;
     private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
     private final Map<String, Object> _clientProperties;
 
@@ -200,8 +202,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     {
         checkPreconditions();
 
-        _username = factory.getUsername();
-        _password = factory.getPassword();
         _virtualHost = factory.getVirtualHost();
         _requestedChannelMax = factory.getRequestedChannelMax();
         _requestedFrameMax = factory.getRequestedFrameMax();
@@ -255,8 +255,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ml.setName("AMQP Connection " + getHost() + ":" + getPort());
         ml.start();
 
+        AMQP.Connection.Start connStart = null;
         try {
-            AMQP.Connection.Start connStart =
+            connStart =
                 (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
 
             _serverProperties = connStart.getServerProperties();
@@ -274,18 +275,42 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             throw AMQChannel.wrap(sse);
         }
 
-        LongString saslResponse = LongStringHelper.asLongString("\0" + _username +
-                                                                "\0" + _password);
-        AMQImpl.Connection.StartOk startOk =
-            new AMQImpl.Connection.StartOk(_clientProperties, "PLAIN",
-                                           saslResponse, "en_US");
+        String[] mechanisms = connStart.getMechanisms().toString().split(" ");
+        SaslClient sc = _factory.getSaslConfig().getSaslClient(mechanisms);
+        if (sc == null) {
+            throw new IOException("No compatible authentication mechanism found - " +
+                    "server offered [" + connStart.getMechanisms() + "]");
+        }
 
+        LongString challenge = null;
+        LongString response = LongStringHelper.asLongString(
+                sc.hasInitialResponse() ? sc.evaluateChallenge(new byte[0]) : null);
         AMQP.Connection.Tune connTune = null;
+        do {
+            Method method = (challenge == null)
+                ? new AMQImpl.Connection.StartOk(_clientProperties,
+                                                 sc.getMechanismName(),
+                                                 response, "en_US")
+                : new AMQImpl.Connection.SecureOk(response);
 
-        try {
-            connTune = (AMQP.Connection.Tune) _channel0.rpc(startOk).getMethod();
-        } catch (ShutdownSignalException e) {
-            throw new PossibleAuthenticationFailureException(e);
+            try {
+                Method serverResponse = _channel0.rpc(method).getMethod();
+                if (serverResponse instanceof AMQP.Connection.Tune) {
+                    connTune = (AMQP.Connection.Tune) serverResponse;
+                } else {
+                    challenge = ((AMQP.Connection.Secure) serverResponse).getChallenge();
+                    response = LongStringHelper.asLongString(sc.evaluateChallenge(challenge.getBytes()));
+                }
+            } catch (ShutdownSignalException e) {
+                throw new PossibleAuthenticationFailureException(e);
+            }
+        } while (connTune == null);
+
+        sc.dispose();
+
+        if (!sc.isComplete()) {
+            throw new RuntimeException(sc.getMechanismName() +
+                    " did not complete, server thought it did");
         }
 
         int channelMax =
@@ -714,6 +739,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     @Override public String toString() {
-        return "amqp://" + _username + "@" + getHost() + ":" + getPort() + _virtualHost;
+        return "amqp://" + _factory.getUsername() + "@" + getHost() + ":" + getPort() + _virtualHost;
     }
 }
