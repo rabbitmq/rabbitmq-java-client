@@ -92,8 +92,8 @@ public class SaslMechanisms extends BrokerTestCase {
 
         // We might be running this standalone
         if (Arrays.asList(mechanisms).contains("RABBIT-CR-DEMO")) {
-            loginOk("RABBIT-CR-DEMO", new byte[][] {"guest".getBytes(), "guest".getBytes()} );
-            loginBad("RABBIT-CR-DEMO", new byte[][] {"guest".getBytes(), "wrong".getBytes()} );
+            loginOk("RABBIT-CR-DEMO", new byte[][] {"guest".getBytes(), "My password is guest".getBytes()} );
+            loginBad("RABBIT-CR-DEMO", new byte[][] {"guest".getBytes(), "My password is wrong".getBytes()} );
         }
     }
 
