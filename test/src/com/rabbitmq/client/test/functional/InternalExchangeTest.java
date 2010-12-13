@@ -33,8 +33,6 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
@@ -81,7 +79,6 @@ public class InternalExchangeTest extends BrokerTestCase
 
         channel.exchangeBind("e1", "e0", "");
         channel.queueBind("q1", "e1", "");
-
     }
 
     @Override
@@ -99,8 +96,7 @@ public class InternalExchangeTest extends BrokerTestCase
 
 
     public void testTryPublishingToInternalExchange()
-            throws IOException,
-                   InterruptedException
+            throws IOException
     {
         byte[] testDataBody = "test-data".getBytes();
 
@@ -110,7 +106,6 @@ public class InternalExchangeTest extends BrokerTestCase
         assertTrue(channel.isOpen());
         GetResponse r = channel.basicGet("q1", true);
         assertTrue(Arrays.equals(r.getBody(), testDataBody));
-
 
         // Publishing to the internal exchange will not be allowed...
         channel.basicPublish("e1", "", null, testDataBody);
