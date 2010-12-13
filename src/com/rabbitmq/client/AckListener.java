@@ -29,26 +29,15 @@
 //   Contributor(s): ______________________________________.
 //
 
-package com.rabbitmq.client.test.server;
-
-import com.rabbitmq.client.test.BrokerTestCase;
+package com.rabbitmq.client;
 
 import java.io.IOException;
 
-import com.rabbitmq.tools.Host;
-
-public class RestartBase extends BrokerTestCase
-{
-    protected void restart()
-        throws IOException
-    {
-        tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-        }
-        setUp();
-    }
-
+/**
+ * Implement this interface in order to be notified of Basic.Ack
+ * events.
+ */
+public interface AckListener {
+    void handleAck(long deliveryTag, boolean multiple)
+        throws IOException;
 }
