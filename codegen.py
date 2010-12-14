@@ -38,6 +38,13 @@ sys.path.append("codegen")              # in case we're building from a distribu
 
 from amqp_codegen import *
 
+class BogusDefaultValue(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
+
 def java_constant_name(c):
     return '_'.join(re.split('[- ]', c.upper()))
 
@@ -52,6 +59,13 @@ javaTypeMap = {
     'table': 'Map<java.lang.String,Object>',
     'timestamp': 'Date'
     }
+
+javaTypesNeverNullInBuilder = set([
+    'java.lang.String',
+    'LongString',
+    'Map<java.lang.String,Object>',
+    'Date'
+    ])
 
 javaPropertyTypeMap = {
     'octet': 'java.lang.Integer',
@@ -92,6 +106,47 @@ def java_field_name(name):
     return java_name(False, name)
 def java_field_type(spec, domain):
     return javaTypeMap[spec.resolveDomain(domain)]
+
+def java_field_default_value(type, value):
+    if type == 'int':
+        return value
+    elif type == 'boolean':
+        return "{0}".format(value).lower()
+    elif type == 'java.lang.String':
+        return "\"{0}\"".format(value)
+    elif type == 'LongString':
+        return "new LongStringHelper.ByteArrayLongString(\"{0}\".getBytes());".format(value)
+    elif type == 'long':
+        return "{0}L".format(value)
+    elif type == 'Map<java.lang.String,Object>':
+        return "new HashMap<java.lang.String,Object>()"
+    else:
+        raise BogusDefaultValue("JSON provided default value {0} for suspicious type {1}".format(value, type))
+
+def typeNameDefault(spec, a):
+    return (java_field_type(spec, a.domain),
+            java_field_name(a.name),
+            java_field_default_value(java_field_type(spec, a.domain),
+                                     a.defaultvalue))
+
+def mandatoryAndNullCheckedFields(spec, m):
+    fieldsToNullCheckInBuild = set([])
+    mandatoryFields          = set([])
+    if m.arguments:
+        for index, a in enumerate(m.arguments):
+            (jfType, jfName, jfDefault) = typeNameDefault(spec,a)
+            if jfType in javaTypesNeverNullInBuilder:
+                fieldsToNullCheckInBuild.update([jfName])
+            if a.defaultvalue == None:
+                mandatoryFields.update([(jfType,jfName)])
+    return (fieldsToNullCheckInBuild, mandatoryFields)
+
+def builderCtorArgSignature(mandatoryFields):
+    ctor_arg_signature_list = []
+    for (argType, argName) in mandatoryFields:
+        ctor_arg_signature_list.append("{0} {1}".format(argType, argName))
+    ctor_arg_signature_string = ", ".join(ctor_arg_signature_list)
+    return ctor_arg_signature_string
 
 #---------------------------------------------------------------------------
 
@@ -137,13 +192,14 @@ def genJavaApi(spec):
         print """package com.rabbitmq.client;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Date;
 
-import com.rabbitmq.client.impl.AMQContentHeader;
 import com.rabbitmq.client.impl.ContentHeaderPropertyWriter;
 import com.rabbitmq.client.impl.ContentHeaderPropertyReader;
 import com.rabbitmq.client.impl.LongString;
+import com.rabbitmq.client.impl.LongStringHelper;
 
 public interface AMQP
 {
@@ -158,17 +214,98 @@ public interface AMQP
         print
         for (c,v,cls) in spec.constants: print "    public static final int %s = %i;" % (java_constant_name(c), v)
 
+    def builder(c,m):
+        def ctorCall(c,m):
+            ctor_call = "return new com.rabbitmq.client.impl.AMQImpl.%s.%s(" % (java_class_name(c.name),java_class_name(m.name))
+            ctor_arg_list = []
+            if m.arguments:
+                for index, a in enumerate(m.arguments):
+                    ctor_arg_list.append("{0}".format(java_field_name(a.name)))
+            ctor_call += ", ".join(ctor_arg_list)
+            ctor_call += ");"
+            print "                     %s" % (ctor_call)
+
+        def genFields(spec, m):
+            (fieldsToNullCheckInBuild, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
+            if m.arguments:
+                for index, a in enumerate(m.arguments):
+                    (jfType, jfName, jfDefault) = typeNameDefault(spec, a)
+                    if a.defaultvalue != None:
+                        print "                private %s %s = %s;" % (jfType, jfName, jfDefault)
+                    else:
+                        print "                private %s %s;" % (jfType, jfName)
+
+        def genBuilderCtor(m, mandatoryFields):
+            ctor_arg_signature_string = builderCtorArgSignature(mandatoryFields)
+            print "                public Builder(%s)" % ctor_arg_signature_string
+            print "                {"
+            for (argType, argName) in mandatoryFields:
+                print "                    this.%s = %s;" % (argName, argName)
+            print "                }"
+
+        def genArgMethods(spec, m):
+            if m.arguments:
+                for index, a in enumerate(m.arguments):
+                    (jfType, jfName, jfDefault) = typeNameDefault(spec, a)
+                    print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
+                    print "                    { this.%s = %s;      return this; }" % (jfName, jfName)
+                    if jfType == "boolean":
+                        print "                public Builder %s()" % (jfName)
+                        print "                    { this.%s = true;      return this; }" % (jfName)
+
+        def genBuildMethod(c,m,fieldsToNullCheckInBuild):
+            print "                public %s build()" % (java_class_name(m.name))
+            print "                {"
+
+            if len(fieldsToNullCheckInBuild) != 0:
+                nullCheckClauses = []
+                for f in fieldsToNullCheckInBuild:
+                    nullCheckClauses.append("{0} == null".format(f))
+                nullCheckClause = " ||\n                       ".join(nullCheckClauses) + ")"
+                print "                    if(%s" % (nullCheckClause)
+                print "                    {"
+                print "                        throw new IllegalStateException(\"Invalid configuration.\");"
+                print "                    }"
+                print
+            ctorCall(c,m)
+            print "                }"
+
+        print
+        print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
+        print "            public static class Builder"
+        print "            {"
+        (fieldsToNullCheckInBuild, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
+        genFields(spec, m)
+        print
+        genBuilderCtor(m, mandatoryFields)
+        print
+        genArgMethods(spec, m)
+        print
+        genBuildMethod(c,m,fieldsToNullCheckInBuild)
+        print "            }"
+
+    def genBuilderGetterApi(c):
+        print
+        print "    // Convenience getters for AMQP method builders"
+        for m in c.allMethods():
+            (cName, mName) = (java_class_name(c.name), java_class_name(m.name))
+            (fieldsToNullCheck, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
+            argSignature = builderCtorArgSignature(mandatoryFields)
+            print "    public %s.%s.Builder %s%s(%s);" % (cName, mName, cName.lower(), mName, argSignature)
+
     def printClassInterfaces():
         for c in spec.classes:
+            # genBuilderGetterApi(c)
             print
             print "    public static class %s {" % (java_class_name(c.name))
             for m in c.allMethods():
                 print "        public interface %s extends Method {" % ((java_class_name(m.name)))
                 for a in m.arguments:
                     print "            %s %s();" % (java_field_type(spec, a.domain), java_getter_name(a.name))
+                builder(c,m)
                 print "        }"
             print "    }"
-        
+
     def printReadProperties(c):
         print
         print """        public void readPropertiesFrom(ContentHeaderPropertyReader reader)
@@ -180,7 +317,7 @@ public interface AMQP
         for f in c.fields:
             print "            this.%s = %s_present ? reader.read%s() : null;" % (java_field_name(f.name), java_field_name(f.name),  java_class_name(f.domain))
         print "        }"
-        
+
     def printWriteProperties(c):
         print
         print """        public void writePropertiesTo(ContentHeaderPropertyWriter writer)
@@ -192,7 +329,7 @@ public interface AMQP
         for f in c.fields:
             print "            if (this.%s != null) { writer.write%s(this.%s); } " % (java_field_name(f.name), java_class_name(f.domain), java_field_name(f.name))
         print "        }"
-        
+
     def printPropertyDebug(c):
         print
         print "        public void appendPropertyDebugStringTo(StringBuffer acc) {"
@@ -205,7 +342,7 @@ public interface AMQP
 
         print "            acc.append(\")\");"
         print "        }"
-        
+
     def printClassProperties(c):
         print
         print "    public static class %(className)s extends %(parentClass)s {" % {'className' : java_class_name(c.name) + 'Properties', 'parentClass' : 'com.rabbitmq.client.impl.AMQ' + java_class_name(c.name) + 'Properties'}
@@ -221,7 +358,7 @@ public interface AMQP
                 sys.stdout.write( "            %s %s" % (java_property_type(spec,f.domain),java_field_name(f.name)))
                 if not index == len(c.fields) - 1:
                     print ","
-                
+
             print ")"
             print "        {"
             for f in c.fields:
@@ -233,7 +370,7 @@ public interface AMQP
         print "        public %sProperties() {}" % (java_class_name(c.name))
         print "        public int getClassId() { return %i; }" % (c.index)
         print "        public java.lang.String getClassName() { return \"%s\"; }" % (c.name)
-        
+
         #access functions
         print
         for f in c.fields:
@@ -274,8 +411,24 @@ import com.rabbitmq.client.UnexpectedMethodError;
 
 public class AMQImpl implements AMQP
 {"""
+    def genBuilderGetterImpl(spec,c):
+        print
+        print "    // Convenience getter methods for AMQP Method builders"
+        for m in c.allMethods():
+            (cName, mName) = (java_class_name(c.name), java_class_name(m.name))
+            (fieldsToNullCheck, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
+            argSignature = builderCtorArgSignature(mandatoryFields)
+            ctorArgList = []
+            for (argType, argName) in mandatoryFields:
+                ctorArgList.append(argName)
+            print "    public static %s.%s.Builder %s%s(%s)" % (cName, mName, cName.lower(), mName, argSignature)
+            print "    {"
+            print "        return new %s.%s.Builder(%s);" % (cName, mName, ", ".join(ctorArgList))
+            print "    }"
+            print
 
-    def printClassMethods(c):
+    def printClassMethods(spec, c):
+        # genBuilderGetterImpl(spec,c)
         print
         print "    public static class %s {" % (java_class_name(c.name))
         print "        public static final int INDEX = %s;" % (c.index)
@@ -340,7 +493,7 @@ public class AMQImpl implements AMQP
                 for a in m.arguments:
                     print "                this.%s = reader.read%s();" % (java_field_name(a.name), java_class_name(spec.resolveDomain(a.domain)))
                 print "            }"
-        
+
             def write_arguments():
                 print
                 print "            public void writeArgumentsTo(MethodArgumentWriter writer)"
@@ -348,7 +501,7 @@ public class AMQImpl implements AMQP
                 print "            {"
                 for a in m.arguments:
                     print "                writer.write%s(this.%s);" % (java_class_name(spec.resolveDomain(a.domain)), java_field_name(a.name))
-                print "            }"            
+                print "            }"
 
             #start
             print
@@ -369,6 +522,7 @@ public class AMQImpl implements AMQP
             argument_debug_string()
             read_arguments()
             write_arguments()
+
             print "        }"
         print "    }"
 
@@ -387,7 +541,7 @@ public class AMQImpl implements AMQP
             for m in c.allMethods():
                print "        public Object visit(%s.%s x) throws IOException { throw new UnexpectedMethodError(x); } " % (java_class_name(c.name), java_class_name(m.name))
         print "    }"
-        
+
     def printMethodArgumentReader():
         print
         print "    public static Method readMethodFrom(DataInputStream in) throws IOException { "
@@ -410,7 +564,7 @@ public class AMQImpl implements AMQP
         print
         print "        throw new UnknownClassOrMethodId(classId, methodId);"
         print "    }"
-        
+
     def printContentHeaderReader(c):
         print
         print """    public static AMQContentHeader readContentHeaderFrom(DataInputStream in)
@@ -427,14 +581,14 @@ public class AMQImpl implements AMQP
         print
         print "        throw new UnknownClassOrMethodId(classId, -1);"
         print "    }"
-    
+
     printHeader()
-    for c in spec.allClasses(): printClassMethods(c)
+    for c in spec.allClasses(): printClassMethods(spec,c)
     printMethodVisitor()
     printMethodArgumentReader()
     printContentHeaderReader(c)
     print "}"
-    
+
 #--------------------------------------------------------------------------------
 
 def generateJavaApi(specPath):
