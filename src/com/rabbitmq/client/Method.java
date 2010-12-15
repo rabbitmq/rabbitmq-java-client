@@ -77,6 +77,6 @@ public interface Method {
      *
      * @throws IOException Problem transmitting method.
      */
-    public void call(com.rabbitmq.client.Channel channel)
+    public void asyncRpc(com.rabbitmq.client.Channel channel)
                 throws IOException;
 }

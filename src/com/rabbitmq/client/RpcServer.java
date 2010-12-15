@@ -111,7 +111,7 @@ public class RpcServer {
      *
      * Note that if the mainloop is blocked waiting for a request, the
      * termination flag is not checked until a request is received, so
-     * a good time to call terminateMainloop() is during a request
+     * a good time to asyncRpc terminateMainloop() is during a request
      * handler.
      *
      * @return the exception that signalled the Channel shutdown, or null for orderly shutdown
@@ -141,7 +141,7 @@ public class RpcServer {
      *
      * Note that if the mainloop is blocked waiting for a request, the
      * termination flag is not checked until a request is received, so
-     * a good time to call terminateMainloop() is during a request
+     * a good time to asyncRpc terminateMainloop() is during a request
      * handler.
      */
     public void terminateMainloop() {

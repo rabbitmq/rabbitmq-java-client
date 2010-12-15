@@ -146,7 +146,7 @@ public class BlockingCell<T> {
 
     /**
      * Store a value in this BlockingCell if it doesn't already have a value.
-     * @return true if this call to setIfUnset actually updated the BlockingCell; false if the cell already had a value.
+     * @return true if this asyncRpc to setIfUnset actually updated the BlockingCell; false if the cell already had a value.
      * @param newValue the new value to store
      */
     public synchronized boolean setIfUnset(T newValue) {

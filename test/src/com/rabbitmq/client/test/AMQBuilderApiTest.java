@@ -65,13 +65,13 @@ public class AMQBuilderApiTest extends BrokerTestCase
                                            .type("direct")
                                            .durable(false)
                                            .build()
-                                           .call(channel);
+                                           .asyncRpc(channel);
 
         assertTrue("Channel should still be open.", channel.isOpen());
 
         new AMQP.Exchange.Delete.Builder().exchange(XCHG_NAME)
                                           .build()
-                                          .call(channel);
+                                          .asyncRpc(channel);
 
         assertTrue("Channel should still be open.", channel.isOpen());
     }

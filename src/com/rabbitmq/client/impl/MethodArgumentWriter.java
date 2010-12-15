@@ -179,7 +179,7 @@ public class MethodArgumentWriter
     }
 
     /**
-     * Public API - call this to ensure all accumulated argument
+     * Public API - asyncRpc this to ensure all accumulated argument
      * values are correctly written to the output stream.
      */
     public void flush()

@@ -156,7 +156,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
 
     /**
      * Private API - used by {@link #call(String[])} to ad-hoc convert
-     * strings into the required data types for a call.
+     * strings into the required data types for a asyncRpc.
      */
     public static Object coerce(String val, String type)
 	throws NumberFormatException

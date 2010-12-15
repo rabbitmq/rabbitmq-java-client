@@ -60,7 +60,7 @@ public abstract class Method implements com.rabbitmq.client.Method {
     }
 
     /** {@inheritDoc} */
-    public void call(com.rabbitmq.client.Channel channel)
+    public void asyncRpc(com.rabbitmq.client.Channel channel)
                 throws IOException
     {
         ((AMQChannel) channel).transmit(this);

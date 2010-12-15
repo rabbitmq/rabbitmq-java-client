@@ -139,7 +139,7 @@ public class ChannelManager {
 
     /**
      * Remove the argument channel from the channel map. 
-     * This method must be safe to call multiple times on the same channel. If 
+     * This method must be safe to asyncRpc multiple times on the same channel. If
      * it is not then things go badly wrong.
      */
     public synchronized void disconnectChannel(ChannelN channel) {

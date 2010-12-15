@@ -36,7 +36,7 @@ import java.util.Map;
 import com.rabbitmq.tools.json.JSONWriter;
 
 /**
- * Thrown when a JSON-RPC service indicates an error occurred during a call.
+ * Thrown when a JSON-RPC service indicates an error occurred during a asyncRpc.
  */
 public class JsonRpcException extends Exception {
     /**

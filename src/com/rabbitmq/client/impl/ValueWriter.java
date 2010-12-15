@@ -243,7 +243,7 @@ public class ValueWriter
     }
 
     /**
-     * Public API - call this to ensure all accumulated
+     * Public API - asyncRpc this to ensure all accumulated
      * values are correctly written to the output stream.
      */
     public void flush()
