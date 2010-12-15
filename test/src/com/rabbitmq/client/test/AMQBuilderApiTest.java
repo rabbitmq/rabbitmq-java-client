@@ -42,15 +42,16 @@ public class AMQBuilderApiTest extends BrokerTestCase
     public void testParticularBuilderForBasicSanityWithRpc() throws IOException
     {
         Method retVal =
-                new AMQP.Exchange.Declare.Builder(XCHG_NAME).type("direct")
-                                                            .durable(false)
-                                                            .build()
-                                                            .rpc(channel);
+                new AMQP.Exchange.Declare.Builder().exchange(XCHG_NAME)
+                                                   .type("direct")
+                                                   .durable(false)
+                                                   .build()
+                                                   .rpc(channel);
 
         assertTrue("Channel should still be open.", channel.isOpen());
         assertTrue(retVal instanceof AMQP.Exchange.DeclareOk);
 
-        retVal = new AMQP.Exchange.Delete.Builder(XCHG_NAME)
+        retVal = new AMQP.Exchange.Delete.Builder().exchange(XCHG_NAME)
                                                    .build()
                                                    .rpc(channel);
         
@@ -60,7 +61,7 @@ public class AMQBuilderApiTest extends BrokerTestCase
 
     public void testParticularBuilderForBasicSanityWithCall() throws IOException
     {
-        new AMQP.Exchange.Declare.Builder(XCHG_NAME)
+        new AMQP.Exchange.Declare.Builder().exchange(XCHG_NAME)
                                            .type("direct")
                                            .durable(false)
                                            .build()
@@ -68,8 +69,9 @@ public class AMQBuilderApiTest extends BrokerTestCase
 
         assertTrue("Channel should still be open.", channel.isOpen());
 
-        new AMQP.Exchange.Delete.Builder(XCHG_NAME).build()
-                                                   .call(channel);
+        new AMQP.Exchange.Delete.Builder().exchange(XCHG_NAME)
+                                          .build()
+                                          .call(channel);
 
         assertTrue("Channel should still be open.", channel.isOpen());
     }
@@ -78,7 +80,7 @@ public class AMQBuilderApiTest extends BrokerTestCase
     {
         try
         {
-            new AMQP.Exchange.Declare.Builder(null).build();
+            new AMQP.Exchange.Declare.Builder().build();
             fail("Should have thrown IllegalStateException");
         }
         catch (Exception e)

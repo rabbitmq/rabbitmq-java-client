@@ -143,8 +143,6 @@ def mandatoryAndNullCheckedFields(spec, m):
 
 def builderCtorArgSignature(mandatoryFields):
     ctor_arg_signature_list = []
-    for (argType, argName) in mandatoryFields:
-        ctor_arg_signature_list.append("{0} {1}".format(argType, argName))
     ctor_arg_signature_string = ", ".join(ctor_arg_signature_list)
     return ctor_arg_signature_string
 
@@ -238,10 +236,7 @@ public interface AMQP
         def genBuilderCtor(m, mandatoryFields):
             ctor_arg_signature_string = builderCtorArgSignature(mandatoryFields)
             print "                public Builder(%s)" % ctor_arg_signature_string
-            print "                {"
-            for (argType, argName) in mandatoryFields:
-                print "                    this.%s = %s;" % (argName, argName)
-            print "                }"
+            print "                { }"
 
         def genArgMethods(spec, m):
             if m.arguments:
