@@ -242,14 +242,14 @@ public interface AMQP
             if m.arguments:
                 for index, a in enumerate(m.arguments):
                     (jfType, jfName, jfDefault) = typeNameDefault(spec, a)
-                    print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
+                    print "                public final Builder %s(%s %s)" % (jfName, jfType, jfName)
                     print "                    { this.%s = %s;      return this; }" % (jfName, jfName)
                     if jfType == "boolean":
-                        print "                public Builder %s()" % (jfName)
+                        print "                public final Builder %s()" % (jfName)
                         print "                    { this.%s = true;      return this; }" % (jfName)
 
         def genBuildMethod(c,m,fieldsToNullCheckInBuild):
-            print "                public %s build()" % (java_class_name(m.name))
+            print "                public final %s build()" % (java_class_name(m.name))
             print "                {"
 
             if len(fieldsToNullCheckInBuild) != 0:
