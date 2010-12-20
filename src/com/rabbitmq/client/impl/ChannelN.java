@@ -535,7 +535,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                     arguments)).getMethod();
     }
 
-
     /** Public API - {@inheritDoc} */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
                                               boolean durable)

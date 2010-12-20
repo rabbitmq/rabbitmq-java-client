@@ -271,7 +271,7 @@ public interface Channel extends ShutdownNotifier {
     Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable) throws IOException;
 
     /**
-     * Declare an exchange, via an interface that allows the complete set of arguments.
+     * Declare an exchange.
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
      * @param exchange the name of the exchange
@@ -300,7 +300,7 @@ public interface Channel extends ShutdownNotifier {
      * @return a declaration-confirm method to indicate the exchange was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
-    public Exchange.DeclareOk exchangeDeclare(String exchange,
+    Exchange.DeclareOk exchangeDeclare(String exchange,
                                               String type,
                                               boolean durable,
                                               boolean autoDelete,
