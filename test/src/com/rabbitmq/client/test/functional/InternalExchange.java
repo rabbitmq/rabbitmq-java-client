@@ -31,6 +31,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -97,18 +98,7 @@ public class InternalExchange extends BrokerTestCase
 
         // Publishing to the internal exchange will not be allowed...
         channel.basicPublish("e1", "", null, testDataBody);
-        try
-        {
-            // The channel should have shut down as a result of the forbidden
-            // attempt to publish to an internal exchange...
-            DefaultConsumer consumer = new DefaultConsumer(channel);
-            channel.basicConsume("q1", consumer);
-            fail("Channel should have shut down with 403 (access refused).");
-        }
-        catch (IOException e)
-        {
-            // We should get 403, access refused...
-            checkShutdownSignal(403, e);
-        }
+
+        expectError(AMQP.ACCESS_REFUSED);
     }
 }
