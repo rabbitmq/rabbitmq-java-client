@@ -851,13 +851,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public Confirm.SelectOk confirmSelect(boolean multiple)
+    public Confirm.SelectOk confirmSelect()
         throws IOException
     {
         if (publishedMessageCount.get() == -1)
             publishedMessageCount.set(0);
         return (Confirm.SelectOk)
-            exnWrappingRpc(new Confirm.Select(multiple, false)).getMethod();
+            exnWrappingRpc(new Confirm.Select(false)).getMethod();
 
     }
 

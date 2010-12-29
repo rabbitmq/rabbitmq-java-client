@@ -65,7 +65,7 @@ public class Confirm extends BrokerTestCase
                     }
                 }
             });
-        channel.confirmSelect(true);
+        channel.confirmSelect();
         channel.queueDeclare("confirm-test", true, true, false, null);
         channel.basicConsume("confirm-test", true,
                              new DefaultConsumer(channel));
@@ -217,7 +217,7 @@ public class Confirm extends BrokerTestCase
     {
         try {
             Channel ch = connection.createChannel();
-            ch.confirmSelect(false);
+            ch.confirmSelect();
             ch.txSelect();
             fail();
         } catch (IOException ioe) {
@@ -226,22 +226,14 @@ public class Confirm extends BrokerTestCase
         try {
             Channel ch = connection.createChannel();
             ch.txSelect();
-            ch.confirmSelect(false);
-            fail();
-        } catch (IOException ioe) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
-        }
-        try {
-            Channel ch = connection.createChannel();
-            ch.confirmSelect(true);
-            ch.confirmSelect(false);
+            ch.confirmSelect();
             fail();
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
         }
         Channel ch = connection.createChannel();
-        ch.confirmSelect(true);
-        ch.confirmSelect(true);
+        ch.confirmSelect();
+        ch.confirmSelect();
     }
 
     /* Publish NUM_MESSAGES persistent messages and wait for

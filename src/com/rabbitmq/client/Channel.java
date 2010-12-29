@@ -660,12 +660,10 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Enables publisher acknowledgements on this channel.
-     * @param multiple determines whether the broker can acknowledge
-     * multiple messages at the same time
      * @see com.rabbitmq.client.AMQP.Confirm.Select
      * @throws java.io.IOException if an error is encountered
      */
-    Confirm.SelectOk confirmSelect(boolean multiple) throws IOException;
+    Confirm.SelectOk confirmSelect() throws IOException;
 
     /**
      * Returns the number of messages published since the channel was
