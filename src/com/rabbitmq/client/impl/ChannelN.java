@@ -515,10 +515,24 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                               Map<String, Object> arguments)
         throws IOException
     {
+        return exchangeDeclare(exchange, type,
+                               durable, autoDelete, false,
+                               arguments);
+    }
+
+    /** Public API - {@inheritDoc} */
+    public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
+                                              boolean durable,
+                                              boolean autoDelete,
+                                              boolean internal,
+                                              Map<String, Object> arguments)
+            throws IOException
+    {
         return (Exchange.DeclareOk)
-            exnWrappingRpc(new Exchange.Declare(TICKET, exchange, type,
-                                                false, durable, autoDelete,
-                                                false, false, arguments)).getMethod();
+                exnWrappingRpc(new Exchange.Declare(TICKET, exchange, type,
+                                                    false, durable, autoDelete,
+                                                    internal, false,
+                                                    arguments)).getMethod();
     }
 
     /** Public API - {@inheritDoc} */
