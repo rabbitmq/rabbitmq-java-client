@@ -688,10 +688,11 @@ public interface Channel extends ShutdownNotifier {
     Confirm.SelectOk confirmSelect() throws IOException;
 
     /**
-     * Returns the number of messages published since the channel was
-     * put in confirm mode.
-     * @return the number of messages published since the first
-     * confirm.select; if the channel is not in confirm mode, -1 is
-     * returned */
-    long getPublishedMessageCount();
+     * Returns the sequence number of the next message to be published
+     * that requires confirmation.
+     * @return the sequence number of the next message to be published
+     * that requires confirmation. 0 if the channel is not in confirm mode.
+     * not in confirm mode
+     */
+    long getNextPublishSeqNo();
 }
