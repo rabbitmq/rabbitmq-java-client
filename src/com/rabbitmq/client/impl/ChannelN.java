@@ -720,10 +720,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public void basicNack(long deliveryTag, boolean multiple)
+    public void basicNack(long deliveryTag, boolean multiple, boolean requeue)
         throws IOException
     {
-        transmit(new Basic.Nack(deliveryTag, multiple));
+        transmit(new Basic.Nack(deliveryTag, multiple, requeue));
     }
 
     /** Public API - {@inheritDoc} */
