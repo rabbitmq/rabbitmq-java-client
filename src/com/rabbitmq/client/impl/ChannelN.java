@@ -867,7 +867,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Confirm.SelectOk confirmSelect()
         throws IOException
     {
-        if (nextPublishSeqNo == 0) nextPublishSeqNo = 0;
+        if (nextPublishSeqNo == 0) nextPublishSeqNo = 1;
         return (Confirm.SelectOk)
             exnWrappingRpc(new Confirm.Select(false)).getMethod();
 
