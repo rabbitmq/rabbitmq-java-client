@@ -105,9 +105,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile AckListener ackListener = null;
 
-    /** Current published message count (used by publisher acknowledgements)
+    /** Sequence number of next published message requiring confirmation.
      */
-    private final AtomicLong publishedMessageCount = new AtomicLong(-1);
+    private long nextPublishSeqNo = 0L;
 
     /** Reference to the currently-active default consumer, or null if there is
      *  none.
@@ -498,8 +498,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
-        if (publishedMessageCount.get() >= 0)
-            publishedMessageCount.incrementAndGet();
+        if (nextPublishSeqNo > 0) nextPublishSeqNo++;
         BasicProperties useProps = props;
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
@@ -868,8 +867,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Confirm.SelectOk confirmSelect()
         throws IOException
     {
-        if (publishedMessageCount.get() == -1)
-            publishedMessageCount.set(0);
+        if (nextPublishSeqNo == 0) nextPublishSeqNo = 1;
         return (Confirm.SelectOk)
             exnWrappingRpc(new Confirm.Select(false)).getMethod();
 
@@ -886,7 +884,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public long getPublishedMessageCount() {
-        return publishedMessageCount.longValue();
+    public long getNextPublishSeqNo() {
+        return nextPublishSeqNo;
     }
 }

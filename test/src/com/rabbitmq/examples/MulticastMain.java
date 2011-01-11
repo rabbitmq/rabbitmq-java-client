@@ -344,7 +344,7 @@ public class MulticastMain {
         }
 
         private boolean throttlePubAck() {
-            return ((pubAckCount > 0) && (channel.getPublishedMessageCount() - mostRecentAcked > pubAckCount));
+            return ((pubAckCount > 0) && (channel.getNextPublishSeqNo() - mostRecentAcked > pubAckCount));
         }
 
         private void delay(long now)
