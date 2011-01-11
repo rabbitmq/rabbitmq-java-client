@@ -254,7 +254,7 @@ public class Confirm extends BrokerTestCase
         throws IOException
     {
         for (long i = 0; i < NUM_MESSAGES; i++) {
-            ackSet.add(i);
+            ackSet.add(channel.getNextPublishSeqNo());
             publish(exchangeName, queueName, persistent, mandatory, immediate);
         }
     }
