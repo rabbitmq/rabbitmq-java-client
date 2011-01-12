@@ -306,14 +306,6 @@ public class MulticastMain {
             }
         }
 
-        private void canPublish()
-            throws InterruptedException
-        {
-            if (confirmPool != null) {
-                confirmPool.acquire();
-            }
-        }
-
         public void run() {
 
             long now;
@@ -324,7 +316,9 @@ public class MulticastMain {
             try {
 
                 while (timeLimit == 0 || now < startTime + timeLimit) {
-                    canPublish();
+                    if (confirmPool != null) {
+                        confirmPool.acquire();
+                    }
                     delay(now);
                     publish(createMessage(totalMsgCount));
                     totalMsgCount++;
