@@ -147,7 +147,7 @@ public class MulticastMain {
                                                 flags, producerTxSize,
                                                 1000L * samplingInterval,
                                                 rateLimit, minMsgSize, timeLimit,
-                                                confirmMax);
+                                                confirm, confirmMax);
                 channel.setReturnListener(p);
                 channel.setAckListener(p);
                 Thread t = new Thread(p);
@@ -244,6 +244,7 @@ public class MulticastMain {
         private int     msgCount;
         private int     basicReturnCount;
 
+        private boolean confirm;
         private long    confirmMax;
         private long    mostRecentConfirmed;
         private long    confirmCount;
@@ -251,7 +252,7 @@ public class MulticastMain {
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
                         long interval, int rateLimit, int minMsgSize, int timeLimit,
-                        long confirmMax)
+                        boolean confirm, long confirmMax)
             throws IOException {
 
             this.channel      = channel;
@@ -266,6 +267,7 @@ public class MulticastMain {
             this.timeLimit    = 1000L * timeLimit;
             this.confirmMax   = confirmMax;
             this.message      = new byte[minMsgSize];
+            this.confirm      = confirm;
         }
 
         public void handleBasicReturn(int replyCode,
@@ -362,15 +364,18 @@ public class MulticastMain {
                 Thread.sleep(pause);
             }
             if (elapsed > interval) {
-                System.out.println("sending rate: " +
-                                   (msgCount * 1000L / elapsed) +
-                                   " msg/s" +
-                                   ", basic returns: " +
-                                   (basicReturnCount * 1000L / elapsed) +
-                                   " ret/s" +
-                                   ", confirms: " +
-                                   (confirmCount * 1000L / elapsed) +
-                                   " c/s");
+                System.out.print("sending rate: " +
+                                 (msgCount * 1000L / elapsed) +
+                                 " msg/s");
+                System.out.print(", basic returns: " +
+                                 (basicReturnCount * 1000L / elapsed) +
+                                 " ret/s");
+                if (confirm) {
+                    System.out.print(", confirms: " +
+                                     (confirmCount * 1000L / elapsed) +
+                                     " c/s");
+                }
+                System.out.println();
                 resetBasicReturns();
                 resetConfirms();
                 msgCount = 0;
