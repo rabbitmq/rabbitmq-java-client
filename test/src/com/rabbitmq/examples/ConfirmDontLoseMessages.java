@@ -57,8 +57,6 @@ public class ConfirmDontLoseMessages {
                 msgCount = Integer.parseInt(args[0]);
         }
 
-        System.out.printf("msgCount = %d\n", msgCount);
-
         connectionFactory = new ConnectionFactory();
 
         // Publish msgCount messages and wait for confirms.
@@ -78,7 +76,7 @@ public class ConfirmDontLoseMessages {
                 // Setup
                 Connection conn = connectionFactory.newConnection();
                 Channel ch = conn.createChannel();
-                ch.queueDeclare(QUEUE_NAME, true, false, true, null);
+                ch.queueDeclare(QUEUE_NAME, true, false, false, null);
                 ch.setAckListener(new AckListener() {
                         public void handleAck(long seqNo,
                                               boolean multiple) {
@@ -94,7 +92,7 @@ public class ConfirmDontLoseMessages {
 
                 // Publish
                 for (long i = 0; i < msgCount; ++i) {
-                    ackSet.add(i);
+                    ackSet.add(ch.getNextPublishSeqNo());
                     ch.basicPublish("", QUEUE_NAME,
                                     MessageProperties.PERSISTENT_BASIC,
                                     "nop".getBytes());
@@ -125,7 +123,7 @@ public class ConfirmDontLoseMessages {
                 // Setup
                 Connection conn = connectionFactory.newConnection();
                 Channel ch = conn.createChannel();
-                ch.queueDeclare(QUEUE_NAME, true, false, true, null);
+                ch.queueDeclare(QUEUE_NAME, true, false, false, null);
 
                 // Consume
                 QueueingConsumer qc = new QueueingConsumer(ch);
