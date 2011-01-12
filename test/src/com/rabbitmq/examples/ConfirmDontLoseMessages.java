@@ -99,6 +99,7 @@ public class ConfirmDontLoseMessages {
                     Thread.sleep(10);
 
                 // Cleanup
+                ch.queueDelete(QUEUE_NAME);
                 ch.close();
                 conn.close();
 
@@ -127,7 +128,7 @@ public class ConfirmDontLoseMessages {
                     qc.nextDelivery();
                 }
 
-                // Consume
+                // Cleanup
                 ch.close();
                 conn.close();
             } catch (Throwable e) {
