@@ -37,6 +37,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.Semaphore;
 import java.util.List;
 import java.util.UUID;
 
@@ -244,10 +245,9 @@ public class MulticastMain {
         private int     msgCount;
         private int     basicReturnCount;
 
-        private boolean confirm;
-        private long    confirmMax;
-        private long    mostRecentConfirmed;
-        private long    confirmCount;
+        private boolean   confirm;
+        private long      confirmCount;
+        private Semaphore confirmPool;
 
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
@@ -265,7 +265,9 @@ public class MulticastMain {
             this.interval     = interval;
             this.rateLimit    = rateLimit;
             this.timeLimit    = 1000L * timeLimit;
-            this.confirmMax   = confirmMax;
+            if (confirmMax > 0) {
+                this.confirmPool  = new Semaphore((int)confirmMax);
+            }
             this.message      = new byte[minMsgSize];
             this.confirm      = confirm;
         }
@@ -295,9 +297,21 @@ public class MulticastMain {
             confirmCount = 0;
         }
 
-        private synchronized void logAck(long seqNum) {
-            mostRecentConfirmed = seqNum;
-            confirmCount++;
+        private void logAck(long seqNum) {
+            if (confirmPool != null) {
+                confirmPool.release();
+            }
+            synchronized (this) {
+                confirmCount++;
+            }
+        }
+
+        private void canPublish()
+            throws InterruptedException
+        {
+            if (confirmPool != null) {
+                confirmPool.acquire();
+            }
         }
 
         public void run() {
@@ -310,17 +324,14 @@ public class MulticastMain {
             try {
 
                 while (timeLimit == 0 || now < startTime + timeLimit) {
-                    if (!throttleConfirms()) {
-                        delay(now);
-                        publish(createMessage(totalMsgCount));
-                        totalMsgCount++;
-                        msgCount++;
+                    canPublish();
+                    delay(now);
+                    publish(createMessage(totalMsgCount));
+                    totalMsgCount++;
+                    msgCount++;
 
-                        if (txSize != 0 && totalMsgCount % txSize == 0) {
-                            channel.txCommit();
-                        }
-                    } else {
-                        Thread.sleep(10);
+                    if (txSize != 0 && totalMsgCount % txSize == 0) {
+                        channel.txCommit();
                     }
                     now = System.currentTimeMillis();
                 }
@@ -344,10 +355,6 @@ public class MulticastMain {
                                  mandatory, immediate,
                                  persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
                                  msg);
-        }
-
-        private boolean throttleConfirms() {
-            return ((confirmMax > 0) && (channel.getNextPublishSeqNo() - mostRecentConfirmed > confirmMax));
         }
 
         private void delay(long now)
