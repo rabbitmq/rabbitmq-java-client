@@ -285,12 +285,7 @@ public class MulticastMain {
         }
 
         public void handleAck(long sequenceNumber, boolean multiple) {
-            if (multiple) {
-                logAck(sequenceNumber);
-                System.out.printf("got an ack all messages up to %d\n", sequenceNumber);
-            } else {
-                logAck(sequenceNumber);
-            }
+            logAck(sequenceNumber);
         }
 
         private synchronized void logAck(long seqNum) {
