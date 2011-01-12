@@ -245,7 +245,8 @@ public class MulticastMain {
         private int     basicReturnCount;
 
         private long    confirmMax;
-        private long    mostRecentAcked;
+        private long    mostRecentConfirmed;
+        private long    confirmCount;
 
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
@@ -288,8 +289,13 @@ public class MulticastMain {
             logAck(sequenceNumber);
         }
 
+        private synchronized void resetConfirms() {
+            confirmCount = 0;
+        }
+
         private synchronized void logAck(long seqNum) {
-            mostRecentAcked = seqNum;
+            mostRecentConfirmed = seqNum;
+            confirmCount++;
         }
 
         public void run() {
@@ -339,7 +345,7 @@ public class MulticastMain {
         }
 
         private boolean throttleConfirms() {
-            return ((confirmMax > 0) && (channel.getNextPublishSeqNo() - mostRecentAcked > confirmMax));
+            return ((confirmMax > 0) && (channel.getNextPublishSeqNo() - mostRecentConfirmed > confirmMax));
         }
 
         private void delay(long now)
@@ -361,8 +367,12 @@ public class MulticastMain {
                                    " msg/s" +
                                    ", basic returns: " +
                                    (basicReturnCount * 1000L / elapsed) +
-                                   " ret/s");
+                                   " ret/s" +
+                                   ", confirms: " +
+                                   (confirmCount * 1000L / elapsed) +
+                                   " c/s");
                 resetBasicReturns();
+                resetConfirms();
                 msgCount = 0;
                 lastStatsTime = now;
             }
