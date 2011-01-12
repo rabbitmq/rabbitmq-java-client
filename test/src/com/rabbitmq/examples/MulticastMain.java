@@ -367,9 +367,11 @@ public class MulticastMain {
                 System.out.print("sending rate: " +
                                  (msgCount * 1000L / elapsed) +
                                  " msg/s");
-                System.out.print(", basic returns: " +
-                                 (basicReturnCount * 1000L / elapsed) +
-                                 " ret/s");
+                if (mandatory || immediate) {
+                    System.out.print(", basic returns: " +
+                                     (basicReturnCount * 1000L / elapsed) +
+                                     " ret/s");
+                }
                 if (confirm) {
                     System.out.print(", confirms: " +
                                      (confirmCount * 1000L / elapsed) +
