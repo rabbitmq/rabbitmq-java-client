@@ -73,7 +73,6 @@ public class ConfirmDontLoseMessages {
                 Connection conn = connectionFactory.newConnection();
                 Channel ch = conn.createChannel();
                 ch.queueDeclare(QUEUE_NAME, true, false, true, null);
-                ch.confirmSelect();
                 ch.setAckListener(new AckListener() {
                         public void handleAck(long seqNo,
                                               boolean multiple) {
@@ -85,6 +84,7 @@ public class ConfirmDontLoseMessages {
                             }
                         }
                     });
+                ch.confirmSelect();
 
                 // Publish
                 for (long i = 0; i < MSG_COUNT; ++i) {
