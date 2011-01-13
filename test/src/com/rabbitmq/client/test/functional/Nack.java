@@ -113,4 +113,36 @@ public class Nack extends AbstractRejectTest {
         expectError(AMQP.PRECONDITION_FAILED);
     }
 
+    public void testNackAll() throws Exception {
+        String q =
+            channel.queueDeclare("", false, true, false, null).getQueue();
+
+        byte[] m1 = "1".getBytes();
+        byte[] m2 = "2".getBytes();
+        byte[] m3 = "3".getBytes();
+        byte[] m4 = "4".getBytes();
+
+        basicPublishVolatile(m1, q);
+        basicPublishVolatile(m2, q);
+        basicPublishVolatile(m3, q);
+        basicPublishVolatile(m4, q);
+
+        checkDelivery(channel.basicGet(q, false), m1, false);
+        checkDelivery(channel.basicGet(q, false), m2, false);
+        checkDelivery(channel.basicGet(q, false), m3, false);
+        checkDelivery(channel.basicGet(q, false), m4, false);
+
+        // nack all
+        channel.basicNack(0, true, true);
+
+        QueueingConsumer c = new QueueingConsumer(secondaryChannel);
+        String consumerTag = secondaryChannel.basicConsume(q, true, c);
+
+        checkDelivery(c.nextDelivery(), m4, true);
+        checkDelivery(c.nextDelivery(), m3, true);
+        checkDelivery(c.nextDelivery(), m2, true);
+        checkDelivery(c.nextDelivery(), m1, true);
+
+        secondaryChannel.basicCancel(consumerTag);
+    }
 }
