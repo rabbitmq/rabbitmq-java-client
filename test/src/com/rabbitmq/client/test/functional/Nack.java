@@ -69,48 +69,48 @@ public class Nack extends AbstractRejectTest {
         expectError(AMQP.PRECONDITION_FAILED);
     }
 
-     public void testMultiNack() throws Exception {
-         String q =
-             channel.queueDeclare("", false, true, false, null).getQueue();
+    public void testMultiNack() throws Exception {
+        String q =
+            channel.queueDeclare("", false, true, false, null).getQueue();
 
-         byte[] m1 = "1".getBytes();
-         byte[] m2 = "2".getBytes();
-         byte[] m3 = "3".getBytes();
-         byte[] m4 = "4".getBytes();
+        byte[] m1 = "1".getBytes();
+        byte[] m2 = "2".getBytes();
+        byte[] m3 = "3".getBytes();
+        byte[] m4 = "4".getBytes();
 
-         basicPublishVolatile(m1, q);
-         basicPublishVolatile(m2, q);
-         basicPublishVolatile(m3, q);
-         basicPublishVolatile(m4, q);
+        basicPublishVolatile(m1, q);
+        basicPublishVolatile(m2, q);
+        basicPublishVolatile(m3, q);
+        basicPublishVolatile(m4, q);
 
-         checkDelivery(channel.basicGet(q, false), m1, false);
-         long tag1 = checkDelivery(channel.basicGet(q, false), m2, false);
-         checkDelivery(channel.basicGet(q, false), m3, false);
-         long tag2 = checkDelivery(channel.basicGet(q, false), m4, false);
+        checkDelivery(channel.basicGet(q, false), m1, false);
+        long tag1 = checkDelivery(channel.basicGet(q, false), m2, false);
+        checkDelivery(channel.basicGet(q, false), m3, false);
+        long tag2 = checkDelivery(channel.basicGet(q, false), m4, false);
 
-         // ack, leaving a gap in un-acked sequence
-         channel.basicAck(tag1, false);
+        // ack, leaving a gap in un-acked sequence
+        channel.basicAck(tag1, false);
 
-         QueueingConsumer c = new QueueingConsumer(secondaryChannel);
-         String consumerTag = secondaryChannel.basicConsume(q, false, c);
+        QueueingConsumer c = new QueueingConsumer(secondaryChannel);
+        String consumerTag = secondaryChannel.basicConsume(q, false, c);
 
-         // requeue multi
-         channel.basicNack(tag2, true, true);
+        // requeue multi
+        channel.basicNack(tag2, true, true);
 
-         checkDelivery(c.nextDelivery(), m4, true);
-         checkDelivery(c.nextDelivery(), m3, true);
-         long tag3 = checkDelivery(c.nextDelivery(), m1, true);
+        checkDelivery(c.nextDelivery(), m4, true);
+        checkDelivery(c.nextDelivery(), m3, true);
+        long tag3 = checkDelivery(c.nextDelivery(), m1, true);
 
-         secondaryChannel.basicCancel(consumerTag);
+        secondaryChannel.basicCancel(consumerTag);
 
-         // no requeue
-         secondaryChannel.basicNack(tag3, true, false);
+        // no requeue
+        secondaryChannel.basicNack(tag3, true, false);
 
-         assertNull(channel.basicGet(q, false));
+        assertNull(channel.basicGet(q, false));
 
-         channel.basicNack(tag3, true, true);
+        channel.basicNack(tag3, true, true);
 
-         expectError(AMQP.PRECONDITION_FAILED);
-     }
+        expectError(AMQP.PRECONDITION_FAILED);
+    }
 
 }
