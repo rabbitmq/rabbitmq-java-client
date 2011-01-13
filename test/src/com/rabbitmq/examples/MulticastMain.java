@@ -287,7 +287,7 @@ public class MulticastMain {
             returnCount++;
         }
 
-        public synchronized void handleAck(long seqNo, boolean multiple) {
+        public void handleAck(long seqNo, boolean multiple) {
             int numConfirms = 0;
             if (multiple) {
                 for (long i = ackSet.first(); i <= seqNo; ++i) {
@@ -300,13 +300,17 @@ public class MulticastMain {
                 ackSet.remove(seqNo);
                 numConfirms = 1;
             }
-            confirmCount += numConfirms;
+            addConfirms(numConfirms);
 
             if (confirmPool != null) {
                 for (int i = 0; i < numConfirms; ++i) {
                     confirmPool.release();
                 }
             }
+        }
+
+        private synchronized void addConfirms(int numConfirms) {
+            confirmCount += numConfirms;
         }
 
         public synchronized void resetCounts() {
