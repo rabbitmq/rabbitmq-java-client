@@ -37,7 +37,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.concurrent.Semaphore;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
@@ -244,10 +248,11 @@ public class MulticastMain {
         private int     msgCount;
         private int     returnCount;
 
-        private boolean confirm;
-        private long    confirmMax;
-        private long    mostRecentConfirmed;
-        private long    confirmCount;
+        private boolean   confirm;
+        private long      confirmCount;
+        private Semaphore confirmPool;
+        private volatile SortedSet<Long> ackSet =
+            Collections.synchronizedSortedSet(new TreeSet<Long>());
 
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
@@ -265,7 +270,9 @@ public class MulticastMain {
             this.interval     = interval;
             this.rateLimit    = rateLimit;
             this.timeLimit    = 1000L * timeLimit;
-            this.confirmMax   = confirmMax;
+            if (confirmMax > 0) {
+                this.confirmPool  = new Semaphore((int)confirmMax);
+            }
             this.message      = new byte[minMsgSize];
             this.confirm      = confirm;
         }
@@ -280,16 +287,28 @@ public class MulticastMain {
             returnCount++;
         }
 
-        public synchronized void resetCounts() {
-            msgCount = 0;
-            returnCount = 0;
-            confirmCount = 0;
-        }
+        public void handleAck(long seqNo, boolean multiple) {
+            int numConfirms = 0;
+            if (multiple) {
+                for (long i = ackSet.first(); i <= seqNo; ++i) {
+                    if (!ackSet.contains(i))
+                        continue;
+                    ackSet.remove(i);
+                    numConfirms++;
+                }
+            } else {
+                ackSet.remove(seqNo);
+                numConfirms = 1;
+            }
+            synchronized (this) {
+                confirmCount += numConfirms;
+            }
 
-        public synchronized void handleAck(long sequenceNumber,
-                                           boolean multiple) {
-            mostRecentConfirmed = sequenceNumber;
-            confirmCount++;
+            if (confirmPool != null) {
+                for (int i = 0; i < numConfirms; ++i) {
+                    confirmPool.release();
+                }
+            }
         }
 
         public void run() {
@@ -302,17 +321,16 @@ public class MulticastMain {
             try {
 
                 while (timeLimit == 0 || now < startTime + timeLimit) {
-                    if (!throttleConfirms()) {
-                        delay(now);
-                        publish(createMessage(totalMsgCount));
-                        totalMsgCount++;
-                        msgCount++;
+                    if (confirmPool != null) {
+                        confirmPool.acquire();
+                    }
+                    delay(now);
+                    publish(createMessage(totalMsgCount));
+                    totalMsgCount++;
+                    msgCount++;
 
-                        if (txSize != 0 && totalMsgCount % txSize == 0) {
-                            channel.txCommit();
-                        }
-                    } else {
-                        Thread.sleep(10);
+                    if (txSize != 0 && totalMsgCount % txSize == 0) {
+                        channel.txCommit();
                     }
                     now = System.currentTimeMillis();
                 }
@@ -332,14 +350,11 @@ public class MulticastMain {
         private void publish(byte[] msg)
             throws IOException {
 
+            ackSet.add(channel.getNextPublishSeqNo());
             channel.basicPublish(exchangeName, id,
                                  mandatory, immediate,
                                  persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
                                  msg);
-        }
-
-        private boolean throttleConfirms() {
-            return ((confirmMax > 0) && (channel.getNextPublishSeqNo() - mostRecentConfirmed > confirmMax));
         }
 
         private void delay(long now)
@@ -356,21 +371,23 @@ public class MulticastMain {
                 Thread.sleep(pause);
             }
             if (elapsed > interval) {
-                System.out.print("sending rate: " +
-                                 (msgCount * 1000L / elapsed) +
-                                 " msg/s");
+                long sendRate, returnRate, confirmRate;
+                synchronized(this) {
+                    sendRate     = msgCount     * 1000L / elapsed;
+                    returnRate   = returnCount  * 1000L / elapsed;
+                    confirmRate  = confirmCount * 1000L / elapsed;
+                    msgCount     = 0;
+                    returnCount  = 0;
+                    confirmCount = 0;
+                }
+                System.out.print("sending rate: " + sendRate + " msg/s");
                 if (mandatory || immediate) {
-                    System.out.print(", returns: " +
-                                     (returnCount * 1000L / elapsed) +
-                                     " ret/s");
+                    System.out.print(", returns: " + returnRate + " ret/s");
                 }
                 if (confirm) {
-                    System.out.print(", confirms: " +
-                                     (confirmCount * 1000L / elapsed) +
-                                     " c/s");
+                    System.out.print(", confirms: " + confirmRate + " c/s");
                 }
                 System.out.println();
-                resetCounts();
                 lastStatsTime = now;
             }
         }
