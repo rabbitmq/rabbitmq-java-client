@@ -311,12 +311,6 @@ public class MulticastMain {
             }
         }
 
-        public synchronized void resetCounts() {
-            msgCount = 0;
-            returnCount = 0;
-            confirmCount = 0;
-        }
-
         public void run() {
 
             long now;
@@ -377,21 +371,23 @@ public class MulticastMain {
                 Thread.sleep(pause);
             }
             if (elapsed > interval) {
-                System.out.print("sending rate: " +
-                                 (msgCount * 1000L / elapsed) +
-                                 " msg/s");
+                long sendRate, returnRate, confirmRate;
+                synchronized(this) {
+                    sendRate     = msgCount     * 1000L / elapsed;
+                    returnRate   = returnCount  * 1000L / elapsed;
+                    confirmRate  = confirmCount * 1000L / elapsed;
+                    msgCount     = 0;
+                    returnCount  = 0;
+                    confirmCount = 0;
+                }
+                System.out.print("sending rate: " + sendRate + " msg/s");
                 if (mandatory || immediate) {
-                    System.out.print(", returns: " +
-                                     (returnCount * 1000L / elapsed) +
-                                     " ret/s");
+                    System.out.print(", returns: " + returnRate + " ret/s");
                 }
                 if (confirm) {
-                    System.out.print(", confirms: " +
-                                     (confirmCount * 1000L / elapsed) +
-                                     " c/s");
+                    System.out.print(", confirms: " + confirmRate + " c/s");
                 }
                 System.out.println();
-                resetCounts();
                 lastStatsTime = now;
             }
         }
