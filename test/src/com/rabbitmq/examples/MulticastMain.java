@@ -246,7 +246,7 @@ public class MulticastMain {
         private long    startTime;
         private long    lastStatsTime;
         private int     msgCount;
-        private int     basicReturnCount;
+        private int     returnCount;
 
         private boolean   confirm;
         private long      confirmCount;
@@ -277,24 +277,17 @@ public class MulticastMain {
             this.confirm      = confirm;
         }
 
-        public void handleBasicReturn(int replyCode,
-                                      String replyText,
-                                      String exchange,
-                                      String routingKey,
-                                      AMQP.BasicProperties properties,
-                                      byte[] body) throws IOException {
-            logBasicReturn();
+        public synchronized void handleBasicReturn(int replyCode,
+                                                   String replyText,
+                                                   String exchange,
+                                                   String routingKey,
+                                                   AMQP.BasicProperties properties,
+                                                   byte[] body)
+            throws IOException {
+            returnCount++;
         }
 
-        public synchronized void logBasicReturn() {
-            basicReturnCount++;
-        }
-
-        public synchronized void resetBasicReturns() {
-            basicReturnCount = 0;
-        }
-
-        public void handleAck(long seqNo, boolean multiple) {
+        public synchronized void handleAck(long seqNo, boolean multiple) {
             int numConfirms = 0;
             if (multiple) {
                 for (long i = ackSet.first(); i <= seqNo; ++i) {
@@ -307,7 +300,7 @@ public class MulticastMain {
                 ackSet.remove(seqNo);
                 numConfirms = 1;
             }
-            addConfirms(numConfirms);
+            confirmCount += numConfirms;
 
             if (confirmPool != null) {
                 for (int i = 0; i < numConfirms; ++i) {
@@ -316,12 +309,10 @@ public class MulticastMain {
             }
         }
 
-        private synchronized void resetConfirms() {
+        public synchronized void resetCounts() {
+            msgCount = 0;
+            returnCount = 0;
             confirmCount = 0;
-        }
-
-        private synchronized void addConfirms(int numConfirms) {
-            confirmCount += numConfirms;
         }
 
         public void run() {
@@ -388,8 +379,8 @@ public class MulticastMain {
                                  (msgCount * 1000L / elapsed) +
                                  " msg/s");
                 if (mandatory || immediate) {
-                    System.out.print(", basic returns: " +
-                                     (basicReturnCount * 1000L / elapsed) +
+                    System.out.print(", returns: " +
+                                     (returnCount * 1000L / elapsed) +
                                      " ret/s");
                 }
                 if (confirm) {
@@ -398,9 +389,7 @@ public class MulticastMain {
                                      " c/s");
                 }
                 System.out.println();
-                resetBasicReturns();
-                resetConfirms();
-                msgCount = 0;
+                resetCounts();
                 lastStatsTime = now;
             }
         }
