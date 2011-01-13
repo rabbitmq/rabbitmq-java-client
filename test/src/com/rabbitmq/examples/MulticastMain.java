@@ -37,8 +37,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.Semaphore;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
@@ -248,6 +251,8 @@ public class MulticastMain {
         private boolean   confirm;
         private long      confirmCount;
         private Semaphore confirmPool;
+        private volatile SortedSet<Long> ackSet =
+            Collections.synchronizedSortedSet(new TreeSet<Long>());
 
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
@@ -289,21 +294,34 @@ public class MulticastMain {
             basicReturnCount = 0;
         }
 
-        public void handleAck(long sequenceNumber, boolean multiple) {
-            logAck(sequenceNumber);
+        public void handleAck(long seqNo, boolean multiple) {
+            int numConfirms = 0;
+            if (multiple) {
+                for (long i = ackSet.first(); i <= seqNo; ++i) {
+                    if (!ackSet.contains(i))
+                        continue;
+                    ackSet.remove(i);
+                    numConfirms++;
+                }
+            } else {
+                ackSet.remove(seqNo);
+                numConfirms = 1;
+            }
+            addConfirms(numConfirms);
+
+            if (confirmPool != null) {
+                for (int i = 0; i < numConfirms; ++i) {
+                    confirmPool.release();
+                }
+            }
         }
 
         private synchronized void resetConfirms() {
             confirmCount = 0;
         }
 
-        private void logAck(long seqNum) {
-            if (confirmPool != null) {
-                confirmPool.release();
-            }
-            synchronized (this) {
-                confirmCount++;
-            }
+        private synchronized void addConfirms(int numConfirms) {
+            confirmCount += numConfirms;
         }
 
         public void run() {
@@ -345,6 +363,7 @@ public class MulticastMain {
         private void publish(byte[] msg)
             throws IOException {
 
+            ackSet.add(channel.getNextPublishSeqNo());
             channel.basicPublish(exchangeName, id,
                                  mandatory, immediate,
                                  persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
