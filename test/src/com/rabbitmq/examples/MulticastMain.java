@@ -86,8 +86,8 @@ public class MulticastMain {
             int consumerCount    = intArg(cmd, 'y', 1);
             int producerTxSize   = intArg(cmd, 'm', 0);
             int consumerTxSize   = intArg(cmd, 'n', 0);
-            boolean pubAck       = cmd.hasOption('c');
-            long pubAckCount     = intArg(cmd, 'k', 0);
+            boolean confirm      = cmd.hasOption('c');
+            long confirmMax      = intArg(cmd, 'k', 0);
             boolean autoAck      = cmd.hasOption('a');
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
@@ -96,9 +96,9 @@ public class MulticastMain {
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
 
-            if ((producerTxSize + consumerTxSize > 0) && pubAck) {
+            if ((producerTxSize + consumerTxSize > 0) && confirm) {
                 throw new ParseException("Cannot select both producerTxSize"+
-                                         "/consumerTxSize and pubAck.");
+                                         "/consumerTxSize and confirm");
             }
 
             //setup
@@ -141,13 +141,13 @@ public class MulticastMain {
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
-                if (pubAck) channel.confirmSelect();
+                if (confirm) channel.confirmSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
                 final Producer p = new Producer(channel, exchangeName, id,
                                                 flags, producerTxSize,
                                                 1000L * samplingInterval,
                                                 rateLimit, minMsgSize, timeLimit,
-                                                pubAckCount);
+                                                confirm, confirmMax);
                 channel.setReturnListener(p);
                 channel.setAckListener(p);
                 Thread t = new Thread(p);
@@ -193,9 +193,9 @@ public class MulticastMain {
         options.addOption(new Option("x", "producers", true, "producer count"));
         options.addOption(new Option("y", "consumers", true, "consumer count"));
         options.addOption(new Option("m", "ptxsize",   true, "producer tx size"));
-        options.addOption(new Option("k", "pubackcnt", true, "max unack'd publishes"));
+        options.addOption(new Option("k", "confirmMax", true, "max unconfirmed publishes"));
         options.addOption(new Option("n", "ctxsize",   true, "consumer tx size"));
-        options.addOption(new Option("c", "puback",    false,"publisher acks"));
+        options.addOption(new Option("c", "confirm",   false,"confirm mode"));
         options.addOption(new Option("a", "autoack",   false,"auto ack"));
         options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
         options.addOption(new Option("s", "size",      true, "message size"));
@@ -242,15 +242,17 @@ public class MulticastMain {
         private long    startTime;
         private long    lastStatsTime;
         private int     msgCount;
-        private int     basicReturnCount;
+        private int     returnCount;
 
-        private long    pubAckCount;
-        private long    mostRecentAcked;
+        private boolean confirm;
+        private long    confirmMax;
+        private long    mostRecentConfirmed;
+        private long    confirmCount;
 
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
                         long interval, int rateLimit, int minMsgSize, int timeLimit,
-                        long pubAckCount)
+                        boolean confirm, long confirmMax)
             throws IOException {
 
             this.channel      = channel;
@@ -263,38 +265,31 @@ public class MulticastMain {
             this.interval     = interval;
             this.rateLimit    = rateLimit;
             this.timeLimit    = 1000L * timeLimit;
-            this.pubAckCount  = pubAckCount;
+            this.confirmMax   = confirmMax;
             this.message      = new byte[minMsgSize];
+            this.confirm      = confirm;
         }
 
-        public void handleBasicReturn(int replyCode,
-                                      String replyText,
-                                      String exchange,
-                                      String routingKey,
-                                      AMQP.BasicProperties properties,
-                                      byte[] body) throws IOException {
-            logBasicReturn();
+        public synchronized void handleBasicReturn(int replyCode,
+                                                   String replyText,
+                                                   String exchange,
+                                                   String routingKey,
+                                                   AMQP.BasicProperties properties,
+                                                   byte[] body)
+            throws IOException {
+            returnCount++;
         }
 
-        public synchronized void logBasicReturn() {
-            basicReturnCount++;
+        public synchronized void resetCounts() {
+            msgCount = 0;
+            returnCount = 0;
+            confirmCount = 0;
         }
 
-        public synchronized void resetBasicReturns() {
-            basicReturnCount = 0;
-        }
-
-        public void handleAck(long sequenceNumber, boolean multiple) {
-            if (multiple) {
-                logAck(sequenceNumber);
-                System.out.printf("got an ack all messages up to %d\n", sequenceNumber);
-            } else {
-                logAck(sequenceNumber);
-            }
-        }
-
-        private synchronized void logAck(long seqNum) {
-            mostRecentAcked = seqNum;
+        public synchronized void handleAck(long sequenceNumber,
+                                           boolean multiple) {
+            mostRecentConfirmed = sequenceNumber;
+            confirmCount++;
         }
 
         public void run() {
@@ -307,7 +302,7 @@ public class MulticastMain {
             try {
 
                 while (timeLimit == 0 || now < startTime + timeLimit) {
-                    if (!throttlePubAck()) {
+                    if (!throttleConfirms()) {
                         delay(now);
                         publish(createMessage(totalMsgCount));
                         totalMsgCount++;
@@ -343,8 +338,8 @@ public class MulticastMain {
                                  msg);
         }
 
-        private boolean throttlePubAck() {
-            return ((pubAckCount > 0) && (channel.getNextPublishSeqNo() - mostRecentAcked > pubAckCount));
+        private boolean throttleConfirms() {
+            return ((confirmMax > 0) && (channel.getNextPublishSeqNo() - mostRecentConfirmed > confirmMax));
         }
 
         private void delay(long now)
@@ -361,14 +356,21 @@ public class MulticastMain {
                 Thread.sleep(pause);
             }
             if (elapsed > interval) {
-                System.out.println("sending rate: " +
-                                   (msgCount * 1000L / elapsed) +
-                                   " msg/s" +
-                                   ", basic returns: " +
-                                   (basicReturnCount * 1000L / elapsed) +
-                                   " ret/s");
-                resetBasicReturns();
-                msgCount = 0;
+                System.out.print("sending rate: " +
+                                 (msgCount * 1000L / elapsed) +
+                                 " msg/s");
+                if (mandatory || immediate) {
+                    System.out.print(", returns: " +
+                                     (returnCount * 1000L / elapsed) +
+                                     " ret/s");
+                }
+                if (confirm) {
+                    System.out.print(", confirms: " +
+                                     (confirmCount * 1000L / elapsed) +
+                                     " c/s");
+                }
+                System.out.println();
+                resetCounts();
                 lastStatsTime = now;
             }
         }
