@@ -27,39 +27,61 @@
 //   All Rights Reserved.
 //
 //   Contributor(s): ______________________________________.
-//
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
+import java.util.Arrays;
 
-public class Reject extends AbstractRejectTest
-{
-    public void testReject()
-        throws IOException, InterruptedException
+abstract class AbstractRejectTest extends BrokerTestCase {
+
+    protected Channel secondaryChannel;
+
+    @Override
+    protected void setUp()
+        throws IOException
     {
-        String q = channel.queueDeclare("", false, true, false, null).getQueue();
+        super.setUp();
+        secondaryChannel = connection.createChannel();
 
-        byte[] m1 = "1".getBytes();
-        byte[] m2 = "2".getBytes();
+    }
 
-        basicPublishVolatile(m1, q);
-        basicPublishVolatile(m2, q);
+    @Override
+    protected void tearDown()
+        throws IOException
+    {
+        if (secondaryChannel != null) {
+            secondaryChannel.abort();
+            secondaryChannel = null;
+        }
+        super.tearDown();
+    }
 
-        long tag1 = checkDelivery(channel.basicGet(q, false), m1, false);
-        long tag2 = checkDelivery(channel.basicGet(q, false), m2, false);
-        QueueingConsumer c = new QueueingConsumer(secondaryChannel);
-        String consumerTag = secondaryChannel.basicConsume(q, false, c);
-        channel.basicReject(tag2, true);
-        long tag3 = checkDelivery(c.nextDelivery(), m2, true);
-        secondaryChannel.basicCancel(consumerTag);
-        secondaryChannel.basicReject(tag3, false);
-        assertNull(channel.basicGet(q, false));
-        channel.basicAck(tag1, false);
-        channel.basicReject(tag3, false);
-        expectError(AMQP.PRECONDITION_FAILED);
+    protected long checkDelivery(QueueingConsumer.Delivery d,
+                                 byte[] msg, boolean redelivered)
+    {
+        assertNotNull(d);
+        return checkDelivery(d.getEnvelope(), d.getBody(), msg, redelivered);
+    }
+
+    protected long checkDelivery(GetResponse r, byte[] msg, boolean redelivered)
+    {
+        assertNotNull(r);
+        return checkDelivery(r.getEnvelope(), r.getBody(), msg, redelivered);
+    }
+
+    protected long checkDelivery(Envelope e, byte[] m,
+                                 byte[] msg, boolean redelivered)
+    {
+        assertNotNull(e);
+        assertTrue(Arrays.equals(m, msg));
+        assertEquals(e.isRedeliver(), redelivered);
+        return e.getDeliveryTag();
     }
 }
