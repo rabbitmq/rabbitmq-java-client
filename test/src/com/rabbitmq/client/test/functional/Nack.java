@@ -35,6 +35,9 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class Nack extends AbstractRejectTest {
 
     public void testSingleNack() throws Exception {
@@ -97,9 +100,7 @@ public class Nack extends AbstractRejectTest {
         // requeue multi
         channel.basicNack(tag2, true, true);
 
-        checkDelivery(c.nextDelivery(), m4, true);
-        checkDelivery(c.nextDelivery(), m3, true);
-        long tag3 = checkDelivery(c.nextDelivery(), m1, true);
+        long tag3 = checkDeliveries(c, m1, m3, m4);
 
         secondaryChannel.basicCancel(consumerTag);
 
@@ -132,9 +133,29 @@ public class Nack extends AbstractRejectTest {
         QueueingConsumer c = new QueueingConsumer(secondaryChannel);
         String consumerTag = secondaryChannel.basicConsume(q, true, c);
 
-        checkDelivery(c.nextDelivery(), m2, true);
-        checkDelivery(c.nextDelivery(), m1, true);
+        checkDeliveries(c, m1, m2);
 
         secondaryChannel.basicCancel(consumerTag);
+    }
+
+    private long checkDeliveries(QueueingConsumer c, byte[]... messages)
+            throws InterruptedException {
+
+        Set<String> msgSet = new HashSet<String>();
+        for (byte[] message : messages) {
+            msgSet.add(new String(message));
+        }
+
+        long lastTag = -1;
+        for(int x = 0; x < messages.length; x++) {
+            QueueingConsumer.Delivery delivery = c.nextDelivery();
+            String m = new String(delivery.getBody());
+            assertTrue("Unexpected message", msgSet.remove(m));
+            checkDelivery(delivery, m.getBytes(), true);
+            lastTag = delivery.getEnvelope().getDeliveryTag();
+        }
+
+        assertTrue(msgSet.isEmpty());
+        return lastTag;
     }
 }
