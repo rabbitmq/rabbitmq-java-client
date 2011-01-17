@@ -49,7 +49,7 @@ public class Confirm extends BrokerTestCase
 {
     final static int NUM_MESSAGES = 1000;
     private static final String TTL_ARG = "x-message-ttl";
-    private volatile SortedSet<Long> ackSet;
+    private SortedSet<Long> ackSet;
 
     @Override
     protected void setUp() throws IOException {
@@ -276,7 +276,7 @@ public class Confirm extends BrokerTestCase
             gotAckFor(i);
     }
 
-    private synchronized void gotAckFor(long msgSeqNo) {
+    private void gotAckFor(long msgSeqNo) {
         if (!ackSet.contains(msgSeqNo)) {
             fail("got duplicate ack: " + msgSeqNo);
         }
