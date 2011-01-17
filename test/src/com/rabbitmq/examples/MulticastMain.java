@@ -290,12 +290,9 @@ public class MulticastMain {
         public void handleAck(long seqNo, boolean multiple) {
             int numConfirms = 0;
             if (multiple) {
-                for (long i = ackSet.first(); i <= seqNo; ++i) {
-                    if (!ackSet.contains(i))
-                        continue;
-                    ackSet.remove(i);
-                    numConfirms++;
-                }
+                SortedSet<Long> confirmed = ackSet.headSet(seqNo + 1);
+                numConfirms += confirmed.size();
+                confirmed.clear();
             } else {
                 ackSet.remove(seqNo);
                 numConfirms = 1;
