@@ -58,11 +58,7 @@ public class Confirm extends BrokerTestCase
         channel.setAckListener(new AckListener() {
                 public void handleAck(long seqNo,
                                       boolean multiple) {
-                    if (multiple) {
-                        Confirm.this.gotAckForMultiple(seqNo);
-                    } else {
-                        Confirm.this.gotAckFor(seqNo);
-                    }
+                    Confirm.this.handleAck(seqNo, multiple);
                 }
             });
         channel.confirmSelect();
@@ -271,16 +267,15 @@ public class Confirm extends BrokerTestCase
                              "nop".getBytes());
     }
 
-    private void gotAckForMultiple(long msgSeqNo) {
-        for (long i = ackSet.first(); i <= msgSeqNo; ++i)
-            gotAckFor(i);
-    }
-
-    private void gotAckFor(long msgSeqNo) {
+    private void handleAck(long msgSeqNo, boolean multiple) {
         if (!ackSet.contains(msgSeqNo)) {
             fail("got duplicate ack: " + msgSeqNo);
         }
-        ackSet.remove(msgSeqNo);
+        if (multiple) {
+            ackSet.headSet(msgSeqNo + 1).clear();
+        } else {
+            ackSet.remove(msgSeqNo);
+        }
     }
 
     private void basicRejectCommon(boolean requeue)
