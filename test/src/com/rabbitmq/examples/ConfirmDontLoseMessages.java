@@ -59,9 +59,9 @@ public class ConfirmDontLoseMessages {
 
         connectionFactory = new ConnectionFactory();
 
-        // Publish msgCount messages and wait for confirms.
-        (new Thread(new Consumer())).start();
         // Consume msgCount messages.
+        (new Thread(new Consumer())).start();
+        // Publish msgCount messages and wait for confirms.
         (new Thread(new Publisher())).start();
     }
 
