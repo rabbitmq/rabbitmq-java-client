@@ -46,18 +46,22 @@ import java.util.TreeSet;
 import java.io.IOException;
 
 public class ConfirmDontLoseMessages {
-    final static int MSG_COUNT = 10000;
+    static int msgCount = 10000;
     final static String QUEUE_NAME = "confirm-test";
     static ConnectionFactory connectionFactory;
 
     public static void main(String[] args)
         throws IOException, InterruptedException
     {
+        if (args.length > 0) {
+                msgCount = Integer.parseInt(args[0]);
+        }
+
         connectionFactory = new ConnectionFactory();
 
-        // Publish MSG_COUNT messages and wait for confirms.
+        // Publish msgCount messages and wait for confirms.
         (new Thread(new Consumer())).start();
-        // Consume MSG_COUNT messages.
+        // Consume msgCount messages.
         (new Thread(new Publisher())).start();
     }
 
@@ -72,23 +76,22 @@ public class ConfirmDontLoseMessages {
                 // Setup
                 Connection conn = connectionFactory.newConnection();
                 Channel ch = conn.createChannel();
-                ch.queueDeclare(QUEUE_NAME, true, false, true, null);
-                ch.confirmSelect();
+                ch.queueDeclare(QUEUE_NAME, true, false, false, null);
                 ch.setAckListener(new AckListener() {
                         public void handleAck(long seqNo,
                                               boolean multiple) {
                             if (multiple) {
-                                for (long i = ackSet.first(); i <= seqNo; ++i)
-                                    ackSet.remove(i);
+                                ackSet.headSet(seqNo+1).clear();
                             } else {
-                                    ackSet.remove(seqNo);
+                                ackSet.remove(seqNo);
                             }
                         }
                     });
+                ch.confirmSelect();
 
                 // Publish
-                for (long i = 0; i < MSG_COUNT; ++i) {
-                    ackSet.add(i);
+                for (long i = 0; i < msgCount; ++i) {
+                    ackSet.add(ch.getNextPublishSeqNo());
                     ch.basicPublish("", QUEUE_NAME,
                                     MessageProperties.PERSISTENT_BASIC,
                                     "nop".getBytes());
@@ -99,6 +102,7 @@ public class ConfirmDontLoseMessages {
                     Thread.sleep(10);
 
                 // Cleanup
+                ch.queueDelete(QUEUE_NAME);
                 ch.close();
                 conn.close();
 
@@ -118,16 +122,16 @@ public class ConfirmDontLoseMessages {
                 // Setup
                 Connection conn = connectionFactory.newConnection();
                 Channel ch = conn.createChannel();
-                ch.queueDeclare(QUEUE_NAME, true, false, true, null);
+                ch.queueDeclare(QUEUE_NAME, true, false, false, null);
 
                 // Consume
                 QueueingConsumer qc = new QueueingConsumer(ch);
                 ch.basicConsume(QUEUE_NAME, true, qc);
-                for (int i = 0; i < MSG_COUNT; ++i) {
+                for (int i = 0; i < msgCount; ++i) {
                     qc.nextDelivery();
                 }
 
-                // Consume
+                // Cleanup
                 ch.close();
                 conn.close();
             } catch (Throwable e) {
