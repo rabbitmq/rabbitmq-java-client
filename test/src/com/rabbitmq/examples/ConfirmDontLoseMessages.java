@@ -81,10 +81,9 @@ public class ConfirmDontLoseMessages {
                         public void handleAck(long seqNo,
                                               boolean multiple) {
                             if (multiple) {
-                                for (long i = ackSet.first(); i <= seqNo; ++i)
-                                    ackSet.remove(i);
+                                ackSet.headSet(seqNo+1).clear();
                             } else {
-                                    ackSet.remove(seqNo);
+                                ackSet.remove(seqNo);
                             }
                         }
                     });
