@@ -78,17 +78,16 @@ public class ConfirmDontLoseMessages {
                         public void handleAck(long seqNo,
                                               boolean multiple) {
                             if (multiple) {
-                                for (long i = ackSet.first(); i <= seqNo; ++i)
-                                    ackSet.remove(i);
+                                ackSet.headSet(seqNo+1).clear();
                             } else {
-                                    ackSet.remove(seqNo);
+                                ackSet.remove(seqNo);
                             }
                         }
                     });
 
                 // Publish
                 for (long i = 0; i < MSG_COUNT; ++i) {
-                    ackSet.add(i);
+                    ackSet.add(ch.getNextPublishSeqNo());
                     ch.basicPublish("", QUEUE_NAME,
                                     MessageProperties.PERSISTENT_BASIC,
                                     "nop".getBytes());
