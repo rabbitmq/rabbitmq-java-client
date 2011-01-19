@@ -73,6 +73,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(SaslMechanisms.class);
         suite.addTestSuite(UserIDHeader.class);
         suite.addTestSuite(InternalExchange.class);
+        suite.addTestSuite(CcRoutes.class);
         return suite;
     }
 }
