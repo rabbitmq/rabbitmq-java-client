@@ -66,9 +66,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 "version", LongStringHelper.asLongString(ClientVersion.VERSION),
                 "platform", LongStringHelper.asLongString("Java"),
                 "copyright", LongStringHelper.asLongString(
-                    "Copyright (C) 2007-2008 LShift Ltd., " +
-                    "Cohesive Financial Technologies LLC., " +
-                    "and Rabbit Technologies Ltd."),
+                    "Copyright (C) 2007-2011 VMware, Inc."),
                 "information", LongStringHelper.asLongString(
                     "Licensed under the MPL. See http://www.rabbitmq.com/")
             });
