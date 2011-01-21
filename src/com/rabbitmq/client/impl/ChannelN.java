@@ -1,33 +1,19 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 
 package com.rabbitmq.client.impl;
 
@@ -105,9 +91,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile AckListener ackListener = null;
 
-    /** Current published message count (used by publisher acknowledgements)
+    /** Sequence number of next published message requiring confirmation.
      */
-    private final AtomicLong publishedMessageCount = new AtomicLong(-1);
+    private long nextPublishSeqNo = 0L;
 
     /** Reference to the currently-active default consumer, or null if there is
      *  none.
@@ -498,8 +484,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
-        if (publishedMessageCount.get() >= 0)
-            publishedMessageCount.incrementAndGet();
+        if (nextPublishSeqNo > 0) nextPublishSeqNo++;
         BasicProperties useProps = props;
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
@@ -515,10 +500,24 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                               Map<String, Object> arguments)
         throws IOException
     {
+        return exchangeDeclare(exchange, type,
+                               durable, autoDelete, false,
+                               arguments);
+    }
+
+    /** Public API - {@inheritDoc} */
+    public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
+                                              boolean durable,
+                                              boolean autoDelete,
+                                              boolean internal,
+                                              Map<String, Object> arguments)
+            throws IOException
+    {
         return (Exchange.DeclareOk)
-            exnWrappingRpc(new Exchange.Declare(TICKET, exchange, type,
-                                                false, durable, autoDelete,
-                                                false, false, arguments)).getMethod();
+                exnWrappingRpc(new Exchange.Declare(TICKET, exchange, type,
+                                                    false, durable, autoDelete,
+                                                    internal, false,
+                                                    arguments)).getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -707,6 +706,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public void basicNack(long deliveryTag, boolean multiple, boolean requeue)
+        throws IOException
+    {
+        transmit(new Basic.Nack(deliveryTag, multiple, requeue));
+    }
+
+    /** Public API - {@inheritDoc} */
     public void basicReject(long deliveryTag, boolean requeue)
         throws IOException
     {
@@ -851,13 +857,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public Confirm.SelectOk confirmSelect(boolean multiple)
+    public Confirm.SelectOk confirmSelect()
         throws IOException
     {
-        if (publishedMessageCount.get() == -1)
-            publishedMessageCount.set(0);
+        if (nextPublishSeqNo == 0) nextPublishSeqNo = 1;
         return (Confirm.SelectOk)
-            exnWrappingRpc(new Confirm.Select(multiple, false)).getMethod();
+            exnWrappingRpc(new Confirm.Select(false)).getMethod();
 
     }
 
@@ -872,7 +877,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public long getPublishedMessageCount() {
-        return publishedMessageCount.longValue();
+    public long getNextPublishSeqNo() {
+        return nextPublishSeqNo;
     }
 }

@@ -419,6 +419,7 @@
           tofile="${bundle.out}/amqp-client-${impl.version}.jar"/>
     <jar destfile="${bundle.out}/amqp-client-${impl.version}-sources.jar">
         <fileset dir="src"/>
+        <fileset dir="${src.generated}"/>
     </jar>
     <jar destfile="${bundle.out}/amqp-client-${impl.version}-javadoc.jar">
         <fileset dir="${javadoc.out}"/>

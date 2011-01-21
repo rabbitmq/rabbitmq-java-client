@@ -21,24 +21,22 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 
-/**
- * Test that unbinding from an auto-delete exchange causes the exchange to go
- * away
- */
-public class UnbindAutoDeleteExchange extends BrokerTestCase {
-    public void testUnbind() throws IOException, InterruptedException {
-        String exchange = "myexchange";
-        channel.exchangeDeclare(exchange, "fanout", false, true, null);
-        String queue = channel.queueDeclare().getQueue();
-        channel.queueBind(queue, exchange, "");
-        channel.queueUnbind(queue, exchange, "");
+public class UserIDHeader extends BrokerTestCase {
+    public void testValidUserId() throws IOException {
+        AMQP.BasicProperties properties = new AMQP.BasicProperties();
+        properties.setUserId("guest");
+        channel.basicPublish("amq.fanout", "", properties, "".getBytes());
+    }
 
+    public void testInvalidUserId() {
+        AMQP.BasicProperties properties = new AMQP.BasicProperties();
+        properties.setUserId("not the guest, honest");
         try {
-            channel.exchangeDeclarePassive(exchange);
-            fail("exchange should no longer be there");
-        }
-        catch (IOException e) {
-            checkShutdownSignal(AMQP.NOT_FOUND, e);
+            channel.basicPublish("amq.fanout", "", properties, "".getBytes());
+            channel.queueDeclare(); // To flush the channel
+            fail("Accepted publish with incorrect user ID");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
     }
 }

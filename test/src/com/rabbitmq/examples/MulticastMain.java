@@ -1,33 +1,19 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 
 package com.rabbitmq.examples;
 
@@ -37,7 +23,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.concurrent.Semaphore;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
@@ -86,8 +76,8 @@ public class MulticastMain {
             int consumerCount    = intArg(cmd, 'y', 1);
             int producerTxSize   = intArg(cmd, 'm', 0);
             int consumerTxSize   = intArg(cmd, 'n', 0);
-            boolean pubAck       = cmd.hasOption('c');
-            long pubAckCount     = intArg(cmd, 'k', 0);
+            boolean confirm      = cmd.hasOption('c');
+            long confirmMax      = intArg(cmd, 'k', 0);
             boolean autoAck      = cmd.hasOption('a');
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
@@ -96,9 +86,9 @@ public class MulticastMain {
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
 
-            if ((producerTxSize + consumerTxSize > 0) && pubAck) {
+            if ((producerTxSize + consumerTxSize > 0) && confirm) {
                 throw new ParseException("Cannot select both producerTxSize"+
-                                         "/consumerTxSize and pubAck.");
+                                         "/consumerTxSize and confirm");
             }
 
             //setup
@@ -141,13 +131,13 @@ public class MulticastMain {
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
-                if (pubAck) channel.confirmSelect(false);
+                if (confirm) channel.confirmSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
                 final Producer p = new Producer(channel, exchangeName, id,
                                                 flags, producerTxSize,
                                                 1000L * samplingInterval,
                                                 rateLimit, minMsgSize, timeLimit,
-                                                pubAckCount);
+                                                confirm, confirmMax);
                 channel.setReturnListener(p);
                 channel.setAckListener(p);
                 Thread t = new Thread(p);
@@ -193,9 +183,9 @@ public class MulticastMain {
         options.addOption(new Option("x", "producers", true, "producer count"));
         options.addOption(new Option("y", "consumers", true, "consumer count"));
         options.addOption(new Option("m", "ptxsize",   true, "producer tx size"));
-        options.addOption(new Option("k", "pubackcnt", true, "max unack'd publishes"));
+        options.addOption(new Option("k", "confirmMax", true, "max unconfirmed publishes"));
         options.addOption(new Option("n", "ctxsize",   true, "consumer tx size"));
-        options.addOption(new Option("c", "puback",    false,"publisher acks"));
+        options.addOption(new Option("c", "confirm",   false,"confirm mode"));
         options.addOption(new Option("a", "autoack",   false,"auto ack"));
         options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
         options.addOption(new Option("s", "size",      true, "message size"));
@@ -242,15 +232,18 @@ public class MulticastMain {
         private long    startTime;
         private long    lastStatsTime;
         private int     msgCount;
-        private int     basicReturnCount;
+        private int     returnCount;
 
-        private long    pubAckCount;
-        private long    mostRecentAcked;
+        private boolean   confirm;
+        private long      confirmCount;
+        private Semaphore confirmPool;
+        private volatile SortedSet<Long> ackSet =
+            Collections.synchronizedSortedSet(new TreeSet<Long>());
 
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
                         long interval, int rateLimit, int minMsgSize, int timeLimit,
-                        long pubAckCount)
+                        boolean confirm, long confirmMax)
             throws IOException {
 
             this.channel      = channel;
@@ -263,38 +256,42 @@ public class MulticastMain {
             this.interval     = interval;
             this.rateLimit    = rateLimit;
             this.timeLimit    = 1000L * timeLimit;
-            this.pubAckCount  = pubAckCount;
-            this.message      = new byte[minMsgSize];
-        }
-
-        public void handleBasicReturn(int replyCode,
-                                      String replyText,
-                                      String exchange,
-                                      String routingKey,
-                                      AMQP.BasicProperties properties,
-                                      byte[] body) throws IOException {
-            logBasicReturn();
-        }
-
-        public synchronized void logBasicReturn() {
-            basicReturnCount++;
-        }
-
-        public synchronized void resetBasicReturns() {
-            basicReturnCount = 0;
-        }
-
-        public void handleAck(long sequenceNumber, boolean multiple) {
-            if (multiple) {
-                logAck(sequenceNumber);
-                System.out.printf("got an ack all messages up to %d\n", sequenceNumber);
-            } else {
-                logAck(sequenceNumber);
+            if (confirmMax > 0) {
+                this.confirmPool  = new Semaphore((int)confirmMax);
             }
+            this.message      = new byte[minMsgSize];
+            this.confirm      = confirm;
         }
 
-        private synchronized void logAck(long seqNum) {
-            mostRecentAcked = seqNum;
+        public synchronized void handleBasicReturn(int replyCode,
+                                                   String replyText,
+                                                   String exchange,
+                                                   String routingKey,
+                                                   AMQP.BasicProperties properties,
+                                                   byte[] body)
+            throws IOException {
+            returnCount++;
+        }
+
+        public void handleAck(long seqNo, boolean multiple) {
+            int numConfirms = 0;
+            if (multiple) {
+                SortedSet<Long> confirmed = ackSet.headSet(seqNo + 1);
+                numConfirms += confirmed.size();
+                confirmed.clear();
+            } else {
+                ackSet.remove(seqNo);
+                numConfirms = 1;
+            }
+            synchronized (this) {
+                confirmCount += numConfirms;
+            }
+
+            if (confirmPool != null) {
+                for (int i = 0; i < numConfirms; ++i) {
+                    confirmPool.release();
+                }
+            }
         }
 
         public void run() {
@@ -307,17 +304,16 @@ public class MulticastMain {
             try {
 
                 while (timeLimit == 0 || now < startTime + timeLimit) {
-                    if (!throttlePubAck()) {
-                        delay(now);
-                        publish(createMessage(totalMsgCount));
-                        totalMsgCount++;
-                        msgCount++;
+                    if (confirmPool != null) {
+                        confirmPool.acquire();
+                    }
+                    delay(now);
+                    publish(createMessage(totalMsgCount));
+                    totalMsgCount++;
+                    msgCount++;
 
-                        if (txSize != 0 && totalMsgCount % txSize == 0) {
-                            channel.txCommit();
-                        }
-                    } else {
-                        Thread.sleep(10);
+                    if (txSize != 0 && totalMsgCount % txSize == 0) {
+                        channel.txCommit();
                     }
                     now = System.currentTimeMillis();
                 }
@@ -337,14 +333,11 @@ public class MulticastMain {
         private void publish(byte[] msg)
             throws IOException {
 
+            ackSet.add(channel.getNextPublishSeqNo());
             channel.basicPublish(exchangeName, id,
                                  mandatory, immediate,
                                  persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
                                  msg);
-        }
-
-        private boolean throttlePubAck() {
-            return ((pubAckCount > 0) && (channel.getPublishedMessageCount() - mostRecentAcked > pubAckCount));
         }
 
         private void delay(long now)
@@ -361,14 +354,23 @@ public class MulticastMain {
                 Thread.sleep(pause);
             }
             if (elapsed > interval) {
-                System.out.println("sending rate: " +
-                                   (msgCount * 1000L / elapsed) +
-                                   " msg/s" +
-                                   ", basic returns: " +
-                                   (basicReturnCount * 1000L / elapsed) +
-                                   " ret/s");
-                resetBasicReturns();
-                msgCount = 0;
+                long sendRate, returnRate, confirmRate;
+                synchronized(this) {
+                    sendRate     = msgCount     * 1000L / elapsed;
+                    returnRate   = returnCount  * 1000L / elapsed;
+                    confirmRate  = confirmCount * 1000L / elapsed;
+                    msgCount     = 0;
+                    returnCount  = 0;
+                    confirmCount = 0;
+                }
+                System.out.print("sending rate: " + sendRate + " msg/s");
+                if (mandatory || immediate) {
+                    System.out.print(", returns: " + returnRate + " ret/s");
+                }
+                if (confirm) {
+                    System.out.print(", confirms: " + confirmRate + " c/s");
+                }
+                System.out.println();
                 lastStatsTime = now;
             }
         }
