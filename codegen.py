@@ -191,7 +191,7 @@ public interface AMQP
                     ctor_arg_list.append("{0}".format(java_field_name(a.name)))
             ctor_call += ", ".join(ctor_arg_list)
             ctor_call += ");"
-            print "                     %s" % (ctor_call)
+            print "                    %s" % (ctor_call)
 
         def genFields(spec, m):
             (fieldsToNullCheckInBuild, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
@@ -231,15 +231,18 @@ public interface AMQP
             if len(fieldsToNullCheckInBuild) != 0:
                 nullCheckClauses = []
                 for f in fieldsToNullCheckInBuild:
-                    nullCheckClauses.append("{0} == null".format(f))
-                nullCheckClause = " ||\n                       ".join(nullCheckClauses) + ")"
-                print "                    if(%s" % (nullCheckClause)
-                print "                    {"
-                print "                        throw new IllegalStateException(\"Invalid configuration.\");"
-                print "                    }"
-                print
+                    print genNullCheckClause(f)
             ctorCall(c,m)
             print "                }"
+
+        def genNullCheckClause(f):
+            return """                    if(%s == null)
+                    {
+                        throw new IllegalStateException(
+                                        "Invalid configuration: '%s'" +
+                                        " must be non-null."
+                                                       );
+                    }\n""" % (f,f)
 
         print
         print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
