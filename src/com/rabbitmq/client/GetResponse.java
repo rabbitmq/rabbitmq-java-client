@@ -19,7 +19,7 @@ package com.rabbitmq.client;
 import com.rabbitmq.client.AMQP.BasicProperties;
 
 /**
- * Encapsulates the response from a {@link Channel#basicGet} message-retrieval method asyncRpc
+ * Encapsulates the response from a {@link Channel#basicGet} message-retrieval method call
  * - essentially a static bean "holder" with message response data.
  */
 public class GetResponse {

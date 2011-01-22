@@ -28,9 +28,9 @@ public class BlockingCell<T> {
 
     /** Will be null until a value is supplied, and possibly still then. */
     private T _value;
-    
+
     private static final long NANOS_IN_MILLI = 1000 * 1000;
-    
+
     private static final long INFINITY = -1;
 
     /** Instantiate a new BlockingCell waiting for a value of the specified type. */
@@ -51,12 +51,12 @@ public class BlockingCell<T> {
         }
         return _value;
     }
-    
+
     /**
      * Wait for a value, and when one arrives, return it (without clearing it). If there's
      * already a value present, there's no need to wait - the existing value is returned.
      * If timeout is reached and value hasn't arrived, TimeoutException is thrown
-     * 
+     *
      * @param timeout timeout in miliseconds. -1 effectively means infinity
      * @return the waited-for value
      * @throws InterruptedException if this thread is interrupted
@@ -75,10 +75,10 @@ public class BlockingCell<T> {
 
         if (!_filled)
             throw new TimeoutException();
-        
+
         return _value;
     }
-    
+
     /**
      * As get(), but catches and ignores InterruptedException, retrying until a value appears.
      * @return the waited-for value
@@ -92,20 +92,20 @@ public class BlockingCell<T> {
             }
         }
     }
-    
+
     /**
      * As get(long timeout), but catches and ignores InterruptedException, retrying until
      * a value appears or until specified timeout is reached. If timeout is reached,
      * TimeoutException it thrown.
      * We also use System.nanoTime() to behave correctly when system clock jumps around.
-     *  
+     *
      * @param timeout timeout in miliseconds. -1 effectively means infinity
      * @return the waited-for value
      */
     public synchronized T uninterruptibleGet(int timeout) throws TimeoutException {
         long now = System.nanoTime() / NANOS_IN_MILLI;
         long runTime = now + timeout;
-        
+
         do {
             try {
                 return get(runTime - now);
@@ -113,7 +113,7 @@ public class BlockingCell<T> {
                 // Ignore.
             }
         } while ((timeout == INFINITY) || ((now = System.nanoTime() / NANOS_IN_MILLI) < runTime));
-        
+
         throw new TimeoutException();
     }
 
@@ -132,7 +132,7 @@ public class BlockingCell<T> {
 
     /**
      * Store a value in this BlockingCell if it doesn't already have a value.
-     * @return true if this asyncRpc to setIfUnset actually updated the BlockingCell; false if the cell already had a value.
+     * @return true if this call to setIfUnset actually updated the BlockingCell; false if the cell already had a value.
      * @param newValue the new value to store
      */
     public synchronized boolean setIfUnset(T newValue) {

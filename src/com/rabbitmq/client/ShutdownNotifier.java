@@ -56,7 +56,7 @@ public interface ShutdownNotifier {
      * Determine whether the component is currently open.
      * Will return false if we are currently closing.
      * Checking this method should be only for information,
-     * because of the race conditions - state can change after the asyncRpc.
+     * because of the race conditions - state can change after the call.
      * Instead just execute and try to catch ShutdownSignalException
      * and IOException
      *

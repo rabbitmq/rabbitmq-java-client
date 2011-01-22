@@ -103,7 +103,7 @@ final class HeartbeatSender {
             }
 
             if (this.executor != null) {
-                // to be safe, we shouldn't asyncRpc shutdown holding the
+                // to be safe, we shouldn't call shutdown holding the
                 // monitor.
                 executorToShutdown = this.executor;
 

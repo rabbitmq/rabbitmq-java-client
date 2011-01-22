@@ -22,7 +22,7 @@ import java.util.Map;
 import com.rabbitmq.tools.json.JSONWriter;
 
 /**
- * Thrown when a JSON-RPC service indicates an error occurred during a asyncRpc.
+ * Thrown when a JSON-RPC service indicates an error occurred during a call.
  */
 public class JsonRpcException extends Exception {
     /**
@@ -39,7 +39,7 @@ public class JsonRpcException extends Exception {
     public Object error;
 
     public JsonRpcException() {
-        // no work needed in default no-argconstructor
+        // no work needed in default no-arg constructor
     }
 
     public JsonRpcException(Map<String, Object> errorMap) {

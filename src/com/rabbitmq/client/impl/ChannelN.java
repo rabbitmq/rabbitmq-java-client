@@ -102,7 +102,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /**
      * Construct a new channel on the given connection with the given
-     * channel number. Usually not called directly - asyncRpc
+     * channel number. Usually not called directly - call
      * Connection.createChannel instead.
      * @see Connection#createChannel
      * @param connection The connection associated with this channel
@@ -751,7 +751,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).consumerTag;
                 _consumers.put(actualConsumerTag, callback);
-                // We need to asyncRpc back inside the connection thread
+                // We need to call back inside the connection thread
                 // in order avoid races with 'deliver' commands
                 try {
                     callback.handleConsumeOk(actualConsumerTag);
@@ -787,7 +787,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 Basic.CancelOk dummy = (Basic.CancelOk) replyCommand.getMethod();
                 Utility.use(dummy);
                 Consumer callback = _consumers.remove(consumerTag);
-                // We need to asyncRpc back inside the connection thread
+                // We need to call back inside the connection thread
                 // in order avoid races with 'deliver' commands
                 try {
                     callback.handleCancelOk(consumerTag);

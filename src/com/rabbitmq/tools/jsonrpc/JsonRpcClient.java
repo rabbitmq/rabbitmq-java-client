@@ -112,7 +112,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
         } catch(ShutdownSignalException ex) {
             throw new IOException(ex.getMessage()); // wrap, re-throw
         }
-        
+
         //System.out.println(requestStr + " --->\n---> " + replyStr);
 	Map<String, Object> map = (Map) (new JSONReader().read(replyStr));
 	return checkReply(map);
@@ -142,7 +142,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
 
     /**
      * Private API - used by {@link #call(String[])} to ad-hoc convert
-     * strings into the required data types for a asyncRpc.
+     * strings into the required data types for a call.
      */
     public static Object coerce(String val, String type)
 	throws NumberFormatException

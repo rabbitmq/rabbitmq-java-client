@@ -124,35 +124,35 @@ public class ChannelManager {
     }
 
     /**
-     * Remove the argument channel from the channel map. 
-     * This method must be safe to asyncRpc multiple times on the same channel. If
+     * Remove the argument channel from the channel map.
+     * This method must be safe to call multiple times on the same channel. If
      * it is not then things go badly wrong.
      */
     public synchronized void disconnectChannel(ChannelN channel) {
         int channelNumber = channel.getChannelNumber();
-       
+
         // Warning, here be dragons. Not great big ones, but little baby ones
-        // which will nibble on your toes and occasionally trip you up when 
-        // you least expect it. 
-        // Basically, there's a race that can end us up here. It almost never 
-        // happens, but it's easier to repair it when it does than prevent it 
-        // from happening in the first place. 
+        // which will nibble on your toes and occasionally trip you up when
+        // you least expect it.
+        // Basically, there's a race that can end us up here. It almost never
+        // happens, but it's easier to repair it when it does than prevent it
+        // from happening in the first place.
         // If we end up doing a Channel.close in one thread and a Channel.open
         // with the same channel number in another, the two can overlap in such
-        // a way as to cause disconnectChannel on the old channel to try to 
+        // a way as to cause disconnectChannel on the old channel to try to
         // remove the new one. Ideally we would fix this race at the source,
-        // but it's much easier to just catch it here.   
+        // but it's much easier to just catch it here.
         synchronized (_channelMap) {
           ChannelN existing = _channelMap.remove(channelNumber);
-          // Nothing to do here. Move along. 
+          // Nothing to do here. Move along.
           if (existing == null) return;
           // Oops, we've gone and stomped on someone else's channel. Put it back
-          // and pretend we didn't touch it. 
+          // and pretend we didn't touch it.
           else if (existing != channel) {
             _channelMap.put(channelNumber, existing);
             return;
           }
           channelNumberAllocator.free(channelNumber);
-        } 
+        }
     }
 }
