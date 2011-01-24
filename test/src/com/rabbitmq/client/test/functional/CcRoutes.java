@@ -46,7 +46,7 @@ public class CcRoutes extends BrokerTestCase  {
 
     static private String[] queues = new String[]{"queue1", "queue2", "queue3"};
     protected String exDirect = "direct_cc_exchange";
-    protected String exFanout = "fanout_cc_exchange";
+    protected String exTopic = "topic_cc_exchange";
     protected BasicProperties props;
     protected Map headers;
     protected List ccList;
@@ -66,7 +66,7 @@ public class CcRoutes extends BrokerTestCase  {
             channel.queueDeclare(q, false, false, false, null);
         }
         channel.exchangeDeclare(exDirect, "direct");
-        channel.exchangeDeclare(exFanout, "fanout");
+        channel.exchangeDeclare(exTopic, "topic");
     }
 
     @Override protected void releaseResources() throws IOException {
@@ -74,7 +74,7 @@ public class CcRoutes extends BrokerTestCase  {
             channel.queueDelete(q);
         }
         channel.exchangeDelete(exDirect);
-        channel.exchangeDelete(exFanout);
+        channel.exchangeDelete(exTopic);
         super.releaseResources();
     }
 
@@ -113,13 +113,23 @@ public class CcRoutes extends BrokerTestCase  {
 
     public void testDirectExchangeWithoutBindings() throws IOException {
         ccList.add("queue1");
-        headerPublish(exDirect, "unbound", ccList, null);
-        expect(new String[] {"queue1"});
+        headerPublish(exDirect, "queue2", ccList, null);
+        expect(new String[] {});
     }
 
-    public void testFanoutExchange() throws IOException {
-        ccList.add("queue2");
-        headerPublish(exFanout, "queue1", ccList, null);
+    public void testTopicExchange() throws IOException {
+        ccList.add("routing_key");
+        channel.queueBind("queue2", exTopic, "routing_key");
+        headerPublish(exTopic, "", ccList, null);
+        expect(new String[] {"queue2"});
+    }
+
+    public void testBoundExchanges() throws IOException {
+        ccList.add("routing_key1");
+        bccList.add("routing_key2");
+        channel.exchangeBind(exTopic, exDirect, "routing_key1");
+        channel.queueBind("queue2", exTopic, "routing_key2");
+        headerPublish(exDirect, "", ccList, bccList);
         expect(new String[] {"queue2"});
     }
 
