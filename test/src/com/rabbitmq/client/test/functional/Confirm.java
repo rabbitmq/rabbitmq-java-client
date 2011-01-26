@@ -19,7 +19,7 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AckListener;
+import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
@@ -41,10 +41,13 @@ public class Confirm extends BrokerTestCase
     protected void setUp() throws IOException {
         super.setUp();
         ackSet = Collections.synchronizedSortedSet(new TreeSet<Long>());
-        channel.setAckListener(new AckListener() {
-                public void handleAck(long seqNo,
-                                      boolean multiple) {
+        channel.setConfirmListener(new ConfirmListener() {
+                public void handleAck(long seqNo, boolean multiple) {
                     Confirm.this.handleAck(seqNo, multiple);
+                }
+
+                public void handleNack(long seqNo, boolean multiple) {
+                    Confirm.this.fail("got a nack");
                 }
             });
         channel.confirmSelect();

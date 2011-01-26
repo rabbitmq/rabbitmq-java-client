@@ -38,7 +38,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import com.rabbitmq.client.AckListener;
+import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
@@ -46,7 +46,6 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.NackListener;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -140,8 +139,7 @@ public class MulticastMain {
                                                 rateLimit, minMsgSize, timeLimit,
                                                 confirm, confirmMax);
                 channel.setReturnListener(p);
-                channel.setAckListener(p);
-                channel.setNackListener(p);
+                channel.setConfirmListener(p);
                 Thread t = new Thread(p);
                 producerThreads[i] = t;
                 t.start();
@@ -216,9 +214,9 @@ public class MulticastMain {
         return Arrays.asList(vals);
     }
 
-    public static class Producer implements Runnable, ReturnListener, AckListener,
-                                            NackListener {
-
+    public static class Producer implements Runnable, ReturnListener,
+                                            ConfirmListener
+    {
         private Channel channel;
         private String  exchangeName;
         private String  id;

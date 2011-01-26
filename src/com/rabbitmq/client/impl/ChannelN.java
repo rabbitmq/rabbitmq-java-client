@@ -17,8 +17,7 @@
 
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.AckListener;
-import com.rabbitmq.client.NackListener;
+import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
@@ -88,13 +87,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile FlowListener flowListener = null;
 
-    /** Reference to the currently-active AckListener, or null if there is none.
+    /** Reference to the currently-active ConfirmListener, or null if there is none.
      */
-    public volatile AckListener ackListener = null;
-
-    /** Reference to the currently-active NackListener, or null if there is none.
-     */
-    public volatile NackListener nackListener = null;
+    public volatile ConfirmListener confirmListener = null;
 
     /** Sequence number of next published message requiring confirmation.
      */
@@ -155,30 +150,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         flowListener = listener;
     }
 
-    /** Returns the current AckListener. */
-    public AckListener getAckListener() {
-        return ackListener;
+    /** Returns the current ConfirmkListener. */
+    public ConfirmListener getConfirmListener() {
+        return confirmListener;
     }
 
     /**
-     * Sets the current AckListener.
-     * A null argument is interpreted to mean "do not use an ack listener".
+     * Sets the current ConfirmListener.
+     * A null argument is interpreted to mean "do not use a confirm listener".
      */
-    public void setAckListener(AckListener listener) {
-        ackListener = listener;
-    }
-
-    /** Returns the current NackListener. */
-    public NackListener getNackListener() {
-        return nackListener;
-    }
-
-    /**
-     * Sets the current NackListener.
-     * A null argument is interpreted to mean "do not use a nack listener".
-     */
-    public void setNackListener(NackListener listener) {
-        nackListener = listener;
+    public void setConfirmListener(ConfirmListener listener) {
+        confirmListener = listener;
     }
 
     /** Returns the current default consumer. */
@@ -340,23 +322,23 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return true;
             } else if (method instanceof Basic.Ack) {
                 Basic.Ack ack = (Basic.Ack) method;
-                AckListener l = getAckListener();
+                ConfirmListener l = getConfirmListener();
                 if (l != null) {
                     try {
                         l.handleAck(ack.getDeliveryTag(), ack.getMultiple());
                     } catch (Throwable ex) {
-                        _connection.getExceptionHandler().handleAckListenerException(this, ex);
+                        _connection.getExceptionHandler().handleConfirmListenerException(this, ex);
                     }
                 }
                 return true;
             } else if (method instanceof Basic.Nack) {
                 Basic.Nack nack = (Basic.Nack) method;
-                NackListener l = getNackListener();
+                ConfirmListener l = getConfirmListener();
                 if (l != null) {
                     try {
                         l.handleNack(nack.getDeliveryTag(), nack.getMultiple());
                     } catch (Throwable ex) {
-                        _connection.getExceptionHandler().handleNackListenerException(this, ex);
+                        _connection.getExceptionHandler().handleConfirmListenerException(this, ex);
                     }
                 }
                 return true;
