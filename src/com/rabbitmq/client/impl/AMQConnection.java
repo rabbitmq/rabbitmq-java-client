@@ -333,9 +333,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                                          heartbeat));
         // 0.9.1: insist [on not being redirected] is deprecated, but
         // still in generated code; just pass a dummy value here
-        Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
-                                                                          "",
-                                                                          false)).getMethod();
+        _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
+                                                            "",
+                                                            false)).getMethod();
         return;
     }
 
@@ -610,11 +610,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ShutdownSignalException sse = new ShutdownSignalException(true,initiatedByApplication,
                                                                   reason, this);
         sse.initCause(cause);
-        synchronized (this) {
-            if (initiatedByApplication)
-                ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-            if (isOpen())
-                _shutdownCause = sse;
+        if (!setShutdownCauseIfOpen(sse)) {
+            if (initiatedByApplication) 
+                throw new AlreadyClosedException("Attempt to use closed connection", this);
         }
 
         // stop any heartbeating

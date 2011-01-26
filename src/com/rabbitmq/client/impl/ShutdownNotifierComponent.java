@@ -40,53 +40,71 @@ import com.rabbitmq.client.ShutdownSignalException;
 
 public class ShutdownNotifierComponent implements ShutdownNotifier {
 
+    /** Monitor for listeners and shutdownCause */
+    private final Object monitor = new Object();
+
     /** List of all shutdown listeners associated with the component */
-    public List<ShutdownListener> listeners
-            = new ArrayList<ShutdownListener>();
+    private final List<ShutdownListener> shutdownListeners
+        = new ArrayList<ShutdownListener>();
 
     /**
      * When this value is null, the component is in an "open"
      * state. When non-null, the component is in "closed" state, and
      * this value indicates the circumstances of the shutdown.
      */
-    public volatile ShutdownSignalException _shutdownCause = null;
+    private volatile ShutdownSignalException shutdownCause = null;
 
     public void addShutdownListener(ShutdownListener listener)
     {
-        boolean closed = false;
-        synchronized(listeners) {
-            closed = !isOpen();
-            listeners.add(listener);
+        ShutdownSignalException sse = null;
+        synchronized(this.monitor) {
+            sse = this.shutdownCause;
+            this.shutdownListeners.add(listener);
         }
-        if (closed)
-            listener.shutdownCompleted(getCloseReason());
+        if (sse != null) // closed
+            listener.shutdownCompleted(sse);
     }
 
     public ShutdownSignalException getCloseReason() {
-        return _shutdownCause;
+        return this.shutdownCause;
     }
 
     public void notifyListeners()
     {
-        synchronized(listeners) {
-            for (ShutdownListener l: listeners)
-                try {
-                    l.shutdownCompleted(getCloseReason());
-                } catch (Exception e) {
-                    // FIXME: proper logging
-                }
+        ShutdownSignalException sse = null;
+        ShutdownListener[] sdls = null;
+        synchronized(this.monitor) {
+            sdls = this.shutdownListeners
+                .toArray(new ShutdownListener[this.shutdownListeners.size()]);
+            sse = this.shutdownCause;
+        }
+        for (ShutdownListener l: sdls) {
+            try {
+                l.shutdownCompleted(sse);
+            } catch (Exception e) {
+            // FIXME: proper logging
+            }
         }
     }
 
     public void removeShutdownListener(ShutdownListener listener)
     {
-        synchronized(listeners) {
-            listeners.remove(listener);
+        synchronized(this.monitor) {
+            this.shutdownListeners.remove(listener);
         }
     }
 
     public boolean isOpen() {
-        return _shutdownCause == null;
+        return this.shutdownCause == null;
     }
 
+    public boolean setShutdownCauseIfOpen(ShutdownSignalException sse) {
+        synchronized (this.monitor) {
+            if (isOpen()) {
+                this.shutdownCause = sse;
+                return true;
+            }
+            return false;
+        }
+    }
 }

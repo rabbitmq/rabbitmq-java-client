@@ -255,13 +255,12 @@ public class Frame {
 
     @Override public String toString() {
         StringBuffer sb = new StringBuffer();
-        sb.append("Frame(" + type + ", " + channel + ", ");
+        sb.append("Frame(type=").append(type).append(", channel=").append(channel).append(", ");
         if (accumulator == null) {
-            sb.append(payload.length + " bytes of payload");
+            sb.append(payload.length).append(" bytes of payload)");
         } else {
-            sb.append(accumulator.size() + " bytes of accumulator");
+            sb.append(accumulator.size()).append(" bytes of accumulator)");
         }
-        sb.append(")");
         return sb.toString();
     }
 
@@ -339,7 +338,7 @@ public class Frame {
             acc += 4 + ((byte[])value).length;
         }
         else if(value instanceof List) {
-            acc += 4 + arraySize((List)value);
+            acc += 4 + arraySize((List<?>)value);
         }
         else if(value == null) {
         }
@@ -350,7 +349,7 @@ public class Frame {
     }
 
     /** Computes the AMQP wire-protocol length of an encoded field-array */
-    public static long arraySize(List values)
+    public static long arraySize(List<?> values)
         throws UnsupportedEncodingException
     {
         long acc = 0;

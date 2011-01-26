@@ -65,13 +65,13 @@ public class BlockingCell<T> {
         }
         return _value;
     }
-    
+
     /**
      * Wait for a value, and when one arrives, return it (without clearing it). If there's
      * already a value present, there's no need to wait - the existing value is returned.
-     * If timeout is reached and value hasn't arrived, TimeoutException is thrown
+     * If timeout is reached and value hasn't arrived, TimeoutException is thrown.
      * 
-     * @param timeout timeout in miliseconds. -1 effectively means infinity
+     * @param timeout timeout in milliseconds. -1 effectively means infinity
      * @return the waited-for value
      * @throws InterruptedException if this thread is interrupted
      */
@@ -112,8 +112,8 @@ public class BlockingCell<T> {
      * a value appears or until specified timeout is reached. If timeout is reached,
      * TimeoutException it thrown.
      * We also use System.nanoTime() to behave correctly when system clock jumps around.
-     *  
-     * @param timeout timeout in miliseconds. -1 effectively means infinity
+     * 
+     * @param timeout timeout in milliseconds. -1 effectively means infinity
      * @return the waited-for value
      */
     public synchronized T uninterruptibleGet(int timeout) throws TimeoutException {
@@ -141,7 +141,7 @@ public class BlockingCell<T> {
         }
         _value = newValue;
         _filled = true;
-        notify();
+        notifyAll();
     }
 
     /**
@@ -154,7 +154,6 @@ public class BlockingCell<T> {
             return false;
         }
         set(newValue);
-        _filled = true;
         return true;
     }
 }

@@ -259,10 +259,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                                       boolean notifyRpc) {
         try {
             synchronized (_channelMutex) {
-                if (!ignoreClosed)
-                    ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-                if (isOpen())
-                    _shutdownCause = signal;
+                if (!setShutdownCauseIfOpen(signal)) {
+                    if (!ignoreClosed) 
+                        throw new AlreadyClosedException("Attempt to use closed channel", this);
+                }
 
                 _channelMutex.notifyAll();
             }
