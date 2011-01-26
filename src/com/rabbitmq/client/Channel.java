@@ -147,6 +147,18 @@ public interface Channel extends ShutdownNotifier {
     void setAckListener(AckListener listener);
 
     /**
+     * Return the current {@link NackListener}.
+     * @return an interface to the current nack listener.
+     */
+    NackListener getNackListener();
+
+    /**
+     * Set the current {@link NackListener}.
+     * @param listener the listener to use, or null indicating "don't use one".
+     */
+    void setNackListener(NackListener listener);
+
+    /**
      * Get the current default consumer. @see setDefaultConsumer for rationale.
      * @return an interface to the current default consumer.
      */

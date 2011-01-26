@@ -65,6 +65,16 @@ public interface ExceptionHandler {
 
     /**
      * Perform any required exception processing for the situation
+     * when the driver thread for the connection has called an
+     * NackListener's handleNack method, and that method has
+     * thrown an exeption.
+     * @param channel the ChannelN that held the NackListener
+     * @param exception the exception thrown by NackListener.handleNack
+     */
+    void handleNackListenerException(Channel channel, Throwable exception);
+
+    /**
+     * Perform any required exception processing for the situation
      * when the driver thread for the connection has called a method
      * on a Consumer, and that method has thrown an exception.
      * @param channel the ChannelN that held the Consumer

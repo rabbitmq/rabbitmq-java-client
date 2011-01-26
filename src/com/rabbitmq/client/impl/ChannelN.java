@@ -18,6 +18,7 @@
 package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.AckListener;
+import com.rabbitmq.client.NackListener;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
@@ -91,6 +92,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile AckListener ackListener = null;
 
+    /** Reference to the currently-active NackListener, or null if there is none.
+     */
+    public volatile NackListener nackListener = null;
+
     /** Sequence number of next published message requiring confirmation.
      */
     private long nextPublishSeqNo = 0L;
@@ -161,6 +166,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public void setAckListener(AckListener listener) {
         ackListener = listener;
+    }
+
+    /** Returns the current NackListener. */
+    public NackListener getNackListener() {
+        return nackListener;
+    }
+
+    /**
+     * Sets the current NackListener.
+     * A null argument is interpreted to mean "do not use a nack listener".
+     */
+    public void setNackListener(NackListener listener) {
+        nackListener = listener;
     }
 
     /** Returns the current default consumer. */
@@ -328,6 +346,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                         l.handleAck(ack.getDeliveryTag(), ack.getMultiple());
                     } catch (Throwable ex) {
                         _connection.getExceptionHandler().handleAckListenerException(this, ex);
+                    }
+                }
+                return true;
+            } else if (method instanceof Basic.Nack) {
+                Basic.Nack nack = (Basic.Nack) method;
+                NackListener l = getNackListener();
+                if (l != null) {
+                    try {
+                        l.handleNack(nack.getDeliveryTag(), nack.getMultiple());
+                    } catch (Throwable ex) {
+                        _connection.getExceptionHandler().handleNackListenerException(this, ex);
                     }
                 }
                 return true;

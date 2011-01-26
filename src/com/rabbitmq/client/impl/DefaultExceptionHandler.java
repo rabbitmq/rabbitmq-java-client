@@ -45,6 +45,10 @@ public class DefaultExceptionHandler implements ExceptionHandler {
         handleChannelKiller(channel, exception, "AckListener.handleAck");
     }
 
+    public void handleNackListenerException(Channel channel, Throwable exception) {
+        handleChannelKiller(channel, exception, "NackListener.handleNack");
+    }
+
     public void handleConsumerException(Channel channel, Throwable exception,
                                         Consumer consumer, String consumerTag,
                                         String methodName)
