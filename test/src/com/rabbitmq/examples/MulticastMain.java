@@ -86,9 +86,9 @@ public class MulticastMain {
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
 
-            if ((producerTxSize + consumerTxSize > 0) && confirm) {
+            if ((producerTxSize > 0) && confirm) {
                 throw new ParseException("Cannot select both producerTxSize"+
-                                         "/consumerTxSize and confirm");
+                                         " and confirm");
             }
 
             //setup
