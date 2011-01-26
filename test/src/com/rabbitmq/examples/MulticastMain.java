@@ -46,6 +46,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.NackListener;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -140,6 +141,7 @@ public class MulticastMain {
                                                 confirm, confirmMax);
                 channel.setReturnListener(p);
                 channel.setAckListener(p);
+                channel.setNackListener(p);
                 Thread t = new Thread(p);
                 producerThreads[i] = t;
                 t.start();
@@ -214,7 +216,8 @@ public class MulticastMain {
         return Arrays.asList(vals);
     }
 
-    public static class Producer implements Runnable, ReturnListener, AckListener {
+    public static class Producer implements Runnable, ReturnListener, AckListener,
+                                            NackListener {
 
         private Channel channel;
         private String  exchangeName;
@@ -236,6 +239,7 @@ public class MulticastMain {
 
         private boolean   confirm;
         private long      confirmCount;
+        private long      nackCount;
         private Semaphore confirmPool;
         private volatile SortedSet<Long> ackSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
@@ -274,6 +278,15 @@ public class MulticastMain {
         }
 
         public void handleAck(long seqNo, boolean multiple) {
+            handleAckNack(seqNo, multiple, false);
+        }
+
+        public void handleNack(long seqNo, boolean multiple) {
+            handleAckNack(seqNo, multiple, true);
+        }
+
+        private void handleAckNack(long seqNo, boolean multiple,
+                                   boolean nack) {
             int numConfirms = 0;
             if (multiple) {
                 SortedSet<Long> confirmed = ackSet.headSet(seqNo + 1);
@@ -284,7 +297,11 @@ public class MulticastMain {
                 numConfirms = 1;
             }
             synchronized (this) {
-                confirmCount += numConfirms;
+                if (nack) {
+                    nackCount += numConfirms;
+                } else {
+                    confirmCount += numConfirms;
+                }
             }
 
             if (confirmPool != null) {
@@ -292,6 +309,7 @@ public class MulticastMain {
                     confirmPool.release();
                 }
             }
+
         }
 
         public void run() {
@@ -354,14 +372,16 @@ public class MulticastMain {
                 Thread.sleep(pause);
             }
             if (elapsed > interval) {
-                long sendRate, returnRate, confirmRate;
+                long sendRate, returnRate, confirmRate, nackRate;
                 synchronized(this) {
                     sendRate     = msgCount     * 1000L / elapsed;
                     returnRate   = returnCount  * 1000L / elapsed;
                     confirmRate  = confirmCount * 1000L / elapsed;
+                    nackRate     = nackCount    * 1000L / elapsed;
                     msgCount     = 0;
                     returnCount  = 0;
                     confirmCount = 0;
+                    nackCount    = 0;
                 }
                 System.out.print("sending rate: " + sendRate + " msg/s");
                 if (mandatory || immediate) {
@@ -369,6 +389,9 @@ public class MulticastMain {
                 }
                 if (confirm) {
                     System.out.print(", confirms: " + confirmRate + " c/s");
+                    if (nackRate > 0) {
+                        System.out.print(", nacks: " + nackRate + " n/s");
+                    }
                 }
                 System.out.println();
                 lastStatsTime = now;
