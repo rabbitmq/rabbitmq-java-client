@@ -110,8 +110,8 @@ public class MulticastMain {
                 if (consumerTxSize > 0) channel.txSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
                 String queueName =
-                        channel.queueDeclare("", flags.contains("persistent"),
-                                             true, false, null).getQueue();
+                        channel.queueDeclare("wibble", true,
+                                             false, true, null).getQueue();
                 QueueingConsumer consumer = new QueueingConsumer(channel);
                 if (prefetchCount > 0) channel.basicQos(prefetchCount);
                 channel.basicConsume(queueName, autoAck, consumer);
