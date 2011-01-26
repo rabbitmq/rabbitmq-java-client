@@ -48,7 +48,7 @@ public class ConfirmDontLoseMessages {
     }
 
     static class Publisher implements Runnable {
-        private volatile SortedSet<Long> ackSet =
+        private volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
         public void run() {
@@ -63,9 +63,9 @@ public class ConfirmDontLoseMessages {
                 ch.setConfirmListener(new ConfirmListener() {
                         public void handleAck(long seqNo, boolean multiple) {
                             if (multiple) {
-                                ackSet.headSet(seqNo+1).clear();
+                                unconfirmedSet.headSet(seqNo+1).clear();
                             } else {
-                                ackSet.remove(seqNo);
+                                unconfirmedSet.remove(seqNo);
                             }
                         }
 
@@ -73,12 +73,12 @@ public class ConfirmDontLoseMessages {
                             int lost = 0;
                             if (multiple) {
                                 SortedSet<Long> nackd =
-                                    ackSet.headSet(seqNo+1);
+                                    unconfirmedSet.headSet(seqNo+1);
                                 lost = nackd.size();
                                 nackd.clear();
                             } else {
                                 lost = 1;
-                                ackSet.remove(seqNo);
+                                unconfirmedSet.remove(seqNo);
                             }
                             System.out.printf("Probably lost %d messages.\n",
                                               lost);
@@ -87,14 +87,14 @@ public class ConfirmDontLoseMessages {
 
                 // Publish
                 for (long i = 0; i < MSG_COUNT; ++i) {
-                    ackSet.add(ch.getNextPublishSeqNo());
+                    unconfirmedSet.add(ch.getNextPublishSeqNo());
                     ch.basicPublish("", QUEUE_NAME,
                                     MessageProperties.PERSISTENT_BASIC,
                                     "nop".getBytes());
                 }
 
                 // Wait
-                while (ackSet.size() > 0)
+                while (unconfirmedSet.size() > 0)
                     Thread.sleep(10);
 
                 // Cleanup

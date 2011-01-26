@@ -239,7 +239,7 @@ public class MulticastMain {
         private long      confirmCount;
         private long      nackCount;
         private Semaphore confirmPool;
-        private volatile SortedSet<Long> ackSet =
+        private volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
         public Producer(Channel channel, String exchangeName, String id,
@@ -287,11 +287,11 @@ public class MulticastMain {
                                    boolean nack) {
             int numConfirms = 0;
             if (multiple) {
-                SortedSet<Long> confirmed = ackSet.headSet(seqNo + 1);
+                SortedSet<Long> confirmed = unconfirmedSet.headSet(seqNo + 1);
                 numConfirms += confirmed.size();
                 confirmed.clear();
             } else {
-                ackSet.remove(seqNo);
+                unconfirmedSet.remove(seqNo);
                 numConfirms = 1;
             }
             synchronized (this) {
@@ -349,7 +349,7 @@ public class MulticastMain {
         private void publish(byte[] msg)
             throws IOException {
 
-            ackSet.add(channel.getNextPublishSeqNo());
+            unconfirmedSet.add(channel.getNextPublishSeqNo());
             channel.basicPublish(exchangeName, id,
                                  mandatory, immediate,
                                  persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
