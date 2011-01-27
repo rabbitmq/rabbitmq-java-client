@@ -82,3 +82,4 @@ SpammyTopicProducer - Sends lots of different topic messages over AMQP.
 StressPersister - Stress test for persister.
 TestMain - RabbitMQ server regression tests.
 TracerConcurrencyTest - Tests correct concurrency behaviour of RabbitMQ tracer.
+
