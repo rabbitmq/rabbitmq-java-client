@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<project name="RabbitMQ Java client" default="build">
+<project name="RabbitMQ Java client" default="build"
+    xmlns:bundlor="antlib:com.springsource.bundlor.ant">
 
   <property file="build.properties"/>
   <property file="config.properties"/>
@@ -45,14 +46,14 @@
     unless="amqp.generate.notRequired" description="generate AMQP.java and AMQImpl.java from AMQP spec">
     <mkdir dir="${src.generated}/com/rabbitmq/client/"/>
     <exec dir="." executable="${python.bin}"
-    	  errorproperty="amqp.generate.error1"
+          errorproperty="amqp.generate.error1"
           resultproperty="amqp.generate.result1">
       <arg line="codegen.py"/>
       <arg line="header"/>
       <arg line="${AMQP_SPEC_JSON_PATH}"/>
       <arg line="${src.generated}/com/rabbitmq/client/AMQP.java"/>
     </exec>
-  	<fail message="Generation of AMQP.java failed with message:${line.separator}${amqp.generate.error1}">
+    <fail message="Generation of AMQP.java failed with message:${line.separator}${amqp.generate.error1}">
         <condition>
             <not>
                 <equals arg1="${amqp.generate.result1}" arg2="0" />
@@ -68,28 +69,28 @@
       <arg line="${AMQP_SPEC_JSON_PATH}"/>
       <arg line="${src.generated}/com/rabbitmq/client/impl/AMQImpl.java"/>
     </exec>
-  	<fail message="Generation of AMQPImpl.java failed with message:${line.separator}${amqp.generate.error2}">
-        <condition>
-            <not>
-                <equals arg1="${amqp.generate.result2}" arg2="0" />
-            </not>
-        </condition>
-  	</fail>
+    <fail message="Generation of AMQPImpl.java failed with message:${line.separator}${amqp.generate.error2}">
+      <condition>
+        <not>
+          <equals arg1="${amqp.generate.result2}" arg2="0" />
+        </not>
+      </condition>
+    </fail>
   </target>
 
   <target name="build" depends="amqp-generate" description="Build the client library.">
     <mkdir dir="${javac.out}"/>
     <copy file="src/com/rabbitmq/client/impl/ClientVersion.java.in"
-	  tofile="${src.generated}/com/rabbitmq/client/impl/ClientVersion.java">
+          tofile="${src.generated}/com/rabbitmq/client/impl/ClientVersion.java">
       <filterset>
-	<filter token="VERSION" value="${impl.version}"/>
+        <filter token="VERSION" value="${impl.version}"/>
       </filterset>
     </copy>
     <javac destdir="${javac.out}"
-	   classpathref="javac.classpath"
-	   source="${standard.javac.source}"
-	   target="${standard.javac.target}"
-	   debug="${javac.debug}">
+        classpathref="javac.classpath"
+        source="${standard.javac.source}"
+        target="${standard.javac.target}"
+        debug="${javac.debug}">
       <src path="src"/>
       <src path="${src.generated}"/>
     </javac>
@@ -178,22 +179,22 @@
   </target>
 
   <target name="test-prepare">
-	<property name="haltOnFailureJunit" value="yes" />
-  	<property name="haltOnFailureJava" value="true" />
+    <property name="haltOnFailureJunit" value="yes" />
+    <property name="haltOnFailureJava" value="true" />
   </target>
 
   <target name="test-build" depends="test-prepare">
-	<antcall target="test-build-param">
-    	<param name="javac.source" value="${standard.javac.source}"/>
-    	<param name="javac.target" value="${standard.javac.target}"/>
-	</antcall>
+    <antcall target="test-build-param">
+      <param name="javac.source" value="${standard.javac.source}"/>
+      <param name="javac.target" value="${standard.javac.target}"/>
+    </antcall>
   </target>
 
   <target name="test-build-alt" depends="test-prepare">
-	<antcall target="test-build-param">
-    	<param name="javac.source" value="${alt.javac.source}"/>
-    	<param name="javac.target" value="${alt.javac.target}"/>
-	</antcall>
+    <antcall target="test-build-param">
+      <param name="javac.source" value="${alt.javac.source}"/>
+      <param name="javac.target" value="${alt.javac.target}"/>
+    </antcall>
   </target>
 
   <!-- Used to rebuild the tests every time, ( dependency on clean-tests )
@@ -317,18 +318,18 @@
   </target>
 
   <target name="test-suite-prepare">
-  	<property name="haltOnFailureJunit" value="no" />
-  	<property name="haltOnFailureJava" value="false" />
+    <property name="haltOnFailureJunit" value="no" />
+    <property name="haltOnFailureJava" value="false" />
   </target>
 
   <target name="test-suite" depends="test-suite-prepare, test-suite-run" description="Run all test suites.">
-  	<fail message="Errors occured in tests">
-  	    <condition>
-            <not>
-                <equals arg1="${test.failure}" arg2="" />
-            </not>
-       </condition>
-  	</fail>
+    <fail message="Errors occured in tests">
+      <condition>
+        <not>
+          <equals arg1="${test.failure}" arg2="" />
+        </not>
+      </condition>
+    </fail>
   </target>
 
   <target name="test-suite-run" depends="test-client, test-ssl, test-server, test-functional, test-main-silent"/>
@@ -405,7 +406,7 @@
     </junit>
   </target>
 
-  <target name="jar" depends="build">
+  <target name="jar" depends="build, bundlor.do">
     <mkdir dir="${lib.out}"/>
     <antcall target="doJarWithTags">
        <param name="jar.name" value="rabbitmq-client"/>
@@ -429,29 +430,30 @@
              token="VERSION" value="${impl.version}"/>
   </target>
 
-  <target name="test-jar" depends="test-build">
+  <target name="test-jar" depends="test-build, test-bundlor.do">
     <mkdir dir="${lib.out}"/>
       <antcall target="doJarWithTags">
          <param name="jar.name" value="rabbitmq-client-tests"/>
          <param name="base" value="${test.javac.out}"/>
       </antcall>
   </target>
-
-    <target name="doJarWithTags">
-        <jar destfile="${lib.out}/${jar.name}.jar"
-             basedir="${base}">
-            <manifest>
-              <section name="${jar.name}">
-                 <attribute name="Specification-Title" value="AMQP"/>
-                 <attribute name="Specification-Version" value="${spec.version}"/>
-                 <attribute name="Specification-Vendor" value="AMQP Working Group (www.amqp.org)"/>
-                 <attribute name="Implementation-Title" value="RabbitMQ"/>
-                 <attribute name="Implementation-Version" value="${impl.version}"/>
-                 <attribute name="Implementation-Vendor" value="Rabbit Technologies Ltd. (www.rabbitmq.com)"/>
-              </section>
-            </manifest>
-        </jar>
-    </target>
+  
+  <target name="doJarWithTags">
+      <jar destfile="${lib.out}/${jar.name}.jar"
+           basedir="${base}"
+           filesetmanifest="merge">
+          <manifest>
+            <section name="${jar.name}">
+               <attribute name="Specification-Title" value="AMQP"/>
+               <attribute name="Specification-Version" value="${spec.version}"/>
+               <attribute name="Specification-Vendor" value="AMQP Working Group (www.amqp.org)"/>
+               <attribute name="Implementation-Title" value="RabbitMQ"/>
+               <attribute name="Implementation-Version" value="${impl.version}"/>
+               <attribute name="Implementation-Vendor" value="Rabbit Technologies Ltd. (www.rabbitmq.com)"/>
+            </section>
+          </manifest>
+      </jar>
+  </target>
 
   <target name="dist" depends="jar, test-jar">
     <mkdir dir="${dist.out}"/>
@@ -459,11 +461,11 @@
       <!-- ant doesn't seem to provide any form of usable abstraction over sets of file names -->
       <!-- consequently we repeat ourselves here. see definition of javac.classpath, supra -->
       <fileset dir="lib">
-	<include name="**/*.jar"/>
+        <include name="**/*.jar"/>
       </fileset>
 
       <fileset dir="${lib.out}">
-	<include name="**/*.jar"/>
+        <include name="**/*.jar"/>
       </fileset>
 
       <fileset dir="scripts">
@@ -509,5 +511,37 @@
 
   <target name="clean-tests">
     <delete dir="build/test"/>
+  </target>
+  
+  <target name="bundlor.init">
+      <taskdef resource="com/springsource/bundlor/ant/antlib.xml"
+          uri="antlib:com.springsource.bundlor.ant">
+          <classpath id="bundlor.classpath">
+              <fileset dir="${bundlor.home}/dist"/>
+              <fileset dir="${bundlor.home}/lib"/>
+          </classpath>
+      </taskdef>
+  </target>
+
+  <target name="bundlor.do" depends="bundlor.init">
+    <bundlor:bundlor
+        inputPath="${javac.out}"
+        outputPath="${javac.out}"
+        manifestTemplatePath="bundlorTemplate.mf">
+      <propertyset>
+        <propertyref builtin="all"/>
+      </propertyset>
+    </bundlor:bundlor>
+  </target>
+  
+  <target name="test-bundlor.do" depends="bundlor.init">
+    <bundlor:bundlor
+        inputPath="${test.javac.out}"
+        outputPath="${test.javac.out}"
+        manifestTemplatePath="bundlorTestTemplate.mf">
+      <propertyset>
+        <propertyref builtin="all"/>
+      </propertyset>
+    </bundlor:bundlor>
   </target>
 </project>
