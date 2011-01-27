@@ -377,7 +377,7 @@ public class QosTests extends BrokerTestCase
         channel.basicRecover(true);
         drain(c, 2);
     }
-    
+
     protected void runLimitTests(int limit,
                                  boolean multiAck,
                                  boolean txMode,
