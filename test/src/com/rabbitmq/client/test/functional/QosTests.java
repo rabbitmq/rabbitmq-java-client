@@ -368,6 +368,16 @@ public class QosTests extends BrokerTestCase
         drain(c, 0);
     }
 
+    public void testRecoverReducesLimit() throws Exception {
+        channel.basicQos(2);
+        QueueingConsumer c = new QueueingConsumer(channel);
+        declareBindConsume(c);
+        fill(3);
+        drain(c, 2);
+        channel.basicRecover(true);
+        drain(c, 2);
+    }
+    
     protected void runLimitTests(int limit,
                                  boolean multiAck,
                                  boolean txMode,
