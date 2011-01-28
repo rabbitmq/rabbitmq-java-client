@@ -18,7 +18,7 @@
 package com.rabbitmq.examples;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AckListener;
+import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -48,7 +48,7 @@ public class ConfirmDontLoseMessages {
     }
 
     static class Publisher implements Runnable {
-        private volatile SortedSet<Long> ackSet =
+        private volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
         public void run() {
@@ -60,27 +60,41 @@ public class ConfirmDontLoseMessages {
                 Channel ch = conn.createChannel();
                 ch.queueDeclare(QUEUE_NAME, true, false, true, null);
                 ch.confirmSelect();
-                ch.setAckListener(new AckListener() {
-                        public void handleAck(long seqNo,
-                                              boolean multiple) {
+                ch.setConfirmListener(new ConfirmListener() {
+                        public void handleAck(long seqNo, boolean multiple) {
                             if (multiple) {
-                                ackSet.headSet(seqNo+1).clear();
+                                unconfirmedSet.headSet(seqNo+1).clear();
                             } else {
-                                ackSet.remove(seqNo);
+                                unconfirmedSet.remove(seqNo);
                             }
+                        }
+
+                        public void handleNack(long seqNo, boolean multiple) {
+                            int lost = 0;
+                            if (multiple) {
+                                SortedSet<Long> nackd =
+                                    unconfirmedSet.headSet(seqNo+1);
+                                lost = nackd.size();
+                                nackd.clear();
+                            } else {
+                                lost = 1;
+                                unconfirmedSet.remove(seqNo);
+                            }
+                            System.out.printf("Probably lost %d messages.\n",
+                                              lost);
                         }
                     });
 
                 // Publish
                 for (long i = 0; i < MSG_COUNT; ++i) {
-                    ackSet.add(ch.getNextPublishSeqNo());
+                    unconfirmedSet.add(ch.getNextPublishSeqNo());
                     ch.basicPublish("", QUEUE_NAME,
                                     MessageProperties.PERSISTENT_BASIC,
                                     "nop".getBytes());
                 }
 
                 // Wait
-                while (ackSet.size() > 0)
+                while (unconfirmedSet.size() > 0)
                     Thread.sleep(10);
 
                 // Cleanup

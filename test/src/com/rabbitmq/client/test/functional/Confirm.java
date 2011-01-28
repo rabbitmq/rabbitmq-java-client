@@ -19,7 +19,7 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AckListener;
+import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
@@ -35,16 +35,20 @@ public class Confirm extends BrokerTestCase
 {
     final static int NUM_MESSAGES = 1000;
     private static final String TTL_ARG = "x-message-ttl";
-    private SortedSet<Long> ackSet;
+    private SortedSet<Long> unconfirmedSet;
 
     @Override
     protected void setUp() throws IOException {
         super.setUp();
-        ackSet = Collections.synchronizedSortedSet(new TreeSet<Long>());
-        channel.setAckListener(new AckListener() {
-                public void handleAck(long seqNo,
-                                      boolean multiple) {
+        unconfirmedSet =
+            Collections.synchronizedSortedSet(new TreeSet<Long>());
+        channel.setConfirmListener(new ConfirmListener() {
+                public void handleAck(long seqNo, boolean multiple) {
                     Confirm.this.handleAck(seqNo, multiple);
+                }
+
+                public void handleNack(long seqNo, boolean multiple) {
+                    Confirm.this.fail("got a nack");
                 }
             });
         channel.confirmSelect();
@@ -236,7 +240,7 @@ public class Confirm extends BrokerTestCase
         throws IOException
     {
         for (long i = 0; i < NUM_MESSAGES; i++) {
-            ackSet.add(channel.getNextPublishSeqNo());
+            unconfirmedSet.add(channel.getNextPublishSeqNo());
             publish(exchangeName, queueName, persistent, mandatory, immediate);
         }
     }
@@ -254,13 +258,13 @@ public class Confirm extends BrokerTestCase
     }
 
     private void handleAck(long msgSeqNo, boolean multiple) {
-        if (!ackSet.contains(msgSeqNo)) {
+        if (!unconfirmedSet.contains(msgSeqNo)) {
             fail("got duplicate ack: " + msgSeqNo);
         }
         if (multiple) {
-            ackSet.headSet(msgSeqNo + 1).clear();
+            unconfirmedSet.headSet(msgSeqNo + 1).clear();
         } else {
-            ackSet.remove(msgSeqNo);
+            unconfirmedSet.remove(msgSeqNo);
         }
     }
 
@@ -278,7 +282,7 @@ public class Confirm extends BrokerTestCase
     }
 
     private void waitAcks() throws InterruptedException {
-        while (ackSet.size() > 0)
+        while (unconfirmedSet.size() > 0)
             Thread.sleep(10);
     }
 }
