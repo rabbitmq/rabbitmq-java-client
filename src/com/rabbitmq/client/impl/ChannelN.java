@@ -357,13 +357,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                      false,
                                                                      command,
                                                                      this);
-        try {
-            synchronized (_channelMutex) {
+        synchronized (_channelMutex) {
+            try {
                 processShutdownSignal(signal, true, false);
                 quiescingTransmit(new Channel.CloseOk());
+            } finally {
+                notifyOutstandingRpc(signal);
             }
-        } finally {
-            notifyOutstandingRpc(signal);
         }
         notifyListeners();
     }
@@ -881,4 +881,5 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public long getNextPublishSeqNo() {
         return nextPublishSeqNo;
     }
+    
 }
