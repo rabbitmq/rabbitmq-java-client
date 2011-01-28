@@ -25,7 +25,7 @@ public class PossibleAuthenticationFailureException extends IOException
 {
     public PossibleAuthenticationFailureException(Throwable cause)
     {
-        super("Possibly caused by authentication failure",
-              cause);
+        super("Possibly caused by authentication failure");
+        super.initCause(cause);
     }
 }
