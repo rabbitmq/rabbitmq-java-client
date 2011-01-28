@@ -23,7 +23,7 @@ distclean: clean
 
 dist: distclean srcdist dist_all
 
-dist_all: dist1.5 dist1.4 javadoc-archive
+dist_all: dist1.5 javadoc-archive
 
 maven-bundle: distclean
 	ant -Dimpl.version=$(VERSION) maven-bundle
@@ -31,10 +31,6 @@ maven-bundle: distclean
 dist1.5:
 	ant -Ddist.out=build/$(PACKAGE_NAME)-bin-$(VERSION) -Dimpl.version=$(VERSION) dist
 	$(MAKE) post-dist TARBALL_NAME=$(PACKAGE_NAME)-bin-$(VERSION)
-
-dist1.4:
-	ant -Ddist.out=build/$(PACKAGE_NAME)-java1.4bin-$(VERSION) -Dimpl.version=$(VERSION) dist1.4
-	$(MAKE) post-dist TARBALL_NAME=$(PACKAGE_NAME)-java1.4bin-$(VERSION)
 
 javadoc-archive:
 	ant javadoc
