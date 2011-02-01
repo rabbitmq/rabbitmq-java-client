@@ -372,11 +372,11 @@ public class QosTests extends BrokerTestCase
         drain(c, 5);
 
         channel.credit(0, false);
-        fill(10);
-        channel.credit(5, true);
+        fill(5);
+        channel.credit(10, true);
         drain(c, 5);
-        channel.credit(1, false);
-        drain(c, 0);
+        fill(5);
+        drain(c, 0); // Our credit drained away
     }
 
 
