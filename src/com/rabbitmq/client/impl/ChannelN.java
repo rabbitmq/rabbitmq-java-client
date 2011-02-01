@@ -23,6 +23,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.CreditListener;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.FlowListener;
 import com.rabbitmq.client.GetResponse;
@@ -87,6 +88,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile FlowListener flowListener = null;
 
+    public volatile CreditListener creditListener = null;
+
     /** Reference to the currently-active ConfirmListener, or null if there is none.
      */
     public volatile ConfirmListener confirmListener = null;
@@ -148,6 +151,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public void setFlowListener(FlowListener listener) {
         flowListener = listener;
+    }
+
+    /** Returns the current FlowListener. */
+    public CreditListener getCreditListener() {
+        return creditListener;
+    }
+
+    /**
+     * Sets the current FlowListener.
+     * A null argument is interpreted to mean "do not use a flow listener".
+     */
+    public void setCreditListener(CreditListener listener) {
+        creditListener = listener;
     }
 
     /** Returns the current ConfirmkListener. */
@@ -315,6 +331,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 if (l != null) {
                     try {
                         l.handleFlow(channelFlow.active);
+                    } catch (Throwable ex) {
+                        _connection.getExceptionHandler().handleFlowListenerException(this, ex);
+                    }
+                }
+                return true;
+            } else if (method instanceof Channel.CreditState) {
+                Channel.CreditState creditState = (Channel.CreditState) method;
+                CreditListener l = getCreditListener();
+                if (l != null) {
+                    try {
+                        l.handleCredit(creditState.credit, creditState.available, creditState.drain);
                     } catch (Throwable ex) {
                         _connection.getExceptionHandler().handleFlowListenerException(this, ex);
                     }
@@ -880,6 +907,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Public API - {@inheritDoc} */
     public Channel.FlowOk flow(final boolean a) throws IOException {
         return (Channel.FlowOk) exnWrappingRpc(new Channel.Flow() {{active = a;}}).getMethod();
+    }
+
+    public void credit(final int c, final boolean d) throws IOException {
+        transmit(new Channel.Credit() {{credit = c; drain = d;}});
     }
 
     /** Public API - {@inheritDoc} */

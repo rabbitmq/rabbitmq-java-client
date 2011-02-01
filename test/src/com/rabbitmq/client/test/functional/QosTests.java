@@ -359,6 +359,27 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
+    public void testCredit() throws IOException
+    {
+        QueueingConsumer c = new QueueingConsumer(channel);
+        declareBindConsume(c);
+
+        channel.credit(0, false);
+        fill(10);
+        channel.credit(5, false);
+        drain(c, 5);
+        channel.credit(5, false);
+        drain(c, 5);
+
+        channel.credit(0, false);
+        fill(10);
+        channel.credit(5, true);
+        drain(c, 5);
+        channel.credit(1, false);
+        drain(c, 0);
+    }
+
+
     public void testNoConsumers() throws Exception {
         String q = declareBind(channel);
         fill(1);
