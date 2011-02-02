@@ -30,7 +30,9 @@ import java.util.Queue;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -361,44 +363,73 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
-    public void testCredit() throws IOException, InterruptedException
-    {
-        QueueingConsumer c = new QueueingConsumer(channel);
-        String ctag = declareBindConsumeCtag(c);
-
-        assertCredit(ctag, 0, 0, false);
-        fill(10);
-        assertCredit(ctag, 5, 10, false);
-        drain(c, 5);
-        assertCredit(ctag, 5, 5, false);
-        drain(c, 5);
-
-        assertCredit(ctag, 0, 0, false);
-        fill(5);
-        assertCredit(ctag, 10, 5, true);
-        drain(c, 5);
-        fill(5);
-        drain(c, 0); // Our credit drained away
+    private class Credit {
+        long credit;
+        long available;
+        boolean drain;
     }
 
-    private void assertCredit(String ctag, int credit, int available, boolean drain) throws IOException, InterruptedException {
-        final long[] serverCredit = new long[1];
-        final long[] serverAvail = new long[1];
-        final CountDownLatch[] latch = new CountDownLatch[1];
-        latch[0] = new CountDownLatch(1);
+    public void testCredit() throws IOException, InterruptedException
+    {
+        final BlockingQueue<Credit> credits = new LinkedBlockingQueue<Credit>();
 
         channel.setCreditListener(new CreditListener() {
             public void handleCredit(String consumerTag, long credit, long available, boolean drain) throws IOException {
-                serverCredit[0] = credit;
-                serverAvail[0] = available;
-                if (latch[0] != null) latch[0].countDown();
+                Credit c = new Credit();
+                c.credit = credit;
+                c.available = available;
+                c.drain = drain;
+                credits.add(c);
             }
         });
 
+        QueueingConsumer c = new QueueingConsumer(channel);
+        String ctag = declareBindConsumeCtag(c);
+
+        // Give zero credit, populate with 10 msgs, get nothing.
+        assertCredit(ctag, 0, 0, false, credits);
+        fill(10);
+        drain(c, 0);
+
+        // Give 5 credit, server says "5 credit, 10 avail", get 5 msgs.
+        assertCredit(ctag, 5, 10, false, credits);
+        drain(c, 5);
+
+        // Give 5 credit, server says "5 credit, 5 avail", get 5 msgs.
+        assertCredit(ctag, 5, 5, false, credits);
+        drain(c, 5);
+
+        // Give zero credit, populate with 5 msgs, get nothing.
+        assertCredit(ctag, 0, 0, false, credits);
+        fill(5);
+        drain(c, 0);
+
+        // Give 10 credit, with drain=true, server says "10 credit, 5 avail".
+        assertCredit(ctag, 10, 5, true, credits);
+        // Get 5 msgs, and the server sends a credit state to say "all your credit drained".
+        drain(c, 5);
+        assertCreditState(0, 0, true, credits);
+
+        // Populate 5 more msgs, but we don't get them because our credit drained.
+        fill(5);
+        drain(c, 0);
+    }
+
+    private void assertCredit(final String ctag, final int credit,
+                              final int available, final boolean drain,
+                              BlockingQueue<Credit> credits)
+            throws IOException, InterruptedException {
         channel.credit(ctag, credit, drain);
-        latch[0].await();
-        assertEquals(credit, serverCredit[0]);
-        assertEquals(available, serverAvail[0]);
+        assertCreditState(credit, available, drain, credits);
+    }
+
+    private void assertCreditState(final int credit, final int available, final boolean drain,
+                                   BlockingQueue<Credit> credits)
+            throws IOException, InterruptedException {
+        Credit cr = credits.take();
+        assertEquals(credit, cr.credit);
+        assertEquals(available, cr.available);
+        assertEquals(drain, cr.drain);
     }
 
     public void testNoConsumers() throws Exception {
