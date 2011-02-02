@@ -136,6 +136,15 @@ public interface Channel extends ShutdownNotifier {
      */
     void setFlowListener(FlowListener listener);
 
+    /** Returns the current FlowListener. */
+    public CreditListener getCreditListener();
+
+    /**
+     * Sets the current FlowListener.
+     * A null argument is interpreted to mean "do not use a flow listener".
+     */
+    public void setCreditListener(CreditListener listener);
+
     /**
      * Return the current {@link ConfirmListener}.
      * @return an interface to the current ack listener.

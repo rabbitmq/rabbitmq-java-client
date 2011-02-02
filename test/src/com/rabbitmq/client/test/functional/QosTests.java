@@ -17,6 +17,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.CreditListener;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.util.Queue;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.CountDownLatch;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -359,26 +361,45 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
-    public void testCredit() throws IOException
+    public void testCredit() throws IOException, InterruptedException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
         String ctag = declareBindConsumeCtag(c);
 
-        channel.credit(ctag, 0, false);
+        assertCredit(ctag, 0, 0, false);
         fill(10);
-        channel.credit(ctag, 5, false);
+        assertCredit(ctag, 5, 10, false);
         drain(c, 5);
-        channel.credit(ctag, 5, false);
+        assertCredit(ctag, 5, 5, false);
         drain(c, 5);
 
-        channel.credit(ctag, 0, false);
+        assertCredit(ctag, 0, 0, false);
         fill(5);
-        channel.credit(ctag, 10, true);
+        assertCredit(ctag, 10, 5, true);
         drain(c, 5);
         fill(5);
         drain(c, 0); // Our credit drained away
     }
 
+    private void assertCredit(String ctag, int credit, int available, boolean drain) throws IOException, InterruptedException {
+        final long[] serverCredit = new long[1];
+        final long[] serverAvail = new long[1];
+        final CountDownLatch[] latch = new CountDownLatch[1];
+        latch[0] = new CountDownLatch(1);
+
+        channel.setCreditListener(new CreditListener() {
+            public void handleCredit(String consumerTag, long credit, long available, boolean drain) throws IOException {
+                serverCredit[0] = credit;
+                serverAvail[0] = available;
+                if (latch[0] != null) latch[0].countDown();
+            }
+        });
+
+        channel.credit(ctag, credit, drain);
+        latch[0].await();
+        assertEquals(credit, serverCredit[0]);
+        assertEquals(available, serverAvail[0]);
+    }
 
     public void testNoConsumers() throws Exception {
         String q = declareBind(channel);
