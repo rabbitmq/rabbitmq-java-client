@@ -230,14 +230,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // incoming commands except for a close and close-ok.
 
         Method method = command.getMethod();
+        // we deal with channel.close in the same way, regardless
+        if (method instanceof Channel.Close) {
+            asyncShutdown(command);
+            return true;
+        }
 
         if (isOpen()) {
             // We're in normal running mode.
 
-            if (method instanceof Channel.Close) {
-                asyncShutdown(command);
-                return true;
-            } else if (method instanceof Basic.Deliver) {
+            if (method instanceof Basic.Deliver) {
                 Basic.Deliver m = (Basic.Deliver) method;
 
                 Consumer callback = _consumers.get(m.consumerTag);
@@ -343,11 +345,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         } else {
             // We're in quiescing mode == !isOpen()
 
-            if (method instanceof Channel.Close) {
-                // We are already shutting down, but we cannot assume no Rpc is waiting.
-                asyncShutdown(command);
-                return true;
-            } else if (method instanceof Channel.CloseOk) {
+            if (method instanceof Channel.CloseOk) {
                 // We're quiescing, and we see a channel.close-ok:
                 // this is our signal to leave quiescing mode and
                 // finally shut down for good. Let it be handled as an
