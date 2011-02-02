@@ -362,18 +362,18 @@ public class QosTests extends BrokerTestCase
     public void testCredit() throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
-        declareBindConsume(c);
+        String ctag = declareBindConsumeCtag(c);
 
-        channel.credit(0, false);
+        channel.credit(ctag, 0, false);
         fill(10);
-        channel.credit(5, false);
+        channel.credit(ctag, 5, false);
         drain(c, 5);
-        channel.credit(5, false);
+        channel.credit(ctag, 5, false);
         drain(c, 5);
 
-        channel.credit(0, false);
+        channel.credit(ctag, 0, false);
         fill(5);
-        channel.credit(10, true);
+        channel.credit(ctag, 10, true);
         drain(c, 5);
         fill(5);
         drain(c, 0); // Our credit drained away
@@ -510,6 +510,14 @@ public class QosTests extends BrokerTestCase
         String queue = declareBind(ch);
         ch.basicConsume(queue, noAck, c);
         return queue;
+    }
+
+    protected String declareBindConsumeCtag(QueueingConsumer c)
+        throws IOException
+    {
+        String queue = declareBind(channel);
+        String ctag = channel.basicConsume(queue, false, c);
+        return ctag;
     }
 
     protected String declareBind(Channel ch) throws IOException {

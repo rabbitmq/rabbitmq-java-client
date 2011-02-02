@@ -88,7 +88,7 @@ public interface Channel extends ShutdownNotifier {
      */
     FlowOk flow(boolean active) throws IOException;
 
-    void credit(int credit, boolean drain) throws IOException;
+    void credit(String consumerTag, int credit, boolean drain) throws IOException;
 
     /**
      * Return the current Channel.Flow settings.
