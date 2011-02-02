@@ -87,8 +87,9 @@ public class CcRoutes extends BrokerTestCase  {
 
     public void testCcList() throws IOException {
         ccList.add("queue2");
+        ccList.add("queue3");
         headerPublish("", "queue1", ccList, null);
-        expect(new String []{"queue1", "queue2"});
+        expect(new String []{"queue1", "queue2", "queue3"});
      }
 
     public void testCcIgnoreEmptyAndInvalidRoutes() throws IOException {
@@ -152,7 +153,9 @@ public class CcRoutes extends BrokerTestCase  {
             if (expectedList.contains(q)) {
                 assertNotNull(getResponse);
                 assertEquals(0, getResponse.getMessageCount());
-                assertFalse(getResponse.getProps().getHeaders().containsKey("BCC"));
+                Map headers = getResponse.getProps().getHeaders();
+                if (headers != null)
+                    assertFalse(headers.containsKey("BCC"));
             } else {
                 assertNull(getResponse);
             }
