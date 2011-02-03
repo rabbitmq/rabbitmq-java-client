@@ -420,9 +420,7 @@ public class QosTests extends BrokerTestCase
             throws IOException, InterruptedException {
         AMQP.Basic.CreditOk cr = channel.credit(ctag, credit, drain);
 
-        assertEquals(credit, cr.getCredit());
         assertEquals(available, cr.getAvailable());
-        assertEquals(drain, cr.getDrain());
     }
 
     private void assertCreditState(final int credit, final int available, final boolean drain,
