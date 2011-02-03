@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.TimeoutException;
 
 
@@ -231,27 +230,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         // incoming commands except for a close and close-ok.
 
         Method method = command.getMethod();
+        // we deal with channel.close in the same way, regardless
+        if (method instanceof Channel.Close) {
+            asyncShutdown(command);
+            return true;
+        }
 
         if (isOpen()) {
             // We're in normal running mode.
 
-            if (method instanceof Channel.Close) {
-                releaseChannelNumber();
-                ShutdownSignalException signal = new ShutdownSignalException(false,
-                                                                             false,
-                                                                             command,
-                                                                             this);
-                synchronized (_channelMutex) {
-                    try {
-                        processShutdownSignal(signal, true, false);
-                        quiescingTransmit(new Channel.CloseOk());
-                    } finally {
-                        notifyOutstandingRpc(signal);
-                    }
-                }
-                notifyListeners();
-                return true;
-            } else if (method instanceof Basic.Deliver) {
+            if (method instanceof Basic.Deliver) {
                 Basic.Deliver m = (Basic.Deliver) method;
 
                 Consumer callback = _consumers.get(m.consumerTag);
@@ -355,15 +343,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return false;
             }
         } else {
-            // We're in quiescing mode.
+            // We're in quiescing mode == !isOpen()
 
-            if (method instanceof Channel.Close) {
-                // We're already shutting down, so just send back an ok.
-                synchronized (_channelMutex) {
-                    quiescingTransmit(new Channel.CloseOk());
-                }
-                return true;
-            } else if (method instanceof Channel.CloseOk) {
+            if (method instanceof Channel.CloseOk) {
                 // We're quiescing, and we see a channel.close-ok:
                 // this is our signal to leave quiescing mode and
                 // finally shut down for good. Let it be handled as an
@@ -376,6 +358,23 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return true;
             }
         }
+    }
+
+    private void asyncShutdown(Command command) throws IOException {
+        releaseChannelNumber();
+        ShutdownSignalException signal = new ShutdownSignalException(false,
+                                                                     false,
+                                                                     command,
+                                                                     this);
+        synchronized (_channelMutex) {
+            try {
+                processShutdownSignal(signal, true, false);
+                quiescingTransmit(new Channel.CloseOk());
+            } finally {
+                notifyOutstandingRpc(signal);
+            }
+        }
+        notifyListeners();
     }
 
     /** Public API - {@inheritDoc} */
@@ -419,7 +418,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         // First, notify all our dependents that we are shutting down.
-        // This clears _isOpen, so no further work from the
+        // This clears isOpen(), so no further work from the
         // application side will be accepted, and any inbound commands
         // will be discarded (unless they're channel.close-oks).
         Channel.Close reason = new Channel.Close(closeCode, closeMessage, 0, 0);
@@ -442,8 +441,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             }
 
             // Now that we're in quiescing state, channel.close was sent and
-            // we wait for the reply. We ignore the result. (It's always
-            // close-ok.)
+            // we wait for the reply. We ignore the result.
+            // (It's NOT always close-ok.)
             notify = true;
             k.getReply(-1);
         } catch (TimeoutException ise) {
@@ -891,4 +890,5 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public long getNextPublishSeqNo() {
         return nextPublishSeqNo;
     }
+    
 }
