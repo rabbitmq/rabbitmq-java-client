@@ -282,7 +282,12 @@ public class Confirm extends BrokerTestCase
     }
 
     private void waitAcks() throws InterruptedException {
-        while (unconfirmedSet.size() > 0)
+        for (int i = 0; i < 6000; i++) {
+            if (unconfirmedSet.size() == 0) {
+                return;
+            }
             Thread.sleep(10);
+        }
+        fail("timeout (1 min) waiting for acks: " + unconfirmedSet);
     }
 }
