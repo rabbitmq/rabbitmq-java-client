@@ -279,7 +279,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 if (l != null) {
                     Basic.Return basicReturn = (Basic.Return) method;
                     try {
-                        l.handleBasicReturn(basicReturn.replyCode,
+                        l.handleReturn(basicReturn.replyCode,
                                             basicReturn.replyText,
                                             basicReturn.exchange,
                                             basicReturn.routingKey,
