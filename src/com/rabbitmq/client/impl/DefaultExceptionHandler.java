@@ -34,7 +34,7 @@ public class DefaultExceptionHandler implements ExceptionHandler {
     }
 
     public void handleReturnListenerException(Channel channel, Throwable exception) {
-        handleChannelKiller(channel, exception, "ReturnListener.handleBasicReturn");
+        handleChannelKiller(channel, exception, "ReturnListener.handleReturn");
     }
 
     public void handleFlowListenerException(Channel channel, Throwable exception) {
