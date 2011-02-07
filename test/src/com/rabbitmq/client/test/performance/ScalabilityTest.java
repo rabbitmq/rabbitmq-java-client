@@ -285,9 +285,9 @@ public class ScalabilityTest {
         boolean immdediate = true;
         final CountDownLatch latch = new CountDownLatch(params.messageCount);
         channel.setReturnListener(new ReturnListener() {
-                public void handleBasicReturn(int replyCode, String replyText,
-                                              String exchange, String routingKey,
-                                              AMQP.BasicProperties properties, byte[] body) throws IOException {
+                public void handleReturn(int replyCode, String replyText,
+                                         String exchange, String routingKey,
+                                         AMQP.BasicProperties properties, byte[] body) throws IOException {
                     latch.countDown();
                 }
             });
