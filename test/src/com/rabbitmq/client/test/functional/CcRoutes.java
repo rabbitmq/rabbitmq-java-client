@@ -63,13 +63,6 @@ public class CcRoutes extends BrokerTestCase  {
         super.releaseResources();
     }
 
-    public void testCcSingleton() throws IOException {
-        headers.put("CC", "queue2");
-        props.setHeaders(headers);
-        channel.basicPublish("", "queue1", props, new byte[0]);
-        expect(new String []{"queue1", "queue2"});
-     }
-
     public void testCcList() throws IOException {
         ccList.add("queue2");
         ccList.add("queue3");
