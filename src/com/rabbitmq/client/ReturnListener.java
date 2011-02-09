@@ -26,7 +26,7 @@ import java.io.IOException;
  * @see Channel#basicPublish
  */
 public interface ReturnListener {
-    void handleBasicReturn(int replyCode,
+    void handleReturn(int replyCode,
             String replyText,
             String exchange,
             String routingKey,

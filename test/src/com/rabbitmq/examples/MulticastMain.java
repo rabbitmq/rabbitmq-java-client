@@ -265,12 +265,12 @@ public class MulticastMain {
             this.confirm      = confirm;
         }
 
-        public synchronized void handleBasicReturn(int replyCode,
-                                                   String replyText,
-                                                   String exchange,
-                                                   String routingKey,
-                                                   AMQP.BasicProperties properties,
-                                                   byte[] body)
+        public synchronized void handleReturn(int replyCode,
+                                              String replyText,
+                                              String exchange,
+                                              String routingKey,
+                                              AMQP.BasicProperties properties,
+                                              byte[] body)
             throws IOException {
             returnCount++;
         }

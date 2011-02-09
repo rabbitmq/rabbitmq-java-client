@@ -58,12 +58,12 @@ public class AlternateExchange extends BrokerTestCase
     @Override protected void setUp() throws IOException {
         super.setUp();
         channel.setReturnListener(new ReturnListener() {
-                public void handleBasicReturn(int replyCode,
-                                              String replyText,
-                                              String exchange,
-                                              String routingKey,
-                                              AMQP.BasicProperties properties,
-                                              byte[] body)
+                public void handleReturn(int replyCode,
+                                         String replyText,
+                                         String exchange,
+                                         String routingKey,
+                                         AMQP.BasicProperties properties,
+                                         byte[] body)
                     throws IOException {
                     gotReturn.set(true);
                 }
