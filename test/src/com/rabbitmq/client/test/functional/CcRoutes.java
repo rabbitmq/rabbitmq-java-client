@@ -16,6 +16,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -112,6 +113,18 @@ public class CcRoutes extends BrokerTestCase  {
         }
         props.setHeaders(headers);
         channel.basicPublish(ex, to, props, new byte[0]);
+    }
+
+    public void testNonArray() throws IOException {
+        headers.put("CC", 0);
+        props.setHeaders(headers);
+        channel.basicPublish("", "queue1", props, new byte[0]);
+        try {
+            expect(new String[] {}, false);
+            fail();
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
     }
 
     private void expect(String[] expectedQueues, boolean usedCc) throws IOException {
