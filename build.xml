@@ -251,25 +251,6 @@
     </java>
   </target>
 
-  <!-- Alternate version that runs using Java 1.4 as a compatibility test -->
-  <target name="test-main-silent-1.4" depends="dist1.4">
-    <java fork="true" classname="${test.main}"
-        jvm="${java-jvm-1.4}" failonerror="${haltOnFailureJava}"
-    	errorproperty="test.failure">
-      <jvmarg value="-Xdebug"/>
-      <jvmarg value="-Dsilent=true"/>
-      <arg value="${broker.hostname}"/>
-      <arg value="${broker.port}"/>
-      <classpath>
-	<fileset dir="${dist.out}">
-	  <include name="**/*.jar"/>
-	</fileset>
-	<pathelement path="${retrotranslator}/retrotranslator-runtime-1.2.1.jar"/>
-	<pathelement path="${retrotranslator}/backport-util-concurrent-3.0.jar"/>
-      </classpath>
-    </java>
-  </target>
-
   <target name="test-main-silent-alt" depends="test-build-alt">
     <java fork="true" classname="${test.main}"
         failonerror="${haltOnFailureJava}" errorproperty="test.failure">
@@ -419,6 +400,7 @@
           tofile="${bundle.out}/amqp-client-${impl.version}.jar"/>
     <jar destfile="${bundle.out}/amqp-client-${impl.version}-sources.jar">
         <fileset dir="src"/>
+        <fileset dir="${src.generated}"/>
     </jar>
     <jar destfile="${bundle.out}/amqp-client-${impl.version}-javadoc.jar">
         <fileset dir="${javadoc.out}"/>
@@ -470,36 +452,6 @@
         <include name="**/*.bat"/>
       </fileset>
     </copy>
-  </target>
-
-  <!-- Build the Java1.4 version by running Retrotranslator on a copy of our jars -->
-  <target name="dist1.4" depends="jar, test-jar">
-    <mkdir dir="${dist.out}"/>
-    <copy todir="${dist.out}">
-      <fileset dir="lib">
-        <include name="**/*.jar"/>
-      </fileset>
-
-      <fileset dir="${lib.out}">
-        <include name="**/*.jar"/>
-      </fileset>
-
-      <fileset dir="scripts">
-        <include name="**/*.sh"/>
-        <include name="**/*.bat"/>
-      </fileset>
-
-      <fileset file="${retrotranslator}/retrotranslator-runtime-1.2.1.jar"/>
-      <fileset file="${retrotranslator}/backport-util-concurrent-3.0.jar"/>
-    </copy>
-    <java fork="true" jar="${retrotranslator}/retrotranslator-transformer-1.2.1.jar">
-      <arg value="-srcjar"/>
-      <arg value="${dist.out}/rabbitmq-client.jar"/>
-    </java>
-    <java fork="true" jar="${retrotranslator}/retrotranslator-transformer-1.2.1.jar">
-      <arg value="-srcjar"/>
-      <arg value="${dist.out}/rabbitmq-client-tests.jar"/>
-    </java>
   </target>
 
   <target name="clean">

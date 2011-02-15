@@ -1,33 +1,19 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 
 package com.rabbitmq.examples;
 
@@ -68,10 +54,10 @@ public class ConsumerMain implements Runnable {
             final String hostName = optArg(args, 0, "localhost");
             final int portNumber = optArg(args, 1, AMQP.PROTOCOL.PORT);
             boolean writeStats = optArg(args, 2, true);
-            boolean noAck = optArg(args, 3, true);
+            boolean autoAck = optArg(args, 3, true);
             final Connection conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
             System.out.println("Channel 0 fully open.");
-            new ConsumerMain(conn, writeStats, noAck).run();
+            new ConsumerMain(conn, writeStats, autoAck).run();
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
             e.printStackTrace();
@@ -91,14 +77,14 @@ public class ConsumerMain implements Runnable {
 
     public boolean _writeStats;
 
-    public boolean _noAck;
+    public boolean _autoAck;
 
-    public ConsumerMain(Connection connection, boolean writeStats, boolean noAck) {
+    public ConsumerMain(Connection connection, boolean writeStats, boolean autoAck) {
         _connection = connection;
         _writeStats = writeStats;
-        _noAck = noAck;
+        _autoAck = autoAck;
         System.out.println((_writeStats ? "WILL" : "WON'T") + " write statistics.");
-        System.out.println((_noAck ? "WILL" : "WON'T") + " use server-side auto-acking.");
+        System.out.println((_autoAck ? "WILL" : "WON'T") + " use server-side auto-acking.");
     }
 
     public void run() {
@@ -124,9 +110,9 @@ public class ConsumerMain implements Runnable {
         channel.queueBind(completionQueue, exchangeName, "");
 
         LatencyExperimentConsumer callback = new LatencyExperimentConsumer(channel, queueName);
-        callback._noAck = this._noAck;
+        callback._autoAck = this._autoAck;
 
-        channel.basicConsume(queueName, _noAck, callback);
+        channel.basicConsume(queueName, _autoAck, callback);
         channel.basicConsume(completionQueue, true, "completion", callback);
         callback.report(_writeStats);
 
@@ -165,7 +151,7 @@ public class ConsumerMain implements Runnable {
 
         public long _nextSummaryTime;
 
-        public boolean _noAck = true;
+        public boolean _autoAck = true;
 
         public LatencyExperimentConsumer(Channel ch, String queueName) {
             super(ch);
@@ -277,7 +263,7 @@ public class ConsumerMain implements Runnable {
             if (msgStartTime != -1) {
                 _deltas[_received++] = now - msgStartTime;
 
-                if (!_noAck && ((_received % ACK_BATCH_SIZE) == 0)) {
+                if (!_autoAck && ((_received % ACK_BATCH_SIZE) == 0)) {
                     getChannel().basicAck(0, true);
                 }
             }
@@ -293,7 +279,7 @@ public class ConsumerMain implements Runnable {
         }
 
         public void finish() throws IOException {
-            if (!_noAck)
+            if (!_autoAck)
                 getChannel().basicAck(0, true);
             _blocker.setIfUnset(new Object());
         }

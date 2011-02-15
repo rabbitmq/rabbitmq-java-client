@@ -1,33 +1,19 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 package com.rabbitmq.client;
 
 import java.io.IOException;
@@ -38,6 +24,7 @@ import com.rabbitmq.client.AMQP.Exchange;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.AMQP.Tx;
 import com.rabbitmq.client.AMQP.Basic;
+import com.rabbitmq.client.AMQP.Confirm;
 import com.rabbitmq.client.AMQP.Channel.FlowOk;
 
 /**
@@ -148,6 +135,18 @@ public interface Channel extends ShutdownNotifier {
     void setFlowListener(FlowListener listener);
 
     /**
+     * Return the current {@link ConfirmListener}.
+     * @return an interface to the current ack listener.
+     */
+    ConfirmListener getConfirmListener();
+
+    /**
+     * Set the current {@link ConfirmListener}.
+     * @param listener the listener to use, or null indicating "don't use one".
+     */
+    void setConfirmListener(ConfirmListener listener);
+
+    /**
      * Get the current default consumer. @see setDefaultConsumer for rationale.
      * @return an interface to the current default consumer.
      */
@@ -185,8 +184,7 @@ public interface Channel extends ShutdownNotifier {
      * Request specific "quality of service" settings.
      *
      * These settings impose limits on the amount of data the server
-     * will deliver to consumers before requiring the receipt of
-     * acknowledgements.
+     * will deliver to consumers before requiring acknowledgements.
      * Thus they provide a means of consumer-initiated flow control.
      * @see com.rabbitmq.client.AMQP.Basic.Qos
      * @param prefetchSize maximum amount of content (measured in
@@ -259,7 +257,7 @@ public interface Channel extends ShutdownNotifier {
     Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable) throws IOException;
 
     /**
-     * Declare an exchange, via an interface that allows the complete set of arguments.
+     * Declare an exchange.
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
      * @param exchange the name of the exchange
@@ -272,6 +270,28 @@ public interface Channel extends ShutdownNotifier {
      */
     Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable, boolean autoDelete,
                                        Map<String, Object> arguments) throws IOException;
+
+    /**
+     * Declare an exchange, via an interface that allows the complete set of
+     * arguments.
+     * @see com.rabbitmq.client.AMQP.Exchange.Declare
+     * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
+     * @param exchange the name of the exchange
+     * @param type the exchange type
+     * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
+     * @param autoDelete true if the server should delete the exchange when it is no longer in use
+     * @param internal true if the exchange is internal, i.e. can't be directly
+     * published to by a client.
+     * @param arguments other properties (construction arguments) for the exchange
+     * @return a declaration-confirm method to indicate the exchange was successfully declared
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.DeclareOk exchangeDeclare(String exchange,
+                                              String type,
+                                              boolean durable,
+                                              boolean autoDelete,
+                                              boolean internal,
+                                              Map<String, Object> arguments) throws IOException;
 
     /**
      * Declare an exchange passively; that is, check if the named exchange exists.
@@ -478,11 +498,13 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.GetOk
      * @see com.rabbitmq.client.AMQP.Basic.GetEmpty
      * @param queue the name of the queue
-     * @param noAck true if no handshake is required
+     * @param autoAck true if the server should consider messages
+     * acknowledged once delivered; false if the server should expect
+     * explicit acknowledgements
      * @return a {@link GetResponse} containing the retrieved message data
      * @throws java.io.IOException if an error is encountered
      */
-    GetResponse basicGet(String queue, boolean noAck) throws IOException;
+    GetResponse basicGet(String queue, boolean autoAck) throws IOException;
 
     /**
      * Acknowledge one or several received
@@ -491,10 +513,29 @@ public interface Channel extends ShutdownNotifier {
      * containing the received message being acknowledged.
      * @see com.rabbitmq.client.AMQP.Basic.Ack
      * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk} or {@link com.rabbitmq.client.AMQP.Basic.Deliver}
-     * @param multiple true if we are acknowledging multiple messages with the same delivery tag
+     * @param multiple true to acknowledge all messages up to and
+     * including the supplied delivery tag; false to acknowledge just
+     * the supplied delivery tag.
      * @throws java.io.IOException if an error is encountered
      */
     void basicAck(long deliveryTag, boolean multiple) throws IOException;
+
+    /**
+     * Reject one or several received messages.
+     *
+     * Supply the <code>deliveryTag</code> from the {@link com.rabbitmq.client.AMQP.Basic.GetOk}
+     * or {@link com.rabbitmq.client.AMQP.Basic.GetOk} method containing the message to be rejected.
+     * @see com.rabbitmq.client.AMQP.Basic.Nack
+     * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk} or {@link com.rabbitmq.client.AMQP.Basic.Deliver}
+     * @param multiple true to reject all messages up to and including
+     * the supplied delivery tag; false to reject just the supplied
+     * delivery tag.
+     * @param requeue true if the rejected message(s) should be requeued rather
+     * than discarded/dead-lettered
+     * @throws java.io.IOException if an error is encountered
+     */
+    void basicNack(long deliveryTag, boolean multiple, boolean requeue)
+            throws IOException;
 
     /**
      * Reject a message. Supply the deliveryTag from the {@link com.rabbitmq.client.AMQP.Basic.GetOk}
@@ -509,7 +550,7 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Start a non-nolocal, non-exclusive consumer, with
-     * explicit acknowledgements required and a server-generated consumerTag.
+     * explicit acknowledgement and a server-generated consumerTag.
      * @param queue the name of the queue
      * @param callback an interface to the consumer object
      * @return the consumerTag generated by the server
@@ -525,7 +566,9 @@ public interface Channel extends ShutdownNotifier {
      * Start a non-nolocal, non-exclusive consumer, with
      * a server-generated consumerTag.
      * @param queue the name of the queue
-     * @param noAck true if no handshake is required
+     * @param autoAck true if the server should consider messages
+     * acknowledged once delivered; false if the server should expect
+     * explicit acknowledgements
      * @param callback an interface to the consumer object
      * @return the consumerTag generated by the server
      * @throws java.io.IOException if an error is encountered
@@ -533,12 +576,14 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
      */
-    String basicConsume(String queue, boolean noAck, Consumer callback) throws IOException;
+    String basicConsume(String queue, boolean autoAck, Consumer callback) throws IOException;
 
     /**
      * Start a non-nolocal, non-exclusive consumer.
      * @param queue the name of the queue
-     * @param noAck true if no handshake is required
+     * @param autoAck true if the server should consider messages
+     * acknowledged once delivered; false if the server should expect
+     * explicit acknowledgements
      * @param consumerTag a client-generated consumer tag to establish context
      * @param callback an interface to the consumer object
      * @return the consumerTag associated with the new consumer
@@ -547,13 +592,15 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
      */
-    String basicConsume(String queue, boolean noAck, String consumerTag, Consumer callback) throws IOException;
+    String basicConsume(String queue, boolean autoAck, String consumerTag, Consumer callback) throws IOException;
 
     /**
      * Start a consumer. Calls the consumer's {@link Consumer#handleConsumeOk}
      * method before returning.
      * @param queue the name of the queue
-     * @param noAck true if no handshake is required
+     * @param autoAck true if the server should consider messages
+     * acknowledged once delivered; false if the server should expect
+     * explicit acknowledgements
      * @param consumerTag a client-generated consumer tag to establish context
      * @param noLocal flag set to true unless server local buffering is required
      * @param exclusive true if this is an exclusive consumer
@@ -564,7 +611,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      */
-    String basicConsume(String queue, boolean noAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments, Consumer callback) throws IOException;
+    String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments, Consumer callback) throws IOException;
 
     /**
      * Cancel a consumer. Calls the consumer's {@link Consumer#handleCancelOk}
@@ -576,6 +623,17 @@ public interface Channel extends ShutdownNotifier {
      */
     void basicCancel(String consumerTag) throws IOException;
 
+    /**
+     * Ask the broker to resend unacknowledged messages.  In 0-8
+     * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
+     * the new, deprecated method basic.recover_async is asynchronous.
+     * <p/>
+     * Equivalent to calling <code>basicRecover(true)</code>, messages 
+     * will be requeued and possibly delivered to a different consumer. 
+     * @see #basicRecover(boolean)
+     */
+     Basic.RecoverOk basicRecover() throws IOException;
+  
     /**
      * Ask the broker to resend unacknowledged messages.  In 0-8
      * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
@@ -624,4 +682,18 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      */
     Tx.RollbackOk txRollback() throws IOException;
+
+    /**
+     * Enables publisher acknowledgements on this channel.
+     * @see com.rabbitmq.client.AMQP.Confirm.Select
+     * @throws java.io.IOException if an error is encountered
+     */
+    Confirm.SelectOk confirmSelect() throws IOException;
+
+    /**
+     * When in confirm mode, returns the sequence number of the next
+     * message to be published.
+     * @return the sequence number of the next message to be published
+     */
+    long getNextPublishSeqNo();
 }

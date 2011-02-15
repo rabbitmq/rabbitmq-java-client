@@ -1,33 +1,19 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 
 package com.rabbitmq.examples;
 
@@ -245,7 +231,7 @@ public class TestMain {
         _ch1 = createChannel();
 
         _ch1.setReturnListener(new ReturnListener() {
-            public void handleBasicReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body)
+            public void handleReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body)
                     throws IOException {
                 Method method = new AMQImpl.Basic.Return(replyCode, replyText, exchange, routingKey);
                 log("Handling return with body " + new String(body));
@@ -323,7 +309,7 @@ public class TestMain {
     }
 
     public class BatchedTracingConsumer extends TracingConsumer {
-        final boolean _noAck;
+        final boolean _autoAck;
 
         final BlockingCell<Object> _k;
 
@@ -331,19 +317,19 @@ public class TestMain {
 
         int _counter;
 
-        public BatchedTracingConsumer(boolean noAck, BlockingCell<Object> k, int batchSize, Channel ch) {
+        public BatchedTracingConsumer(boolean autoAck, BlockingCell<Object> k, int batchSize, Channel ch) {
             super(ch);
-            _noAck = noAck;
+            _autoAck = autoAck;
             _k = k;
             _batchSize = batchSize;
             _counter = 0;
         }
 
         @Override public void handleDelivery(String consumer_Tag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-            log("Async message (" + _counter + "," + (_noAck ? "noack" : "ack") + "): " + new String(body));
+            log("Async message (" + _counter + "," + (_autoAck ? "autoack" : "ack") + "): " + new String(body));
             _counter++;
             if (_counter == _batchSize) {
-                if (!_noAck) {
+                if (!_autoAck) {
                     log("Acking batch.");
                     getChannel().basicAck(envelope.getDeliveryTag(), true);
                 }
@@ -379,7 +365,7 @@ public class TestMain {
         }
     }
 
-    public int drain(int batchSize, String queueName, boolean noAck) throws IOException {
+    public int drain(int batchSize, String queueName, boolean autoAck) throws IOException {
         long latestTag = 0;
         boolean notEmpty = true;
         int remaining = batchSize;
@@ -387,7 +373,7 @@ public class TestMain {
 
         while (notEmpty && (remaining > 0)) {
             for (int i = 0; (i < 2) && (remaining > 0); i++) {
-                GetResponse c = _ch1.basicGet(queueName, noAck);
+                GetResponse c = _ch1.basicGet(queueName, autoAck);
                 if (c == null) {
                     notEmpty = false;
                 } else {
@@ -398,7 +384,7 @@ public class TestMain {
                     count++;
                 }
             }
-            if (!noAck && latestTag != 0) {
+            if (!autoAck && latestTag != 0) {
                 _ch1.basicAck(latestTag, true);
                 latestTag = 0;
             }
