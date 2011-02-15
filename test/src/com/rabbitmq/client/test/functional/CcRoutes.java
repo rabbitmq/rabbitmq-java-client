@@ -104,17 +104,6 @@ public class CcRoutes extends BrokerTestCase  {
         expect(new String[] {"queue2"}, true);
     }
 
-    private void headerPublish(String ex, String to, List<String> cc, List<String> bcc) throws IOException {
-        if (cc != null) {
-            headers.put("CC", ccList);
-        }
-        if (bcc != null) {
-            headers.put("BCC", bccList);
-        }
-        props.setHeaders(headers);
-        channel.basicPublish(ex, to, props, new byte[0]);
-    }
-
     public void testNonArray() throws IOException {
         headers.put("CC", 0);
         props.setHeaders(headers);
@@ -125,6 +114,17 @@ public class CcRoutes extends BrokerTestCase  {
         } catch (IOException e) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
+    }
+
+    private void headerPublish(String ex, String to, List<String> cc, List<String> bcc) throws IOException {
+        if (cc != null) {
+            headers.put("CC", ccList);
+        }
+        if (bcc != null) {
+            headers.put("BCC", bccList);
+        }
+        props.setHeaders(headers);
+        channel.basicPublish(ex, to, props, new byte[0]);
     }
 
     private void expect(String[] expectedQueues, boolean usedCc) throws IOException {
