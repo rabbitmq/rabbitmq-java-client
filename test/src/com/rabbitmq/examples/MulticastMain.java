@@ -76,8 +76,7 @@ public class MulticastMain {
             int consumerCount    = intArg(cmd, 'y', 1);
             int producerTxSize   = intArg(cmd, 'm', 0);
             int consumerTxSize   = intArg(cmd, 'n', 0);
-            boolean confirm      = cmd.hasOption('c');
-            long confirmMax      = intArg(cmd, 'k', 0);
+            long confirm         = intArg(cmd, 'c', -1);
             boolean autoAck      = cmd.hasOption('a');
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
@@ -86,7 +85,7 @@ public class MulticastMain {
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
 
-            if ((producerTxSize > 0) && confirm) {
+            if ((producerTxSize > 0) && confirm >= 0) {
                 throw new ParseException("Cannot select both producerTxSize"+
                                          " and confirm");
             }
@@ -131,13 +130,13 @@ public class MulticastMain {
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
                 if (producerTxSize > 0) channel.txSelect();
-                if (confirm) channel.confirmSelect();
+                if (confirm >= 0) channel.confirmSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
                 final Producer p = new Producer(channel, exchangeName, id,
                                                 flags, producerTxSize,
                                                 1000L * samplingInterval,
                                                 rateLimit, minMsgSize, timeLimit,
-                                                confirm, confirmMax);
+                                                confirm);
                 channel.setReturnListener(p);
                 channel.setConfirmListener(p);
                 Thread t = new Thread(p);
@@ -183,9 +182,8 @@ public class MulticastMain {
         options.addOption(new Option("x", "producers", true, "producer count"));
         options.addOption(new Option("y", "consumers", true, "consumer count"));
         options.addOption(new Option("m", "ptxsize",   true, "producer tx size"));
-        options.addOption(new Option("k", "confirmMax", true, "max unconfirmed publishes"));
         options.addOption(new Option("n", "ctxsize",   true, "consumer tx size"));
-        options.addOption(new Option("c", "confirm",   false,"confirm mode"));
+        options.addOption(new Option("c", "confirm",   true, "max unconfirmed publishes"));
         options.addOption(new Option("a", "autoack",   false,"auto ack"));
         options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
         options.addOption(new Option("s", "size",      true, "message size"));
@@ -235,17 +233,17 @@ public class MulticastMain {
         private int     msgCount;
         private int     returnCount;
 
-        private boolean   confirm;
+        private long      confirm;
+        private Semaphore confirmPool;
         private long      confirmCount;
         private long      nackCount;
-        private Semaphore confirmPool;
         private volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
         public Producer(Channel channel, String exchangeName, String id,
                         List flags, int txSize,
                         long interval, int rateLimit, int minMsgSize, int timeLimit,
-                        boolean confirm, long confirmMax)
+                        long confirm)
             throws IOException {
 
             this.channel      = channel;
@@ -258,11 +256,11 @@ public class MulticastMain {
             this.interval     = interval;
             this.rateLimit    = rateLimit;
             this.timeLimit    = 1000L * timeLimit;
-            if (confirmMax > 0) {
-                this.confirmPool  = new Semaphore((int)confirmMax);
-            }
             this.message      = new byte[minMsgSize];
             this.confirm      = confirm;
+            if (confirm > 0) {
+                this.confirmPool  = new Semaphore((int)confirm);
+            }
         }
 
         public synchronized void handleReturn(int replyCode,
@@ -385,7 +383,7 @@ public class MulticastMain {
                 if (mandatory || immediate) {
                     System.out.print(", returns: " + returnRate + " ret/s");
                 }
-                if (confirm) {
+                if (confirm >= 0) {
                     System.out.print(", confirms: " + confirmRate + " c/s");
                     if (nackRate > 0) {
                         System.out.print(", nacks: " + nackRate + " n/s");
