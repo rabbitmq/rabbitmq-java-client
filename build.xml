@@ -463,7 +463,7 @@
   <target name="clean-tests">
     <delete dir="build/test"/>
   </target>
-  
+
   <target name="bundlor.init">
       <taskdef resource="com/springsource/bundlor/ant/antlib.xml"
           uri="antlib:com.springsource.bundlor.ant">
@@ -484,7 +484,7 @@
       </propertyset>
     </bundlor:bundlor>
   </target>
-  
+
   <target name="test-bundlor.do" depends="bundlor.init">
     <bundlor:bundlor
         inputPath="${test.javac.out}"
