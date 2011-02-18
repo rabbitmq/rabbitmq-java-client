@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<project name="RabbitMQ Java client" default="build">
+<project name="RabbitMQ Java client" default="build"
+    xmlns:bundlor="antlib:com.springsource.bundlor.ant">
 
   <property file="build.properties"/>
   <property file="config.properties"/>
@@ -386,7 +387,7 @@
     </junit>
   </target>
 
-  <target name="jar" depends="build">
+  <target name="jar" depends="build, bundlor.do">
     <mkdir dir="${lib.out}"/>
     <antcall target="doJarWithTags">
        <param name="jar.name" value="rabbitmq-client"/>
@@ -410,7 +411,7 @@
              token="VERSION" value="${impl.version}"/>
   </target>
 
-  <target name="test-jar" depends="test-build">
+  <target name="test-jar" depends="test-build, test-bundlor.do">
     <mkdir dir="${lib.out}"/>
       <antcall target="doJarWithTags">
          <param name="jar.name" value="rabbitmq-client-tests"/>
@@ -420,7 +421,8 @@
 
     <target name="doJarWithTags">
         <jar destfile="${lib.out}/${jar.name}.jar"
-             basedir="${base}">
+             basedir="${base}"
+             filesetmanifest="merge">
             <manifest>
               <section name="${jar.name}">
                  <attribute name="Specification-Title" value="AMQP"/>
@@ -460,5 +462,37 @@
 
   <target name="clean-tests">
     <delete dir="build/test"/>
+  </target>
+  
+  <target name="bundlor.init">
+      <taskdef resource="com/springsource/bundlor/ant/antlib.xml"
+          uri="antlib:com.springsource.bundlor.ant">
+          <classpath id="bundlor.classpath">
+              <fileset dir="${bundlor.home}/dist"/>
+              <fileset dir="${bundlor.home}/lib"/>
+          </classpath>
+      </taskdef>
+  </target>
+
+  <target name="bundlor.do" depends="bundlor.init">
+    <bundlor:bundlor
+        inputPath="${javac.out}"
+        outputPath="${javac.out}"
+        manifestTemplatePath="bundlorTemplate.mf">
+      <propertyset>
+        <propertyref builtin="all"/>
+      </propertyset>
+    </bundlor:bundlor>
+  </target>
+  
+  <target name="test-bundlor.do" depends="bundlor.init">
+    <bundlor:bundlor
+        inputPath="${test.javac.out}"
+        outputPath="${test.javac.out}"
+        manifestTemplatePath="bundlorTestTemplate.mf">
+      <propertyset>
+        <propertyref builtin="all"/>
+      </propertyset>
+    </bundlor:bundlor>
   </target>
 </project>
