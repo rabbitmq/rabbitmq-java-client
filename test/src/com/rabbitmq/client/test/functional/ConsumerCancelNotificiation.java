@@ -46,7 +46,7 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
         channel.queueDeclare(queue, false, true, false, null);
         Consumer consumer = new QueueingConsumer(channel) {
             @Override
-            public void handleCancelNotification() throws IOException {
+            public void handleCancel(String consumerTag) throws IOException {
                 synchronized (lock) {
                     notified = !notified;
                     lock.notifyAll();

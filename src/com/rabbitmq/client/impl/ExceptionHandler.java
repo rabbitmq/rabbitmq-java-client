@@ -78,5 +78,4 @@ public interface ExceptionHandler {
                                  Consumer consumer,
                                  String consumerTag,
                                  String methodName);
-
 }
