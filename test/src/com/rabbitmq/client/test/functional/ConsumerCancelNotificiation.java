@@ -32,7 +32,7 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
 
     private void assertNotified(boolean expected, boolean wait) {
         synchronized (lock) {
-            if (wait) {
+            if (wait && (expected != notified)) {
                 try {
                     lock.wait();
                 } catch (InterruptedException e) {
