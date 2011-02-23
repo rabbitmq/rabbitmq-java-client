@@ -51,8 +51,9 @@ public interface Consumer {
 
     /**
      * Called when the consumer is cancelled for reasons other than by a
-     * basicCancel: e.g. the queue is deleted. See handleCancelOk for
-     * notification of consumer cancellation due to basicCancel.
+     * basicCancel: e.g. the queue has been deleted (either by this channel or
+     * by any other channel). See handleCancelOk for notification of consumer
+     * cancellation due to basicCancel.
      * 
      * @throws IOException
      */
