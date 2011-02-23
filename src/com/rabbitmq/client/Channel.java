@@ -180,9 +180,6 @@ public interface Channel extends ShutdownNotifier {
      */
     void setDefaultConsumer(Consumer consumer);
 
-    ConsumerCancellationListener getConsumerCancellationListener();
-    void setConsumerCancellationListener(ConsumerCancellationListener notifier);
-
     /**
      * Request specific "quality of service" settings.
      *

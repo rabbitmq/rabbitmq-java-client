@@ -197,10 +197,6 @@ public class AMQConnectionTest extends TestCase {
             fail("handleConsumerException " + consumerTag + " " + methodName + ": " + ex);
         }
         
-        public void handleConsumerCancellationException(Channel channel, Throwable ex) {
-            fail("handleConsmuerCancellationException " + ex);
-        }
-
         public List<Throwable> getHandledExceptions() {
             return _handledExceptions;
         }

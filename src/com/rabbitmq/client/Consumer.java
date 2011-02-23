@@ -82,4 +82,6 @@ public interface Consumer {
                         AMQP.BasicProperties properties,
                         byte[] body)
         throws IOException;
+    
+    void handleCancelNotification() throws IOException;
 }

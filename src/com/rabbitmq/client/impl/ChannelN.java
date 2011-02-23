@@ -91,8 +91,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile ConfirmListener confirmListener = null;
 
-    public volatile ConsumerCancellationListener consumerCancellationListener = null;
-    
     /** Sequence number of next published message requiring confirmation.
      */
     private long nextPublishSeqNo = 0L;
@@ -176,15 +174,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public void setDefaultConsumer(Consumer consumer) {
         defaultConsumer = consumer;
-    }
-
-    public ConsumerCancellationListener getConsumerCancellationListener() {
-        return consumerCancellationListener;
-    }
-
-    public void setConsumerCancellationListener(
-            ConsumerCancellationListener listener) {
-        consumerCancellationListener = listener;
     }
 
     /**
@@ -352,12 +341,20 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 // so return false
                 return false;
             } else if (method instanceof Basic.Cancel) {
-                ConsumerCancellationListener l = getConsumerCancellationListener();
-                if (l != null) {
+                Basic.Cancel m = (Basic.Cancel)method;
+                Consumer callback = _consumers.get(m.consumerTag);
+                if (callback == null) {
+                    callback = defaultConsumer;
+                }
+                if (callback != null) {
                     try {
-                        l.handleConsumerCancellation(((Basic.Cancel)method).getConsumerTag());
+                        callback.handleCancelNotification();
                     } catch (Throwable ex) {
-                        _connection.getExceptionHandler().handleConsumerCancellationException(this, ex);
+                        _connection.getExceptionHandler().handleConsumerException(this,
+                                                                                  ex,
+                                                                                  callback,
+                                                                                  m.consumerTag,
+                                                                                  "handleCancelNotification");
                     }
                 }
                 return true;

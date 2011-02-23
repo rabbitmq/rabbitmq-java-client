@@ -79,6 +79,10 @@ public class DefaultConsumer implements Consumer {
             // no work to do
     }
 
+    public void handleCancelNotification() throws IOException {
+        // no work to do
+    }
+
     /**
     *  Retrieve the channel.
      * @return the channel this consumer is attached to.

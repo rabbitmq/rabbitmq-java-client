@@ -79,5 +79,4 @@ public interface ExceptionHandler {
                                  String consumerTag,
                                  String methodName);
 
-    void handleConsumerCancellationException(Channel channel, Throwable exception);
 }
