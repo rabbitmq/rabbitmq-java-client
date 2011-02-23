@@ -23,6 +23,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.ConsumerCancellationListener;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.FlowListener;
 import com.rabbitmq.client.GetResponse;
@@ -90,6 +91,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile ConfirmListener confirmListener = null;
 
+    public volatile ConsumerCancellationListener consumerCancellationListener = null;
+    
     /** Sequence number of next published message requiring confirmation.
      */
     private long nextPublishSeqNo = 0L;
@@ -173,6 +176,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public void setDefaultConsumer(Consumer consumer) {
         defaultConsumer = consumer;
+    }
+
+    public ConsumerCancellationListener getConsumerCancellationListener() {
+        return consumerCancellationListener;
+    }
+
+    public void setConsumerCancellationListener(
+            ConsumerCancellationListener listener) {
+        consumerCancellationListener = listener;
     }
 
     /**
@@ -339,6 +351,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 // be handled by whichever RPC continuation invoked Recover,
                 // so return false
                 return false;
+            } else if (method instanceof Basic.Cancel) {
+                ConsumerCancellationListener l = getConsumerCancellationListener();
+                if (l != null) {
+                    try {
+                        l.handleConsumerCancellation(((Basic.Cancel)method).getConsumerTag());
+                    } catch (Throwable ex) {
+                        _connection.getExceptionHandler().handleConsumerCancellationException(this, ex);
+                    }
+                }
+                return true;
             } else {
                 return false;
             }

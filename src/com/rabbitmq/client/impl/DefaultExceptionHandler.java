@@ -55,6 +55,12 @@ public class DefaultExceptionHandler implements ExceptionHandler {
                                               + " for channel " + channel);
     }
 
+    public void handleConsumerCancellationException(Channel channel,
+            Throwable exception) {
+        handleChannelKiller(channel, exception, "ConsumerCancellationListener.handleConsumerCancellation");
+
+    }
+
     protected void handleChannelKiller(Channel channel,
                                        Throwable exception,
                                        String what)

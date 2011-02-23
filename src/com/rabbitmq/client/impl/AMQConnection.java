@@ -65,6 +65,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         capabilities.put("publisher_confirms", true);
         capabilities.put("exchange_exchange_bindings", true);
         capabilities.put("basic.nack", true);
+        capabilities.put("consumer_cancel_notify", true);
         return Frame.buildTable(new Object[] {
                 "product", LongStringHelper.asLongString("RabbitMQ"),
                 "version", LongStringHelper.asLongString(ClientVersion.VERSION),
