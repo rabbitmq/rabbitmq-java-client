@@ -341,7 +341,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return false;
             } else if (method instanceof Basic.Cancel) {
                 Basic.Cancel m = (Basic.Cancel)method;
-                Consumer callback = _consumers.get(m.consumerTag);
+                Consumer callback = _consumers.remove(m.consumerTag);
                 if (callback == null) {
                     callback = defaultConsumer;
                 }
