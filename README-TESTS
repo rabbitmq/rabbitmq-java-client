@@ -12,32 +12,26 @@ The suites are:
   Server tests
   SSL tests
 
-All the tests require a conforming server listening on localhost:5672
-(the default settings).  For details on running specific tests, see
-below.
+The Server test suite cannot be launched from the public umbrella
+( http://hg.rabbitmq.com/rabbitmq-public-umbrella ). Attempting to launch
+this suite by executing the "test-server" ant target will fail, because
+test necessary prerequisites are not present in the public umbrella.
 
-All the test suites can be run with the command ant test-suite. To run
-specific test suites see the instructions below.
+All other tests require a conforming server listening on localhost:5672
+(the default settings). SSL tests require a broker listening on the default
+SSL port. For details on running specific tests, see below.
 
 
 Running a Specific Test Suite
 =============================
 
-To run a specific test suite, but not the others, you should execute
-one of the following in the top-level directory of the source tree:
+To run a specific test suite you should execute one of the following in the
+top-level directory of the source tree:
 
   ant test-client
   ant test-functional
-  ant test-server
   ant test-ssl
 
-Note that to run the SSL tests, the RabbitMQ server should be
-configured to use SSL as per the SSL with RabbitMQ guide.
-
-The server tests are meant to test a RabbitMQ broker.  Broadly, they
-require a running RabbitMQ broker on the default host/port, the source
-code for rabbitmq-server in ../rabbitmq-server, and a test directory
-../rabbitmq-test.  Running them manually is a tricky business.
 
 For example, to run the client tests:
 
@@ -66,3 +60,39 @@ BUILD SUCCESSFUL
 
 If any tests are broken details can be found by viewing this file:
 	build/TEST-com.rabbitmq.client.test.ClientTests.txt
+
+
+SSL Test Setup
+--------------
+
+To run the SSL tests, the RabbitMQ server and Java client should be configured
+as per the SSL instructions on the RabbitMQ website. The SSL_CERTS_DIR
+environment variable must point to a certificate folder with the following
+minimal structure:
+
+   $SSL_CERTS_DIR
+   |-- client
+   |   |-- keycert.p12
+   |   |-- cert.pem
+   |   \-- key.pem
+   |-- server
+   |   |-- cert.pem
+   |   \-- key.pem
+   \-- testca
+       \-- cacert.pem
+
+The PASSWORD environment variable must be set to the password of the keycert.p12
+PKCS12 keystore. The broker must be configured to validate client certificates.
+This will become minimal broker configuration file if $SSL_CERTS_DIR is replaced
+with the certificate folder:
+
+%%%%% begin sample test broker configuration
+[{rabbit, [{ssl_listeners, [5671]},
+           {ssl_options,   [{cacertfile,"$SSL_CERTS_DIR/testca/cacert.pem"},
+                            {certfile,"$SSL_CERTS_DIR/server/cert.pem"},
+                            {keyfile,"$SSL_CERTS_DIR/server/key.pem"},
+                            {verify,verify_peer},
+                            {fail_if_no_peer_cert, false}]}]}].
+%%%%% end sample test broker configuration
+
+

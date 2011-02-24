@@ -36,10 +36,10 @@ public interface ExceptionHandler {
     /**
      * Perform any required exception processing for the situation
      * when the driver thread for the connection has called a
-     * ReturnListener's handleBasicReturn method, and that method has
+     * ReturnListener's handleReturn method, and that method has
      * thrown an exception.
      * @param channel the ChannelN that held the ReturnListener
-     * @param exception the exception thrown by ReturnListener.handleBasicReturn
+     * @param exception the exception thrown by ReturnListener.handleReturn
      */
     void handleReturnListenerException(Channel channel, Throwable exception);
 
