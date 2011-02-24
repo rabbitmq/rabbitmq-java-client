@@ -30,18 +30,6 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
     
     private boolean notified = false;
 
-    private void assertNotified(boolean expected, boolean wait) {
-        synchronized (lock) {
-            if (wait && (expected != notified)) {
-                try {
-                    lock.wait();
-                } catch (InterruptedException e) {
-                }
-            }
-            assertEquals(notified, expected);
-        }
-    }
-    
     public void testConsumerCancellationNotification() throws IOException {
         channel.queueDeclare(queue, false, true, false, null);
         Consumer consumer = new QueueingConsumer(channel) {
@@ -54,8 +42,15 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
             }
         };
         channel.basicConsume(queue, consumer);
-        assertNotified(false, false);
         channel.queueDelete(queue);
-        assertNotified(true, true);
+        synchronized (lock) {
+            if (!notified) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                }
+            }
+            assertTrue(notified);
+        }
     }
 }
