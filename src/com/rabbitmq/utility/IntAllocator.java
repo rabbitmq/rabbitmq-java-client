@@ -19,62 +19,107 @@ package com.rabbitmq.utility;
 import java.util.Arrays;
 
 /**
- * A class for allocating integer IDs in a given range.
+ * A class for allocating integers from a given range.
+ * <p/><strong>Concurrent Semantics:</strong><br />
+ * This class is <b><i>not</i></b> thread safe.
+ * 
+ * <p/><b>Implementation notes:</b>
+ * <br/>This could really use being a balanced binary tree. However for normal
+ * usages it doesn't actually matter.
+ * 
+ * <p/><b>Invariants:</b>
+ * <br/>Sorted in order of first element.
+ * <br/>Intervals are non-overlapping, non-adjacent.
+ * 
  */
-public class IntAllocator{
+public class IntAllocator {
 
-    // Invariant: Sorted in order of first element.
-    // Invariant: Intervals are non-overlapping, non-adjacent.
-    // This could really use being a balanced binary tree. However for normal
-    // usages it doesn't actually matter.
     private IntervalList base;
 
     private final int[] unsorted;
     private int unsortedCount = 0;
 
     /**
-     * A class representing an inclusive interval from start to end.
+     * A node in a singly-linked list of inclusive intervals.
+     * <br/>A single node denotes the interval of integers from
+     * <code>start</code> to <code>end</code> inclusive.
      */
     private static class IntervalList{
+        int start;
+        int end;
+        IntervalList next;  // next interval in the list.
+        
         IntervalList(int start, int end){
             this.start = start;
             this.end = end;
         }
 
-        int start;
-        int end;
-        IntervalList next;
-
         int length(){ return end - start + 1; }
     }
 
-    /** Destructively merge two IntervalLists.
-     * Invariant: None of the Intervals in the two lists may overlap
-     * intervals in this list.
-     */
-    public static IntervalList merge(IntervalList x, IntervalList y){
-        if(x == null) return y;
-        if(y == null) return x;
-
-        if(x.end > y.start) return merge(y, x);
-
-        // We now have x, y non-null and x.End < y.Start.
-        if(y.start == x.end + 1){
-            // The two intervals adjoin. Merge them into one and then
-            // merge the tails.
-            x.end = y.end;
-            x.next = merge(x.next, y.next);
-            return x;
+    private static class IntervalListAccumulator {
+        /** <b>Invariant:</b> either both null, or both non-null. */
+        private IntervalList accumListStart, accumListEnd = null;
+        
+        /**
+         * Add a single node to the end of the accumulated list, merging the
+         * last two nodes if abutting.<br/>
+         * <b>Note:</b> the node added is not modified by add;
+         * in particular, the <code>next</code> field is preserved, 
+         * and copied if the nodes are merged.
+         * @param iListNode node to add, terminate list if this is null.
+         */
+        public void add(IntervalList iListNode) {
+            if (accumListStart == null) {
+                accumListStart = accumListEnd = iListNode;
+            } else {
+                if (iListNode == null) {
+                    accumListEnd.next = null;
+                } else if (accumListEnd.end + 1 == iListNode.start) {
+                    accumListEnd.end = iListNode.end;
+                    accumListEnd.next = iListNode.next;
+                } else {
+                    accumListEnd.next = iListNode;
+                    accumListEnd = iListNode;
+                }
+            }
         }
-
-        // y belongs in the tail of x.
-
-        x.next = merge(y, x.next);
-        return x;
+        /**
+         * Append the list from this node and return the accumulated list
+         * including this node chain.<br/>
+         * <b>Note:</b> The accumulated list is cleared after this call.
+         * @param iListNode chain to append to accumListEnd.
+         * @return the accumulated list
+         */
+        public IntervalList getAppendedResult(IntervalList iListNode) {
+            add(iListNode); // note: this preserves the chain
+            IntervalList result = accumListStart;
+            accumListStart = accumListEnd = null;
+            return result;
+        }
     }
 
+    /**
+     * Merge two IntervalLists.
+     * <p/><b>Preconditions:</b><br/>
+     * None of the intervals in the two lists overlap.
+     */
+    private static IntervalList merge(IntervalList x, IntervalList y){
+        IntervalListAccumulator outList = new IntervalListAccumulator();
+        while (true) {
+            if(x == null) { return outList.getAppendedResult(y); }
+            if(y == null) { return outList.getAppendedResult(x); }
+            if (x.start < y.start) {
+                outList.add(x);
+                x = x.next;
+            } else {
+                outList.add(y);
+                y = y.next;
+            }
+        }
+    }
 
-    public static IntervalList fromArray(int[] xs, int length){
+    private static IntervalList fromArray(int[] xs, int length){
         Arrays.sort(xs, 0, length);
 
         IntervalList result = null;
@@ -100,14 +145,13 @@ public class IntAllocator{
         return result;
     }
 
-
     /**
     * Creates an IntAllocator allocating integer IDs within the inclusive range
     * [start, end]
     */
     public IntAllocator(int start, int end){
         if(start > end)
-            throw new IllegalArgumentException("illegal range [" + start    +
+            throw new IllegalArgumentException("illegal range [" + start +
               ", " + end + "]");
 
         // Fairly arbitrary heuristic for a good size for the unsorted set.
@@ -116,8 +160,8 @@ public class IntAllocator{
     }
 
     /**
-     * Allocate a fresh integer from the range, or return -1 if no more integers
-     * are available. This operation is guaranteed to run in O(1)
+     * Allocate an unallocated integer from the range, or return -1 if no 
+     * more integers are available. This operation is guaranteed to run in O(1)
      */
     public int allocate(){
         if(unsortedCount > 0){
@@ -183,7 +227,7 @@ public class IntAllocator{
         return true;
     }
 
-    public void flush(){
+    private void flush(){
         if(unsortedCount == 0) return;
 
         base = merge(base, fromArray(unsorted, unsortedCount));
@@ -193,26 +237,24 @@ public class IntAllocator{
     @Override public String toString(){
         StringBuilder builder = new StringBuilder();
 
-        builder.append("IntAllocator{");
-
-        builder.append("intervals = [");
+        builder.append("IntAllocator{intervals = [");
         IntervalList it = base;
-        while(it != null){
+        if (it != null) {
             builder.append(it.start).append("..").append(it.end);
-            if(it.next != null) builder.append(", ");
             it = it.next;
         }
-        builder.append("]");
-
-        builder.append(", unsorted = [");
-        for(int i = 0; i < unsortedCount; i++){
-            builder.append(unsorted[i]);
-            if( i < unsortedCount - 1) builder.append(", ");
+        while (it != null) {
+            builder.append(", ").append(it.start).append("..").append(it.end);
+            it = it.next;
         }
-        builder.append("]");
-
-
-        builder.append("}");
+        builder.append("], unsorted = [");
+        if (unsortedCount > 0) {
+            builder.append(unsorted[0]);
+        }
+        for(int i = 1; i < unsortedCount; ++i){
+            builder.append(", ").append(unsorted[i]);
+        }
+        builder.append("]}");
         return builder.toString();
     }
 }
