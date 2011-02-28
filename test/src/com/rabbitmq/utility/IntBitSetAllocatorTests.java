@@ -23,12 +23,12 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
-public class IntAllocatorTests extends TestCase {
+public class IntBitSetAllocatorTests extends TestCase {
 
     private static final int TEST_ITERATIONS = 50000;
     private static final int HI_RANGE = 100000;
     private static final int LO_RANGE = 100;
-    private IntAllocator iAll = new IntAllocator(LO_RANGE, HI_RANGE);
+    private IntBitSetAllocator iAll = new IntBitSetAllocator(LO_RANGE, HI_RANGE);
 
     private Random rand = new Random(70608L);
 
@@ -61,7 +61,7 @@ public class IntAllocatorTests extends TestCase {
                 set.add(trial);
             } else {
                 if (!set.isEmpty()) {
-                    int trial = extract(set);
+                    int trial = extractOne(set);
                     assertFalse("Allocator agreed to reserve " + trial,
                             iAll.reserve(trial));
                     iAll.free(trial);
@@ -75,52 +75,7 @@ public class IntAllocatorTests extends TestCase {
         }
     }
 
-    public void testReserveAndFreeBS() throws Exception {
-        IntBitSetAllocator ibs = new IntBitSetAllocator(LO_RANGE, HI_RANGE);
-        Set<Integer> set = new HashSet<Integer>();
-        for (int i = 0; i < TEST_ITERATIONS; ++i) {
-            int trial = getTrial(rand);
-            if (set.contains(trial)) {
-                ibs.free(trial);
-                set.remove(trial);
-            } else {
-                assertTrue("Did not reserve free integer " + trial,
-                        ibs.reserve(trial));
-                set.add(trial);
-            }
-        }
-
-        for (int trial : set) {
-            assertFalse("Integer " + trial + " not allocated!",
-                    ibs.reserve(trial));
-        }
-    }
-
-    public void testAllocateAndFreeBS() throws Exception {
-        IntBitSetAllocator ibs = new IntBitSetAllocator(LO_RANGE, HI_RANGE);
-        Set<Integer> set = new HashSet<Integer>();
-        for (int i=0; i < TEST_ITERATIONS; ++i) {
-            if (getBool(rand)) {
-                int trial = ibs.allocate();
-                assertFalse("Already allocated " + trial, set.contains(trial));
-                set.add(trial);
-            } else {
-                if (!set.isEmpty()) {
-                    int trial = extract(set);
-                    assertFalse("Allocator agreed to reserve " + trial,
-                            ibs.reserve(trial));
-                    ibs.free(trial);
-                }
-            }
-        }
-
-        for (int trial : set) {
-            assertFalse("Integer " + trial + " should be allocated!",
-                    ibs.reserve(trial));
-        }
-    }
-
-    public void testToStringBS() throws Exception {
+    public void testToString() throws Exception {
         IntBitSetAllocator ibs = new IntBitSetAllocator(LO_RANGE, HI_RANGE);
         assertEquals("IntBitSetAllocator{allocated = []}", ibs.toString());
         ibs.allocate();
@@ -135,28 +90,7 @@ public class IntAllocatorTests extends TestCase {
                     , ibs.toString());
     }
 
-    public void testToString() throws Exception {
-        assertEquals("IntAllocator{intervals = [100..100000], unsorted = []}"
-                    , iAll.toString());
-        iAll.allocate();
-        assertEquals("IntAllocator{intervals = [101..100000], unsorted = []}"
-                    , iAll.toString());
-        iAll.free(100);
-        assertEquals("IntAllocator{intervals = [101..100000]"
-                    + ", unsorted = [100]}"
-                    , iAll.toString());
-        for(int i = 200; i<211; i=i+4) {
-            iAll.reserve(i);
-            iAll.reserve(i+1);
-            iAll.reserve(i+2);
-        }
-        assertEquals("IntAllocator{intervals = "
-                    + "[100..199, 203..203, 207..207, 211..100000]"
-                    + ", unsorted = []}"
-                    , iAll.toString());
-    }
-
-    private static int extract(Set<Integer> set) {
+    private static int extractOne(Set<Integer> set) {
         Iterator<Integer> iter = set.iterator();
         int trial = iter.next();
         iter.remove();

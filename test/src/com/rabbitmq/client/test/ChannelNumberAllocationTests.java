@@ -69,13 +69,15 @@ public class ChannelNumberAllocationTests extends TestCase{
     for(int i = 1; i <= CHANNEL_COUNT; i++)
       channels.add(connection.createChannel());
 
-    // In the current implementation the list should actually
-    // already be sorted, but we don't want to force that behaviour
+    // In the current implementation the allocated numbers need not be increasing
     Collections.sort(channels, COMPARATOR);
 
-    int i = 1;
-    for(Channel channel : channels)
-      assertEquals(i++, channel.getChannelNumber());
+    assertEquals("Didn't create the right number of channels!", CHANNEL_COUNT, channels.size());
+    for(int i = 1; i < CHANNEL_COUNT; ++i) {
+        assertTrue("Channel numbers should be distinct."
+                  , channels.get(i-1).getChannelNumber() < channels.get(i).getChannelNumber()
+                  );
+    }
   }
 
   public void testAllocateAfterManualAssign() throws Exception{

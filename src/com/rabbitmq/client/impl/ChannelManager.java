@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.utility.IntAllocator;
+import com.rabbitmq.utility.IntBitSetAllocator;
 
 /**
  * Manages a set of channels, indexed by channel number.
@@ -34,7 +34,7 @@ public class ChannelManager {
     /** Mapping from channel number to AMQChannel instance */
     private final Map<Integer, ChannelN> _channelMap =
         Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
-    private final IntAllocator channelNumberAllocator;
+    private final IntBitSetAllocator channelNumberAllocator;
 
     /** Maximum channel number available on this connection. */
     public final int _channelMax;
@@ -50,7 +50,7 @@ public class ChannelManager {
             channelMax = (1 << 16) - 1;
         }
         _channelMax = channelMax;
-        channelNumberAllocator = new IntAllocator(1, channelMax);
+        channelNumberAllocator = new IntBitSetAllocator(1, channelMax);
     }
 
 
