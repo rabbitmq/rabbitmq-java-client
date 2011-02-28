@@ -23,12 +23,12 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
-public class IntBitSetAllocatorTests extends TestCase {
+public class IntAllocatorTests extends TestCase {
 
     private static final int TEST_ITERATIONS = 50000;
     private static final int HI_RANGE = 100000;
     private static final int LO_RANGE = 100;
-    private IntBitSetAllocator iAll = new IntBitSetAllocator(LO_RANGE, HI_RANGE);
+    private IntAllocator iAll = new IntAllocator(LO_RANGE, HI_RANGE);
 
     private Random rand = new Random(70608L);
 
@@ -40,15 +40,13 @@ public class IntBitSetAllocatorTests extends TestCase {
                 iAll.free(trial);
                 set.remove(trial);
             } else {
-                assertTrue("Did not reserve free integer " + trial,
-                        iAll.reserve(trial));
+                assertTrue("Did not reserve free integer " + trial, iAll.reserve(trial));
                 set.add(trial);
             }
         }
 
         for (int trial : set) {
-            assertFalse("Integer " + trial + " not allocated!",
-                    iAll.reserve(trial));
+            assertFalse("Integer " + trial + " not allocated!", iAll.reserve(trial));
         }
     }
 
@@ -62,31 +60,28 @@ public class IntBitSetAllocatorTests extends TestCase {
             } else {
                 if (!set.isEmpty()) {
                     int trial = extractOne(set);
-                    assertFalse("Allocator agreed to reserve " + trial,
-                            iAll.reserve(trial));
+                    assertFalse("Allocator agreed to reserve " + trial, iAll.reserve(trial));
                     iAll.free(trial);
                 }
             }
         }
 
         for (int trial : set) {
-            assertFalse("Integer " + trial + " should be allocated!",
-                    iAll.reserve(trial));
+            assertFalse("Integer " + trial + " should be allocated!", iAll.reserve(trial));
         }
     }
 
     public void testToString() throws Exception {
-        IntBitSetAllocator ibs = new IntBitSetAllocator(LO_RANGE, HI_RANGE);
-        assertEquals("IntBitSetAllocator{allocated = []}", ibs.toString());
+        IntAllocator ibs = new IntAllocator(LO_RANGE, HI_RANGE);
+        assertEquals("IntAllocator{allocated = []}", ibs.toString());
         ibs.allocate();
-        assertEquals("IntBitSetAllocator{allocated = [100]}", ibs.toString());
+        assertEquals("IntAllocator{allocated = [100]}", ibs.toString());
         for(int i = 200; i<211; i=i+4) {
             ibs.reserve(i);
             ibs.reserve(i+1);
             ibs.reserve(i+2);
         }
-        assertEquals("IntBitSetAllocator{allocated = "
-                    + "[100, 200..202, 204..206, 208..210]}"
+        assertEquals("IntAllocator{allocated = [100, 200..202, 204..206, 208..210]}"
                     , ibs.toString());
     }
 

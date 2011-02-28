@@ -38,7 +38,7 @@ import java.util.BitSet;
  * range.
  * <br/>Very little Object creation and destruction occurs in use.
  */
-public class IntBitSetAllocator {
+public class IntAllocator {
 
     private final int loRange; // the integer bit 0 represents
     private final int hiRange; // the integer(+1) the highest bit represents
@@ -50,12 +50,12 @@ public class IntBitSetAllocator {
     private final BitSet freeSet;
 
     /**
-     * Creates an IntBitSetAllocator allocating integer IDs within the
+     * Creates an IntAllocator allocating integer IDs within the
      * inclusive range [<code>bottom</code>, <code>top</code>].
      * @param bottom lower end of range
      * @param top upper end of range (inclusive)
      */
-    public IntBitSetAllocator(int bottom, int top) {
+    public IntAllocator(int bottom, int top) {
         this.loRange = bottom;
         this.hiRange = top + 1;
         this.numberOfBits = hiRange - loRange;
@@ -111,7 +111,7 @@ public class IntBitSetAllocator {
     @Override
     public String toString() {
         StringBuilder sb
-            = new StringBuilder("IntBitSetAllocator{allocated = [");
+            = new StringBuilder("IntAllocator{allocated = [");
 
         int firstClearBit = this.freeSet.nextClearBit(0);
         if (firstClearBit < this.numberOfBits) {
