@@ -50,7 +50,7 @@ public class ValueWriter
         if (length > 255) {
             throw new IllegalArgumentException(
                     "Short string too long; utf-8 encoded length = " + length +
-                    ", max = 255."); 
+                    ", max = 255.");
         }
         out.writeByte(bytes.length);
         out.write(bytes);
@@ -205,7 +205,7 @@ public class ValueWriter
             }
         }
     }
-  
+
     /** Public API - encodes an octet from an int. */
     public final void writeOctet(int octet)
         throws IOException
