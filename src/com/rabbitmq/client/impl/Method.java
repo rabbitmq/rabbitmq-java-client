@@ -37,6 +37,21 @@ public abstract class Method implements com.rabbitmq.client.Method {
     /** {@inheritDoc} */
     public abstract String protocolMethodName();
 
+    /** {@inheritDoc} */
+    public Method rpc(com.rabbitmq.client.Channel channel)
+           throws IOException
+    {
+        ChannelN channelN = (ChannelN)channel;
+        return channelN.exnWrappingRpc(this).getMethod();
+    }
+
+    /** {@inheritDoc} */
+    public void asyncRpc(com.rabbitmq.client.Channel channel)
+                throws IOException
+    {
+        ((AMQChannel) channel).transmit(this);
+    }
+
     /**
      * Tell if content is present.
      * @return true if the wire-protocol for this method should involve a content header and body,
