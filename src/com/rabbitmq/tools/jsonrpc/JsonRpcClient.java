@@ -112,7 +112,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
         } catch(ShutdownSignalException ex) {
             throw new IOException(ex.getMessage()); // wrap, re-throw
         }
-        
+
         //System.out.println(requestStr + " --->\n---> " + replyStr);
 	Map<String, Object> map = (Map) (new JSONReader().read(replyStr));
 	return checkReply(map);

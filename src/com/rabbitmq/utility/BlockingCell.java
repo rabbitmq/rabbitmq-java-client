@@ -28,9 +28,9 @@ public class BlockingCell<T> {
 
     /** Will be null until a value is supplied, and possibly still then. */
     private T _value;
-    
+
     private static final long NANOS_IN_MILLI = 1000 * 1000;
-    
+
     private static final long INFINITY = -1;
 
     /** Instantiate a new BlockingCell waiting for a value of the specified type. */
@@ -75,10 +75,10 @@ public class BlockingCell<T> {
 
         if (!_filled)
             throw new TimeoutException();
-        
+
         return _value;
     }
-    
+
     /**
      * As get(), but catches and ignores InterruptedException, retrying until a value appears.
      * @return the waited-for value
@@ -92,7 +92,7 @@ public class BlockingCell<T> {
             }
         }
     }
-    
+
     /**
      * As get(long timeout), but catches and ignores InterruptedException, retrying until
      * a value appears or until specified timeout is reached. If timeout is reached,
@@ -105,7 +105,7 @@ public class BlockingCell<T> {
     public synchronized T uninterruptibleGet(int timeout) throws TimeoutException {
         long now = System.nanoTime() / NANOS_IN_MILLI;
         long runTime = now + timeout;
-        
+
         do {
             try {
                 return get(runTime - now);
@@ -113,7 +113,7 @@ public class BlockingCell<T> {
                 // Ignore.
             }
         } while ((timeout == INFINITY) || ((now = System.nanoTime() / NANOS_IN_MILLI) < runTime));
-        
+
         throw new TimeoutException();
     }
 
