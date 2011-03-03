@@ -35,32 +35,32 @@ def java_constant_name(c):
 
 javaTypeMap = {
     'octet': 'int',
-    'shortstr': 'java.lang.String',
+    'shortstr': 'String',
     'longstr': 'LongString',
     'short': 'int',
     'long': 'int',
     'longlong': 'long',
     'bit': 'boolean',
-    'table': 'Map<java.lang.String,Object>',
+    'table': 'Map<String,Object>',
     'timestamp': 'Date'
     }
 
 javaTypesNeverNullInBuilder = set([
-    'java.lang.String',
+    'String',
     'LongString',
-    'Map<java.lang.String,Object>',
+    'Map<String,Object>',
     'Date'
     ])
 
 javaPropertyTypeMap = {
-    'octet': 'java.lang.Integer',
-    'shortstr': 'java.lang.String',
+    'octet': 'Integer',
+    'shortstr': 'String',
     'longstr': 'LongString',
-    'short': 'java.lang.Integer',
-    'long': 'java.lang.Integer',
-    'longlong': 'java.lang.Long',
-    'bit': 'java.lang.Boolean',
-    'table': 'Map<java.lang.String,Object>',
+    'short': 'Integer',
+    'long': 'Integer',
+    'longlong': 'Long',
+    'bit': 'Boolean',
+    'table': 'Map<String,Object>',
     'timestamp': 'Date'
     }
 
@@ -97,14 +97,14 @@ def java_field_default_value(type, value):
         return value
     elif type == 'boolean':
         return "{0}".format(value).lower()
-    elif type == 'java.lang.String':
+    elif type == 'String':
         return "\"{0}\"".format(value)
     elif type == 'LongString':
         return "new LongStringHelper.ByteArrayLongString(\"{0}\".getBytes())".format(value)
     elif type == 'long':
         return "{0}L".format(value)
-    elif type == 'Map<java.lang.String,Object>':
-        return "new HashMap<java.lang.String,Object>()"
+    elif type == 'Map<String,Object>':
+        return "new HashMap<String,Object>()"
     else:
         raise BogusDefaultValue("JSON provided default value {0} for suspicious type {1}".format(value, type))
 
@@ -205,24 +205,17 @@ public interface AMQP
 
         def genBuilderCtor(m, mandatoryFields):
             ctor_arg_signature_string = builderCtorArgSignature(mandatoryFields)
-            print "                public Builder(%s)" % ctor_arg_signature_string
-            print "                { }"
+            print "                public Builder(%s) { }" % ctor_arg_signature_string
 
         def genArgMethods(spec, m):
             if m.arguments:
                 for index, a in enumerate(m.arguments):
                     (jfType, jfName, jfDefault) = typeNameDefault(spec, a)
                     print "                public final Builder %s(%s %s)" % (jfName, jfType, jfName)
-                    print "                {"
-                    print "                    this.%s = %s;" % (jfName, jfName)
-                    print "                    return this;"
-                    print "                }"
+                    print "                {   this.%s = %s; return this; }" % (jfName, jfName)
                     if jfType == "boolean":
                         print "                public final Builder %s()" % (jfName)
-                        print "                {"
-                        print "                    this.%s = true;" % (jfName)
-                        print "                    return this;"
-                        print "                }"
+                        print "                {   this.%s = true; return this; }" % (jfName)
 
         def genBuildMethod(c,m,fieldsToNullCheckInBuild):
             print "                public final %s build()" % (java_class_name(m.name))
@@ -343,7 +336,7 @@ public interface AMQP
         print
         print "        public %sProperties() {}" % (java_class_name(c.name))
         print "        public int getClassId() { return %i; }" % (c.index)
-        print "        public java.lang.String getClassName() { return \"%s\"; }" % (c.name)
+        print "        public String getClassName() { return \"%s\"; }" % (c.name)
 
         #access functions
         print
@@ -396,9 +389,7 @@ public class AMQImpl implements AMQP
             for (argType, argName) in mandatoryFields:
                 ctorArgList.append(argName)
             print "    public static %s.%s.Builder %s%s(%s)" % (cName, mName, cName.lower(), mName, argSignature)
-            print "    {"
-            print "        return new %s.%s.Builder(%s);" % (cName, mName, ", ".join(ctorArgList))
-            print "    }"
+            print "    {   return new %s.%s.Builder(%s); }" % (cName, mName, ", ".join(ctorArgList))
             print
 
     def printClassMethods(spec, c):
@@ -433,19 +424,19 @@ public class AMQImpl implements AMQP
                 print "            public %s() {}" % (java_class_name(m.name))
                 print "            public int protocolClassId() { return %s; }" % (c.index)
                 print "            public int protocolMethodId() { return %s; }" % (m.index)
-                print "            public java.lang.String protocolMethodName() { return \"%s.%s\";}" % (c.name, m.name)
+                print "            public String protocolMethodName() { return \"%s.%s\";}" % (c.name, m.name)
                 print
-                print "            public boolean hasContent() {"
-                if m.hasContent:
-                    print "                return true;"
-                else:
-                    print "                return false;"
-                print "            }"
+                print "            public boolean hasContent() { return %s; }" % (trueOrFalse(m.hasContent))
 
                 print
-                print """            public Object visit(MethodVisitor visitor) throws IOException {
-                return visitor.visit(this);
-            }"""
+                print "            public Object visit(MethodVisitor visitor) throws IOException"
+                print "            {   return visitor.visit(this); }"
+            
+            def trueOrFalse(truthVal):
+                if truthVal:
+                    return "true"
+                else:
+                    return "false"
 
             def argument_debug_string():
                 print
@@ -541,12 +532,9 @@ public class AMQImpl implements AMQP
 
     def printContentHeaderReader(c):
         print
-        print """    public static AMQContentHeader readContentHeaderFrom(DataInputStream in)
-        throws IOException
-    {
-        int classId = in.readShort();
-
-        switch (classId) {"""
+        print "    public static AMQContentHeader readContentHeaderFrom(DataInputStream in) throws IOException {"
+        print "        int classId = in.readShort();"
+        print "        switch (classId) {"
         for c in spec.allClasses():
             if len(c.fields) > 0:
                 print "            case %s: return new %sProperties();" %(c.index, (java_class_name(c.name)))
