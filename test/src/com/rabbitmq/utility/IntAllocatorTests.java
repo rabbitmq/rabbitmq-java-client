@@ -28,9 +28,9 @@ public class IntAllocatorTests extends TestCase {
     private static final int TEST_ITERATIONS = 50000;
     private static final int HI_RANGE = 100000;
     private static final int LO_RANGE = 100;
-    private IntAllocator iAll = new IntAllocator(LO_RANGE, HI_RANGE);
+    private final IntAllocator iAll = new IntAllocator(LO_RANGE, HI_RANGE);
 
-    private Random rand = new Random(70608L);
+    private final Random rand = new Random(70608L);
 
     public void testReserveAndFree() throws Exception {
         Set<Integer> set = new HashSet<Integer>();
@@ -91,11 +91,11 @@ public class IntAllocatorTests extends TestCase {
         iter.remove();
         return trial;
     }
-    
+
     private static int getTrial(Random rand) {
         return rand.nextInt(HI_RANGE-LO_RANGE+1) + LO_RANGE;
     }
-    
+
     private static boolean getBool(Random rand) {
         return rand.nextBoolean();
     }
