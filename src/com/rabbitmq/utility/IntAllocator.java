@@ -19,19 +19,19 @@ package com.rabbitmq.utility;
 import java.util.BitSet;
 
 /**
- * A class for allocating integers from a given range that uses a 
+ * A class for allocating integers from a given range that uses a
  * {@link BitSet} representation of the free integers.
- * 
+ *
  * <p/><strong>Concurrent Semantics:</strong><br />
  * This class is <b><i>not</i></b> thread safe.
- * 
+ *
  * <p/><b>Implementation notes:</b>
  * <br/>This was originally an ordered chain of non-overlapping Intervals,
  * together with a fixed size array cache for freed integers.
  * <br/>{@link #reserve()} was expensive in this scheme, whereas in the
  * present implementation it is O(1), as is {@link #free()}.
  * <br/>Although {@link #allocate()} is slightly slower than O(1) and in the
- * worst case could be O(N), the use of the {@link #lastIndex} field 
+ * worst case could be O(N), the use of the {@link #lastIndex} field
  * for starting the next scan for free integers means this is negligible.
  * <br/>The data representation overhead is O(N) where N is the size of the
  * allocation range. One <code>long</code> is used for every 64 integers in the
@@ -64,7 +64,7 @@ public class IntAllocator {
     }
 
     /**
-     * Allocate an unallocated integer from the range, or return -1 if no 
+     * Allocate an unallocated integer from the range, or return -1 if no
      * more integers are available.
      * @return the allocated integer, or -1
      */
@@ -78,6 +78,7 @@ public class IntAllocator {
         this.freeSet.clear(setIndex);
         return setIndex + this.loRange;
     }
+
     /**
      * Make the provided integer available for allocation again. This operation
      * runs in O(1) time.
