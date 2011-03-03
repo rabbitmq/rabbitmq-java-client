@@ -39,7 +39,7 @@ public class JsonRpcException extends Exception {
     public Object error;
 
     public JsonRpcException() {
-        // no work needed in default no-argconstructor
+        // no work needed in default no-arg constructor
     }
 
     public JsonRpcException(Map<String, Object> errorMap) {
