@@ -36,7 +36,7 @@ import junit.framework.TestCase;
 public class ConnectionOpen extends TestCase {
     public void testCorrectProtocolHeader() throws IOException {
         ConnectionFactory factory = new ConnectionFactory();
-        SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
+        SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT), "localhost");
         fh.sendHeader();
         AMQCommand.Assembler a = AMQCommand.newAssembler();
         AMQCommand command = null;
@@ -56,7 +56,7 @@ public class ConnectionOpen extends TestCase {
 
     public void testCrazyProtocolHeader() throws IOException {
         ConnectionFactory factory = new ConnectionFactory();
-        SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
+        SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT), "localhost");
         fh.sendHeader(100, 3); // major, minor
         DataInputStream in = fh._inputStream;
         // we should get a valid protocol header back

@@ -33,6 +33,9 @@ import com.rabbitmq.client.AMQP;
  */
 
 public class SocketFrameHandler implements FrameHandler {
+    /** Host we connect to */
+    public final String _host;
+
     /** The underlying socket */
     public final Socket _socket;
 
@@ -48,15 +51,16 @@ public class SocketFrameHandler implements FrameHandler {
     /**
      * @param socket the socket to use
      */
-    public SocketFrameHandler(Socket socket) throws IOException {
+    public SocketFrameHandler(Socket socket, String host) throws IOException {
         _socket = socket;
+        _host = host;
 
         _inputStream = new DataInputStream(new BufferedInputStream(_socket.getInputStream()));
         _outputStream = new DataOutputStream(new BufferedOutputStream(_socket.getOutputStream()));
     }
 
     public String getHost() {
-        return _socket.getInetAddress().getHostName();
+        return _host;
     }
 
     public int getPort() {

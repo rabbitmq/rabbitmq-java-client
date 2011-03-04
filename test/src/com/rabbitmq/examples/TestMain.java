@@ -88,7 +88,7 @@ public class TestMain {
             String hostName = addr.getHost();
             int portNumber = addr.getPort();
             if (portNumber == -1) portNumber = AMQP.PROTOCOL.PORT;
-            return new SocketFrameHandler(getSocketFactory().createSocket(hostName, portNumber)) {
+            return new SocketFrameHandler(getSocketFactory().createSocket(hostName, portNumber), hostName) {
                     public void sendHeader() throws IOException {
                         sendHeader(protocolMajor, protocolMinor);
                     }

@@ -36,7 +36,7 @@ public class CloseInMainLoop extends BrokerTestCase{
     public SpecialConnection() throws Exception{
       super(
           new ConnectionFactory(),
-          new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", 5672)),
+          new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", 5672), "localhost"),
           new DefaultExceptionHandler(){
             @Override public void handleConsumerException(Channel channel,
                                                            Throwable exception,
