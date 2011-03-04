@@ -20,7 +20,10 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Default implementation of SaslConfig that uses the standard Java
@@ -28,9 +31,11 @@ import java.util.Map;
  * @see com.rabbitmq.client.ConnectionFactory
  */
 public class DefaultSaslConfig implements SaslConfig {
+    public static final String[] DEFAULT_PREFERRED_MECHANISMS = new String[]{"PLAIN"};
+
     private ConnectionFactory factory;
     private String authorizationId;
-    private Map<String,?> mechanismProperties;
+    private String[] preferredMechanisms = DEFAULT_PREFERRED_MECHANISMS;
     private CallbackHandler callbackHandler;
 
     public DefaultSaslConfig(ConnectionFactory factory) {
@@ -42,16 +47,28 @@ public class DefaultSaslConfig implements SaslConfig {
         this.authorizationId = authorizationId;
     }
 
-    public void setMechanismProperties(Map<String, ?> mechanismProperties) {
-        this.mechanismProperties = mechanismProperties;
+    /**
+     * Set a list of SASL mechanisms to use (in descending order of preference)
+     * @param preferredMechanisms
+     */
+    public void setPreferredMechanisms(String[] preferredMechanisms) {
+        this.preferredMechanisms = preferredMechanisms;
     }
 
     public void setCallbackHandler(CallbackHandler callbackHandler) {
         this.callbackHandler = callbackHandler;
     }
 
-    public SaslClient getSaslClient(String[] mechanisms) throws SaslException {
-        return Sasl.createSaslClient(mechanisms, authorizationId, "AMQP",
-              factory.getHost(), mechanismProperties, callbackHandler);
+    public SaslClient getSaslClient(String[] serverMechanisms) throws SaslException {
+        List<String> server = Arrays.asList(serverMechanisms);
+        List<String> client = Arrays.asList(preferredMechanisms);
+        client.retainAll(server);
+
+        for (String mechanism: client) {
+            SaslClient saslClient = Sasl.createSaslClient(new String[]{mechanism},
+                     authorizationId, "AMQP", factory.getHost(), null, callbackHandler);
+            if (saslClient != null) return saslClient;
+        }
+        return null;
     }
 }
