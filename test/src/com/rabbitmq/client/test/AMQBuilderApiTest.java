@@ -59,7 +59,7 @@ public class AMQBuilderApiTest extends BrokerTestCase
         assertTrue(retVal instanceof AMQP.Exchange.DeleteOk);
     }
 
-    public void testParticularBuilderForBasicSanityWithCall() throws IOException
+    public void testParticularBuilderForBasicSanityWithAsyncRpc() throws IOException
     {
         new AMQP.Exchange.Declare.Builder().exchange(XCHG_NAME)
                                            .type("direct")

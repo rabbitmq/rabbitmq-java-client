@@ -48,7 +48,6 @@ javaTypeMap = {
 javaTypesNeverNullInBuilder = set([
     'String',
     'LongString',
-    'Map<String,Object>',
     'Date'
     ])
 
@@ -104,7 +103,7 @@ def java_field_default_value(type, value):
     elif type == 'long':
         return "{0}L".format(value)
     elif type == 'Map<String,Object>':
-        return "new HashMap<String,Object>()"
+        return "null"
     else:
         raise BogusDefaultValue("JSON provided default value {0} for suspicious type {1}".format(value, type))
 
@@ -294,7 +293,7 @@ public interface AMQP
             print "            writer.writePresence(this.%s != null);" % (java_field_name(f.name))
         print "            writer.finishPresence();"
         for f in c.fields:
-            print "            if (this.%s != null) { writer.write%s(this.%s); } " % (java_field_name(f.name), java_class_name(f.domain), java_field_name(f.name))
+            print "            if (this.%s != null) { writer.write%s(this.%s); }" % (java_field_name(f.name), java_class_name(f.domain), java_field_name(f.name))
         print "        }"
 
     def printPropertyDebug(c):
@@ -504,12 +503,12 @@ public class AMQImpl implements AMQP
         print "    public static class DefaultMethodVisitor implements MethodVisitor {"
         for c in spec.allClasses():
             for m in c.allMethods():
-               print "        public Object visit(%s.%s x) throws IOException { throw new UnexpectedMethodError(x); } " % (java_class_name(c.name), java_class_name(m.name))
+               print "        public Object visit(%s.%s x) throws IOException { throw new UnexpectedMethodError(x); }" % (java_class_name(c.name), java_class_name(m.name))
         print "    }"
 
     def printMethodArgumentReader():
         print
-        print "    public static Method readMethodFrom(DataInputStream in) throws IOException { "
+        print "    public static Method readMethodFrom(DataInputStream in) throws IOException {"
         print "        int classId = in.readShort();"
         print "        int methodId = in.readShort();"
         print "        switch (classId) {"
