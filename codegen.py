@@ -159,7 +159,6 @@ def genJavaApi(spec):
         print """package com.rabbitmq.client;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Date;
 
@@ -217,24 +216,20 @@ public interface AMQP
                         print "                {   this.%s = true; return this; }" % (jfName)
 
         def genBuildMethod(c,m,fieldsToNullCheckInBuild):
-            print "                public final %s build()" % (java_class_name(m.name))
-            print "                {"
+            print "                public final %s build() {" % (java_class_name(m.name))
 
             if len(fieldsToNullCheckInBuild) != 0:
                 nullCheckClauses = []
                 for f in fieldsToNullCheckInBuild:
-                    print genNullCheckClause(f)
+                    printGenNullCheckClause(f)
             ctorCall(c,m)
             print "                }"
 
-        def genNullCheckClause(f):
-            return """                    if(%s == null)
-                    {
-                        throw new IllegalStateException(
-                                        "Invalid configuration: '%s'" +
-                                        " must be non-null."
-                                                       );
-                    }\n""" % (f,f)
+        def printGenNullCheckClause(f):
+            print "                    if(%s == null)" % (f)
+            print "                    {   throw new IllegalStateException("
+            print "                        \"Invalid configuration: '%s' must be non-null.\");" % (f)
+            print "                    }"
 
         print
         print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))

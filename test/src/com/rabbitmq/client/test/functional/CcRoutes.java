@@ -135,7 +135,7 @@ public class CcRoutes extends BrokerTestCase  {
             if (expectedList.contains(q)) {
                 assertNotNull(getResponse);
                 assertEquals(0, getResponse.getMessageCount());
-                Map headers = getResponse.getProps().getHeaders();
+                Map<?, ?> headers = getResponse.getProps().getHeaders();
                 if (headers != null){
                     assertEquals(usedCc, headers.containsKey("CC"));
                     assertFalse(headers.containsKey("BCC"));
