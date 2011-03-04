@@ -54,6 +54,14 @@ public class DefaultConsumer implements Consumer {
     }
 
     /**
+     * No-op implementation of {@link Consumer#handleCancel(String)}
+     * @param consumerTag the defined consumer tag (client- or server-generated)
+     */
+    public void handleCancel(String consumerTag) throws IOException {
+        // no work to do
+    }
+
+    /**
      * No-op implementation of {@link Consumer#handleShutdownSignal}.
      */
     public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {

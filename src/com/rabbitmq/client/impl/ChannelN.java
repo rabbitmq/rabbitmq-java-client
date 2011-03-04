@@ -17,10 +17,15 @@
 
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.ConfirmListener;
-import com.rabbitmq.client.AMQP.BasicProperties;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
+import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.Envelope;
@@ -30,6 +35,7 @@ import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.UnexpectedMethodError;
+import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.impl.AMQImpl.Basic;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
 import com.rabbitmq.client.impl.AMQImpl.Confirm;
@@ -37,12 +43,6 @@ import com.rabbitmq.client.impl.AMQImpl.Exchange;
 import com.rabbitmq.client.impl.AMQImpl.Queue;
 import com.rabbitmq.client.impl.AMQImpl.Tx;
 import com.rabbitmq.utility.Utility;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 
 /**
@@ -339,6 +339,24 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 // be handled by whichever RPC continuation invoked Recover,
                 // so return false
                 return false;
+            } else if (method instanceof Basic.Cancel) {
+                Basic.Cancel m = (Basic.Cancel)method;
+                Consumer callback = _consumers.remove(m.consumerTag);
+                if (callback == null) {
+                    callback = defaultConsumer;
+                }
+                if (callback != null) {
+                    try {
+                        callback.handleCancel(m.getConsumerTag());
+                    } catch (Throwable ex) {
+                        _connection.getExceptionHandler().handleConsumerException(this,
+                                                                                  ex,
+                                                                                  callback,
+                                                                                  m.getConsumerTag(),
+                                                                                  "handleCancel");
+                    }
+                }
+                return true;
             } else {
                 return false;
             }

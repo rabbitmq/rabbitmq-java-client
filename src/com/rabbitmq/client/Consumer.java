@@ -50,6 +50,16 @@ public interface Consumer {
     void handleCancelOk(String consumerTag);
 
     /**
+     * Called when the consumer is cancelled for reasons other than by a
+     * basicCancel: e.g. the queue has been deleted (either by this channel or
+     * by any other channel). See handleCancelOk for notification of consumer
+     * cancellation due to basicCancel.
+     * 
+     * @throws IOException
+     */
+    void handleCancel(String consumerTag) throws IOException;
+
+    /**
      * Called to the consumer that either the channel or the undelying connection has been shut down.
      * @param consumerTag the defined consumerTag (either client- or server-generated)
      * @param sig an exception object encapsulating the reason for shutdown
