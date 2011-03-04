@@ -64,6 +64,7 @@ public class QueueingConsumer extends DefaultConsumer {
     // When this is non-null the queue is in shutdown mode and nextDelivery should
     // throw a shutdown signal exception.
     private volatile ShutdownSignalException _shutdown;
+    private volatile ConsumerCancelledException _cancelled;
 
     // Marker object used to signal the queue is in shutdown mode.
     // It is only there to wake up consumers. The canonical representation
@@ -83,6 +84,11 @@ public class QueueingConsumer extends DefaultConsumer {
     @Override public void handleShutdownSignal(String consumerTag,
                                                ShutdownSignalException sig) {
         _shutdown = sig;
+        _queue.add(POISON);
+    }
+
+    @Override public void handleCancel(String consumerTag) throws IOException {
+        _cancelled = new ConsumerCancelledException();
         _queue.add(POISON);
     }
 
@@ -150,16 +156,19 @@ public class QueueingConsumer extends DefaultConsumer {
      */
     private Delivery handle(Delivery delivery) {
         if (delivery == POISON ||
-            delivery == null && _shutdown != null) {
+            delivery == null && (_shutdown != null || _cancelled != null)) {
             if (delivery == POISON) {
                 _queue.add(POISON);
-                if (_shutdown == null) {
+                if (_shutdown == null && _cancelled == null) {
                     throw new IllegalStateException(
-                        "POISON in queue, but null _shutdown. " +
+                        "POISON in queue, but null _shutdown and null _cancelled. " +
                         "This should never happen, please report as a BUG");
                 }
             }
-            throw Utility.fixStackTrace(_shutdown);
+            if (null != _shutdown)
+                throw Utility.fixStackTrace(_shutdown);
+            if (null != _cancelled)
+                throw Utility.fixStackTrace(_cancelled);
         }
         return delivery;
     }
@@ -171,7 +180,7 @@ public class QueueingConsumer extends DefaultConsumer {
      * @throws ShutdownSignalException if the connection is shut down while waiting
      */
     public Delivery nextDelivery()
-        throws InterruptedException, ShutdownSignalException
+        throws InterruptedException, ShutdownSignalException, ConsumerCancelledException
     {
         return handle(_queue.take());
     }
@@ -184,7 +193,7 @@ public class QueueingConsumer extends DefaultConsumer {
      * @throws ShutdownSignalException if the connection is shut down while waiting
      */
     public Delivery nextDelivery(long timeout)
-        throws InterruptedException, ShutdownSignalException
+        throws InterruptedException, ShutdownSignalException, ConsumerCancelledException
     {
         return handle(_queue.poll(timeout, TimeUnit.MILLISECONDS));
     }

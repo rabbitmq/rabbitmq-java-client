@@ -54,7 +54,7 @@ public interface Consumer {
      * basicCancel: e.g. the queue has been deleted (either by this channel or
      * by any other channel). See handleCancelOk for notification of consumer
      * cancellation due to basicCancel.
-     * 
+     *
      * @throws IOException
      */
     void handleCancel(String consumerTag) throws IOException;

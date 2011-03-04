@@ -19,24 +19,31 @@ package com.rabbitmq.client.test.functional;
 import java.io.IOException;
 
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class ConsumerCancelNotificiation extends BrokerTestCase {
 
     private final String queue = "cancel_notification_queue";
-    
+
     private final Object lock = new Object();
-    
+
     private boolean notified = false;
 
+    private boolean failed = false;
+
     public void testConsumerCancellationNotification() throws IOException {
+        synchronized (lock) {
+            notified = false;
+        }
         channel.queueDeclare(queue, false, true, false, null);
         Consumer consumer = new QueueingConsumer(channel) {
             @Override
             public void handleCancel(String consumerTag) throws IOException {
                 synchronized (lock) {
-                    notified = !notified;
+                    notified = true;
                     lock.notifyAll();
                 }
             }
@@ -52,5 +59,50 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
             }
             assertTrue(notified);
         }
+    }
+
+    public void testConsumerCancellationInterruptsQueuingConsumerWait()
+            throws IOException, InterruptedException {
+        synchronized (lock) {
+            notified = false;
+            failed = false;
+        }
+        channel.queueDeclare(queue, false, true, false, null);
+        final QueueingConsumer consumer = new QueueingConsumer(channel);
+        Runnable receiver = new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    consumer.nextDelivery();
+                } catch (ConsumerCancelledException e) {
+                    synchronized (lock) {
+                        notified = true;
+                        lock.notifyAll();
+                        return; // avoid fall through to failure
+                    }
+                } catch (ShutdownSignalException e) {
+                } catch (InterruptedException e) {
+                }
+                synchronized (lock) {
+                    failed = true;
+                    lock.notifyAll();
+                }
+            }
+        };
+        Thread t = new Thread(receiver);
+        t.start();
+        channel.basicConsume(queue, consumer);
+        channel.queueDelete(queue);
+        synchronized (lock) {
+            if (!(notified || failed)) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                }
+            }
+            assertTrue(notified);
+        }
+        t.join();
     }
 }
