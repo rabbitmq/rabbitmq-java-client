@@ -21,6 +21,7 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 
@@ -33,9 +34,6 @@ import com.rabbitmq.client.AMQP;
  */
 
 public class SocketFrameHandler implements FrameHandler {
-    /** Host we connect to */
-    public final String _host;
-
     /** The underlying socket */
     public final Socket _socket;
 
@@ -51,16 +49,15 @@ public class SocketFrameHandler implements FrameHandler {
     /**
      * @param socket the socket to use
      */
-    public SocketFrameHandler(Socket socket, String host) throws IOException {
+    public SocketFrameHandler(Socket socket) throws IOException {
         _socket = socket;
-        _host = host;
 
         _inputStream = new DataInputStream(new BufferedInputStream(_socket.getInputStream()));
         _outputStream = new DataOutputStream(new BufferedOutputStream(_socket.getOutputStream()));
     }
 
-    public String getHost() {
-        return _host;
+    public InetAddress getAddress() {
+        return _socket.getInetAddress();
     }
 
     public int getPort() {

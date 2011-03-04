@@ -83,7 +83,7 @@ public class FrameMax extends BrokerTestCase {
         public MyFrameHandler(Socket socket)
             throws IOException
         {
-            super(socket, "localhost");
+            super(socket);
         }
 
         public Frame readFrame() throws IOException {

@@ -360,13 +360,13 @@ public class ConnectionFactory implements Cloneable {
         Socket socket = factory.createSocket();
         configureSocket(socket);
         socket.connect(new InetSocketAddress(hostName, portNumber), connectionTimeout);
-        return createFrameHandler(socket, hostName);
+        return createFrameHandler(socket);
     }
 
-    protected FrameHandler createFrameHandler(Socket sock, String host)
+    protected FrameHandler createFrameHandler(Socket sock)
         throws IOException
     {
-        return new SocketFrameHandler(sock, host);
+        return new SocketFrameHandler(sock);
     }
 
     /**

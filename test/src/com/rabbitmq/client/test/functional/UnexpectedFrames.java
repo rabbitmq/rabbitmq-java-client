@@ -38,8 +38,8 @@ public class UnexpectedFrames extends BrokerTestCase {
 
         private boolean confusedOnce = false;
 
-        public ConfusedFrameHandler(Socket socket, String host) throws IOException {
-            super(socket, host);
+        public ConfusedFrameHandler(Socket socket) throws IOException {
+            super(socket);
         }
 
         @Override
@@ -66,9 +66,9 @@ public class UnexpectedFrames extends BrokerTestCase {
 
     private static class ConfusedConnectionFactory extends ConnectionFactory {
 
-        @Override protected FrameHandler createFrameHandler(Socket sock, String host)
+        @Override protected FrameHandler createFrameHandler(Socket sock)
             throws IOException {
-            return new ConfusedFrameHandler(sock, host);
+            return new ConfusedFrameHandler(sock);
         }
     }
 
