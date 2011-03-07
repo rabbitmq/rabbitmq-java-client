@@ -17,6 +17,8 @@
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.ConsumerCancelledException;
@@ -28,45 +30,29 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
 
     private final String queue = "cancel_notification_queue";
 
-    private final Object lock = new Object();
+    public void testConsumerCancellationNotification() throws IOException,
+            InterruptedException {
+        final BlockingQueue<Boolean> result = new ArrayBlockingQueue<Boolean>(1);
 
-    private boolean notified = false;
-
-    private boolean failed = false;
-
-    public void testConsumerCancellationNotification() throws IOException {
-        synchronized (lock) {
-            notified = false;
-        }
         channel.queueDeclare(queue, false, true, false, null);
         Consumer consumer = new QueueingConsumer(channel) {
             @Override
             public void handleCancel(String consumerTag) throws IOException {
-                synchronized (lock) {
-                    notified = true;
-                    lock.notifyAll();
+                try {
+                    result.put(true);
+                } catch (InterruptedException e) {
+                    fail();
                 }
             }
         };
         channel.basicConsume(queue, consumer);
         channel.queueDelete(queue);
-        synchronized (lock) {
-            if (!notified) {
-                try {
-                    lock.wait();
-                } catch (InterruptedException e) {
-                }
-            }
-            assertTrue(notified);
-        }
+        assertTrue(result.take());
     }
 
     public void testConsumerCancellationInterruptsQueuingConsumerWait()
             throws IOException, InterruptedException {
-        synchronized (lock) {
-            notified = false;
-            failed = false;
-        }
+        final BlockingQueue<Boolean> result = new ArrayBlockingQueue<Boolean>(1);
         channel.queueDeclare(queue, false, true, false, null);
         final QueueingConsumer consumer = new QueueingConsumer(channel);
         Runnable receiver = new Runnable() {
@@ -74,19 +60,17 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
             @Override
             public void run() {
                 try {
-                    consumer.nextDelivery();
-                } catch (ConsumerCancelledException e) {
-                    synchronized (lock) {
-                        notified = true;
-                        lock.notifyAll();
-                        return; // avoid fall through to failure
+                    try {
+                        consumer.nextDelivery();
+                    } catch (ConsumerCancelledException e) {
+                        result.put(true);
+                        return;
+                    } catch (ShutdownSignalException e) {
+                    } catch (InterruptedException e) {
                     }
-                } catch (ShutdownSignalException e) {
+                    result.put(false);
                 } catch (InterruptedException e) {
-                }
-                synchronized (lock) {
-                    failed = true;
-                    lock.notifyAll();
+                    fail();
                 }
             }
         };
@@ -94,15 +78,7 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
         t.start();
         channel.basicConsume(queue, consumer);
         channel.queueDelete(queue);
-        synchronized (lock) {
-            if (!(notified || failed)) {
-                try {
-                    lock.wait();
-                } catch (InterruptedException e) {
-                }
-            }
-            assertTrue(notified);
-        }
+        assertTrue(result.take());
         t.join();
     }
 }
