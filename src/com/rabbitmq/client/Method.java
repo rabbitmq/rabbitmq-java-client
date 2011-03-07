@@ -17,8 +17,6 @@
 
 package com.rabbitmq.client;
 
-import java.io.IOException;
-
 /**
  * Public interface to objects representing an AMQP method - see the <a href="http://www.amqp.org/">spec</a> for details.
  */
@@ -41,25 +39,4 @@ public interface Method {
      * @return the AMQP protocol method name of this Method
      */
     String protocolMethodName();
-
-    /**
-     * Synchronously send this Method over the specified channel.
-     *
-     * @param channel Channel over which to transmit method.
-     * @return Response to method.  Caller should cast as appropriate.
-     *
-     * @throws IOException Problem transmitting method.
-     */
-    public Method rpc(Channel channel)
-           throws IOException;
-
-    /**
-     * Asynchronously send this method over the specified channel.
-     *
-     * @param channel Channel over which to transmit method.
-     *
-     * @throws IOException Problem transmitting method.
-     */
-    public void asyncRpc(Channel channel)
-                throws IOException;
 }

@@ -20,7 +20,6 @@ package com.rabbitmq.client.impl;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.AMQImpl.MethodVisitor;
 
@@ -37,21 +36,6 @@ public abstract class Method implements com.rabbitmq.client.Method {
 
     /** {@inheritDoc} */
     public abstract String protocolMethodName();
-
-    /** {@inheritDoc} */
-    public Method rpc(Channel channel)
-           throws IOException
-    {
-        ChannelN channelN = (ChannelN)channel;
-        return channelN.exnWrappingRpc(this).getMethod();
-    }
-
-    /** {@inheritDoc} */
-    public void asyncRpc(Channel channel)
-                throws IOException
-    {
-        ((AMQChannel) channel).transmit(this);
-    }
 
     /**
      * Tell if content is present.

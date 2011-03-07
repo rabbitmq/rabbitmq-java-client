@@ -890,5 +890,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public long getNextPublishSeqNo() {
         return nextPublishSeqNo;
     }
-    
+
+    public void asyncRpc(com.rabbitmq.client.Method method) throws IOException {
+        // This cast should eventually go
+        transmit((com.rabbitmq.client.impl.Method)method);
+    }
+
+    public com.rabbitmq.client.Method rpc(com.rabbitmq.client.Method method) throws IOException {
+        return exnWrappingRpc((com.rabbitmq.client.impl.Method)method).getMethod();
+    }
+
 }

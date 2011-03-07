@@ -28,18 +28,20 @@ public class AMQBuilderApiTest extends BrokerTestCase
     public void testParticularBuilderForBasicSanityWithRpc() throws IOException
     {
         Method retVal =
-                new AMQP.Exchange.Declare.Builder().exchange(XCHG_NAME)
-                                                   .type("direct")
-                                                   .durable(false)
-                                                   .build()
-                                                   .rpc(channel);
+                channel.rpc(new AMQP.Exchange.Declare.Builder()
+                           .exchange(XCHG_NAME)
+                           .type("direct")
+                           .durable(false)
+                           .build()
+                           );
 
         assertTrue("Channel should still be open.", channel.isOpen());
         assertTrue(retVal instanceof AMQP.Exchange.DeclareOk);
 
-        retVal = new AMQP.Exchange.Delete.Builder().exchange(XCHG_NAME)
-                                                   .build()
-                                                   .rpc(channel);
+        retVal = channel.rpc(new AMQP.Exchange.Delete.Builder()
+                            .exchange(XCHG_NAME)
+                            .build()
+                            );
         
         assertTrue("Channel should still be open.", channel.isOpen());
         assertTrue(retVal instanceof AMQP.Exchange.DeleteOk);
@@ -47,17 +49,19 @@ public class AMQBuilderApiTest extends BrokerTestCase
 
     public void testParticularBuilderForBasicSanityWithAsyncRpc() throws IOException
     {
-        new AMQP.Exchange.Declare.Builder().exchange(XCHG_NAME)
-                                           .type("direct")
-                                           .durable(false)
-                                           .build()
-                                           .asyncRpc(channel);
+        channel.asyncRpc(new AMQP.Exchange.Declare.Builder()
+                        .exchange(XCHG_NAME)
+                        .type("direct")
+                        .durable(false)
+                        .build()
+                        );
 
         assertTrue("Channel should still be open.", channel.isOpen());
 
-        new AMQP.Exchange.Delete.Builder().exchange(XCHG_NAME)
-                                          .build()
-                                          .asyncRpc(channel);
+        channel.asyncRpc(new AMQP.Exchange.Delete.Builder()
+                        .exchange(XCHG_NAME)
+                        .build()
+                        );
 
         assertTrue("Channel should still be open.", channel.isOpen());
     }
