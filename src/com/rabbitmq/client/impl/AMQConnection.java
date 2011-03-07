@@ -242,7 +242,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         // start the main loop going
         Thread ml = new MainLoop();
-        ml.setName("AMQP Connection " + getAddress().getHostAddress() + ":" + getPort());
+        ml.setName("AMQP Connection " + getHostAddress() + ":" + getPort());
         ml.start();
 
         AMQP.Connection.Start connStart = null;
@@ -560,7 +560,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _brokerInitiatedShutdown = true;
         Thread scw = new SocketCloseWait(sse);
         scw.setName("AMQP Connection Closing Monitor " +
-                    getAddress().getHostAddress() + ":" + getPort());
+                getHostAddress() + ":" + getPort());
         scw.start();
     }
 
@@ -727,6 +727,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     @Override public String toString() {
-        return "amqp://" + _factory.getUsername() + "@" + getAddress().getHostAddress() + ":" + getPort() + _virtualHost;
+        return "amqp://" + _factory.getUsername() + "@" + getHostAddress() + ":" + getPort() + _virtualHost;
+    }
+
+    private String getHostAddress() {
+        return getAddress() == null ? null : getAddress().getHostAddress();
     }
 }
