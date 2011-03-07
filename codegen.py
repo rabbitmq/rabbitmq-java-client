@@ -99,7 +99,7 @@ def java_field_default_value(type, value):
     elif type == 'String':
         return "\"{0}\"".format(value)
     elif type == 'LongString':
-        return "new LongStringHelper.ByteArrayLongString(\"{0}\".getBytes())".format(value)
+        return "LongStringHelper.asLongString(\"{0}\")".format(value)
     elif type == 'long':
         return "{0}L".format(value)
     elif type == 'Map<String,Object>':
@@ -167,9 +167,9 @@ import com.rabbitmq.client.impl.ContentHeaderPropertyReader;
 import com.rabbitmq.client.impl.LongString;
 import com.rabbitmq.client.impl.LongStringHelper;
 
-public interface AMQP
-{
-    public static class PROTOCOL {"""
+public interface AMQP {
+"""
+        print "    public static class PROTOCOL {"
         print "        public static final int MAJOR = %i;" % spec.major
         print "        public static final int MINOR = %i;" % spec.minor
         print "        public static final int REVISION = %i;" % spec.revision
@@ -370,8 +370,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.UnknownClassOrMethodId;
 import com.rabbitmq.client.UnexpectedMethodError;
 
-public class AMQImpl implements AMQP
-{"""
+public class AMQImpl implements AMQP {"""
     def genBuilderGetterImpl(spec,c):
         print
         print "    // Convenience getter methods for AMQP Method builders"

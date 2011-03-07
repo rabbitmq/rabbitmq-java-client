@@ -32,7 +32,7 @@ public class LongStringHelper
      * Private API - Implementation of {@link LongString}. When
      * interpreting bytes as a string, uses UTF-8 encoding.
      */
-    public static class ByteArrayLongString
+    private static class ByteArrayLongString
         implements LongString
     {
         byte [] bytes;
