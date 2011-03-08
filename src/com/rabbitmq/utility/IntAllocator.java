@@ -16,203 +16,127 @@
 
 package com.rabbitmq.utility;
 
-import java.util.Arrays;
+import java.util.BitSet;
 
 /**
- * A class for allocating integer IDs in a given range.
+ * A class for allocating integers from a given range that uses a
+ * {@link BitSet} representation of the free integers.
+ *
+ * <p/><strong>Concurrent Semantics:</strong><br />
+ * This class is <b><i>not</i></b> thread safe.
+ *
+ * <p/><b>Implementation notes:</b>
+ * <br/>This was originally an ordered chain of non-overlapping Intervals,
+ * together with a fixed size array cache for freed integers.
+ * <br/>{@link #reserve()} was expensive in this scheme, whereas in the
+ * present implementation it is O(1), as is {@link #free()}.
+ * <br/>Although {@link #allocate()} is slightly slower than O(1) and in the
+ * worst case could be O(N), the use of the {@link #lastIndex} field
+ * for starting the next scan for free integers means this is negligible.
+ * <br/>The data representation overhead is O(N) where N is the size of the
+ * allocation range. One <code>long</code> is used for every 64 integers in the
+ * range.
+ * <br/>Very little Object creation and destruction occurs in use.
  */
-public class IntAllocator{
+public class IntAllocator {
 
-    // Invariant: Sorted in order of first element.
-    // Invariant: Intervals are non-overlapping, non-adjacent.
-    // This could really use being a balanced binary tree. However for normal
-    // usages it doesn't actually matter.
-    private IntervalList base;
-
-    private final int[] unsorted;
-    private int unsortedCount = 0;
+    private final int loRange; // the integer bit 0 represents
+    private final int hiRange; // the integer(+1) the highest bit represents
+    private final int numberOfBits; // relevant in freeSet
+    private int lastIndex = 0; // for searching for FREE integers
+    /** A bit is SET in freeSet if the corresponding integer is FREE
+     * <br/>A bit is UNSET in freeSet if the corresponding integer is ALLOCATED
+     */
+    private final BitSet freeSet;
 
     /**
-     * A class representing an inclusive interval from start to end.
+     * Creates an IntAllocator allocating integer IDs within the
+     * inclusive range [<code>bottom</code>, <code>top</code>].
+     * @param bottom lower end of range
+     * @param top upper end of range (inclusive)
      */
-    private static class IntervalList{
-        IntervalList(int start, int end){
-            this.start = start;
-            this.end = end;
-        }
-
-        int start;
-        int end;
-        IntervalList next;
-
-        int length(){ return end - start + 1; }
-    }
-
-    /** Destructively merge two IntervalLists.
-     * Invariant: None of the Intervals in the two lists may overlap
-     * intervals in this list.
-     */
-    public static IntervalList merge(IntervalList x, IntervalList y){
-        if(x == null) return y;
-        if(y == null) return x;
-
-        if(x.end > y.start) return merge(y, x);
-
-        // We now have x, y non-null and x.End < y.Start.
-        if(y.start == x.end + 1){
-            // The two intervals adjoin. Merge them into one and then
-            // merge the tails.
-            x.end = y.end;
-            x.next = merge(x.next, y.next);
-            return x;
-        }
-
-        // y belongs in the tail of x.
-
-        x.next = merge(y, x.next);
-        return x;
-    }
-
-
-    public static IntervalList fromArray(int[] xs, int length){
-        Arrays.sort(xs, 0, length);
-
-        IntervalList result = null;
-        IntervalList current = null;
-
-        int i = 0;
-        while(i < length){
-            int start = i;
-            while((i < length - 1) && (xs[i + 1] == xs[i] + 1))
-                i++;
-
-            IntervalList interval = new IntervalList(xs[start], xs[i]);
-
-            if(result == null){
-                result = interval;
-                current = interval;
-            } else {
-                current.next = interval;
-                current = interval;
-            }
-            i++;
-        }
-        return result;
-    }
-
-
-    /**
-    * Creates an IntAllocator allocating integer IDs within the inclusive range
-    * [start, end]
-    */
-    public IntAllocator(int start, int end){
-        if(start > end)
-            throw new IllegalArgumentException("illegal range [" + start    +
-              ", " + end + "]");
-
-        // Fairly arbitrary heuristic for a good size for the unsorted set.
-        unsorted = new int[Math.max(32, (int)Math.sqrt(end - start))];
-        base = new IntervalList(start, end);
+    public IntAllocator(int bottom, int top) {
+        this.loRange = bottom;
+        this.hiRange = top + 1;
+        this.numberOfBits = hiRange - loRange;
+        this.freeSet = new BitSet(this.numberOfBits);
+        this.freeSet.set(0, this.numberOfBits); // All integers FREE initially
     }
 
     /**
-     * Allocate a fresh integer from the range, or return -1 if no more integers
-     * are available. This operation is guaranteed to run in O(1)
+     * Allocate an unallocated integer from the range, or return -1 if no
+     * more integers are available.
+     * @return the allocated integer, or -1
      */
-    public int allocate(){
-        if(unsortedCount > 0){
-            return unsorted[--unsortedCount];
-        } else if (base != null){
-            IntervalList source = base;
-            if(base.length() == 1) base = base.next;
-            return source.start++;
-        } else {
-            return -1;
+    public int allocate() {
+        int setIndex = this.freeSet.nextSetBit(this.lastIndex);
+        if (setIndex<0) { // means none found in trailing part
+            setIndex = this.freeSet.nextSetBit(0);
         }
+        if (setIndex<0) return -1;
+        this.lastIndex = setIndex;
+        this.freeSet.clear(setIndex);
+        return setIndex + this.loRange;
     }
 
     /**
      * Make the provided integer available for allocation again. This operation
-     * runs in amortized O(sqrt(range size)) time: About every sqrt(range size)
-     * operations will take O(range_size + number of intervals) to complete and
-     * the rest run in constant time.
-     *
-     * No error checking is performed, so if you double free or free an integer
-     * that was not originally allocated the results are undefined. Sorry.
+     * runs in O(1) time.
+     * <br/>No error checking is performed, so if you double free or free an
+     * integer that was not originally allocated the results are undefined.
+     * @param reservation the previously allocated integer to free
      */
-    public void free(int id){
-        if(unsortedCount >= unsorted.length){
-            flush();
-        }
-        unsorted[unsortedCount++] = id;
+    public void free(int reservation) {
+        this.freeSet.set(reservation - this.loRange);
     }
 
     /**
      * Attempt to reserve the provided ID as if it had been allocated. Returns
      * true if it is available, false otherwise.
-     *
-     * This operation runs in O(id) in the worst case scenario, though it can
-     * usually be expected to perform better than that unless a great deal of
-     * fragmentation has occurred.
+     * <br/>
+     * This operation runs in O(1) time.
+     * @param reservation the integer to be allocated, if possible
+     * @return <code><b>true</b></code> if allocated, <code><b>false</b></code>
+     * if already allocated
      */
-    public boolean reserve(int id){
-        flush();
-
-        IntervalList current = base;
-
-        while(current != null && current.end < id){
-            current = current.next;
+    public boolean reserve(int reservation) {
+        int index = reservation - this.loRange;
+        if (this.freeSet.get(index)) { // FREE
+            this.freeSet.clear(index);
+            return true;
+        } else {
+            return false;
         }
-
-        if(current == null) return false;
-        if(current.start > id) return false;
-
-        if(current.end == id)
-                current.end--;
-        else if(current.start == id)
-            current.start++;
-        else {
-            // The ID is in the middle of this interval.
-            // We need to split the interval into two.
-            IntervalList rest = new IntervalList(id + 1, current.end);
-            current.end = id - 1;
-            rest.next = current.next;
-            current.next = rest;
-        }
-
-        return true;
     }
 
-    public void flush(){
-        if(unsortedCount == 0) return;
+    @Override
+    public String toString() {
+        StringBuilder sb
+            = new StringBuilder("IntAllocator{allocated = [");
 
-        base = merge(base, fromArray(unsorted, unsortedCount));
-        unsortedCount = 0;
+        int firstClearBit = this.freeSet.nextClearBit(0);
+        if (firstClearBit < this.numberOfBits) {
+            int firstSetAfterThat = this.freeSet.nextSetBit(firstClearBit+1);
+            if (firstSetAfterThat < 0)
+                firstSetAfterThat = this.numberOfBits;
+
+            stringInterval(sb, firstClearBit, firstSetAfterThat);
+            for (int i = this.freeSet.nextClearBit(firstSetAfterThat+1);
+                     i < this.numberOfBits;
+                     i = this.freeSet.nextClearBit(i+1)) {
+                int nextSet = this.freeSet.nextSetBit(i);
+                if (nextSet<0) nextSet = this.numberOfBits;
+                stringInterval(sb.append(", "), i, nextSet);
+                i = nextSet;
+            }
+        }
+        sb.append("]}");
+        return sb.toString();
     }
-
-    @Override public String toString(){
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("IntAllocator{");
-
-        builder.append("intervals = [");
-        IntervalList it = base;
-        while(it != null){
-            builder.append(it.start).append("..").append(it.end);
-            if(it.next != null) builder.append(", ");
-            it = it.next;
+    private void stringInterval(StringBuilder sb, int i1, int i2) {
+        sb.append(i1 + this.loRange);
+        if (i1+1 != i2) {
+            sb.append("..").append(i2-1 + this.loRange);
         }
-        builder.append("]");
-
-        builder.append(", unsorted = [");
-        for(int i = 0; i < unsortedCount; i++){
-            builder.append(unsorted[i]);
-            if( i < unsortedCount - 1) builder.append(", ");
-        }
-        builder.append("]");
-
-
-        builder.append("}");
-        return builder.toString();
     }
 }

@@ -70,6 +70,9 @@ public class ConnectionFactory implements Cloneable {
     /** The default port to use for AMQP connections when using SSL */
     public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
 
+    /** The default connection timeout (wait indefinitely until connection established or error occurs) */
+    public static final int DEFAULT_CONNECTION_TIMEOUT = 0;
+
     /**
      * The default SSL protocol (currently "SSLv3").
      */
@@ -83,6 +86,7 @@ public class ConnectionFactory implements Cloneable {
     private int requestedChannelMax               = DEFAULT_CHANNEL_MAX;
     private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
     private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
+    private int connectionTimeout                 = DEFAULT_CONNECTION_TIMEOUT;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = new DefaultSaslConfig(this);
@@ -217,6 +221,22 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
+     * Set the connection timeout.
+     * @param connectionTimeout connection establishment timeout in milliseconds; zero for infinite
+     */
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    /**
+     * Retrieve the connection timeout.
+     * @return the connection timeout, in milliseconds; zero for infinite
+     */
+    public int getConnectionTimeout() {
+        return this.connectionTimeout;
+    }
+
+    /**
      * Set the requested heartbeat.
      * @param requestedHeartbeat the initially requested heartbeat interval, in seconds; zero for none
      */
@@ -339,7 +359,7 @@ public class ConnectionFactory implements Cloneable {
         int portNumber = portOrDefault(addr.getPort());
         Socket socket = factory.createSocket();
         configureSocket(socket);
-        socket.connect(new InetSocketAddress(hostName, portNumber));
+        socket.connect(new InetSocketAddress(hostName, portNumber), connectionTimeout);
         return createFrameHandler(socket);
     }
 
