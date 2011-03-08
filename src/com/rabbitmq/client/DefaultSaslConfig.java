@@ -33,41 +33,40 @@ import java.util.Set;
 public class DefaultSaslConfig implements SaslConfig {
     public static final String[] DEFAULT_PREFERRED_MECHANISMS = new String[]{"PLAIN"};
 
-    private ConnectionFactory factory;
-    private String authorizationId;
-    private String[] preferredMechanisms = DEFAULT_PREFERRED_MECHANISMS;
-    private CallbackHandler callbackHandler;
+    private final ConnectionFactory factory;
+    private final List<String> mechanisms;
+    private final CallbackHandler callbackHandler;
 
+    /**
+     * Create a DefaultSaslConfig which only wants to use PLAIN.
+     *
+     * @param factory - the ConnectionFactory to use to obtain username, password and host
+     */
     public DefaultSaslConfig(ConnectionFactory factory) {
-        this.factory = factory;
-        callbackHandler = new UsernamePasswordCallbackHandler(factory);
-    }
-
-    public void setAuthorizationId(String authorizationId) {
-        this.authorizationId = authorizationId;
+        this(factory, DEFAULT_PREFERRED_MECHANISMS);
     }
 
     /**
-     * Set a list of SASL mechanisms to use (in descending order of preference)
-     * @param preferredMechanisms
+     * Create a DefaultSaslConfig with a list of mechanisms to use.
+     *
+     * @param factory - the ConnectionFactory to use to obtain username, password and host
+     * @param mechanisms - a list of SASL mechanisms to use (in descending order of preference)
      */
-    public void setPreferredMechanisms(String[] preferredMechanisms) {
-        this.preferredMechanisms = preferredMechanisms;
-    }
-
-    public void setCallbackHandler(CallbackHandler callbackHandler) {
-        this.callbackHandler = callbackHandler;
+    public DefaultSaslConfig(ConnectionFactory factory, String[] mechanisms) {
+        this.factory = factory;
+        callbackHandler = new UsernamePasswordCallbackHandler(factory);
+        this.mechanisms = Arrays.asList(mechanisms);
     }
 
     public SaslClient getSaslClient(String[] serverMechanisms) throws SaslException {
-        List<String> server = Arrays.asList(serverMechanisms);
-        List<String> client = Arrays.asList(preferredMechanisms);
-        client.retainAll(server);
+        Set<String> server = new HashSet<String>(Arrays.asList(serverMechanisms));
 
-        for (String mechanism: client) {
-            SaslClient saslClient = Sasl.createSaslClient(new String[]{mechanism},
-                     authorizationId, "AMQP", factory.getHost(), null, callbackHandler);
-            if (saslClient != null) return saslClient;
+        for (String mechanism: mechanisms) {
+            if (server.contains(mechanism)) {
+                SaslClient saslClient = Sasl.createSaslClient(new String[]{mechanism},
+                         null, "AMQP", factory.getHost(), null, callbackHandler);
+                if (saslClient != null) return saslClient;
+            }
         }
         return null;
     }
