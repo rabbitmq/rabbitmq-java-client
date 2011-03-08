@@ -17,6 +17,7 @@
 package com.rabbitmq.client;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Map;
 
 /**
@@ -46,7 +47,7 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * Retrieve the host.
      * @return the hostname of the peer we're connected to.
      */
-    String getHost();
+    InetAddress getAddress();
 
     /**
      * Retrieve the port number.

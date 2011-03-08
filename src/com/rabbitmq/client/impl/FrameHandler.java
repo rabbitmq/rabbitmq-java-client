@@ -17,6 +17,7 @@
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
@@ -25,8 +26,8 @@ import java.net.SocketTimeoutException;
  */
 
 public interface FrameHandler {
-    /** Retrieve hostname of peer. */
-    public String getHost();
+    /** Retrieve address of peer. */
+    public InetAddress getAddress();
 
     /** Retrieve port number of peer. */
     public int getPort();

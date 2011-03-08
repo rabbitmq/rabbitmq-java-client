@@ -17,6 +17,7 @@
 package com.rabbitmq.client.test;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
@@ -159,8 +160,8 @@ public class AMQConnectionTest extends TestCase {
             return 0;
         }
 
-        public String getHost() {
-            return "MockFrameHandler";
+        public InetAddress getAddress() {
+            return null;
         }
 
         public int getPort() {

@@ -18,6 +18,7 @@
 package com.rabbitmq.client.test;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -145,8 +146,8 @@ public class BrokenFramesTest extends TestCase {
             return 0;
         }
 
-        public String getHost() {
-            return "MyFrameHandler";
+        public InetAddress getAddress() {
+            return null;
         }
 
         public int getPort() {
