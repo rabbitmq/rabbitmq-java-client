@@ -218,7 +218,7 @@ public interface AMQP {
         def genBuildMethod(c,m,fieldsToNullCheckInBuild):
             print "                public final %s build() {" % (java_class_name(m.name))
 
-            if len(fieldsToNullCheckInBuild) != 0:
+            if fieldsToNullCheckInBuild:
                 nullCheckClauses = []
                 for f in fieldsToNullCheckInBuild:
                     printGenNullCheckClause(f)
@@ -241,22 +241,11 @@ public interface AMQP {
         genBuilderCtor(m, mandatoryFields)
         print
         genArgMethods(spec, m)
-        print
         genBuildMethod(c,m,fieldsToNullCheckInBuild)
         print "            }"
 
-    def genBuilderGetterApi(c):
-        print
-        print "    // Convenience getters for AMQP method builders"
-        for m in c.allMethods():
-            (cName, mName) = (java_class_name(c.name), java_class_name(m.name))
-            (fieldsToNullCheck, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
-            argSignature = builderCtorArgSignature(mandatoryFields)
-            print "    public %s.%s.Builder %s%s(%s);" % (cName, mName, cName.lower(), mName, argSignature)
-
     def printClassInterfaces():
         for c in spec.classes:
-            # genBuilderGetterApi(c)
             print
             print "    public static class %s {" % (java_class_name(c.name))
             for m in c.allMethods():
@@ -371,22 +360,8 @@ import com.rabbitmq.client.UnknownClassOrMethodId;
 import com.rabbitmq.client.UnexpectedMethodError;
 
 public class AMQImpl implements AMQP {"""
-    def genBuilderGetterImpl(spec,c):
-        print
-        print "    // Convenience getter methods for AMQP Method builders"
-        for m in c.allMethods():
-            (cName, mName) = (java_class_name(c.name), java_class_name(m.name))
-            (fieldsToNullCheck, mandatoryFields) = mandatoryAndNullCheckedFields(spec, m)
-            argSignature = builderCtorArgSignature(mandatoryFields)
-            ctorArgList = []
-            for (argType, argName) in mandatoryFields:
-                ctorArgList.append(argName)
-            print "    public static %s.%s.Builder %s%s(%s)" % (cName, mName, cName.lower(), mName, argSignature)
-            print "    {   return new %s.%s.Builder(%s); }" % (cName, mName, ", ".join(ctorArgList))
-            print
 
     def printClassMethods(spec, c):
-        # genBuilderGetterImpl(spec,c)
         print
         print "    public static class %s {" % (java_class_name(c.name))
         print "        public static final int INDEX = %s;" % (c.index)
@@ -398,23 +373,21 @@ public class AMQImpl implements AMQP {"""
                     for a in m.arguments:
                         print "            public %s %s() { return %s; }" % (java_field_type(spec,a.domain), java_getter_name(a.name), java_field_name(a.name))
 
-            def constructor():
-                if m.arguments:
-                    print
-                    print "            public %s(" % (java_class_name(m.name))
-                    for index,a in enumerate(m.arguments):
-                        sys.stdout.write("                %s %s" % (java_field_type(spec,a.domain), java_field_name(a.name)))
-                        if not index == len(m.arguments) - 1:
-                            print ","
-                    print ")"
-                    print "            {"
-                    for a in m.arguments:
-                        print "                this.%s = %s;" % (java_field_name(a.name), java_field_name(a.name))
-                    print "            }"
+            def constructors():
+                print
+                argList = [ "%s %s" % (java_field_type(spec,a.domain),java_field_name(a.name)) for a in m.arguments ]
+                print "            public %s(%s) {" % (java_class_name(m.name), ", ".join(argList))
+                for a in m.arguments:
+                    print "                this.%s = %s;" % (java_field_name(a.name), java_field_name(a.name))
+                print "            }"
+                
+                consArgs = [ "rdr.read%s()" % (java_class_name(spec.resolveDomain(a.domain))) for a in m.arguments ]
+                print "            public %s(MethodArgumentReader rdr) throws IOException {" % (java_class_name(m.name))
+                print "                this(%s);" % (", ".join(consArgs))
+                print "            }"
 
             def others():
                 print
-                print "            public %s() {}" % (java_class_name(m.name))
                 print "            public int protocolClassId() { return %s; }" % (c.index)
                 print "            public int protocolMethodId() { return %s; }" % (m.index)
                 print "            public String protocolMethodName() { return \"%s.%s\";}" % (c.name, m.name)
@@ -474,7 +447,7 @@ public class AMQImpl implements AMQP {"""
                     print "            public %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
 
             getters()
-            constructor()
+            constructors()
             others()
 
             argument_debug_string()
@@ -512,9 +485,7 @@ public class AMQImpl implements AMQP {"""
             for m in c.allMethods():
                 fq_name = java_class_name(c.name) + '.' + java_class_name(m.name)
                 print "                    case %s: {" % (m.index)
-                print "                        %s result = new %s();" % (fq_name, fq_name)
-                print "                        result.readArgumentsFrom(new MethodArgumentReader(in));"
-                print "                        return result;"
+                print "                        return new %s(new MethodArgumentReader(in));" % (fq_name)
                 print "                    }"
             print "                    default: break;"
             print "                }"
@@ -529,7 +500,7 @@ public class AMQImpl implements AMQP {"""
         print "        int classId = in.readShort();"
         print "        switch (classId) {"
         for c in spec.allClasses():
-            if len(c.fields) > 0:
+            if c.fields:
                 print "            case %s: return new %sProperties();" %(c.index, (java_class_name(c.name)))
         print "            default: break;"
         print "        }"
