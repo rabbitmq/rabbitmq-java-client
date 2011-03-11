@@ -21,6 +21,7 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 
@@ -55,8 +56,8 @@ public class SocketFrameHandler implements FrameHandler {
         _outputStream = new DataOutputStream(new BufferedOutputStream(_socket.getOutputStream()));
     }
 
-    public String getHost() {
-        return _socket.getInetAddress().getHostName();
+    public InetAddress getAddress() {
+        return _socket.getInetAddress();
     }
 
     public int getPort() {

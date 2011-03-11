@@ -19,6 +19,7 @@ package com.rabbitmq.client.impl;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
@@ -152,8 +153,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public Map<String, Object> _serverProperties;
 
     /** {@inheritDoc} */
-    public String getHost() {
-        return _frameHandler.getHost();
+    public InetAddress getAddress() {
+        return _frameHandler.getAddress();
     }
 
     /** {@inheritDoc} */
@@ -242,7 +243,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         // start the main loop going
         Thread ml = new MainLoop();
-        ml.setName("AMQP Connection " + getHost() + ":" + getPort());
+        ml.setName("AMQP Connection " + getHostAddress() + ":" + getPort());
         ml.start();
 
         AMQP.Connection.Start connStart = null;
@@ -560,7 +561,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _brokerInitiatedShutdown = true;
         Thread scw = new SocketCloseWait(sse);
         scw.setName("AMQP Connection Closing Monitor " +
-                    getHost() + ":" + getPort());
+                getHostAddress() + ":" + getPort());
         scw.start();
     }
 
@@ -727,6 +728,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     @Override public String toString() {
-        return "amqp://" + _factory.getUsername() + "@" + getHost() + ":" + getPort() + _virtualHost;
+        return "amqp://" + _factory.getUsername() + "@" + getHostAddress() + ":" + getPort() + _virtualHost;
+    }
+
+    private String getHostAddress() {
+        return getAddress() == null ? null : getAddress().getHostAddress();
     }
 }

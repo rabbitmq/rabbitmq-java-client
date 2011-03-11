@@ -20,7 +20,10 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Default implementation of SaslConfig that uses the standard Java
@@ -28,30 +31,43 @@ import java.util.Map;
  * @see com.rabbitmq.client.ConnectionFactory
  */
 public class DefaultSaslConfig implements SaslConfig {
-    private ConnectionFactory factory;
-    private String authorizationId;
-    private Map<String,?> mechanismProperties;
-    private CallbackHandler callbackHandler;
+    public static final String[] DEFAULT_PREFERRED_MECHANISMS = new String[]{"PLAIN"};
 
+    private final ConnectionFactory factory;
+    private final List<String> mechanisms;
+    private final CallbackHandler callbackHandler;
+
+    /**
+     * Create a DefaultSaslConfig which only wants to use PLAIN.
+     *
+     * @param factory - the ConnectionFactory to use to obtain username, password and host
+     */
     public DefaultSaslConfig(ConnectionFactory factory) {
+        this(factory, DEFAULT_PREFERRED_MECHANISMS);
+    }
+
+    /**
+     * Create a DefaultSaslConfig with a list of mechanisms to use.
+     *
+     * @param factory - the ConnectionFactory to use to obtain username, password and host
+     * @param mechanisms - a list of SASL mechanisms to use (in descending order of preference)
+     */
+    public DefaultSaslConfig(ConnectionFactory factory, String[] mechanisms) {
         this.factory = factory;
         callbackHandler = new UsernamePasswordCallbackHandler(factory);
+        this.mechanisms = Arrays.asList(mechanisms);
     }
 
-    public void setAuthorizationId(String authorizationId) {
-        this.authorizationId = authorizationId;
-    }
+    public SaslClient getSaslClient(String[] serverMechanisms) throws SaslException {
+        Set<String> server = new HashSet<String>(Arrays.asList(serverMechanisms));
 
-    public void setMechanismProperties(Map<String, ?> mechanismProperties) {
-        this.mechanismProperties = mechanismProperties;
-    }
-
-    public void setCallbackHandler(CallbackHandler callbackHandler) {
-        this.callbackHandler = callbackHandler;
-    }
-
-    public SaslClient getSaslClient(String[] mechanisms) throws SaslException {
-        return Sasl.createSaslClient(mechanisms, authorizationId, "AMQP",
-              factory.getHost(), mechanismProperties, callbackHandler);
+        for (String mechanism: mechanisms) {
+            if (server.contains(mechanism)) {
+                SaslClient saslClient = Sasl.createSaslClient(new String[]{mechanism},
+                         null, "AMQP", factory.getHost(), null, callbackHandler);
+                if (saslClient != null) return saslClient;
+            }
+        }
+        return null;
     }
 }

@@ -18,7 +18,7 @@
 
   <path id="test.javac.classpath">
     <path refid="javac.classpath"/>
-<!--    <pathelement path="${junit.home}/junit.jar"/> -->
+<!--    <pathelement path="${junit.home}/junit.jar"/>  -->
   </path>
 
   <path id="test.classpath">
