@@ -23,30 +23,43 @@ sys.path.append("codegen")              # in case we're building from a distribu
 
 from amqp_codegen import *
 
+class BogusDefaultValue(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
+
 def java_constant_name(c):
     return '_'.join(re.split('[- ]', c.upper()))
 
 javaTypeMap = {
     'octet': 'int',
-    'shortstr': 'java.lang.String',
+    'shortstr': 'String',
     'longstr': 'LongString',
     'short': 'int',
     'long': 'int',
     'longlong': 'long',
     'bit': 'boolean',
-    'table': 'Map<java.lang.String,Object>',
+    'table': 'Map<String,Object>',
     'timestamp': 'Date'
     }
 
+javaTypesToCheckForNull = set([
+    'String',
+    'LongString',
+    'Date'
+    ])
+
 javaPropertyTypeMap = {
-    'octet': 'java.lang.Integer',
-    'shortstr': 'java.lang.String',
+    'octet': 'Integer',
+    'shortstr': 'String',
     'longstr': 'LongString',
-    'short': 'java.lang.Integer',
-    'long': 'java.lang.Integer',
-    'longlong': 'java.lang.Long',
-    'bit': 'java.lang.Boolean',
-    'table': 'Map<java.lang.String,Object>',
+    'short': 'Integer',
+    'long': 'Integer',
+    'longlong': 'Long',
+    'bit': 'Boolean',
+    'table': 'Map<String,Object>',
     'timestamp': 'Date'
     }
 
@@ -78,6 +91,36 @@ def java_field_name(name):
 def java_field_type(spec, domain):
     return javaTypeMap[spec.resolveDomain(domain)]
 
+def java_field_default_value(type, value):
+    if type == 'int':
+        return value
+    elif type == 'boolean':
+        return "{0}".format(value).lower()
+    elif type == 'String':
+        return "\"{0}\"".format(value)
+    elif type == 'LongString':
+        return "LongStringHelper.asLongString(\"{0}\")".format(value)
+    elif type == 'long':
+        return "{0}L".format(value)
+    elif type == 'Map<String,Object>':
+        return "null"
+    else:
+        raise BogusDefaultValue("JSON provided default value {0} for suspicious type {1}".format(value, type))
+
+def typeNameDefault(spec, a):
+    return (java_field_type(spec, a.domain),
+            java_field_name(a.name),
+            java_field_default_value(java_field_type(spec, a.domain),
+                                     a.defaultvalue))
+
+def nullCheckedFields(spec, m):
+    fieldsToNullCheck = set([])
+    for a in m.arguments:
+        (jfType, jfName, jfDefault) = typeNameDefault(spec,a)
+        if jfType in javaTypesToCheckForNull:
+            fieldsToNullCheck.add(jfName)
+    return fieldsToNullCheck
+
 #---------------------------------------------------------------------------
 
 def printFileHeader():
@@ -104,20 +147,20 @@ def printFileHeader():
 def genJavaApi(spec):
     def printHeader():
         printFileHeader()
-        print """package com.rabbitmq.client;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.Date;
-
-import com.rabbitmq.client.impl.AMQContentHeader;
-import com.rabbitmq.client.impl.ContentHeaderPropertyWriter;
-import com.rabbitmq.client.impl.ContentHeaderPropertyReader;
-import com.rabbitmq.client.impl.LongString;
-
-public interface AMQP
-{
-    public static class PROTOCOL {"""
+        print "package com.rabbitmq.client;"
+        print
+        print "import java.io.IOException;"
+        print "import java.util.Map;"
+        print "import java.util.Date;"
+        print
+        print "import com.rabbitmq.client.impl.ContentHeaderPropertyWriter;"
+        print "import com.rabbitmq.client.impl.ContentHeaderPropertyReader;"
+        print "import com.rabbitmq.client.impl.LongString;"
+        print "import com.rabbitmq.client.impl.LongStringHelper;"
+        print
+        print "public interface AMQP {"
+        print
+        print "    public static class PROTOCOL {"
         print "        public static final int MAJOR = %i;" % spec.major
         print "        public static final int MINOR = %i;" % spec.minor
         print "        public static final int REVISION = %i;" % spec.revision
@@ -128,6 +171,46 @@ public interface AMQP
         print
         for (c,v,cls) in spec.constants: print "    public static final int %s = %i;" % (java_constant_name(c), v)
 
+    def builder(c,m):
+        def ctorCall(c,m):
+            ctor_call = "com.rabbitmq.client.impl.AMQImpl.%s.%s" % (java_class_name(c.name),java_class_name(m.name))
+            ctor_arg_list = [ java_field_name(a.name) for a in m.arguments ]
+            print "                    return new %s(%s);" % (ctor_call, ", ".join(ctor_arg_list))
+
+        def genFields(spec, m):
+            for a in m.arguments:
+                (jfType, jfName, jfDefault) = typeNameDefault(spec, a)
+                if a.defaultvalue != None:
+                    print "                private %s %s = %s;" % (jfType, jfName, jfDefault)
+                else:
+                    print "                private %s %s;" % (jfType, jfName)
+
+        def genArgMethods(spec, m):
+            for a in m.arguments:
+                (jfType, jfName, jfDefault) = typeNameDefault(spec, a)
+                print "                public final Builder %s(%s %s)" % (jfName, jfType, jfName)
+                print "                {   this.%s = %s; return this; }" % (jfName, jfName)
+                if jfType == "boolean":
+                    print "                public final Builder %s()" % (jfName)
+                    print "                {   return this.%s(true); }" % (jfName)
+
+        def genBuildMethod(c,m):
+            print "                public final %s build() {" % (java_class_name(m.name))
+            ctorCall(c,m)
+            print "                }"
+
+        print
+        print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
+        print "            public static class Builder"
+        print "            {"
+        genFields(spec, m)
+        print
+        print "                public Builder() { }"
+        print
+        genArgMethods(spec, m)
+        genBuildMethod(c,m)
+        print "            }"
+
     def printClassInterfaces():
         for c in spec.classes:
             print
@@ -136,6 +219,7 @@ public interface AMQP
                 print "        public interface %s extends Method {" % ((java_class_name(m.name)))
                 for a in m.arguments:
                     print "            %s %s();" % (java_field_type(spec, a.domain), java_getter_name(a.name))
+                builder(c,m)
                 print "        }"
             print "    }"
 
@@ -160,22 +244,18 @@ public interface AMQP
             print "            writer.writePresence(this.%s != null);" % (java_field_name(f.name))
         print "            writer.finishPresence();"
         for f in c.fields:
-            print "            if (this.%s != null) { writer.write%s(this.%s); } " % (java_field_name(f.name), java_class_name(f.domain), java_field_name(f.name))
+            print "            if (this.%s != null) { writer.write%s(this.%s); }" % (java_field_name(f.name), java_class_name(f.domain), java_field_name(f.name))
         print "        }"
 
     def printPropertyDebug(c):
+        appendList = [ "%s=\")\n               .append(this.%s)\n               .append(\"" 
+                       % (f.name, java_field_name(f.name))
+                       for f in c.fields ]
         print
-        print "        public void appendPropertyDebugStringTo(StringBuffer acc) {"
-        print "            acc.append(\"(\");"
-        for index,f in enumerate(c.fields):
-            print "            acc.append(\"%s=\");" % (f.name)
-            print "            acc.append(this.%s);" % (java_field_name(f.name))
-            if not index == len(c.fields) - 1:
-                print "            acc.append(\", \");"
-
-        print "            acc.append(\")\");"
+        print "        public void appendArgumentDebugStringTo(StringBuffer acc) {"
+        print "            acc.append(\"(%s)\");" % ", ".join(appendList)
         print "        }"
-
+        
     def printClassProperties(c):
         print
         print "    public static class %(className)s extends %(parentClass)s {" % {'className' : java_class_name(c.name) + 'Properties', 'parentClass' : 'com.rabbitmq.client.impl.AMQ' + java_class_name(c.name) + 'Properties'}
@@ -186,13 +266,10 @@ public interface AMQP
         #constructor
         if c.fields:
             print
-            print "        public %sProperties ( " % (java_class_name(c.name))
-            for index,f in enumerate(c.fields):
-                sys.stdout.write( "            %s %s" % (java_property_type(spec,f.domain),java_field_name(f.name)))
-                if not index == len(c.fields) - 1:
-                    print ","
-
-            print ")"
+            consParmList = [ "%s %s" % (java_property_type(spec,f.domain),java_field_name(f.name))
+                             for f in c.fields ]
+            print "        public %sProperties(" % (java_class_name(c.name))
+            print "            %s)" % (",\n            ".join(consParmList))
             print "        {"
             for f in c.fields:
                 print "            this.%s = %s;" % (java_field_name(f.name), java_field_name(f.name))
@@ -202,7 +279,7 @@ public interface AMQP
         print
         print "        public %sProperties() {}" % (java_class_name(c.name))
         print "        public int getClassId() { return %i; }" % (c.index)
-        print "        public java.lang.String getClassName() { return \"%s\"; }" % (c.name)
+        print "        public String getClassName() { return \"%s\"; }" % (c.name)
 
         #access functions
         print
@@ -232,20 +309,19 @@ public interface AMQP
 def genJavaImpl(spec):
     def printHeader():
         printFileHeader()
-        print """package com.rabbitmq.client.impl;
+        print "package com.rabbitmq.client.impl;"
+        print
+        print "import java.io.IOException;"
+        print "import java.io.DataInputStream;"
+        print "import java.util.Map;"
+        print
+        print "import com.rabbitmq.client.AMQP;"
+        print "import com.rabbitmq.client.UnknownClassOrMethodId;"
+        print "import com.rabbitmq.client.UnexpectedMethodError;"
+        print
+        print "public class AMQImpl implements AMQP {"
 
-import java.io.IOException;
-import java.io.DataInputStream;
-import java.util.Map;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.UnknownClassOrMethodId;
-import com.rabbitmq.client.UnexpectedMethodError;
-
-public class AMQImpl implements AMQP
-{"""
-
-    def printClassMethods(c):
+    def printClassMethods(spec, c):
         print
         print "    public static class %s {" % (java_class_name(c.name))
         print "        public static final int INDEX = %s;" % (c.index)
@@ -257,58 +333,50 @@ public class AMQImpl implements AMQP
                     for a in m.arguments:
                         print "            public %s %s() { return %s; }" % (java_field_type(spec,a.domain), java_getter_name(a.name), java_field_name(a.name))
 
-            def constructor():
-                if m.arguments:
-                    print
-                    print "            public %s(" % (java_class_name(m.name))
-                    for index,a in enumerate(m.arguments):
-                        sys.stdout.write("                %s %s" % (java_field_type(spec,a.domain), java_field_name(a.name)))
-                        if not index == len(m.arguments) - 1:
-                            print ","
-                    print ")"
-                    print "            {"
-                    for a in m.arguments:
-                        print "                this.%s = %s;" % (java_field_name(a.name), java_field_name(a.name))
-                    print "            }"
+            def constructors():
+                print
+                argList = [ "%s %s" % (java_field_type(spec,a.domain),java_field_name(a.name)) for a in m.arguments ]
+                print "            public %s(%s) {" % (java_class_name(m.name), ", ".join(argList))
+
+                fieldsToNullCheckInCons = nullCheckedFields(spec, m)
+
+                for f in fieldsToNullCheckInCons:
+                    print "                if(%s == null)" % (f)
+                    print "                    throw new IllegalStateException(\"Invalid configuration: '%s' must be non-null.\");" % (f)
+
+                for a in m.arguments:
+                    print "                this.%s = %s;" % (java_field_name(a.name), java_field_name(a.name))
+                print "            }"
+
+                consArgs = [ "rdr.read%s()" % (java_class_name(spec.resolveDomain(a.domain))) for a in m.arguments ]
+                print "            public %s(MethodArgumentReader rdr) throws IOException {" % (java_class_name(m.name))
+                print "                this(%s);" % (", ".join(consArgs))
+                print "            }"
 
             def others():
                 print
-                print "            public %s() {}" % (java_class_name(m.name))
                 print "            public int protocolClassId() { return %s; }" % (c.index)
                 print "            public int protocolMethodId() { return %s; }" % (m.index)
-                print "            public java.lang.String protocolMethodName() { return \"%s.%s\";}" % (c.name, m.name)
+                print "            public String protocolMethodName() { return \"%s.%s\";}" % (c.name, m.name)
                 print
-                print "            public boolean hasContent() {"
-                if m.hasContent:
-                    print "                return true;"
-                else:
-                    print "                return false;"
-                print "            }"
+                print "            public boolean hasContent() { return %s; }" % (trueOrFalse(m.hasContent))
+                print
+                print "            public Object visit(MethodVisitor visitor) throws IOException"
+                print "            {   return visitor.visit(this); }"
 
-                print
-                print """            public Object visit(MethodVisitor visitor) throws IOException {
-                return visitor.visit(this);
-            }"""
+            def trueOrFalse(truthVal):
+                if truthVal:
+                    return "true"
+                else:
+                    return "false"
 
             def argument_debug_string():
+                appendList = [ "%s=\")\n                   .append(this.%s)\n                   .append(\"" 
+                               % (a.name, java_field_name(a.name))
+                               for a in m.arguments ]
                 print
                 print "            public void appendArgumentDebugStringTo(StringBuffer acc) {"
-                print "                acc.append(\"(\");"
-                for index, a in enumerate(m.arguments):
-                    print "                acc.append(\"%s=\");" % (a.name)
-                    print "                acc.append(this.%s);" % (java_field_name(a.name))
-                    if not index == len(m.arguments) - 1:
-                        print "                acc.append(\",\");"
-                print "                acc.append(\")\");"
-                print "            }"
-
-            def read_arguments():
-                print
-                print "            public void readArgumentsFrom(MethodArgumentReader reader)"
-                print "                throws IOException"
-                print "            {"
-                for a in m.arguments:
-                    print "                this.%s = reader.read%s();" % (java_field_name(a.name), java_class_name(spec.resolveDomain(a.domain)))
+                print "                acc.append(\"(%s)\");" % ", ".join(appendList)
                 print "            }"
 
             def write_arguments():
@@ -327,17 +395,15 @@ public class AMQImpl implements AMQP
             print "            implements com.rabbitmq.client.AMQP.%s.%s" % (java_class_name(c.name), java_class_name(m.name))
             print "        {"
             print "            public static final int INDEX = %s;" % (m.index)
-            if m.arguments:
-                print
-                for a in m.arguments:
-                    print "            public %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
+            print
+            for a in m.arguments:
+                print "            private final %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
 
             getters()
-            constructor()
+            constructors()
             others()
 
             argument_debug_string()
-            read_arguments()
             write_arguments()
 
             print "        }"
@@ -356,12 +422,12 @@ public class AMQImpl implements AMQP
         print "    public static class DefaultMethodVisitor implements MethodVisitor {"
         for c in spec.allClasses():
             for m in c.allMethods():
-               print "        public Object visit(%s.%s x) throws IOException { throw new UnexpectedMethodError(x); } " % (java_class_name(c.name), java_class_name(m.name))
+               print "        public Object visit(%s.%s x) throws IOException { throw new UnexpectedMethodError(x); }" % (java_class_name(c.name), java_class_name(m.name))
         print "    }"
 
     def printMethodArgumentReader():
         print
-        print "    public static Method readMethodFrom(DataInputStream in) throws IOException { "
+        print "    public static Method readMethodFrom(DataInputStream in) throws IOException {"
         print "        int classId = in.readShort();"
         print "        int methodId = in.readShort();"
         print "        switch (classId) {"
@@ -371,9 +437,7 @@ public class AMQImpl implements AMQP
             for m in c.allMethods():
                 fq_name = java_class_name(c.name) + '.' + java_class_name(m.name)
                 print "                    case %s: {" % (m.index)
-                print "                        %s result = new %s();" % (fq_name, fq_name)
-                print "                        result.readArgumentsFrom(new MethodArgumentReader(in));"
-                print "                        return result;"
+                print "                        return new %s(new MethodArgumentReader(in));" % (fq_name)
                 print "                    }"
             print "                    default: break;"
             print "                }"
@@ -384,14 +448,11 @@ public class AMQImpl implements AMQP
 
     def printContentHeaderReader(c):
         print
-        print """    public static AMQContentHeader readContentHeaderFrom(DataInputStream in)
-        throws IOException
-    {
-        int classId = in.readShort();
-
-        switch (classId) {"""
+        print "    public static AMQContentHeader readContentHeaderFrom(DataInputStream in) throws IOException {"
+        print "        int classId = in.readShort();"
+        print "        switch (classId) {"
         for c in spec.allClasses():
-            if len(c.fields) > 0:
+            if c.fields:
                 print "            case %s: return new %sProperties();" %(c.index, (java_class_name(c.name)))
         print "            default: break;"
         print "        }"
@@ -400,7 +461,7 @@ public class AMQImpl implements AMQP
         print "    }"
 
     printHeader()
-    for c in spec.allClasses(): printClassMethods(c)
+    for c in spec.allClasses(): printClassMethods(spec,c)
     printMethodVisitor()
     printMethodArgumentReader()
     printContentHeaderReader(c)

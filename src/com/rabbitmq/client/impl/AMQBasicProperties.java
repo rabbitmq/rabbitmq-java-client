@@ -16,7 +16,6 @@
 
 package com.rabbitmq.client.impl;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Hashtable;
@@ -32,8 +31,7 @@ public abstract class AMQBasicProperties
         
         Map<String, Object> thisHeaders = getHeaders();
         if (thisHeaders != null) {
-            Map<String, Object> headers = new Hashtable<String, Object>();
-            headers.putAll(thisHeaders);
+            Map<String, Object> headers = new Hashtable<String, Object>(thisHeaders);
             bpClone.setHeaders(headers);
         }
         

@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import com.rabbitmq.client.MalformedFrameException;
 
 /**
- * Helper class to reade AMQP wire-protocol encoded values.
+ * Helper class to read AMQP wire-protocol encoded values.
  */
 public class ValueReader
 {
@@ -58,7 +58,8 @@ public class ValueReader
     }
 
     /** Public API - convenience method - reads a short string from a DataInput
-Stream. */
+     * Stream.
+     */
     public static final String readShortstr(DataInputStream in)
         throws IOException
     {

@@ -428,14 +428,15 @@ public class TestMain {
         expect(2, drain(10, q3, true));
     }
 
-    public void doBasicReturn(BlockingCell cell, int expectedCode) {
+    public void doBasicReturn(BlockingCell<Object> cell, int expectedCode) {
         Object[] a = (Object[]) cell.uninterruptibleGet();
         AMQImpl.Basic.Return method = (AMQImpl.Basic.Return) a[0];
         log("Returned: " + method);
         log(" - props: " + a[1]);
         log(" - body: " + new String((byte[]) a[2]));
-        if (method.replyCode != expectedCode) {
-            System.err.println("Eek! Got basic return with code " + method.replyCode + ", but expected code " + expectedCode);
+        int replyCode = method.getReplyCode();
+        if (replyCode != expectedCode) {
+            System.err.println("Eek! Got basic return with code " + replyCode + ", but expected code " + expectedCode);
             System.exit(1);
         }
     }
