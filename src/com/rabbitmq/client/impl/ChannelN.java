@@ -136,26 +136,26 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         returnListener = listener;
     }
 
-    /** Returns the current FlowListener. */
+    /** Returns the current {@link FlowListener}. */
     public FlowListener getFlowListener() {
         return flowListener;
     }
 
     /**
-     * Sets the current FlowListener.
+     * Sets the current {@link FlowListener}.
      * A null argument is interpreted to mean "do not use a flow listener".
      */
     public void setFlowListener(FlowListener listener) {
         flowListener = listener;
     }
 
-    /** Returns the current ConfirmkListener. */
+    /** Returns the current {@link ConfirmListener}. */
     public ConfirmListener getConfirmListener() {
         return confirmListener;
     }
 
     /**
-     * Sets the current ConfirmListener.
+     * Sets the current {@link ConfirmListener}.
      * A null argument is interpreted to mean "do not use a confirm listener".
      */
     public void setConfirmListener(ConfirmListener listener) {
@@ -341,18 +341,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return false;
             } else if (method instanceof Basic.Cancel) {
                 Basic.Cancel m = (Basic.Cancel)method;
-                Consumer callback = _consumers.remove(m.consumerTag);
+                String consumerTag = m.getConsumerTag();
+                Consumer callback = _consumers.remove(consumerTag);
                 if (callback == null) {
                     callback = defaultConsumer;
                 }
                 if (callback != null) {
                     try {
-                        callback.handleCancel(m.getConsumerTag());
+                        callback.handleCancel(consumerTag);
                     } catch (Throwable ex) {
                         _connection.getExceptionHandler().handleConsumerException(this,
                                                                                   ex,
                                                                                   callback,
-                                                                                  m.getConsumerTag(),
+                                                                                  consumerTag,
                                                                                   "handleCancel");
                     }
                 }
