@@ -188,20 +188,23 @@ def genJavaApi(spec):
         def genArgMethods(spec, m):
             for a in m.arguments:
                 (jfType, jfName, jfDefault) = typeNameDefault(spec, a)
-                print "                public final Builder %s(%s %s)" % (jfName, jfType, jfName)
+                print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
                 print "                {   this.%s = %s; return this; }" % (jfName, jfName)
                 if jfType == "boolean":
-                    print "                public final Builder %s()" % (jfName)
+                    print "                public Builder %s()" % (jfName)
                     print "                {   return this.%s(true); }" % (jfName)
+                elif jfType == "LongString":
+                    print "                public Builder %s(String %s)" % (jfName, jfName)
+                    print "                {   return this.%s(LongStringHelper.asLongString(%s)); }" % (jfName, jfName)
 
         def genBuildMethod(c,m):
-            print "                public final %s build() {" % (java_class_name(m.name))
+            print "                public %s build() {" % (java_class_name(m.name))
             ctorCall(c,m)
             print "                }"
 
         print
         print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
-        print "            public static class Builder"
+        print "            public static final class Builder"
         print "            {"
         genFields(spec, m)
         print

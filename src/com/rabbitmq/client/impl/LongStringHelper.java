@@ -94,6 +94,7 @@ public class LongStringHelper
      */
     public static LongString asLongString(String string)
     {
+        if (string==null) return null;
         try {
             return new ByteArrayLongString(string.getBytes("utf-8"));
         }
@@ -109,6 +110,7 @@ public class LongStringHelper
      */
     public static LongString asLongString(byte [] bytes)
     {
+        if (bytes==null) return null;
         return new ByteArrayLongString(bytes);
     }
 }
