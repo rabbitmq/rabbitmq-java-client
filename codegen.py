@@ -150,6 +150,8 @@ def genJavaApi(spec):
         print "package com.rabbitmq.client;"
         print
         print "import java.io.IOException;"
+        print "import java.util.Collections;"
+        print "import java.util.HashMap;"
         print "import java.util.Map;"
         print "import java.util.Date;"
         print
@@ -188,8 +190,14 @@ def genJavaApi(spec):
         def genArgMethods(spec, m):
             for a in m.arguments:
                 (jfType, jfName, jfDefault) = typeNameDefault(spec, a)
-                print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
-                print "                {   this.%s = %s; return this; }" % (jfName, jfName)
+
+                if jfType == "Map<String,Object>":
+                    print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
+                    print "                {   this.%s = %s==null ? null : Collections.unmodifiableMap(new HashMap<String,Object>(%s)); return this; }" % (jfName, jfName, jfName)
+                else:
+                    print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
+                    print "                {   this.%s = %s; return this; }" % (jfName, jfName)
+
                 if jfType == "boolean":
                     print "                public Builder %s()" % (jfName)
                     print "                {   return this.%s(true); }" % (jfName)
