@@ -146,7 +146,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private int _heartbeat;
 
     private final String _virtualHost;
-//    private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
     private final Map<String, Object> _clientProperties;
 
     /** Saved server properties field from connection.start */

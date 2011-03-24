@@ -21,6 +21,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -146,9 +147,10 @@ public class ValueReader
     public static final Map<String, Object> readTable(DataInputStream in)
         throws IOException
     {
-        Map<String, Object> table = new HashMap<String, Object>();
         long tableLength = unsignedExtend(in.readInt());
-
+        if (tableLength == 0) return Collections.emptyMap();
+        
+        Map<String, Object> table = new HashMap<String, Object>();
         DataInputStream tableIn = new DataInputStream
             (new TruncatedInputStream(in, tableLength));
         while(tableIn.available() > 0) {
@@ -217,13 +219,13 @@ public class ValueReader
     }
 
     /** Read a field-array */
-    public static List readArray(DataInputStream in)
+    public static List<Object> readArray(DataInputStream in)
         throws IOException
     {
         long length = unsignedExtend(in.readInt());
         DataInputStream arrayIn = new DataInputStream
             (new TruncatedInputStream(in, length));
-        List array = new ArrayList();
+        List<Object> array = new ArrayList<Object>();
         while(arrayIn.available() > 0) {
             Object value = readFieldValue(arrayIn);
             array.add(value);

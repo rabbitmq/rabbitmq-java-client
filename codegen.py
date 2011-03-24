@@ -305,6 +305,7 @@ def genJavaApi(spec):
     for c in spec.classes:
         if c.hasContentProperties:
             printClassProperties(c)
+
     print "}"
 
 #--------------------------------------------------------------------------------

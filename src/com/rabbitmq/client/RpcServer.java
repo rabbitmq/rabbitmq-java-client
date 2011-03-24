@@ -141,12 +141,14 @@ public class RpcServer {
         throws IOException
     {
         AMQP.BasicProperties requestProperties = request.getProperties();
-        if (requestProperties.getCorrelationId() != null && requestProperties.getReplyTo() != null)
+        String correlationId = requestProperties.getCorrelationId();
+        String replyTo = requestProperties.getReplyTo();
+        if (correlationId != null && replyTo != null)
         {
             AMQP.BasicProperties replyProperties = new AMQP.BasicProperties();
             byte[] replyBody = handleCall(request, replyProperties);
-            replyProperties.setCorrelationId(requestProperties.getCorrelationId());
-            _channel.basicPublish("", requestProperties.getReplyTo(),
+            replyProperties.setCorrelationId(correlationId);
+            _channel.basicPublish("", replyTo,
                                   replyProperties, replyBody);
         } else {
             handleCast(request);
