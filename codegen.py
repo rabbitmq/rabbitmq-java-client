@@ -51,29 +51,36 @@ javaTypesToCheckForNull = set([
     'Date'
     ])
 
-javaPropertyTypeMap = {
-    'octet': 'Integer',
-    'shortstr': 'String',
-    'longstr': 'LongString',
-    'short': 'Integer',
-    'long': 'Integer',
-    'longlong': 'Long',
-    'bit': 'Boolean',
-    'table': 'Map<String,Object>',
-    'timestamp': 'Date'
+# the types in the range of javaTypeMap must be in java_scala_types
+java_scalar_types = set([
+    'int',
+    'long',
+    'boolean'
+    ])
+
+# the java_scalar_types must be in the domain of javaBoxedTypeMap
+javaBoxedTypeMap = {
+    'int': 'Integer',
+    'long': 'Long',
+    'boolean': 'Boolean'
     }
+def java_boxed_type(jtype):
+    if jtype in java_scalar_types:
+        return javaBoxedTypeMap[jtype]
+    else:
+        return jtype
 
 def java_type(spec, domain):
     return javaTypeMap[spec.resolveDomain(domain)]
 
-def java_name(upper, name):
+def java_name(upperNext, name):
     out = ''
     for c in name:
         if not c.isalnum():
-            upper = True
-        elif upper:
+            upperNext = True
+        elif upperNext:
             out += c.upper()
-            upper = False
+            upperNext = False
         else:
             out += c
     return out
@@ -84,8 +91,6 @@ def java_class_name(name):
 def java_getter_name(name):
     return java_name(False, 'get-' + name)
 
-def java_property_type(spec, type):
-    return javaPropertyTypeMap[spec.resolveDomain(type)]
 def java_field_name(name):
     return java_name(False, name)
 def java_field_type(spec, domain):
@@ -108,10 +113,9 @@ def java_field_default_value(type, value):
         raise BogusDefaultValue("JSON provided default value {0} for suspicious type {1}".format(value, type))
 
 def typeNameDefault(spec, a):
-    return (java_field_type(spec, a.domain),
-            java_field_name(a.name),
-            java_field_default_value(java_field_type(spec, a.domain),
-                                     a.defaultvalue))
+    fieldType = java_field_type(spec, a.domain)
+    defaultVal = java_field_default_value(fieldType, a.defaultvalue)
+    return (fieldType, java_field_name(a.name), defaultVal)
 
 def nullCheckedFields(spec, m):
     fieldsToNullCheck = set([])
@@ -236,59 +240,111 @@ def genJavaApi(spec):
 
     def printReadPropertiesFrom(c):
         print
-        print """        public void readPropertiesFrom(ContentHeaderPropertyReader reader)
-            throws IOException
-        {"""
+        print "        public void readPropertiesFrom(ContentHeaderPropertyReader reader)"
+        print "            throws IOException"
+        print "        {"
+
         for f in c.fields:
-            print "            boolean %s_present = reader.readPresence();" % (java_field_name(f.name))
+            (jfName, jfType) = (java_field_name(f.name), java_field_type(spec, f.domain))
+            if jfType in java_scalar_types:
+                print "            this.%sIsSet = reader.readPresence();" % (jfName)
+            else:
+                print "            boolean %s_present = reader.readPresence();" % (jfName)
         print "            reader.finishPresence();"
         for f in c.fields:
-            print "            this.%s = %s_present ? reader.read%s() : null;" % (java_field_name(f.name), java_field_name(f.name),  java_class_name(f.domain))
+            (jfName, jfType, jfClass) = (java_field_name(f.name), java_field_type(spec, f.domain), java_class_name(f.domain))
+            if jfType in java_scalar_types:
+                print "            if (this.%sIsSet) this.%s = reader.read%s();" % (jfName, jfName, jfClass)
+            else:
+                print "            this.%s = %s_present ? reader.read%s() : null;" % (jfName, jfName, jfClass)
+
         print "        }"
 
     def printWritePropertiesTo(c):
         print
-        print """        public void writePropertiesTo(ContentHeaderPropertyWriter writer)
-            throws IOException
-        {"""
+        print "        public void writePropertiesTo(ContentHeaderPropertyWriter writer)"
+        print "            throws IOException"
+        print "        {"
         for f in c.fields:
-            print "            writer.writePresence(this.%s != null);" % (java_field_name(f.name))
+            (jfName, jfType) = (java_field_name(f.name), java_field_type(spec, f.domain))
+            if jfType in java_scalar_types:
+                print "            writer.writePresence(this.%sIsSet);" % (jfName)
+            else:
+                print "            writer.writePresence(this.%s != null);" % (jfName)
+
         print "            writer.finishPresence();"
+
         for f in c.fields:
-            print "            if (this.%s != null) { writer.write%s(this.%s); }" % (java_field_name(f.name), java_class_name(f.domain), java_field_name(f.name))
+            (jfName, jfType, jfClass) = (java_field_name(f.name), java_field_type(spec, f.domain), java_class_name(f.domain))
+            if jfType in java_scalar_types:
+                print "            if (this.%sIsSet) writer.write%s(this.%s);" % (jfName, jfClass, jfName)
+            else:
+                print "            if (this.%s != null) writer.write%s(this.%s);" % (jfName, jfClass, jfName)
         print "        }"
 
     def printAppendArgumentDebugStringTo(c):
-        appendList = [ "%s=\")\n               .append(this.%s)\n               .append(\"" 
-                       % (f.name, java_field_name(f.name))
+        def optionalValueClause(jField, jType):
+            if jType in java_scalar_types:
+                return "this.%sIsSet ? String.valueOf(this.%s) : \"unset\"" % (jField, jField)
+            else:
+                return "this.%s" % (jField)
+
+        appendList = [ "%s=\")\n               .append(%s)\n               .append(\"" 
+                       % (f.name, optionalValueClause(java_field_name(f.name), java_field_type(spec, f.domain)))
                        for f in c.fields ]
         print
         print "        public void appendArgumentDebugStringTo(StringBuffer acc) {"
-        print "            acc.append(\"(%s)\");" % ", ".join(appendList)
+        print "            acc.append(\"(%s)\");" % (", ".join(appendList))
         print "        }"
-        
+
+    def printPropertiesBuilderClass(c):
+        print "        public static final class Builder {"
+        for f in c.fields:
+            print "            private %s %s;" % (java_field_type(spec, f.domain),java_field_name(f.name))
+
+        print "        }"
+
     def printPropertiesClass(c):
+        def printGetterAndSetter(fieldType, fieldName):
+            capFieldName = fieldName[0].upper() + fieldName[1:]
+            print "        public %s get%s() { return this.%s; }" % (fieldType, capFieldName, fieldName)
+            if fieldType in java_scalar_types:
+                print "        public void set%s(%s %s)" % (capFieldName, fieldType, fieldName) 
+                print "        { this.%s = %s; this.%sIsSet = true; }" % (fieldName, fieldName, fieldName) 
+            else:
+                print "        public void set%s(%s %s) { this.%s = %s; }" % (capFieldName, fieldType, fieldName, fieldName, fieldName) 
+
+        jClassName = java_class_name(c.name)
+
         print
-        print "    public static class %(className)s extends %(parentClass)s {" % {'className' : java_class_name(c.name) + 'Properties', 'parentClass' : 'com.rabbitmq.client.impl.AMQ' + java_class_name(c.name) + 'Properties'}
+        print "    public static class %sProperties extends com.rabbitmq.client.impl.AMQ%sProperties {" % (jClassName, jClassName)
         #property fields
         for f in c.fields:
-            print "        private %s %s;" % (java_property_type(spec, f.domain),java_field_name(f.name))
+            (fType, fName) = (java_field_type(spec, f.domain),java_field_name(f.name))
+            if fType in java_scalar_types:
+                print "        private boolean %sIsSet = false;" % (fName)
+            print "        private %s %s;" % (fType, fName)
 
         #explicit constructor
         if c.fields:
             print
-            consParmList = [ "%s %s" % (java_property_type(spec,f.domain),java_field_name(f.name))
+            consParmList = [ "%s %s" % (java_boxed_type(java_field_type(spec,f.domain)),java_field_name(f.name))
                              for f in c.fields ]
-            print "        public %sProperties(" % (java_class_name(c.name))
+            print "        public %sProperties(" % (jClassName)
             print "            %s)" % (",\n            ".join(consParmList))
             print "        {"
             for f in c.fields:
-                print "            this.%s = %s;" % (java_field_name(f.name), java_field_name(f.name))
+                (fType, fName) = (java_field_type(spec, f.domain),java_field_name(f.name))
+                if fType in java_scalar_types:
+                    print "            if (%s == null) { this.%sIsSet = false; }" % (fName, fName)
+                    print "            else { this.%sIsSet = true; this.%s = %s; }" % (fName, fName, fName)
+                else:
+                    print "            this.%s = %s;" % (fName, fName)
             print "        }"
 
         #default constructor
         print
-        print "        public %sProperties() {}" % (java_class_name(c.name))
+        print "        public %sProperties() {}" % (jClassName)
 
         #class properties
         print "        public int getClassId() { return %i; }" % (c.index)
@@ -297,15 +353,13 @@ def genJavaApi(spec):
         #accessor methods
         print
         for f in c.fields:
-            print """        public %(fieldType)s get%(capFieldName)s() { return %(fieldName)s; }
-        public void set%(capFieldName)s(%(fieldType)s %(fieldName)s) { this.%(fieldName)s = %(fieldName)s; }""" % \
-            {'fieldType' : java_property_type(spec, f.domain), \
-            'capFieldName' : (java_field_name(f.name)[0].upper() + java_field_name(f.name)[1:]), \
-            'fieldName' : java_field_name(f.name)}
+            printGetterAndSetter(java_field_type(spec, f.domain), java_field_name(f.name))
 
         printReadPropertiesFrom(c)
         printWritePropertiesTo(c)
         printAppendArgumentDebugStringTo(c)
+        printPropertiesBuilderClass(c)
+
         print "    }"
 
     def printPropertiesClasses():

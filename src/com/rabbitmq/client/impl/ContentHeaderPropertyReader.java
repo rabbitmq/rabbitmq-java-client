@@ -48,7 +48,7 @@ public class ContentHeaderPropertyReader {
         this.bitCount = 15; // forces a flagWord read
     }
 
-    public boolean isContinuationBitSet() {
+    private boolean isContinuationBitSet() {
         return (flagWord & 1) != 0;
     }
 
@@ -109,7 +109,7 @@ public class ContentHeaderPropertyReader {
     }
 
     /** Reads and returns an AMQP octet content header field. */
-    public Integer readOctet() throws IOException {
+    public int readOctet() throws IOException {
         return in.readOctet();
     }
 

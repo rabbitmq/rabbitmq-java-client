@@ -44,13 +44,13 @@ public interface BasicProperties {
      * Retrieve the value in the deliveryMode field.
      * @return deliveryMode field, or null if the field has not been set.
      */
-    public abstract Integer getDeliveryMode();
+    public abstract int getDeliveryMode();
     
     /**
      * Retrieve the value in the priority field.
      * @return priority field, or null if the field has not been set.
      */
-    public abstract Integer getPriority();
+    public abstract int getPriority();
     
     /**
      * Retrieve the value in the correlationId field.
@@ -122,13 +122,13 @@ public interface BasicProperties {
      * Set the deliveryMode field, or null indicating the field is not set
      * @param deliveryMode the value to set the field to
      */
-    public abstract void setDeliveryMode(Integer deliveryMode);
+    public abstract void setDeliveryMode(int deliveryMode);
     
     /**
      * Set the priority field, or null indicating the field is not set
      * @param priority the value to set the field to
      */
-    public abstract void setPriority(Integer priority);
+    public abstract void setPriority(int priority);
     
     /**
      * Set the correlationId field, or null indicating the field is not set
