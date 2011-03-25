@@ -159,8 +159,8 @@ def genJavaApi(spec):
         print "import com.rabbitmq.client.impl.ContentHeaderPropertyReader;"
         print "import com.rabbitmq.client.impl.LongString;"
         print "import com.rabbitmq.client.impl.LongStringHelper;"
-        print
-        print "public interface AMQP {"
+
+    def printProtocolClass():
         print
         print "    public static class PROTOCOL {"
         print "        public static final int MAJOR = %i;" % spec.major
@@ -234,7 +234,7 @@ def genJavaApi(spec):
                 print "        }"
             print "    }"
 
-    def printReadProperties(c):
+    def printReadPropertiesFrom(c):
         print
         print """        public void readPropertiesFrom(ContentHeaderPropertyReader reader)
             throws IOException
@@ -246,7 +246,7 @@ def genJavaApi(spec):
             print "            this.%s = %s_present ? reader.read%s() : null;" % (java_field_name(f.name), java_field_name(f.name),  java_class_name(f.domain))
         print "        }"
 
-    def printWriteProperties(c):
+    def printWritePropertiesTo(c):
         print
         print """        public void writePropertiesTo(ContentHeaderPropertyWriter writer)
             throws IOException
@@ -258,7 +258,7 @@ def genJavaApi(spec):
             print "            if (this.%s != null) { writer.write%s(this.%s); }" % (java_field_name(f.name), java_class_name(f.domain), java_field_name(f.name))
         print "        }"
 
-    def printPropertyDebug(c):
+    def printAppendArgumentDebugStringTo(c):
         appendList = [ "%s=\")\n               .append(this.%s)\n               .append(\"" 
                        % (f.name, java_field_name(f.name))
                        for f in c.fields ]
@@ -267,14 +267,14 @@ def genJavaApi(spec):
         print "            acc.append(\"(%s)\");" % ", ".join(appendList)
         print "        }"
         
-    def printClassProperties(c):
+    def printPropertiesClass(c):
         print
         print "    public static class %(className)s extends %(parentClass)s {" % {'className' : java_class_name(c.name) + 'Properties', 'parentClass' : 'com.rabbitmq.client.impl.AMQ' + java_class_name(c.name) + 'Properties'}
         #property fields
         for f in c.fields:
             print "        private %s %s;" % (java_property_type(spec, f.domain),java_field_name(f.name))
 
-        #constructor
+        #explicit constructor
         if c.fields:
             print
             consParmList = [ "%s %s" % (java_property_type(spec,f.domain),java_field_name(f.name))
@@ -286,13 +286,15 @@ def genJavaApi(spec):
                 print "            this.%s = %s;" % (java_field_name(f.name), java_field_name(f.name))
             print "        }"
 
-        #empty constructor
+        #default constructor
         print
         print "        public %sProperties() {}" % (java_class_name(c.name))
+
+        #class properties
         print "        public int getClassId() { return %i; }" % (c.index)
         print "        public String getClassName() { return \"%s\"; }" % (c.name)
 
-        #access functions
+        #accessor methods
         print
         for f in c.fields:
             print """        public %(fieldType)s get%(capFieldName)s() { return %(fieldName)s; }
@@ -301,18 +303,24 @@ def genJavaApi(spec):
             'capFieldName' : (java_field_name(f.name)[0].upper() + java_field_name(f.name)[1:]), \
             'fieldName' : java_field_name(f.name)}
 
-        printReadProperties(c)
-        printWriteProperties(c)
-        printPropertyDebug(c)
+        printReadPropertiesFrom(c)
+        printWritePropertiesTo(c)
+        printAppendArgumentDebugStringTo(c)
         print "    }"
 
+    def printPropertiesClasses():
+        for c in spec.classes:
+            if c.hasContentProperties:
+                printPropertiesClass(c)
+
     printHeader()
+    print
+    print "public interface AMQP {"
+
+    printProtocolClass()
     printConstants()
     printClassInterfaces()
-
-    for c in spec.classes:
-        if c.hasContentProperties:
-            printClassProperties(c)
+    printPropertiesClasses()
 
     print "}"
 
@@ -330,8 +338,6 @@ def genJavaImpl(spec):
         print "import com.rabbitmq.client.AMQP;"
         print "import com.rabbitmq.client.UnknownClassOrMethodId;"
         print "import com.rabbitmq.client.UnexpectedMethodError;"
-        print
-        print "public class AMQImpl implements AMQP {"
 
     def printClassMethods(spec, c):
         print
@@ -452,13 +458,13 @@ def genJavaImpl(spec):
                 print "                        return new %s(new MethodArgumentReader(in));" % (fq_name)
                 print "                    }"
             print "                    default: break;"
-            print "                }"
+            print "                } break;"
         print "        }"
         print
         print "        throw new UnknownClassOrMethodId(classId, methodId);"
         print "    }"
 
-    def printContentHeaderReader(c):
+    def printContentHeaderReader():
         print
         print "    public static AMQContentHeader readContentHeaderFrom(DataInputStream in) throws IOException {"
         print "        int classId = in.readShort();"
@@ -473,10 +479,15 @@ def genJavaImpl(spec):
         print "    }"
 
     printHeader()
+    print
+    print "public class AMQImpl implements AMQP {"
+
     for c in spec.allClasses(): printClassMethods(spec,c)
+    
     printMethodVisitor()
     printMethodArgumentReader()
-    printContentHeaderReader(c)
+    printContentHeaderReader()
+
     print "}"
 
 #--------------------------------------------------------------------------------
