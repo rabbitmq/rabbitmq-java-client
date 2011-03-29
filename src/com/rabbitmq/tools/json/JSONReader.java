@@ -51,7 +51,7 @@ public class JSONReader {
     private CharacterIterator it;
     private char c;
     private Object token;
-    private StringBuffer buf = new StringBuffer();
+    private StringBuilder buf = new StringBuilder();
 
     private char next() {
         c = it.next();

@@ -29,7 +29,7 @@ public class Host {
     {
         final BufferedReader br = new BufferedReader(new InputStreamReader(is));
         String line;
-        final StringBuffer buff = new StringBuffer();
+        final StringBuilder buff = new StringBuilder();
         while ((line = br.readLine()) != null) {
             buff.append(line);
         }

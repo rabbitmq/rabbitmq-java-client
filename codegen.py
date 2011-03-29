@@ -300,7 +300,7 @@ def genJavaApi(spec):
                        % (f.name, optionalValueClause(java_field_name(f.name), java_field_type(spec, f.domain)))
                        for f in c.fields ]
         print
-        print "        public void appendArgumentDebugStringTo(StringBuffer acc) {"
+        print "        public void appendArgumentDebugStringTo(StringBuilder acc) {"
         print "            acc.append(\"(%s)\");" % (", ".join(appendList))
         print "        }"
 
@@ -525,7 +525,7 @@ def genJavaImpl(spec):
                                % (a.name, java_field_name(a.name))
                                for a in m.arguments ]
                 print
-                print "            public void appendArgumentDebugStringTo(StringBuffer acc) {"
+                print "            public void appendArgumentDebugStringTo(StringBuilder acc) {"
                 print "                acc.append(\"(%s)\");" % ", ".join(appendList)
                 print "            }"
 
