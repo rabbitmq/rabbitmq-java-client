@@ -25,8 +25,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 
-import javax.net.SocketFactory;
-
 import com.rabbitmq.client.AMQP;
 
 /**

@@ -23,6 +23,9 @@ import java.io.IOException;
  */
 public class PossibleAuthenticationFailureException extends IOException
 {
+    /** Default for non-checking. */
+    private static final long serialVersionUID = 1L;
+
     public PossibleAuthenticationFailureException(Throwable cause)
     {
         super("Possibly caused by authentication failure");
