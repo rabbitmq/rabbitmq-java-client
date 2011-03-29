@@ -262,7 +262,8 @@ def genJavaApi(spec):
             for f in c.fields:
                 (jfName, jfType, jfClass) = (java_field_name(f.name), java_field_type(spec, f.domain), java_class_name(f.domain))
                 if jfType in java_scalar_types:
-                    print "            if (this.%sIsSet) this.%s = reader.read%s();" % (jfName, jfName, jfClass)
+                    print "            if (this.%sIsSet) { this.%s = reader.read%s(); }" % (jfName, jfName, jfClass)
+                    print "            else { this.%s = %s; }" % (jfName, java_scalar_default(jfType))
                 else:
                     print "            this.%s = %s_present ? reader.read%s() : null;" % (jfName, jfName, jfClass)
 
@@ -354,15 +355,25 @@ def genJavaApi(spec):
 
         print "        }"
 
+    def printPropertiesBuilder(c):
+        print
+        print "        public Builder builder() {"
+        print "            Builder builder = new Builder();"
+        setFieldList = [ "%s(%s)" % (fn, fn)
+                         for fn in [ java_field_name(f.name)
+                                    for f in c.fields if java_field_type(spec, f.domain) not in java_scalar_types ] ]
+        print "            builder.%s;" % ("\n                .".join(setFieldList))
+        for f in c.fields:
+            if java_field_type(spec, f.domain) in java_scalar_types:
+                fn = java_field_name(f.name)
+                print "            if (%sIsSet) { builder.%s(%s); }" % (fn, fn, fn)
+        print "            return builder;"
+        print "        }"
+
     def printPropertiesClass(c):
-        def printGetterAndSetter(fieldType, fieldName):
+        def printGetter(fieldType, fieldName):
             capFieldName = fieldName[0].upper() + fieldName[1:]
             print "        public %s get%s() { return this.%s; }" % (fieldType, capFieldName, fieldName)
-            if fieldType in java_scalar_types:
-                print "        public void set%s(%s %s)" % (capFieldName, fieldType, fieldName)
-                print "        {   this.%s = %s; this.%sIsSet = true; }" % (fieldName, fieldName, fieldName)
-            else:
-                print "        public void set%s(%s %s) { this.%s = %s; }" % (capFieldName, fieldType, fieldName, fieldName, fieldName)
 
         jClassName = java_class_name(c.name)
 
@@ -372,8 +383,8 @@ def genJavaApi(spec):
         for f in c.fields:
             (fType, fName) = (java_field_type(spec, f.domain), java_field_name(f.name))
             if fType in java_scalar_types:
-                print "        private boolean %sIsSet = false;" % (fName)
-            print "        private %s %s;" % (fType, fName)
+                print "        private final boolean %sIsSet;" % (fName)
+            print "        private final %s %s;" % (fType, fName)
 
         #explicit constructor
         if c.fields:
@@ -409,10 +420,12 @@ def genJavaApi(spec):
         print "        public int getClassId() { return %i; }" % (c.index)
         print "        public String getClassName() { return \"%s\"; }" % (c.name)
 
+        printPropertiesBuilder(c)
+        
         #accessor methods
         print
         for f in c.fields:
-            printGetterAndSetter(java_field_type(spec, f.domain), java_field_name(f.name))
+            printGetter(java_field_type(spec, f.domain), java_field_name(f.name))
 
         printWritePropertiesTo(c)
         printAppendArgumentDebugStringTo(c)

@@ -100,9 +100,7 @@ public class JsonRpcServer extends StringRpcServer {
      */
     public String handleStringCall(String requestBody, AMQP.BasicProperties replyProperties)
     {
-        replyProperties.setContentType("application/json");
         String replyBody = doCall(requestBody);
-        //System.err.println(requestBody + " --> " + replyBody);
         return replyBody;
     }
 

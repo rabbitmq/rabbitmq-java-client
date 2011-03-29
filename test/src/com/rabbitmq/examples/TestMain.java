@@ -42,7 +42,7 @@ import com.rabbitmq.utility.Utility;
 public class TestMain {
     public static void main(String[] args) throws IOException {
         // Show what version this class was compiled with, to check conformance testing
-        Class clazz = TestMain.class;
+        Class<?> clazz = TestMain.class;
         String javaVersion = System.getProperty("java.version");
         System.out.println(clazz.getName() + " : javac v" + getCompilerVersion(clazz) + " on " + javaVersion);
         try {
@@ -487,8 +487,6 @@ public class TestMain {
 
     public void tryTransaction(String queueName) throws IOException {
 
-        GetResponse c;
-
         _ch1.txSelect();
 
         //test basicReturn handling in tx context
@@ -553,7 +551,7 @@ public class TestMain {
 
 
     // utility: tell what Java compiler version a class was compiled with
-    public static String getCompilerVersion(Class clazz) throws IOException {
+    public static String getCompilerVersion(Class<?> clazz) throws IOException {
         String resourceName = "/" + clazz.getName().replace('.', '/') + ".class";
         System.out.println(resourceName);
 

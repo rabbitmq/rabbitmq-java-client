@@ -37,7 +37,7 @@ public class CLIHelper {
     }
 
     public CLIHelper(Options opts) {
-        Iterator it = opts.getOptions().iterator();
+        Iterator<?> it = opts.getOptions().iterator();
         while (it.hasNext()) {
             options.addOption((Option) it.next());
         }

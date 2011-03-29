@@ -17,10 +17,10 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.ShutdownSignalException;
 import java.io.IOException;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public class DoubleDeletion extends BrokerTestCase
 {

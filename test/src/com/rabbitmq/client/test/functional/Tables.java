@@ -53,6 +53,7 @@ public class Tables extends BrokerTestCase
         table.put("t", true);
         table.put("x", "byte".getBytes());
         table.put("V", null);
+        @SuppressWarnings("rawtypes")
         List fieldArray = new ArrayList();
         fieldArray.add(LongStringHelper.asLongString("foo"));
         fieldArray.add(123);
@@ -87,8 +88,8 @@ public class Tables extends BrokerTestCase
                            Arrays.equals((byte[])va, (byte[])vb));
             }
             else if (va instanceof List && vb instanceof List) {
-                Iterator vbi = ((List)vb).iterator();
-                for (Object vaEntry : (List)va) {
+                Iterator<?> vbi = ((List<?>)vb).iterator();
+                for (Object vaEntry : (List<?>)va) {
                     Object vbEntry = vbi.next();
                     assertEquals("arrays unequal at key " + k, vaEntry, vbEntry);
                 }

@@ -148,9 +148,7 @@ public class RpcServer {
             AMQP.BasicProperties replyProperties
                 = new AMQP.BasicProperties.Builder().correlationId(correlationId).build();
             byte[] replyBody = handleCall(request, replyProperties);
-            replyProperties.setCorrelationId(correlationId);
-            _channel.basicPublish("", replyTo,
-                                  replyProperties, replyBody);
+            _channel.basicPublish("", replyTo, replyProperties, replyBody);
         } else {
             handleCast(request);
         }

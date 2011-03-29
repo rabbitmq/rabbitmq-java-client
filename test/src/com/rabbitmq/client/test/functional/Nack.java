@@ -17,12 +17,11 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.QueueingConsumer;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.QueueingConsumer;
 
 public class Nack extends AbstractRejectTest {
 
