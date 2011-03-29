@@ -237,7 +237,7 @@ public class AMQCommand implements Command {
          * How many more bytes of content body are expected to arrive
          * from the broker.
          */
-        public long remainingBodyBytes;
+        private long remainingBodyBytes;
 
         public Assembler() {
             this.state = STATE_EXPECTING_METHOD;
@@ -275,9 +275,8 @@ public class AMQCommand implements Command {
               case STATE_EXPECTING_CONTENT_HEADER:
                   switch (f.type) {
                     case AMQP.FRAME_HEADER: {
-                        DataInputStream in = f.getInputStream();
-                        _contentHeader = AMQImpl.readContentHeaderFrom(in);
-                        this.remainingBodyBytes = _contentHeader.readFrom(in);
+                        _contentHeader = AMQImpl.readContentHeaderFrom(f.getInputStream());
+                        this.remainingBodyBytes = _contentHeader.getBodySize();
                         updateContentBodyState();
                         return completedCommand();
                     }

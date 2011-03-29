@@ -51,12 +51,22 @@ javaTypesToCheckForNull = set([
     'Date'
     ])
 
-# the types in the range of javaTypeMap must be in java_scala_types
+# the scalar types in the range of javaTypeMap must be in java_scala_types
 java_scalar_types = set([
     'int',
     'long',
     'boolean'
     ])
+javaScalarDefaultMap = {
+    'int': '0',
+    'long': '0L',
+    'boolean': 'false'
+    }
+def java_scalar_default(jtype):
+    if jtype in java_scalar_types:
+        return javaScalarDefaultMap[jtype]
+    else:
+        return 'null'
 
 # the java_scalar_types must be in the domain of javaBoxedTypeMap
 javaBoxedTypeMap = {
@@ -153,6 +163,7 @@ def genJavaApi(spec):
         printFileHeader()
         print "package com.rabbitmq.client;"
         print
+        print "import java.io.DataInputStream;"
         print "import java.io.IOException;"
         print "import java.util.Collections;"
         print "import java.util.HashMap;"
@@ -195,12 +206,8 @@ def genJavaApi(spec):
             for a in m.arguments:
                 (jfType, jfName, jfDefault) = typeNameDefault(spec, a)
 
-                if jfType == "Map<String,Object>":
-                    print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
-                    print "                {   this.%s = %s==null ? null : Collections.unmodifiableMap(new HashMap<String,Object>(%s)); return this; }" % (jfName, jfName, jfName)
-                else:
-                    print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
-                    print "                {   this.%s = %s; return this; }" % (jfName, jfName)
+                print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
+                print "                {   this.%s = %s; return this; }" % (jfName, jfName)
 
                 if jfType == "boolean":
                     print "                public Builder %s()" % (jfName)
@@ -238,27 +245,26 @@ def genJavaApi(spec):
                 print "        }"
             print "    }"
 
-    def printReadPropertiesFrom(c):
-        print
-        print "        public void readPropertiesFrom(ContentHeaderPropertyReader reader)"
-        print "            throws IOException"
-        print "        {"
+    def printReadProperties(c):
+        if c.fields:
+            for f in c.fields:
+                (jfName, jfType) = (java_field_name(f.name), java_field_type(spec, f.domain))
+                if jfType in java_scalar_types:
+                    print "            this.%sIsSet = reader.readPresence();" % (jfName)
+                else:
+                    print "            boolean %s_present = reader.readPresence();" % (jfName)
+            print
 
-        for f in c.fields:
-            (jfName, jfType) = (java_field_name(f.name), java_field_type(spec, f.domain))
-            if jfType in java_scalar_types:
-                print "            this.%sIsSet = reader.readPresence();" % (jfName)
-            else:
-                print "            boolean %s_present = reader.readPresence();" % (jfName)
         print "            reader.finishPresence();"
-        for f in c.fields:
-            (jfName, jfType, jfClass) = (java_field_name(f.name), java_field_type(spec, f.domain), java_class_name(f.domain))
-            if jfType in java_scalar_types:
-                print "            if (this.%sIsSet) this.%s = reader.read%s();" % (jfName, jfName, jfClass)
-            else:
-                print "            this.%s = %s_present ? reader.read%s() : null;" % (jfName, jfName, jfClass)
 
-        print "        }"
+        if c.fields:
+            print
+            for f in c.fields:
+                (jfName, jfType, jfClass) = (java_field_name(f.name), java_field_type(spec, f.domain), java_class_name(f.domain))
+                if jfType in java_scalar_types:
+                    print "            if (this.%sIsSet) this.%s = reader.read%s();" % (jfName, jfName, jfClass)
+                else:
+                    print "            this.%s = %s_present ? reader.read%s() : null;" % (jfName, jfName, jfClass)
 
     def printWritePropertiesTo(c):
         print
@@ -298,9 +304,53 @@ def genJavaApi(spec):
         print "        }"
 
     def printPropertiesBuilderClass(c):
+        def printBuilderSetter(fieldType, fieldName):
+            if fieldType in java_scalar_types:
+                print "            public Builder %s(%s %s)" % (fieldName, fieldType, fieldName)
+                print "            {   this.%s = %s; this.%sIsSet = true; return this; }" % (fieldName, fieldName, fieldName)
+                print "            public Builder %sUnSet() { this.%sIsSet = false; return this; }" % (fieldName, fieldName)
+                if fieldType == "boolean":
+                    print "            public Builder %s()" % (fieldName)
+                    print "            {   return this.%s(true); }" % (fieldName)
+            else:
+                print "            public Builder %s(%s %s)" % (fieldName, fieldType, fieldName)
+                print "            {   this.%s = %s; return this; }" % (fieldName, fieldName)
+                if fieldType == "LongString":
+                    print "            public Builder %s(String %s)" % (fieldName, fieldName)
+                    print "            {   return this.%s(LongStringHelper.asLongString(%s)); }" % (fieldName, fieldName)
+
+        def ctorParm(field):
+            (fType, fName) = (java_field_type(spec, field.domain), java_field_name(field.name))
+            if fType in java_scalar_types:
+                return "%sIsSet ? %s : null" % (fName, fName)
+            else:
+                return fName
+
+        print
         print "        public static final class Builder {"
+        # fields
         for f in c.fields:
-            print "            private %s %s;" % (java_field_type(spec, f.domain),java_field_name(f.name))
+            (fType, fName) = (java_field_type(spec, f.domain), java_field_name(f.name))
+            if fType in java_scalar_types:
+                print "            private boolean %sIsSet = false;" % (fName)
+            print "            private %s %s;" % (fType, fName)
+        # ctor
+        print
+        print "            public Builder() {};"
+        # setters
+        print
+        for f in c.fields:
+            printBuilderSetter(java_field_type(spec, f.domain), java_field_name(f.name))
+        print
+        jClassName = java_class_name(c.name)
+        # build()
+        objName = "%sProperties" % (jClassName)
+        ctor_parm_list = [ ctorParm(f) for f in c.fields ]
+        print "            public %s build() {" % (objName)
+        print "                return new %s" % (objName)
+        print "                    ( %s" % ("\n                    , ".join(ctor_parm_list))
+        print "                    );"
+        print "            }"
 
         print "        }"
 
@@ -309,10 +359,10 @@ def genJavaApi(spec):
             capFieldName = fieldName[0].upper() + fieldName[1:]
             print "        public %s get%s() { return this.%s; }" % (fieldType, capFieldName, fieldName)
             if fieldType in java_scalar_types:
-                print "        public void set%s(%s %s)" % (capFieldName, fieldType, fieldName) 
-                print "        { this.%s = %s; this.%sIsSet = true; }" % (fieldName, fieldName, fieldName) 
+                print "        public void set%s(%s %s)" % (capFieldName, fieldType, fieldName)
+                print "        {   this.%s = %s; this.%sIsSet = true; }" % (fieldName, fieldName, fieldName)
             else:
-                print "        public void set%s(%s %s) { this.%s = %s; }" % (capFieldName, fieldType, fieldName, fieldName, fieldName) 
+                print "        public void set%s(%s %s) { this.%s = %s; }" % (capFieldName, fieldType, fieldName, fieldName, fieldName)
 
         jClassName = java_class_name(c.name)
 
@@ -320,7 +370,7 @@ def genJavaApi(spec):
         print "    public static class %sProperties extends com.rabbitmq.client.impl.AMQ%sProperties {" % (jClassName, jClassName)
         #property fields
         for f in c.fields:
-            (fType, fName) = (java_field_type(spec, f.domain),java_field_name(f.name))
+            (fType, fName) = (java_field_type(spec, f.domain), java_field_name(f.name))
             if fType in java_scalar_types:
                 print "        private boolean %sIsSet = false;" % (fName)
             print "        private %s %s;" % (fType, fName)
@@ -328,23 +378,32 @@ def genJavaApi(spec):
         #explicit constructor
         if c.fields:
             print
-            consParmList = [ "%s %s" % (java_boxed_type(java_field_type(spec,f.domain)),java_field_name(f.name))
+            consParmList = [ "%s %s" % (java_boxed_type(java_field_type(spec,f.domain)), java_field_name(f.name))
                              for f in c.fields ]
             print "        public %sProperties(" % (jClassName)
             print "            %s)" % (",\n            ".join(consParmList))
             print "        {"
             for f in c.fields:
-                (fType, fName) = (java_field_type(spec, f.domain),java_field_name(f.name))
+                (fType, fName) = (java_field_type(spec, f.domain), java_field_name(f.name))
                 if fType in java_scalar_types:
-                    print "            if (%s == null) { this.%sIsSet = false; }" % (fName, fName)
+                    print "            if (%s == null) { this.%sIsSet = false; this.%s = %s; }" % (fName, fName, fName, java_scalar_default(fType))
                     print "            else { this.%sIsSet = true; this.%s = %s; }" % (fName, fName, fName)
                 else:
-                    print "            this.%s = %s;" % (fName, fName)
+                    if fType == "Map<String,Object>":
+                        print "            this.%s = %s==null ? null : Collections.unmodifiableMap(new HashMap<String,Object>(%s));" % (fName, fName, fName)
+                    else:
+                        print "            this.%s = %s;" % (fName, fName)
             print "        }"
 
-        #default constructor
+        #datainputstream constructor
         print
-        print "        public %sProperties() {}" % (jClassName)
+        print "        public %sProperties(DataInputStream in) throws IOException {" % (jClassName)
+        print "            super(in);"
+        print "            ContentHeaderPropertyReader reader = new ContentHeaderPropertyReader(in);"
+        
+        printReadProperties(c)
+        
+        print "        }"
 
         #class properties
         print "        public int getClassId() { return %i; }" % (c.index)
@@ -355,7 +414,6 @@ def genJavaApi(spec):
         for f in c.fields:
             printGetterAndSetter(java_field_type(spec, f.domain), java_field_name(f.name))
 
-        printReadPropertiesFrom(c)
         printWritePropertiesTo(c)
         printAppendArgumentDebugStringTo(c)
         printPropertiesBuilderClass(c)
@@ -387,6 +445,8 @@ def genJavaImpl(spec):
         print
         print "import java.io.IOException;"
         print "import java.io.DataInputStream;"
+        print "import java.util.Collections;"
+        print "import java.util.HashMap;"
         print "import java.util.Map;"
         print
         print "import com.rabbitmq.client.AMQP;"
@@ -413,11 +473,16 @@ def genJavaImpl(spec):
                 fieldsToNullCheckInCons = nullCheckedFields(spec, m)
 
                 for f in fieldsToNullCheckInCons:
-                    print "                if(%s == null)" % (f)
+                    print "                if (%s == null)" % (f)
                     print "                    throw new IllegalStateException(\"Invalid configuration: '%s' must be non-null.\");" % (f)
 
                 for a in m.arguments:
-                    print "                this.%s = %s;" % (java_field_name(a.name), java_field_name(a.name))
+                    (jfType, jfName) = (java_field_type(spec, a.domain), java_field_name(a.name))
+                    if jfType == "Map<String,Object>":
+                        print "                this.%s = %s==null ? null : Collections.unmodifiableMap(new HashMap<String,Object>(%s));" % (jfName, jfName, jfName)
+                    else:
+                        print "                this.%s = %s;" % (jfName, jfName)
+
                 print "            }"
 
                 consArgs = [ "rdr.read%s()" % (java_class_name(spec.resolveDomain(a.domain))) for a in m.arguments ]
@@ -525,11 +590,11 @@ def genJavaImpl(spec):
         print "        switch (classId) {"
         for c in spec.allClasses():
             if c.fields:
-                print "            case %s: return new %sProperties();" %(c.index, (java_class_name(c.name)))
+                print "            case %s: return new %sProperties(in);" %(c.index, (java_class_name(c.name)))
         print "            default: break;"
         print "        }"
         print
-        print "        throw new UnknownClassOrMethodId(classId, -1);"
+        print "        throw new UnknownClassOrMethodId(classId);"
         print "    }"
 
     printHeader()

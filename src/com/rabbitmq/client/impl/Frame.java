@@ -280,7 +280,7 @@ public class Frame {
     }
 
     /** Computes the AMQP wire-protocol length of a protocol-encoded field-value. */
-    public static long fieldValueSize(Object value)
+    private static long fieldValueSize(Object value)
         throws UnsupportedEncodingException
     {
         long acc = 1; // for the type tag
@@ -300,7 +300,9 @@ public class Frame {
             acc += 8;
         }
         else if(value instanceof Map) {
-            acc += 4 + tableSize((Map<String, Object>) value);
+            @SuppressWarnings("unchecked")
+            Map<String,Object> map = (Map<String,Object>) value;
+            acc += 4 + tableSize(map);
         }
         else if (value instanceof Byte) {
             acc += 1;
@@ -346,14 +348,14 @@ public class Frame {
     }
   
     /** Computes the AMQP wire-protocol length of a protocol-encoded long string. */
-    public static int longStrSize(String str)
+    private static int longStrSize(String str)
         throws UnsupportedEncodingException
     {
         return str.getBytes("utf-8").length + 4;
     }
 
     /** Computes the AMQP wire-protocol length of a protocol-encoded short string. */
-    public static int shortStrSize(String str)
+    private static int shortStrSize(String str)
         throws UnsupportedEncodingException
     {
         return str.getBytes("utf-8").length + 1;

@@ -48,7 +48,7 @@ public class ServiceDescription {
         JSONUtil.tryFill(this, rawServiceDescription);
     }
 
-    public ServiceDescription(Class klass) {
+    public ServiceDescription(Class<?> klass) {
         this.procedures = new HashMap<String, ProcedureDescription>();
         for (Method m: klass.getMethods()) {
             ProcedureDescription proc = new ProcedureDescription(m);

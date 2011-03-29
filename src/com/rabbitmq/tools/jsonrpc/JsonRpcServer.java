@@ -45,7 +45,7 @@ public class JsonRpcServer extends StringRpcServer {
     /** Holds the JSON-RPC service description for this client. */
     public ServiceDescription serviceDescription;
     /** The interface this server implements. */
-    public Class interfaceClass;
+    public Class<?> interfaceClass;
     /** The instance backing this server. */
     public Object interfaceInstance;
 
@@ -59,15 +59,15 @@ public class JsonRpcServer extends StringRpcServer {
      * @throws IOException if something goes wrong during an AMQP operation
      */
     public JsonRpcServer(Channel channel,
-                         Class interfaceClass,
+                         Class<?> interfaceClass,
                          Object interfaceInstance)
         throws IOException
     {
-	super(channel);
+        super(channel);
         init(interfaceClass, interfaceInstance);
     }
 
-    private void init(Class interfaceClass, Object interfaceInstance)
+    private void init(Class<?> interfaceClass, Object interfaceInstance)
     {
         this.interfaceClass = interfaceClass;
         this.interfaceInstance = interfaceInstance;
@@ -87,11 +87,11 @@ public class JsonRpcServer extends StringRpcServer {
      */
     public JsonRpcServer(Channel channel,
                          String queueName,
-                         Class interfaceClass,
+                         Class<?> interfaceClass,
                          Object interfaceInstance)
         throws IOException
     {
-	super(channel, queueName);
+        super(channel, queueName);
         init(interfaceClass, interfaceInstance);
     }
 
@@ -113,12 +113,12 @@ public class JsonRpcServer extends StringRpcServer {
      */
     public String doCall(String requestBody)
     {
-        Map<String, Object> request;
         Object id;
         String method;
         Object[] params;
         try {
-            request = (Map) new JSONReader().read(requestBody);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> request = (Map<String,Object>) new JSONReader().read(requestBody);
             if (request == null) {
                 return errorResponse(null, 400, "Bad Request", null);
             }
@@ -128,7 +128,8 @@ public class JsonRpcServer extends StringRpcServer {
 
             id = request.get("id");
             method = (String) request.get("method");
-            params = ((List) request.get("params")).toArray();
+            List<?> parmList = (List<?>) request.get("params");
+            params = parmList.toArray();
         } catch (ClassCastException cce) {
             // Bogus request!
             return errorResponse(null, 400, "Bad Request", null);
@@ -204,6 +205,6 @@ public class JsonRpcServer extends StringRpcServer {
      * service built from interfaceClass at construction time.
      */
     public ServiceDescription getServiceDescription() {
-	return serviceDescription;
+        return serviceDescription;
     }
 }

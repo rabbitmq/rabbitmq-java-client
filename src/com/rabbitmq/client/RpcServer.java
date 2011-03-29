@@ -145,7 +145,8 @@ public class RpcServer {
         String replyTo = requestProperties.getReplyTo();
         if (correlationId != null && replyTo != null)
         {
-            AMQP.BasicProperties replyProperties = new AMQP.BasicProperties();
+            AMQP.BasicProperties replyProperties
+                = new AMQP.BasicProperties.Builder().correlationId(correlationId).build();
             byte[] replyBody = handleCall(request, replyProperties);
             replyProperties.setCorrelationId(correlationId);
             _channel.basicPublish("", replyTo,

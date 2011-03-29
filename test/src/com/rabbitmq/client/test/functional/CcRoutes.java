@@ -33,14 +33,14 @@ public class CcRoutes extends BrokerTestCase  {
     static private String[] queues = new String[]{"queue1", "queue2", "queue3"};
     protected String exDirect = "direct_cc_exchange";
     protected String exTopic = "topic_cc_exchange";
-    protected BasicProperties props;
+    protected BasicProperties.Builder propsBuilder;
     protected Map<String, Object> headers;
     protected List<String> ccList;
     protected List<String> bccList;
 
     @Override protected void setUp() throws IOException {
         super.setUp();
-        props = new BasicProperties();
+        propsBuilder = new BasicProperties.Builder();
         headers = new HashMap<String, Object>();
         ccList = new ArrayList<String>();
         bccList = new ArrayList<String>();
@@ -106,8 +106,8 @@ public class CcRoutes extends BrokerTestCase  {
 
     public void testNonArray() throws IOException {
         headers.put("CC", 0);
-        props.setHeaders(headers);
-        channel.basicPublish("", "queue1", props, new byte[0]);
+        propsBuilder.headers(headers);
+        channel.basicPublish("", "queue1", propsBuilder.build(), new byte[0]);
         try {
             expect(new String[] {}, false);
             fail();
@@ -123,8 +123,8 @@ public class CcRoutes extends BrokerTestCase  {
         if (bcc != null) {
             headers.put("BCC", bccList);
         }
-        props.setHeaders(headers);
-        channel.basicPublish(ex, to, props, new byte[0]);
+        propsBuilder.headers(headers);
+        channel.basicPublish(ex, to, propsBuilder.build(), new byte[0]);
     }
 
     private void expect(String[] expectedQueues, boolean usedCc) throws IOException {

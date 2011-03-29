@@ -23,14 +23,12 @@ import java.io.IOException;
 
 public class UserIDHeader extends BrokerTestCase {
     public void testValidUserId() throws IOException {
-        AMQP.BasicProperties properties = new AMQP.BasicProperties();
-        properties.setUserId("guest");
+        AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder().userId("guest").build();
         channel.basicPublish("amq.fanout", "", properties, "".getBytes());
     }
 
     public void testInvalidUserId() {
-        AMQP.BasicProperties properties = new AMQP.BasicProperties();
-        properties.setUserId("not the guest, honest");
+        AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder().userId("not the guest, honest").build();
         try {
             channel.basicPublish("amq.fanout", "", properties, "".getBytes());
             channel.queueDeclare(); // To flush the channel

@@ -163,53 +163,56 @@ public class Routing extends BrokerTestCase
         spec.put("x-match", "any");
         channel.queueBind(Q2, "amq.match", "", spec);
 
-        AMQP.BasicProperties props = new AMQP.BasicProperties();
+        AMQP.BasicProperties.Builder props = new AMQP.BasicProperties.Builder();
 
         channel.basicPublish("amq.match", "", null, "0".getBytes());
-        channel.basicPublish("amq.match", "", props, "0b".getBytes());
+        channel.basicPublish("amq.match", "", props.build(), "0b".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", "12345");
-        channel.basicPublish("amq.match", "", props, "1".getBytes());
+        Map<String, Object> map = new HashMap<String, Object>();
+        props.headers(map);
+        
+        map.clear();
+        map.put("h1", "12345");
+        channel.basicPublish("amq.match", "", props.build(), "1".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", 12345);
-        channel.basicPublish("amq.match", "", props, "1b".getBytes());
+        map.clear();
+        map.put("h1", "12345");
+        channel.basicPublish("amq.match", "", props.build(), "1b".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h2", "bar");
-        channel.basicPublish("amq.match", "", props, "2".getBytes());
+        map.clear();
+        map.put("h2", "bar");
+        channel.basicPublish("amq.match", "", props.build(), "2".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", "12345");
-        props.getHeaders().put("h2", "bar");
-        channel.basicPublish("amq.match", "", props, "3".getBytes());
+        map.clear();
+        map.put("h1", "12345");
+        map.put("h2", "bar");
+        channel.basicPublish("amq.match", "", props.build(), "3".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", "12345");
-        props.getHeaders().put("h2", "bar");
-        props.getHeaders().put("h3", null);
-        channel.basicPublish("amq.match", "", props, "4".getBytes());
+        map.clear();
+        map.put("h1", "12345");
+        map.put("h2", "bar");
+        map.put("h3", null);
+        channel.basicPublish("amq.match", "", props.build(), "4".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", "12345");
-        props.getHeaders().put("h2", "quux");
-        channel.basicPublish("amq.match", "", props, "5".getBytes());
+        map.clear();
+        map.put("h1", "12345");
+        map.put("h2", "quux");
+        channel.basicPublish("amq.match", "", props.build(), "5".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", "zot");
-        props.getHeaders().put("h2", "quux");
-        props.getHeaders().put("h3", null);
-        channel.basicPublish("amq.match", "", props, "6".getBytes());
+        map.clear();
+        map.put("h1", "zot");
+        map.put("h2", "quux");
+        map.put("h3", null);
+        channel.basicPublish("amq.match", "", props.build(), "6".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h3", null);
-        channel.basicPublish("amq.match", "", props, "7".getBytes());
+        map.clear();
+        map.put("h3", null);
+        channel.basicPublish("amq.match", "", props.build(), "7".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", "zot");
-        props.getHeaders().put("h2", "quux");
-        channel.basicPublish("amq.match", "", props, "8".getBytes());
+        map.clear();
+        map.put("h1", "zot");
+        map.put("h2", "quux");
+        channel.basicPublish("amq.match", "", props.build(), "8".getBytes());
 
         checkGet(Q1, true); // 4
         checkGet(Q1, false);
@@ -221,6 +224,7 @@ public class Routing extends BrokerTestCase
         checkGet(Q2, true); // 5
         checkGet(Q2, true); // 6
         checkGet(Q2, true); // 7
+        checkGet(Q2, true); // 8
         checkGet(Q2, false);
     }
 
