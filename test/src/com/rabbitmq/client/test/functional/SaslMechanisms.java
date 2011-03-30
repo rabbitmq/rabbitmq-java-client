@@ -20,18 +20,19 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.SaslConfig;
+import com.rabbitmq.client.SaslMechanism;
+import com.rabbitmq.client.impl.LongString;
+import com.rabbitmq.client.impl.LongStringHelper;
 import com.rabbitmq.client.test.BrokerTestCase;
 
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
 import java.io.IOException;
 import java.util.Arrays;
 
 public class SaslMechanisms extends BrokerTestCase {
     private String[] mechanisms;
 
-    public class Client implements SaslClient {
-        public Client(String name, byte[][] responses) {
+    public class Mechanism implements SaslMechanism {
+        public Mechanism(String name, byte[][] responses) {
             this.name = name;
             this.responses = responses;
         }
@@ -40,36 +41,13 @@ public class SaslMechanisms extends BrokerTestCase {
         private byte[][] responses;
         private int counter;
 
-        public String getMechanismName() {
+        public String getName() {
             return name;
         }
 
-        public boolean hasInitialResponse() {
-            return true;
-        }
-
-        public byte[] evaluateChallenge(byte[] bytes) throws SaslException {
+        public LongString handleChallenge(LongString challenge, ConnectionFactory factory) {
             counter ++;
-            return responses[counter-1];
-        }
-
-        public boolean isComplete() {
-            return counter >= responses.length;
-        }
-
-        public byte[] unwrap(byte[] bytes, int i, int i1) throws SaslException {
-            throw new UnsupportedOperationException();
-        }
-
-        public byte[] wrap(byte[] bytes, int i, int i1) throws SaslException {
-            throw new UnsupportedOperationException();
-        }
-
-        public Object getNegotiatedProperty(String s) {
-            throw new UnsupportedOperationException();
-        }
-
-        public void dispose() throws SaslException {
+            return LongStringHelper.asLongString(responses[counter-1]);
         }
     }
 
@@ -82,9 +60,9 @@ public class SaslMechanisms extends BrokerTestCase {
             this.responses = responses;
         }
 
-        public SaslClient getSaslClient(String[] mechanisms) throws SaslException {
+        public SaslMechanism getSaslMechanism(String[] mechanisms) {
             SaslMechanisms.this.mechanisms = mechanisms;
-            return new Client(name, responses);
+            return new Mechanism(name, responses);
         }
     }
 
