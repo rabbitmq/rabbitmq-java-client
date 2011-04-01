@@ -328,6 +328,9 @@ public class Frame {
         else if(value instanceof List) {
             acc += 4 + arraySize((List<?>)value);
         }
+        else if(value instanceof Object[]) {
+            acc += 4 + arraySize((Object[])value);
+        }
         else if(value == null) {
         }
         else {
@@ -338,6 +341,17 @@ public class Frame {
 
     /** Computes the AMQP wire-protocol length of an encoded field-array */
     public static long arraySize(List<?> values)
+        throws UnsupportedEncodingException
+    {
+        long acc = 0;
+        for (Object value : values) {
+            acc += fieldValueSize(value);
+        }
+        return acc;
+    }
+
+    /** Computes the AMQP wire-protocol length of an encoded field-array */
+    public static long arraySize(Object[] values)
         throws UnsupportedEncodingException
     {
         long acc = 0;
