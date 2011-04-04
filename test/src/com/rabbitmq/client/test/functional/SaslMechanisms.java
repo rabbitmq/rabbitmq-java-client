@@ -32,21 +32,21 @@ public class SaslMechanisms extends BrokerTestCase {
     private String[] mechanisms;
 
     public class Mechanism implements SaslMechanism {
-        public Mechanism(String name, byte[][] responses) {
-            this.name = name;
-            this.responses = responses;
-        }
-
         private String name;
         private byte[][] responses;
         private int counter;
 
+        public Mechanism(String name, byte[][] responses) {
+            this.name = name;
+            this.responses = responses;
+        }
+        
         public String getName() {
             return name;
         }
 
         public LongString handleChallenge(LongString challenge, ConnectionFactory factory) {
-            counter ++;
+            counter++;
             return LongStringHelper.asLongString(responses[counter-1]);
         }
     }
