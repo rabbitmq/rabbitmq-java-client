@@ -273,7 +273,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
 
         LongString challenge = null;
-        LongString response = sm.handleChallenge(LongStringHelper.asLongString(""), _factory);
+        LongString response = sm.handleChallenge(null, _factory);
 
         AMQP.Connection.Tune connTune = null;
         do {
