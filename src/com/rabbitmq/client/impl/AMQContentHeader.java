@@ -58,12 +58,12 @@ public abstract class AMQContentHeader implements ContentHeader {
     public abstract void writePropertiesTo(ContentHeaderPropertyWriter writer) throws IOException;
 
     /** Public API - {@inheritDoc} */
-    public void appendPropertyDebugStringTo(StringBuffer acc) {
-        acc.append("(?)");
+    public void appendPropertyDebugStringTo(Appendable acc) {
+        try { acc.append("(?)"); } catch(IOException ioe) { }
     }
 
     @Override public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("#contentHeader<").append(getClassName()).append(">");
         this.appendPropertyDebugStringTo(sb);
         return sb.toString();
