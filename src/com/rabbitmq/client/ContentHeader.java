@@ -38,5 +38,5 @@ public interface ContentHeader extends Cloneable {
      * A debugging utility - enable properties to be appended to a string buffer for use as trace messages.
      * @param buffer a place to append the properties as a string
      */
-    public void appendPropertyDebugStringTo(StringBuilder buffer);
+    public void appendPropertyDebugStringTo(Appendable buffer);
 }
