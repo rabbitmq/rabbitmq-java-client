@@ -51,31 +51,20 @@ javaTypesToCheckForNull = set([
     'Date'
     ])
 
-# the scalar types in the range of javaTypeMap must be in java_scala_types
-java_scalar_types = set([
+# the scalar types in the range of javaTypeMap must be in javaScalarTypes
+javaScalarTypes = set([
     'int',
     'long',
     'boolean'
     ])
-javaScalarDefaultMap = {
-    'int': '0',
-    'long': '0L',
-    'boolean': 'false'
-    }
-def java_scalar_default(jtype):
-    if jtype in java_scalar_types:
-        return javaScalarDefaultMap[jtype]
-    else:
-        return 'null'
-
-# the java_scalar_types must be in the domain of javaBoxedTypeMap
+# the javaScalarTypes must be in the domain of javaBoxedTypeMap
 javaBoxedTypeMap = {
     'int': 'Integer',
     'long': 'Long',
     'boolean': 'Boolean'
     }
 def java_boxed_type(jtype):
-    if jtype in java_scalar_types:
+    if jtype in javaScalarTypes:
         return javaBoxedTypeMap[jtype]
     else:
         return jtype
@@ -248,11 +237,7 @@ def genJavaApi(spec):
     def printReadProperties(c):
         if c.fields:
             for f in c.fields:
-                (jfName, jfType) = (java_field_name(f.name), java_field_type(spec, f.domain))
-                if jfType in java_scalar_types:
-                    print "            this.%sIsSet = reader.readPresence();" % (jfName)
-                else:
-                    print "            boolean %s_present = reader.readPresence();" % (jfName)
+                print "            boolean %s_present = reader.readPresence();" % (java_field_name(f.name))
             print
 
         print "            reader.finishPresence();"
@@ -260,44 +245,29 @@ def genJavaApi(spec):
         if c.fields:
             print
             for f in c.fields:
-                (jfName, jfType, jfClass) = (java_field_name(f.name), java_field_type(spec, f.domain), java_class_name(f.domain))
-                if jfType in java_scalar_types:
-                    print "            if (this.%sIsSet) { this.%s = reader.read%s(); }" % (jfName, jfName, jfClass)
-                    print "            else { this.%s = %s; }" % (jfName, java_scalar_default(jfType))
-                else:
-                    print "            this.%s = %s_present ? reader.read%s() : null;" % (jfName, jfName, jfClass)
+                (jfName, jfClass) = (java_field_name(f.name), java_class_name(f.domain))
+                print "            this.%s = %s_present ? reader.read%s() : null;" % (jfName, jfName, jfClass)
 
     def printWritePropertiesTo(c):
         print
         print "        public void writePropertiesTo(ContentHeaderPropertyWriter writer)"
         print "            throws IOException"
         print "        {"
-        for f in c.fields:
-            (jfName, jfType) = (java_field_name(f.name), java_field_type(spec, f.domain))
-            if jfType in java_scalar_types:
-                print "            writer.writePresence(this.%sIsSet);" % (jfName)
-            else:
-                print "            writer.writePresence(this.%s != null);" % (jfName)
-
+        if c.fields:
+            for f in c.fields:
+                print "            writer.writePresence(this.%s != null);" % (java_field_name(f.name))
+            print
         print "            writer.finishPresence();"
-
-        for f in c.fields:
-            (jfName, jfType, jfClass) = (java_field_name(f.name), java_field_type(spec, f.domain), java_class_name(f.domain))
-            if jfType in java_scalar_types:
-                print "            if (this.%sIsSet) writer.write%s(this.%s);" % (jfName, jfClass, jfName)
-            else:
+        if c.fields:
+            print
+            for f in c.fields:
+                (jfName, jfClass) = (java_field_name(f.name), java_class_name(f.domain))
                 print "            if (this.%s != null) writer.write%s(this.%s);" % (jfName, jfClass, jfName)
         print "        }"
 
     def printAppendArgumentDebugStringTo(c):
-        def optionalValueClause(jField, jType):
-            if jType in java_scalar_types:
-                return "this.%sIsSet ? String.valueOf(this.%s) : \"unset\"" % (jField, jField)
-            else:
-                return "this.%s" % (jField)
-
-        appendList = [ "%s=\")\n               .append(%s)\n               .append(\"" 
-                       % (f.name, optionalValueClause(java_field_name(f.name), java_field_type(spec, f.domain)))
+        appendList = [ "%s=\")\n               .append(this.%s)\n               .append(\"" 
+                       % (f.name, java_field_name(f.name))
                        for f in c.fields ]
         print
         print "        public void appendArgumentDebugStringTo(StringBuffer acc) {"
@@ -306,35 +276,21 @@ def genJavaApi(spec):
 
     def printPropertiesBuilderClass(c):
         def printBuilderSetter(fieldType, fieldName):
-            if fieldType in java_scalar_types:
-                print "            public Builder %s(%s %s)" % (fieldName, fieldType, fieldName)
-                print "            {   this.%s = %s; this.%sIsSet = true; return this; }" % (fieldName, fieldName, fieldName)
-                print "            public Builder %sUnSet() { this.%sIsSet = false; return this; }" % (fieldName, fieldName)
-                if fieldType == "boolean":
-                    print "            public Builder %s()" % (fieldName)
-                    print "            {   return this.%s(true); }" % (fieldName)
-            else:
-                print "            public Builder %s(%s %s)" % (fieldName, fieldType, fieldName)
-                print "            {   this.%s = %s; return this; }" % (fieldName, fieldName)
-                if fieldType == "LongString":
-                    print "            public Builder %s(String %s)" % (fieldName, fieldName)
-                    print "            {   return this.%s(LongStringHelper.asLongString(%s)); }" % (fieldName, fieldName)
-
-        def ctorParm(field):
-            (fType, fName) = (java_field_type(spec, field.domain), java_field_name(field.name))
-            if fType in java_scalar_types:
-                return "%sIsSet ? %s : null" % (fName, fName)
-            else:
-                return fName
+            print "            public Builder %s(%s %s)" % (fieldName, java_boxed_type(fieldType), fieldName)
+            print "            {   this.%s = %s; return this; }" % (fieldName, fieldName)
+            if fieldType == "boolean":
+                print "            public Builder %s()" % (fieldName)
+                print "            {   return this.%s(true); }" % (fieldName)
+            elif fieldType == "LongString":
+                print "            public Builder %s(String %s)" % (fieldName, fieldName)
+                print "            {   return this.%s(LongStringHelper.asLongString(%s)); }" % (fieldName, fieldName)
 
         print
         print "        public static final class Builder {"
         # fields
         for f in c.fields:
             (fType, fName) = (java_field_type(spec, f.domain), java_field_name(f.name))
-            if fType in java_scalar_types:
-                print "            private boolean %sIsSet = false;" % (fName)
-            print "            private %s %s;" % (fType, fName)
+            print "            private %s %s;" % (java_boxed_type(fType), fName)
         # ctor
         print
         print "            public Builder() {};"
@@ -346,7 +302,7 @@ def genJavaApi(spec):
         jClassName = java_class_name(c.name)
         # build()
         objName = "%sProperties" % (jClassName)
-        ctor_parm_list = [ ctorParm(f) for f in c.fields ]
+        ctor_parm_list = [ java_field_name(f.name) for f in c.fields ]
         print "            public %s build() {" % (objName)
         print "                return new %s" % (objName)
         print "                    ( %s" % ("\n                    , ".join(ctor_parm_list))
@@ -360,20 +316,24 @@ def genJavaApi(spec):
         print "        public Builder builder() {"
         print "            Builder builder = new Builder();"
         setFieldList = [ "%s(%s)" % (fn, fn)
-                         for fn in [ java_field_name(f.name)
-                                    for f in c.fields if java_field_type(spec, f.domain) not in java_scalar_types ] ]
+                         for fn in [ java_field_name(f.name) for f in c.fields ]
+                         ]
         print "            builder.%s;" % ("\n                .".join(setFieldList))
-        for f in c.fields:
-            if java_field_type(spec, f.domain) in java_scalar_types:
-                fn = java_field_name(f.name)
-                print "            if (%sIsSet) { builder.%s(%s); }" % (fn, fn, fn)
         print "            return builder;"
         print "        }"
 
     def printPropertiesClass(c):
         def printGetter(fieldType, fieldName):
             capFieldName = fieldName[0].upper() + fieldName[1:]
-            print "        public %s get%s() { return this.%s; }" % (fieldType, capFieldName, fieldName)
+            print "        public %s get%s() { return this.%s; }" % (java_boxed_type(fieldType), capFieldName, fieldName)
+        def printSetter(fieldType, fieldName):
+            capFieldName = fieldName[0].upper() + fieldName[1:]
+            print "        @Deprecated"
+            if fieldType == "Map<String,Object>":
+                print "        public void set%s(%s %s)" % (capFieldName, fieldType, fieldName)
+                print "        { this.%s = %s==null ? null : Collections.unmodifiableMap(new HashMap<String,Object>(%s)); }" % (fieldName, fieldName, fieldName)
+            else:
+                print "        public void set%s(%s %s) { this.%s = %s; }" % (capFieldName, java_boxed_type(fieldType), fieldName, fieldName, fieldName)
 
         jClassName = java_class_name(c.name)
 
@@ -381,10 +341,8 @@ def genJavaApi(spec):
         print "    public static class %sProperties extends com.rabbitmq.client.impl.AMQ%sProperties {" % (jClassName, jClassName)
         #property fields
         for f in c.fields:
-            (fType, fName) = (java_field_type(spec, f.domain), java_field_name(f.name))
-            if fType in java_scalar_types:
-                print "        private final boolean %sIsSet;" % (fName)
-            print "        private final %s %s;" % (fType, fName)
+            (fType, fName) = (java_boxed_type(java_field_type(spec, f.domain)), java_field_name(f.name))
+            print "        private %s %s;" % (fType, fName)
 
         #explicit constructor
         if c.fields:
@@ -396,14 +354,10 @@ def genJavaApi(spec):
             print "        {"
             for f in c.fields:
                 (fType, fName) = (java_field_type(spec, f.domain), java_field_name(f.name))
-                if fType in java_scalar_types:
-                    print "            if (%s == null) { this.%sIsSet = false; this.%s = %s; }" % (fName, fName, fName, java_scalar_default(fType))
-                    print "            else { this.%sIsSet = true; this.%s = %s; }" % (fName, fName, fName)
+                if fType == "Map<String,Object>":
+                    print "            this.%s = %s==null ? null : Collections.unmodifiableMap(new HashMap<String,Object>(%s));" % (fName, fName, fName)
                 else:
-                    if fType == "Map<String,Object>":
-                        print "            this.%s = %s==null ? null : Collections.unmodifiableMap(new HashMap<String,Object>(%s));" % (fName, fName, fName)
-                    else:
-                        print "            this.%s = %s;" % (fName, fName)
+                    print "            this.%s = %s;" % (fName, fName)
             print "        }"
 
         #datainputstream constructor
@@ -425,7 +379,9 @@ def genJavaApi(spec):
         #accessor methods
         print
         for f in c.fields:
-            printGetter(java_field_type(spec, f.domain), java_field_name(f.name))
+            (jType, jName) = (java_field_type(spec, f.domain), java_field_name(f.name))
+            printGetter(jType, jName)
+            printSetter(jType, jName)
 
         printWritePropertiesTo(c)
         printAppendArgumentDebugStringTo(c)

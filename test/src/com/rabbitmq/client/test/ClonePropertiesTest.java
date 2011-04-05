@@ -44,7 +44,7 @@ public class ClonePropertiesTest extends TestCase {
         assertEquals(MessageProperties.MINIMAL_PERSISTENT_BASIC.getDeliveryMode(),
                      ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
                        .getDeliveryMode());
-        assertEquals(2,
+        assertEquals(new Integer(2),
                      ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
                        .getDeliveryMode());
     }
