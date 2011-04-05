@@ -53,8 +53,7 @@ public class Tables extends BrokerTestCase
         table.put("t", true);
         table.put("x", "byte".getBytes());
         table.put("V", null);
-        @SuppressWarnings("rawtypes")
-        List fieldArray = new ArrayList();
+        List<Object> fieldArray = new ArrayList<Object>();
         fieldArray.add(LongStringHelper.asLongString("foo"));
         fieldArray.add(123);
         table.put("A", fieldArray);

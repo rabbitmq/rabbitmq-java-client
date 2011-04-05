@@ -293,15 +293,19 @@ def genJavaApi(spec):
         def optionalValueClause(jField, jType):
             if jType in java_scalar_types:
                 return "this.%sIsSet ? String.valueOf(this.%s) : \"unset\"" % (jField, jField)
-            else:
+            elif jType == "String":
                 return "this.%s" % (jField)
+            else:
+                return "String.valueOf(this.%s)" % (jField)
 
         appendList = [ "%s=\")\n               .append(%s)\n               .append(\"" 
                        % (f.name, optionalValueClause(java_field_name(f.name), java_field_type(spec, f.domain)))
                        for f in c.fields ]
         print
-        print "        public void appendArgumentDebugStringTo(StringBuilder acc) {"
-        print "            acc.append(\"(%s)\");" % (", ".join(appendList))
+        print "        public void appendArgumentDebugStringTo(Appendable acc) {"
+        print "            try {"
+        print "                acc.append(\"(%s)\");" % (", ".join(appendList))
+        print "            } catch(IOException _) { }"
         print "        }"
 
     def printPropertiesBuilderClass(c):
@@ -521,12 +525,21 @@ def genJavaImpl(spec):
                     return "false"
 
             def argument_debug_string():
-                appendList = [ "%s=\")\n                   .append(this.%s)\n                   .append(\"" 
-                               % (a.name, java_field_name(a.name))
+                def appendFieldValue(a):
+                    (jName, jType) = (java_field_name(a.name), java_field_type(spec, a.domain))
+                    if jType == "String":
+                        return "this.%s" % (jName)
+                    else:
+                        return "String.valueOf(this.%s)" % (jName)
+
+                appendList = [ "%s=\")\n                   .append(%s)\n                   .append(\"" 
+                               % (a.name, appendFieldValue(a))
                                for a in m.arguments ]
                 print
-                print "            public void appendArgumentDebugStringTo(StringBuilder acc) {"
-                print "                acc.append(\"(%s)\");" % ", ".join(appendList)
+                print "            public void appendArgumentDebugStringTo(Appendable acc) {"
+                print "                try {"
+                print "                    acc.append(\"(%s)\");" % ", ".join(appendList)
+                print "                } catch(IOException _) { }"
                 print "            }"
 
             def write_arguments():

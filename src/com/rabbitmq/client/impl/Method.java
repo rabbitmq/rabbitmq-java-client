@@ -63,8 +63,8 @@ public abstract class Method implements com.rabbitmq.client.Method {
      * Public API - debugging utility
      * @param buffer the buffer to append debug data to
      */
-    public void appendArgumentDebugStringTo(StringBuilder buffer) {
-        buffer.append("(?)");
+    public void appendArgumentDebugStringTo(Appendable buffer) {
+        try { buffer.append("(?)");} catch(IOException ioe) { }
     }
 
     @Override public String toString() {
