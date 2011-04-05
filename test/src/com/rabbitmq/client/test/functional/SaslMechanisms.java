@@ -40,7 +40,7 @@ public class SaslMechanisms extends BrokerTestCase {
             this.name = name;
             this.responses = responses;
         }
-        
+
         public String getName() {
             return name;
         }
