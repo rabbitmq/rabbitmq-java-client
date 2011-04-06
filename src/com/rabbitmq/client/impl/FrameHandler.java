@@ -73,6 +73,13 @@ public interface FrameHandler {
     void writeFrame(Frame frame) throws IOException;
 
     /**
+     * Flush the underlying data connection.
+     *
+     * @throws IOException if there is a problem accessing the connection
+     */
+    void flush() throws IOException;
+
+    /**
      * Close the underlying data connection (complaint not permitted).
      */
     void close();

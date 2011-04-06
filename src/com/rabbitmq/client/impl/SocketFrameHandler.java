@@ -152,12 +152,16 @@ public class SocketFrameHandler implements FrameHandler {
     public void writeFrame(Frame frame) throws IOException {
         synchronized (_outputStream) {
             frame.writeTo(_outputStream);
-            _outputStream.flush();
         }
+    }
+
+    public void flush() throws IOException {
+        _outputStream.flush();
     }
 
     public void close() {
         try {
+            flush();
             _socket.close();
         } catch (IOException ioe) {
             // Ignore.

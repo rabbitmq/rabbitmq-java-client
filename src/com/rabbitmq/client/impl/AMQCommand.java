@@ -183,6 +183,9 @@ public class AMQCommand implements Command {
                 connection.writeFrame(frame);
             }
         }
+
+        connection.flush();
+
     }
 
     @Override public String toString() {
