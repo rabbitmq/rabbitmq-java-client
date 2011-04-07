@@ -16,56 +16,40 @@
 
 package com.rabbitmq.client;
 
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
+import com.rabbitmq.client.impl.ExternalMechanism;
+import com.rabbitmq.client.impl.PlainMechanism;
+
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
- * Default implementation of SaslConfig that uses the standard Java
- * algorithm for selecting a sasl client.
- * @see com.rabbitmq.client.ConnectionFactory
+ * Default SASL configuration. Uses one of our built-in mechanisms.
  */
 public class DefaultSaslConfig implements SaslConfig {
-    public static final String[] DEFAULT_PREFERRED_MECHANISMS = new String[]{"PLAIN"};
+    private final String mechanism;
 
-    private final ConnectionFactory factory;
-    private final List<String> mechanisms;
-    private final CallbackHandler callbackHandler;
-
-    /**
-     * Create a DefaultSaslConfig which only wants to use PLAIN.
-     *
-     * @param factory - the ConnectionFactory to use to obtain username, password and host
-     */
-    public DefaultSaslConfig(ConnectionFactory factory) {
-        this(factory, DEFAULT_PREFERRED_MECHANISMS);
-    }
+    public static final DefaultSaslConfig PLAIN = new DefaultSaslConfig("PLAIN");
+    public static final DefaultSaslConfig EXTERNAL = new DefaultSaslConfig("EXTERNAL");
 
     /**
-     * Create a DefaultSaslConfig with a list of mechanisms to use.
+     * Create a DefaultSaslConfig with an explicit mechanism to use.
      *
-     * @param factory - the ConnectionFactory to use to obtain username, password and host
-     * @param mechanisms - a list of SASL mechanisms to use (in descending order of preference)
+     * @param mechanism - a SASL mechanism to use
      */
-    public DefaultSaslConfig(ConnectionFactory factory, String[] mechanisms) {
-        this.factory = factory;
-        callbackHandler = new UsernamePasswordCallbackHandler(factory);
-        this.mechanisms = Arrays.asList(mechanisms);
+    private DefaultSaslConfig(String mechanism) {
+        this.mechanism = mechanism;
     }
 
-    public SaslClient getSaslClient(String[] serverMechanisms) throws SaslException {
+    public SaslMechanism getSaslMechanism(String[] serverMechanisms) {
         Set<String> server = new HashSet<String>(Arrays.asList(serverMechanisms));
 
-        for (String mechanism: mechanisms) {
-            if (server.contains(mechanism)) {
-                SaslClient saslClient = Sasl.createSaslClient(new String[]{mechanism},
-                         null, "AMQP", factory.getHost(), null, callbackHandler);
-                if (saslClient != null) return saslClient;
+        if (server.contains(mechanism)) {
+            if (mechanism.equals("PLAIN")) {
+                return new PlainMechanism();
+            }
+            else if (mechanism.equals("EXTERNAL")) {
+                return new ExternalMechanism();
             }
         }
         return null;

@@ -16,11 +16,27 @@
 
 package com.rabbitmq.client;
 
+import com.rabbitmq.client.impl.LongString;
+
+import java.io.IOException;
+
 /**
- * This interface represents a hook to allow you to control how exactly
- * a sasl client is selected during authentication.
- * @see com.rabbitmq.client.ConnectionFactory
+ * Our own view of a SASL authentication mechanism, introduced to remove a
+ * dependency on javax.security.sasl.
  */
-public interface SaslConfig {
-    SaslMechanism getSaslMechanism(String[] mechanisms);
+public interface SaslMechanism {
+    /**
+     * The name of this mechanism (e.g. PLAIN)
+     * @return
+     */
+    String getName();
+
+    /**
+     * Handle one round of challenge-response
+     * @param challenge the challenge this round, or null on first round.
+     * @param factory for reference to e.g. username and password.
+     * @return response
+     * @throws IOException
+     */
+    LongString handleChallenge(LongString challenge, ConnectionFactory factory);
 }
