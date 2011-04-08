@@ -30,6 +30,7 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(ExclusiveQueueDurability.class);
         suite.addTestSuite(AlternateExchangeEquivalence.class);
         suite.addTestSuite(MemoryAlarms.class);
+        suite.addTestSuite(Firehose.class);
         return suite;
     }
 }
