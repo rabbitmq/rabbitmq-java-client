@@ -20,5 +20,8 @@ public class TransientExchangeDurableQueue extends ClusteredTestBase {
 
         basicPublishVolatile("transientX", "");
         assertDelivered("durableQ", 1);
+
+        channel.exchangeDelete("transientX");
+        channel.queueDelete("durableQ");
     }
 }
