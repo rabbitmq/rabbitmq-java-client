@@ -35,22 +35,6 @@ import java.io.IOException;
  *
  */
 public class DurableBindingLifecycle extends BindingLifecycleBase {
-    @Override
-    protected void restart() throws IOException {
-        if (clusteredConnection != null) {
-            clusteredConnection.abort();
-            clusteredConnection = null;
-            clusteredChannel = null;
-            alternateConnection = null;
-            alternateChannel = null;
-
-            Host.executeCommand("cd ../rabbitmq-test; make restart-secondary-node");
-        }
-        tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
-        setUp();
-    }
-
     /**
      *   Tests whether durable bindings are correctly recovered.
      */

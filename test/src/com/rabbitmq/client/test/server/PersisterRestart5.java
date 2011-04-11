@@ -17,10 +17,11 @@
 
 package com.rabbitmq.client.test.server;
 
+import com.rabbitmq.client.test.BrokerTestCase;
+
 import java.io.IOException;
 
-public class PersisterRestart5 extends RestartBase
-{
+public class PersisterRestart5 extends BrokerTestCase {
 
     private static final String Q1 = "Restart5One";
     private static final String Q2 = "Restart5Two";

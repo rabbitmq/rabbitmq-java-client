@@ -21,9 +21,9 @@ import java.io.IOException;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.test.BrokerTestCase;
 
-public class PersisterRestart1 extends RestartBase
-{
+public class PersisterRestart1 extends BrokerTestCase {
 
     private static final String Q = "Restart";
 

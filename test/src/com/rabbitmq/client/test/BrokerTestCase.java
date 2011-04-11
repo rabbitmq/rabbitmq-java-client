@@ -19,6 +19,7 @@ package com.rabbitmq.client.test;
 
 import java.io.IOException;
 
+import com.rabbitmq.tools.Host;
 import junit.framework.TestCase;
 
 import com.rabbitmq.client.Channel;
@@ -227,4 +228,15 @@ public class BrokerTestCase extends TestCase
     channel.queueDelete(q);
   }
 
+    protected void restart()
+        throws IOException
+    {
+        tearDown();
+        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+        }
+        setUp();
+    }
 }
