@@ -42,7 +42,6 @@ public class Firehose extends BrokerTestCase {
 
         Map<String,Object> delHeaders = deliver.getProps().getHeaders();
         checkHeaders(delHeaders);
-        assertNotNull(delHeaders.get("delivery_tag"));
         assertNotNull(delHeaders.get("redelivered"));
 
         assertEquals(msg.getBody().length, publish.getBody().length);
