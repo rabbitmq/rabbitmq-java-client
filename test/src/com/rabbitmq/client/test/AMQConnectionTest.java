@@ -167,6 +167,10 @@ public class AMQConnectionTest extends TestCase {
         public int getPort() {
             return -1;
         }
+
+        public void flush() throws IOException {
+            // no need to implement this: don't bother writing the frame
+        }
     }
 
     /** Mock frame handler to facilitate testing. */
