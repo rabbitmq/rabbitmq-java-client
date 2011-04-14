@@ -134,13 +134,14 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
     }
 
     /**
-     * Test that when we have a transient exchange bound to a durable queue and the
-     * durable queue is on a cluster node that restarts, we do not lose the binding.
-     * See bug 24009.
+     * Test that when we have a transient exchange bound to a durable
+     * queue and the durable queue is on a cluster node that restarts,
+     * we do not lose the binding.  See bug 24009.
      */
     public void testTransientExchangeDurableQueue() throws IOException {
-        // This test depends on the second node in the cluster to keep the transient X alive
-        if (clusteredChannel != null) {
+        // This test depends on the second node in the cluster to keep
+        // the transient X alive
+        if (clusteredConnection != null) {
             channel.exchangeDeclare("transientX", "fanout", false);
             declareAndBindDurableQueue("durableQ", "transientX", "");
 
