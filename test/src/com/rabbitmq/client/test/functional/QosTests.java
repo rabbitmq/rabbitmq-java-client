@@ -17,7 +17,6 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,7 +35,6 @@ import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 
-import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Envelope;
 
 public class QosTests extends BrokerTestCase
