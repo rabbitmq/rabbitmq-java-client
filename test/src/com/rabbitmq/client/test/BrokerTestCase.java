@@ -19,7 +19,6 @@ package com.rabbitmq.client.test;
 
 import java.io.IOException;
 
-import com.rabbitmq.tools.Host;
 import junit.framework.TestCase;
 
 import com.rabbitmq.client.Channel;
@@ -40,7 +39,7 @@ public class BrokerTestCase extends TestCase
     public Connection connection;
     public Channel channel;
 
-    protected void setUp()
+    public void setUp()
         throws IOException
     {
         openConnection();
@@ -49,7 +48,7 @@ public class BrokerTestCase extends TestCase
         createResources();
     }
 
-    protected void tearDown()
+    public void tearDown()
         throws IOException
     {
         closeChannel();

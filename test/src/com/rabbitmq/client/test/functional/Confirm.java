@@ -38,7 +38,7 @@ public class Confirm extends BrokerTestCase
     private SortedSet<Long> unconfirmedSet;
 
     @Override
-    protected void setUp() throws IOException {
+    public void setUp() throws IOException {
         super.setUp();
         unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());

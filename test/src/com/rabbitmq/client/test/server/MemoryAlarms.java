@@ -32,7 +32,7 @@ public class MemoryAlarms extends BrokerTestCase {
     private Channel channel2;
 
     @Override
-    protected void setUp() throws IOException {
+    public void setUp() throws IOException {
         connectionFactory.setRequestedHeartbeat(1);
         super.setUp();
         if (connection2 == null) {
@@ -42,7 +42,7 @@ public class MemoryAlarms extends BrokerTestCase {
     }
 
     @Override
-    protected void tearDown() throws IOException {
+    public void tearDown() throws IOException {
         if (channel2 != null) {
             channel2.abort();
             channel2 = null;

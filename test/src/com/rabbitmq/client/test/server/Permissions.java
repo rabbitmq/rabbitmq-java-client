@@ -48,14 +48,14 @@ public class Permissions extends BrokerTestCase
         connectionFactory = factory;
     }
 
-    protected void setUp()
+    public void setUp()
         throws IOException
     {
         addRestrictedAccount();
         super.setUp();
     }
 
-    protected void tearDown()
+    public void tearDown()
         throws IOException
     {
         super.tearDown();

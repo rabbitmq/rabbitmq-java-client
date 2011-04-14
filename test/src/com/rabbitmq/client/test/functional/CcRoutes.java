@@ -38,7 +38,7 @@ public class CcRoutes extends BrokerTestCase  {
     protected List<String> ccList;
     protected List<String> bccList;
 
-    @Override protected void setUp() throws IOException {
+    @Override public void setUp() throws IOException {
         super.setUp();
         props = new BasicProperties();
         headers = new HashMap<String, Object>();

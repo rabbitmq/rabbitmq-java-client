@@ -16,11 +16,11 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.functional.RabbitBrokerTestCase;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 
-public class PersisterRestart6 extends RabbitBrokerTestCase {
+public class PersisterRestart6 extends BrokerTestCase {
 
     private static final String q = "Restart6";
     
@@ -29,10 +29,10 @@ public class PersisterRestart6 extends RabbitBrokerTestCase {
         basicPublishPersistent("a".getBytes(), q);
         basicPublishPersistent("b".getBytes(), q);
         basicPublishPersistent("c".getBytes(), q);
-        restart();
+        ServerUtil.restart(this);
         assertTrue(new String(basicGet(q).getBody()).equals("a"));
-        restart();
-        restart();
+        ServerUtil.restart(this);
+        ServerUtil.restart(this);
         assertTrue(new String(basicGet(q).getBody()).equals("b"));
         assertTrue(new String(basicGet(q).getBody()).equals("c"));
         deleteQueue(q);

@@ -36,20 +36,19 @@ import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 
-import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Envelope;
 
 public class QosTests extends BrokerTestCase
 {
 
-    protected void setUp()
+    public void setUp()
         throws IOException
     {
         openConnection();
         openChannel();
     }
 
-    protected void tearDown()
+    public void tearDown()
         throws IOException
     {
         closeChannel();

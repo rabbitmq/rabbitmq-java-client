@@ -31,7 +31,7 @@ abstract class AbstractRejectTest extends BrokerTestCase {
     protected Channel secondaryChannel;
 
     @Override
-    protected void setUp()
+    public void setUp()
         throws IOException
     {
         super.setUp();
@@ -40,7 +40,7 @@ abstract class AbstractRejectTest extends BrokerTestCase {
     }
 
     @Override
-    protected void tearDown()
+    public void tearDown()
         throws IOException
     {
         if (secondaryChannel != null) {

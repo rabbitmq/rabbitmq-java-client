@@ -21,22 +21,22 @@ import java.io.IOException;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.functional.RabbitBrokerTestCase;
+import com.rabbitmq.client.test.BrokerTestCase;
 
-public class PersisterRestart1 extends RabbitBrokerTestCase {
+public class PersisterRestart1 extends BrokerTestCase {
 
     private static final String Q = "Restart";
 
     private Channel channel2;
 
-    protected void setUp()
+    public void setUp()
         throws IOException
     {
         super.setUp();
         channel2 = connection.createChannel();
     }
 
-    protected void tearDown()
+    public void tearDown()
         throws IOException
     {
         if (channel2 != null) {
@@ -85,7 +85,7 @@ public class PersisterRestart1 extends RabbitBrokerTestCase {
         openChannel();
         exercisePersister();
 
-        restart();
+        ServerUtil.restart(this);
 
         assertDelivered(Q, 4, true);
         deleteQueue(Q);

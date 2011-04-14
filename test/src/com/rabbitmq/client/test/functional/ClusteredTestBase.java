@@ -21,14 +21,13 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
 
 /**
  *  Base class for tests which would like a second, clustered node.
  */
-public class ClusteredTestBase extends RabbitBrokerTestCase {
+public class ClusteredTestBase extends BrokerTestCase {
     // If these are non-null then the secondary node is up and clustered
     public Channel clusteredChannel;
     public Connection clusteredConnection;
@@ -121,25 +120,5 @@ public class ClusteredTestBase extends RabbitBrokerTestCase {
             alternateConnection = null;
         }
         super.closeConnection();
-    }
-
-    @Override
-    protected void restart() throws IOException {
-        if (clusteredConnection != null) {
-            clusteredConnection.abort();
-            clusteredConnection = null;
-            clusteredChannel = null;
-            alternateConnection = null;
-            alternateChannel = null;
-
-            Host.executeCommand("cd ../rabbitmq-test; make restart-secondary-node");
-        }
-        restartPrimary();
-    }
-
-    protected void restartPrimary() throws IOException {
-        tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
-        setUp();
     }
 }

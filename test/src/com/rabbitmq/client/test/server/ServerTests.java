@@ -27,7 +27,6 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(DurableBindingLifecycle.class);
         suite.addTestSuite(EffectVisibilityCrossNodeTest.class);
         suite.addTestSuite(ExclusiveQueueDurability.class);
-        suite.addTestSuite(TransientExchangeDurableQueue.class);
         suite.addTestSuite(AlternateExchangeEquivalence.class);
         suite.addTestSuite(MemoryAlarms.class);
         suite.addTest(PersisterRestartTests.suite());

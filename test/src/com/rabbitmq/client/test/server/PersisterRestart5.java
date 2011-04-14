@@ -17,11 +17,11 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.functional.RabbitBrokerTestCase;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 
-public class PersisterRestart5 extends RabbitBrokerTestCase {
+public class PersisterRestart5 extends BrokerTestCase {
 
     private static final String Q1 = "Restart5One";
     private static final String Q2 = "Restart5Two";
@@ -56,7 +56,7 @@ public class PersisterRestart5 extends RabbitBrokerTestCase {
         // and hopefully delivered
         channel.txCommit();
 
-        restart();
+        ServerUtil.restart(this);
         
         assertDelivered(Q1, 3);
         assertDelivered(Q2, 3);

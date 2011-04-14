@@ -108,6 +108,10 @@ public class BindingLifecycleBase extends ClusteredTestBase {
     }
   }
 
+
+  protected void restart() throws IOException {
+  }
+
   protected void sendRoutable(Binding binding) throws IOException {
     channel.basicPublish(binding.x, binding.k, null, payload);
     GetResponse response = channel.basicGet(binding.q, true);

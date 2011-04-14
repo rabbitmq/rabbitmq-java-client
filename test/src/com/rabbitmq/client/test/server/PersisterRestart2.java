@@ -17,11 +17,11 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.functional.RabbitBrokerTestCase;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 
-public class PersisterRestart2 extends RabbitBrokerTestCase {
+public class PersisterRestart2 extends BrokerTestCase {
 
     private static final String Q1 = "Restart2One";
     private static final String Q2 = "Restart2Two";
@@ -44,7 +44,7 @@ public class PersisterRestart2 extends RabbitBrokerTestCase {
         exercisePersister(Q1);
         exercisePersister(Q2);
         
-        restart();
+        ServerUtil.restart(this);
         
         assertDelivered(Q1, 2);
         assertDelivered(Q2, 2);

@@ -17,11 +17,11 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.functional.RabbitBrokerTestCase;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 
-public class PersisterRestart3 extends RabbitBrokerTestCase {
+public class PersisterRestart3 extends BrokerTestCase {
 
     private static final String Q1 = "Restart3One";
     private static final String Q2 = "Restart3Two";
@@ -50,7 +50,7 @@ public class PersisterRestart3 extends RabbitBrokerTestCase {
         // That's one persistent and one volatile per queue.
         channel.txCommit();
 
-        restart();
+        ServerUtil.restart(this);
         
         assertDelivered(Q1, 1);
         assertDelivered(Q2, 1);
