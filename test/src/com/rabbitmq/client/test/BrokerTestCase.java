@@ -227,16 +227,4 @@ public class BrokerTestCase extends TestCase
   protected void deleteQueue(String q) throws IOException {
     channel.queueDelete(q);
   }
-
-    protected void restart()
-        throws IOException
-    {
-        tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-        }
-        setUp();
-    }
 }

@@ -16,11 +16,11 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.functional.RabbitBrokerTestCase;
 
 import java.io.IOException;
 
-public class PersisterRestart6 extends BrokerTestCase {
+public class PersisterRestart6 extends RabbitBrokerTestCase {
 
     private static final String q = "Restart6";
     

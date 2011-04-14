@@ -10,18 +10,19 @@ import java.io.IOException;
  * See bug 24009.
  */
 public class TransientExchangeDurableQueue extends ClusteredTestBase {
-
     public void testTransientExchangeDurableQueue() throws IOException {
-        channel.exchangeDeclare("transientX", "fanout", false);
-        channel.queueDeclare("durableQ", true, false, false, null);
-        channel.queueBind("durableQ", "transientX", "");
-        
-        restartPrimary();
+        // This test depends on the second node in the cluster to keep the transient X alive
+        if (clusteredChannel != null) {
+            channel.exchangeDeclare("transientX", "fanout", false);
+            declareAndBindDurableQueue("durableQ", "transientX", "");
 
-        basicPublishVolatile("transientX", "");
-        assertDelivered("durableQ", 1);
+            restartPrimary();
 
-        channel.exchangeDelete("transientX");
-        channel.queueDelete("durableQ");
+            basicPublishVolatile("transientX", "");
+            assertDelivered("durableQ", 1);
+
+            deleteExchange("transientX");
+            deleteQueue("durableQ");
+        }
     }
 }

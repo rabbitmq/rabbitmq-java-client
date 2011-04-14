@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  *  Base class for tests which would like a second, clustered node.
  */
-public class ClusteredTestBase extends BrokerTestCase {
+public class ClusteredTestBase extends RabbitBrokerTestCase {
     // If these are non-null then the secondary node is up and clustered
     public Channel clusteredChannel;
     public Connection clusteredConnection;
@@ -134,9 +134,7 @@ public class ClusteredTestBase extends BrokerTestCase {
 
             Host.executeCommand("cd ../rabbitmq-test; make restart-secondary-node");
         }
-        tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
-        setUp();
+        restartPrimary();
     }
 
     protected void restartPrimary() throws IOException {
