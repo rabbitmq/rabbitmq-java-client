@@ -46,6 +46,10 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
 
             Host.executeCommand("cd ../rabbitmq-test; make restart-secondary-node");
         }
+        restartPrimary();
+    }
+
+    private void restartPrimary() throws IOException {
         tearDown();
         Host.executeCommand("cd ../rabbitmq-test; make restart-app");
         setUp();
@@ -129,5 +133,24 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
         deleteQueue(Q);
     }
 
+    /**
+     * Test that when we have a transient exchange bound to a durable queue and the
+     * durable queue is on a cluster node that restarts, we do not lose the binding.
+     * See bug 24009.
+     */
+    public void testTransientExchangeDurableQueue() throws IOException {
+        // This test depends on the second node in the cluster to keep the transient X alive
+        if (clusteredChannel != null) {
+            channel.exchangeDeclare("transientX", "fanout", false);
+            declareAndBindDurableQueue("durableQ", "transientX", "");
 
+            restartPrimary();
+
+            basicPublishVolatile("transientX", "");
+            assertDelivered("durableQ", 1);
+
+            deleteExchange("transientX");
+            deleteQueue("durableQ");
+        }
+    }
 }
