@@ -44,8 +44,7 @@ public class PerQueueTTLPublisher {
         channel.queueBind(queue, exchange, queue, null);
 
         // send a message
-        AMQP.BasicProperties props = new AMQP.BasicProperties();
-        props.setDeliveryMode(2);
+        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().deliveryMode(2).build();
         for(int x = 0; x < 10; x++) {
             channel.basicPublish(exchange, queue, props, ("Msg [" + x + "]").getBytes());
         }

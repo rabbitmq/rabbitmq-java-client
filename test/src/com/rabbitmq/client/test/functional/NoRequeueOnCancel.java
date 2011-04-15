@@ -40,11 +40,10 @@ public class NoRequeueOnCancel extends BrokerTestCase
         channel.basicPublish("", Q, null, "1".getBytes());
 
         QueueingConsumer c;
-        QueueingConsumer.Delivery d;
 
         c = new QueueingConsumer(channel);
         String consumerTag = channel.basicConsume(Q, false, c);
-        d = c.nextDelivery();
+        c.nextDelivery();
         channel.basicCancel(consumerTag);
 
         assertNull(channel.basicGet(Q, true));

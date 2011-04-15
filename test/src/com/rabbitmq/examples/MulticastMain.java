@@ -24,11 +24,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.concurrent.Semaphore;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.Semaphore;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -38,19 +38,17 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.AMQP.Queue;
-import com.rabbitmq.client.QueueingConsumer.Delivery;
 
 
 public class MulticastMain {
@@ -81,7 +79,7 @@ public class MulticastMain {
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
-            List flags           = lstArg(cmd, 'f');
+            List<?> flags        = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
 
@@ -204,7 +202,7 @@ public class MulticastMain {
         return Integer.parseInt(cmd.getOptionValue(opt, Integer.toString(def)));
     }
 
-    private static List lstArg(CommandLine cmd, char opt) {
+    private static List<?> lstArg(CommandLine cmd, char opt) {
         String[] vals = cmd.getOptionValues('f');
         if (vals == null) {
             vals = new String[] {};
@@ -241,7 +239,7 @@ public class MulticastMain {
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
         public Producer(Channel channel, String exchangeName, String id,
-                        List flags, int txSize,
+                        List<?> flags, int txSize,
                         long interval, int rateLimit, int minMsgSize, int timeLimit,
                         long confirm)
             throws IOException {
@@ -458,7 +456,7 @@ public class MulticastMain {
 		    totalMsgCount++;
 
                     DataInputStream d = new DataInputStream(new ByteArrayInputStream(delivery.getBody()));
-                    int msgSeq = d.readInt();
+                    d.readInt();
                     long msgNano = d.readLong();
                     long nano = System.nanoTime();
 

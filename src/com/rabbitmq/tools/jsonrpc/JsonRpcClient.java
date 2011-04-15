@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.tools.jsonrpc;
 
 import java.io.IOException;
@@ -81,7 +80,8 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
         throws JsonRpcException
     {
 	if (reply.containsKey("error")) {
-            Map map = (Map) reply.get("error");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) reply.get("error");
             // actually a Map<String, Object>
             throw new JsonRpcException(map);
         }
@@ -114,7 +114,8 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
         }
 
         //System.out.println(requestStr + " --->\n---> " + replyStr);
-	Map<String, Object> map = (Map) (new JSONReader().read(replyStr));
+	@SuppressWarnings("unchecked")
+    Map<String, Object> map = (Map<String, Object>) (new JSONReader().read(replyStr));
 	return checkReply(map);
     }
 
@@ -132,7 +133,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     /**
      * Public API - gets a dynamic proxy for a particular interface class.
      */
-    public Object createProxy(Class klass)
+    public Object createProxy(Class<?> klass)
         throws IllegalArgumentException
     {
         return Proxy.newProxyInstance(klass.getClassLoader(),
@@ -213,7 +214,8 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     public void retrieveServiceDescription()
 	throws IOException, JsonRpcException
     {
-	Map<String, Object> rawServiceDescription = (Map) call("system.describe", null);
+	@SuppressWarnings("unchecked")
+    Map<String, Object> rawServiceDescription = (Map<String, Object>) call("system.describe", null);
 	//System.out.println(new JSONWriter().write(rawServiceDescription));
 	this.serviceDescription = new ServiceDescription(rawServiceDescription);
     }

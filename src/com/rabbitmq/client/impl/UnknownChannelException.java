@@ -18,6 +18,8 @@
 package com.rabbitmq.client.impl;
 
 class UnknownChannelException extends RuntimeException {
+    /** Default for non-checking. */
+    private static final long serialVersionUID = 1L;
     private final int channelNumber;
 
     public UnknownChannelException(int channelNumber) {

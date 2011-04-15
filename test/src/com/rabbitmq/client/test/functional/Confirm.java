@@ -48,7 +48,7 @@ public class Confirm extends BrokerTestCase
                 }
 
                 public void handleNack(long seqNo, boolean multiple) {
-                    Confirm.this.fail("got a nack");
+                    fail("got a nack");
                 }
             });
         channel.confirmSelect();
@@ -184,7 +184,7 @@ public class Confirm extends BrokerTestCase
         for (long i = 0; i < NUM_MESSAGES; i++) {
             GetResponse resp =
                 channel.basicGet("confirm-test-noconsumer", false);
-            long dtag = resp.getEnvelope().getDeliveryTag();
+            resp.getEnvelope().getDeliveryTag();
             // not acking
         }
 

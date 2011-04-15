@@ -136,26 +136,26 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         returnListener = listener;
     }
 
-    /** Returns the current FlowListener. */
+    /** Returns the current {@link FlowListener}. */
     public FlowListener getFlowListener() {
         return flowListener;
     }
 
     /**
-     * Sets the current FlowListener.
+     * Sets the current {@link FlowListener}.
      * A null argument is interpreted to mean "do not use a flow listener".
      */
     public void setFlowListener(FlowListener listener) {
         flowListener = listener;
     }
 
-    /** Returns the current ConfirmkListener. */
+    /** Returns the current {@link ConfirmListener}. */
     public ConfirmListener getConfirmListener() {
         return confirmListener;
     }
 
     /**
-     * Sets the current ConfirmListener.
+     * Sets the current {@link ConfirmListener}.
      * A null argument is interpreted to mean "do not use a confirm listener".
      */
     public void setConfirmListener(ConfirmListener listener) {
@@ -242,7 +242,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             if (method instanceof Basic.Deliver) {
                 Basic.Deliver m = (Basic.Deliver) method;
 
-                Consumer callback = _consumers.get(m.consumerTag);
+                Consumer callback = _consumers.get(m.getConsumerTag());
                 if (callback == null) {
                     if (defaultConsumer == null) {
                         // No handler set. We should blow up as this message
@@ -257,12 +257,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     }
                 }
 
-                Envelope envelope = new Envelope(m.deliveryTag,
-                                                 m.redelivered,
-                                                 m.exchange,
-                                                 m.routingKey);
+                Envelope envelope = new Envelope(m.getDeliveryTag(),
+                                                 m.getRedelivered(),
+                                                 m.getExchange(),
+                                                 m.getRoutingKey());
                 try {
-                    callback.handleDelivery(m.consumerTag,
+                    callback.handleDelivery(m.getConsumerTag(),
                                             envelope,
                                             (BasicProperties) command.getContentHeader(),
                                             command.getContentBody());
@@ -270,7 +270,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     _connection.getExceptionHandler().handleConsumerException(this,
                                                                               ex,
                                                                               callback,
-                                                                              m.consumerTag,
+                                                                              m.getConsumerTag(),
                                                                               "handleDelivery");
                 }
                 return true;
@@ -279,10 +279,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 if (l != null) {
                     Basic.Return basicReturn = (Basic.Return) method;
                     try {
-                        l.handleReturn(basicReturn.replyCode,
-                                            basicReturn.replyText,
-                                            basicReturn.exchange,
-                                            basicReturn.routingKey,
+                        l.handleReturn(basicReturn.getReplyCode(),
+                                            basicReturn.getReplyText(),
+                                            basicReturn.getExchange(),
+                                            basicReturn.getRoutingKey(),
                                             (BasicProperties)
                                             command.getContentHeader(),
                                             command.getContentBody());
@@ -295,14 +295,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             } else if (method instanceof Channel.Flow) {
                 Channel.Flow channelFlow = (Channel.Flow) method;
                 synchronized (_channelMutex) {
-                    _blockContent = !channelFlow.active;
-                    transmit(new Channel.FlowOk(channelFlow.active));
+                    _blockContent = !channelFlow.getActive();
+                    transmit(new Channel.FlowOk(!_blockContent));
                     _channelMutex.notifyAll();
                 }
                 FlowListener l = getFlowListener();
                 if (l != null) {
                     try {
-                        l.handleFlow(channelFlow.active);
+                        l.handleFlow(channelFlow.getActive());
                     } catch (Throwable ex) {
                         _connection.getExceptionHandler().handleFlowListenerException(this, ex);
                     }
@@ -341,18 +341,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return false;
             } else if (method instanceof Basic.Cancel) {
                 Basic.Cancel m = (Basic.Cancel)method;
-                Consumer callback = _consumers.remove(m.consumerTag);
+                String consumerTag = m.getConsumerTag();
+                Consumer callback = _consumers.remove(consumerTag);
                 if (callback == null) {
                     callback = defaultConsumer;
                 }
                 if (callback != null) {
                     try {
-                        callback.handleCancel(m.getConsumerTag());
+                        callback.handleCancel(consumerTag);
                     } catch (Throwable ex) {
                         _connection.getExceptionHandler().handleConsumerException(this,
                                                                                   ex,
                                                                                   callback,
-                                                                                  m.getConsumerTag(),
+                                                                                  consumerTag,
                                                                                   "handleCancel");
                     }
                 }
@@ -711,13 +712,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
         if (method instanceof Basic.GetOk) {
             Basic.GetOk getOk = (Basic.GetOk)method;
-            Envelope envelope = new Envelope(getOk.deliveryTag,
-                                             getOk.redelivered,
-                                             getOk.exchange,
-                                             getOk.routingKey);
+            Envelope envelope = new Envelope(getOk.getDeliveryTag(),
+                                             getOk.getRedelivered(),
+                                             getOk.getExchange(),
+                                             getOk.getRoutingKey());
             BasicProperties props = (BasicProperties)replyCommand.getContentHeader();
             byte[] body = replyCommand.getContentBody();
-            int messageCount = getOk.messageCount;
+            int messageCount = getOk.getMessageCount();
             return new GetResponse(envelope, props, body, messageCount);
         } else if (method instanceof Basic.GetEmpty) {
             return null;
@@ -777,7 +778,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     {
         BlockingRpcContinuation<String> k = new BlockingRpcContinuation<String>() {
             public String transformReply(AMQCommand replyCommand) {
-                String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).consumerTag;
+                String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).getConsumerTag();
                 _consumers.put(actualConsumerTag, callback);
                 // We need to call back inside the connection thread
                 // in order avoid races with 'deliver' commands
@@ -896,7 +897,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Public API - {@inheritDoc} */
     public Channel.FlowOk flow(final boolean a) throws IOException {
-        return (Channel.FlowOk) exnWrappingRpc(new Channel.Flow() {{active = a;}}).getMethod();
+        return (Channel.FlowOk) exnWrappingRpc(new Channel.Flow(a)).getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -908,5 +909,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public long getNextPublishSeqNo() {
         return nextPublishSeqNo;
     }
-    
+
+    public void asyncRpc(com.rabbitmq.client.Method method) throws IOException {
+        // This cast should eventually go
+        transmit((com.rabbitmq.client.impl.Method)method);
+    }
+
+    public com.rabbitmq.client.Method rpc(com.rabbitmq.client.Method method) throws IOException {
+        return exnWrappingRpc((com.rabbitmq.client.impl.Method)method).getMethod();
+    }
+
 }

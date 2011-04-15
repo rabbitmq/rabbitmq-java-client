@@ -17,7 +17,6 @@
 package com.rabbitmq.client.impl;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -218,8 +217,9 @@ public class AMQCommand implements Command {
         }
         int actualLength = s.toByteArray().length;
         if (EMPTY_CONTENT_BODY_FRAME_SIZE != actualLength) {
-            throw new AssertionError("Internal error: EMPTY_CONTENT_BODY_FRAME_SIZE is " + "incorrect - defined as " + EMPTY_CONTENT_BODY_FRAME_SIZE
-                    + ", where the computed value is in fact " + actualLength);
+            throw new AssertionError("Internal error: expected EMPTY_CONTENT_BODY_FRAME_SIZE("
+                    + EMPTY_CONTENT_BODY_FRAME_SIZE
+                    + ") is not equal to computed value: " + actualLength);
         }
     }
 
@@ -236,7 +236,7 @@ public class AMQCommand implements Command {
          * How many more bytes of content body are expected to arrive
          * from the broker.
          */
-        public long remainingBodyBytes;
+        private long remainingBodyBytes;
 
         public Assembler() {
             this.state = STATE_EXPECTING_METHOD;
@@ -274,9 +274,8 @@ public class AMQCommand implements Command {
               case STATE_EXPECTING_CONTENT_HEADER:
                   switch (f.type) {
                     case AMQP.FRAME_HEADER: {
-                        DataInputStream in = f.getInputStream();
-                        _contentHeader = AMQImpl.readContentHeaderFrom(in);
-                        this.remainingBodyBytes = _contentHeader.readFrom(in);
+                        _contentHeader = AMQImpl.readContentHeaderFrom(f.getInputStream());
+                        this.remainingBodyBytes = _contentHeader.getBodySize();
                         updateContentBodyState();
                         return completedCommand();
                     }

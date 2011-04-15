@@ -16,17 +16,16 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.AMQP.Queue;
-
-import java.net.Socket;
 import java.io.IOException;
+import java.net.Socket;
 import java.util.Random;
+
+import com.rabbitmq.client.AMQP.Queue;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
 
 
 /**

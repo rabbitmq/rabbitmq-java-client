@@ -22,6 +22,9 @@ package com.rabbitmq.client;
  * which was already closed
  */
 public class AlreadyClosedException extends ShutdownSignalException {
+    /** Default for suppressing warnings without version check. */
+    private static final long serialVersionUID = 1L;
+
     public AlreadyClosedException(String s, Object ref)
     {
         super(true, true, s, ref);

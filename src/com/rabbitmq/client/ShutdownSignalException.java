@@ -27,6 +27,9 @@ import com.rabbitmq.utility.SensibleClone;
  */
 
 public class ShutdownSignalException extends RuntimeException implements SensibleClone<ShutdownSignalException> {
+    /** Default for non-checking. */
+    private static final long serialVersionUID = 1L;
+
     /** True if the connection is shut down, or false if this signal refers to a channel */
     private final boolean _hardError;
 

@@ -148,7 +148,10 @@ public class ValueWriter
             writeOctet('F');
             // Ignore the warnings here.  We hate erasure
             // (not even a little respect)
-            writeTable((Map<String, Object>) value);
+            // (We even have trouble recognising it.)
+            @SuppressWarnings("unchecked")
+            Map<String,Object> map = (Map<String,Object>) value;
+            writeTable(map);
         }
         else if (value instanceof Byte) {
             writeOctet('b');
@@ -184,7 +187,7 @@ public class ValueWriter
         }
         else if(value instanceof List) {
             writeOctet('A');
-            writeArray((List)value);
+            writeArray((List<?>)value);
         }
         else {
             throw new IllegalArgumentException
@@ -192,7 +195,7 @@ public class ValueWriter
         }
     }
 
-    public void writeArray(List value)
+    public void writeArray(List<?> value)
         throws IOException
     {
         if (value==null) {

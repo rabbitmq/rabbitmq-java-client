@@ -145,7 +145,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private int _heartbeat;
 
     private final String _virtualHost;
-    private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
     private final Map<String, Object> _clientProperties;
 
     /** Saved server properties field from connection.start */
@@ -193,9 +192,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         checkPreconditions();
 
         _virtualHost = factory.getVirtualHost();
-        _requestedChannelMax = factory.getRequestedChannelMax();
-        _requestedFrameMax = factory.getRequestedFrameMax();
-        _requestedHeartbeat = factory.getRequestedHeartbeat();
         _clientProperties = new HashMap<String, Object>(factory.getClientProperties());
 
         _factory = factory;

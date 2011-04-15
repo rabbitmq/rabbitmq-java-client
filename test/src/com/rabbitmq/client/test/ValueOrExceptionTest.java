@@ -26,7 +26,10 @@ import com.rabbitmq.utility.SensibleClone;
 public class ValueOrExceptionTest extends TestCase {
     public static class InsufficientMagicException extends Exception 
       implements SensibleClone<InsufficientMagicException> {
-      public InsufficientMagicException(String message) {
+      /** Default for no check. */
+        private static final long serialVersionUID = 1L;
+
+    public InsufficientMagicException(String message) {
         super(message);
       }
 

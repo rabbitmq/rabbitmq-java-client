@@ -18,7 +18,6 @@ package com.rabbitmq.client;
 
 import com.rabbitmq.client.impl.Version;
 
-import java.io.IOException;
 import java.net.ProtocolException;
 
 /**
@@ -27,6 +26,8 @@ import java.net.ProtocolException;
  */
 public class ProtocolVersionMismatchException extends ProtocolException
 {
+    /** Default serialVersionUID for serializability without version checking. */
+    private static final long serialVersionUID = 1L;
     private Version clientVersion;
     private Version serverVersion;
 

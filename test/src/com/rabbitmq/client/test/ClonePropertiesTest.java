@@ -19,9 +19,6 @@ package com.rabbitmq.client.test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.Map;
-import java.util.Hashtable;
-
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.MessageProperties;
 
@@ -39,13 +36,6 @@ public class ClonePropertiesTest extends TestCase {
     {
         assertTrue(MessageProperties.MINIMAL_PERSISTENT_BASIC !=
                    MessageProperties.MINIMAL_PERSISTENT_BASIC.clone());
-        
-        BasicProperties bp = (BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone();
-        Map<String, Object> headers = new Hashtable<String, Object>();
-        headers.put("test", "123");
-        bp.setHeaders(headers);
-        assertTrue(
-            bp.getHeaders() != ((BasicProperties) bp.clone()).getHeaders());
     }
 
     public void testPropertyClonePreservesValues()
@@ -54,7 +44,7 @@ public class ClonePropertiesTest extends TestCase {
         assertEquals(MessageProperties.MINIMAL_PERSISTENT_BASIC.getDeliveryMode(),
                      ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
                        .getDeliveryMode());
-        assertEquals((Integer) 2,
+        assertEquals(new Integer(2),
                      ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
                        .getDeliveryMode());
     }

@@ -102,9 +102,6 @@ public class Version {
     public static boolean checkVersion(Version clientVersion,
                                        Version serverVersion) {
 
-        Version adjustedClientVersion = clientVersion.adjust();
-        Version adjustedServerVersion = serverVersion.adjust();
-
         return clientVersion.adjust().equals(serverVersion.adjust());
     }
 
