@@ -226,5 +226,4 @@ public class BrokerTestCase extends TestCase
   protected void deleteQueue(String q) throws IOException {
     channel.queueDelete(q);
   }
-
 }
