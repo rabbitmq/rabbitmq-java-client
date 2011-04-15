@@ -240,7 +240,7 @@ public class Frame {
     }
 
     @Override public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("Frame(type=").append(type).append(", channel=").append(channel).append(", ");
         if (accumulator == null) {
             sb.append(payload.length).append(" bytes of payload)");
