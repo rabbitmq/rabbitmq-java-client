@@ -142,7 +142,8 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
         // This test depends on the second node in the cluster to keep the transient X alive
         if (clusteredChannel != null) {
             channel.exchangeDeclare("transientX", "fanout", false);
-            declareAndBindDurableQueue("durableQ", "transientX", "");
+            channel.queueDeclare("durableQ", true, false, false, null);
+            channel.queueBind("durableQ", "transientX", "");
 
             restartPrimary();
 
