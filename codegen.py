@@ -96,20 +96,22 @@ def java_field_type(spec, domain):
     return javaTypeMap[spec.resolveDomain(domain)]
 
 def java_field_default_value(type, value):
+    val_map = {"value" : value}
     if type == 'int':
         return value
     elif type == 'boolean':
-        return "{0}".format(value).lower()
+        bool_str = '%(value)s'% val_map
+        return bool_str.lower()
     elif type == 'String':
-        return "\"{0}\"".format(value)
+        return '"%(value)s"' % val_map
     elif type == 'LongString':
-        return "LongStringHelper.asLongString(\"{0}\")".format(value)
+        return 'LongStringHelper.asLongString("%(value)s")' % val_map
     elif type == 'long':
-        return "{0}L".format(value)
+        return '%(value)sL' % val_map
     elif type == 'Map<String,Object>':
         return "null"
     else:
-        raise BogusDefaultValue("JSON provided default value {0} for suspicious type {1}".format(value, type))
+        raise BogusDefaultValue("JSON provided default value %(value)s for suspicious type %(type)s" % {"value" : value, "type" : type})
 
 def typeNameDefault(spec, a):
     fieldType = java_field_type(spec, a.domain)
