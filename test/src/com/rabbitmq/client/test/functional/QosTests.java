@@ -35,8 +35,6 @@ import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 
-import com.rabbitmq.client.Envelope;
-
 public class QosTests extends BrokerTestCase
 {
 
