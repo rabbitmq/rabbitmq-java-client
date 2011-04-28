@@ -17,11 +17,18 @@
 
 package com.rabbitmq.tools;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.AMQCommand;
@@ -62,11 +69,15 @@ public class Tracer implements Runnable {
     final static int MAX_TIME_BETWEEN_FLUSHES = 1000;
     final static Object FLUSH = new Object();
 
-    private static class AsyncLogger extends Thread {
+    public interface Logger {
+        void log(String msg);
+    }
+
+    private static class AsyncLogger extends Thread implements Logger{
         final PrintStream ps;
         final BlockingQueue<Object> queue = new ArrayBlockingQueue<Object>(LOG_QUEUE_SIZE, true);
-        AsyncLogger(PrintStream ps) {
-            this.ps = new PrintStream(new BufferedOutputStream(ps, BUFFER_SIZE), false);
+        AsyncLogger(OutputStream os) {
+            this.ps = new PrintStream(new BufferedOutputStream(os, BUFFER_SIZE), false);
             start();
 
             new Thread() {
@@ -82,7 +93,8 @@ public class Tracer implements Runnable {
             }.start();
         }
 
-        @Override public void run() {
+        @Override
+        public void run() {
             try {
                 while(true) {
                     Object message = queue.take();
@@ -93,7 +105,8 @@ public class Tracer implements Runnable {
             }
         }
 
-        void log(String message) {
+        @Override
+        public void log(String message) {
             try {
               queue.put(message);
             } catch(InterruptedException ex) {
@@ -123,7 +136,7 @@ public class Tracer implements Runnable {
         try {
             ServerSocket server = new ServerSocket(listenPort);
             int counter = 0;
-            AsyncLogger logger = new AsyncLogger(System.out);
+            Logger logger = new AsyncLogger(System.out);
             while (true) {
                 Socket conn = server.accept();
                 new Tracer(conn, counter++, connectHost, connectPort, logger);
@@ -148,9 +161,9 @@ public class Tracer implements Runnable {
 
     public DataOutputStream oos;
 
-    public AsyncLogger logger;
+    public Logger logger;
 
-    public Tracer(Socket sock, int id, String host, int port, AsyncLogger logger) throws IOException {
+    public Tracer(Socket sock, int id, String host, int port, Logger logger) throws IOException {
         this.inSock = sock;
         this.outSock = new Socket(host, port);
         this.id = id;
@@ -194,8 +207,8 @@ public class Tracer implements Runnable {
     }
 
     public void log(String message) {
-        logger.log("" + System.currentTimeMillis() + ": conn#"
-                      + id + " " + message);
+        StringBuilder sb = new StringBuilder();
+        logger.log(sb.append(System.currentTimeMillis()).append(": conn#").append(id).append(' ').append(message).toString());
     }
 
     public void logException(Exception e) {
