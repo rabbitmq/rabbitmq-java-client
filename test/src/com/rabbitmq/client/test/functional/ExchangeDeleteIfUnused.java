@@ -20,7 +20,6 @@ package com.rabbitmq.client.test.functional;
 import java.io.IOException;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 /* Declare an exchange, bind a queue to it, then try to delete it,

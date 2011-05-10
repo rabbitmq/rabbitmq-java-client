@@ -16,9 +16,9 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
-import java.util.concurrent.*;
-import java.util.Random;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 
 /** 
  * Test that the tracer correctly handles multiple concurrently processing
@@ -60,14 +60,11 @@ public class TracerConcurrencyTest{
     }
 
     for(int i = 0; i < threadCount; i++){
-      final int j = i;
       new Thread(){
         @Override public void run(){
           try {
-            Random rnd = new Random();
             Channel ch = conn.createChannel();
             while(true){
-                Channel old = ch;
                 ch.close();
                 ch = conn.createChannel(); 
                 ch.basicPublish(

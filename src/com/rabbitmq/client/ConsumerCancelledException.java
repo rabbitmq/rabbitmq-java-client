@@ -21,6 +21,9 @@ import com.rabbitmq.utility.SensibleClone;
 public class ConsumerCancelledException extends RuntimeException implements
         SensibleClone<ConsumerCancelledException> {
 
+    /** Default for non-checking. */
+    private static final long serialVersionUID = 1L;
+
     @Override
     public ConsumerCancelledException sensibleClone() {
         try {

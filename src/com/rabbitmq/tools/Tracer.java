@@ -211,7 +211,7 @@ public class Tracer implements Runnable {
 
         public DataOutputStream o;
 
-        public HashMap<Integer, AMQCommand.Assembler> assemblers = new HashMap();
+        public HashMap<Integer, AMQCommand.Assembler> assemblers = new HashMap<Integer, AMQCommand.Assembler>();
 
         public DirectionHandler(BlockingCell<Object> waitCell, boolean inBound, DataInputStream i, DataOutputStream o) {
             this.waitCell = waitCell;
@@ -239,9 +239,8 @@ public class Tracer implements Runnable {
                   break;
               }
               case AMQP.FRAME_HEADER: {
-                  DataInputStream in = f.getInputStream();
-                  AMQContentHeader contentHeader = AMQImpl.readContentHeaderFrom(in);
-                  long remainingBodyBytes = contentHeader.readFrom(in);
+                  AMQContentHeader contentHeader = AMQImpl.readContentHeaderFrom(f.getInputStream());
+                  long remainingBodyBytes = contentHeader.getBodySize();
                   report(f.channel,
                          "Expected body size: " + remainingBodyBytes +
                          "; " + contentHeader.toString());

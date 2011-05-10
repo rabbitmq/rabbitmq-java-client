@@ -26,6 +26,9 @@ import java.io.PrintStream;
 
 public class Utility {
     static class ThrowableCreatedElsewhere extends Throwable {
+        /** Default for non-checking. */
+        private static final long serialVersionUID = 1L;
+
         public ThrowableCreatedElsewhere(Throwable throwable) {
           super(throwable.getClass() + " created elsewhere");
           this.setStackTrace(throwable.getStackTrace());

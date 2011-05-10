@@ -17,19 +17,17 @@
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.ConfirmListener;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
-
+import java.io.IOException;
 import java.util.Collections;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import java.io.IOException;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConfirmListener;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
 
 public class ConfirmDontLoseMessages {
     static int msgCount = 10000;

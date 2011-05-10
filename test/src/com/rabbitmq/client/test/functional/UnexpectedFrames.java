@@ -16,14 +16,17 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.*;
-import com.rabbitmq.client.test.BrokerTestCase;
-
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Socket;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.Frame;
+import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.SocketFrameHandler;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 /**
  * Test that the server correctly handles us when we send it bad frames

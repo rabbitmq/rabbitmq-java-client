@@ -696,4 +696,19 @@ public interface Channel extends ShutdownNotifier {
      * @return the sequence number of the next message to be published
      */
     long getNextPublishSeqNo();
+
+    /**
+     * Asynchronously send a method over this channel.
+     * @param method method to transmit over this channel.
+     * @throws IOException Problem transmitting method.
+     */
+    void asyncRpc(Method method) throws IOException;
+
+    /**
+     * Synchronously send a method over this channel.
+     * @param method method to transmit over this channel.
+     * @return response to method. Caller should cast as appropriate.
+     * @throws IOException Problem transmitting method.
+     */
+    Method rpc(Method method) throws IOException;
 }

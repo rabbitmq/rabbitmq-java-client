@@ -34,11 +34,10 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.ProtocolVersionMismatchException;
+import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
-
-import javax.security.sasl.SaslClient;
 
 /**
  * Concrete class representing and managing an AMQP connection to a broker.
@@ -146,7 +145,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private int _heartbeat;
 
     private final String _virtualHost;
-    private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
     private final Map<String, Object> _clientProperties;
 
     /** Saved server properties field from connection.start */
@@ -194,9 +192,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         checkPreconditions();
 
         _virtualHost = factory.getVirtualHost();
-        _requestedChannelMax = factory.getRequestedChannelMax();
-        _requestedFrameMax = factory.getRequestedFrameMax();
-        _requestedHeartbeat = factory.getRequestedHeartbeat();
         _clientProperties = new HashMap<String, Object>(factory.getClientProperties());
 
         _factory = factory;
@@ -267,20 +262,20 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
 
         String[] mechanisms = connStart.getMechanisms().toString().split(" ");
-        SaslClient sc = _factory.getSaslConfig().getSaslClient(mechanisms);
-        if (sc == null) {
+        SaslMechanism sm = _factory.getSaslConfig().getSaslMechanism(mechanisms);
+        if (sm == null) {
             throw new IOException("No compatible authentication mechanism found - " +
                     "server offered [" + connStart.getMechanisms() + "]");
         }
 
         LongString challenge = null;
-        LongString response = LongStringHelper.asLongString(
-                sc.hasInitialResponse() ? sc.evaluateChallenge(new byte[0]) : null);
+        LongString response = sm.handleChallenge(null, _factory);
+
         AMQP.Connection.Tune connTune = null;
         do {
             Method method = (challenge == null)
                 ? new AMQImpl.Connection.StartOk(_clientProperties,
-                                                 sc.getMechanismName(),
+                                                 sm.getName(),
                                                  response, "en_US")
                 : new AMQImpl.Connection.SecureOk(response);
 
@@ -290,19 +285,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     connTune = (AMQP.Connection.Tune) serverResponse;
                 } else {
                     challenge = ((AMQP.Connection.Secure) serverResponse).getChallenge();
-                    response = LongStringHelper.asLongString(sc.evaluateChallenge(challenge.getBytes()));
+                    response = sm.handleChallenge(challenge, _factory);
                 }
             } catch (ShutdownSignalException e) {
                 throw new PossibleAuthenticationFailureException(e);
             }
         } while (connTune == null);
-
-        sc.dispose();
-
-        if (!sc.isComplete()) {
-            throw new RuntimeException(sc.getMechanismName() +
-                    " did not complete, server thought it did");
-        }
 
         int channelMax =
             negotiatedMaxValue(_factory.getRequestedChannelMax(),

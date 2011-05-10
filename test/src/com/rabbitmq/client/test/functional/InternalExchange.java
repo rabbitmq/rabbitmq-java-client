@@ -17,13 +17,12 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.BrokerTestCase;
-
 import java.io.IOException;
 import java.util.Arrays;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 
 //

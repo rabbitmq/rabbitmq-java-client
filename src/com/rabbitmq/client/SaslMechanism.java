@@ -14,26 +14,29 @@
 //  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
 
-package com.rabbitmq.client.impl;
+package com.rabbitmq.client;
 
-import java.io.DataInputStream;
+import com.rabbitmq.client.impl.LongString;
+
 import java.io.IOException;
 
-import com.rabbitmq.client.BasicProperties;
+/**
+ * Our own view of a SASL authentication mechanism, introduced to remove a
+ * dependency on javax.security.sasl.
+ */
+public interface SaslMechanism {
+    /**
+     * The name of this mechanism (e.g. PLAIN)
+     * @return
+     */
+    String getName();
 
-public abstract class AMQBasicProperties
-        extends AMQContentHeader implements BasicProperties {
-
-    protected AMQBasicProperties() {
-        
-    }
-    
-    protected AMQBasicProperties(DataInputStream in) throws IOException {
-        super(in);
-    }
-
-    @Override
-    public Object clone() throws CloneNotSupportedException {
-        return (AMQBasicProperties) super.clone();
-    }
+    /**
+     * Handle one round of challenge-response
+     * @param challenge the challenge this round, or null on first round.
+     * @param factory for reference to e.g. username and password.
+     * @return response
+     * @throws IOException
+     */
+    LongString handleChallenge(LongString challenge, ConnectionFactory factory);
 }

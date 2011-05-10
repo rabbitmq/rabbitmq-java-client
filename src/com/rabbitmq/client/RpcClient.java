@@ -158,16 +158,8 @@ public class RpcClient {
         synchronized (_continuationMap) {
             _correlationId++;
             String replyId = "" + _correlationId;
-            if (props != null) {
-                props.setCorrelationId(replyId);
-                props.setReplyTo(_replyQueue);
-            }
-            else {
-                props = new AMQP.BasicProperties(null, null, null, null,
-                                             null, replyId,
-                                             _replyQueue, null, null, null,
-                                             null, null, null, null);
-            }
+            props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
+                    .correlationId(replyId).replyTo(_replyQueue).build();
             _continuationMap.put(replyId, k);
         }
         publish(props, message);
