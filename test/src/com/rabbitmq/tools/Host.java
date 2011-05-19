@@ -68,4 +68,8 @@ public class Host {
                                   "\nstderr:\n" + stderr + "\n");
         }
     }
+
+    public static void rabbitmqctl(String command) throws IOException {
+        executeCommand("../rabbitmq-server/scripts/rabbitmqctl " + command);
+    }
 }

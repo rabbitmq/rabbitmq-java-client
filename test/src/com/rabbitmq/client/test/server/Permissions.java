@@ -65,28 +65,21 @@ public class Permissions extends BrokerTestCase
     protected void addRestrictedAccount()
         throws IOException
     {
-        runCtl("add_user test test");
-        runCtl("add_user testadmin test");
-        runCtl("add_vhost /test");
-        runCtl("set_permissions -p /test test configure write read");
-        runCtl("set_permissions -p /test testadmin \".*\" \".*\" \".*\"");
+        Host.rabbitmqctl("add_user test test");
+        Host.rabbitmqctl("add_user testadmin test");
+        Host.rabbitmqctl("add_vhost /test");
+        Host.rabbitmqctl("set_permissions -p /test test configure write read");
+        Host.rabbitmqctl("set_permissions -p /test testadmin \".*\" \".*\" \".*\"");
     }
 
     protected void deleteRestrictedAccount()
         throws IOException
     {
-        runCtl("clear_permissions -p /test testadmin");
-        runCtl("clear_permissions -p /test test");
-        runCtl("delete_vhost /test");
-        runCtl("delete_user testadmin");
-        runCtl("delete_user test");
-    }
-
-    protected void runCtl(String command)
-        throws IOException
-    {
-        Host.executeCommand("../rabbitmq-server/scripts/rabbitmqctl " +
-                            command);
+        Host.rabbitmqctl("clear_permissions -p /test testadmin");
+        Host.rabbitmqctl("clear_permissions -p /test test");
+        Host.rabbitmqctl("delete_vhost /test");
+        Host.rabbitmqctl("delete_user testadmin");
+        Host.rabbitmqctl("delete_user test");
     }
 
     protected void createResources()
@@ -241,7 +234,7 @@ public class Permissions extends BrokerTestCase
     public void testNoAccess()
         throws IOException, InterruptedException
     {
-        runCtl("set_permissions -p /test test \"\" \"\" \"\"");
+        Host.rabbitmqctl("set_permissions -p /test test \"\" \"\" \"\"");
         Thread.sleep(2000);
 
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
