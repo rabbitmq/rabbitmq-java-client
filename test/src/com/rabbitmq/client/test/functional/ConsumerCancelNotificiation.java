@@ -57,7 +57,6 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
         final QueueingConsumer consumer = new QueueingConsumer(channel);
         Runnable receiver = new Runnable() {
 
-            @Override
             public void run() {
                 try {
                     try {
