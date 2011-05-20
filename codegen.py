@@ -95,23 +95,21 @@ def java_field_name(name):
 def java_field_type(spec, domain):
     return javaTypeMap[spec.resolveDomain(domain)]
 
-def java_field_default_value(type, value):
-    val_map = {"value" : value}
-    if type == 'int':
+def java_field_default_value(jtype, value):
+    if jtype == 'int':
         return value
-    elif type == 'boolean':
-        bool_str = '%(value)s'% val_map
-        return bool_str.lower()
-    elif type == 'String':
-        return '"%(value)s"' % val_map
-    elif type == 'LongString':
-        return 'LongStringHelper.asLongString("%(value)s")' % val_map
-    elif type == 'long':
-        return '%(value)sL' % val_map
-    elif type == 'Map<String,Object>':
+    elif jtype == 'boolean':
+        return ('%s'% (value)).lower()
+    elif jtype == 'String':
+        return '"%s"' % (value)
+    elif jtype == 'LongString':
+        return 'LongStringHelper.asLongString("%s")' % (value)
+    elif jtype == 'long':
+        return '%sL' % (value)
+    elif jtype == 'Map<String,Object>':
         return "null"
     else:
-        raise BogusDefaultValue("JSON provided default value %(value)s for suspicious type %(type)s" % {"value" : value, "type" : type})
+        raise BogusDefaultValue("JSON provided default value %s for suspicious type %s" % (value, jtype))
 
 def typeNameDefault(spec, a):
     fieldType = java_field_type(spec, a.domain)
@@ -268,20 +266,12 @@ def genJavaApi(spec):
         print "        }"
 
     def printAppendArgumentDebugStringTo(c):
-        def appendValue(jField, jType):
-            if jType == "String":
-                return "this.%s" % (jField)
-            else:
-                return "String.valueOf(this.%s)" % (jField)
-
-        appendList = [ "%s=\")\n               .append(%s)\n               .append(\"" 
-                       % (f.name, appendValue(java_field_name(f.name), java_field_type(spec, f.domain)))
+        appendList = [ "%s=\")\n               .append(this.%s)\n               .append(\""
+                       % (f.name, java_field_name(f.name))
                        for f in c.fields ]
         print
-        print "        public void appendArgumentDebugStringTo(Appendable acc) {"
-        print "            try {"
-        print "                acc.append(\"(%s)\");" % (", ".join(appendList))
-        print "            } catch(IOException _) { }"
+        print "        public void appendArgumentDebugStringTo(StringBuilder acc) {"
+        print "            acc.append(\"(%s)\");" % (", ".join(appendList))
         print "        }"
 
     def printPropertiesBuilderClass(c):
@@ -487,21 +477,12 @@ def genJavaImpl(spec):
                     return "false"
 
             def argument_debug_string():
-                def appendFieldValue(a):
-                    (jName, jType) = (java_field_name(a.name), java_field_type(spec, a.domain))
-                    if jType == "String":
-                        return "this.%s" % (jName)
-                    else:
-                        return "String.valueOf(this.%s)" % (jName)
-
-                appendList = [ "%s=\")\n                   .append(%s)\n                   .append(\"" 
-                               % (a.name, appendFieldValue(a))
+                appendList = [ "%s=\")\n                   .append(this.%s)\n                   .append(\""
+                               % (a.name, java_field_name(a.name))
                                for a in m.arguments ]
                 print
-                print "            public void appendArgumentDebugStringTo(Appendable acc) {"
-                print "                try {"
-                print "                    acc.append(\"(%s)\");" % ", ".join(appendList)
-                print "                } catch(IOException _) { }"
+                print "            public void appendArgumentDebugStringTo(StringBuilder acc) {"
+                print "                acc.append(\"(%s)\");" % ", ".join(appendList)
                 print "            }"
 
             def write_arguments():
