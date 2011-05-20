@@ -60,10 +60,10 @@ public class Firehose extends BrokerTestCase {
     }
 
     private void enable() throws IOException {
-        Host.rabbitmqctl("set_env trace_exchanges '[{<<\"/\">>, <<\"trace\">>}]'");
+        Host.rabbitmqctl("start_tracing trace");
     }
 
     private void disable() throws IOException {
-        Host.rabbitmqctl("unset_env trace_exchanges");
+        Host.rabbitmqctl("stop_tracing");
     }
 }
