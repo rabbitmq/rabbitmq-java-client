@@ -15,12 +15,11 @@ public class Firehose extends BrokerTestCase {
     @Override
     protected void createResources() throws IOException {
         super.createResources();
-        channel.exchangeDeclare("trace", "fanout", false, true, null);
         channel.exchangeDeclare("test", "fanout", false, true, null);
         q = channel.queueDeclare().getQueue();
         firehose = channel.queueDeclare().getQueue();
         channel.queueBind(q, "test", "");
-        channel.queueBind(firehose, "trace", "");
+        channel.queueBind(firehose, "amq.rabbitmq.trace", "#");
     }
 
     public void testFirehose() throws IOException {
@@ -61,10 +60,10 @@ public class Firehose extends BrokerTestCase {
     }
 
     private void enable() throws IOException {
-        Host.rabbitmqctl("set_env trace_exchanges '[{<<\"/\">>, <<\"trace\">>}]'");
+        Host.rabbitmqctl("trace_on");
     }
 
     private void disable() throws IOException {
-        Host.rabbitmqctl("unset_env trace_exchanges");
+        Host.rabbitmqctl("trace_off");
     }
 }
