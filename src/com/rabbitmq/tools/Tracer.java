@@ -151,8 +151,8 @@ public class Tracer implements Runnable {
 //        this(listenPort, createId(listenPort), host, port, new AsyncLogger(System.out), new BlockingCell<Exception>(), System.getProperties());
 //    }
 
-    public Tracer(int listenPort, String id, String host, int port, Properties props) throws IOException {
-        this(listenPort, id, host, port, new AsyncLogger(System.out), new BlockingCell<Exception>(), props);
+    public Tracer(int listenPort, String id, String host, int port, Logger logger, Properties props) throws IOException {
+        this(listenPort, id, host, port, logger, new BlockingCell<Exception>(), props);
     }
 
     public Tracer(String id) throws IOException {
