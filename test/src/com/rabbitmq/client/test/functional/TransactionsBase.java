@@ -18,6 +18,7 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 
@@ -234,6 +235,9 @@ public abstract class TransactionsBase
             fail("expected exception");
         }
         catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
+        catch (AlreadyClosedException e) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
         connection = null;
