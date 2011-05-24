@@ -17,6 +17,7 @@
 
 package com.rabbitmq.client.test.server;
 
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
@@ -347,6 +348,10 @@ public class Permissions extends BrokerTestCase
             test.with(name);
             assertTrue(msg, exp);
         } catch (IOException e) {
+            checkShutdownSignal(AMQP.ACCESS_REFUSED, e);
+            openConnection();
+            openChannel();
+        } catch (AlreadyClosedException e) {
             checkShutdownSignal(AMQP.ACCESS_REFUSED, e);
             openConnection();
             openChannel();
