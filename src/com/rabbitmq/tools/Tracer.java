@@ -31,6 +31,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.AMQCommand;
@@ -388,7 +389,7 @@ public class Tracer implements Runnable {
 
         private final Runnable loggerRunnable;
 
-        private final AtomicBoolean started;
+        private final SafeCounter countStarted;
         private volatile Thread loggerThread = null;
 
         /**
@@ -430,7 +431,7 @@ public class Tracer implements Runnable {
                 throw new IllegalArgumentException("Flush interval ("
                         + flushInterval + "ms) must be positive and at least "
                         + MIN_FLUSH_INTERVAL + "ms.");
-            this.started = new AtomicBoolean(false);
+            this.countStarted = new SafeCounter();
 
             PrintStream printStream = new PrintStream(new BufferedOutputStream(
                     os, BUFFER_SIZE), false);
@@ -448,8 +449,17 @@ public class Tracer implements Runnable {
             }
         }
 
+        public boolean start() {
+            if (this.countStarted.testZeroAndIncrement()) {
+                this.loggerThread = new Thread(this.loggerRunnable);
+                this.loggerThread.start();
+                return true;
+            }
+            return false; // meaning already started
+        }
+
         public boolean stop() {
-            if (this.started.compareAndSet(true, false)) {
+            if (this.countStarted.decrementAndTestZero()) {
                 if (this.loggerThread != null) {
                     try {
                         this.queue.put(new Pr<String, LogCmd>(null, LogCmd.STOP));
@@ -464,16 +474,7 @@ public class Tracer implements Runnable {
             return false; // meaning already stopped
         }
 
-        public boolean start() {
-            if (this.started.compareAndSet(false, true)) {
-                this.loggerThread = new Thread(this.loggerRunnable);
-                this.loggerThread.start();
-                return true;
-            }
-            return false; // meaning already started
-        }
-
-        private static class AsyncLoggerRunnable implements Runnable {
+        private class AsyncLoggerRunnable implements Runnable {
             private final int flushInterval;
             private final PrintStream ps;
             private final BlockingQueue<Pr<String, LogCmd> > queue;
@@ -515,6 +516,7 @@ public class Tracer implements Runnable {
                     this.ps.flush();
 
                 } catch (InterruptedException ie) {
+                    AsyncLogger.this.countStarted.reset();
                     drainCurrentQueue();
                     this.ps.println("Interrupted.");
                     this.ps.flush();
@@ -528,6 +530,33 @@ public class Tracer implements Runnable {
                     if (item != null && item.left() != null)
                         this.ps.println(item.left());
                 }
+            }
+        }
+    }
+    
+    private static class SafeCounter {
+        private final Object countMonitor = new Object();
+        private int count;
+        public SafeCounter() {
+            this.count = 0;
+        }
+        public boolean testZeroAndIncrement() {
+            synchronized (this.countMonitor) {
+                int val = this.count;
+                this.count++;
+                return (val == 0);
+            }
+        }
+        public boolean decrementAndTestZero() {
+            synchronized (this.countMonitor) {
+                if (this.count == 0) return false;
+                --this.count;
+                return (0 == this.count);
+            }
+        }
+        public void reset() {
+            synchronized (this.countMonitor) {
+                this.count = 0;
             }
         }
     }
