@@ -233,8 +233,7 @@ public abstract class TransactionsBase
         // "On a transacted channel, this check MUST be done immediately and
         // not delayed until a Tx.Commit."
         expectError(AMQP.PRECONDITION_FAILED);
-        connection = null;
-        openConnection();
+        openChannel();
     }
 
     /*
