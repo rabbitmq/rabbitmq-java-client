@@ -230,16 +230,9 @@ public abstract class TransactionsBase
         basicGet();
         basicAck();
         basicAck(latestTag+1, true);
-        try {
-            txCommit();
-            fail("expected exception");
-        }
-        catch (IOException e) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
-        }
-        catch (AlreadyClosedException e) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
-        }
+        // "On a transacted channel, this check MUST be done immediately and
+        // not delayed until a Tx.Commit."
+        expectError(AMQP.PRECONDITION_FAILED);
         connection = null;
         openConnection();
     }
