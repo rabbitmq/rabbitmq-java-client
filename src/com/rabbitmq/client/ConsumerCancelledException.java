@@ -24,7 +24,6 @@ public class ConsumerCancelledException extends RuntimeException implements
     /** Default for non-checking. */
     private static final long serialVersionUID = 1L;
 
-    @Override
     public ConsumerCancelledException sensibleClone() {
         try {
             return (ConsumerCancelledException) super.clone();
