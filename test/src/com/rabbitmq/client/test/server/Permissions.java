@@ -341,9 +341,11 @@ public class Permissions extends BrokerTestCase
             test.with(name);
             assertTrue(msg, exp);
         } catch (IOException e) {
+            assertFalse(msg, exp);
             checkShutdownSignal(AMQP.ACCESS_REFUSED, e);
             openChannel();
         } catch (AlreadyClosedException e) {
+            assertFalse(msg, exp);
             checkShutdownSignal(AMQP.ACCESS_REFUSED, e);
             openChannel();
         }
