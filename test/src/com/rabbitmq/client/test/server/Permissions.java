@@ -190,7 +190,7 @@ public class Permissions extends BrokerTestCase
                     channel.basicPublish(name, "", null, "foo".getBytes());
                     //followed by a dummy synchronous command in order
                     //to catch any errors
-                    ((AMQChannel)channel).exnWrappingRpc(new AMQImpl.Channel.Flow(true));
+                    channel.basicQos(0);
                 }});
     }
 
@@ -277,7 +277,7 @@ public class Permissions extends BrokerTestCase
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
                 public void with(String _) throws IOException {
                     channel.basicPublish("write", "", null, "foo".getBytes());
-                    channel.queueDeclare();
+                    channel.basicQos(0);
                 }}
         );
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {
@@ -299,15 +299,11 @@ public class Permissions extends BrokerTestCase
             action.with("");
             fail();
         } catch (IOException e) {
-            ShutdownSignalException sse = (ShutdownSignalException)e.getCause();
-            if (sse.isHardError()) {
-                fail("Got a hard-error.  Was expecting soft-error: " + exceptionCode);
-            } else {
-                AMQP.Channel.Close closeMethod =
-                    (AMQP.Channel.Close) ((Command)sse.getReason()).getMethod();
-                assertEquals(exceptionCode, closeMethod.getReplyCode());
-            }
-            channel = channel.getConnection().createChannel();
+            checkShutdownSignal(exceptionCode, e);
+            openChannel();
+        } catch (AlreadyClosedException e) {
+            checkShutdownSignal(exceptionCode, e);
+            openChannel();
         }
     }
 
@@ -349,11 +345,9 @@ public class Permissions extends BrokerTestCase
             assertTrue(msg, exp);
         } catch (IOException e) {
             checkShutdownSignal(AMQP.ACCESS_REFUSED, e);
-            openConnection();
             openChannel();
         } catch (AlreadyClosedException e) {
             checkShutdownSignal(AMQP.ACCESS_REFUSED, e);
-            openConnection();
             openChannel();
         }
     }
