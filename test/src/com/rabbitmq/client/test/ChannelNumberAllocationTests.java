@@ -1,3 +1,19 @@
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
+//
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
+//
+//  The Original Code is RabbitMQ.
+//
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//
+
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
@@ -53,13 +69,15 @@ public class ChannelNumberAllocationTests extends TestCase{
     for(int i = 1; i <= CHANNEL_COUNT; i++)
       channels.add(connection.createChannel());
 
-    // In the current implementation the list should actually
-    // already be sorted, but we don't want to force that behaviour
+    // In the current implementation the allocated numbers need not be increasing
     Collections.sort(channels, COMPARATOR);
 
-    int i = 1;
-    for(Channel channel : channels)
-      assertEquals(i++, channel.getChannelNumber());
+    assertEquals("Didn't create the right number of channels!", CHANNEL_COUNT, channels.size());
+    for(int i = 1; i < CHANNEL_COUNT; ++i) {
+        assertTrue("Channel numbers should be distinct."
+                  , channels.get(i-1).getChannelNumber() < channels.get(i).getChannelNumber()
+                  );
+    }
   }
 
   public void testAllocateAfterManualAssign() throws Exception{

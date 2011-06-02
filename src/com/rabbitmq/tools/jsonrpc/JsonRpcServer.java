@@ -1,33 +1,19 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 
 package com.rabbitmq.tools.jsonrpc;
 
@@ -59,7 +45,7 @@ public class JsonRpcServer extends StringRpcServer {
     /** Holds the JSON-RPC service description for this client. */
     public ServiceDescription serviceDescription;
     /** The interface this server implements. */
-    public Class interfaceClass;
+    public Class<?> interfaceClass;
     /** The instance backing this server. */
     public Object interfaceInstance;
 
@@ -73,15 +59,15 @@ public class JsonRpcServer extends StringRpcServer {
      * @throws IOException if something goes wrong during an AMQP operation
      */
     public JsonRpcServer(Channel channel,
-                         Class interfaceClass,
+                         Class<?> interfaceClass,
                          Object interfaceInstance)
         throws IOException
     {
-	super(channel);
+        super(channel);
         init(interfaceClass, interfaceInstance);
     }
 
-    private void init(Class interfaceClass, Object interfaceInstance)
+    private void init(Class<?> interfaceClass, Object interfaceInstance)
     {
         this.interfaceClass = interfaceClass;
         this.interfaceInstance = interfaceInstance;
@@ -101,11 +87,11 @@ public class JsonRpcServer extends StringRpcServer {
      */
     public JsonRpcServer(Channel channel,
                          String queueName,
-                         Class interfaceClass,
+                         Class<?> interfaceClass,
                          Object interfaceInstance)
         throws IOException
     {
-	super(channel, queueName);
+        super(channel, queueName);
         init(interfaceClass, interfaceInstance);
     }
 
@@ -114,9 +100,7 @@ public class JsonRpcServer extends StringRpcServer {
      */
     public String handleStringCall(String requestBody, AMQP.BasicProperties replyProperties)
     {
-        replyProperties.setContentType("application/json");
         String replyBody = doCall(requestBody);
-        //System.err.println(requestBody + " --> " + replyBody);
         return replyBody;
     }
 
@@ -127,12 +111,12 @@ public class JsonRpcServer extends StringRpcServer {
      */
     public String doCall(String requestBody)
     {
-        Map<String, Object> request;
         Object id;
         String method;
         Object[] params;
         try {
-            request = (Map) new JSONReader().read(requestBody);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> request = (Map<String,Object>) new JSONReader().read(requestBody);
             if (request == null) {
                 return errorResponse(null, 400, "Bad Request", null);
             }
@@ -142,7 +126,8 @@ public class JsonRpcServer extends StringRpcServer {
 
             id = request.get("id");
             method = (String) request.get("method");
-            params = ((List) request.get("params")).toArray();
+            List<?> parmList = (List<?>) request.get("params");
+            params = parmList.toArray();
         } catch (ClassCastException cce) {
             // Bogus request!
             return errorResponse(null, 400, "Bad Request", null);
@@ -218,6 +203,6 @@ public class JsonRpcServer extends StringRpcServer {
      * service built from interfaceClass at construction time.
      */
     public ServiceDescription getServiceDescription() {
-	return serviceDescription;
+        return serviceDescription;
     }
 }

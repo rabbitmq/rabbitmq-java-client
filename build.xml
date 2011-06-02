@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<project name="RabbitMQ Java client" default="build">
+<project name="RabbitMQ Java client" default="build"
+    xmlns:bundlor="antlib:com.springsource.bundlor.ant">
 
   <property file="build.properties"/>
   <property file="config.properties"/>
@@ -17,7 +18,7 @@
 
   <path id="test.javac.classpath">
     <path refid="javac.classpath"/>
-<!--    <pathelement path="${junit.home}/junit.jar"/> -->
+<!--    <pathelement path="${junit.home}/junit.jar"/>  -->
   </path>
 
   <path id="test.classpath">
@@ -251,25 +252,6 @@
     </java>
   </target>
 
-  <!-- Alternate version that runs using Java 1.4 as a compatibility test -->
-  <target name="test-main-silent-1.4" depends="dist1.4">
-    <java fork="true" classname="${test.main}"
-        jvm="${java-jvm-1.4}" failonerror="${haltOnFailureJava}"
-    	errorproperty="test.failure">
-      <jvmarg value="-Xdebug"/>
-      <jvmarg value="-Dsilent=true"/>
-      <arg value="${broker.hostname}"/>
-      <arg value="${broker.port}"/>
-      <classpath>
-	<fileset dir="${dist.out}">
-	  <include name="**/*.jar"/>
-	</fileset>
-	<pathelement path="${retrotranslator}/retrotranslator-runtime-1.2.1.jar"/>
-	<pathelement path="${retrotranslator}/backport-util-concurrent-3.0.jar"/>
-      </classpath>
-    </java>
-  </target>
-
   <target name="test-main-silent-alt" depends="test-build-alt">
     <java fork="true" classname="${test.main}"
         failonerror="${haltOnFailureJava}" errorproperty="test.failure">
@@ -405,7 +387,7 @@
     </junit>
   </target>
 
-  <target name="jar" depends="build">
+  <target name="jar" depends="build, bundlor.do">
     <mkdir dir="${lib.out}"/>
     <antcall target="doJarWithTags">
        <param name="jar.name" value="rabbitmq-client"/>
@@ -419,6 +401,7 @@
           tofile="${bundle.out}/amqp-client-${impl.version}.jar"/>
     <jar destfile="${bundle.out}/amqp-client-${impl.version}-sources.jar">
         <fileset dir="src"/>
+        <fileset dir="${src.generated}"/>
     </jar>
     <jar destfile="${bundle.out}/amqp-client-${impl.version}-javadoc.jar">
         <fileset dir="${javadoc.out}"/>
@@ -428,7 +411,7 @@
              token="VERSION" value="${impl.version}"/>
   </target>
 
-  <target name="test-jar" depends="test-build">
+  <target name="test-jar" depends="test-build, test-bundlor.do">
     <mkdir dir="${lib.out}"/>
       <antcall target="doJarWithTags">
          <param name="jar.name" value="rabbitmq-client-tests"/>
@@ -438,7 +421,8 @@
 
     <target name="doJarWithTags">
         <jar destfile="${lib.out}/${jar.name}.jar"
-             basedir="${base}">
+             basedir="${base}"
+             filesetmanifest="merge">
             <manifest>
               <section name="${jar.name}">
                  <attribute name="Specification-Title" value="AMQP"/>
@@ -472,41 +456,43 @@
     </copy>
   </target>
 
-  <!-- Build the Java1.4 version by running Retrotranslator on a copy of our jars -->
-  <target name="dist1.4" depends="jar, test-jar">
-    <mkdir dir="${dist.out}"/>
-    <copy todir="${dist.out}">
-      <fileset dir="lib">
-        <include name="**/*.jar"/>
-      </fileset>
-
-      <fileset dir="${lib.out}">
-        <include name="**/*.jar"/>
-      </fileset>
-
-      <fileset dir="scripts">
-        <include name="**/*.sh"/>
-        <include name="**/*.bat"/>
-      </fileset>
-
-      <fileset file="${retrotranslator}/retrotranslator-runtime-1.2.1.jar"/>
-      <fileset file="${retrotranslator}/backport-util-concurrent-3.0.jar"/>
-    </copy>
-    <java fork="true" jar="${retrotranslator}/retrotranslator-transformer-1.2.1.jar">
-      <arg value="-srcjar"/>
-      <arg value="${dist.out}/rabbitmq-client.jar"/>
-    </java>
-    <java fork="true" jar="${retrotranslator}/retrotranslator-transformer-1.2.1.jar">
-      <arg value="-srcjar"/>
-      <arg value="${dist.out}/rabbitmq-client-tests.jar"/>
-    </java>
-  </target>
-
   <target name="clean">
     <delete dir="build"/>
   </target>
 
   <target name="clean-tests">
     <delete dir="build/test"/>
+  </target>
+
+  <target name="bundlor.init">
+      <taskdef resource="com/springsource/bundlor/ant/antlib.xml"
+          uri="antlib:com.springsource.bundlor.ant">
+          <classpath id="bundlor.classpath">
+              <fileset dir="${bundlor.home}/dist"/>
+              <fileset dir="${bundlor.home}/lib"/>
+          </classpath>
+      </taskdef>
+  </target>
+
+  <target name="bundlor.do" depends="bundlor.init">
+    <bundlor:bundlor
+        inputPath="${javac.out}"
+        outputPath="${javac.out}"
+        manifestTemplatePath="bundlorTemplate.mf">
+      <propertyset>
+        <propertyref builtin="all"/>
+      </propertyset>
+    </bundlor:bundlor>
+  </target>
+
+  <target name="test-bundlor.do" depends="bundlor.init">
+    <bundlor:bundlor
+        inputPath="${test.javac.out}"
+        outputPath="${test.javac.out}"
+        manifestTemplatePath="bundlorTestTemplate.mf">
+      <propertyset>
+        <propertyref builtin="all"/>
+      </propertyset>
+    </bundlor:bundlor>
   </target>
 </project>

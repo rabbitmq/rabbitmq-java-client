@@ -1,36 +1,23 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 
 package com.rabbitmq.client.test.server;
 
+import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.Map;
@@ -41,7 +28,6 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Method;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQChannel;
@@ -79,28 +65,21 @@ public class Permissions extends BrokerTestCase
     protected void addRestrictedAccount()
         throws IOException
     {
-        runCtl("add_user test test");
-        runCtl("add_user testadmin test");
-        runCtl("add_vhost /test");
-        runCtl("set_permissions -p /test test configure write read");
-        runCtl("set_permissions -p /test testadmin \".*\" \".*\" \".*\"");
+        Host.rabbitmqctl("add_user test test");
+        Host.rabbitmqctl("add_user testadmin test");
+        Host.rabbitmqctl("add_vhost /test");
+        Host.rabbitmqctl("set_permissions -p /test test configure write read");
+        Host.rabbitmqctl("set_permissions -p /test testadmin \".*\" \".*\" \".*\"");
     }
 
     protected void deleteRestrictedAccount()
         throws IOException
     {
-        runCtl("clear_permissions -p /test testadmin");
-        runCtl("clear_permissions -p /test test");
-        runCtl("delete_vhost /test");
-        runCtl("delete_user testadmin");
-        runCtl("delete_user test");
-    }
-
-    protected void runCtl(String command)
-        throws IOException
-    {
-        Host.executeCommand("../rabbitmq-server/scripts/rabbitmqctl " +
-                            command);
+        Host.rabbitmqctl("clear_permissions -p /test testadmin");
+        Host.rabbitmqctl("clear_permissions -p /test test");
+        Host.rabbitmqctl("delete_vhost /test");
+        Host.rabbitmqctl("delete_user testadmin");
+        Host.rabbitmqctl("delete_user test");
     }
 
     protected void createResources()
@@ -148,8 +127,10 @@ public class Permissions extends BrokerTestCase
             unAuthFactory.newConnection();
             fail("Exception expected if password is wrong");
         } catch (IOException e) {
+            assertTrue(e instanceof PossibleAuthenticationFailureException);
             String msg = e.getMessage();
-            assertTrue("Exception message should contain auth", msg.toLowerCase().contains("auth"));
+            assertTrue("Exception message should contain 'auth'",
+                       msg.toLowerCase().contains("auth"));
         }
     }
 
@@ -253,7 +234,7 @@ public class Permissions extends BrokerTestCase
     public void testNoAccess()
         throws IOException, InterruptedException
     {
-        runCtl("set_permissions -p /test test \"\" \"\" \"\"");
+        Host.rabbitmqctl("set_permissions -p /test test \"\" \"\" \"\"");
         Thread.sleep(2000);
 
         expectExceptionRun(AMQP.ACCESS_REFUSED, new WithName() {

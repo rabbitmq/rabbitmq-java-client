@@ -1,33 +1,19 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 
 package com.rabbitmq.client.test.functional;
 
@@ -177,53 +163,56 @@ public class Routing extends BrokerTestCase
         spec.put("x-match", "any");
         channel.queueBind(Q2, "amq.match", "", spec);
 
-        AMQP.BasicProperties props = new AMQP.BasicProperties();
+        AMQP.BasicProperties.Builder props = new AMQP.BasicProperties.Builder();
 
         channel.basicPublish("amq.match", "", null, "0".getBytes());
-        channel.basicPublish("amq.match", "", props, "0b".getBytes());
+        channel.basicPublish("amq.match", "", props.build(), "0b".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", "12345");
-        channel.basicPublish("amq.match", "", props, "1".getBytes());
+        Map<String, Object> map = new HashMap<String, Object>();
+        props.headers(map);
+        
+        map.clear();
+        map.put("h1", "12345");
+        channel.basicPublish("amq.match", "", props.build(), "1".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", 12345);
-        channel.basicPublish("amq.match", "", props, "1b".getBytes());
+        map.clear();
+        map.put("h1", "12345");
+        channel.basicPublish("amq.match", "", props.build(), "1b".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h2", "bar");
-        channel.basicPublish("amq.match", "", props, "2".getBytes());
+        map.clear();
+        map.put("h2", "bar");
+        channel.basicPublish("amq.match", "", props.build(), "2".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", "12345");
-        props.getHeaders().put("h2", "bar");
-        channel.basicPublish("amq.match", "", props, "3".getBytes());
+        map.clear();
+        map.put("h1", "12345");
+        map.put("h2", "bar");
+        channel.basicPublish("amq.match", "", props.build(), "3".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", "12345");
-        props.getHeaders().put("h2", "bar");
-        props.getHeaders().put("h3", null);
-        channel.basicPublish("amq.match", "", props, "4".getBytes());
+        map.clear();
+        map.put("h1", "12345");
+        map.put("h2", "bar");
+        map.put("h3", null);
+        channel.basicPublish("amq.match", "", props.build(), "4".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", "12345");
-        props.getHeaders().put("h2", "quux");
-        channel.basicPublish("amq.match", "", props, "5".getBytes());
+        map.clear();
+        map.put("h1", "12345");
+        map.put("h2", "quux");
+        channel.basicPublish("amq.match", "", props.build(), "5".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", "zot");
-        props.getHeaders().put("h2", "quux");
-        props.getHeaders().put("h3", null);
-        channel.basicPublish("amq.match", "", props, "6".getBytes());
+        map.clear();
+        map.put("h1", "zot");
+        map.put("h2", "quux");
+        map.put("h3", null);
+        channel.basicPublish("amq.match", "", props.build(), "6".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h3", null);
-        channel.basicPublish("amq.match", "", props, "7".getBytes());
+        map.clear();
+        map.put("h3", null);
+        channel.basicPublish("amq.match", "", props.build(), "7".getBytes());
 
-        props.setHeaders(new HashMap<String, Object>());
-        props.getHeaders().put("h1", "zot");
-        props.getHeaders().put("h2", "quux");
-        channel.basicPublish("amq.match", "", props, "8".getBytes());
+        map.clear();
+        map.put("h1", "zot");
+        map.put("h2", "quux");
+        channel.basicPublish("amq.match", "", props.build(), "8".getBytes());
 
         checkGet(Q1, true); // 4
         checkGet(Q1, false);
@@ -235,6 +224,7 @@ public class Routing extends BrokerTestCase
         checkGet(Q2, true); // 5
         checkGet(Q2, true); // 6
         checkGet(Q2, true); // 7
+        checkGet(Q2, true); // 8
         checkGet(Q2, false);
     }
 

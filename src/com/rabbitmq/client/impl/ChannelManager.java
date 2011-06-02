@@ -1,33 +1,19 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
@@ -149,35 +135,35 @@ public class ChannelManager {
     }
 
     /**
-     * Remove the argument channel from the channel map. 
-     * This method must be safe to call multiple times on the same channel. If 
+     * Remove the argument channel from the channel map.
+     * This method must be safe to call multiple times on the same channel. If
      * it is not then things go badly wrong.
      */
     public synchronized void disconnectChannel(ChannelN channel) {
         int channelNumber = channel.getChannelNumber();
-       
+
         // Warning, here be dragons. Not great big ones, but little baby ones
-        // which will nibble on your toes and occasionally trip you up when 
-        // you least expect it. 
-        // Basically, there's a race that can end us up here. It almost never 
-        // happens, but it's easier to repair it when it does than prevent it 
-        // from happening in the first place. 
+        // which will nibble on your toes and occasionally trip you up when
+        // you least expect it.
+        // Basically, there's a race that can end us up here. It almost never
+        // happens, but it's easier to repair it when it does than prevent it
+        // from happening in the first place.
         // If we end up doing a Channel.close in one thread and a Channel.open
         // with the same channel number in another, the two can overlap in such
-        // a way as to cause disconnectChannel on the old channel to try to 
+        // a way as to cause disconnectChannel on the old channel to try to
         // remove the new one. Ideally we would fix this race at the source,
-        // but it's much easier to just catch it here.   
+        // but it's much easier to just catch it here.
         synchronized (_channelMap) {
           ChannelN existing = _channelMap.remove(channelNumber);
-          // Nothing to do here. Move along. 
+          // Nothing to do here. Move along.
           if (existing == null) return;
           // Oops, we've gone and stomped on someone else's channel. Put it back
-          // and pretend we didn't touch it. 
+          // and pretend we didn't touch it.
           else if (existing != channel) {
             _channelMap.put(channelNumber, existing);
             return;
           }
           channelNumberAllocator.free(channelNumber);
-        } 
+        }
     }
 }

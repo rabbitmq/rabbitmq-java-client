@@ -1,39 +1,24 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 package com.rabbitmq.client;
 
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -87,6 +72,9 @@ public class ConnectionFactory implements Cloneable {
     /** The default port to use for AMQP connections when using SSL */
     public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
 
+    /** The default connection timeout (wait indefinitely until connection established or error occurs) */
+    public static final int DEFAULT_CONNECTION_TIMEOUT = 0;
+
     /**
      * The default SSL protocol (currently "SSLv3").
      */
@@ -100,8 +88,10 @@ public class ConnectionFactory implements Cloneable {
     private int requestedChannelMax               = DEFAULT_CHANNEL_MAX;
     private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
     private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
+    private int connectionTimeout                 = DEFAULT_CONNECTION_TIMEOUT;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
+    private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
 
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.
@@ -233,6 +223,22 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
+     * Set the connection timeout.
+     * @param connectionTimeout connection establishment timeout in milliseconds; zero for infinite
+     */
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    /**
+     * Retrieve the connection timeout.
+     * @return the connection timeout, in milliseconds; zero for infinite
+     */
+    public int getConnectionTimeout() {
+        return this.connectionTimeout;
+    }
+
+    /**
      * Set the requested heartbeat.
      * @param requestedHeartbeat the initially requested heartbeat interval, in seconds; zero for none
      */
@@ -261,6 +267,24 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setClientProperties(Map<String, Object> clientProperties) {
         _clientProperties = clientProperties;
+    }
+
+    /**
+     * Gets the sasl config to use when authenticating
+     * @return
+     * @see com.rabbitmq.client.SaslConfig
+     */
+    public SaslConfig getSaslConfig() {
+        return saslConfig;
+    }
+
+    /**
+     * Sets the sasl config to use when authenticating
+     * @param saslConfig
+     * @see com.rabbitmq.client.SaslConfig
+     */
+    public void setSaslConfig(SaslConfig saslConfig) {
+        this.saslConfig = saslConfig;
     }
 
     /**
@@ -337,7 +361,7 @@ public class ConnectionFactory implements Cloneable {
         int portNumber = portOrDefault(addr.getPort());
         Socket socket = factory.createSocket();
         configureSocket(socket);
-        socket.connect(new InetSocketAddress(hostName, portNumber));
+        socket.connect(new InetSocketAddress(hostName, portNumber), connectionTimeout);
         return createFrameHandler(socket);
     }
 
@@ -407,7 +431,7 @@ public class ConnectionFactory implements Cloneable {
 
     @Override public ConnectionFactory clone(){
         try {
-            return (ConnectionFactory)super.clone(); 
+            return (ConnectionFactory)super.clone();
         } catch (CloneNotSupportedException e) {
             throw new Error(e);
         }

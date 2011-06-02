@@ -1,33 +1,19 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 
 package com.rabbitmq.client.impl;
 
@@ -35,6 +21,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,7 +31,7 @@ import java.util.ArrayList;
 import com.rabbitmq.client.MalformedFrameException;
 
 /**
- * Helper class to reade AMQP wire-protocol encoded values.
+ * Helper class to read AMQP wire-protocol encoded values.
  */
 public class ValueReader
 {
@@ -72,7 +59,8 @@ public class ValueReader
     }
 
     /** Public API - convenience method - reads a short string from a DataInput
-Stream. */
+     * Stream.
+     */
     public static final String readShortstr(DataInputStream in)
         throws IOException
     {
@@ -159,9 +147,10 @@ Stream. */
     public static final Map<String, Object> readTable(DataInputStream in)
         throws IOException
     {
-        Map<String, Object> table = new HashMap<String, Object>();
         long tableLength = unsignedExtend(in.readInt());
-
+        if (tableLength == 0) return Collections.emptyMap();
+        
+        Map<String, Object> table = new HashMap<String, Object>();
         DataInputStream tableIn = new DataInputStream
             (new TruncatedInputStream(in, tableLength));
         while(tableIn.available() > 0) {
@@ -230,13 +219,13 @@ Stream. */
     }
 
     /** Read a field-array */
-    public static List readArray(DataInputStream in)
+    public static List<Object> readArray(DataInputStream in)
         throws IOException
     {
         long length = unsignedExtend(in.readInt());
         DataInputStream arrayIn = new DataInputStream
             (new TruncatedInputStream(in, length));
-        List array = new ArrayList();
+        List<Object> array = new ArrayList<Object>();
         while(arrayIn.available() > 0) {
             Object value = readFieldValue(arrayIn);
             array.add(value);

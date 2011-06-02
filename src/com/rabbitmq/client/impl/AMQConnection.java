@@ -1,51 +1,41 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 
 package com.rabbitmq.client.impl;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.Map;
 import java.util.HashMap;
-import java.util.concurrent.*;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Address;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MissedHeartbeatException;
+import com.rabbitmq.client.PossibleAuthenticationFailureException;
+import com.rabbitmq.client.ProtocolVersionMismatchException;
+import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
@@ -72,16 +62,20 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @see Connection#getClientProperties
      */
     public static Map<String, Object> defaultClientProperties() {
+        Map<String, Object> capabilities = new HashMap<String, Object>();
+        capabilities.put("publisher_confirms", true);
+        capabilities.put("exchange_exchange_bindings", true);
+        capabilities.put("basic.nack", true);
+        capabilities.put("consumer_cancel_notify", true);
         return Frame.buildTable(new Object[] {
                 "product", LongStringHelper.asLongString("RabbitMQ"),
                 "version", LongStringHelper.asLongString(ClientVersion.VERSION),
                 "platform", LongStringHelper.asLongString("Java"),
                 "copyright", LongStringHelper.asLongString(
-                    "Copyright (C) 2007-2008 LShift Ltd., " +
-                    "Cohesive Financial Technologies LLC., " +
-                    "and Rabbit Technologies Ltd."),
+                    "Copyright (C) 2007-2011 VMware, Inc."),
                 "information", LongStringHelper.asLongString(
-                    "Licensed under the MPL. See http://www.rabbitmq.com/")
+                    "Licensed under the MPL. See http://www.rabbitmq.com/"),
+                "capabilities", capabilities
             });
     }
 
@@ -155,16 +149,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     private int _heartbeat;
 
-    private final String _username, _password, _virtualHost;
-    private final int _requestedChannelMax, _requestedFrameMax, _requestedHeartbeat;
+    private final String _virtualHost;
     private final Map<String, Object> _clientProperties;
 
     /** Saved server properties field from connection.start */
     public Map<String, Object> _serverProperties;
 
     /** {@inheritDoc} */
-    public String getHost() {
-        return _frameHandler.getHost();
+    public InetAddress getAddress() {
+        return _frameHandler.getAddress();
     }
 
     /** {@inheritDoc} */
@@ -205,12 +198,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     {
         checkPreconditions();
 
-        _username = factory.getUsername();
-        _password = factory.getPassword();
         _virtualHost = factory.getVirtualHost();
-        _requestedChannelMax = factory.getRequestedChannelMax();
-        _requestedFrameMax = factory.getRequestedFrameMax();
-        _requestedHeartbeat = factory.getRequestedHeartbeat();
         _clientProperties = new HashMap<String, Object>(factory.getClientProperties());
 
         _factory = factory;
@@ -234,7 +222,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Connection.Start/.StartOk, Connection.Tune/.TuneOk, and then
      * calls Connection.Open and waits for the OpenOk. Sets heartbeat
      * and frame max values after tuning has taken place.
-     * @throws java.io.IOException if an error is encountered
+     * @throws java.io.IOException if an error is encountered; IOException
+     * subtypes {@link ProtocolVersionMismatchException} and
+     * {@link PossibleAuthenticationFailureException} will be thrown in the
+     * corresponding circumstances.
      */
     public void start()
         throws IOException
@@ -257,42 +248,59 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         // start the main loop going
         Thread ml = new MainLoop();
-        ml.setName("AMQP Connection " + getHost() + ":" + getPort());
+        ml.setName("AMQP Connection " + getHostAddress() + ":" + getPort());
         ml.start();
 
+        AMQP.Connection.Start connStart = null;
         try {
-            AMQP.Connection.Start connStart =
+            connStart =
                 (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
 
             _serverProperties = connStart.getServerProperties();
-        
+
             Version serverVersion =
                 new Version(connStart.getVersionMajor(),
                             connStart.getVersionMinor());
-        
+
             if (!Version.checkVersion(clientVersion, serverVersion)) {
                 _frameHandler.close(); //this will cause mainLoop to terminate
-                //TODO: throw a more specific exception
-                throw new IOException("protocol version mismatch: expected " +
-                                      clientVersion + ", got " + serverVersion);
+                throw new ProtocolVersionMismatchException(clientVersion,
+                                                           serverVersion);
             }
         } catch (ShutdownSignalException sse) {
             throw AMQChannel.wrap(sse);
         }
-        
-        LongString saslResponse = LongStringHelper.asLongString("\0" + _username +
-                                                                "\0" + _password);
-        AMQImpl.Connection.StartOk startOk =
-            new AMQImpl.Connection.StartOk(_clientProperties, "PLAIN",
-                                           saslResponse, "en_US");
-        
-        AMQP.Connection.Tune connTune = null;
 
-        try {
-            connTune = (AMQP.Connection.Tune) _channel0.rpc(startOk).getMethod();
-        } catch (ShutdownSignalException e) {
-            throw AMQChannel.wrap(e, "Possibly caused by authentication failure");
+        String[] mechanisms = connStart.getMechanisms().toString().split(" ");
+        SaslMechanism sm = _factory.getSaslConfig().getSaslMechanism(mechanisms);
+        if (sm == null) {
+            throw new IOException("No compatible authentication mechanism found - " +
+                    "server offered [" + connStart.getMechanisms() + "]");
         }
+
+        LongString challenge = null;
+        LongString response = sm.handleChallenge(null, _factory);
+
+        AMQP.Connection.Tune connTune = null;
+        do {
+            Method method = (challenge == null)
+                ? new AMQImpl.Connection.StartOk(_clientProperties,
+                                                 sm.getName(),
+                                                 response, "en_US")
+                : new AMQImpl.Connection.SecureOk(response);
+
+            try {
+                Method serverResponse = _channel0.rpc(method).getMethod();
+                if (serverResponse instanceof AMQP.Connection.Tune) {
+                    connTune = (AMQP.Connection.Tune) serverResponse;
+                } else {
+                    challenge = ((AMQP.Connection.Secure) serverResponse).getChallenge();
+                    response = sm.handleChallenge(challenge, _factory);
+                }
+            } catch (ShutdownSignalException e) {
+                throw new PossibleAuthenticationFailureException(e);
+            }
+        } while (connTune == null);
 
         int channelMax =
             negotiatedMaxValue(_factory.getRequestedChannelMax(),
@@ -309,15 +317,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             negotiatedMaxValue(_factory.getRequestedHeartbeat(),
                                connTune.getHeartbeat());
         setHeartbeat(heartbeat);
-        
+
         _channel0.transmit(new AMQImpl.Connection.TuneOk(channelMax,
                                                          frameMax,
                                                          heartbeat));
         // 0.9.1: insist [on not being redirected] is deprecated, but
         // still in generated code; just pass a dummy value here
-        Method res = _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
-                                                                          "",
-                                                                          false)).getMethod();
+        _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
+                                                            "",
+                                                            false)).getMethod();
         return;
     }
 
@@ -526,7 +534,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 return false;
             } else {
                 // Quiescing.
-                if (method instanceof AMQP.Connection.CloseOk) {    
+                if (method instanceof AMQP.Connection.CloseOk) {
                     // It's our final "RPC". Time to shut down.
                     _running = false;
                     // If Close was sent from within the MainLoop we
@@ -552,17 +560,17 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _brokerInitiatedShutdown = true;
         Thread scw = new SocketCloseWait(sse);
         scw.setName("AMQP Connection Closing Monitor " +
-                    getHost() + ":" + getPort());
+                getHostAddress() + ":" + getPort());
         scw.start();
     }
-    
+
     private class SocketCloseWait extends Thread {
         private ShutdownSignalException cause;
-        
+
         public SocketCloseWait(ShutdownSignalException sse) {
             cause = sse;
         }
-        
+
         @Override public void run() {
             try {
                 _appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
@@ -581,7 +589,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Protected API - causes all attached channels to terminate with
      * a ShutdownSignal built from the argument, and stops this
      * connection from accepting further work from the application.
-     * 
+     *
      * @return a shutdown signal built using the given arguments
      */
     public ShutdownSignalException shutdown(Object reason,
@@ -592,11 +600,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ShutdownSignalException sse = new ShutdownSignalException(true,initiatedByApplication,
                                                                   reason, this);
         sse.initCause(cause);
-        synchronized (this) {
-            if (initiatedByApplication)
-                ensureIsOpen(); // invariant: we should never be shut down more than once per instance
-            if (isOpen())
-                _shutdownCause = sse;
+        if (!setShutdownCauseIfOpen(sse)) {
+            if (initiatedByApplication) 
+                throw new AlreadyClosedException("Attempt to use closed connection", this);
         }
 
         // stop any heartbeating
@@ -666,7 +672,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
-    /** 
+    /**
      * Protected API - Delegates to {@link
      * #close(int,String,boolean,Throwable,int,boolean) the
      * six-argument close method}, passing
@@ -726,6 +732,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     @Override public String toString() {
-        return "amqp://" + _username + "@" + getHost() + ":" + getPort() + _virtualHost;
+        return "amqp://" + _factory.getUsername() + "@" + getHostAddress() + ":" + getPort() + _virtualHost;
+    }
+
+    private String getHostAddress() {
+        return getAddress() == null ? null : getAddress().getHostAddress();
     }
 }

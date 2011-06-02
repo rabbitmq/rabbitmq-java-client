@@ -1,33 +1,19 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 
 package com.rabbitmq.client.impl;
 
@@ -254,14 +240,13 @@ public class Frame {
     }
 
     @Override public String toString() {
-        StringBuffer sb = new StringBuffer();
-        sb.append("Frame(" + type + ", " + channel + ", ");
+        StringBuilder sb = new StringBuilder();
+        sb.append("Frame(type=").append(type).append(", channel=").append(channel).append(", ");
         if (accumulator == null) {
-            sb.append(payload.length + " bytes of payload");
+            sb.append(payload.length).append(" bytes of payload)");
         } else {
-            sb.append(accumulator.size() + " bytes of accumulator");
+            sb.append(accumulator.size()).append(" bytes of accumulator)");
         }
-        sb.append(")");
         return sb.toString();
     }
 
@@ -295,7 +280,7 @@ public class Frame {
     }
 
     /** Computes the AMQP wire-protocol length of a protocol-encoded field-value. */
-    public static long fieldValueSize(Object value)
+    private static long fieldValueSize(Object value)
         throws UnsupportedEncodingException
     {
         long acc = 1; // for the type tag
@@ -315,7 +300,9 @@ public class Frame {
             acc += 8;
         }
         else if(value instanceof Map) {
-            acc += 4 + tableSize((Map<String, Object>) value);
+            @SuppressWarnings("unchecked")
+            Map<String,Object> map = (Map<String,Object>) value;
+            acc += 4 + tableSize(map);
         }
         else if (value instanceof Byte) {
             acc += 1;
@@ -339,7 +326,7 @@ public class Frame {
             acc += 4 + ((byte[])value).length;
         }
         else if(value instanceof List) {
-            acc += 4 + arraySize((List)value);
+            acc += 4 + arraySize((List<?>)value);
         }
         else if(value == null) {
         }
@@ -350,7 +337,7 @@ public class Frame {
     }
 
     /** Computes the AMQP wire-protocol length of an encoded field-array */
-    public static long arraySize(List values)
+    public static long arraySize(List<?> values)
         throws UnsupportedEncodingException
     {
         long acc = 0;
@@ -361,14 +348,14 @@ public class Frame {
     }
   
     /** Computes the AMQP wire-protocol length of a protocol-encoded long string. */
-    public static int longStrSize(String str)
+    private static int longStrSize(String str)
         throws UnsupportedEncodingException
     {
         return str.getBytes("utf-8").length + 4;
     }
 
     /** Computes the AMQP wire-protocol length of a protocol-encoded short string. */
-    public static int shortStrSize(String str)
+    private static int shortStrSize(String str)
         throws UnsupportedEncodingException
     {
         return str.getBytes("utf-8").length + 1;

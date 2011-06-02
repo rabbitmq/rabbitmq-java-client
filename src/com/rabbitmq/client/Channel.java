@@ -1,33 +1,19 @@
-//   The contents of this file are subject to the Mozilla Public License
-//   Version 1.1 (the "License"); you may not use this file except in
-//   compliance with the License. You may obtain a copy of the License at
-//   http://www.mozilla.org/MPL/
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
 //
-//   Software distributed under the License is distributed on an "AS IS"
-//   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-//   License for the specific language governing rights and limitations
-//   under the License.
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
 //
-//   The Original Code is RabbitMQ.
+//  The Original Code is RabbitMQ.
 //
-//   The Initial Developers of the Original Code are LShift Ltd,
-//   Cohesive Financial Technologies LLC, and Rabbit Technologies Ltd.
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
-//   Portions created before 22-Nov-2008 00:00:00 GMT by LShift Ltd,
-//   Cohesive Financial Technologies LLC, or Rabbit Technologies Ltd
-//   are Copyright (C) 2007-2008 LShift Ltd, Cohesive Financial
-//   Technologies LLC, and Rabbit Technologies Ltd.
-//
-//   Portions created by LShift Ltd are Copyright (C) 2007-2010 LShift
-//   Ltd. Portions created by Cohesive Financial Technologies LLC are
-//   Copyright (C) 2007-2010 Cohesive Financial Technologies
-//   LLC. Portions created by Rabbit Technologies Ltd are Copyright
-//   (C) 2007-2010 Rabbit Technologies Ltd.
-//
-//   All Rights Reserved.
-//
-//   Contributor(s): ______________________________________.
-//
+
 package com.rabbitmq.client;
 
 import java.io.IOException;
@@ -38,6 +24,7 @@ import com.rabbitmq.client.AMQP.Exchange;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.AMQP.Tx;
 import com.rabbitmq.client.AMQP.Basic;
+import com.rabbitmq.client.AMQP.Confirm;
 import com.rabbitmq.client.AMQP.Channel.FlowOk;
 
 /**
@@ -146,6 +133,18 @@ public interface Channel extends ShutdownNotifier {
      * @param listener the listener to use, or null indicating "don't use one".
      */
     void setFlowListener(FlowListener listener);
+
+    /**
+     * Return the current {@link ConfirmListener}.
+     * @return an interface to the current ack listener.
+     */
+    ConfirmListener getConfirmListener();
+
+    /**
+     * Set the current {@link ConfirmListener}.
+     * @param listener the listener to use, or null indicating "don't use one".
+     */
+    void setConfirmListener(ConfirmListener listener);
 
     /**
      * Get the current default consumer. @see setDefaultConsumer for rationale.
@@ -258,7 +257,7 @@ public interface Channel extends ShutdownNotifier {
     Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable) throws IOException;
 
     /**
-     * Declare an exchange, via an interface that allows the complete set of arguments.
+     * Declare an exchange.
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
      * @param exchange the name of the exchange
@@ -271,6 +270,28 @@ public interface Channel extends ShutdownNotifier {
      */
     Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable, boolean autoDelete,
                                        Map<String, Object> arguments) throws IOException;
+
+    /**
+     * Declare an exchange, via an interface that allows the complete set of
+     * arguments.
+     * @see com.rabbitmq.client.AMQP.Exchange.Declare
+     * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
+     * @param exchange the name of the exchange
+     * @param type the exchange type
+     * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
+     * @param autoDelete true if the server should delete the exchange when it is no longer in use
+     * @param internal true if the exchange is internal, i.e. can't be directly
+     * published to by a client.
+     * @param arguments other properties (construction arguments) for the exchange
+     * @return a declaration-confirm method to indicate the exchange was successfully declared
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.DeclareOk exchangeDeclare(String exchange,
+                                              String type,
+                                              boolean durable,
+                                              boolean autoDelete,
+                                              boolean internal,
+                                              Map<String, Object> arguments) throws IOException;
 
     /**
      * Declare an exchange passively; that is, check if the named exchange exists.
@@ -500,6 +521,23 @@ public interface Channel extends ShutdownNotifier {
     void basicAck(long deliveryTag, boolean multiple) throws IOException;
 
     /**
+     * Reject one or several received messages.
+     *
+     * Supply the <code>deliveryTag</code> from the {@link com.rabbitmq.client.AMQP.Basic.GetOk}
+     * or {@link com.rabbitmq.client.AMQP.Basic.GetOk} method containing the message to be rejected.
+     * @see com.rabbitmq.client.AMQP.Basic.Nack
+     * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk} or {@link com.rabbitmq.client.AMQP.Basic.Deliver}
+     * @param multiple true to reject all messages up to and including
+     * the supplied delivery tag; false to reject just the supplied
+     * delivery tag.
+     * @param requeue true if the rejected message(s) should be requeued rather
+     * than discarded/dead-lettered
+     * @throws java.io.IOException if an error is encountered
+     */
+    void basicNack(long deliveryTag, boolean multiple, boolean requeue)
+            throws IOException;
+
+    /**
      * Reject a message. Supply the deliveryTag from the {@link com.rabbitmq.client.AMQP.Basic.GetOk}
      * or {@link com.rabbitmq.client.AMQP.Basic.Deliver} method
      * containing the received message being rejected.
@@ -589,6 +627,17 @@ public interface Channel extends ShutdownNotifier {
      * Ask the broker to resend unacknowledged messages.  In 0-8
      * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
      * the new, deprecated method basic.recover_async is asynchronous.
+     * <p/>
+     * Equivalent to calling <code>basicRecover(true)</code>, messages 
+     * will be requeued and possibly delivered to a different consumer. 
+     * @see #basicRecover(boolean)
+     */
+     Basic.RecoverOk basicRecover() throws IOException;
+  
+    /**
+     * Ask the broker to resend unacknowledged messages.  In 0-8
+     * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
+     * the new, deprecated method basic.recover_async is asynchronous.
      * @param requeue If true, messages will be requeued and possibly
      * delivered to a different consumer. If false, messages will be
      * redelivered to the same consumer.
@@ -633,4 +682,33 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      */
     Tx.RollbackOk txRollback() throws IOException;
+
+    /**
+     * Enables publisher acknowledgements on this channel.
+     * @see com.rabbitmq.client.AMQP.Confirm.Select
+     * @throws java.io.IOException if an error is encountered
+     */
+    Confirm.SelectOk confirmSelect() throws IOException;
+
+    /**
+     * When in confirm mode, returns the sequence number of the next
+     * message to be published.
+     * @return the sequence number of the next message to be published
+     */
+    long getNextPublishSeqNo();
+
+    /**
+     * Asynchronously send a method over this channel.
+     * @param method method to transmit over this channel.
+     * @throws IOException Problem transmitting method.
+     */
+    void asyncRpc(Method method) throws IOException;
+
+    /**
+     * Synchronously send a method over this channel.
+     * @param method method to transmit over this channel.
+     * @return response to method. Caller should cast as appropriate.
+     * @throws IOException Problem transmitting method.
+     */
+    Method rpc(Method method) throws IOException;
 }

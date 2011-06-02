@@ -1,8 +1,24 @@
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
+//
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
+//
+//  The Original Code is RabbitMQ.
+//
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//
+
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
-import java.util.concurrent.*;
-import java.util.Random;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 
 /** 
  * Test that the tracer correctly handles multiple concurrently processing
@@ -44,14 +60,11 @@ public class TracerConcurrencyTest{
     }
 
     for(int i = 0; i < threadCount; i++){
-      final int j = i;
       new Thread(){
         @Override public void run(){
           try {
-            Random rnd = new Random();
             Channel ch = conn.createChannel();
             while(true){
-                Channel old = ch;
                 ch.close();
                 ch = conn.createChannel(); 
                 ch.basicPublish(
