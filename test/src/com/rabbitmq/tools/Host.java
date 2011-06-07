@@ -27,9 +27,9 @@ public class Host {
     private static String capture(InputStream is)
         throws IOException
     {
-        final BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
         String line;
-        final StringBuffer buff = new StringBuffer();
+        StringBuilder buff = new StringBuilder();
         while ((line = br.readLine()) != null) {
             buff.append(line);
         }
@@ -67,5 +67,9 @@ public class Host {
                                   "\nstdout:\n" + stdout +
                                   "\nstderr:\n" + stderr + "\n");
         }
+    }
+
+    public static void rabbitmqctl(String command) throws IOException {
+        executeCommand("../rabbitmq-server/scripts/rabbitmqctl " + command);
     }
 }

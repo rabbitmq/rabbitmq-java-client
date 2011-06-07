@@ -26,10 +26,11 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(Permissions.class);
         suite.addTestSuite(DurableBindingLifecycle.class);
         suite.addTestSuite(EffectVisibilityCrossNodeTest.class);
-        suite.addTest(PersisterRestartTests.suite());
         suite.addTestSuite(ExclusiveQueueDurability.class);
         suite.addTestSuite(AlternateExchangeEquivalence.class);
         suite.addTestSuite(MemoryAlarms.class);
+        suite.addTest(PersisterRestartTests.suite());
+        suite.addTestSuite(Firehose.class);
         return suite;
     }
 }

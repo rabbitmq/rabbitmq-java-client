@@ -14,13 +14,20 @@
 //  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
 
-package com.rabbitmq.client;
+package com.rabbitmq.client.impl;
+
+import com.rabbitmq.client.SaslMechanism;
+import com.rabbitmq.client.ConnectionFactory;
 
 /**
- * This interface represents a hook to allow you to control how exactly
- * a sasl client is selected during authentication.
- * @see com.rabbitmq.client.ConnectionFactory
+ * The EXTERNAL auth mechanism
  */
-public interface SaslConfig {
-    SaslMechanism getSaslMechanism(String[] mechanisms);
+public class ExternalMechanism implements SaslMechanism {
+    public String getName() {
+        return "EXTERNAL";
+    }
+
+    public LongString handleChallenge(LongString challenge, ConnectionFactory factory) {
+        return LongStringHelper.asLongString("");
+    }
 }

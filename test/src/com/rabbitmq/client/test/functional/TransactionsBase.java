@@ -17,12 +17,13 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.AMQP.BasicProperties;
 
 public abstract class TransactionsBase
     extends BrokerTestCase
@@ -229,15 +230,10 @@ public abstract class TransactionsBase
         basicGet();
         basicAck();
         basicAck(latestTag+1, true);
-        try {
-            txCommit();
-            fail("expected exception");
-        }
-        catch (IOException e) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
-        }
-        connection = null;
-        openConnection();
+        // "On a transacted channel, this check MUST be done immediately and
+        // not delayed until a Tx.Commit."
+        expectError(AMQP.PRECONDITION_FAILED);
+        openChannel();
     }
 
     /*

@@ -89,7 +89,7 @@ public class ConnectionFactory implements Cloneable {
     private int connectionTimeout                 = DEFAULT_CONNECTION_TIMEOUT;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
-    private SaslConfig saslConfig                 = new DefaultSaslConfig(this);
+    private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
 
     /**
      * Instantiate a ConnectionFactory with a default set of parameters.

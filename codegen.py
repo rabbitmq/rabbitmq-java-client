@@ -95,21 +95,21 @@ def java_field_name(name):
 def java_field_type(spec, domain):
     return javaTypeMap[spec.resolveDomain(domain)]
 
-def java_field_default_value(type, value):
-    if type == 'int':
+def java_field_default_value(jtype, value):
+    if jtype == 'int':
         return value
-    elif type == 'boolean':
-        return "{0}".format(value).lower()
-    elif type == 'String':
-        return "\"{0}\"".format(value)
-    elif type == 'LongString':
-        return "LongStringHelper.asLongString(\"{0}\")".format(value)
-    elif type == 'long':
-        return "{0}L".format(value)
-    elif type == 'Map<String,Object>':
+    elif jtype == 'boolean':
+        return ('%s'% (value)).lower()
+    elif jtype == 'String':
+        return '"%s"' % (value)
+    elif jtype == 'LongString':
+        return 'LongStringHelper.asLongString("%s")' % (value)
+    elif jtype == 'long':
+        return '%sL' % (value)
+    elif jtype == 'Map<String,Object>':
         return "null"
     else:
-        raise BogusDefaultValue("JSON provided default value {0} for suspicious type {1}".format(value, type))
+        raise BogusDefaultValue("JSON provided default value %s for suspicious type %s" % (value, jtype))
 
 def typeNameDefault(spec, a):
     fieldType = java_field_type(spec, a.domain)
@@ -266,11 +266,11 @@ def genJavaApi(spec):
         print "        }"
 
     def printAppendArgumentDebugStringTo(c):
-        appendList = [ "%s=\")\n               .append(this.%s)\n               .append(\"" 
+        appendList = [ "%s=\")\n               .append(this.%s)\n               .append(\""
                        % (f.name, java_field_name(f.name))
                        for f in c.fields ]
         print
-        print "        public void appendArgumentDebugStringTo(StringBuffer acc) {"
+        print "        public void appendArgumentDebugStringTo(StringBuilder acc) {"
         print "            acc.append(\"(%s)\");" % (", ".join(appendList))
         print "        }"
 
@@ -477,11 +477,11 @@ def genJavaImpl(spec):
                     return "false"
 
             def argument_debug_string():
-                appendList = [ "%s=\")\n                   .append(this.%s)\n                   .append(\"" 
+                appendList = [ "%s=\")\n                   .append(this.%s)\n                   .append(\""
                                % (a.name, java_field_name(a.name))
                                for a in m.arguments ]
                 print
-                print "            public void appendArgumentDebugStringTo(StringBuffer acc) {"
+                print "            public void appendArgumentDebugStringTo(StringBuilder acc) {"
                 print "                acc.append(\"(%s)\");" % ", ".join(appendList)
                 print "            }"
 
