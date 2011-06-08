@@ -91,6 +91,18 @@ public class DeadLetterExchange extends BrokerTestCase {
             }, null, PropertiesFactory.NULL, "queue_purged");
     }
 
+    public void testDeadLetterQueueLeaseExpire() throws Exception {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-expires", 1000);
+
+        channel.basicReject();
+        deadLetterTest(new Runnable() {
+                    public void run() {
+                        sleep(2000);
+                    }
+                }, args, PropertiesFactory.NULL, "queue_expired");
+    }
+
     private void deadLetterTest(final Runnable deathTrigger,
                                 Map<String, Object> queueDeclareArgs,
                                 PropertiesFactory propsFactory,
