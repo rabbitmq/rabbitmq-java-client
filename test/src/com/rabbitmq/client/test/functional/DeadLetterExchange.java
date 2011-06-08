@@ -95,7 +95,6 @@ public class DeadLetterExchange extends BrokerTestCase {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-expires", 1000);
 
-        channel.basicReject();
         deadLetterTest(new Runnable() {
                     public void run() {
                         sleep(2000);
