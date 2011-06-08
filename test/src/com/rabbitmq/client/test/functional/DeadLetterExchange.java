@@ -82,6 +82,15 @@ public class DeadLetterExchange extends BrokerTestCase {
             }, null, PropertiesFactory.NULL, "queue_deleted");
     }
 
+    public void testDeadLetterQueuePurged() throws Exception {
+        deadLetterTest(new Callable<Void>() {
+                public Void call() throws Exception{
+                    channel.queuePurge(TEST_QUEUE_NAME);
+                    return null;
+                }
+            }, null, PropertiesFactory.NULL, "queue_purged");
+    }
+
     private void deadLetterTest(final Runnable deathTrigger,
                                 Map<String, Object> queueDeclareArgs,
                                 PropertiesFactory propsFactory,
