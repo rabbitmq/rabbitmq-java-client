@@ -9,20 +9,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * Simple help class that dispatches notifications to a {@link Consumer} on an
  * internally-managed thread.
  * <p/>
- * Each <code>Channel</code> has a single <code>ConsumerDispatcher</code>,
+ * Each {@link Channel} has a single {@link ConsumerDispatcher},
  * which in turn manages a single thread.
  * <p/>
- * All <code>Consumers</code> for a <code>Channel</code> share the same thread.
+ * All {@link Consumer}s for a {@link Channel} share the same thread.
  */
 public final class ConsumerDispatcher {
 
-    private final WorkPool<Channel> workPool;
+    private final WorkPool<Channel, Runnable> workPool;
 
     private final ExecutorService dispatchExecutor;
 
@@ -34,7 +33,7 @@ public final class ConsumerDispatcher {
 
     public ConsumerDispatcher(AMQConnection connection,
                               Channel channel,
-                              WorkPool<Channel> workPool,
+                              WorkPool<Channel, Runnable> workPool,
                               ExecutorService executor) {
         this.connection = connection;
         this.channel = channel;
@@ -149,8 +148,8 @@ public final class ConsumerDispatcher {
 
     private void execute(Runnable r) {
         checkShutdown();
-        if (this.workPool.workIn(this.channel, r)) {
-            this.dispatchExecutor.submit(new WorkPoolProxyRunnable());
+        if (this.workPool.addWorkItem(this.channel, r)) {
+            this.dispatchExecutor.execute(new WorkPoolProxyRunnable());
         }
     }
 
@@ -168,47 +167,24 @@ public final class ConsumerDispatcher {
         this.workPool.registerKey(channel);
     }
 
-    /**
-     * Simple {@link ThreadFactory} implementation that creates threads
-     * with names of the form:
-     * <code>rabbit-dispatcher-<i>channel.toString()</i></code>.
-     */
-    private static final class ChannelThreadFactory implements ThreadFactory {
-
-        private static final String PREFIX = "rabbit-dispatcher-";
-
-        private final Channel channel;
-
-        public ChannelThreadFactory(Channel channel) {
-            this.channel = channel;
-        }
-
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r);
-            thread.setName(PREFIX + this.channel.toString());
-            thread.setDaemon(true);
-            return thread;
-        }
-    }
-
     private final class WorkPoolProxyRunnable implements Runnable {
 
         public void run() {
             int size = 16;
             List<Runnable> block = new ArrayList<Runnable>(size);
             try {
-                Channel key = workPool.nextBlock(block, size);
+                Channel key = workPool.nextWorkBlock(block, size);
                 
                 try {
                     for (Runnable runnable : block) {
                         runnable.run();
                     }
                 } finally {
-                    if (workPool.workBlockFinished(key)) {
+                    if (workPool.finishWorkBlock(key)) {
                         dispatchExecutor.execute(new WorkPoolProxyRunnable());
                     }
                 }
-            } catch (InterruptedException e) {
+            } catch (RuntimeException e) {
                 Thread.currentThread().interrupt();
             }
         }

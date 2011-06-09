@@ -109,7 +109,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @param channelNumber The channel number to be associated with this channel
      */
     public ChannelN(AMQConnection connection, int channelNumber,
-                    WorkPool<com.rabbitmq.client.Channel> workPool, ExecutorService executor) {
+                    WorkPool<com.rabbitmq.client.Channel, Runnable> workPool, ExecutorService executor) {
         super(connection, channelNumber);
         this.dispatcher = new ConsumerDispatcher(connection, this, workPool, executor);
         this.dispatcher.registerChannel(this);

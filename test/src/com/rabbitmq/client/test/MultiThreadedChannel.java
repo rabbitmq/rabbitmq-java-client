@@ -31,7 +31,6 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.util.concurrent.atomic.AtomicReference;

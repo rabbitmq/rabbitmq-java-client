@@ -24,7 +24,6 @@ import com.rabbitmq.client.ConnectionFactory;
 import java.util.Collections;
 
 /**
- * @author robharrop
  */
 public class PerQueueTTLPublisher {
 

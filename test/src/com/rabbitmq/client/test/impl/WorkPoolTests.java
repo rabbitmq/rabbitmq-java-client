@@ -7,15 +7,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author robharrop
  */
 public class WorkPoolTests extends TestCase {
 
-    private WorkPool<String> pool = new WorkPool<String>();
+    private WorkPool<String, Object> pool = new WorkPool<String, Object>();
 
     public void testUnkownKey() {
         try {
-            this.pool.workIn("test", newRunnable());
+            this.pool.addWorkItem("test", new Object());
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             // expected
@@ -23,87 +22,75 @@ public class WorkPoolTests extends TestCase {
     }
 
     public void testBasicInOut() throws InterruptedException {
-        Runnable one = newRunnable();
-        Runnable two = newRunnable();
+        Object one = new Object();
+        Object two = new Object();
 
         this.pool.registerKey("test");
-        assertTrue(this.pool.workIn("test", one));
-        assertFalse(this.pool.workIn("test", two));
+        assertTrue(this.pool.addWorkItem("test", one));
+        assertFalse(this.pool.addWorkItem("test", two));
 
-        List<Runnable> workList = new ArrayList<Runnable>(16);
-        String key = this.pool.nextBlock(workList, 1);
+        List<Object> workList = new ArrayList<Object>(16);
+        String key = this.pool.nextWorkBlock(workList, 1);
         assertEquals("test", key);
         assertEquals(1, workList.size());
         assertEquals(one, workList.get(0));
 
-        assertTrue(this.pool.workBlockFinished(key));
+        assertTrue(this.pool.finishWorkBlock(key));
 
         workList.clear();
-        key = this.pool.nextBlock(workList, 1);
+        key = this.pool.nextWorkBlock(workList, 1);
         assertEquals("test", key);
         assertEquals(two, workList.get(0));
 
-        assertFalse(this.pool.workBlockFinished(key));
+        assertFalse(this.pool.finishWorkBlock(key));
     }
 
     public void testWorkInWhileInProgress() throws Exception {
-        Runnable one = newRunnable();
-        Runnable two = newRunnable();
+        Object one = new Object();
+        Object two = new Object();
 
         this.pool.registerKey("test");
-        assertTrue(this.pool.workIn("test", one));
+        assertTrue(this.pool.addWorkItem("test", one));
 
-
-        List<Runnable> workList = new ArrayList<Runnable>(16);
-        String key = this.pool.nextBlock(workList, 1);
+        List<Object> workList = new ArrayList<Object>(16);
+        String key = this.pool.nextWorkBlock(workList, 1);
         assertEquals("test", key);
         assertEquals(1, workList.size());
         assertEquals(one, workList.get(0));
 
-        this.pool.workIn("test", two);
+        this.pool.addWorkItem("test", two);
 
-        this.pool.workBlockFinished(key);
+        this.pool.finishWorkBlock(key);
 
         workList.clear();
-        key = this.pool.nextBlock(workList, 1);
+        key = this.pool.nextWorkBlock(workList, 1);
         assertEquals("test", key);
         assertEquals(1, workList.size());
         assertEquals(two, workList.get(0));
     }
 
     public void testInterleavingKeys() throws Exception {
-        Runnable one = newRunnable();
-        Runnable two = newRunnable();
+        Object one = new Object();
+        Object two = new Object();
 
         this.pool.registerKey("test1");
         this.pool.registerKey("test2");
 
-        assertTrue(this.pool.workIn("test1", one));
-        assertTrue(this.pool.workIn("test2", two));
+        assertTrue(this.pool.addWorkItem("test1", one));
+        assertTrue(this.pool.addWorkItem("test2", two));
 
-        List<Runnable> workList = new ArrayList<Runnable>(16);
-        String key = this.pool.nextBlock(workList, 1);
+        List<Object> workList = new ArrayList<Object>(16);
+        String key = this.pool.nextWorkBlock(workList, 1);
         assertEquals("test1", key);
         assertEquals(1, workList.size());
         assertEquals(one, workList.get(0));
 
-
         workList.clear();
 
-        key = this.pool.nextBlock(workList, 1);
+        key = this.pool.nextWorkBlock(workList, 1);
         assertEquals("test2", key);
         assertEquals(1, workList.size());
         assertEquals(two, workList.get(0));
 
-
     }
-
-    private Runnable newRunnable() {
-        return new Runnable() {
-            public void run() {
-            }
-        };
-    }
-
-
 }

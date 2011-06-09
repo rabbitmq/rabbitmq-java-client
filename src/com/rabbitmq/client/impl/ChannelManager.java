@@ -40,7 +40,7 @@ public class ChannelManager {
 
     private final ExecutorService executor;
 
-    private final WorkPool<Channel> workPool;
+    private final WorkPool<Channel, Runnable> workPool;
 
     /** Maximum channel number available on this connection. */
     public final int _channelMax;
@@ -49,7 +49,7 @@ public class ChannelManager {
       return _channelMax;
     }
 
-    public ChannelManager(WorkPool<Channel> workPool,
+    public ChannelManager(WorkPool<Channel, Runnable> workPool,
                           ExecutorService executor, int channelMax) {
         if (channelMax == 0) {
             // The framing encoding only allows for unsigned 16-bit integers

@@ -92,12 +92,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             }
         };
 
-    private final WorkPool<Channel> workPool = new WorkPool<Channel>();
+    private final WorkPool<Channel, Runnable> workPool = new WorkPool<Channel, Runnable>();
 
     private final ExecutorService dispatchExecutor;
 
     /** Object that manages a set of channels */
-    public ChannelManager _channelManager;
+    private ChannelManager _channelManager;
 
     /** Frame source/sink */
     private final FrameHandler _frameHandler;
