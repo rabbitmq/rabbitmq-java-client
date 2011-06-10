@@ -48,8 +48,8 @@ public class RpcClient {
     private final String _routingKey;
     /** timeout to use on call responses */
     private final int _timeout;
-    /** FOREVER value must match convention on {@link BlockingCell#uninterruptibleGet(int)} */
-    protected final static int FOREVER = -1;
+    /** NO_TIMEOUT value must match convention on {@link BlockingCell#uninterruptibleGet(int)} */
+    protected final static int NO_TIMEOUT = -1;
 
     /** Map from request correlation ID to continuation BlockingCell */
     private final Map<String, BlockingCell<Object>> _continuationMap = new HashMap<String, BlockingCell<Object>>();
@@ -77,7 +77,7 @@ public class RpcClient {
         _channel = channel;
         _exchange = exchange;
         _routingKey = routingKey;
-        if (timeout < FOREVER) throw new IllegalArgumentException("Timeout must be -1 or greater.");
+        if (timeout < NO_TIMEOUT) throw new IllegalArgumentException("Timeout arguument must be NO_TIMEOUT(-1) or non-negative.");
         _timeout = timeout;
         _correlationId = 0;
 
@@ -99,7 +99,7 @@ public class RpcClient {
      * @see #setupReplyQueue
      */
     public RpcClient(Channel channel, String exchange, String routingKey) throws IOException {
-        this(channel, exchange, routingKey, FOREVER);
+        this(channel, exchange, routingKey, NO_TIMEOUT);
     }
 
     /**

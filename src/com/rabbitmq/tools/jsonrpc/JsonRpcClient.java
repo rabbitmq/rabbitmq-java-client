@@ -76,7 +76,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     public JsonRpcClient(Channel channel, String exchange, String routingKey)
     throws IOException, JsonRpcException, TimeoutException
     {
-        this(channel, exchange, routingKey, RpcClient.FOREVER);
+        this(channel, exchange, routingKey, RpcClient.NO_TIMEOUT);
     }
 
     /**
