@@ -58,6 +58,7 @@ public class ExclusiveQueueDurability extends BrokerTestCase {
     public void openChannel()
         throws IOException
     {
+        Host.executeCommand("cd ../rabbitmq-test; make restart-secondary-node");
         ConnectionFactory cf2 = connectionFactory.clone();
         cf2.setHost("localhost");
         cf2.setPort(5673);
