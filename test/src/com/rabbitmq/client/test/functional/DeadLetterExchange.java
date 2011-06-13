@@ -20,6 +20,8 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     private static final String DEAD_LETTER_QUEUE = "queue.dle";
 
+    private static final int MSG_COUNT = 10;
+
     @Override
     protected void createResources() throws IOException {
         this.channel.exchangeDeclare(DEAD_LETTER_EXCHANGE, "direct");
@@ -102,6 +104,39 @@ public class DeadLetterExchange extends BrokerTestCase {
                 }, args, PropertiesFactory.NULL, "queue_expired");
     }
 
+    public void testDeadLetterOnReject() throws Exception {
+        deadLetterTest(new Callable<Void>() {
+                    public Void call() throws Exception {
+                        for (int x = 0; x < MSG_COUNT; x++) {
+                            GetResponse getResponse =
+                                    channel.basicGet(TEST_QUEUE_NAME, false);
+                             channel.basicReject(
+                                     getResponse.getEnvelope().getDeliveryTag(),
+                                     false);
+
+                        }
+                        return null;
+                    }
+                }, null, PropertiesFactory.NULL, "rejected");
+    }
+
+    public void testDeadLetterOnNack() throws Exception {
+        deadLetterTest(new Callable<Void>() {
+                    public Void call() throws Exception {
+                        for (int x = 0; x < MSG_COUNT; x++) {
+                            GetResponse getResponse =
+                                    channel.basicGet(TEST_QUEUE_NAME, false);
+                             channel.basicNack(
+                                     getResponse.getEnvelope().getDeliveryTag(),
+                                     false,
+                                     false);
+
+                        }
+                        return null;
+                    }
+                }, null, PropertiesFactory.NULL, "rejected");
+    }
+
     private void deadLetterTest(final Runnable deathTrigger,
                                 Map<String, Object> queueDeclareArgs,
                                 PropertiesFactory propsFactory,
@@ -125,9 +160,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         this.channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
         this.channel.queueBind(DEAD_LETTER_QUEUE, DEAD_LETTER_EXCHANGE, "test");
 
-        int msgCount = 10;
-
-        for(int x = 0; x < msgCount; x++) {
+        for(int x = 0; x < MSG_COUNT; x++) {
             this.channel.basicPublish("amq.direct", "test",
                                       propsFactory.create(x),
                                       "test message".getBytes());
@@ -135,7 +168,7 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         deathTrigger.call();
 
-        for(int x = 0; x < msgCount; x++) {
+        for(int x = 0; x < MSG_COUNT; x++) {
             GetResponse getResponse =
                 this.channel.basicGet(DEAD_LETTER_QUEUE, true);
             assertNotNull("Message not dead-lettered", getResponse);
