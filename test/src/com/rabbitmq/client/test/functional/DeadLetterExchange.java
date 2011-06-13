@@ -101,7 +101,7 @@ public class DeadLetterExchange extends BrokerTestCase {
                     public void run() {
                         sleep(2000);
                     }
-                }, args, PropertiesFactory.NULL, "queue_expired");
+                }, args, PropertiesFactory.NULL, "queue_deleted");
     }
 
     public void testDeadLetterOnReject() throws Exception {
