@@ -11,13 +11,12 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Simple help class that dispatches notifications to a {@link Consumer} on an
- * internally-managed thread.
+ * Dispatches notifications to a {@link Consumer} on an
+ * internally-managed executor service and work pool.
  * <p/>
  * Each {@link Channel} has a single {@link ConsumerDispatcher},
- * which in turn manages a single thread.
- * <p/>
- * All {@link Consumer}s for a {@link Channel} share the same thread.
+ * but the executor service and work pool may be shared with other channels, typically those on the same
+ * {@link Connection}.
  */
 public final class ConsumerDispatcher {
 
@@ -174,7 +173,7 @@ public final class ConsumerDispatcher {
             List<Runnable> block = new ArrayList<Runnable>(size);
             try {
                 Channel key = workPool.nextWorkBlock(block, size);
-                
+                if (key == null) return; // nothing ready to run
                 try {
                     for (Runnable runnable : block) {
                         runnable.run();

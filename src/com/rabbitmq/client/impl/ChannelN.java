@@ -59,10 +59,7 @@ import com.rabbitmq.utility.Utility;
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
     private static final String UNSPECIFIED_OUT_OF_BAND = "";
 
-    /**
-     * When 0.9.1 is signed off, tickets can be removed from the codec
-     * and this field can be deleted.
-     */
+    /** When 0.9.1 is signed off, tickets can be removed from the codec and this field should be deleted.*/
     @Deprecated
     private static final int TICKET = 0;
 
@@ -78,28 +75,24 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public final Map<String, Consumer> _consumers =
         Collections.synchronizedMap(new HashMap<String, Consumer>());
 
-    /** Reference to the currently-active ReturnListener, or null if there is none.
-     */
+    /** Reference to the currently-active ReturnListener, or null if there is none.*/
     public volatile ReturnListener returnListener = null;
 
-    /** Reference to the currently-active FlowListener, or null if there is none.
-     */
+    /** Reference to the currently-active FlowListener, or null if there is none.*/
     public volatile FlowListener flowListener = null;
 
-    /** Reference to the currently-active ConfirmListener, or null if there is none.
-     */
+    /** Reference to the currently-active ConfirmListener, or null if there is none.*/
     public volatile ConfirmListener confirmListener = null;
 
-    /** Sequence number of next published message requiring confirmation.
-     */
+    /** Sequence number of next published message requiring confirmation.*/
     private long nextPublishSeqNo = 0L;
 
-    /** Reference to the currently-active default consumer, or null if there is
-     *  none.
-     */
+    /** Reference to the currently-active default consumer, or null if there is none.*/
     public volatile Consumer defaultConsumer = null;
 
+    /** Dispatcher of consumer work for this channel */
     private final ConsumerDispatcher dispatcher;
+
     /**
      * Construct a new channel on the given connection with the given
      * channel number. Usually not called directly - call
@@ -107,6 +100,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see Connection#createChannel
      * @param connection The connection associated with this channel
      * @param channelNumber The channel number to be associated with this channel
+     * @param workPool pool in which this channel's consumer work is stored
+     * @param executor service which executes the work in the workPool
      */
     public ChannelN(AMQConnection connection, int channelNumber,
                     WorkPool<com.rabbitmq.client.Channel, Runnable> workPool, ExecutorService executor) {

@@ -6,10 +6,12 @@ import java.util.Queue;
 import java.util.Set;
 
 /**
- * A generic queue-like implementation (only supporting operations <code>add</code>,
+ * A generic queue-like implementation (supporting operations <code>addIfNotPresent</code>,
  * <code>poll</code>, <code>contains</code>, and <code>isEmpty</code>)
  * which restricts a queue element to appear at most once.
  * If the element is already present {@link #addIfNotPresent(T)} returns <code><b>false</b></code>.
+ * <p/>
+ * Elements must not be <code><b>null</b></code>.
  * <p/><b>Concurrent Semantics</b><br/>
  * This implementation is <i>not</i> thread-safe.
  * @param <T> type of elements in the queue
@@ -19,7 +21,7 @@ public class SetQueue<T> {
     private final Queue<T> queue = new LinkedList<T>();
 
     /**
-     * Add an element to the back of the queue, or else return false.
+     * Add an element to the back of the queue and return <code><b>true</b></code>, or else return <code><b>false</b></code>.
      * @param item to add
      * @return <b><code>true</code></b> if the element was added, <b><code>false</code></b> if it is already present.
      */
@@ -34,7 +36,7 @@ public class SetQueue<T> {
 
     /**
      * Remove the head of the queue and return it.
-     * @return head of the queue, or <b><code>null</code></b> if the queue is empty.
+     * @return head element of the queue, or <b><code>null</code></b> if the queue is empty.
      */
     public T poll() {
         T item =  this.queue.poll();
@@ -44,17 +46,12 @@ public class SetQueue<T> {
         return item;
     }
 
-    /**
-     * @param item to check for
-     * @return <code><b>true</b></code> if and only if <b>item</b> is in the queue.
-     */
+    /** @return <code><b>true</b></code> if and only if <b>item</b> is in the queue.*/
     public boolean contains(T item) {
         return this.members.contains(item);
     }
 
-    /**
-     * @return <code><b>true</b></code> if and only if the queue is empty.
-     */
+    /** @return <code><b>true</b></code> if and only if the queue is empty.*/
     public boolean isEmpty() {
         return this.members.isEmpty();
     }
