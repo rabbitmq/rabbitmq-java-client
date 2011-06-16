@@ -121,7 +121,7 @@ public class QueueingConsumer extends DefaultConsumer {
                                byte[] body)
         throws IOException
     {
-        checkShutdown();
+//        checkShutdown();
         this._queue.add(new Delivery(envelope, properties, body));
     }
 
@@ -173,9 +173,15 @@ public class QueueingConsumer extends DefaultConsumer {
     }
 
     /**
-     * If this is a non-POISON non-null delivery simply return it.
-     * If this is POISON we are in shutdown mode, throw _shutdown
-     * If this is null, we may be in shutdown mode. Check and see.
+     * If delivery is not POISON nor null, return it.
+     * <p/>
+     * If delivery, _shutdown and _cancelled are all null, return null.
+     * <p/>
+     * If delivery is POISON re-insert POISON into the queue and
+     * throw an exception if POISONed for no reason.
+     * <p/>
+     * Otherwise, if we are in shutdown mode or cancelled,
+     * throw a corresponding exception.
      */
     private Delivery handle(Delivery delivery) {
         if (delivery == POISON ||

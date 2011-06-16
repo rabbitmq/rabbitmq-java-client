@@ -65,22 +65,26 @@ public interface Consumer {
     void handleCancel(String consumerTag) throws IOException;
 
     /**
-     * Called to the consumer that either the channel or the undelying connection has been shut down.
+     * Called to the consumer that either the channel or the underlying connection has been shut down.
      * @param consumerTag the defined consumerTag (either client- or server-generated)
      * @param sig an exception object encapsulating the reason for shutdown
      */
     void handleShutdownSignal(String consumerTag, ShutdownSignalException sig);
 
     /**
-     * Called to notify the consumer that we've received a basic.recover-ok
-     * in reply to a basic.recover some other thread sent. All messages
+     * Called to notify the consumer that we've received a <code>basic.recover-ok</code>
+     * in reply to a <code>basic.recover</code> some other thread sent. All messages
      * received before this is invoked that haven't been ack'ed will be
-     * redelivered. All messages received afterwards won't be.
-     *
-     * This method exists since all the Consumer callbacks are invoked by the
-     * connection main loop thread - so it's sometimes useful to allow that
+     * re-delivered. All messages received afterwards won't be.
+     * <p/><b>Note</b><br/>
+     * If {@link Consumer} callbacks are invoked by the
+     * connection main loop thread - it's sometimes useful to allow that
      * thread to know that the recover-ok has been received, rather than the
      * thread which invoked basicRecover().
+     * <p/>
+     * It is no longer the case that callbacks are invoked on the connection
+     * main loop thread. The justification for this callback is therefore less
+     * sound.  However, it is retained for compatibility.
      */
     void handleRecoverOk();
 
