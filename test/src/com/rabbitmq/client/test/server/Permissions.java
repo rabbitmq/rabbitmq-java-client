@@ -143,10 +143,6 @@ public class Permissions extends BrokerTestCase
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                    channel.exchangeDeclarePassive(name);
-                }});
-        runConfigureTest(new WithName() {
-                public void with(String name) throws IOException {
                     channel.exchangeDelete(name);
                 }});
     }
@@ -160,12 +156,19 @@ public class Permissions extends BrokerTestCase
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                    channel.queueDeclarePassive(name);
-                }});
-        runConfigureTest(new WithName() {
-                public void with(String name) throws IOException {
                     channel.queueDelete(name);
                 }});
+    }
+
+    public void testPassiveDeclaration() throws IOException {
+        adminCh.exchangeDeclare("xxx", "direct");
+        adminCh.queueDeclare("xxx", false, false, false, null);
+        // We have no permissions on these but should be able to passive
+        // declare them anyway
+        channel.exchangeDeclarePassive("xxx");
+        channel.queueDeclarePassive("xxx");
+        adminCh.exchangeDelete("xxx");
+        adminCh.queueDelete("xxx");
     }
 
     public void testBinding()
