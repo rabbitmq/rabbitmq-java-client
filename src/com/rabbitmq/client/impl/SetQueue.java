@@ -5,8 +5,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-/**
- * A generic queue-like implementation (supporting operations <code>addIfNotPresent</code>,
+/** A generic queue-like implementation (supporting operations <code>addIfNotPresent</code>,
  * <code>poll</code>, <code>contains</code>, and <code>isEmpty</code>)
  * which restricts a queue element to appear at most once.
  * If the element is already present {@link #addIfNotPresent(T)} returns <code><b>false</b></code>.
@@ -20,8 +19,7 @@ public class SetQueue<T> {
     private final Set<T> members = new HashSet<T>();
     private final Queue<T> queue = new LinkedList<T>();
 
-    /**
-     * Add an element to the back of the queue and return <code><b>true</b></code>, or else return <code><b>false</b></code>.
+    /** Add an element to the back of the queue and return <code><b>true</b></code>, or else return <code><b>false</b></code>.
      * @param item to add
      * @return <b><code>true</code></b> if the element was added, <b><code>false</code></b> if it is already present.
      */
@@ -34,8 +32,7 @@ public class SetQueue<T> {
         return true;
     }
 
-    /**
-     * Remove the head of the queue and return it.
+    /** Remove the head of the queue and return it.
      * @return head element of the queue, or <b><code>null</code></b> if the queue is empty.
      */
     public T poll() {
@@ -54,5 +51,19 @@ public class SetQueue<T> {
     /** @return <code><b>true</b></code> if and only if the queue is empty.*/
     public boolean isEmpty() {
         return this.members.isEmpty();
+    }
+
+    /** Remove item from queue, if present.
+     *  @return <code><b>true</b></code> if and only if item was initially present and was removed.
+     */
+    public boolean remove(T item) {
+        this.queue.remove(item); // there can only be one such item in the queue
+        return this.members.remove(item);
+    }
+
+    /** Remove all items from the queue. */
+    public void clear() {
+        this.queue.clear();
+        this.members.clear();
     }
 }

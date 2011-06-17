@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import java.net.Socket;
 import java.net.InetSocketAddress;
@@ -401,11 +399,9 @@ public class ConnectionFactory implements Cloneable {
         IOException lastException = null;
         for (Address addr : addrs) {
             try {
-                ExecutorService executorService = Executors.newFixedThreadPool(NUM_CHANNEL_CONSUMER_THREADS);
                 FrameHandler frameHandler = createFrameHandler(addr);
-                AMQConnection conn = new AMQConnection(this,
-                                                     frameHandler,
-                                                     executorService);
+                AMQConnection conn = 
+                    new AMQConnection(this, frameHandler, NUM_CHANNEL_CONSUMER_THREADS);
                 conn.start();
                 return conn;
             } catch (IOException e) {

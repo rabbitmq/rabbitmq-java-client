@@ -23,7 +23,6 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -92,9 +91,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             }
         };
 
-    private final WorkPool<Channel, Runnable> workPool = new WorkPool<Channel, Runnable>();
-
-    private final ExecutorService dispatchExecutor;
+    private final ConsumerWorkService _workService;
 
     /** Object that manages a set of channels */
     private ChannelManager _channelManager;
@@ -181,8 +178,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public AMQConnection(ConnectionFactory factory,
                          FrameHandler frameHandler,
-                         ExecutorService executorService) {
-        this(factory, frameHandler, executorService, new DefaultExceptionHandler());
+                         int numWorkThreads) {
+        this(factory, frameHandler, numWorkThreads, new DefaultExceptionHandler());
     }
 
     /**
@@ -193,7 +190,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public AMQConnection(ConnectionFactory factory,
                          FrameHandler frameHandler,
-                         ExecutorService executorService,
+                         int numWorkThreads,
                          ExceptionHandler exceptionHandler)
     {
         checkPreconditions();
@@ -211,8 +208,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _exceptionHandler = exceptionHandler;
         _brokerInitiatedShutdown = false;
 
-        dispatchExecutor  = executorService;
-        _channelManager = new ChannelManager(this.workPool, this.dispatchExecutor, 0);
+        _workService  = new ConsumerWorkService(numWorkThreads);
+        _channelManager = new ChannelManager(this._workService, 0);
     }
 
     /**
@@ -305,8 +302,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         int channelMax =
             negotiatedMaxValue(_factory.getRequestedChannelMax(),
                                connTune.getChannelMax());
-        _channelManager = new ChannelManager(this.workPool,
-                this.dispatchExecutor, channelMax);
+        _channelManager = new ChannelManager(this._workService, channelMax);
         
         int frameMax =
             negotiatedMaxValue(_factory.getRequestedFrameMax(),
@@ -611,8 +607,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _channel0.processShutdownSignal(sse, !initiatedByApplication, notifyRpc);
         _channelManager.handleSignal(sse);
 
-        this.dispatchExecutor.shutdown();
-        
+        this._workService.shutdown();
+
         return sse;
     }
 
@@ -702,7 +698,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                       boolean abort)
         throws IOException
     {
-        final boolean sync = !(Thread.currentThread() instanceof MainLoop);
+        boolean sync = !(Thread.currentThread() instanceof MainLoop);
 
         try {
             AMQImpl.Connection.Close reason =

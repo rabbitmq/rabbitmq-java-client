@@ -22,10 +22,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.Channel;
 import com.rabbitmq.utility.IntAllocator;
 
 /**
@@ -38,9 +36,7 @@ public class ChannelManager {
         Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
     private final IntAllocator channelNumberAllocator;
 
-    private final ExecutorService executor;
-
-    private final WorkPool<Channel, Runnable> workPool;
+    private final ConsumerWorkService workService;
 
     /** Maximum channel number available on this connection. */
     public final int _channelMax;
@@ -49,8 +45,7 @@ public class ChannelManager {
       return _channelMax;
     }
 
-    public ChannelManager(WorkPool<Channel, Runnable> workPool,
-                          ExecutorService executor, int channelMax) {
+    public ChannelManager(ConsumerWorkService workService, int channelMax) {
         if (channelMax == 0) {
             // The framing encoding only allows for unsigned 16-bit integers
             // for the channel number
@@ -59,8 +54,7 @@ public class ChannelManager {
         _channelMax = channelMax;
         channelNumberAllocator = new IntAllocator(1, channelMax);
         
-        this.executor = executor;
-        this.workPool = workPool;
+        this.workService = workService;
     }
 
 
@@ -123,7 +117,7 @@ public class ChannelManager {
                         + "Please report this as a bug.");
             }
 
-            ch = new ChannelN(connection, channelNumber, this.workPool, this.executor);
+            ch = new ChannelN(connection, channelNumber, this.workService);
             addChannel(ch);
         }
         ch.open(); // now that it's been added to our internal tables

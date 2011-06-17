@@ -1,14 +1,30 @@
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
+//
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
+//
+//  The Original Code is RabbitMQ.
+//
+//  The Initial Developer of the Original Code is VMware, Inc.
+//  Copyright (c) 2011 VMware, Inc.  All rights reserved.
+
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.Utility;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 
 /**
  * Dispatches notifications to a {@link Consumer} on an
@@ -20,9 +36,7 @@ import java.util.concurrent.ExecutorService;
  */
 public final class ConsumerDispatcher {
 
-    private final WorkPool<Channel, Runnable> workPool;
-
-    private final ExecutorService dispatchExecutor;
+    private final ConsumerWorkService workService;
 
     private final AMQConnection connection;
 
@@ -32,12 +46,11 @@ public final class ConsumerDispatcher {
 
     public ConsumerDispatcher(AMQConnection connection,
                               Channel channel,
-                              WorkPool<Channel, Runnable> workPool,
-                              ExecutorService executor) {
+                              ConsumerWorkService workService) {
         this.connection = connection;
         this.channel = channel;
-        this.workPool = workPool;
-        this.dispatchExecutor = executor;
+        workService.registerKey(channel);
+        this.workService = workService;
     }
 
     public void handleConsumeOk(final Consumer delegate,
@@ -115,7 +128,7 @@ public final class ConsumerDispatcher {
         execute(new Runnable() {
             public void run() {
                 notifyConsumersOfShutdown(consumers, signal);
-                shutdown(signal);
+                ConsumerDispatcher.this.shutdown(signal);
             }
         });
     }
@@ -147,9 +160,7 @@ public final class ConsumerDispatcher {
 
     private void execute(Runnable r) {
         checkShutdown();
-        if (this.workPool.addWorkItem(this.channel, r)) {
-            this.dispatchExecutor.execute(new WorkPoolProxyRunnable());
-        }
+        this.workService.addWork(this.channel, r);
     }
 
     private void shutdown(ShutdownSignalException signal) {
@@ -159,33 +170,6 @@ public final class ConsumerDispatcher {
     private void checkShutdown() {
         if (this.shutdownSignal != null) {
             throw Utility.fixStackTrace(this.shutdownSignal);
-        }
-    }
-
-    public void registerChannel(Channel channel) {
-        this.workPool.registerKey(channel);
-    }
-
-    private final class WorkPoolProxyRunnable implements Runnable {
-
-        public void run() {
-            int size = 16;
-            List<Runnable> block = new ArrayList<Runnable>(size);
-            try {
-                Channel key = workPool.nextWorkBlock(block, size);
-                if (key == null) return; // nothing ready to run
-                try {
-                    for (Runnable runnable : block) {
-                        runnable.run();
-                    }
-                } finally {
-                    if (workPool.finishWorkBlock(key)) {
-                        dispatchExecutor.execute(new WorkPoolProxyRunnable());
-                    }
-                }
-            } catch (RuntimeException e) {
-                Thread.currentThread().interrupt();
-            }
         }
     }
 }

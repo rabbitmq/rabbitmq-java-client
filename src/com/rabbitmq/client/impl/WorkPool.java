@@ -61,8 +61,6 @@ import java.util.Set;
  */
 public class WorkPool<K, W> {
 
-    public WorkPool() {}
-
     /** protecting <code>ready</code>, <code>inProgress</code> and <code>pool</code> */
     private final Object monitor = new Object();
         /** An ordered queue of <i>ready</i> clients. */
@@ -84,6 +82,29 @@ public class WorkPool<K, W> {
             if (!this.pool.containsKey(key)) {
                 this.pool.put(key, new LinkedList<W>());
             }
+        }
+    }
+
+    /**
+     * Remove client from pool and from any other state. Has no effect if client already absent.
+     * @param key of client to unregister
+     */
+    public void unregisterKey(K key) {
+        synchronized (this.monitor) {
+            this.pool.remove(key);
+            this.ready.remove(key);
+            this.inProgress.remove(key);
+        }
+    }
+
+    /**
+     * Remove all clients from pool and from any other state.
+     */
+    public void unregisterAllKeys() {
+        synchronized (this.monitor) {
+            this.pool.clear();
+            this.ready.clear();
+            this.inProgress.clear();
         }
     }
 
@@ -130,18 +151,19 @@ public class WorkPool<K, W> {
 
     /**
      * Add (enqueue) an item for a specific client.
+     * No change and returns <code><b>false</b></code> if client not registered.
      * If <i>dormant</i>, the client will be marked <i>ready</i>.
      * @param key the client to add to the work item to
      * @param item the work item to add to the client queue
      * @return <code><b>true</b></code> if and only if the client is marked <i>ready</i>
      * &mdash; <i>as a result of this work item</i>
-     * @throws IllegalArgumentException if the client is not registered
+     * @throws IllegalArgumentException if key not registered.
      */
     public boolean addWorkItem(K key, W item) {
         synchronized (this.monitor) {
             Queue<W> queue = this.pool.get(key);
             if (queue == null) {
-                throw new IllegalArgumentException("Unknown client");
+                throw new IllegalArgumentException("Client " + key + " not registered");
             }
             queue.offer(item);
             if (isDormant(key)) {
@@ -153,14 +175,18 @@ public class WorkPool<K, W> {
     }
 
     /**
-     * Report client no longer <i>in progress</i>.
+     * Set client no longer <i>in progress</i>.
+     * Ignore unknown clients (and return <code><b>false</b></code>).
      * @param key client that has finished work
-     * @return true if and only if client becomes <i>ready</i>
+     * @return <code><b>true</b></code> if and only if client becomes <i>ready</i>
+     * @throws IllegalStateException if registered client not <i>in progress</i>
      */
     public boolean finishWorkBlock(K key) {
         synchronized (this.monitor) {
+            if (!this.isRegistered(key))
+                return false;
             if (!this.inProgress.contains(key)) {
-                throw new IllegalStateException("Client not in progress.");
+                throw new IllegalStateException("Client " + key + " not in progress");
             }
 
             if (moreWorkItems(key)) {
@@ -174,19 +200,22 @@ public class WorkPool<K, W> {
     }
 
     private boolean moreWorkItems(K key) {
-        return !this.pool.get(key).isEmpty();
+        Deque<W> deque = this.pool.get(key);
+        return (deque==null ? false : !deque.isEmpty());
     }
     
     /* State identification functions */
     private boolean isInProgress(K key){ return this.inProgress.contains(key); }
     private boolean isReady(K key){ return this.ready.contains(key); }
-    private boolean isDormant(K key){ return !isInProgress(key) && !isReady(key); }
+    private boolean isRegistered(K key) { return this.pool.containsKey(key); }
+    private boolean isDormant(K key){ return !isInProgress(key) && !isReady(key) && isRegistered(key); }
 
-    /* State transition methods */
+    /* State transition methods - all assume key registered */
     private void inProgressToReady(K key){ this.inProgress.remove(key); this.ready.addIfNotPresent(key); };
     private void inProgressToDormant(K key){ this.inProgress.remove(key); };
     private void dormantToReady(K key){ this.ready.addIfNotPresent(key); };
 
+    /* Basic work selector and state transition step */
     private K readyToInProgress() {
         K key = this.ready.poll();
         if (key != null) {
