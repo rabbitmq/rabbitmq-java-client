@@ -116,7 +116,7 @@ public class Permissions extends BrokerTestCase
         action.with("configure");
         action.with("write");
         action.with("read");
-        action.with("no-permission");
+        action.with("none");
     }
 
     public void testAuth()
@@ -333,7 +333,7 @@ public class Permissions extends BrokerTestCase
         runTest(true, "configure-me", test);
         runTest(false, "write-me", test);
         runTest(false, "read-me", test);
-        runTest(false, "no-permission", test);
+        runTest(false, "none", test);
     }
 
     protected void runTest(boolean expC, boolean expW, boolean expR, boolean expN,
@@ -343,7 +343,7 @@ public class Permissions extends BrokerTestCase
         runTest(expC, "configure", test);
         runTest(expW, "write", test);
         runTest(expR, "read", test);
-        runTest(expN, "no-permission", test);
+        runTest(expN, "none", test);
     }
 
     protected void runTest(boolean exp, String name, WithName test)
