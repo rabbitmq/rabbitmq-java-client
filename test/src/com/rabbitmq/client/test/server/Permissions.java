@@ -96,8 +96,6 @@ public class Permissions extends BrokerTestCase
                     adminCh.exchangeDeclare(name, "direct");
                     adminCh.queueDeclare(name, false, false, false, null);
                 }});
-        adminCh.exchangeDeclare("no-permission", "direct");
-        adminCh.queueDeclare("no-permission", false, false, false, null);
     }
 
     protected void releaseResources()
@@ -108,8 +106,6 @@ public class Permissions extends BrokerTestCase
                     adminCh.queueDelete(name);
                     adminCh.exchangeDelete(name);
                 }});
-        adminCh.exchangeDelete("no-permission");
-        adminCh.queueDelete("no-permission");
 
         adminCh.getConnection().abort();
     }
@@ -120,6 +116,7 @@ public class Permissions extends BrokerTestCase
         action.with("configure");
         action.with("write");
         action.with("read");
+        action.with("no-permission");
     }
 
     public void testAuth()
@@ -166,11 +163,11 @@ public class Permissions extends BrokerTestCase
     }
 
     public void testPassiveDeclaration() throws IOException {
-        runTest(true, "no-permission", new WithName() {
+        runTest(true, true, true, true, new WithName() {
                 public void with(String name) throws IOException {
                     channel.exchangeDeclarePassive(name);
                 }});
-        runTest(true, "no-permission", new WithName() {
+        runTest(true, true, true, true, new WithName() {
                 public void with(String name) throws IOException {
                     channel.queueDeclarePassive(name);
                 }});
@@ -179,11 +176,11 @@ public class Permissions extends BrokerTestCase
     public void testBinding()
         throws IOException
     {
-        runTest(false, true, false, new WithName() {
+        runTest(false, true, false, false, new WithName() {
                 public void with(String name) throws IOException {
                     channel.queueBind(name, "read", "");
                 }});
-        runTest(false, false, true, new WithName() {
+        runTest(false, false, true, false, new WithName() {
                 public void with(String name) throws IOException {
                     channel.queueBind("write", name, "");
                 }});
@@ -192,7 +189,7 @@ public class Permissions extends BrokerTestCase
     public void testPublish()
         throws IOException
     {
-        runTest(false, true, false, new WithName() {
+        runTest(false, true, false, false, new WithName() {
                 public void with(String name) throws IOException {
                     channel.basicPublish(name, "", null, "foo".getBytes());
                     //followed by a dummy synchronous command in order
@@ -204,7 +201,7 @@ public class Permissions extends BrokerTestCase
     public void testGet()
         throws IOException
     {
-        runTest(false, false, true, new WithName() {
+        runTest(false, false, true, false, new WithName() {
                 public void with(String name) throws IOException {
                     channel.basicGet(name, true);
                 }});
@@ -213,7 +210,7 @@ public class Permissions extends BrokerTestCase
     public void testConsume()
         throws IOException
     {
-        runTest(false, false, true, new WithName() {
+        runTest(false, false, true, false, new WithName() {
                 public void with(String name) throws IOException {
                     channel.basicConsume(name, new QueueingConsumer(channel));
                 }});
@@ -222,7 +219,7 @@ public class Permissions extends BrokerTestCase
     public void testPurge()
         throws IOException
     {
-        runTest(false, false, true, new WithName() {
+        runTest(false, false, true, false, new WithName() {
                 public void with(String name) throws IOException {
                     ((AMQChannel)channel).exnWrappingRpc(new AMQImpl.Queue.Purge(0, name, false));
                 }});
@@ -231,11 +228,11 @@ public class Permissions extends BrokerTestCase
     public void testAltExchConfiguration()
         throws IOException
     {
-        runTest(false, false, false,
+        runTest(false, false, false, false,
                 createAltExchConfigTest("configure-me"));
-        runTest(false, false, false,
+        runTest(false, false, false, false,
                 createAltExchConfigTest("configure-and-write-me"));
-        runTest(false, true, false,
+        runTest(false, true, false, false,
                 createAltExchConfigTest("configure-and-read-me"));
     }
 
@@ -336,15 +333,17 @@ public class Permissions extends BrokerTestCase
         runTest(true, "configure-me", test);
         runTest(false, "write-me", test);
         runTest(false, "read-me", test);
+        runTest(false, "no-permission", test);
     }
 
-    protected void runTest(boolean expC, boolean expW, boolean expR,
+    protected void runTest(boolean expC, boolean expW, boolean expR, boolean expN,
                            WithName test)
         throws IOException
     {
         runTest(expC, "configure", test);
         runTest(expW, "write", test);
         runTest(expR, "read", test);
+        runTest(expN, "no-permission", test);
     }
 
     protected void runTest(boolean exp, String name, WithName test)
