@@ -21,6 +21,7 @@ import com.rabbitmq.client.*;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 
 import javax.net.SocketFactory;
 
@@ -37,7 +38,7 @@ public class CloseInMainLoop extends BrokerTestCase{
       super(
           new ConnectionFactory(),
           new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", 5672)),
-          1,
+          Executors.newFixedThreadPool(1),
           new DefaultExceptionHandler(){
             @Override public void handleConsumerException(Channel channel,
                                                            Throwable exception,

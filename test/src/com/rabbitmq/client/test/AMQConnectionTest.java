@@ -23,6 +23,8 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -84,9 +86,10 @@ public class AMQConnectionTest extends TestCase {
         IOException exception = new SocketTimeoutException();
         _mockFrameHandler.setExceptionOnReadingFrames(exception);
         MyExceptionHandler handler = new MyExceptionHandler();
+        ExecutorService executor = Executors.newFixedThreadPool(1);
         assertEquals(0, _mockFrameHandler.countHeadersSent());
         try {
-            new AMQConnection(factory, _mockFrameHandler, 1, handler).start();
+            new AMQConnection(factory, _mockFrameHandler, executor, handler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
            // As expected 

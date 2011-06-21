@@ -38,10 +38,10 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
         @Override public void run(){
           try {
             while(true){
-              c.nextDelivery();
+                c.nextDelivery();
             }
           } catch (ShutdownSignalException sig) {
-            count.decrementAndGet();
+              count.decrementAndGet();
           } catch (Exception e) {
             throw new RuntimeException(e);
           } finally {
@@ -52,11 +52,10 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
     }
 
     connection.close();
-
+    
     // Far longer than this could reasonably take
     assertTrue(latch.await(5, TimeUnit.SECONDS));
     assertEquals(0, count.get());
   }
-
 
 }

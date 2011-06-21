@@ -23,6 +23,8 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -81,7 +83,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private static final Version clientVersion =
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
 
-    /** Initialization parameters */
+    /** Initialisation parameters */
     private final ConnectionFactory _factory;
 
     /** The special channel 0 */
@@ -105,11 +107,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Maximum frame length, or zero if no limit is set */
     private int _frameMax;
 
-    /** Handler for (otherwise-unhandled) exceptions that crop up in the mainloop. */
+    /** Handler for (uncaught) exceptions that crop up in the {@link MainLoop}. */
     private final ExceptionHandler _exceptionHandler;
 
-    /**
-     * Object used for blocking main application thread when doing all the necessary
+    /** Object used for blocking main application thread when doing all the necessary
      * connection shutdown operations
      */
     private BlockingCell<Object> _appContinuation = new BlockingCell<Object>();
@@ -117,7 +118,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Flag indicating whether the client received Connection.Close message from the broker */
     private boolean _brokerInitiatedShutdown = false;
 
-    /** Manages heartbeat sending for this connection */
+    /** Manages heart-beat sending for this connection */
     private final HeartbeatSender _heartbeatSender;
 
     /**
@@ -128,7 +129,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _channelManager.disconnectChannel(channel);
     }
 
-    public void ensureIsOpen()
+    private void ensureIsOpen()
         throws AlreadyClosedException
     {
         if (!isOpen()) {
@@ -179,18 +180,19 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public AMQConnection(ConnectionFactory factory,
                          FrameHandler frameHandler,
                          int numWorkThreads) {
-        this(factory, frameHandler, numWorkThreads, new DefaultExceptionHandler());
+        this(factory, frameHandler, Executors.newFixedThreadPool(numWorkThreads), new DefaultExceptionHandler());
     }
 
     /**
      * Construct a new connection to a broker.
      * @param factory the initialization parameters for a connection
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
+     * @param executor the {@link ExecutorService} that executes the {@link Consumer} work for channels of the connection
      * @param exceptionHandler interface to an object that will handle any special exceptions encountered while using this connection
      */
     public AMQConnection(ConnectionFactory factory,
                          FrameHandler frameHandler,
-                         int numWorkThreads,
+                         ExecutorService executor,
                          ExceptionHandler exceptionHandler)
     {
         checkPreconditions();
@@ -208,7 +210,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _exceptionHandler = exceptionHandler;
         _brokerInitiatedShutdown = false;
 
-        _workService  = new ConsumerWorkService(numWorkThreads);
+        _workService  = new ConsumerWorkService(executor);
         _channelManager = new ChannelManager(this._workService, 0);
     }
 
@@ -217,10 +219,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Sends the protocol
      * version negotiation header, and runs through
      * Connection.Start/.StartOk, Connection.Tune/.TuneOk, and then
-     * calls Connection.Open and waits for the OpenOk. Sets heartbeat
+     * calls Connection.Open and waits for the OpenOk. Sets heart-beat
      * and frame max values after tuning has taken place.
-     * @throws java.io.IOException if an error is encountered; IOException
-     * subtypes {@link ProtocolVersionMismatchException} and
+     * @throws IOException if an error is encountered;
+     * sub-classes {@link ProtocolVersionMismatchException} and
      * {@link PossibleAuthenticationFailureException} will be thrown in the
      * corresponding circumstances.
      */

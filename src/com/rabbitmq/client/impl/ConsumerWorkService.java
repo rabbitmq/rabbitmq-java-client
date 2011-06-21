@@ -18,7 +18,6 @@ package com.rabbitmq.client.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import com.rabbitmq.client.Channel;
 
@@ -27,8 +26,8 @@ public class ConsumerWorkService {
     private final ExecutorService executor;
     private final WorkPool<Channel, Runnable> workPool;
 
-    public ConsumerWorkService(int numWorkThreads) {
-        this.executor = Executors.newFixedThreadPool(numWorkThreads);
+    public ConsumerWorkService(ExecutorService executor) {
+        this.executor = executor;
         this.workPool = new WorkPool<Channel, Runnable>();
     }
 
