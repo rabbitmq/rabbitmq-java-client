@@ -57,7 +57,7 @@ public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
                 channel.basicPublish("amq.fanout", "", null, msg);
             }
             for (int j = 0; j < queues.length ; j++) {
-                assertEquals(MESSAGES_PER_BATCH, channel.queuePurge(queues[i]).getMessageCount());
+                assertEquals(MESSAGES_PER_BATCH, channel.queuePurge(queues[j]).getMessageCount());
             }
         }
     }
