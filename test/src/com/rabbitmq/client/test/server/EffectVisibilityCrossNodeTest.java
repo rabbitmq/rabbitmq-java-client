@@ -37,6 +37,13 @@ public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
         }
     }
 
+    @Override
+    protected void releaseResources() throws IOException {
+        for (int i = 0; i < queues.length ; i++) {
+            alternateChannel.queueDelete(queues[i]);
+        }
+    }
+
     private static final int QUEUES = 5;
     private static final int BATCHES = 500;
     private static final int MESSAGES_PER_BATCH = 10;
