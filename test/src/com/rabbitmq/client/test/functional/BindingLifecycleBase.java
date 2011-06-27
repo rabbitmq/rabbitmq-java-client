@@ -108,7 +108,7 @@ public class BindingLifecycleBase extends ClusteredTestBase {
     }
   }
 
-
+  @Override
   protected void restart() throws IOException {
   }
 

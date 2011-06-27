@@ -12,25 +12,25 @@
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
 //  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
-//
-
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.ConfirmBase;
 
 import java.io.IOException;
 
-import com.rabbitmq.tools.Host;
-
-public class RestartBase extends BrokerTestCase
+public class MessageRecovery extends ConfirmBase
 {
-    protected void restart()
-        throws IOException
-    {
-        tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
-        setUp();
+
+    private final static String Q = "recovery-test";
+
+    public void test() throws IOException, InterruptedException {
+        channel.queueDeclare(Q, true, false, false, null);
+        publish("", Q, true, false, false);
+        waitAcks();
+        restart();
+        assertDelivered(Q, 1);
+        channel.queueDelete(Q);
     }
 
 }
