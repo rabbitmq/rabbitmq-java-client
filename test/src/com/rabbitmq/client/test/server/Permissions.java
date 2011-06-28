@@ -106,7 +106,6 @@ public class Permissions extends BrokerTestCase
                     adminCh.queueDelete(name);
                     adminCh.exchangeDelete(name);
                 }});
-
         adminCh.getConnection().abort();
     }
 
