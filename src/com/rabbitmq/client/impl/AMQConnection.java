@@ -29,6 +29,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
+import com.rabbitmq.client.ConfirmChannel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MissedHeartbeatException;
@@ -375,6 +376,18 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public ExceptionHandler getExceptionHandler() {
         return _exceptionHandler;
+    }
+
+    /** Public API - {@inheritDoc} */
+    public ConfirmChannel createConfirmChannel(int channelNumber) throws IOException {
+        ensureIsOpen();
+        return (ConfirmChannel)_channelManager.createChannel(this, channelNumber, true);
+    }
+
+    /** Public API - {@inheritDoc} */
+    public ConfirmChannel createConfirmChannel() throws IOException {
+        ensureIsOpen();
+        return (ConfirmChannel)_channelManager.createChannel(this, true);
     }
 
     /** Public API - {@inheritDoc} */

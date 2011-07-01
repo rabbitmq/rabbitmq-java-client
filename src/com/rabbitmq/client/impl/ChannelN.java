@@ -53,7 +53,6 @@ import com.rabbitmq.utility.Utility;
  * <pre>
  * {@link Connection} conn = ...;
  * {@link ChannelN} ch1 = conn.{@link Connection#createChannel createChannel}();
- * ch1.{@link ChannelN#open open}();
  * </pre>
  */
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {

@@ -79,6 +79,10 @@ public class ChannelManager {
     }
 
     public ChannelN createChannel(AMQConnection connection) throws IOException {
+        return createChannel(connection, false);
+    }
+
+    public ChannelN createChannel(AMQConnection connection, boolean isConfirm) throws IOException {
         int channelNumber;
         synchronized (this) {
             channelNumber = channelNumberAllocator.allocate();
@@ -86,21 +90,26 @@ public class ChannelManager {
                 return null;
             }
         }
-        return createChannelInternal(connection, channelNumber);
+        return createChannelInternal(connection, channelNumber, isConfirm);
     }
 
     public ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
+        return createChannel(connection, channelNumber, false);
+    }
+
+    public ChannelN createChannel(AMQConnection connection, int channelNumber,
+                                  boolean isConfirm) throws IOException {
         boolean reserved;
         synchronized (this) {
             reserved = channelNumberAllocator.reserve(channelNumber);
         }
         if(reserved)
-            return createChannelInternal(connection, channelNumber);
+            return createChannelInternal(connection, channelNumber, isConfirm);
         else
             return null;
     }
 
-    private ChannelN createChannelInternal(AMQConnection connection, int channelNumber) throws IOException {
+    private ChannelN createChannelInternal(AMQConnection connection, int channelNumber, boolean isConfirm) throws IOException {
         ChannelN ch;
         synchronized (this) {
             if (_channelMap.containsKey(channelNumber)) {
@@ -112,7 +121,11 @@ public class ChannelManager {
                         + "use. This should never happen. "
                         + "Please report this as a bug.");
             }
-            ch = new ChannelN(connection, channelNumber);
+            if (isConfirm) {
+                ch = new ConfirmChannelN(connection, channelNumber);
+            } else {
+                ch = new ChannelN(connection, channelNumber);
+            }
             addChannel(ch);
         }
         ch.open(); // now that it's been added to our internal tables
