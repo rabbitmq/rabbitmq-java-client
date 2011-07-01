@@ -65,6 +65,7 @@ public class ConfirmChannelTests extends ConfirmBase
         throws IOException, InterruptedException
     {
         for (long i = 0; i < NUM_MESSAGES; i++) {
+            unconfirmedSet.add(channel.getNextPublishSeqNo());
             publish("", QUEUE_NAME, true, false, false);
         }
         if (((ConfirmChannel)channel).waitForConfirms() &&
@@ -72,15 +73,5 @@ public class ConfirmChannelTests extends ConfirmBase
         {
             fail("waitForConfirms returned with unconfirmed messages");
         }
-    }
-
-    protected void publish(String exchangeName, String queueName,
-                           boolean persistent, boolean mandatory,
-                           boolean immediate)
-        throws IOException
-    {
-            unconfirmedSet.add(channel.getNextPublishSeqNo());
-            super.publish(exchangeName, queueName, persistent, mandatory,
-                          immediate);
     }
 }

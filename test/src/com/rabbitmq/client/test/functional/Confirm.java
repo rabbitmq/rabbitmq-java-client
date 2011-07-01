@@ -119,7 +119,7 @@ public class Confirm extends ConfirmBase
 
         channel.queueDelete("confirm-test-noconsumer");
 
-        channel.waitForConfirms();
+        waitAcks();
     }
 
     public void testConfirmQueuePurge()
@@ -129,7 +129,7 @@ public class Confirm extends ConfirmBase
 
         channel.queuePurge("confirm-test-noconsumer");
 
-        channel.waitForConfirms();
+        waitAcks();
     }
 
     public void testConfirmBasicReject()
@@ -137,7 +137,7 @@ public class Confirm extends ConfirmBase
     {
         basicRejectCommon(false);
 
-        channel.waitForConfirms();
+        waitAcks();
     }
 
     public void testConfirmQueueTTL()
@@ -145,7 +145,7 @@ public class Confirm extends ConfirmBase
     {
         publishN("", "confirm-ttl", true, false, false);
 
-        channel.waitForConfirms();
+        waitAcks();
     }
 
     public void testConfirmBasicRejectRequeue()
@@ -159,7 +159,7 @@ public class Confirm extends ConfirmBase
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
-        channel.waitForConfirms();
+        waitAcks();
     }
 
     public void testConfirmBasicRecover()
@@ -181,7 +181,7 @@ public class Confirm extends ConfirmBase
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
-        channel.waitForConfirms();
+        waitAcks();
     }
 
     public void testConfirmSelect()
@@ -216,7 +216,7 @@ public class Confirm extends ConfirmBase
     {
         publishN(exchange, queueName, persistent, mandatory, immediate);
 
-        channel.waitForConfirms();
+        waitAcks();
     }
 
     private void publishN(String exchangeName, String queueName,

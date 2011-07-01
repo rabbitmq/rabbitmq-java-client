@@ -23,12 +23,8 @@ import com.rabbitmq.client.MessageProperties;
 import java.io.IOException;
 
 public class ConfirmBase extends BrokerTestCase {
-
-    protected ConfirmChannel channel;
-
     @Override
-    protected void setUp() throws IOException {
-        super.setUp();
+    public void openChannel() throws IOException {
         channel = connection.createConfirmChannel();
     }
 
@@ -42,4 +38,7 @@ public class ConfirmBase extends BrokerTestCase {
                              "nop".getBytes());
     }
 
+    protected void waitAcks() throws InterruptedException {
+        ((ConfirmChannel)channel).waitForConfirms();
+    }
 }
