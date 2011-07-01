@@ -16,51 +16,26 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.ConfirmChannel;
 import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.MessageProperties;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 public class ConfirmBase extends BrokerTestCase {
 
-    protected SortedSet<Long> unconfirmedSet;
+    protected ConfirmChannel channel;
 
     @Override
     protected void setUp() throws IOException {
         super.setUp();
-        unconfirmedSet = Collections.synchronizedSortedSet(new TreeSet<Long>());
-        channel.setConfirmListener(new ConfirmListener() {
-                public void handleAck(long seqNo, boolean multiple) {
-                    if (!unconfirmedSet.contains(seqNo)) {
-                        fail("got duplicate ack: " + seqNo);
-                    }
-                    if (multiple) {
-                        unconfirmedSet.headSet(seqNo + 1).clear();
-                    } else {
-                        unconfirmedSet.remove(seqNo);
-                    }
-                }
-
-                public void handleNack(long seqNo, boolean multiple) {
-                    fail("got a nack");
-                }
-            });
-        channel.confirmSelect();
-    }
-
-    protected void waitAcks() throws InterruptedException {
-        while (unconfirmedSet.size() > 0)
-            Thread.sleep(10);
+        channel = connection.createConfirmChannel();
     }
 
     protected void publish(String exchangeName, String queueName,
                            boolean persistent, boolean mandatory,
                            boolean immediate)
         throws IOException {
-        unconfirmedSet.add(channel.getNextPublishSeqNo());
         channel.basicPublish(exchangeName, queueName, mandatory, immediate,
                              persistent ? MessageProperties.PERSISTENT_BASIC
                                         : MessageProperties.BASIC,

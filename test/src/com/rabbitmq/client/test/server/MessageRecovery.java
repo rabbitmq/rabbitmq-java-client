@@ -27,7 +27,7 @@ public class MessageRecovery extends ConfirmBase
     public void test() throws IOException, InterruptedException {
         channel.queueDeclare(Q, true, false, false, null);
         publish("", Q, true, false, false);
-        waitAcks();
+        channel.waitForConfirms();
         restart();
         assertDelivered(Q, 1);
         channel.queueDelete(Q);

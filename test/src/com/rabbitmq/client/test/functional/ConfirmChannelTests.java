@@ -24,19 +24,38 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.test.ConfirmBase;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class ConfirmChannelTests extends ConfirmBase
 {
     private final static int NUM_MESSAGES = 100;
     private final static String QUEUE_NAME = "confirmchannel-test";
 
+    private SortedSet<Long> unconfirmedSet;
+
     @Override
     protected void setUp() throws IOException {
         super.setUp();
-        Channel oldChannel = channel;
-        channel = connection.createConfirmChannel();
-        channel.setConfirmListener(oldChannel.getConfirmListener());
-        oldChannel.close();
+
+        unconfirmedSet = Collections.synchronizedSortedSet(new TreeSet<Long>());
+        channel.setConfirmListener(new ConfirmListener() {
+                public void handleAck(long seqNo, boolean multiple) {
+                    if (!unconfirmedSet.contains(seqNo)) {
+                        fail("got duplicate ack: " + seqNo);
+                    }
+                    if (multiple) {
+                        unconfirmedSet.headSet(seqNo + 1).clear();
+                    } else {
+                        unconfirmedSet.remove(seqNo);
+                    }
+                }
+
+                public void handleNack(long seqNo, boolean multiple) {
+                    fail("got a nack");
+                }
+            });
 
         channel.queueDeclare(QUEUE_NAME, true, true, false, null);
         channel.basicConsume(QUEUE_NAME, true, new DefaultConsumer(channel));
@@ -53,5 +72,15 @@ public class ConfirmChannelTests extends ConfirmBase
         {
             fail("waitForConfirms returned with unconfirmed messages");
         }
+    }
+
+    protected void publish(String exchangeName, String queueName,
+                           boolean persistent, boolean mandatory,
+                           boolean immediate)
+        throws IOException
+    {
+            unconfirmedSet.add(channel.getNextPublishSeqNo());
+            super.publish(exchangeName, queueName, persistent, mandatory,
+                          immediate);
     }
 }
