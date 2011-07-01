@@ -99,36 +99,6 @@ public class ConfirmChannelN extends ChannelN
         return chainedConfirmListener;
     }
 
-    /** This method is not supported by ConfirmChannelN
-        @throws UnsupportedOperationException
-    */
-    @Override
-    public Tx.SelectOk txSelect()
-        throws IOException
-    {
-        throw new UnsupportedOperationException("tx methods not supported on ConfirmChannelN");
-    }
-
-    /** This method is not supported by ConfirmChannelN
-        @throws UnsupportedOperationException
-    */
-    @Override
-    public Tx.CommitOk txCommit()
-        throws IOException
-    {
-        throw new UnsupportedOperationException("tx methods not supported on ConfirmChannelN");
-    }
-
-    /** This method is not supported by ConfirmChannelN
-        @throws UnsupportedOperationException
-    */
-    @Override
-    public Tx.RollbackOk txRollback()
-        throws IOException
-    {
-        throw new UnsupportedOperationException("tx methods not supported on ConfirmChannelN");
-    }
-
     /** {@inheritDoc} */
     public boolean waitForConfirms()
         throws InterruptedException
