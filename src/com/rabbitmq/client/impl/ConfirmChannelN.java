@@ -35,7 +35,9 @@ import java.io.IOException;
  * </pre>
  */
 
-public class ConfirmChannelN extends ChannelN implements com.rabbitmq.client.ConfirmChannel {
+public class ConfirmChannelN extends ChannelN
+    implements com.rabbitmq.client.ConfirmChannel
+{
     public volatile ConfirmListener chainedConfirmListener;
     private volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
@@ -74,7 +76,8 @@ public class ConfirmChannelN extends ChannelN implements com.rabbitmq.client.Con
         throws IOException
     {
         unconfirmedSet.add(getNextPublishSeqNo());
-        super.basicPublish(exchange, routingKey, mandatory, immediate, props, body);
+        super.basicPublish(exchange, routingKey, mandatory, immediate, props,
+                           body);
     }
 
     /** {@inheritDoc} */
