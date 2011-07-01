@@ -309,7 +309,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return true;
             } else if (method instanceof Basic.Ack) {
                 Basic.Ack ack = (Basic.Ack) method;
-                ConfirmListener l = getConfirmListener();
+                ConfirmListener l = confirmListener;
                 if (l != null) {
                     try {
                         l.handleAck(ack.getDeliveryTag(), ack.getMultiple());
@@ -320,7 +320,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return true;
             } else if (method instanceof Basic.Nack) {
                 Basic.Nack nack = (Basic.Nack) method;
-                ConfirmListener l = getConfirmListener();
+                ConfirmListener l = confirmListener;
                 if (l != null) {
                     try {
                         l.handleNack(nack.getDeliveryTag(), nack.getMultiple());

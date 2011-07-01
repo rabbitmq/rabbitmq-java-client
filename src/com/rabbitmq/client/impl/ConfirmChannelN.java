@@ -49,7 +49,7 @@ public class ConfirmChannelN extends ChannelN
     {
         super(connection, channelNumber);
 
-        setConfirmListener(new ConfirmListener() {
+        super.setConfirmListener(new ConfirmListener() {
                 public void handleAck(long seqNo, boolean multiple)
                     throws IOException
                 {
@@ -63,13 +63,20 @@ public class ConfirmChannelN extends ChannelN
                 {
                     handleAckNack(seqNo, multiple, true);
                     if (chainedConfirmListener != null)
-                        chainedConfirmListener.handleAck(seqNo, multiple);
+                        chainedConfirmListener.handleNack(seqNo, multiple);
                 }
             });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void open() throws IOException {
+        super.open();
         confirmSelect();
     }
 
     /** {@inheritDoc} */
+    @Override
     public void basicPublish(String exchange, String routingKey,
                              boolean mandatory, boolean immediate,
                              BasicProperties props, byte[] body)
@@ -81,11 +88,13 @@ public class ConfirmChannelN extends ChannelN
     }
 
     /** {@inheritDoc} */
+    @Override
     public void setConfirmListener(ConfirmListener listener) {
         chainedConfirmListener = listener;
     }
 
     /** {@inheritDoc} */
+    @Override
     public ConfirmListener getConfirmListener() {
         return chainedConfirmListener;
     }
@@ -93,6 +102,7 @@ public class ConfirmChannelN extends ChannelN
     /** This method is not supported by ConfirmChannelN
         @throws UnsupportedOperationException
     */
+    @Override
     public Tx.SelectOk txSelect()
         throws IOException
     {
@@ -102,6 +112,7 @@ public class ConfirmChannelN extends ChannelN
     /** This method is not supported by ConfirmChannelN
         @throws UnsupportedOperationException
     */
+    @Override
     public Tx.CommitOk txCommit()
         throws IOException
     {
@@ -111,6 +122,7 @@ public class ConfirmChannelN extends ChannelN
     /** This method is not supported by ConfirmChannelN
         @throws UnsupportedOperationException
     */
+    @Override
     public Tx.RollbackOk txRollback()
         throws IOException
     {
