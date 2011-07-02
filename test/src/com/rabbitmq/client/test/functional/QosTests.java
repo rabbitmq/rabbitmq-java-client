@@ -152,12 +152,10 @@ public class QosTests extends BrokerTestCase
         closeChannel();
         for (int limit : Arrays.asList(1, 2)) {
             for (boolean multiAck : Arrays.asList(false, true)) {
-                for (boolean txMode : Arrays.asList(true, false)) {
-                    for (int queueCount : Arrays.asList(1, 2)) {
-                        openChannel();
-                        runLimitTests(limit, multiAck, txMode, queueCount);
-                        closeChannel();
-                    }
+                for (int queueCount : Arrays.asList(1, 2)) {
+                    openChannel();
+                    runLimitTests(limit, multiAck, queueCount);
+                    closeChannel();
                 }
             }
         }
@@ -391,7 +389,6 @@ public class QosTests extends BrokerTestCase
 
     protected void runLimitTests(int limit,
                                  boolean multiAck,
-                                 boolean txMode,
                                  int queueCount)
         throws IOException
     {
@@ -403,10 +400,6 @@ public class QosTests extends BrokerTestCase
         //-> 2*limit + 1*queueCount + 1
         List<String> queues = configure(c, limit, queueCount,
                                         2*limit + 1*queueCount + 1);
-
-        if (txMode) {
-            channel.txSelect();
-        }
 
         //is limit enforced?
         Queue<Delivery> d = drain(c, limit);
@@ -421,22 +414,12 @@ public class QosTests extends BrokerTestCase
 
         //are acks handled correctly?
         //and does the basic.get above have no effect on limiting?
-        Delivery last = ack(d, multiAck);
-        if (txMode) {
-            drain(c, 0);
-            channel.txRollback();
-            drain(c, 0);
-            ackDelivery(last, true);
-            channel.txCommit();
-        }
+        ack(d, multiAck);
         drain(c, limit);
 
         //do acks for basic.gets have no effect on limiting?
         for (long t  : tags) {
             channel.basicAck(t, false);
-        }
-        if (txMode) {
-            channel.txCommit();
         }
         drain(c, 0);
     }

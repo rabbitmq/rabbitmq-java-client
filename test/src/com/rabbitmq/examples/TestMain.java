@@ -57,9 +57,8 @@ public class TestMain {
 
             new TestMain(conn, silent).run();
 
-            runProducerConsumerTest(hostName, portNumber, 500);
-            runProducerConsumerTest(hostName, portNumber, 0);
-            runProducerConsumerTest(hostName, portNumber, -1);
+            runProducerConsumerTest(hostName, portNumber, false);
+            runProducerConsumerTest(hostName, portNumber, true);
 
             runConnectionShutdownTests(hostName, portNumber);
 
@@ -178,12 +177,13 @@ public class TestMain {
         ((SocketFrameHandler)((AMQConnection)conn).getFrameHandler()).close();
     }
 
-    public static void runProducerConsumerTest(String hostName, int portNumber, int commitEvery) throws IOException {
+    public static void runProducerConsumerTest(String hostName, int portNumber, boolean shouldPersist) throws IOException {
         ConnectionFactory cfconnp = new ConnectionFactory();
         cfconnp.setHost(hostName);
         cfconnp.setPort(portNumber);
         Connection connp = cfconnp.newConnection();
-        ProducerMain p = new ProducerMain(connp, 2000, 10000, false, commitEvery, true);
+        ProducerMain p = new ProducerMain(connp, 2000, 10000, false,
+                                          (shouldPersist ? 0 : -1), true);
         new Thread(p).start();
         ConnectionFactory cfconnc = new ConnectionFactory();
         cfconnc.setHost(hostName);
@@ -262,8 +262,6 @@ public class TestMain {
         queueName =_ch1.queueDeclare().getQueue();
         sendLotsOfTrivialMessages(batchSize, queueName);
         expect(batchSize, drain(batchSize, queueName, true));
-
-        tryTransaction(queueName);
 
         _ch1.close();
 
@@ -484,71 +482,6 @@ public class TestMain {
             }
         }
     }
-
-    public void tryTransaction(String queueName) throws IOException {
-
-        _ch1.txSelect();
-
-        //test basicReturn handling in tx context
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish("", queueName, false, false, null, "normal".getBytes());
-        _ch1.basicPublish("", queueName, true, false, null, "mandatory".getBytes());
-        _ch1.basicPublish("", "bogus", true, false, null, "mandatory".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_ROUTE);
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish("", "bogus", false, true, null, "immediate".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
-        returnCell = new BlockingCell<Object>();
-        _ch1.txCommit();
-        expect(2, drain(10, queueName, false));
-
-        /*
-          TODO: figure out what these tests are meant to do; they
-          currently break due to rollback no longer requeueing
-          delivered messages
-
-        String x = "txtest";
-        _ch1.exchangeDeclare(x, "direct", true);
-        String requestQueue = _ch1.queueDeclare("", true).getQueue();
-        String replyQueue = _ch1.queueDeclare("", true).getQueue();
-        _ch1.queueBind(requestQueue, x, requestQueue);
-        _ch1.queueBind(replyQueue, x, replyQueue);
-        publish2(x, requestQueue, "Request");
-        _ch1.txCommit();
-
-        expect(1, drain(10, requestQueue, false));
-        expect(0, drain(10, replyQueue, false));
-        _ch1.txRollback();
-
-        expect(1, drain(10, requestQueue, false));
-        expect(0, drain(10, replyQueue, false));
-        publish2(x, replyQueue, "Reply");
-        _ch1.txRollback();
-
-        waitForKey("Temp queues should have ONE REQUEST, no reply");
-
-        expect(1, drain(10, requestQueue, false));
-        expect(0, drain(10, replyQueue, false));
-        publish2(x, replyQueue, "Reply");
-        _ch1.txCommit();
-
-        waitForKey("Temp queues should have no request, ONE REPLY");
-
-        expect(0, drain(10, requestQueue, false));
-        expect(1, drain(10, replyQueue, false));
-        _ch1.txRollback();
-
-        expect(0, drain(10, requestQueue, false));
-        expect(1, drain(10, replyQueue, false));
-        _ch1.txCommit();
-
-        _ch1.queueDelete(requestQueue);
-        _ch1.queueDelete(replyQueue);
-
-        */
-    }
-
-
 
     // utility: tell what Java compiler version a class was compiled with
     public static String getCompilerVersion(Class<?> clazz) throws IOException {

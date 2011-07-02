@@ -16,10 +16,37 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.test.BrokerTestCase;
+
 import java.io.IOException;
 
-public class InvalidAcks extends InvalidAcksBase {
-    protected void select() throws IOException {}
-    protected void commit() throws IOException {}
-}
+/**
+ * See bug 21846:
+ * Basic.Ack is now required to signal a channel error immediately upon
+ * detecting an invalid deliveryTag.
+ *
+ * Specifically, a client MUST not acknowledge the same message more than once.
+ */
+public class InvalidAcks extends BrokerTestCase {
 
+    public void testDoubleAck()
+        throws IOException
+    {
+        String q = channel.queueDeclare().getQueue();
+        basicPublishVolatile(q);
+
+        long tag = channel.basicGet(q, false).getEnvelope().getDeliveryTag();
+        channel.basicAck(tag, false);
+        channel.basicAck(tag, false);
+
+        expectError(AMQP.PRECONDITION_FAILED);
+    }
+
+    public void testCrazyAck()
+        throws IOException
+    {
+        channel.basicAck(123456, false);
+        expectError(AMQP.PRECONDITION_FAILED);
+    }
+}

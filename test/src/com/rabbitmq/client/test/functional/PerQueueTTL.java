@@ -139,33 +139,6 @@ public class PerQueueTTL extends BrokerTestCase {
         assertEquals("three", new String(get()));
 
     }
-    
-    /*
-     * Test get expiry for messages sent under a transaction
-     */
-    public void testTransactionalPublishWithGet() throws Exception {
-        long ttl = 1000;
-        declareQueue(TTL_QUEUE_NAME, ttl);
-        this.channel.queueBind(TTL_QUEUE_NAME, TTL_EXCHANGE, TTL_QUEUE_NAME);
-
-        byte[] msg1 = "one".getBytes();
-        byte[] msg2 = "two".getBytes();
-
-        this.channel.txSelect();
-
-        basicPublishVolatile(msg1, TTL_EXCHANGE, TTL_QUEUE_NAME);
-        Thread.sleep(1500);
-
-        basicPublishVolatile(msg2, TTL_EXCHANGE, TTL_QUEUE_NAME);
-        this.channel.txCommit();
-        Thread.sleep(500);
-
-        assertEquals("one", new String(get()));
-        Thread.sleep(800);
-
-        assertNull(get());
-    }
-
 
     private byte[] get() throws IOException {
         GetResponse response = basicGet(TTL_QUEUE_NAME);
