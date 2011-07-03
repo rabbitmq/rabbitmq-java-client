@@ -187,13 +187,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** {@inheritDoc} */
-    public boolean waitForConfirms()
+    public synchronized boolean waitForConfirms()
         throws InterruptedException
     {
-        synchronized (this) {
-            while (unconfirmedSet.size() > 0)
-                wait();
-        }
+        while (unconfirmedSet.size() > 0)
+            wait();
 
         boolean noNacksReceived = !nacksReceived;
         nacksReceived = false;
