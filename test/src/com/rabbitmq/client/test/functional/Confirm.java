@@ -236,7 +236,7 @@ public class Confirm extends BrokerTestCase
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
             unconfirmedSet.add(channel.getNextPublishSeqNo());
-            publish("", "confirm-wait-for-acks", true, false, false);
+            publish("", "confirm-test", true, false, false);
         }
         waitAcks();
         if (!unconfirmedSet.isEmpty()) {
@@ -244,6 +244,14 @@ public class Confirm extends BrokerTestCase
         }
     }
 
+    public void testWaitForAcksNop()
+        throws IOException, InterruptedException
+    {
+        channel = connection.createChannel();
+        // Don't enable Confirm mode
+        publish("", "confirm-test", true, false, false);
+        waitAcks(); // Nop
+    }
 
     /* Publish NUM_MESSAGES messages and wait for confirmations. */
     public void confirmTest(String exchange, String queueName,
