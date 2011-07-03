@@ -19,16 +19,19 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConfirmChannel;
+import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.ConfirmBase;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
-public class Confirm extends ConfirmBase
+public class Confirm extends BrokerTestCase
 {
     private final static int NUM_MESSAGES = 1000;
 
@@ -208,6 +211,40 @@ public class Confirm extends ConfirmBase
         ch.confirmSelect();
     }
 
+    public void testWaitForAcks()
+        throws IOException, InterruptedException
+    {
+        final SortedSet<Long> unconfirmedSet =
+            Collections.synchronizedSortedSet(new TreeSet<Long>());
+        channel.setConfirmListener(new ConfirmListener() {
+                public void handleAck(long seqNo, boolean multiple) {
+                    if (!unconfirmedSet.contains(seqNo)) {
+                        fail("got duplicate ack: " + seqNo);
+                    }
+                    if (multiple) {
+                        unconfirmedSet.headSet(seqNo + 1).clear();
+                    } else {
+                        unconfirmedSet.remove(seqNo);
+                    }
+                }
+
+                public void handleNack(long seqNo, boolean multiple) {
+                    fail("got a nack");
+                }
+            });
+
+
+        for (long i = 0; i < NUM_MESSAGES; i++) {
+            unconfirmedSet.add(channel.getNextPublishSeqNo());
+            publish("", "confirm-wait-for-acks", true, false, false);
+        }
+        waitAcks();
+        if (!unconfirmedSet.isEmpty()) {
+            fail("waitForConfirms returned with unconfirmed messages");
+        }
+    }
+
+
     /* Publish NUM_MESSAGES messages and wait for confirmations. */
     public void confirmTest(String exchange, String queueName,
                             boolean persistent, boolean mandatory,
@@ -240,5 +277,20 @@ public class Confirm extends ConfirmBase
             long dtag = resp.getEnvelope().getDeliveryTag();
             channel.basicReject(dtag, requeue);
         }
+    }
+
+    protected void publish(String exchangeName, String queueName,
+                           boolean persistent, boolean mandatory,
+                           boolean immediate)
+        throws IOException {
+        channel.basicPublish(exchangeName, queueName, mandatory, immediate,
+                             persistent ? MessageProperties.PERSISTENT_BASIC
+                                        : MessageProperties.BASIC,
+                             "nop".getBytes());
+    }
+
+    protected void waitAcks() throws IOException, InterruptedException {
+        if (!channel.waitForConfirms())
+            fail("got nacks");
     }
 }

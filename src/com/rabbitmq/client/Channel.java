@@ -698,6 +698,13 @@ public interface Channel extends ShutdownNotifier {
     long getNextPublishSeqNo();
 
     /**
+     * Wait until all messages published since the last call have been
+     * either ack'd or nack'd by the broker.
+     * @return whether all the messages were ack'd (and none were nack'd)
+     */
+    boolean waitForConfirms() throws InterruptedException;
+
+    /**
      * Asynchronously send a method over this channel.
      * @param method method to transmit over this channel.
      * @throws IOException Problem transmitting method.

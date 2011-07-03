@@ -107,21 +107,6 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     Channel createChannel(int channelNumber) throws IOException;
 
     /**
-     * Create a new {@link ConfirmChannel}, using an internally allocated channel number.
-     * @return a new channel descriptor, or null if none is available
-     * @throws IOException if an I/O problem is encountered
-     */
-    ConfirmChannel createConfirmChannel() throws IOException;
-
-    /**
-     * Create a new {@link ConfirmChannel} channel, using the specified channel number if possible.
-     * @param channelNumber the channel number to allocate
-     * @return a new channel descriptor, or null if this channel number is already in use
-     * @throws IOException if an I/O problem is encountered
-     */
-    ConfirmChannel createConfirmChannel(int channelNumber) throws IOException;
-
-    /**
      * Close this connection and all its channels
      * with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
      * and message 'OK'.
