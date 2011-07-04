@@ -187,22 +187,6 @@ public class Confirm extends ConfirmBase
     public void testConfirmSelect()
         throws IOException
     {
-        try {
-            Channel ch = connection.createChannel();
-            ch.confirmSelect();
-            ch.txSelect();
-            fail();
-        } catch (IOException ioe) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
-        }
-        try {
-            Channel ch = connection.createChannel();
-            ch.txSelect();
-            ch.confirmSelect();
-            fail();
-        } catch (IOException ioe) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
-        }
         Channel ch = connection.createChannel();
         ch.confirmSelect();
         ch.confirmSelect();
