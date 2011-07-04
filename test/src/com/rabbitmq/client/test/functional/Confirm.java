@@ -239,8 +239,6 @@ public class Confirm extends BrokerTestCase
         }
         waitAcks();
         if (!unconfirmedSet.isEmpty()) {
-            for (Long i : unconfirmedSet)
-                System.out.println("still unconfirmed: " + i);
             fail("waitForConfirms returned with unconfirmed messages");
         }
     }
