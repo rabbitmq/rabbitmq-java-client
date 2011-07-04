@@ -82,10 +82,8 @@ public class FileProducer {
 		Map<String, Object> headers = new HashMap<String, Object>();
 		headers.put("filename", filename);
 		headers.put("length", (int) f.length());
-		BasicProperties props = new BasicProperties(null, null, headers, null,
-							    null, null, null, null,
-							    null, null, null, null,
-							    null, null);
+		BasicProperties props = new BasicProperties();
+		props.setHeaders(headers);
 		ch.basicPublish(exchange, routingKey, props, body);
 		System.out.println(" done.");
 	    }
