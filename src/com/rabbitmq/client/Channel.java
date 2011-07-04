@@ -699,7 +699,8 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Wait until all messages published since the last call have been
-     * either ack'd or nack'd by the broker.
+     * either ack'd or nack'd by the broker.  Note, calling this
+     * method on a non-Confirm channel is a no-op.
      * @return whether all the messages were ack'd (and none were nack'd)
      */
     boolean waitForConfirms() throws InterruptedException;

@@ -233,13 +233,14 @@ public class Confirm extends BrokerTestCase
                 }
             });
 
-
         for (long i = 0; i < NUM_MESSAGES; i++) {
             unconfirmedSet.add(channel.getNextPublishSeqNo());
             publish("", "confirm-test", true, false, false);
         }
         waitAcks();
         if (!unconfirmedSet.isEmpty()) {
+            for (Long i : unconfirmedSet)
+                System.out.println("still unconfirmed: " + i);
             fail("waitForConfirms returned with unconfirmed messages");
         }
     }

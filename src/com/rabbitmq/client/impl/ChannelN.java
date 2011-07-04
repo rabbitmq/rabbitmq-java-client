@@ -128,17 +128,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 public void handleAck(long seqNo, boolean multiple)
                     throws IOException
                 {
-                    handleAckNack(seqNo, multiple, false);
                     if (confirmListener != null)
                         confirmListener.handleAck(seqNo, multiple);
+                    handleAckNack(seqNo, multiple, false);
                 }
 
                 public void handleNack(long seqNo, boolean multiple)
                     throws IOException
                 {
-                    handleAckNack(seqNo, multiple, true);
                     if (confirmListener != null)
                         confirmListener.handleNack(seqNo, multiple);
+                    handleAckNack(seqNo, multiple, true);
                 }
             };
     }
@@ -187,15 +187,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** {@inheritDoc} */
-    public synchronized boolean waitForConfirms()
+    public boolean waitForConfirms()
         throws InterruptedException
     {
-        while (unconfirmedSet.size() > 0)
-            wait();
-
-        boolean noNacksReceived = !nacksReceived;
-        nacksReceived = false;
-        return noNacksReceived;
+        synchronized (unconfirmedSet) {
+            while (unconfirmedSet.size() > 0)
+                unconfirmedSet.wait();
+            boolean noNacksReceived = !nacksReceived;
+            nacksReceived = false;
+            return noNacksReceived;
+        }
     }
 
     /**
@@ -961,18 +962,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     protected void handleAckNack(long seqNo, boolean multiple, boolean nack) {
-        int numConfirms = 0;
         if (multiple) {
-            SortedSet<Long> confirmed = unconfirmedSet.headSet(seqNo + 1);
-            numConfirms += confirmed.size();
-            confirmed.clear();
+            unconfirmedSet.headSet(seqNo + 1).clear();
         } else {
             unconfirmedSet.remove(seqNo);
-            numConfirms = 1;
         }
-        synchronized (this) {
+        synchronized (unconfirmedSet) {
             nacksReceived = nacksReceived || nack;
-            notify();
+            if (unconfirmedSet.isEmpty())
+                unconfirmedSet.notify();
         }
     }
 }
