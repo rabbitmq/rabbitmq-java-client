@@ -211,7 +211,7 @@ public class Confirm extends BrokerTestCase
         ch.confirmSelect();
     }
 
-    public void testWaitForAcks()
+    public void testWaitForConfirms()
         throws IOException, InterruptedException
     {
         final SortedSet<Long> unconfirmedSet =
@@ -237,19 +237,33 @@ public class Confirm extends BrokerTestCase
             unconfirmedSet.add(channel.getNextPublishSeqNo());
             publish("", "confirm-test", true, false, false);
         }
+
         waitAcks();
         if (!unconfirmedSet.isEmpty()) {
             fail("waitForConfirms returned with unconfirmed messages");
         }
     }
 
-    public void testWaitForAcksNop()
+    public void testWaitForConfirmsNoOp()
         throws IOException, InterruptedException
     {
         channel = connection.createChannel();
         // Don't enable Confirm mode
         publish("", "confirm-test", true, false, false);
         waitAcks(); // Nop
+    }
+
+    public void testWaitForConfirmsException()
+        throws IOException, InterruptedException
+    {
+        publishN("", "confirm-test", true, false, false);
+        channel.close();
+        try {
+            waitAcks();
+            fail("waitAcks worked on a closed channel");
+        } catch (Exception e) {
+            //whoosh; everything ok
+        }
     }
 
     /* Publish NUM_MESSAGES messages and wait for confirmations. */
