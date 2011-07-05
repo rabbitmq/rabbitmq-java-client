@@ -88,10 +88,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /** The special channel 0 */
     private final AMQChannel _channel0 = new AMQChannel(this, 0) {
-            @Override public boolean processAsync(Command c) throws IOException {
-                return _connection.processControlCommand(c);
-            }
-        };
+        @Override public boolean processAsync(Command c) throws IOException {
+            return _connection.processControlCommand(c);
+        }
+    };
 
     private final ConsumerWorkService _workService;
 
@@ -503,9 +503,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /**
      * Handles incoming control commands on channel zero.
+     * @see ChannelN#processAsync
      */
-    public boolean processControlCommand(Command c)
-        throws IOException
+    public boolean processControlCommand(Command c) throws IOException
     {
         // Similar trick to ChannelN.processAsync used here, except
         // we're interested in whole-connection quiescing.
@@ -514,35 +514,31 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         Method method = c.getMethod();
 
-        if (method instanceof AMQP.Connection.Close) {
-            if (isOpen()) {
+        if (isOpen()) {
+            if (method instanceof AMQP.Connection.Close) {
                 handleConnectionClose(c);
+                return true;
             } else {
+                return false;
+            }
+        } else {
+            if (method instanceof AMQP.Connection.Close) {
                 // Already shutting down, so just send back a CloseOk.
                 try {
                     _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
                 } catch (IOException ioe) {
                     Utility.emptyStatement();
                 }
-            }
-            return true;
-        } else {
-            if (isOpen()) {
-                // Normal command.
-                return false;
-            } else {
-                // Quiescing.
-                if (method instanceof AMQP.Connection.CloseOk) {
-                    // It's our final "RPC". Time to shut down.
-                    _running = false;
-                    // If Close was sent from within the MainLoop we
-                    // will not have a continuation to return to, so
-                    // we treat this as processed in that case.
-                    return _channel0._activeRpc == null;
-                } else {
-                    // Ignore all others.
-                    return true;
-                }
+                return true;
+            } else if (method instanceof AMQP.Connection.CloseOk) {
+                // It's our final "RPC". Time to shut down.
+                _running = false;
+                // If Close was sent from within the MainLoop we
+                // will not have a continuation to return to, so
+                // we treat this as processed in that case.
+                return _channel0._activeRpc == null;
+            } else { // Ignore all others.
+                return true;
             }
         }
     }
@@ -554,7 +550,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
-        _heartbeatSender.shutdown(); // Do not try to send heartbeats after CloseOk
         _brokerInitiatedShutdown = true;
         Thread scw = new SocketCloseWait(sse);
         scw.setName("AMQP Connection Closing Monitor " +

@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -56,6 +59,8 @@ import com.rabbitmq.utility.Utility;
  * </pre>
  */
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
+    private static final int SHUTDOWN_TIMEOUT_SECONDS = 10;
+
     private static final String UNSPECIFIED_OUT_OF_BAND = "";
 
     /** When 0.9.1 is signed off, tickets can be removed from the codec and this field should be deleted.*/
@@ -71,7 +76,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * BlockingRpcContinuation to inject code into the reader thread
      * in basicConsume and basicCancel.
      */
-    public final Map<String, Consumer> _consumers =
+    private final Map<String, Consumer> _consumers =
         Collections.synchronizedMap(new HashMap<String, Consumer>());
 
     /** Reference to the currently-active ReturnListener, or null if there is none.*/
@@ -173,27 +178,37 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /**
-     * Protected API - sends a ShutdownSignal to all active consumers.
+     * Sends a ShutdownSignal to all active consumers.
      * @param signal an exception signalling channel shutdown
      */
-    public void broadcastShutdownSignal(ShutdownSignalException signal) {
+    private Future<Boolean> broadcastShutdownSignal(ShutdownSignalException signal) {
         Map<String, Consumer> snapshotConsumers;
         synchronized (_consumers) {
             snapshotConsumers = new HashMap<String, Consumer>(_consumers);
         }
-        this.dispatcher.handleShutdownSignal(snapshotConsumers, signal);
+        return this.dispatcher.handleShutdownSignal(snapshotConsumers, signal);
     }
 
     /**
-     * Protected API - overridden to broadcast the signal to all
-     * consumers before calling the superclass's method.
+     * Protected API - overridden to quiesce consumer work and broadcast the signal
+     * to all consumers after calling the superclass's method.
      */
     @Override public void processShutdownSignal(ShutdownSignalException signal,
                                                 boolean ignoreClosed,
                                                 boolean notifyRpc)
     {
+        this.dispatcher.quiesce();
         super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
-        broadcastShutdownSignal(signal);
+        try {
+            broadcastShutdownSignal(signal)
+            .get(SHUTDOWN_TIMEOUT_SECONDS , TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            // TODO Should we be interruptible?
+        } catch (ExecutionException e) {
+            // TODO Shouldn't happen, but what if it does?
+        } catch (TimeoutException e) {
+            // TODO log problem and continue if timed out
+        }
     }
 
     public void releaseChannelNumber() {
