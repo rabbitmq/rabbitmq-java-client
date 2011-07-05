@@ -187,9 +187,19 @@ public class Confirm extends ConfirmBase
     public void testSelect()
         throws IOException
     {
-        Channel ch = connection.createChannel();
-        ch.confirmSelect();
-        ch.confirmSelect();
+        channel.confirmSelect();
+    }
+
+    public void testTx()
+        throws IOException, InterruptedException
+    {
+        channel.txSelect();
+        publishN("", "confirm-test", false, false, false);
+        channel.txCommit();
+        waitAcks();
+        publishN("", "confirm-test", false, false, false);
+        channel.txRollback();
+        waitAcks();
     }
 
     /* Publish NUM_MESSAGES messages and wait for confirmations. */
