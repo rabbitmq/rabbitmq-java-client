@@ -703,7 +703,14 @@ public interface Channel extends ShutdownNotifier {
      * non-Confirm channel, waitForConfirms returns true immediately.
      * @return whether all the messages were ack'd (and none were nack'd)
      */
-    boolean waitForConfirms() throws InterruptedException;
+    boolean waitForConfirms() throws IOException, InterruptedException;
+
+    /** Wait untill all messages published since the last call have
+     * been either ack'd or nack'd by the broker.  If any of the
+     * messages were nack'd, waitForConfirmsOrDie will throw an
+     * IOException.  When called on a non-Confirm channel, it will
+     * return immediately. */
+    void waitForConfirmsOrDie() throws IOException, InterruptedException;
 
     /**
      * Asynchronously send a method over this channel.

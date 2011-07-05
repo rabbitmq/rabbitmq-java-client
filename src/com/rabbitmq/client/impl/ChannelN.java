@@ -188,11 +188,29 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** {@inheritDoc} */
     public boolean waitForConfirms()
-        throws InterruptedException
+        throws IOException, InterruptedException
+    {
+        return waitForConfirmsInternal(false);
+    }
+
+    /** {@inheritDoc} */
+    public void waitForConfirmsOrDie()
+        throws IOException, InterruptedException
+    {
+        waitForConfirmsInternal(true);
+    }
+
+    protected boolean waitForConfirmsInternal(boolean dieOnNack)
+        throws IOException, InterruptedException
     {
         synchronized (unconfirmedSet) {
             while (true) {
                 if (getCloseReason() != null) {
+                    throw Utility.fixStackTrace(getCloseReason());
+                }
+                if (dieOnNack && nacksReceived) {
+                    close(AMQP.REPLY_SUCCESS, "OK", true,
+                          new RuntimeException("received nack"), false);
                     throw Utility.fixStackTrace(getCloseReason());
                 }
                 if (unconfirmedSet.isEmpty()) {
