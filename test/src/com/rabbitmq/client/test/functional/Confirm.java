@@ -122,7 +122,7 @@ public class Confirm extends BrokerTestCase
 
         channel.queueDelete("confirm-test-noconsumer");
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     public void testConfirmQueuePurge()
@@ -132,7 +132,7 @@ public class Confirm extends BrokerTestCase
 
         channel.queuePurge("confirm-test-noconsumer");
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     public void testConfirmBasicReject()
@@ -140,7 +140,7 @@ public class Confirm extends BrokerTestCase
     {
         basicRejectCommon(false);
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     public void testConfirmQueueTTL()
@@ -148,7 +148,7 @@ public class Confirm extends BrokerTestCase
     {
         publishN("", "confirm-ttl", true, false, false);
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     public void testConfirmBasicRejectRequeue()
@@ -162,7 +162,7 @@ public class Confirm extends BrokerTestCase
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     public void testConfirmBasicRecover()
@@ -184,7 +184,7 @@ public class Confirm extends BrokerTestCase
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     public void testConfirmSelect()
@@ -238,7 +238,7 @@ public class Confirm extends BrokerTestCase
             publish("", "confirm-test", true, false, false);
         }
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
         if (!unconfirmedSet.isEmpty()) {
             fail("waitForConfirms returned with unconfirmed messages");
         }
@@ -250,7 +250,7 @@ public class Confirm extends BrokerTestCase
         channel = connection.createChannel();
         // Don't enable Confirm mode
         publish("", "confirm-test", true, false, false);
-        waitAcks(); // Nop
+        channel.waitForConfirmsOrDie(); // Nop
     }
 
     public void testWaitForConfirmsException()
@@ -259,7 +259,7 @@ public class Confirm extends BrokerTestCase
         publishN("", "confirm-test", true, false, false);
         channel.close();
         try {
-            waitAcks();
+            channel.waitForConfirmsOrDie();
             fail("waitAcks worked on a closed channel");
         } catch (Exception e) {
             //whoosh; everything ok
@@ -274,7 +274,7 @@ public class Confirm extends BrokerTestCase
     {
         publishN(exchange, queueName, persistent, mandatory, immediate);
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     private void publishN(String exchangeName, String queueName,
@@ -308,10 +308,5 @@ public class Confirm extends BrokerTestCase
                              persistent ? MessageProperties.PERSISTENT_BASIC
                                         : MessageProperties.BASIC,
                              "nop".getBytes());
-    }
-
-    protected void waitAcks() throws IOException, InterruptedException {
-        if (!channel.waitForConfirms())
-            fail("got nacks");
     }
 }

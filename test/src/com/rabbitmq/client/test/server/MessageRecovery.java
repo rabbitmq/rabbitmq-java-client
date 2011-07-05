@@ -31,8 +31,7 @@ public class MessageRecovery extends BrokerTestCase
         channel.basicPublish("", Q, false, false,
                              MessageProperties.PERSISTENT_BASIC,
                              "nop".getBytes());
-        if (!channel.waitForConfirms())
-            fail("received nacks");
+        channel.waitForConfirmsOrDie();
 
         restart();
         assertDelivered(Q, 1);
