@@ -22,7 +22,6 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
 
 /**
- * @author robharrop
  */
 public class PerQueueTTLGetter {
 

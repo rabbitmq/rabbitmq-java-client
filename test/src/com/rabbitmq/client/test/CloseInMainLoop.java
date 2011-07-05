@@ -21,6 +21,7 @@ import com.rabbitmq.client.*;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 
 import javax.net.SocketFactory;
 
@@ -37,6 +38,7 @@ public class CloseInMainLoop extends BrokerTestCase{
       super(
           new ConnectionFactory(),
           new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", 5672)),
+          Executors.newFixedThreadPool(1),
           new DefaultExceptionHandler(){
             @Override public void handleConsumerException(Channel channel,
                                                            Throwable exception,
@@ -48,7 +50,7 @@ public class CloseInMainLoop extends BrokerTestCase{
                                                                   "Internal error in Consumer " +
                                                                     consumerTag,
                                                                   false,
-                                                                  exception);
+                                                                  exception, AMQConnection.CONNECTION_CLOSING_TIMEOUT, false);
                 } catch (IOException ioe) {
                     // Man, this clearly isn't our day.
                     // Ignore the exception? TODO: Log the nested failure

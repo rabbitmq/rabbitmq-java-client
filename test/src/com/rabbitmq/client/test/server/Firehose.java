@@ -54,6 +54,7 @@ public class Firehose extends BrokerTestCase {
 
     private void checkHeaders(Map<String, Object> pubHeaders) {
         assertEquals("test", pubHeaders.get("exchange_name").toString());
+        @SuppressWarnings("unchecked")
         List<Object> routing_keys = (List<Object>) pubHeaders.get("routing_keys");
         assertEquals("traced", routing_keys.get(0).toString());
     }

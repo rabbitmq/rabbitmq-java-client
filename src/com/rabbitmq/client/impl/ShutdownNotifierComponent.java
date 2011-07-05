@@ -52,7 +52,9 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
     }
 
     public ShutdownSignalException getCloseReason() {
-        return this.shutdownCause;
+        synchronized(this.monitor) {
+            return this.shutdownCause;
+        }
     }
 
     public void notifyListeners()
@@ -81,7 +83,9 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
     }
 
     public boolean isOpen() {
-        return this.shutdownCause == null;
+        synchronized(this.monitor) {
+            return this.shutdownCause == null;
+        }
     }
 
     public boolean setShutdownCauseIfOpen(ShutdownSignalException sse) {
