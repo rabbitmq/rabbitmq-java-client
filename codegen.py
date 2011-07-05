@@ -370,6 +370,9 @@ def genJavaApi(spec):
         
         print "        }"
 
+        # default constructor
+        print "        public %sProperties() {}" % (jClassName)
+
         #class properties
         print "        public int getClassId() { return %i; }" % (c.index)
         print "        public String getClassName() { return \"%s\"; }" % (c.name)
