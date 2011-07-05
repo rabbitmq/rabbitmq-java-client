@@ -191,14 +191,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws InterruptedException
     {
         synchronized (unconfirmedSet) {
-            while ((unconfirmedSet.size() > 0) && (getCloseReason() == null))
+            while (true) {
+                if (getCloseReason() != null) {
+                    throw Utility.fixStackTrace(getCloseReason());
+                }
+                if (unconfirmedSet.isEmpty()) {
+                    boolean noNacksReceived = !nacksReceived;
+                    nacksReceived = false;
+                    return noNacksReceived;
+                }
                 unconfirmedSet.wait();
-            if (unconfirmedSet.isEmpty()) {
-                boolean noNacksReceived = !nacksReceived;
-                nacksReceived = false;
-                return noNacksReceived;
-            } else {
-                throw Utility.fixStackTrace(getCloseReason());
             }
         }
     }
