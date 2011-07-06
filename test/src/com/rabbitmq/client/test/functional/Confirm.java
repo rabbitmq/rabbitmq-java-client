@@ -188,6 +188,22 @@ public class Confirm extends ConfirmBase
         throws IOException
     {
         channel.confirmSelect();
+        try {
+            Channel ch = connection.createChannel();
+            ch.confirmSelect();
+            ch.txSelect();
+            fail();
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
+        }
+        try {
+            Channel ch = connection.createChannel();
+            ch.txSelect();
+            ch.confirmSelect();
+            fail();
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
+        }
     }
 
     public void testTx()
