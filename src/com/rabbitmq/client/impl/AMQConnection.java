@@ -604,8 +604,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _channel0.processShutdownSignal(sse, !initiatedByApplication, notifyRpc);
         _channelManager.handleSignal(sse);
 
-        this._workService.shutdown();
-
         return sse;
     }
 

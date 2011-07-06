@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.IntAllocator;
@@ -31,12 +33,16 @@ import com.rabbitmq.utility.IntAllocator;
  */
 
 public class ChannelManager {
+    private static final int SHUTDOWN_TIMEOUT_SECONDS = 10;
+
     /** Mapping from channel number to AMQChannel instance */
     private final Map<Integer, ChannelN> _channelMap =
         Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
     private final IntAllocator channelNumberAllocator;
 
     private final ConsumerWorkService workService;
+
+    private final Set<Future<Boolean>> shutdownSet = new HashSet<Future<Boolean>>();
 
     /** Maximum channel number available on this connection. */
     public final int _channelMax;
@@ -79,7 +85,24 @@ public class ChannelManager {
         for (ChannelN channel : channels) {
             disconnectChannel(channel);
             channel.processShutdownSignal(signal, true, true);
+            shutdownSet.add(channel.getFutureShutdown());
         }
+        scheduleShutdownProcessing();
+    }
+
+    private void scheduleShutdownProcessing() {
+        final Set<Future<Boolean>> sdSet = new HashSet<Future<Boolean>>(shutdownSet);
+        final ConsumerWorkService ssWorkService = workService;
+        Thread shutdownThread = new Thread( new Runnable() {
+            @Override
+            public void run() {
+                for (Future<Boolean> bool : sdSet) {
+                    try { bool.get(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS); } catch (Throwable e) { }
+                }
+                ssWorkService.shutdown();
+            }}, "ConsumerWorkServiceShutdown");
+        shutdownThread.setDaemon(true);
+        shutdownThread.start();
     }
 
     public ChannelN createChannel(AMQConnection connection) throws IOException {

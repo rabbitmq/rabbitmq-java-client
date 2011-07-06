@@ -26,9 +26,12 @@ import java.util.concurrent.Executors;
 import javax.net.SocketFactory;
 
 public class CloseInMainLoop extends BrokerTestCase{
-  class SpecialConnection extends AMQConnection{
-    private AtomicBoolean validShutdown = new AtomicBoolean();
 
+  private final CountDownLatch closeLatch = new CountDownLatch(1);
+
+  class SpecialConnection extends AMQConnection{
+    private AtomicBoolean validShutdown = new AtomicBoolean(false);
+    
     public boolean hadValidShutdown(){
       if(isOpen()) throw new IllegalStateException("hadValidShutdown called while connection is still open");
       return validShutdown.get();
@@ -40,20 +43,23 @@ public class CloseInMainLoop extends BrokerTestCase{
           new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", 5672)),
           Executors.newFixedThreadPool(1),
           new DefaultExceptionHandler(){
-            @Override public void handleConsumerException(Channel channel,
-                                                           Throwable exception,
-                                                           Consumer consumer,
-                                                           String consumerTag,
-                                                           String methodName){
+            @Override
+            public void handleConsumerException(Channel channel,
+                                                Throwable exception,
+                                                Consumer consumer,
+                                                String consumerTag,
+                                                String methodName) {
                 try {
                   ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
                                                                   "Internal error in Consumer " +
                                                                     consumerTag,
                                                                   false,
                                                                   exception, AMQConnection.CONNECTION_CLOSING_TIMEOUT, false);
-                } catch (IOException ioe) {
+                } catch (Throwable e) {
                     // Man, this clearly isn't our day.
-                    // Ignore the exception? TODO: Log the nested failure
+                    // TODO: Log the nested failure
+                } finally {
+                    closeLatch.countDown();
                 }
             }
         });
@@ -85,22 +91,23 @@ public class CloseInMainLoop extends BrokerTestCase{
     channel.queueDeclare("q", false, false, false, null);
     channel.queueBind("q", "x", "k");
 
-    final CountDownLatch latch = new CountDownLatch(1);
+    final CountDownLatch consumerLatch = new CountDownLatch(1);
 
     channel.basicConsume("q", true, new DefaultConsumer(channel){
-      public void handleDelivery(String consumerTag,
-                                 Envelope envelope,
-                                 AMQP.BasicProperties properties,
-                                 byte[] body){
-        latch.countDown();
-        throw new RuntimeException("I am a bad consumer");
-      }
+        @Override
+        public void handleDelivery(String consumerTag,
+                                   Envelope envelope,
+                                   AMQP.BasicProperties properties,
+                                   byte[] body) {
+            consumerLatch.countDown();
+            throw new RuntimeException("I am a bad consumer");
+        }
     });
 
     channel.basicPublish("x", "k", null, new byte[10]);
 
-    latch.await();
-    Thread.sleep(200);
+    consumerLatch.await();
+    closeLatch.await();
     assertTrue(connection.hadValidShutdown());
   }
 

@@ -21,9 +21,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -59,8 +57,6 @@ import com.rabbitmq.utility.Utility;
  * </pre>
  */
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
-    private static final int SHUTDOWN_TIMEOUT_SECONDS = 10;
-
     private static final String UNSPECIFIED_OUT_OF_BAND = "";
 
     /** When 0.9.1 is signed off, tickets can be removed from the codec and this field should be deleted.*/
@@ -96,6 +92,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Dispatcher of consumer work for this channel */
     private final ConsumerDispatcher dispatcher;
+
+    /** Future boolean for shutting down */
+    private volatile Future<Boolean> finishedShutdownFlag = null;
 
     /**
      * Construct a new channel on the given connection with the given
@@ -199,16 +198,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     {
         this.dispatcher.quiesce();
         super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
-        try {
-            broadcastShutdownSignal(signal)
-            .get(SHUTDOWN_TIMEOUT_SECONDS , TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            // TODO Should we be interruptible?
-        } catch (ExecutionException e) {
-            // TODO Shouldn't happen, but what if it does?
-        } catch (TimeoutException e) {
-            // TODO log problem and continue if timed out
-        }
+        finishedShutdownFlag = broadcastShutdownSignal(signal);
+    }
+
+    public Future<Boolean> getFutureShutdown() {
+        return finishedShutdownFlag;
     }
 
     public void releaseChannelNumber() {
