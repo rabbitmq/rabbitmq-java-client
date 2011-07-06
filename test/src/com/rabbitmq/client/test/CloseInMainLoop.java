@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.SocketFactory;
 
@@ -91,23 +92,19 @@ public class CloseInMainLoop extends BrokerTestCase{
     channel.queueDeclare("q", false, false, false, null);
     channel.queueBind("q", "x", "k");
 
-    final CountDownLatch consumerLatch = new CountDownLatch(1);
-
     channel.basicConsume("q", true, new DefaultConsumer(channel){
         @Override
         public void handleDelivery(String consumerTag,
                                    Envelope envelope,
                                    AMQP.BasicProperties properties,
                                    byte[] body) {
-            consumerLatch.countDown();
             throw new RuntimeException("I am a bad consumer");
         }
     });
 
     channel.basicPublish("x", "k", null, new byte[10]);
 
-    consumerLatch.await();
-    closeLatch.await();
+    assertTrue(closeLatch.await(200, TimeUnit.MILLISECONDS));
     assertTrue(connection.hadValidShutdown());
   }
 
