@@ -111,40 +111,46 @@ public interface Channel extends ShutdownNotifier {
     void abort(int closeCode, String closeMessage) throws IOException;
 
     /**
-     * Return the current {@link ReturnListener}.
-     * @return an interface to the current return listener
+     * Add a {@link ReturnListener}.
+     * @param listener the listener to add
      */
-    ReturnListener getReturnListener();
+    void addReturnListener(ReturnListener listener);
 
     /**
-     * Set the current {@link ReturnListener}.
-     * @param listener the listener to use, or null indicating "don't use one".
+     * Remove a {@link ReturnListener}.
+     * @param listener the listener to remove
+     * @return <code><b>true</b></code> if the listener was found and removed,
+     * <code><b>false</b></code> otherwise
      */
-    void setReturnListener(ReturnListener listener);
+    boolean removeReturnListener(ReturnListener listener);
 
     /**
-     * Return the current {@link FlowListener}.
-     * @return an interface to the current flow listener.
+     * Add a {@link FlowListener}.
+     * @param listener the listener to add
      */
-    FlowListener getFlowListener();
+    void addFlowListener(FlowListener listener);
 
     /**
-     * Set the current {@link FlowListener}.
-     * @param listener the listener to use, or null indicating "don't use one".
+     * Remove a {@link FlowListener}.
+     * @param listener the listener to remove
+     * @return <code><b>true</b></code> if the listener was found and removed,
+     * <code><b>false</b></code> otherwise
      */
-    void setFlowListener(FlowListener listener);
+    boolean removeFlowListener(FlowListener listener);
 
     /**
-     * Return the current {@link ConfirmListener}.
-     * @return an interface to the current ack listener.
+     * Add a {@link ConfirmListener}.
+     * @param listener the listener to add
      */
-    ConfirmListener getConfirmListener();
+    void addConfirmListener(ConfirmListener listener);
 
     /**
-     * Set the current {@link ConfirmListener}.
-     * @param listener the listener to use, or null indicating "don't use one".
+     * Remove a {@link ConfirmListener}.
+     * @param listener the listener to remove
+     * @return <code><b>true</b></code> if the listener was found and removed,
+     * <code><b>false</b></code> otherwise
      */
-    void setConfirmListener(ConfirmListener listener);
+    boolean removeConfirmListener(ConfirmListener listener);
 
     /**
      * Get the current default consumer. @see setDefaultConsumer for rationale.

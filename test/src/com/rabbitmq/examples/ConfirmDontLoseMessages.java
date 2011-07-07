@@ -61,7 +61,7 @@ public class ConfirmDontLoseMessages {
                 Connection conn = connectionFactory.newConnection();
                 Channel ch = conn.createChannel();
                 ch.queueDeclare(QUEUE_NAME, true, false, false, null);
-                ch.setConfirmListener(new ConfirmListener() {
+                ch.addConfirmListener(new ConfirmListener() {
                         public void handleAck(long seqNo, boolean multiple) {
                             if (multiple) {
                                 unconfirmedSet.headSet(seqNo+1).clear();

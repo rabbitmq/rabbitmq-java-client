@@ -135,8 +135,8 @@ public class MulticastMain {
                                                 1000L * samplingInterval,
                                                 rateLimit, minMsgSize, timeLimit,
                                                 confirm);
-                channel.setReturnListener(p);
-                channel.setConfirmListener(p);
+                channel.addReturnListener(p);
+                channel.addConfirmListener(p);
                 Thread t = new Thread(p);
                 producerThreads[i] = t;
                 t.start();

@@ -230,7 +230,7 @@ public class TestMain {
 
         _ch1 = createChannel();
 
-        _ch1.setReturnListener(new ReturnListener() {
+        _ch1.addReturnListener(new ReturnListener() {
             public void handleReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body)
                     throws IOException {
                 Method method = new AMQImpl.Basic.Return(replyCode, replyText, exchange, routingKey);
