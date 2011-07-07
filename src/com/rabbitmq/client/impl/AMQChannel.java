@@ -40,7 +40,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * so that clients can themselves use the channel to synchronize
      * on.
      */
-    public final Object _channelMutex = new Object();
+    protected final Object _channelMutex = new Object();
 
     /** The connection this channel is associated with. */
     public final AMQConnection _connection;
