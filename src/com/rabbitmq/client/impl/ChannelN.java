@@ -111,7 +111,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Whether any nacks have been received since the last
      * waitForConfirms(). */
-    protected volatile boolean nacksReceived = false;
+    protected volatile boolean onlyAcksReceived = true;
 
     /**
      * Construct a new channel on the given connection with the given
@@ -196,9 +196,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     throw new IOException(Utility.fixStackTrace(getCloseReason()));
                 }
                 if (unconfirmedSet.isEmpty()) {
-                    boolean noNacksReceived = !nacksReceived;
-                    nacksReceived = false;
-                    return noNacksReceived;
+                    boolean aux = onlyAcksReceived;
+                    onlyAcksReceived = true;
+                    return aux;
                 }
                 unconfirmedSet.wait();
             }
@@ -988,7 +988,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             unconfirmedSet.remove(seqNo);
         }
         synchronized (unconfirmedSet) {
-            nacksReceived = nacksReceived || nack;
+            onlyAcksReceived = onlyAcksReceived && !nack;
             if (unconfirmedSet.isEmpty())
                 unconfirmedSet.notify();
         }
