@@ -83,11 +83,6 @@ public class MulticastMain {
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
 
-            if ((producerTxSize > 0) && confirm >= 0) {
-                throw new ParseException("Cannot select both producerTxSize"+
-                                         " and confirm");
-            }
-
             //setup
             String id = UUID.randomUUID().toString();
             Stats stats = new Stats(1000L * samplingInterval);
