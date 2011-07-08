@@ -193,7 +193,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         synchronized (unconfirmedSet) {
             while (true) {
                 if (getCloseReason() != null) {
-                    throw Utility.fixStackTrace(getCloseReason());
+                    throw new IOException(Utility.fixStackTrace(getCloseReason()));
                 }
                 if (unconfirmedSet.isEmpty()) {
                     boolean noNacksReceived = !nacksReceived;
@@ -212,7 +212,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (!waitForConfirms()) {
             close(AMQP.REPLY_SUCCESS, "OK", true,
                   new RuntimeException("received nack"), false);
-            throw Utility.fixStackTrace(getCloseReason());
+            throw new IOException(Utility.fixStackTrace(getCloseReason()));
         }
     }
 
