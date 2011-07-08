@@ -91,17 +91,17 @@ public class QosScaling {
     }
 
     protected void publish(List<String> queues) throws IOException {
-        Channel pubCh = connection.createChannel();
-        pubCh.txSelect();
         byte[] body = "".getBytes();
         int messagesPerQueue = params.messageCount / queues.size();
         for (String queue : queues) {
             for (int i = 0; i < messagesPerQueue; i++) {
-                pubCh.basicPublish("", queue, null, body);
+                channel.basicPublish("", queue, null, body);
             }
         }
-        pubCh.txCommit();
-        pubCh.close();
+        //ensure that all the messages have reached the queues
+        for (String queue : queues) {
+            channel.queueDeclarePassive(queue);
+        }
     }
 
     protected long drain(QueueingConsumer c) throws IOException {
@@ -128,7 +128,9 @@ public class QosScaling {
         channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);
         try {
+            channel.flow(false);
             publish(consume(consumer));
+            channel.flow(true);
             return drain(consumer);
         } finally {
             connection.abort();
