@@ -118,11 +118,11 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     /**
      * Placeholder until we address bug 15786 (implementing a proper exception hierarchy).
      */
-    public AMQCommand exnWrappingRpc(Method m)
+    public AMQCommand exnWrappingRpc(com.rabbitmq.client.Method m)
         throws IOException
     {
         try {
-            return rpc(m);
+            return rpc((com.rabbitmq.client.impl.Method)m);
         } catch (AlreadyClosedException ace) {
             // Do not wrap it since it means that connection/channel
             // was closed in some action in the past
