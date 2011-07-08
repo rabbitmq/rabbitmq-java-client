@@ -43,10 +43,9 @@ public class QosScaling {
             helper.addOption(new Option("n", "messages", true, "number of messages to send"));
             helper.addOption(new Option("q", "queues",   true, "number of queues to route messages to"));
             helper.addOption(new Option("e", "empty",    true, "number of queues to leave empty"));
-            
             return helper.parseCommandLine(args);
         }
-        
+
         public Parameters(CommandLine cmd) {
             host         = cmd.getOptionValue("h", "localhost");
             port         = CLIHelper.getOptionValue(cmd, "p", 5672);
