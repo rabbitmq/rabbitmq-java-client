@@ -24,6 +24,8 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.tools.jsonrpc.JsonRpcClient;
 
 public class HelloJsonClient {
+    private static final int RPC_TIMEOUT_ONE_SECOND = 1000;
+
     public static void main(String[] args) {
         try {
             String request = (args.length > 0) ? args[0] : "Rabbit";
@@ -35,7 +37,7 @@ public class HelloJsonClient {
             cfconn.setPort(portNumber);
             Connection conn = cfconn.newConnection();
             Channel ch = conn.createChannel();
-            JsonRpcClient client = new JsonRpcClient(ch, "", "Hello");
+            JsonRpcClient client = new JsonRpcClient(ch, "", "Hello", RPC_TIMEOUT_ONE_SECOND);
             HelloJsonService service =
                 (HelloJsonService) client.createProxy(HelloJsonService.class);
 
