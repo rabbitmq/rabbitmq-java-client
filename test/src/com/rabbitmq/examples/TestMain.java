@@ -502,50 +502,6 @@ public class TestMain {
         _ch1.txCommit();
         expect(2, drain(10, queueName, false));
 
-        /*
-          TODO: figure out what these tests are meant to do; they
-          currently break due to rollback no longer requeueing
-          delivered messages
-
-        String x = "txtest";
-        _ch1.exchangeDeclare(x, "direct", true);
-        String requestQueue = _ch1.queueDeclare("", true).getQueue();
-        String replyQueue = _ch1.queueDeclare("", true).getQueue();
-        _ch1.queueBind(requestQueue, x, requestQueue);
-        _ch1.queueBind(replyQueue, x, replyQueue);
-        publish2(x, requestQueue, "Request");
-        _ch1.txCommit();
-
-        expect(1, drain(10, requestQueue, false));
-        expect(0, drain(10, replyQueue, false));
-        _ch1.txRollback();
-
-        expect(1, drain(10, requestQueue, false));
-        expect(0, drain(10, replyQueue, false));
-        publish2(x, replyQueue, "Reply");
-        _ch1.txRollback();
-
-        waitForKey("Temp queues should have ONE REQUEST, no reply");
-
-        expect(1, drain(10, requestQueue, false));
-        expect(0, drain(10, replyQueue, false));
-        publish2(x, replyQueue, "Reply");
-        _ch1.txCommit();
-
-        waitForKey("Temp queues should have no request, ONE REPLY");
-
-        expect(0, drain(10, requestQueue, false));
-        expect(1, drain(10, replyQueue, false));
-        _ch1.txRollback();
-
-        expect(0, drain(10, requestQueue, false));
-        expect(1, drain(10, replyQueue, false));
-        _ch1.txCommit();
-
-        _ch1.queueDelete(requestQueue);
-        _ch1.queueDelete(replyQueue);
-
-        */
     }
 
 
