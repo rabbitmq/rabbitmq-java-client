@@ -494,9 +494,11 @@ public class TestMain {
         _ch1.basicPublish("", queueName, false, false, null, "normal".getBytes());
         _ch1.basicPublish("", queueName, true, false, null, "mandatory".getBytes());
         _ch1.basicPublish("", "bogus", true, false, null, "mandatory".getBytes());
+        _ch1.txCommit();
         doBasicReturn(returnCell, AMQP.NO_ROUTE);
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish("", "bogus", false, true, null, "immediate".getBytes());
+        _ch1.txCommit();
         doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
         returnCell = new BlockingCell<Object>();
         _ch1.txCommit();
