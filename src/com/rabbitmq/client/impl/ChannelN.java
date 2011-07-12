@@ -100,10 +100,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile Consumer defaultConsumer = null;
 
-    /** Internal ConfirmListener used to keep track of unacknowledged
-     * messages. */
-    protected volatile ConfirmListener firstConfirmListener;
-
     /** Set of currently unconfirmed messages (i.e. messages that have
      * not been ack'd or nack'd by the server yet. */
     protected volatile SortedSet<Long> unconfirmedSet =
@@ -123,24 +119,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public ChannelN(AMQConnection connection, int channelNumber) {
         super(connection, channelNumber);
-
-        firstConfirmListener = new ConfirmListener() {
-                public void handleAck(long seqNo, boolean multiple)
-                    throws IOException
-                {
-                    if (confirmListener != null)
-                        confirmListener.handleAck(seqNo, multiple);
-                    handleAckNack(seqNo, multiple, false);
-                }
-
-                public void handleNack(long seqNo, boolean multiple)
-                    throws IOException
-                {
-                    if (confirmListener != null)
-                        confirmListener.handleNack(seqNo, multiple);
-                    handleAckNack(seqNo, multiple, true);
-                }
-            };
     }
 
     /**
@@ -376,18 +354,22 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             } else if (method instanceof Basic.Ack) {
                 Basic.Ack ack = (Basic.Ack) method;
                 try {
-                    firstConfirmListener.handleAck(ack.getDeliveryTag(), ack.getMultiple());
+                    if (confirmListener != null)
+                        confirmListener.handleAck(ack.getDeliveryTag(), ack.getMultiple());
                 } catch (Throwable ex) {
                     _connection.getExceptionHandler().handleConfirmListenerException(this, ex);
                 }
+                handleAckNack(ack.getDeliveryTag(), ack.getMultiple(), false);
                 return true;
             } else if (method instanceof Basic.Nack) {
                 Basic.Nack nack = (Basic.Nack) method;
                 try {
-                    firstConfirmListener.handleNack(nack.getDeliveryTag(), nack.getMultiple());
+                    if (confirmListener != null)
+                        confirmListener.handleNack(nack.getDeliveryTag(), nack.getMultiple());
                 } catch (Throwable ex) {
                     _connection.getExceptionHandler().handleConfirmListenerException(this, ex);
                 }
+                handleAckNack(nack.getDeliveryTag(), nack.getMultiple(), true);
                 return true;
             } else if (method instanceof Basic.RecoverOk) {
                 for (Consumer callback: _consumers.values()) {
