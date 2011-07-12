@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.RpcClient;
@@ -57,18 +58,25 @@ import com.rabbitmq.tools.json.JSONWriter;
  */
 public class JsonRpcClient extends RpcClient implements InvocationHandler {
     /** Holds the JSON-RPC service description for this client. */
-    public ServiceDescription serviceDescription;
+    private ServiceDescription serviceDescription;
 
     /**
      * Construct a new JsonRpcClient, passing the parameters through
      * to RpcClient's constructor. The service description record is
      * retrieved from the server during construction.
+     * @throws TimeoutException if a response is not received within the timeout specified, if any
      */
-    public JsonRpcClient(Channel channel, String exchange, String routingKey)
-        throws IOException, JsonRpcException
+    public JsonRpcClient(Channel channel, String exchange, String routingKey, int timeout)
+        throws IOException, JsonRpcException, TimeoutException
     {
-	super(channel, exchange, routingKey);
+	super(channel, exchange, routingKey, timeout);
 	retrieveServiceDescription();
+    }
+
+    public JsonRpcClient(Channel channel, String exchange, String routingKey)
+    throws IOException, JsonRpcException, TimeoutException
+    {
+        this(channel, exchange, routingKey, RpcClient.NO_TIMEOUT);
     }
 
     /**
@@ -96,27 +104,25 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * waits for the response.
      * @return the result contained within the reply, if no exception is found
      * @throws JsonRpcException if the reply object contained an exception
+     * @throws TimeoutException if a response is not received within the timeout specified, if any
      */
-    public Object call(String method, Object[] params)
-	throws IOException, JsonRpcException
+    public Object call(String method, Object[] params) throws IOException, JsonRpcException, TimeoutException
     {
-	HashMap<String, Object> request = new HashMap<String, Object>();
-	request.put("id", null);
-	request.put("method", method);
-	request.put("version", ServiceDescription.JSON_RPC_VERSION);
-	request.put("params", (params == null) ? new Object[0] : params);
+        HashMap<String, Object> request = new HashMap<String, Object>();
+        request.put("id", null);
+        request.put("method", method);
+        request.put("version", ServiceDescription.JSON_RPC_VERSION);
+        request.put("params", (params == null) ? new Object[0] : params);
         String requestStr = new JSONWriter().write(request);
-	String replyStr;
         try {
-            replyStr = this.stringCall(requestStr);
+            String replyStr = this.stringCall(requestStr);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) (new JSONReader().read(replyStr));
+            return checkReply(map);
         } catch(ShutdownSignalException ex) {
             throw new IOException(ex.getMessage()); // wrap, re-throw
         }
 
-        //System.out.println(requestStr + " --->\n---> " + replyStr);
-	@SuppressWarnings("unchecked")
-    Map<String, Object> map = (Map<String, Object>) (new JSONReader().read(replyStr));
-	return checkReply(map);
     }
 
     /**
@@ -176,10 +182,11 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * @return the result contained within the reply, if no exception is found
      * @throws JsonRpcException if the reply object contained an exception
      * @throws NumberFormatException if a coercion failed
+     * @throws TimeoutException if a response is not received within the timeout specified, if any
      * @see #coerce
      */
     public Object call(String[] args)
-	throws NumberFormatException, IOException, JsonRpcException
+	throws NumberFormatException, IOException, JsonRpcException, TimeoutException
     {
 	if (args.length == 0) {
 	    throw new IllegalArgumentException("First string argument must be method name");
@@ -210,13 +217,13 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * Private API - invokes the "system.describe" method on the
      * server, and parses and stores the resulting service description
      * in this object.
+     * TODO: Avoid calling this from the constructor.
+     * @throws TimeoutException if a response is not received within the timeout specified, if any
      */
-    public void retrieveServiceDescription()
-	throws IOException, JsonRpcException
+    private void retrieveServiceDescription() throws IOException, JsonRpcException, TimeoutException
     {
-	@SuppressWarnings("unchecked")
-    Map<String, Object> rawServiceDescription = (Map<String, Object>) call("system.describe", null);
-	//System.out.println(new JSONWriter().write(rawServiceDescription));
-	this.serviceDescription = new ServiceDescription(rawServiceDescription);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> rawServiceDescription = (Map<String, Object>) call("system.describe", null);
+        serviceDescription = new ServiceDescription(rawServiceDescription);
     }
 }
