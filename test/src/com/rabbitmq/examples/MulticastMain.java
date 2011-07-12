@@ -117,11 +117,13 @@ public class MulticastMain {
             }
             Thread[] producerThreads = new Thread[producerCount];
             Connection[] producerConnections = new Connection[producerCount];
+            Channel[] producerChannels = new Channel[producerCount];
             for (int i = 0; i < producerCount; i++) {
                 System.out.println("starting producer #" + i);
                 Connection conn = factory.newConnection();
                 producerConnections[i] = conn;
                 Channel channel = conn.createChannel();
+                producerChannels[i] = channel;
                 if (producerTxSize > 0) channel.txSelect();
                 if (confirm >= 0) channel.confirmSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
@@ -130,8 +132,8 @@ public class MulticastMain {
                                                 1000L * samplingInterval,
                                                 rateLimit, minMsgSize, timeLimit,
                                                 confirm);
-                channel.setReturnListener(p);
-                channel.setConfirmListener(p);
+                channel.addReturnListener(p);
+                channel.addConfirmListener(p);
                 Thread t = new Thread(p);
                 producerThreads[i] = t;
                 t.start();
@@ -139,6 +141,8 @@ public class MulticastMain {
 
             for (int i = 0; i < producerCount; i++) {
                 producerThreads[i].join();
+                producerChannels[i].clearReturnListeners();
+                producerChannels[i].clearConfirmListeners();
                 producerConnections[i].close();
             }
 

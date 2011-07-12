@@ -57,7 +57,7 @@ public class AlternateExchange extends BrokerTestCase
 
     @Override protected void setUp() throws IOException {
         super.setUp();
-        channel.setReturnListener(new ReturnListener() {
+        channel.addReturnListener(new ReturnListener() {
                 public void handleReturn(int replyCode,
                                          String replyText,
                                          String exchange,
