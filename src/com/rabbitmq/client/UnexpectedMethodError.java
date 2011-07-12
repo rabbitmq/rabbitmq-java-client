@@ -17,8 +17,6 @@
 
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.Method;
-
 /**
  * Indicates that a {@link Method} object was supplied that was not
  * expected. For instance, {@link Channel#basicGet} throws this if it

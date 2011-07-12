@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.Map;
 
 import com.rabbitmq.client.ContentHeader;
+import com.rabbitmq.client.LongString;
 
 /**
  * Generates an AMQP wire-protocol packet from a {@link ContentHeader}.

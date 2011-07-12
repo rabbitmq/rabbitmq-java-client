@@ -27,6 +27,8 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 
+import com.rabbitmq.client.LongString;
+
 /**
  * Helper class to generates AMQP wire-protocol encoded values.
  */

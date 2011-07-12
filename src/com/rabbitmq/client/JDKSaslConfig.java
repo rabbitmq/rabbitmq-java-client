@@ -16,7 +16,6 @@
 
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.LongString;
 import com.rabbitmq.client.impl.LongStringHelper;
 
 import javax.security.auth.callback.Callback;

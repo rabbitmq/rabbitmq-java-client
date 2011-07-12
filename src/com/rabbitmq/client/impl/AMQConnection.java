@@ -31,6 +31,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.ProtocolVersionMismatchException;
