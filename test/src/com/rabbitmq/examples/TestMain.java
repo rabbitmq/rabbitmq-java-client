@@ -201,15 +201,15 @@ public class TestMain {
         }
     }
 
-    public Connection _connection;
+    private Connection _connection;
 
-    public Channel _ch1;
+    private Channel _ch1;
 
-    public int _messageId = 0;
+    private int _messageId = 0;
 
-    private boolean _silent;
+    private final boolean _silent;
 
-    private BlockingCell<Object> returnCell;
+    private volatile BlockingCell<Object> returnCell;
 
     public TestMain(Connection connection, boolean silent) {
         _connection = connection;
@@ -229,15 +229,6 @@ public class TestMain {
         final int batchSize = 5;
 
         _ch1 = createChannel();
-
-        _ch1.addReturnListener(new ReturnListener() {
-            public void handleReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body)
-                    throws IOException {
-                Method method = new AMQImpl.Basic.Return(replyCode, replyText, exchange, routingKey);
-                log("Handling return with body " + new String(body));
-                returnCell.set(new Object[] { method, properties, body });
-            }
-        });
 
         String queueName =_ch1.queueDeclare().getQueue();
 
@@ -274,6 +265,18 @@ public class TestMain {
             // work around bug 15794
         }
         log("Leaving TestMain.run().");
+    }
+
+    private void setChannelReturnListener() {
+        log("Setting return listener..");
+        _ch1.addReturnListener(new ReturnListener() {
+            public void handleReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body)
+                    throws IOException {
+                Method method = new AMQImpl.Basic.Return(replyCode, replyText, exchange, routingKey);
+                log("Handling return with body " + new String(body));
+                TestMain.this.returnCell.set(new Object[] { method, properties, body });
+            }
+        });
     }
 
     public class UnexpectedSuccessException extends IOException {
@@ -447,6 +450,8 @@ public class TestMain {
         String mx = "mandatoryTestExchange";
         _ch1.exchangeDeclare(mx, "fanout", false, true, null);
 
+        setChannelReturnListener();
+
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());
         doBasicReturn(returnCell, AMQP.NO_ROUTE);
@@ -472,7 +477,15 @@ public class TestMain {
         drain(1, mq, true);
         _ch1.queueDelete(mq, true, true);
 
+        unsetChannelReturnListener();
+
         log("Completed basic.return testing.");
+        
+    }
+
+    private void unsetChannelReturnListener() {
+        _ch1.clearReturnListeners();
+        log("ReturnListeners unset");
     }
 
     public void waitForKey(String prompt) throws IOException {
@@ -487,7 +500,11 @@ public class TestMain {
 
     public void tryTransaction(String queueName) throws IOException {
 
+        log("About to tryTranscation");
+
         _ch1.txSelect();
+
+        setChannelReturnListener();
 
         //test basicReturn handling in tx context
         returnCell = new BlockingCell<Object>();
@@ -502,6 +519,8 @@ public class TestMain {
         _ch1.txCommit();
         expect(2, drain(10, queueName, false));
 
+        unsetChannelReturnListener();
+        log("Finished tryTransaction");
     }
 
 
