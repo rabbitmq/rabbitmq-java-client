@@ -18,12 +18,11 @@
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -81,14 +80,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public final Map<String, Consumer> _consumers =
         Collections.synchronizedMap(new HashMap<String, Consumer>());
 
-    /** Monitor protecting all listeners collections */
-    private final Object listenersMonitor = new Object();
-        /** The ReturnListener collection. */
-        private final Collection<ReturnListener> returnListeners = new LinkedList<ReturnListener>();
-        /** The FlowListener collection. */
-        private final Collection<FlowListener> flowListeners = new LinkedList<FlowListener>();
-        /** The ConfirmListener collection. */
-        private final Collection<ConfirmListener> confirmListeners = new LinkedList<ConfirmListener>();
+    /* All listeners collections are in CopyOnWriteArrayList objects */
+    /** The ReturnListener collection. */
+    private final Collection<ReturnListener> returnListeners = new CopyOnWriteArrayList<ReturnListener>();
+    /** The FlowListener collection. */
+    private final Collection<FlowListener> flowListeners = new CopyOnWriteArrayList<FlowListener>();
+    /** The ConfirmListener collection. */
+    private final Collection<ConfirmListener> confirmListeners = new CopyOnWriteArrayList<ConfirmListener>();
 
     /** Sequence number of next published message requiring confirmation. */
     private long nextPublishSeqNo = 0L;
@@ -120,91 +118,40 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         Utility.use(openOk);
     }
 
-    /** Returns a readable copy of the current ReturnListener collection. */
-    private Collection<ReturnListener> getReturnListeners() {
-        synchronized (listenersMonitor) {
-            if (returnListeners.isEmpty())
-                return Collections.emptyList();
-            return new ArrayList<ReturnListener>(returnListeners);
-        }
-    }
-
     public void addReturnListener(ReturnListener listener) {
-        synchronized (listenersMonitor) {
-            returnListeners.add(listener);
-        }
+        returnListeners.add(listener);
     }
 
     public boolean removeReturnListener(ReturnListener listener) {
-        synchronized (listenersMonitor) {
-            return returnListeners.remove(listener);
-        }
+        return returnListeners.remove(listener);
     }
 
-    public int clearReturnListeners() {
-        synchronized(listenersMonitor) {
-            int result = returnListeners.size();
-            returnListeners.clear();
-            return result;
-        }
-    }
-
-    /** Returns a readable copy of the current FlowListener collection. */
-    private Collection<FlowListener> getFlowListeners() {
-        synchronized (listenersMonitor) {
-            if (flowListeners.isEmpty())
-                return Collections.emptyList();
-            return new ArrayList<FlowListener>(flowListeners);
-        }
+    public void clearReturnListeners() {
+        returnListeners.clear();
     }
 
     public void addFlowListener(FlowListener listener) {
-        synchronized (listenersMonitor) {
-            flowListeners.add(listener);
-        }
+        flowListeners.add(listener);
     }
 
     public boolean removeFlowListener(FlowListener listener) {
-        synchronized (listenersMonitor) {
-            return flowListeners.remove(listener);
-        }
+        return flowListeners.remove(listener);
     }
 
-    public int clearFlowListeners() {
-        synchronized(listenersMonitor) {
-            int result = flowListeners.size();
-            flowListeners.clear();
-            return result;
-        }
-    }
-
-    /** Returns a readable copy of the current ConfirmListener collection. */
-    private Collection<ConfirmListener> getConfirmListeners() {
-        synchronized (listenersMonitor) {
-            if (confirmListeners.isEmpty())
-                return Collections.emptyList();
-            return new ArrayList<ConfirmListener>(confirmListeners);
-        }
+    public void clearFlowListeners() {
+        flowListeners.clear();
     }
 
     public void addConfirmListener(ConfirmListener listener) {
-        synchronized (listenersMonitor) {
-            confirmListeners.add(listener);
-        }
+        confirmListeners.add(listener);
     }
 
     public boolean removeConfirmListener(ConfirmListener listener) {
-        synchronized (listenersMonitor) {
-            return confirmListeners.remove(listener);
-        }
+        return confirmListeners.remove(listener);
     }
 
-    public int clearConfirmListeners() {
-        synchronized(listenersMonitor) {
-            int result = confirmListeners.size();
-            confirmListeners.clear();
-            return result;
-        }
+    public void clearConfirmListeners() {
+        confirmListeners.clear();
     }
 
     /** Returns the current default consumer. */
@@ -388,7 +335,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     private void callReturnListeners(Command command, Basic.Return basicReturn) {
         try {
-            for (ReturnListener l : getReturnListeners()) {
+            for (ReturnListener l : this.returnListeners) {
                 l.handleReturn(basicReturn.getReplyCode(),
                                basicReturn.getReplyText(),
                                basicReturn.getExchange(),
@@ -403,7 +350,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     private void callFlowListeners(Command command, Channel.Flow channelFlow) {
         try {
-            for (FlowListener l : getFlowListeners()) {
+            for (FlowListener l : this.flowListeners) {
                 l.handleFlow(channelFlow.getActive());
             }
         } catch (Throwable ex) {
@@ -413,7 +360,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     private void callConfirmListeners(Command command, Basic.Ack ack) {
         try {
-            for (ConfirmListener l : getConfirmListeners()) {
+            for (ConfirmListener l : this.confirmListeners) {
                 l.handleAck(ack.getDeliveryTag(), ack.getMultiple());
             }
         } catch (Throwable ex) {
@@ -423,7 +370,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     private void callConfirmListeners(Command command, Basic.Nack nack) {
         try {
-            for (ConfirmListener l : getConfirmListeners()) {
+            for (ConfirmListener l : this.confirmListeners) {
                 l.handleNack(nack.getDeliveryTag(), nack.getMultiple());
             }
         } catch (Throwable ex) {
