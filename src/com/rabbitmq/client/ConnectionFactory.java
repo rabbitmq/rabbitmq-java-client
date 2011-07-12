@@ -38,6 +38,8 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory implements Cloneable {
+    private static final int NUM_CHANNEL_CONSUMER_THREADS = 5;
+
     /** Default user name */
     public static final String DEFAULT_USER = "guest";
 
@@ -398,8 +400,8 @@ public class ConnectionFactory implements Cloneable {
         for (Address addr : addrs) {
             try {
                 FrameHandler frameHandler = createFrameHandler(addr);
-                AMQConnection conn = new AMQConnection(this,
-                                                       frameHandler);
+                AMQConnection conn = 
+                    new AMQConnection(this, frameHandler, NUM_CHANNEL_CONSUMER_THREADS);
                 conn.start();
                 return conn;
             } catch (IOException e) {

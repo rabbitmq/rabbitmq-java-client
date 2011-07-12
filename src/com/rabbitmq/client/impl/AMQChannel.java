@@ -40,7 +40,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * so that clients can themselves use the channel to synchronize
      * on.
      */
-    public final Object _channelMutex = new Object();
+    protected final Object _channelMutex = new Object();
 
     /** The connection this channel is associated with. */
     public final AMQConnection _connection;
@@ -158,8 +158,12 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public void enqueueRpc(RpcContinuation k)
     {
         synchronized (_channelMutex) {
-            if (_activeRpc != null) {
-                throw new IllegalStateException("cannot execute more than one synchronous AMQP command at a time");
+            while (_activeRpc != null) {
+                try {
+                    _channelMutex.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
             _activeRpc = k;
         }
@@ -170,6 +174,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         synchronized (_channelMutex) {
             RpcContinuation result = _activeRpc;
             _activeRpc = null;
+            _channelMutex.notifyAll();
             return result;
         }
     }
