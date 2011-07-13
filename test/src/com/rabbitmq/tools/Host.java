@@ -63,9 +63,6 @@ public class Host {
     public static void executeCommandIgnoringErrors(String command) throws IOException
     {
         Process pr = executeCommandProcess(command);
-//        String stdout = capture(pr.getInputStream());
-//        String stderr = capture(pr.getErrorStream());
-
         waitForExitValue(pr);
     }
 
