@@ -31,6 +31,7 @@ import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.FlowListener;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.Method;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -106,7 +107,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /**
      * Package method: open the channel.
-     * This is only called from AMQConnection.
+     * This is only called from {@link ChannelManager}.
      * @throws java.io.IOException if any problem is encountered
      */
     public void open() throws IOException {
@@ -967,13 +968,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return nextPublishSeqNo;
     }
 
-    public void asyncRpc(com.rabbitmq.client.Method method) throws IOException {
-        // This cast should eventually go
-        transmit((com.rabbitmq.client.impl.Method)method);
+    public void asyncRpc(Method method) throws IOException {
+        transmit(method);
     }
 
-    public Method rpc(com.rabbitmq.client.Method method) throws IOException {
-        return exnWrappingRpc((com.rabbitmq.client.impl.Method)method).getMethod();
+    public AMQCommand rpc(Method method) throws IOException {
+        return exnWrappingRpc(method);
     }
 
 }

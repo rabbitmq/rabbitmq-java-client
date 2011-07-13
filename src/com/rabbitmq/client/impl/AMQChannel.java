@@ -22,6 +22,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Command;
+import com.rabbitmq.client.Method;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingValueOrException;
@@ -118,11 +119,11 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     /**
      * Placeholder until we address bug 15786 (implementing a proper exception hierarchy).
      */
-    public AMQCommand exnWrappingRpc(com.rabbitmq.client.Method m)
+    public AMQCommand exnWrappingRpc(Method m)
         throws IOException
     {
         try {
-            return rpc((com.rabbitmq.client.impl.Method)m);
+            return rpc(m);
         } catch (AlreadyClosedException ace) {
             // Do not wrap it since it means that connection/channel
             // was closed in some action in the past
@@ -183,8 +184,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     /**
-     * Protected API - sends a Command to the broker and waits for the
-     * next inbound Command from the broker: only for use from
+     * Protected API - sends a {@link Method} to the broker and waits for the
+     * next in-bound Command from the broker: only for use from
      * non-connection-MainLoop threads!
      */
     public AMQCommand rpc(Method m)
