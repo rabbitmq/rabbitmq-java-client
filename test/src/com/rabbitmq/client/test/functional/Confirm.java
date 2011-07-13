@@ -261,7 +261,9 @@ public class Confirm extends BrokerTestCase
         try {
             channel.waitForConfirmsOrDie();
             fail("waitAcks worked on a closed channel");
-        } catch (IOException e) {
+        } catch (IOException ioe) {
+            if (ioe.getCause() == null || !(ioe.getCause() instanceof RuntimeException))
+                fail("got the wrong exception :(");
             //whoosh; everything ok
         } catch (InterruptedException e) {
             // whoosh; we should probably re-run, though

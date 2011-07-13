@@ -188,7 +188,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException, InterruptedException
     {
         if (!waitForConfirms()) {
-            close(AMQP.REPLY_SUCCESS, "OK", true,
+            close(AMQP.REPLY_SUCCESS, "NACKS RECEIVED", true,
                   new RuntimeException("received nack"), false);
             throw new IOException(Utility.fixStackTrace(getCloseReason()));
         }
