@@ -36,8 +36,40 @@ public class Host {
         return buff.toString();
     }
 
-    public static void executeCommand(String command)
-        throws IOException
+    public static void executeCommand(String command) throws IOException
+    {
+        Process pr = executeCommandProcess(command);
+        String stdout = capture(pr.getInputStream());
+        String stderr = capture(pr.getErrorStream());
+
+        int ev = waitForExitValue(pr);
+        if (ev != 0) {
+            throw new IOException("unexpected command exit value: " + ev +
+                                  "\nstdout:\n" + stdout +
+                                  "\nstderr:\n" + stderr + "\n");
+        }
+    }
+
+    private static int waitForExitValue(Process pr) {
+        while(true) {
+            try {
+                pr.waitFor();
+                break;
+            } catch (InterruptedException e) {}
+        }
+        return pr.exitValue();
+    }
+
+    public static void executeCommandIgnoringErrors(String command) throws IOException
+    {
+        Process pr = executeCommandProcess(command);
+//        String stdout = capture(pr.getInputStream());
+//        String stderr = capture(pr.getErrorStream());
+
+        waitForExitValue(pr);
+    }
+
+    private static Process executeCommandProcess(String command) throws IOException
     {
         String[] finalCommand;
         if (System.getProperty("os.name").toLowerCase().indexOf("windows") != -1) {
@@ -52,24 +84,14 @@ public class Host {
             finalCommand[1] = "-c";
             finalCommand[2] = command;
         }
-        final Process pr = Runtime.getRuntime().exec(finalCommand);
-        final String stdout = capture(pr.getInputStream());
-        final String stderr = capture(pr.getErrorStream());
-        while(true) {
-            try {
-                pr.waitFor();
-                break;
-            } catch (InterruptedException e) {}
-        }
-        int ev = pr.exitValue();
-        if (ev != 0) {
-            throw new IOException("unexpected command exit value: " + ev +
-                                  "\nstdout:\n" + stdout +
-                                  "\nstderr:\n" + stderr + "\n");
-        }
+        return Runtime.getRuntime().exec(finalCommand);
     }
 
     public static void rabbitmqctl(String command) throws IOException {
         executeCommand("../rabbitmq-server/scripts/rabbitmqctl " + command);
+    }
+
+    public static void rabbitmqctlIgnoreErrors(String command) throws IOException {
+        executeCommandIgnoringErrors("../rabbitmq-server/scripts/rabbitmqctl " + command);
     }
 }
