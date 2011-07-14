@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -53,7 +55,6 @@ import com.rabbitmq.utility.Utility;
  * <pre>
  * {@link Connection} conn = ...;
  * {@link ChannelN} ch1 = conn.{@link Connection#createChannel createChannel}();
- * ch1.{@link ChannelN#open open}();
  * </pre>
  */
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
@@ -98,6 +99,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      *  none.
      */
     public volatile Consumer defaultConsumer = null;
+
+    /** Set of currently unconfirmed messages (i.e. messages that have
+     * not been ack'd or nack'd by the server yet. */
+    protected volatile SortedSet<Long> unconfirmedSet =
+            Collections.synchronizedSortedSet(new TreeSet<Long>());
+
+    /** Whether any nacks have been received since the last
+     * waitForConfirms(). */
+    protected volatile boolean onlyAcksReceived = true;
 
     /**
      * Construct a new channel on the given connection with the given
@@ -154,6 +164,35 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return confirmListener;
     }
 
+    /** {@inheritDoc} */
+    public boolean waitForConfirms()
+        throws InterruptedException
+    {
+        synchronized (unconfirmedSet) {
+            while (true) {
+                if (getCloseReason() != null) {
+                    throw Utility.fixStackTrace(getCloseReason());
+                }
+                if (unconfirmedSet.isEmpty()) {
+                    boolean aux = onlyAcksReceived;
+                    onlyAcksReceived = true;
+                    return aux;
+                }
+                unconfirmedSet.wait();
+            }
+        }
+    }
+
+    /** {@inheritDoc} */
+    public void waitForConfirmsOrDie()
+        throws IOException, InterruptedException
+    {
+        if (!waitForConfirms()) {
+            close(AMQP.REPLY_SUCCESS, "NACKS RECEIVED", true, null, false);
+            throw new IOException("nacks received");
+        }
+    }
+
     /**
      * Sets the current {@link ConfirmListener}.
      * A null argument is interpreted to mean "do not use a confirm listener".
@@ -208,6 +247,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     {
         super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
         broadcastShutdownSignal(signal);
+        synchronized (unconfirmedSet) {
+            unconfirmedSet.notify();
+        }
     }
 
     public void releaseChannelNumber() {
@@ -310,25 +352,23 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return true;
             } else if (method instanceof Basic.Ack) {
                 Basic.Ack ack = (Basic.Ack) method;
-                ConfirmListener l = getConfirmListener();
-                if (l != null) {
-                    try {
-                        l.handleAck(ack.getDeliveryTag(), ack.getMultiple());
-                    } catch (Throwable ex) {
-                        _connection.getExceptionHandler().handleConfirmListenerException(this, ex);
-                    }
+                try {
+                    if (confirmListener != null)
+                        confirmListener.handleAck(ack.getDeliveryTag(), ack.getMultiple());
+                } catch (Throwable ex) {
+                    _connection.getExceptionHandler().handleConfirmListenerException(this, ex);
                 }
+                handleAckNack(ack.getDeliveryTag(), ack.getMultiple(), false);
                 return true;
             } else if (method instanceof Basic.Nack) {
                 Basic.Nack nack = (Basic.Nack) method;
-                ConfirmListener l = getConfirmListener();
-                if (l != null) {
-                    try {
-                        l.handleNack(nack.getDeliveryTag(), nack.getMultiple());
-                    } catch (Throwable ex) {
-                        _connection.getExceptionHandler().handleConfirmListenerException(this, ex);
-                    }
+                try {
+                    if (confirmListener != null)
+                        confirmListener.handleNack(nack.getDeliveryTag(), nack.getMultiple());
+                } catch (Throwable ex) {
+                    _connection.getExceptionHandler().handleConfirmListenerException(this, ex);
                 }
+                handleAckNack(nack.getDeliveryTag(), nack.getMultiple(), true);
                 return true;
             } else if (method instanceof Basic.RecoverOk) {
                 for (Consumer callback: _consumers.values()) {
@@ -513,7 +553,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
-        if (nextPublishSeqNo > 0) nextPublishSeqNo++;
+        if (nextPublishSeqNo > 0) {
+            unconfirmedSet.add(getNextPublishSeqNo());
+            nextPublishSeqNo++;
+        }
         BasicProperties useProps = props;
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
@@ -919,4 +962,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return exnWrappingRpc((com.rabbitmq.client.impl.Method)method).getMethod();
     }
 
+    protected void handleAckNack(long seqNo, boolean multiple, boolean nack) {
+        if (multiple) {
+            unconfirmedSet.headSet(seqNo + 1).clear();
+        } else {
+            unconfirmedSet.remove(seqNo);
+        }
+        synchronized (unconfirmedSet) {
+            onlyAcksReceived = onlyAcksReceived && !nack;
+            if (unconfirmedSet.isEmpty())
+                unconfirmedSet.notify();
+        }
+    }
 }

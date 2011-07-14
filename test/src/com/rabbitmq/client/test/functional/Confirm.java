@@ -17,18 +17,23 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.ConfirmBase;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.test.BrokerTestCase;
+
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
-public class Confirm extends ConfirmBase
+public class Confirm extends BrokerTestCase
 {
     private final static int NUM_MESSAGES = 1000;
 
@@ -119,7 +124,7 @@ public class Confirm extends ConfirmBase
 
         channel.queueDelete("confirm-test-noconsumer");
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     public void testQueuePurge()
@@ -129,7 +134,7 @@ public class Confirm extends ConfirmBase
 
         channel.queuePurge("confirm-test-noconsumer");
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     public void testBasicReject()
@@ -137,7 +142,7 @@ public class Confirm extends ConfirmBase
     {
         basicRejectCommon(false);
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     public void testQueueTTL()
@@ -145,7 +150,7 @@ public class Confirm extends ConfirmBase
     {
         publishN("", "confirm-ttl", true, false, false);
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     public void testBasicRejectRequeue()
@@ -159,7 +164,7 @@ public class Confirm extends ConfirmBase
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     public void testBasicRecover()
@@ -181,7 +186,7 @@ public class Confirm extends ConfirmBase
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     public void testSelect()
@@ -206,6 +211,65 @@ public class Confirm extends ConfirmBase
         }
     }
 
+    public void testWaitForConfirms()
+        throws IOException, InterruptedException
+    {
+        final SortedSet<Long> unconfirmedSet =
+            Collections.synchronizedSortedSet(new TreeSet<Long>());
+        channel.setConfirmListener(new ConfirmListener() {
+                public void handleAck(long seqNo, boolean multiple) {
+                    if (!unconfirmedSet.contains(seqNo)) {
+                        fail("got duplicate ack: " + seqNo);
+                    }
+                    if (multiple) {
+                        unconfirmedSet.headSet(seqNo + 1).clear();
+                    } else {
+                        unconfirmedSet.remove(seqNo);
+                    }
+                }
+
+                public void handleNack(long seqNo, boolean multiple) {
+                    fail("got a nack");
+                }
+            });
+
+        for (long i = 0; i < NUM_MESSAGES; i++) {
+            unconfirmedSet.add(channel.getNextPublishSeqNo());
+            publish("", "confirm-test", true, false, false);
+        }
+
+        channel.waitForConfirmsOrDie();
+        if (!unconfirmedSet.isEmpty()) {
+            fail("waitForConfirms returned with unconfirmed messages");
+        }
+    }
+
+    public void testWaitForConfirmsNoOp()
+        throws IOException, InterruptedException
+    {
+        channel = connection.createChannel();
+        // Don't enable Confirm mode
+        publish("", "confirm-test", true, false, false);
+        channel.waitForConfirmsOrDie(); // Nop
+    }
+
+    public void testWaitForConfirmsException()
+        throws IOException, InterruptedException
+    {
+        publishN("", "confirm-test", true, false, false);
+        channel.close();
+        try {
+            channel.waitForConfirmsOrDie();
+            fail("waitAcks worked on a closed channel");
+        } catch (ShutdownSignalException sse) {
+            if (!(sse.getReason() instanceof AMQP.Channel.Close))
+                fail("didn't except for the right reason");
+            //whoosh; everything ok
+        } catch (InterruptedException e) {
+            // whoosh; we should probably re-run, though
+        }
+    }
+
     /* Publish NUM_MESSAGES messages and wait for confirmations. */
     public void confirmTest(String exchange, String queueName,
                             boolean persistent, boolean mandatory,
@@ -214,7 +278,7 @@ public class Confirm extends ConfirmBase
     {
         publishN(exchange, queueName, persistent, mandatory, immediate);
 
-        waitAcks();
+        channel.waitForConfirmsOrDie();
     }
 
     private void publishN(String exchangeName, String queueName,
@@ -238,5 +302,15 @@ public class Confirm extends ConfirmBase
             long dtag = resp.getEnvelope().getDeliveryTag();
             channel.basicReject(dtag, requeue);
         }
+    }
+
+    protected void publish(String exchangeName, String queueName,
+                           boolean persistent, boolean mandatory,
+                           boolean immediate)
+        throws IOException {
+        channel.basicPublish(exchangeName, queueName, mandatory, immediate,
+                             persistent ? MessageProperties.PERSISTENT_BASIC
+                                        : MessageProperties.BASIC,
+                             "nop".getBytes());
     }
 }
