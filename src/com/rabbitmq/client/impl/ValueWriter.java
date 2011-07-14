@@ -107,7 +107,7 @@ public class ValueWriter
             out.writeInt(0);
         } else {
             out.writeInt((int)Frame.tableSize(table));
-            for(Map.Entry<String,Object> entry:  table.entrySet()) {
+            for(Map.Entry<String,Object> entry: table.entrySet()) {
                 writeShortstr(entry.getKey());
                 Object value = entry.getValue();
                 writeFieldValue(value);

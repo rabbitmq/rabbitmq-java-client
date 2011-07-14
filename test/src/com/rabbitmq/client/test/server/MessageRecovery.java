@@ -24,7 +24,7 @@ public class MessageRecovery extends ConfirmBase
 
     private final static String Q = "recovery-test";
 
-    public void test() throws IOException, InterruptedException {
+    public void testMessageRecovery() throws IOException, InterruptedException {
         channel.queueDeclare(Q, true, false, false, null);
         publish("", Q, true, false, false);
         waitAcks();
