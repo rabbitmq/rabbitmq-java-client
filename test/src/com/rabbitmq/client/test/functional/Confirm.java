@@ -23,7 +23,9 @@ import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
+
 
 import java.io.IOException;
 import java.util.Collections;
@@ -261,9 +263,9 @@ public class Confirm extends BrokerTestCase
         try {
             channel.waitForConfirmsOrDie();
             fail("waitAcks worked on a closed channel");
-        } catch (IOException ioe) {
-            if (ioe.getCause() == null || !(ioe.getCause() instanceof RuntimeException))
-                fail("got the wrong exception :(");
+        } catch (ShutdownSignalException sse) {
+            if (!(sse.getReason() instanceof AMQP.Channel.Close))
+                fail("didn't except for the right reason");
             //whoosh; everything ok
         } catch (InterruptedException e) {
             // whoosh; we should probably re-run, though
