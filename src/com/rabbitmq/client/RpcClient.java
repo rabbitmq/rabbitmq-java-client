@@ -234,7 +234,7 @@ public class RpcClient {
      * Perform an AMQP wire-protocol-table based RPC roundtrip <br><br>
      *
      * There are some restrictions on the values appearing in the table: <br>
-     * they must be of type {@link String}, {@link com.rabbitmq.client.LongString}, {@link Integer}, {@link java.math.BigDecimal}, {@link Date},
+     * they must be of type {@link String}, {@link LongString}, {@link Integer}, {@link java.math.BigDecimal}, {@link Date},
      * or (recursively) a {@link Map} of the enclosing type.
      *
      * @param message the table to send
