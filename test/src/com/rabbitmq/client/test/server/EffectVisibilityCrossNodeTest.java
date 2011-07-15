@@ -16,8 +16,6 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.functional.ClusteredTestBase;
 
 import java.io.IOException;

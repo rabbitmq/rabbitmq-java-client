@@ -216,7 +216,7 @@ public class Confirm extends BrokerTestCase
     {
         final SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
-        channel.setConfirmListener(new ConfirmListener() {
+        channel.addConfirmListener(new ConfirmListener() {
                 public void handleAck(long seqNo, boolean multiple) {
                     if (!unconfirmedSet.contains(seqNo)) {
                         fail("got duplicate ack: " + seqNo);
