@@ -28,9 +28,11 @@ import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingValueOrException;
 
 /**
- * Base class modelling an AMQ channel. Subclasses implement {@link #close()}
- * and {@link #processAsync()}, and may choose to override
- * {@link processShutdownSignal()} and {@link rpc()}.
+ * Base class modelling an AMQ channel. Subclasses implement
+ * {@link com.rabbitmq.client.Channel#close} and
+ * {@link #processAsync processAsync()}, and may choose to override
+ * {@link #processShutdownSignal processShutdownSignal()} and
+ * {@link #rpc rpc()}.
  *
  * @see ChannelN
  * @see Connection
@@ -253,7 +255,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         try {
             synchronized (_channelMutex) {
                 if (!setShutdownCauseIfOpen(signal)) {
-                    if (!ignoreClosed) 
+                    if (!ignoreClosed)
                         throw new AlreadyClosedException("Attempt to use closed channel", this);
                 }
 
