@@ -722,8 +722,8 @@ public interface Channel extends ShutdownNotifier {
     /**
      * Synchronously send a method over this channel.
      * @param method method to transmit over this channel.
-     * @return response to method. Caller should cast as appropriate.
+     * @return command response to method. Caller should cast as appropriate.
      * @throws IOException Problem transmitting method.
      */
-    Method rpc(Method method) throws IOException;
+    Command rpc(Method method) throws IOException;
 }

@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 
+import com.rabbitmq.client.LongString;
+
 /**
  * Parses AMQP wire-protocol {@link Method} arguments from a
  * DataInputStream. Methods on this object are usually called from

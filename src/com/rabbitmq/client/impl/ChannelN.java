@@ -33,6 +33,7 @@ import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.FlowListener;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.Method;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -59,13 +60,6 @@ import com.rabbitmq.utility.Utility;
  */
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
     private static final String UNSPECIFIED_OUT_OF_BAND = "";
-
-    /**
-     * When 0.9.1 is signed off, tickets can be removed from the codec
-     * and this field can be deleted.
-     */
-    @Deprecated
-    private static final int TICKET = 0;
 
     /**
      * Map from consumer tag to {@link Consumer} instance.
@@ -123,7 +117,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /**
      * Package method: open the channel.
-     * This is only called from AMQConnection.
+     * This is only called from {@link ChannelManager}.
      * @throws java.io.IOException if any problem is encountered
      */
     public void open() throws IOException {
@@ -561,8 +555,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
         }
-        transmit(new AMQCommand(new Basic.Publish(TICKET, exchange, routingKey,
-                                                  mandatory, immediate),
+        transmit(new AMQCommand(new Basic.Publish.Builder()
+                                    .exchange(exchange)
+                                    .routingKey(routingKey)
+                                    .mandatory(mandatory)
+                                    .immediate(immediate)
+                                .build(),
                                 useProps, body));
     }
 
@@ -586,10 +584,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             throws IOException
     {
         return (Exchange.DeclareOk)
-                exnWrappingRpc(new Exchange.Declare(TICKET, exchange, type,
-                                                    false, durable, autoDelete,
-                                                    internal, false,
-                                                    arguments)).getMethod();
+                exnWrappingRpc(new Exchange.Declare.Builder()
+                                .exchange(exchange)
+                                .type(type)
+                                .durable(durable)
+                                .autoDelete(autoDelete)
+                                .internal(internal)
+                                .arguments(arguments)
+                               .build())
+                .getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -612,9 +615,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return (Exchange.DeclareOk)
-            exnWrappingRpc(new Exchange.Declare(TICKET, exchange, "",
-                                                true, false, false,
-                                                false, false, null)).getMethod();
+            exnWrappingRpc(new Exchange.Declare.Builder()
+                            .exchange(exchange)
+                            .type("")
+                            .passive()
+                           .build())
+            .getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -622,7 +628,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return (Exchange.DeleteOk)
-            exnWrappingRpc(new Exchange.Delete(TICKET, exchange, ifUnused, false)).getMethod();
+            exnWrappingRpc(new Exchange.Delete.Builder()
+                            .exchange(exchange)
+                            .ifUnused(ifUnused)
+                           .build())
+            .getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -636,9 +646,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Exchange.BindOk exchangeBind(String destination, String source,
             String routingKey, Map<String, Object> arguments)
             throws IOException {
-        return (Exchange.BindOk) exnWrappingRpc(
-                new Exchange.Bind(TICKET, destination, source, routingKey,
-                        false, arguments)).getMethod();
+        return (Exchange.BindOk) 
+               exnWrappingRpc(new Exchange.Bind.Builder()
+                               .destination(destination)
+                               .source(source)
+                               .routingKey(routingKey)
+                               .arguments(arguments)
+                              .build())
+               .getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -651,9 +666,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Exchange.UnbindOk exchangeUnbind(String destination, String source,
             String routingKey, Map<String, Object> arguments)
             throws IOException {
-        return (Exchange.UnbindOk) exnWrappingRpc(
-                new Exchange.Unbind(TICKET, destination, source, routingKey,
-                        false, arguments)).getMethod();
+        return (Exchange.UnbindOk)
+               exnWrappingRpc(new Exchange.Unbind.Builder()
+                               .destination(destination)
+                               .source(source)
+                               .routingKey(routingKey)
+                               .arguments(arguments)
+                              .build())
+               .getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -668,8 +688,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return (Queue.DeclareOk)
-            exnWrappingRpc(new Queue.Declare(TICKET, queue, false, durable,
-                                             exclusive, autoDelete, false, arguments)).getMethod();
+               exnWrappingRpc(new Queue.Declare.Builder()
+                               .queue(queue)
+                               .durable(durable)
+                               .exclusive(exclusive)
+                               .autoDelete(autoDelete)
+                               .arguments(arguments)
+                              .build())
+               .getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -684,8 +710,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return (Queue.DeclareOk)
-            exnWrappingRpc(new Queue.Declare(TICKET, queue, true, false,
-                                             true, true, false, null)).getMethod();
+               exnWrappingRpc(new Queue.Declare.Builder()
+                               .queue(queue)
+                               .passive()
+                               .exclusive()
+                               .autoDelete()
+                              .build())
+               .getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -693,7 +724,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return (Queue.DeleteOk)
-            exnWrappingRpc(new Queue.Delete(TICKET, queue, ifUnused, ifEmpty, false)).getMethod();
+               exnWrappingRpc(new Queue.Delete.Builder()
+                               .queue(queue)
+                               .ifUnused(ifUnused)
+                               .ifEmpty(ifEmpty)
+                              .build())
+               .getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -709,8 +745,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return (Queue.BindOk)
-            exnWrappingRpc(new Queue.Bind(TICKET, queue, exchange, routingKey,
-                                          false, arguments)).getMethod();
+               exnWrappingRpc(new Queue.Bind.Builder()
+                               .queue(queue)
+                               .exchange(exchange)
+                               .routingKey(routingKey)
+                               .arguments(arguments)
+                              .build())
+               .getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -727,8 +768,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return (Queue.UnbindOk)
-            exnWrappingRpc(new Queue.Unbind(TICKET, queue, exchange, routingKey,
-                                            arguments)).getMethod();
+               exnWrappingRpc(new Queue.Unbind.Builder()
+                               .queue(queue)
+                               .exchange(exchange)
+                               .routingKey(routingKey)
+                               .arguments(arguments)
+                              .build())
+               .getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -736,7 +782,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return (Queue.PurgeOk)
-            exnWrappingRpc(new Queue.Purge(TICKET, queue, false)).getMethod();
+               exnWrappingRpc(new Queue.Purge.Builder()
+                               .queue(queue)
+                              .build())
+               .getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -750,7 +799,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public GetResponse basicGet(String queue, boolean autoAck)
         throws IOException
     {
-        AMQCommand replyCommand = exnWrappingRpc(new Basic.Get(TICKET, queue, autoAck));
+        AMQCommand replyCommand = exnWrappingRpc(new Basic.Get.Builder()
+                                                  .queue(queue)
+                                                  .noAck(autoAck)
+                                                 .build());
         Method method = replyCommand.getMethod();
 
         if (method instanceof Basic.GetOk) {
@@ -838,9 +890,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             }
         };
 
-        rpc(new Basic.Consume(TICKET, queue, consumerTag,
-                              noLocal, autoAck, exclusive,
-                              false, arguments),
+        rpc((Method)
+            new Basic.Consume.Builder()
+             .queue(queue)
+             .consumerTag(consumerTag)
+             .noLocal(noLocal)
+             .noAck(autoAck)
+             .exclusive(exclusive)
+             .arguments(arguments)
+            .build(),
             k);
 
         try {
@@ -953,13 +1011,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return nextPublishSeqNo;
     }
 
-    public void asyncRpc(com.rabbitmq.client.Method method) throws IOException {
-        // This cast should eventually go
-        transmit((com.rabbitmq.client.impl.Method)method);
+    public void asyncRpc(Method method) throws IOException {
+        transmit(method);
     }
 
-    public com.rabbitmq.client.Method rpc(com.rabbitmq.client.Method method) throws IOException {
-        return exnWrappingRpc((com.rabbitmq.client.impl.Method)method).getMethod();
+    public AMQCommand rpc(Method method) throws IOException {
+        return exnWrappingRpc(method);
     }
 
     protected void handleAckNack(long seqNo, boolean multiple, boolean nack) {
