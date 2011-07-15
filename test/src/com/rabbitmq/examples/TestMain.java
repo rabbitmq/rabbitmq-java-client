@@ -228,7 +228,6 @@ public class TestMain {
         final int batchSize = 5;
 
         _ch1 = createChannel();
-        setChannelReturnListener();
         
         String queueName =_ch1.queueDeclare().getQueue();
 

@@ -90,12 +90,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Set of currently unconfirmed messages (i.e. messages that have
      * not been ack'd or nack'd by the server yet. */
-    protected volatile SortedSet<Long> unconfirmedSet =
+    private volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
     /** Whether any nacks have been received since the last
      * waitForConfirms(). */
-    protected volatile boolean onlyAcksReceived = true;
+    private volatile boolean onlyAcksReceived = true;
 
     /**
      * Construct a new channel on the given connection with the given
@@ -314,10 +314,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 callFlowListeners(command, channelFlow);
                 return true;
             } else if (method instanceof Basic.Ack) {
-                callConfirmListeners(command, (Basic.Ack) method);
+                Basic.Ack ack = (Basic.Ack) method;
+                callConfirmListeners(command, ack);
+                handleAckNack(ack.getDeliveryTag(), ack.getMultiple(), false);
                 return true;
             } else if (method instanceof Basic.Nack) {
-                callConfirmListeners(command, (Basic.Nack) method);
+                Basic.Nack nack = (Basic.Nack) method;
+                callConfirmListeners(command, nack);
+                handleAckNack(nack.getDeliveryTag(), nack.getMultiple(), false);
                 return true;
             } else if (method instanceof Basic.RecoverOk) {
                 for (Consumer callback: _consumers.values()) {
