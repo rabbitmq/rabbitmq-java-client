@@ -242,7 +242,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
         broadcastShutdownSignal(signal);
         synchronized (unconfirmedSet) {
-            unconfirmedSet.notify();
+            unconfirmedSet.notifyAll();
         }
     }
 
@@ -1028,7 +1028,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         synchronized (unconfirmedSet) {
             onlyAcksReceived = onlyAcksReceived && !nack;
             if (unconfirmedSet.isEmpty())
-                unconfirmedSet.notify();
+                unconfirmedSet.notifyAll();
         }
     }
 }
