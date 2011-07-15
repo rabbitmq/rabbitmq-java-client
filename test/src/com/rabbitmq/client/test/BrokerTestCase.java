@@ -35,10 +35,10 @@ import com.rabbitmq.tools.Host;
 
 public class BrokerTestCase extends TestCase
 {
-    public ConnectionFactory connectionFactory = new ConnectionFactory();
+    protected ConnectionFactory connectionFactory = new ConnectionFactory();
 
-    public Connection connection;
-    public Channel channel;
+    protected Connection connection;
+    protected Channel channel;
 
     protected void setUp()
         throws IOException

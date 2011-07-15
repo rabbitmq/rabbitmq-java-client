@@ -22,14 +22,17 @@ import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Command;
+import com.rabbitmq.client.Method;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingValueOrException;
 
 /**
- * Base class modelling an AMQ channel. Subclasses implement close()
- * and processAsync(), and may choose to override
- * processShutdownSignal().
+ * Base class modelling an AMQ channel. Subclasses implement
+ * {@link com.rabbitmq.client.Channel#close} and
+ * {@link #processAsync processAsync()}, and may choose to override
+ * {@link #processShutdownSignal processShutdownSignal()} and
+ * {@link #rpc rpc()}.
  *
  * @see ChannelN
  * @see Connection
@@ -122,7 +125,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         throws IOException
     {
         try {
-            return rpc(m);
+            return privateRpc(m);
         } catch (AlreadyClosedException ace) {
             // Do not wrap it since it means that connection/channel
             // was closed in some action in the past
@@ -183,11 +186,17 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     /**
-     * Protected API - sends a Command to the broker and waits for the
-     * next inbound Command from the broker: only for use from
+     * Protected API - sends a {@link Method} to the broker and waits for the
+     * next in-bound Command from the broker: only for use from
      * non-connection-MainLoop threads!
      */
     public AMQCommand rpc(Method m)
+        throws IOException, ShutdownSignalException
+    {
+        return privateRpc(m);
+    }
+
+    private AMQCommand privateRpc(Method m)
         throws IOException, ShutdownSignalException
     {
         SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
@@ -246,7 +255,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         try {
             synchronized (_channelMutex) {
                 if (!setShutdownCauseIfOpen(signal)) {
-                    if (!ignoreClosed) 
+                    if (!ignoreClosed)
                         throw new AlreadyClosedException("Attempt to use closed channel", this);
                 }
 

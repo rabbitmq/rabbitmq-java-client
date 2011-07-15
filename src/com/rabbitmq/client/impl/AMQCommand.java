@@ -69,7 +69,7 @@ public class AMQCommand implements Command {
      * Construct a command with just a method, and without header or body.
      * @param method the wrapped method
      */
-    public AMQCommand(Method method) {
+    public AMQCommand(com.rabbitmq.client.Method method) {
         this(method, null, null);
     }
 
@@ -79,8 +79,8 @@ public class AMQCommand implements Command {
      * @param contentHeader the wrapped content header
      * @param body the message body data
      */
-    public AMQCommand(Method method, AMQContentHeader contentHeader, byte[] body) {
-        _method = method;
+    public AMQCommand(com.rabbitmq.client.Method method, AMQContentHeader contentHeader, byte[] body) {
+        _method = (Method) method;
         _contentHeader = contentHeader;
         setContentBody(body);
     }

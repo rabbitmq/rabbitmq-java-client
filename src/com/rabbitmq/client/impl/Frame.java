@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.List;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.MalformedFrameException;
 
 /**

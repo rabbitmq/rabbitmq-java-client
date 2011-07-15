@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+import com.rabbitmq.client.LongString;
+
 /**
  * Utility for working with {@link LongString}s.
  */
@@ -35,7 +37,7 @@ public class LongStringHelper
     private static class ByteArrayLongString
         implements LongString
     {
-        byte [] bytes;
+        private byte [] bytes;
 
         public ByteArrayLongString(byte[] bytes)
         {
