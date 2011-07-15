@@ -25,7 +25,7 @@ public class MessageRecovery extends BrokerTestCase
 
     private final static String Q = "recovery-test";
 
-    public void test() throws IOException, InterruptedException {
+    public void testMessageRecovery() throws IOException, InterruptedException {
         channel.confirmSelect();
         channel.queueDeclare(Q, true, false, false, null);
         channel.basicPublish("", Q, false, false,
