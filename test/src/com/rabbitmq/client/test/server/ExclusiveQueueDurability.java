@@ -33,7 +33,7 @@ public class ExclusiveQueueDurability extends BrokerTestCase {
     void verifyQueueMissing(Channel channel, String queueName)
             throws IOException {
         try {
-            channel.queueDeclare(queueName, true, true, false, null);
+            channel.queueDeclare(queueName, false, false, false, null);
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.RESOURCE_LOCKED, ioe);
             fail("Declaring the queue resulted in a channel exception, probably meaning that it already exists");
