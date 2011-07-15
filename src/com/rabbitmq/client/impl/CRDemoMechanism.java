@@ -17,6 +17,7 @@
 package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 

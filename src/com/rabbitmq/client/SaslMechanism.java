@@ -16,7 +16,6 @@
 
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.LongString;
 
 import java.io.IOException;
 

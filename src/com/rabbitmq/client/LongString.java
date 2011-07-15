@@ -15,7 +15,7 @@
 //
 
 
-package com.rabbitmq.client.impl;
+package com.rabbitmq.client;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -31,8 +31,7 @@ public interface LongString
     public static final long MAX_LENGTH = 0xffffffffL;
 
     /**
-     * Get the length of the content of the long string in bytes
-     * @return the length in bytes >= 0 <= MAX_LENGTH
+     * @return the length of the {@link LongString} in bytes >= 0 <= MAX_LENGTH
      */
     public long length();
 
@@ -40,17 +39,18 @@ public interface LongString
      * Get the content stream.
      * Repeated calls to this function return the same stream,
      * which may not support rewind.
-     * @return An input stream the reads the content
+     * @return An input stream that reads the content of the {@link LongString}
      * @throws IOException if an error is encountered
      */
     public DataInputStream getStream() throws IOException;
 
     /**
-     * Get the content as a byte array.
-     * Repeated calls to this function return the same array.
-     * This function will fail if getContentLength() > Integer.MAX_VALUE
-     * throwing an IllegalStateException.
-     * @return the content as an array
+     * Get the content as a byte array.  This need not be a copy. Updates to the
+     * returned array may change the value of the {@link LongString}.
+     * Repeated calls to this function may return the same array.
+     * This function will fail if <code><b>this</b>.length() > Integer.MAX_VALUE</code>,
+     * throwing an {@link IllegalStateException}.
+     * @return the array of bytes containing the content of the {@link LongString}
      */
     public byte [] getBytes();
 }

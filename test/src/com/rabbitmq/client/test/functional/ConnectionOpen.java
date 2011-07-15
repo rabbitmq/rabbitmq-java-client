@@ -22,7 +22,7 @@ import java.io.DataInputStream;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.MalformedFrameException;
-import com.rabbitmq.client.impl.Method;
+import com.rabbitmq.client.Method;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.impl.AMQCommand;
 import com.rabbitmq.client.ConnectionFactory;

@@ -698,6 +698,21 @@ public interface Channel extends ShutdownNotifier {
     long getNextPublishSeqNo();
 
     /**
+     * Wait until all messages published since the last call have been
+     * either ack'd or nack'd by the broker.  Note, when called on a
+     * non-Confirm channel, waitForConfirms returns true immediately.
+     * @return whether all the messages were ack'd (and none were nack'd)
+     */
+    boolean waitForConfirms() throws InterruptedException;
+
+    /** Wait until all messages published since the last call have
+     * been either ack'd or nack'd by the broker.  If any of the
+     * messages were nack'd, waitForConfirmsOrDie will throw an
+     * IOException.  When called on a non-Confirm channel, it will
+     * return immediately. */
+    void waitForConfirmsOrDie() throws IOException, InterruptedException;
+
+    /**
      * Asynchronously send a method over this channel.
      * @param method method to transmit over this channel.
      * @throws IOException Problem transmitting method.
@@ -707,8 +722,8 @@ public interface Channel extends ShutdownNotifier {
     /**
      * Synchronously send a method over this channel.
      * @param method method to transmit over this channel.
-     * @return response to method. Caller should cast as appropriate.
+     * @return command response to method. Caller should cast as appropriate.
      * @throws IOException Problem transmitting method.
      */
-    Method rpc(Method method) throws IOException;
+    Command rpc(Method method) throws IOException;
 }

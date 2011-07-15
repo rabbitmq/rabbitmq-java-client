@@ -18,10 +18,10 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
-import com.rabbitmq.client.impl.LongString;
 import com.rabbitmq.client.impl.LongStringHelper;
 import com.rabbitmq.client.test.BrokerTestCase;
 
