@@ -17,9 +17,6 @@
 
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.Method;
-
-
 /**
  * Interface to a container for an AMQP method-and-arguments, with optional content header and body.
  */

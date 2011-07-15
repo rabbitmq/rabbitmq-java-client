@@ -36,7 +36,7 @@ import com.rabbitmq.tools.Host;
 public class Permissions extends BrokerTestCase
 {
 
-    protected Channel adminCh;
+    private Channel adminCh;
 
     public Permissions()
     {
@@ -50,6 +50,7 @@ public class Permissions extends BrokerTestCase
     protected void setUp()
         throws IOException
     {
+        deleteRestrictedAccount();
         addRestrictedAccount();
         super.setUp();
     }
@@ -74,11 +75,11 @@ public class Permissions extends BrokerTestCase
     protected void deleteRestrictedAccount()
         throws IOException
     {
-        Host.rabbitmqctl("clear_permissions -p /test testadmin");
-        Host.rabbitmqctl("clear_permissions -p /test test");
-        Host.rabbitmqctl("delete_vhost /test");
-        Host.rabbitmqctl("delete_user testadmin");
-        Host.rabbitmqctl("delete_user test");
+        Host.rabbitmqctlIgnoreErrors("clear_permissions -p /test testadmin");
+        Host.rabbitmqctlIgnoreErrors("clear_permissions -p /test test");
+        Host.rabbitmqctlIgnoreErrors("delete_vhost /test");
+        Host.rabbitmqctlIgnoreErrors("delete_user testadmin");
+        Host.rabbitmqctlIgnoreErrors("delete_user test");
     }
 
     protected void createResources()
@@ -357,7 +358,7 @@ public class Permissions extends BrokerTestCase
         }
     }
 
-    public interface WithName {
+    private interface WithName {
         public void with(String name) throws IOException;
     }
 

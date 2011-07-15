@@ -161,7 +161,6 @@ def genJavaApi(spec):
         print
         print "import com.rabbitmq.client.impl.ContentHeaderPropertyWriter;"
         print "import com.rabbitmq.client.impl.ContentHeaderPropertyReader;"
-        print "import com.rabbitmq.client.impl.LongString;"
         print "import com.rabbitmq.client.impl.LongStringHelper;"
 
     def printProtocolClass():
@@ -422,6 +421,7 @@ def genJavaImpl(spec):
         print "import java.util.Map;"
         print
         print "import com.rabbitmq.client.AMQP;"
+        print "import com.rabbitmq.client.LongString;"
         print "import com.rabbitmq.client.UnknownClassOrMethodId;"
         print "import com.rabbitmq.client.UnexpectedMethodError;"
 

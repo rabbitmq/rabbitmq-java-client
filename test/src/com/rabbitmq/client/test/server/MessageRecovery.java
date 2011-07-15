@@ -15,19 +15,24 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.ConfirmBase;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 
-public class MessageRecovery extends ConfirmBase
+public class MessageRecovery extends BrokerTestCase
 {
 
     private final static String Q = "recovery-test";
 
-    public void test() throws IOException, InterruptedException {
+    public void testMessageRecovery() throws IOException, InterruptedException {
+        channel.confirmSelect();
         channel.queueDeclare(Q, true, false, false, null);
-        publish("", Q, true, false, false);
-        waitAcks();
+        channel.basicPublish("", Q, false, false,
+                             MessageProperties.PERSISTENT_BASIC,
+                             "nop".getBytes());
+        channel.waitForConfirmsOrDie();
+
         restart();
         assertDelivered(Q, 1);
         channel.queueDelete(Q);

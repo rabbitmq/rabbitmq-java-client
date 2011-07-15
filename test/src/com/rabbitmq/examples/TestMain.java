@@ -29,12 +29,11 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.Method;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.Method;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
@@ -229,7 +228,8 @@ public class TestMain {
         final int batchSize = 5;
 
         _ch1 = createChannel();
-
+        setChannelReturnListener();
+        
         String queueName =_ch1.queueDeclare().getQueue();
 
         sendLotsOfTrivialMessages(batchSize, queueName);
@@ -272,7 +272,12 @@ public class TestMain {
         _ch1.addReturnListener(new ReturnListener() {
             public void handleReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body)
                     throws IOException {
-                Method method = new AMQImpl.Basic.Return(replyCode, replyText, exchange, routingKey);
+                Method method = new AMQP.Basic.Return.Builder()
+                                        .replyCode(replyCode)
+                                        .replyText(replyText)
+                                        .exchange(exchange)
+                                        .routingKey(routingKey)
+                                .build();
                 log("Handling return with body " + new String(body));
                 TestMain.this.returnCell.set(new Object[] { method, properties, body });
             }
@@ -433,7 +438,7 @@ public class TestMain {
 
     public void doBasicReturn(BlockingCell<Object> cell, int expectedCode) {
         Object[] a = (Object[]) cell.uninterruptibleGet();
-        AMQImpl.Basic.Return method = (AMQImpl.Basic.Return) a[0];
+        AMQP.Basic.Return method = (AMQP.Basic.Return) a[0];
         log("Returned: " + method);
         log(" - props: " + a[1]);
         log(" - body: " + new String((byte[]) a[2]));

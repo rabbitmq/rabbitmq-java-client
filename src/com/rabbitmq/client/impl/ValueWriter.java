@@ -27,6 +27,8 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 
+import com.rabbitmq.client.LongString;
+
 /**
  * Helper class to generates AMQP wire-protocol encoded values.
  */
@@ -107,7 +109,7 @@ public class ValueWriter
             out.writeInt(0);
         } else {
             out.writeInt((int)Frame.tableSize(table));
-            for(Map.Entry<String,Object> entry:  table.entrySet()) {
+            for(Map.Entry<String,Object> entry: table.entrySet()) {
                 writeShortstr(entry.getKey());
                 Object value = entry.getValue();
                 writeFieldValue(value);
