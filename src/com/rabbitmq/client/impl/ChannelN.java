@@ -85,8 +85,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public volatile ConfirmListener confirmListener = null;
 
-    /** Sequence number of next published message requiring confirmation.
-     */
+    /** Sequence number of next published message requiring confirmation. */
     private long nextPublishSeqNo = 0L;
 
     /** Reference to the currently-active default consumer, or null if there is
@@ -95,7 +94,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public volatile Consumer defaultConsumer = null;
 
     /** Set of currently unconfirmed messages (i.e. messages that have
-     * not been ack'd or nack'd by the server yet. */
+     *  not been ack'd or nack'd by the server yet. */
     protected volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
