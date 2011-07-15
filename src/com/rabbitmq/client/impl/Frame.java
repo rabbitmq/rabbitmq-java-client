@@ -37,28 +37,22 @@ import com.rabbitmq.client.MalformedFrameException;
 
 /**
  * Represents an AMQP wire-protocol frame, with frame type, channel number, and payload bytes.
+ * TODO: make state private
  */
 public class Frame {
-    /**
-     * Frame type code
-     */
-    public int type;
+    /** Frame type code */
+    public final int type;
 
     /** Frame channel number, 0-65535 */
-    public int channel;
+    public final int channel;
 
     /** Frame payload bytes (for inbound frames) */
-    public byte[] payload;
+    public final byte[] payload;
 
-    /** Frame payload (for outbound frames) */
-    public ByteArrayOutputStream accumulator;
-
-    /**
-     * Constructs an uninitialized frame.
+    /** Frame payload (for outbound frames)
+     * TODO: make final; currently modified explicitly in tests.
      */
-    public Frame() {
-        // No work to do
-    }
+    public ByteArrayOutputStream accumulator;
 
     /**
      * Constructs a frame for output with a type and a channel number and a

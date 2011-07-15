@@ -17,7 +17,6 @@
 package com.rabbitmq.utility;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 
 /**
@@ -73,18 +72,12 @@ public class Utility {
 
   
     public static String makeStackTrace(Throwable throwable) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream printStream = new PrintStream(outputStream);
+        ByteArrayOutputStream baOutStream = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(baOutStream, false);
         throwable.printStackTrace(printStream);
-        String text = new String(outputStream.toByteArray());
-        printStream.close();
-        try {
-            outputStream.close();
-        } catch (IOException ex) {
-            // Closing the output stream won't generate an error, and in
-            // fact does nothing - just being tidy
-            ex.printStackTrace();
-        }
+        printStream.flush(); // since we don't automatically do so
+        String text = baOutStream.toString();
+        printStream.close(); // closes baOutStream
         return text;
     }
 
