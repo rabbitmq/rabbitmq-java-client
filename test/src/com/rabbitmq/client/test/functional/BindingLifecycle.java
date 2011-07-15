@@ -56,6 +56,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * longer purged, even if the channel they were sent down is not
      * (Tx-)transacted."
      */
+    @SuppressWarnings("deprecation")
     public void testUnackedPurge() throws IOException {
         Binding binding = setupExchangeBindings(false);
         channel.basicPublish(binding.x, binding.k, null, payload);
