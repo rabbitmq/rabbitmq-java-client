@@ -119,8 +119,8 @@ public class QueueLifecycle extends BrokerTestCase {
         // now it's there
         verifyQueue(name, false, false, true, null);
         QueueingConsumer consumer = new QueueingConsumer(channel);
-        channel.basicConsume(name, consumer);
-        channel.basicCancel(consumer.getConsumerTag());
+        String consumerTag = channel.basicConsume(name, consumer);
+        channel.basicCancel(consumerTag);
         // now it's not .. we hope
         try {
             verifyQueueExists(name);
@@ -137,8 +137,8 @@ public class QueueLifecycle extends BrokerTestCase {
         // now it's there
         verifyQueue(name, false, true, false, null);
         QueueingConsumer consumer = new QueueingConsumer(channel);
-        channel.basicConsume(name, consumer);
-        channel.basicCancel(consumer.getConsumerTag());
+        String consumerTag = channel.basicConsume(name, consumer);
+        channel.basicCancel(consumerTag);
         // and still there, because exclusive no longer implies autodelete
         verifyQueueExists(name);
     }

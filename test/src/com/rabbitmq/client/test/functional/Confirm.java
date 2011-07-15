@@ -26,7 +26,6 @@ import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
@@ -263,7 +262,7 @@ public class Confirm extends BrokerTestCase
             fail("waitAcks worked on a closed channel");
         } catch (ShutdownSignalException sse) {
             if (!(sse.getReason() instanceof AMQP.Channel.Close))
-                fail("didn't except for the right reason");
+                fail("Shutdown reason not Channel.Close");
             //whoosh; everything ok
         } catch (InterruptedException e) {
             // whoosh; we should probably re-run, though

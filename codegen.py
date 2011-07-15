@@ -313,11 +313,11 @@ def genJavaApi(spec):
     def printPropertiesBuilder(c):
         print
         print "        public Builder builder() {"
-        print "            Builder builder = new Builder();"
+        print "            Builder builder = new Builder()"
         setFieldList = [ "%s(%s)" % (fn, fn)
                          for fn in [ java_field_name(f.name) for f in c.fields ]
                          ]
-        print "            builder.%s;" % ("\n                .".join(setFieldList))
+        print "                .%s;" % ("\n                .".join(setFieldList))
         print "            return builder;"
         print "        }"
 
