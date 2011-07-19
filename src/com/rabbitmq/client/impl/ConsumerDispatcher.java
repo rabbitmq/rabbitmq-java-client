@@ -103,11 +103,11 @@ public final class ConsumerDispatcher {
         });
     }
 
-    public void handleRecoverOk(final Consumer delegate) {
+    public void handleRecoverOk(final Consumer delegate, final String consumerTag) {
         if (this.shuttingDown) return;
         execute(new Runnable() {
             public void run() {
-                delegate.handleRecoverOk();
+                delegate.handleRecoverOk(consumerTag);
             }
         });
     }

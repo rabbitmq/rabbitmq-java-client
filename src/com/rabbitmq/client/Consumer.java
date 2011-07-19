@@ -72,8 +72,9 @@ public interface Consumer {
      * in reply to a <code><b>basic.recover</b></code>. All messages
      * received before this is invoked that haven't been <i>ack</i>'ed will be
      * re-delivered. All messages received afterwards won't be.
+     * @param consumerTag the <i>consumer tag</i> associated with the consumer
      */
-    void handleRecoverOk();
+    void handleRecoverOk(String consumerTag);
 
     /**
      * Called when a <code><b>basic.deliver</b></code> is received for this consumer.

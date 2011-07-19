@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Future;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -327,10 +328,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 handleAckNack(nack.getDeliveryTag(), nack.getMultiple(), false);
                 return true;
             } else if (method instanceof Basic.RecoverOk) {
-                for (Consumer callback: _consumers.values()) {
-                    this.dispatcher.handleRecoverOk(callback);
+                for (Entry<String, Consumer> entry : _consumers.entrySet()) {
+                    this.dispatcher.handleRecoverOk(entry.getValue(), entry.getKey());
                 }
-
                 // Unlike all the other cases we still want this RecoverOk to
                 // be handled by whichever RPC continuation invoked Recover,
                 // so return false
