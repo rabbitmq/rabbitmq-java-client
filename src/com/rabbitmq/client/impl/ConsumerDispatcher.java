@@ -34,7 +34,7 @@ import java.util.concurrent.Future;
  * but the executor service and work pool may be shared with other channels, typically those on the same
  * {@link Connection}.
  */
-public final class ConsumerDispatcher {
+final class ConsumerDispatcher {
 
     private final ConsumerWorkService workService;
 

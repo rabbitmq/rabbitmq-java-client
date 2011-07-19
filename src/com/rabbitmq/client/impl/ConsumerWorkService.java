@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutorService;
 
 import com.rabbitmq.client.Channel;
 
-public class ConsumerWorkService {
+final class ConsumerWorkService {
     private static final int MAX_RUNNABLE_BLOCK_SIZE = 16;
     private final ExecutorService executor;
     private final WorkPool<Channel, Runnable> workPool;

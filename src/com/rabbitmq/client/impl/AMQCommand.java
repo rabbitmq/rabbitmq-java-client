@@ -30,15 +30,15 @@ import com.rabbitmq.client.UnexpectedFrameError;
 public class AMQCommand implements Command {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    // EMPTY_CONTENT_BODY_FRAME_SIZE, 8 = 1 + 2 + 4 + 1
-    // - 1 byte of frame type
-    // - 2 bytes of channel number
-    // - 4 bytes of frame payload length
-    // - 1 byte of payload trailer FRAME_END byte
-    // See definition of checkEmptyContentBodyFrameSize(), an assertion
-    // called at startup.
-    /** Safety definition - see also {@link #checkEmptyContentBodyFrameSize} */
-    public static final int EMPTY_CONTENT_BODY_FRAME_SIZE = 8;
+    /** EMPTY_CONTENT_BODY_FRAME_SIZE = 8 = 1 + 2 + 4 + 1
+     * <ul><li>1 byte of frame type</li>
+     * <li>2 bytes of channel number</li>
+     * <li>4 bytes of frame payload length</li>
+     * <li>1 byte of payload trailer FRAME_END byte</li></ul>
+     * See {@link #checkEmptyContentBodyFrameSize}, an assertion
+     * called at startup.
+     */
+    private static final int EMPTY_CONTENT_BODY_FRAME_SIZE = 8;
 
     /** The method for this command */
     private Method _method;
@@ -48,7 +48,6 @@ public class AMQCommand implements Command {
 
     /** The first (and usually only) fragment of the content body */
     private byte[] _body0;
-
     /** The remaining fragments of this command's content body - a list of byte[] */
     private List<byte[]> _bodyN;
 
@@ -57,12 +56,7 @@ public class AMQCommand implements Command {
      * @return the new Assembler
      */
     public static Assembler newAssembler() {
-        return new AMQCommand().getFreshAssembler();
-    }
-
-    /** Construct a command without any method, header or body. */
-    public AMQCommand() {
-        this(null, null, null);
+        return new AMQCommand(null, null, null).new Assembler();
     }
 
     /**
@@ -104,15 +98,15 @@ public class AMQCommand implements Command {
     }
 
     /**
-     * Public API - Set the Command's content body.
+     * Private API - Set the Command's content body.
      * @param body the body data
      */
-    public void setContentBody(byte[] body) {
+    private void setContentBody(byte[] body) {
         _body0 = body;
         _bodyN = null;
     }
 
-    public void appendBodyFragment(byte[] fragment) {
+    private void appendBodyFragment(byte[] fragment) {
         if (_body0 == null) {
             _body0 = fragment;
         } else {
@@ -126,7 +120,7 @@ public class AMQCommand implements Command {
     /**
      * Private API - Stitches together a fragmented content body into a single byte array.
      */
-    public void coalesceContentBody() {
+    private void coalesceContentBody() {
         List<byte[]> oldFragments = _bodyN;
         byte[] firstFragment = _body0 == null ? EMPTY_BYTE_ARRAY : _body0;
 
@@ -144,14 +138,6 @@ public class AMQCommand implements Command {
         }
 
         setContentBody(body);
-    }
-
-    /**
-     * Private API - retrieves a fresh Assembler that writes into this AMQCommand.
-     * @return the new Assembler
-     */
-    public Assembler getFreshAssembler() {
-        return new Assembler();
     }
 
     /**
@@ -200,14 +186,17 @@ public class AMQCommand implements Command {
         return "{" + _method + "," + _contentHeader + "," + contentStr + "}";
     }
 
+    /** Called to check internal code assumptions. */
+    public static void checkPreconditions() {
+        checkEmptyContentBodyFrameSize();
+    }
+
     /**
-     * Private API - Called to check internal consistency of the
-     * code. Since we're using a precomputed value for
-     * EMPTY_CONTENT_BODY_FRAME_SIZE, we check here once, at
-     * connection startup, that EMPTY_CONTENT_BODY_FRAME_SIZE is
+     * Since we're using a pre-computed value for
+     * EMPTY_CONTENT_BODY_FRAME_SIZE we check this is
      * actually correct when run against the framing code in Frame.
      */
-    public static void checkEmptyContentBodyFrameSize() {
+    private static void checkEmptyContentBodyFrameSize() {
         Frame f = new Frame(AMQP.FRAME_BODY, 0, new byte[0]);
         ByteArrayOutputStream s = new ByteArrayOutputStream();
         try {
@@ -224,13 +213,13 @@ public class AMQCommand implements Command {
     }
 
     public class Assembler {
-        public static final int STATE_EXPECTING_METHOD = 0;
-        public static final int STATE_EXPECTING_CONTENT_HEADER = 1;
-        public static final int STATE_EXPECTING_CONTENT_BODY = 2;
-        public static final int STATE_COMPLETE = 3;
+        private static final int STATE_EXPECTING_METHOD = 0;
+        private static final int STATE_EXPECTING_CONTENT_HEADER = 1;
+        private static final int STATE_EXPECTING_CONTENT_BODY = 2;
+        private static final int STATE_COMPLETE = 3;
 
         /** Current state, used to decide how to handle each incoming frame. */
-        public int state;
+        private int state;
 
         /**
          * How many more bytes of content body are expected to arrive
@@ -247,57 +236,62 @@ public class AMQCommand implements Command {
          * Used to decide when an incoming command is ready for processing
          * @return the completed command, if appropriate
          */
-        public AMQCommand completedCommand() {
+        private AMQCommand completedCommand() {
             return (this.state == STATE_COMPLETE) ? AMQCommand.this : null;
         }
 
         /** Decides whether more body frames are expected */
-        public void updateContentBodyState() {
+        private void updateContentBodyState() {
             this.state = (this.remainingBodyBytes > 0) ? STATE_EXPECTING_CONTENT_BODY : STATE_COMPLETE;
         }
 
-        public AMQCommand handleFrame(Frame f)
-            throws IOException
+        private AMQCommand consumeMethodFrame(Frame f) throws IOException {
+            if (f.type == AMQP.FRAME_METHOD) {
+                _method = AMQImpl.readMethodFrom(f.getInputStream());
+                state = _method.hasContent() ? STATE_EXPECTING_CONTENT_HEADER : STATE_COMPLETE;
+                return completedCommand();
+            } else {
+                throw new UnexpectedFrameError(f, AMQP.FRAME_METHOD);
+            }
+        }
+
+        private AMQCommand consumeHeaderFrame(Frame f) throws IOException {
+            if (f.type == AMQP.FRAME_HEADER) {
+                _contentHeader = AMQImpl.readContentHeaderFrom(f.getInputStream());
+                this.remainingBodyBytes = _contentHeader.getBodySize();
+                updateContentBodyState();
+                return completedCommand();
+            } else {
+                throw new UnexpectedFrameError(f, AMQP.FRAME_HEADER);
+            }
+        }
+
+        private AMQCommand consumeBodyFrame(Frame f) {
+            if (f.type == AMQP.FRAME_BODY) {
+                byte[] fragment = f.getPayload();
+                this.remainingBodyBytes -= fragment.length;
+                updateContentBodyState();
+                if (this.remainingBodyBytes < 0) {
+                    throw new UnsupportedOperationException("%%%%%% FIXME unimplemented");
+                }
+                appendBodyFragment(fragment);
+                return completedCommand();
+            } else {
+                throw new UnexpectedFrameError(f, AMQP.FRAME_BODY);
+            }
+        }
+
+        public AMQCommand handleFrame(Frame f) throws IOException
         {
             switch (this.state) {
               case STATE_EXPECTING_METHOD:
-                  switch (f.type) {
-                    case AMQP.FRAME_METHOD: {
-                        _method = AMQImpl.readMethodFrom(f.getInputStream());
-                        state = _method.hasContent() ? STATE_EXPECTING_CONTENT_HEADER : STATE_COMPLETE;
-                        return completedCommand();
-                    }
-                    default:
-                        throw new UnexpectedFrameError(f, AMQP.FRAME_METHOD);
-                  }
+                  return consumeMethodFrame(f);
 
               case STATE_EXPECTING_CONTENT_HEADER:
-                  switch (f.type) {
-                    case AMQP.FRAME_HEADER: {
-                        _contentHeader = AMQImpl.readContentHeaderFrom(f.getInputStream());
-                        this.remainingBodyBytes = _contentHeader.getBodySize();
-                        updateContentBodyState();
-                        return completedCommand();
-                    }
-                    default:
-                        throw new UnexpectedFrameError(f, AMQP.FRAME_HEADER);
-                  }
+                  return consumeHeaderFrame(f);
 
               case STATE_EXPECTING_CONTENT_BODY:
-                  switch (f.type) {
-                    case AMQP.FRAME_BODY: {
-                        byte[] fragment = f.getPayload();
-                        this.remainingBodyBytes -= fragment.length;
-                        updateContentBodyState();
-                        if (this.remainingBodyBytes < 0) {
-                            throw new UnsupportedOperationException("%%%%%% FIXME unimplemented");
-                        }
-                        appendBodyFragment(fragment);
-                        return completedCommand();
-                    }
-                    default:
-                        throw new UnexpectedFrameError(f, AMQP.FRAME_BODY);
-                  }
+                  return consumeBodyFrame(f);
 
               default:
                   throw new AssertionError("Bad Command State " + this.state);

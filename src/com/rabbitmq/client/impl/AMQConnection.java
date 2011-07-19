@@ -332,8 +332,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * Private API - check required preconditions and protocol invariants
      */
-    public void checkPreconditions() {
-        AMQCommand.checkEmptyContentBodyFrameSize();
+    private void checkPreconditions() {
+        AMQCommand.checkPreconditions();
     }
 
     /** {@inheritDoc} */
