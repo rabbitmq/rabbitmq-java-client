@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
@@ -22,11 +21,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.Connection;
@@ -39,7 +40,6 @@ import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.UnexpectedMethodError;
-import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.impl.AMQImpl.Basic;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
 import com.rabbitmq.client.impl.AMQImpl.Confirm;
@@ -47,7 +47,6 @@ import com.rabbitmq.client.impl.AMQImpl.Exchange;
 import com.rabbitmq.client.impl.AMQImpl.Queue;
 import com.rabbitmq.client.impl.AMQImpl.Tx;
 import com.rabbitmq.utility.Utility;
-
 
 /**
  * Main interface to AMQP protocol functionality. Public API -
@@ -62,9 +61,8 @@ import com.rabbitmq.utility.Utility;
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
     private static final String UNSPECIFIED_OUT_OF_BAND = "";
 
-    /**
-     * Map from consumer tag to {@link Consumer} instance.
-     *
+    /** Map from consumer tag to {@link Consumer} instance.
+     * <p/>
      * Note that, in general, this map should ONLY ever be accessed
      * from the connection's reader thread. We go to some pains to
      * ensure this is the case - see the use of
@@ -82,19 +80,24 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** The ConfirmListener collection. */
     private final Collection<ConfirmListener> confirmListeners = new CopyOnWriteArrayList<ConfirmListener>();
 
-    /** Sequence number of next published message requiring confirmation. */
+    /** Sequence number of next published message requiring confirmation.*/
     private long nextPublishSeqNo = 0L;
 
     /** The current default consumer, or null if there is none. */
     private volatile Consumer defaultConsumer = null;
+
+    /** Dispatcher of consumer work for this channel */
+    private final ConsumerDispatcher dispatcher;
+
+    /** Future boolean for shutting down */
+    private volatile Future<Boolean> finishedShutdownFlag = null;
 
     /** Set of currently unconfirmed messages (i.e. messages that have
      *  not been ack'd or nack'd by the server yet. */
     private volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
-    /** Whether any nacks have been received since the last
-     * waitForConfirms(). */
+    /** Whether any nacks have been received since the last waitForConfirms(). */
     private volatile boolean onlyAcksReceived = true;
 
     /**
@@ -104,9 +107,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see Connection#createChannel
      * @param connection The connection associated with this channel
      * @param channelNumber The channel number to be associated with this channel
+     * @param workPool pool in which this channel's consumer work is stored
+     * @param executor service which executes the work in the workPool
      */
-    public ChannelN(AMQConnection connection, int channelNumber) {
+    public ChannelN(AMQConnection connection, int channelNumber,
+                    ConsumerWorkService workService) {
         super(connection, channelNumber);
+        this.dispatcher = new ConsumerDispatcher(connection, this, workService);
     }
 
     /**
@@ -201,41 +208,35 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /**
-     * Protected API - sends a ShutdownSignal to all active consumers.
+     * Sends a ShutdownSignal to all active consumers.
      * @param signal an exception signalling channel shutdown
      */
-    public void broadcastShutdownSignal(ShutdownSignalException signal) {
+    private Future<Boolean> broadcastShutdownSignal(ShutdownSignalException signal) {
         Map<String, Consumer> snapshotConsumers;
         synchronized (_consumers) {
             snapshotConsumers = new HashMap<String, Consumer>(_consumers);
         }
-        for (Map.Entry<String,Consumer> entry: snapshotConsumers.entrySet()) {
-            Consumer callback = entry.getValue();
-            try {
-                callback.handleShutdownSignal(entry.getKey(), signal);
-            } catch (Throwable ex) {
-                _connection.getExceptionHandler().handleConsumerException(this,
-                                                                          ex,
-                                                                          callback,
-                                                                          entry.getKey(),
-                                                                          "handleShutdownSignal");
-            }
-        }
+        return this.dispatcher.handleShutdownSignal(snapshotConsumers, signal);
     }
 
     /**
-     * Protected API - overridden to broadcast the signal to all
-     * consumers before calling the superclass's method.
+     * Protected API - overridden to quiesce consumer work and broadcast the signal
+     * to all consumers after calling the superclass's method.
      */
     @Override public void processShutdownSignal(ShutdownSignalException signal,
                                                 boolean ignoreClosed,
                                                 boolean notifyRpc)
     {
+        this.dispatcher.quiesce();
         super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
-        broadcastShutdownSignal(signal);
+        finishedShutdownFlag = broadcastShutdownSignal(signal);
         synchronized (unconfirmedSet) {
             unconfirmedSet.notifyAll();
         }
+    }
+
+    public Future<Boolean> getFutureShutdown() {
+        return finishedShutdownFlag;
     }
 
     public void releaseChannelNumber() {
@@ -290,10 +291,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                  m.getExchange(),
                                                  m.getRoutingKey());
                 try {
-                    callback.handleDelivery(m.getConsumerTag(),
-                                            envelope,
-                                            (BasicProperties) command.getContentHeader(),
-                                            command.getContentBody());
+                    this.dispatcher.handleDelivery(callback,
+                                                   m.getConsumerTag(),
+                                                   envelope,
+                                                   (BasicProperties) command.getContentHeader(),
+                                                   command.getContentBody());
                 } catch (Throwable ex) {
                     _connection.getExceptionHandler().handleConsumerException(this,
                                                                               ex,
@@ -326,7 +328,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return true;
             } else if (method instanceof Basic.RecoverOk) {
                 for (Consumer callback: _consumers.values()) {
-                    callback.handleRecoverOk();
+                    this.dispatcher.handleRecoverOk(callback);
                 }
 
                 // Unlike all the other cases we still want this RecoverOk to
@@ -880,17 +882,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).getConsumerTag();
                 _consumers.put(actualConsumerTag, callback);
-                // We need to call back inside the connection thread
-                // in order avoid races with 'deliver' commands
-                try {
-                    callback.handleConsumeOk(actualConsumerTag);
-                } catch (Throwable ex) {
-                    _connection.getExceptionHandler().handleConsumerException(ChannelN.this,
-                                                                              ex,
-                                                                              callback,
-                                                                              actualConsumerTag,
-                                                                              "handleConsumeOk");
-                }
+
+                dispatcher.handleConsumeOk(callback, actualConsumerTag);
                 return actualConsumerTag;
             }
         };
@@ -924,15 +917,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 Consumer callback = _consumers.remove(consumerTag);
                 // We need to call back inside the connection thread
                 // in order avoid races with 'deliver' commands
-                try {
-                    callback.handleCancelOk(consumerTag);
-                } catch (Throwable ex) {
-                    _connection.getExceptionHandler().handleConsumerException(ChannelN.this,
-                                                                              ex,
-                                                                              callback,
-                                                                              consumerTag,
-                                                                              "handleCancelOk");
-                }
+                dispatcher.handleCancelOk(callback, consumerTag);
                 return callback;
             }
         };
@@ -1024,7 +1009,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return exnWrappingRpc(method);
     }
 
-    protected void handleAckNack(long seqNo, boolean multiple, boolean nack) {
+    private void handleAckNack(long seqNo, boolean multiple, boolean nack) {
         if (multiple) {
             unconfirmedSet.headSet(seqNo + 1).clear();
         } else {

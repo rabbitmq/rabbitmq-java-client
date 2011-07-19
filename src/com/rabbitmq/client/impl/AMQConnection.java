@@ -23,6 +23,8 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -83,18 +85,20 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private static final Version clientVersion =
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
 
-    /** Initialization parameters */
+    /** Initialisation parameters */
     private final ConnectionFactory _factory;
 
     /** The special channel 0 */
     private final AMQChannel _channel0 = new AMQChannel(this, 0) {
-            @Override public boolean processAsync(Command c) throws IOException {
-                return _connection.processControlCommand(c);
-            }
-        };
+        @Override public boolean processAsync(Command c) throws IOException {
+            return _connection.processControlCommand(c);
+        }
+    };
+
+    private final ConsumerWorkService _workService;
 
     /** Object that manages a set of channels */
-    public ChannelManager _channelManager = new ChannelManager(0);
+    private ChannelManager _channelManager;
 
     /** Frame source/sink */
     private final FrameHandler _frameHandler;
@@ -105,11 +109,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Maximum frame length, or zero if no limit is set */
     private int _frameMax;
 
-    /** Handler for (otherwise-unhandled) exceptions that crop up in the mainloop. */
+    /** Handler for (uncaught) exceptions that crop up in the {@link MainLoop}. */
     private final ExceptionHandler _exceptionHandler;
 
-    /**
-     * Object used for blocking main application thread when doing all the necessary
+    /** Object used for blocking main application thread when doing all the necessary
      * connection shutdown operations
      */
     private BlockingCell<Object> _appContinuation = new BlockingCell<Object>();
@@ -117,7 +120,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Flag indicating whether the client received Connection.Close message from the broker */
     private boolean _brokerInitiatedShutdown = false;
 
-    /** Manages heartbeat sending for this connection */
+    /** Manages heart-beat sending for this connection */
     private final HeartbeatSender _heartbeatSender;
 
     /**
@@ -128,7 +131,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _channelManager.disconnectChannel(channel);
     }
 
-    public void ensureIsOpen()
+    private void ensureIsOpen()
         throws AlreadyClosedException
     {
         if (!isOpen()) {
@@ -177,18 +180,21 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
      */
     public AMQConnection(ConnectionFactory factory,
-                         FrameHandler frameHandler) {
-        this(factory, frameHandler, new DefaultExceptionHandler());
+                         FrameHandler frameHandler,
+                         int numWorkThreads) {
+        this(factory, frameHandler, Executors.newFixedThreadPool(numWorkThreads), new DefaultExceptionHandler());
     }
 
     /**
      * Construct a new connection to a broker.
      * @param factory the initialization parameters for a connection
      * @param frameHandler interface to an object that will handle the frame I/O for this connection
+     * @param executor the {@link ExecutorService} that executes the {@link Consumer} work for channels of the connection
      * @param exceptionHandler interface to an object that will handle any special exceptions encountered while using this connection
      */
     public AMQConnection(ConnectionFactory factory,
                          FrameHandler frameHandler,
+                         ExecutorService executor,
                          ExceptionHandler exceptionHandler)
     {
         checkPreconditions();
@@ -205,6 +211,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _heartbeat = 0;
         _exceptionHandler = exceptionHandler;
         _brokerInitiatedShutdown = false;
+
+        _workService  = new ConsumerWorkService(executor);
+        _channelManager = new ChannelManager(this._workService, 0);
     }
 
     /**
@@ -212,10 +221,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Sends the protocol
      * version negotiation header, and runs through
      * Connection.Start/.StartOk, Connection.Tune/.TuneOk, and then
-     * calls Connection.Open and waits for the OpenOk. Sets heartbeat
+     * calls Connection.Open and waits for the OpenOk. Sets heart-beat
      * and frame max values after tuning has taken place.
-     * @throws java.io.IOException if an error is encountered; IOException
-     * subtypes {@link ProtocolVersionMismatchException} and
+     * @throws IOException if an error is encountered;
+     * sub-classes {@link ProtocolVersionMismatchException} and
      * {@link PossibleAuthenticationFailureException} will be thrown in the
      * corresponding circumstances.
      */
@@ -297,8 +306,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         int channelMax =
             negotiatedMaxValue(_factory.getRequestedChannelMax(),
                                connTune.getChannelMax());
-        _channelManager = new ChannelManager(channelMax);
-
+        _channelManager = new ChannelManager(this._workService, channelMax);
+        
         int frameMax =
             negotiatedMaxValue(_factory.getRequestedFrameMax(),
                                connTune.getFrameMax());
@@ -496,9 +505,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /**
      * Handles incoming control commands on channel zero.
+     * @see ChannelN#processAsync
      */
-    public boolean processControlCommand(Command c)
-        throws IOException
+    public boolean processControlCommand(Command c) throws IOException
     {
         // Similar trick to ChannelN.processAsync used here, except
         // we're interested in whole-connection quiescing.
@@ -507,35 +516,31 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         Method method = c.getMethod();
 
-        if (method instanceof AMQP.Connection.Close) {
-            if (isOpen()) {
+        if (isOpen()) {
+            if (method instanceof AMQP.Connection.Close) {
                 handleConnectionClose(c);
+                return true;
             } else {
+                return false;
+            }
+        } else {
+            if (method instanceof AMQP.Connection.Close) {
                 // Already shutting down, so just send back a CloseOk.
                 try {
                     _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
                 } catch (IOException ioe) {
                     Utility.emptyStatement();
                 }
-            }
-            return true;
-        } else {
-            if (isOpen()) {
-                // Normal command.
-                return false;
-            } else {
-                // Quiescing.
-                if (method instanceof AMQP.Connection.CloseOk) {
-                    // It's our final "RPC". Time to shut down.
-                    _running = false;
-                    // If Close was sent from within the MainLoop we
-                    // will not have a continuation to return to, so
-                    // we treat this as processed in that case.
-                    return _channel0._activeRpc == null;
-                } else {
-                    // Ignore all others.
-                    return true;
-                }
+                return true;
+            } else if (method instanceof AMQP.Connection.CloseOk) {
+                // It's our final "RPC". Time to shut down.
+                _running = false;
+                // If Close was sent from within the MainLoop we
+                // will not have a continuation to return to, so
+                // we treat this as processed in that case.
+                return _channel0._activeRpc == null;
+            } else { // Ignore all others.
+                return true;
             }
         }
     }
@@ -547,7 +552,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }
-        _heartbeatSender.shutdown(); // Do not try to send heartbeats after CloseOk
         _brokerInitiatedShutdown = true;
         Thread scw = new SocketCloseWait(sse);
         scw.setName("AMQP Connection Closing Monitor " +
@@ -601,6 +605,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         _channel0.processShutdownSignal(sse, !initiatedByApplication, notifyRpc);
         _channelManager.handleSignal(sse);
+
         return sse;
     }
 
@@ -663,7 +668,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * Protected API - Delegates to {@link
      * #close(int,String,boolean,Throwable,int,boolean) the
-     * six-argument close method}, passing 0 for the timeout, and
+     * six-argument close method}, passing
+     * {@link #CONNECTION_CLOSING_TIMEOUT} for the timeout, and
      * false for the abort flag.
      */
     public void close(int closeCode,
@@ -672,7 +678,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                       Throwable cause)
         throws IOException
     {
-        close(closeCode, closeMessage, initiatedByApplication, cause, 0, false);
+        close(closeCode, closeMessage, initiatedByApplication, cause,
+                CONNECTION_CLOSING_TIMEOUT, false);
     }
 
     /**
@@ -688,7 +695,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                       boolean abort)
         throws IOException
     {
-        final boolean sync = !(Thread.currentThread() instanceof MainLoop);
+        boolean sync = !(Thread.currentThread() instanceof MainLoop);
 
         try {
             AMQImpl.Connection.Close reason =

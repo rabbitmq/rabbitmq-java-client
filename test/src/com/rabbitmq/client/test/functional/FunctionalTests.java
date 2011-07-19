@@ -18,6 +18,8 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.test.Bug20004Test;
+import com.rabbitmq.client.test.impl.WorkPoolTests;
+
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
@@ -60,6 +62,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(UserIDHeader.class);
         suite.addTestSuite(InternalExchange.class);
         suite.addTestSuite(CcRoutes.class);
+        suite.addTestSuite(WorkPoolTests.class);
         return suite;
     }
 }

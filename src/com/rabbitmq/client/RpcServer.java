@@ -25,14 +25,14 @@ import java.io.IOException;
 */
 public class RpcServer {
     /** Channel we are communicating on */
-    protected final Channel _channel;
+    private final Channel _channel;
     /** Queue to receive requests from */
-    protected final String _queueName;
+    private final String _queueName;
     /** Boolean controlling the exit from the mainloop. */
-    protected boolean _mainloopRunning = true;
+    private boolean _mainloopRunning = true;
 
     /** Consumer attached to our request queue */
-    protected QueueingConsumer _consumer;
+    private QueueingConsumer _consumer;
 
     /**
      * Creates an RpcServer listening on a temporary exclusive
