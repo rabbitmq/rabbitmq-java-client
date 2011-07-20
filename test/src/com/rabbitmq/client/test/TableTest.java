@@ -44,7 +44,7 @@ public class TableTest
         suite.addTestSuite(TableTest.class);
         return suite;
     }
-    
+
     public byte [] marshal(Map<String, Object> table) 
         throws IOException
     {
@@ -56,7 +56,7 @@ public class TableTest
         assertEquals(Frame.tableSize(table) + 4, buffer.size());
         return buffer.toByteArray();
     }
-    
+
     public Map<String, Object> unmarshal(byte [] bytes) 
         throws IOException
     {
@@ -72,7 +72,7 @@ public class TableTest
     {
         return new Date((System.currentTimeMillis()/1000)*1000);
     }
-    
+
     public void testLoop() 
         throws IOException
     {
@@ -89,6 +89,5 @@ public class TableTest
         table.put("d", LongStringHelper.asLongString("d"));
         assertEquals(table, unmarshal(marshal(table)));
 
- 
     }
 }

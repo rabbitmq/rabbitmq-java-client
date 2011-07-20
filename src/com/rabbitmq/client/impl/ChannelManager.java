@@ -45,7 +45,7 @@ public class ChannelManager {
     private final Set<Future<Boolean>> shutdownSet = new HashSet<Future<Boolean>>();
 
     /** Maximum channel number available on this connection. */
-    public final int _channelMax;
+    private final int _channelMax;
 
     public int getChannelMax(){
       return _channelMax;

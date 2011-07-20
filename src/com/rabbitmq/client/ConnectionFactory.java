@@ -41,44 +41,40 @@ public class ConnectionFactory implements Cloneable {
     private static final int NUM_CHANNEL_CONSUMER_THREADS = 5;
 
     /** Default user name */
-    public static final String DEFAULT_USER = "guest";
+    private static final String DEFAULT_USER = "guest";
 
     /** Default password */
-    public static final String DEFAULT_PASS = "guest";
+    private static final String DEFAULT_PASS = "guest";
 
     /** Default virtual host */
-    public static final String DEFAULT_VHOST = "/";
+    private static final String DEFAULT_VHOST = "/";
 
-    /** Default value for the desired maximum channel number; zero for
-     * unlimited */
-    public static final int DEFAULT_CHANNEL_MAX = 0;
+    /** Default value for the desired maximum channel number; zero for unlimited */
+    private static final int DEFAULT_CHANNEL_MAX = 0;
 
-    /** Default value for the desired maximum frame size; zero for
-     * unlimited */
-    public static final int DEFAULT_FRAME_MAX = 0;
+    /** Default value for the desired maximum frame size; zero for unlimited */
+    private static final int DEFAULT_FRAME_MAX = 0;
 
     /** Default value for desired heartbeat interval; zero for none */
-    public static final int DEFAULT_HEARTBEAT = 0;
+    private static final int DEFAULT_HEARTBEAT = 0;
 
     /** The default host to connect to */
-    public static final String DEFAULT_HOST = "localhost";
+    private static final String DEFAULT_HOST = "localhost";
 
     /** A constant that when passed as a port number causes the connection to use the default port */
-    public static final int USE_DEFAULT_PORT = -1;
+    private static final int USE_DEFAULT_PORT = -1;
 
     /** The default port to use for AMQP connections when not using SSL */
-    public static final int DEFAULT_AMQP_PORT = 5672;
+    private static final int DEFAULT_AMQP_PORT = 5672;
 
     /** The default port to use for AMQP connections when using SSL */
-    public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
+    private static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
 
     /** The default connection timeout (wait indefinitely until connection established or error occurs) */
-    public static final int DEFAULT_CONNECTION_TIMEOUT = 0;
+    private static final int DEFAULT_CONNECTION_TIMEOUT = 0;
 
-    /**
-     * The default SSL protocol (currently "SSLv3").
-     */
-    public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
+    /** The default SSL protocol (currently "SSLv3") */
+    private static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
     private String username                       = DEFAULT_USER;
     private String password                       = DEFAULT_PASS;
@@ -93,22 +89,16 @@ public class ConnectionFactory implements Cloneable {
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
 
-    /**
-     * Instantiate a ConnectionFactory with a default set of parameters.
-     */
+    /** Instantiate a ConnectionFactory with a default set of parameters */
     public ConnectionFactory() {
     }
 
-    /**
-     *  @return the default host to use for connections
-     */
+    /** @return the default host to use for connections */
     public String getHost() {
         return host;
     }
 
-    /**
-     *  @param host the default host to use for connections
-     */
+    /** @param host the default host to use for connections */
     public void setHost(String host) {
         this.host = host;
     }
@@ -119,9 +109,7 @@ public class ConnectionFactory implements Cloneable {
         else return DEFAULT_AMQP_PORT;
     }
 
-    /**
-     *  @return the default port to use for connections
-     */
+    /** @return the default port to use for connections */
     public int getPort() {
         return portOrDefault(port);
     }

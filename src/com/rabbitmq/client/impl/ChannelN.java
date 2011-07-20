@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.Future;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -120,7 +119,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /**
      * Package method: open the channel.
      * This is only called from {@link ChannelManager}.
-     * @throws java.io.IOException if any problem is encountered
+     * @throws IOException if any problem is encountered
      */
     public void open() throws IOException {
         // wait for the Channel.OpenOk response, then ignore it
@@ -328,7 +327,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 handleAckNack(nack.getDeliveryTag(), nack.getMultiple(), false);
                 return true;
             } else if (method instanceof Basic.RecoverOk) {
-                for (Entry<String, Consumer> entry : _consumers.entrySet()) {
+                for (Map.Entry<String, Consumer> entry : _consumers.entrySet()) {
                     this.dispatcher.handleRecoverOk(entry.getValue(), entry.getKey());
                 }
                 // Unlike all the other cases we still want this RecoverOk to

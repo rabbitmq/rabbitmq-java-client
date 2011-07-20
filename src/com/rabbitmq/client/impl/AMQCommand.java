@@ -227,7 +227,7 @@ public class AMQCommand implements Command {
          */
         private long remainingBodyBytes;
 
-        public Assembler() {
+        private Assembler() {
             this.state = STATE_EXPECTING_METHOD;
             this.remainingBodyBytes = 0;
         }

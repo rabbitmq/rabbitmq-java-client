@@ -116,8 +116,8 @@ public class AMQConnectionTest extends TestCase {
 // add test that we time out if no initial Start command is received,
 // setting a timeout and having the FrameHandler return null
     
-     /** Mock frame handler to facilitate testing. */
-    public static class MockFrameHandler implements FrameHandler {
+    /** Mock frame handler to facilitate testing. */
+    private static class MockFrameHandler implements FrameHandler {
         /** How many times has sendHeader() been called? */
         private int _numHeadersSent;
         
@@ -132,7 +132,7 @@ public class AMQConnectionTest extends TestCase {
         }
 
         public void setExceptionOnReadingFrames(IOException exception) {
-            _exceptionOnReadingFrames = exception;            
+            _exceptionOnReadingFrames = exception;
         }
 
         public Frame readFrame() throws IOException {
@@ -173,7 +173,7 @@ public class AMQConnectionTest extends TestCase {
     }
 
     /** Mock frame handler to facilitate testing. */
-    public class MyExceptionHandler implements ExceptionHandler {
+    private class MyExceptionHandler implements ExceptionHandler {
         private List<Throwable> _handledExceptions = new ArrayList<Throwable>();
 
         public void handleUnexpectedConnectionDriverException(Connection conn, Throwable ex) {
@@ -204,5 +204,5 @@ public class AMQConnectionTest extends TestCase {
         public List<Throwable> getHandledExceptions() {
             return _handledExceptions;
         }
-    }    
+    }
 }

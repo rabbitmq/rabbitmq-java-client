@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 import java.io.DataInputStream;
+import java.net.Socket;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.MalformedFrameException;
@@ -56,9 +57,11 @@ public class ConnectionOpen extends TestCase {
 
     public void testCrazyProtocolHeader() throws IOException {
         ConnectionFactory factory = new ConnectionFactory();
-        SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
+        // keep the frame handler's socket
+        Socket fhSocket = factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT);
+        SocketFrameHandler fh = new SocketFrameHandler(fhSocket);
         fh.sendHeader(100, 3); // major, minor
-        DataInputStream in = fh._inputStream;
+        DataInputStream in = fh.getInputStream();
         // we should get a valid protocol header back
         byte[] header = new byte[4];
         in.read(header);
@@ -67,21 +70,21 @@ public class ConnectionOpen extends TestCase {
         assertEquals("AMQP", new String(header));
         in.read(header);
         assertEquals(in.available(), 0);
-        // At this point the socket should have been closed.  We can't
-        // directly test for this, since Socket.isClosed isn't very
-        // reliable, but we can test whether trying to read more bytes
+        // At this point the socket should have been closed.  We can
+        // directly test for this, but since Socket.isClosed is purported to be
+        // unreliable, we can also test whether trying to read more bytes
         // gives an error.
-        fh._socket.setSoTimeout(500);
-        // NB the frame handler will return null if the socket times out
-        try {
-            fh.readFrame();
-            fail("Expected socket read to fail due to socket being closed");
-        }
-        catch (MalformedFrameException mfe) {
-            fail("Expected nothing, rather than a badly-formed something");
-        }
-        catch (IOException ioe) {
-            return;
+        if (!fhSocket.isClosed()) {
+            fh.setTimeout(500);
+            // NB the frame handler will return null if the socket times out
+            try {
+                fh.readFrame();
+                fail("Expected socket read to fail due to socket being closed");
+            } catch (MalformedFrameException mfe) {
+                fail("Expected nothing, rather than a badly-formed something");
+            } catch (IOException ioe) {
+                return;
+            }
         }
     }
 

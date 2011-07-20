@@ -153,7 +153,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final Map<String, Object> _clientProperties;
 
     /** Saved server properties field from connection.start */
-    public Map<String, Object> _serverProperties;
+    private Map<String, Object> _serverProperties;
 
     /** {@inheritDoc} */
     public InetAddress getAddress() {
@@ -307,7 +307,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             negotiatedMaxValue(_factory.getRequestedChannelMax(),
                                connTune.getChannelMax());
         _channelManager = new ChannelManager(this._workService, channelMax);
-        
+
         int frameMax =
             negotiatedMaxValue(_factory.getRequestedFrameMax(),
                                connTune.getFrameMax());
@@ -318,14 +318,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                connTune.getHeartbeat());
         setHeartbeat(heartbeat);
 
-        _channel0.transmit(new AMQImpl.Connection.TuneOk(channelMax,
-                                                         frameMax,
-                                                         heartbeat));
+        _channel0.transmit(new AMQP.Connection.TuneOk.Builder()
+                            .channelMax(channelMax)
+                            .frameMax(frameMax)
+                            .heartbeat(heartbeat)
+                          .build());
         // 0.9.1: insist [on not being redirected] is deprecated, but
         // still in generated code; just pass a dummy value here
-        _channel0.exnWrappingRpc(new AMQImpl.Connection.Open(_virtualHost,
-                                                            "",
-                                                            false)).getMethod();
+        _channel0.exnWrappingRpc(new AMQP.Connection.Open.Builder()
+                                  .virtualHost(_virtualHost)
+                                .build());
         return;
     }
 
@@ -401,14 +403,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Private API - reads a single frame from the connection to the broker,
-     * or returns null if the read times out.
-     */
-    public Frame readFrame() throws IOException {
-        return _frameHandler.readFrame();
-    }
-
-    /**
      * Public API - sends a frame directly to the broker.
      */
     public void writeFrame(Frame f) throws IOException {
@@ -433,7 +427,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         @Override public void run() {
             try {
                 while (_running) {
-                    Frame frame = readFrame();
+                    Frame frame = _frameHandler.readFrame();
 
                     if (frame != null) {
                         _missedHeartbeats = 0;
@@ -478,27 +472,20 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Private API - Called when a frame-read operation times out. Checks to
-     * see if too many heartbeats have been missed, and if so, throws
-     * MissedHeartbeatException.
-     *
-     * @throws MissedHeartbeatException
-     *                 if too many silent timeouts have gone by
+     * Called when a frame-read operation times out
+     * @throws MissedHeartbeatException if heart-beats have been missed
      */
-    public void handleSocketTimeout() throws MissedHeartbeatException {
-        if (_heartbeat == 0) {
-            // No heartbeating. Go back and wait some more.
+    private void handleSocketTimeout() throws MissedHeartbeatException {
+        if (_heartbeat == 0) { // No heart-beating
             return;
         }
-
-        _missedHeartbeats++;
 
         // We check against 8 = 2 * 4 because we need to wait for at
         // least two complete heartbeat setting intervals before
         // complaining, and we've set the socket timeout to a quarter
         // of the heartbeat setting in setHeartbeat above.
-        if (_missedHeartbeats > (2 * 4)) {
-            throw new MissedHeartbeatException("Heartbeat missing with heartbeat == " +
+        if (++_missedHeartbeats > (2 * 4)) {
+            throw new MissedHeartbeatException("Heartbeat missing with heartbeat = " +
                                                _heartbeat + " seconds");
         }
     }
@@ -698,8 +685,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         boolean sync = !(Thread.currentThread() instanceof MainLoop);
 
         try {
-            AMQImpl.Connection.Close reason =
-                new AMQImpl.Connection.Close(closeCode, closeMessage, 0, 0);
+            AMQP.Connection.Close reason =
+                new AMQP.Connection.Close.Builder()
+                    .replyCode(closeCode)
+                    .replyText(closeMessage)
+                .build();
 
             shutdown(reason, initiatedByApplication, cause, true);
             if(sync){

@@ -35,21 +35,22 @@ public class MethodArgumentReader
     private final ValueReader in;
     /** If we are reading one or more bits, holds the current packed collection of bits */
     private int bits;
-    /** If we are reading one or more bits, keeps track of which bit position we are reading from */
-    private int bit;
+    /** If we are reading one or more bits, keeps track of which bit position we will read from next.
+     * (reading least to most significant order) */
+    private int nextBitMask;
 
     /**
-     * Private API - resets the bit group accumulator variables when
+     * Resets the bit group accumulator variables when
      * some non-bit argument value is to be read.
      */
     private void clearBits()
     {
         bits = 0;
-        bit = 0x100;
+        nextBitMask = 0x100; // triggers readOctet first time
     }
 
     /**
-     * Construct a MethodArgumentReader streaming over the given DataInputStream.
+     * Construct a MethodArgumentReader from the given DataInputStream.
      */
     public MethodArgumentReader(DataInputStream in)
     {
@@ -101,13 +102,13 @@ public class MethodArgumentReader
     public final boolean readBit()
         throws IOException
     {
-        if (bit > 0x80) {
+        if (nextBitMask > 0x80) {
             bits = in.readOctet();
-            bit = 0x01;
+            nextBitMask = 0x01;
         }
 
-        boolean result = (bits&bit) != 0;
-        bit = bit << 1;
+        boolean result = (bits&nextBitMask) != 0;
+        nextBitMask = nextBitMask << 1;
         return result;
     }
 

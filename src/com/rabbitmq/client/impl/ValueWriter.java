@@ -30,7 +30,7 @@ import org.apache.commons.io.IOUtils;
 import com.rabbitmq.client.LongString;
 
 /**
- * Helper class to generates AMQP wire-protocol encoded values.
+ * Helper class to generate AMQP wire-protocol encoded values.
  */
 public class ValueWriter
 {
