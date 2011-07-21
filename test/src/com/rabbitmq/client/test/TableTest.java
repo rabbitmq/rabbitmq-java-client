@@ -34,6 +34,8 @@ import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.LongStringHelper;
 import com.rabbitmq.client.impl.MethodArgumentReader;
 import com.rabbitmq.client.impl.MethodArgumentWriter;
+import com.rabbitmq.client.impl.ValueReader;
+import com.rabbitmq.client.impl.ValueWriter;
 
 public class TableTest
     extends TestCase
@@ -49,7 +51,7 @@ public class TableTest
         throws IOException
     {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        MethodArgumentWriter writer = new MethodArgumentWriter(new DataOutputStream(buffer));
+        MethodArgumentWriter writer = new MethodArgumentWriter(new ValueWriter(new DataOutputStream(buffer)));
         writer.writeTable(table);
         writer.flush();
         
@@ -62,8 +64,9 @@ public class TableTest
     {
         MethodArgumentReader reader = 
             new MethodArgumentReader
-            (new DataInputStream
-             (new ByteArrayInputStream(bytes)));
+            (new ValueReader
+             (new DataInputStream
+              (new ByteArrayInputStream(bytes))));
         
         return reader.readTable();
     }

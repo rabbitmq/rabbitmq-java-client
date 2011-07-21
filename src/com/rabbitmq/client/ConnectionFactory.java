@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import java.net.Socket;
 import java.net.InetSocketAddress;
@@ -38,44 +40,26 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory implements Cloneable {
-    private static final int NUM_CHANNEL_CONSUMER_THREADS = 5;
+    
+    /** Default Executor threads        */ private static final int    DEFAULT_NUM_CONSUMER_THREADS = 5;
+    /** Default user name               */ private static final String DEFAULT_USER = "guest";
+    /** Default password                */ private static final String DEFAULT_PASS = "guest";
+    /** Default virtual host            */ private static final String DEFAULT_VHOST = "/";
+    /** Default maximum channel number;
+     *  zero for unlimited              */ private static final int    DEFAULT_CHANNEL_MAX = 0;
+    /** Default maximum frame size;
+     *  zero means no limit             */ private static final int    DEFAULT_FRAME_MAX = 0;
+    /** Default heart-beat interval;
+     *  zero means no heart-beats       */ private static final int    DEFAULT_HEARTBEAT = 0;
+    /** The default host                */ private static final String DEFAULT_HOST = "localhost";
+    /** 'Use the default port' port     */ private static final int    USE_DEFAULT_PORT = -1;
+    /** The default non-ssl port        */ private static final int    DEFAULT_AMQP_PORT = AMQP.PROTOCOL.PORT;
+    /** The default ssl port            */ private static final int    DEFAULT_AMQP_OVER_SSL_PORT = 5671;
+    /** The default connection timeout;
+     *  zero means wait indefinitely    */ private static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
+    /** The default SSL protocol        */ private static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
-    /** Default user name */
-    private static final String DEFAULT_USER = "guest";
-
-    /** Default password */
-    private static final String DEFAULT_PASS = "guest";
-
-    /** Default virtual host */
-    private static final String DEFAULT_VHOST = "/";
-
-    /** Default value for the desired maximum channel number; zero for unlimited */
-    private static final int DEFAULT_CHANNEL_MAX = 0;
-
-    /** Default value for the desired maximum frame size; zero for unlimited */
-    private static final int DEFAULT_FRAME_MAX = 0;
-
-    /** Default value for desired heartbeat interval; zero for none */
-    private static final int DEFAULT_HEARTBEAT = 0;
-
-    /** The default host to connect to */
-    private static final String DEFAULT_HOST = "localhost";
-
-    /** A constant that when passed as a port number causes the connection to use the default port */
-    private static final int USE_DEFAULT_PORT = -1;
-
-    /** The default port to use for AMQP connections when not using SSL */
-    private static final int DEFAULT_AMQP_PORT = 5672;
-
-    /** The default port to use for AMQP connections when using SSL */
-    private static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
-
-    /** The default connection timeout (wait indefinitely until connection established or error occurs) */
-    private static final int DEFAULT_CONNECTION_TIMEOUT = 0;
-
-    /** The default SSL protocol (currently "SSLv3") */
-    private static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
-
+    private int numConsumerThreads                = DEFAULT_NUM_CONSUMER_THREADS;
     private String username                       = DEFAULT_USER;
     private String password                       = DEFAULT_PASS;
     private String virtualHost                    = DEFAULT_VHOST;
@@ -88,6 +72,17 @@ public class ConnectionFactory implements Cloneable {
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
+    
+
+    /** @return number of consumer threads in default {@link ExecutorService} */
+    public int getNumConsumerThreads() {
+        return numConsumerThreads;
+    }
+
+    /** @param numConsumerThreads threads in created private executor service */
+    public void setNumConsumerThreads(int numConsumerThreads) {
+        this.numConsumerThreads = numConsumerThreads;
+    }
 
     /** Instantiate a ConnectionFactory with a default set of parameters */
     public ConnectionFactory() {
@@ -309,7 +304,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Convenience method for setting up a SSL socket factory, using
-     * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
+     * the supplied protocol and a very trusting TrustManager.
      */
     public void useSslProtocol(String protocol)
         throws NoSuchAlgorithmException, KeyManagementException
@@ -377,11 +372,12 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Create a new broker connection
+     * @param executor thread execution service for consumers on the connection
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(Address[] addrs)
+    private Connection newConnection(ExecutorService executor, Address[] addrs)
         throws IOException
     {
         IOException lastException = null;
@@ -389,7 +385,16 @@ public class ConnectionFactory implements Cloneable {
             try {
                 FrameHandler frameHandler = createFrameHandler(addr);
                 AMQConnection conn = 
-                    new AMQConnection(this, frameHandler, NUM_CHANNEL_CONSUMER_THREADS);
+                    new AMQConnection(username,
+                                      password,
+                                      frameHandler,
+                                      executor,
+                                      virtualHost,
+                                      getClientProperties(),
+                                      requestedFrameMax,
+                                      requestedChannelMax,
+                                      requestedHeartbeat,
+                                      saslConfig);
                 conn.start();
                 return conn;
             } catch (IOException e) {
@@ -397,11 +402,8 @@ public class ConnectionFactory implements Cloneable {
             }
         }
 
-        if (lastException == null) {
-            throw new IOException("failed to connect");
-        } else {
-            throw lastException;
-        }
+        throw (lastException != null) ? lastException
+                                      : new IOException("failed to connect");
     }
 
     /**
@@ -410,10 +412,22 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection() throws IOException {
-        return newConnection(new Address[] {
-                                 new Address(getHost(), getPort())});
+        return newConnection(Executors.newFixedThreadPool(this.numConsumerThreads),
+                             new Address[] {new Address(getHost(), getPort())}
+                            );
     }
 
+    /**
+     * Create a new broker connection
+     * @param executor thread execution service for consumers on the connection
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newConnection(ExecutorService executor) throws IOException {
+        return newConnection(executor,
+                             new Address[] {new Address(getHost(), getPort())}
+                            );
+    }
 
     @Override public ConnectionFactory clone(){
         try {

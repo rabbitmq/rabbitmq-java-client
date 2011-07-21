@@ -45,7 +45,7 @@ public class SaslMechanisms extends BrokerTestCase {
             return name;
         }
 
-        public LongString handleChallenge(LongString challenge, ConnectionFactory factory) {
+        public LongString handleChallenge(LongString challenge, String username, String password) {
             counter++;
             return LongStringHelper.asLongString(responses[counter-1]);
         }

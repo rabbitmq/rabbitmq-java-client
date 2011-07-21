@@ -38,32 +38,44 @@ public class CloseInMainLoop extends BrokerTestCase{
       return validShutdown.get();
     }
 
-    public SpecialConnection() throws Exception{
-      super(
-          new ConnectionFactory(),
-          new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", 5672)),
-          Executors.newFixedThreadPool(1),
-          new DefaultExceptionHandler(){
-            @Override
-            public void handleConsumerException(Channel channel,
-                                                Throwable exception,
-                                                Consumer consumer,
-                                                String consumerTag,
-                                                String methodName) {
-                try {
-                  ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
-                                                                  "Internal error in Consumer " +
-                                                                    consumerTag,
-                                                                  false,
-                                                                  exception, AMQConnection.CONNECTION_CLOSING_TIMEOUT, false);
-                } catch (Throwable e) {
-                    // Man, this clearly isn't our day.
-                    // TODO: Log the nested failure
-                } finally {
-                    closeLatch.countDown();
+    public SpecialConnection() throws Exception {
+        this(new ConnectionFactory());
+    }
+
+    private SpecialConnection(ConnectionFactory factory) throws Exception{
+      super(factory.getUsername(),
+            factory.getPassword(),
+            new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT)),
+            Executors.newFixedThreadPool(1),
+            factory.getVirtualHost(),
+            factory.getClientProperties(),
+            factory.getRequestedFrameMax(),
+            factory.getRequestedChannelMax(),
+            factory.getRequestedHeartbeat(),
+            factory.getSaslConfig(),
+            new DefaultExceptionHandler(){
+                @Override
+                public void handleConsumerException(Channel channel,
+                                                    Throwable exception,
+                                                    Consumer consumer,
+                                                    String consumerTag,
+                                                    String methodName) {
+                    try {
+                      ((AMQConnection) channel.getConnection())
+                          .close(AMQP.INTERNAL_ERROR,
+                                 "Internal error in Consumer " + consumerTag,
+                                 false,
+                                 exception,
+                                 AMQConnection.CONNECTION_CLOSING_TIMEOUT,
+                                 false);
+                    } catch (Throwable e) {
+                        // Man, this clearly isn't our day.
+                        // TODO: Log the nested failure
+                    } finally {
+                        closeLatch.countDown();
+                    }
                 }
-            }
-        });
+            });
 
         this.start();
       }
@@ -75,7 +87,6 @@ public class CloseInMainLoop extends BrokerTestCase{
     }
 
   }
-
 
   public void testCloseOKNormallyReceived() throws Exception{
     SpecialConnection connection = new SpecialConnection();

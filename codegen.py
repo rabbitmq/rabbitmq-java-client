@@ -546,7 +546,7 @@ def genJavaImpl(spec):
             for m in c.allMethods():
                 fq_name = java_class_name(c.name) + '.' + java_class_name(m.name)
                 print "                    case %s: {" % (m.index)
-                print "                        return new %s(new MethodArgumentReader(in));" % (fq_name)
+                print "                        return new %s(new MethodArgumentReader(new ValueReader(in)));" % (fq_name)
                 print "                    }"
             print "                    default: break;"
             print "                } break;"

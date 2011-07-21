@@ -17,7 +17,6 @@
 
 package com.rabbitmq.client.impl;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
@@ -50,11 +49,11 @@ public class MethodArgumentReader
     }
 
     /**
-     * Construct a MethodArgumentReader from the given DataInputStream.
+     * Construct a MethodArgumentReader from the given {@link ValueReader}.
      */
-    public MethodArgumentReader(DataInputStream in)
+    public MethodArgumentReader(ValueReader in)
     {
-        this.in = new ValueReader(in);
+        this.in = in;
         clearBits();
     }
 

@@ -57,10 +57,12 @@ public class Tracer implements Runnable {
     public static final boolean SILENT_MODE =
         property("SILENT_MODE");
 
-    final static int LOG_QUEUE_SIZE = 1024 * 1024;
-    final static int BUFFER_SIZE = 10 * 1024 * 1024;
-    final static int MAX_TIME_BETWEEN_FLUSHES = 1000;
-    final static Object FLUSH = new Object();
+    private final static int LOG_QUEUE_SIZE = 1024 * 1024;
+    private final static int BUFFER_SIZE = 10 * 1024 * 1024;
+    private final static int MAX_TIME_BETWEEN_FLUSHES = 1000;
+    private final static Object FLUSH = new Object();
+    private final static int DEFAULT_CONNECT_PORT = AMQP.PROTOCOL.PORT;
+    private final static int DEFAULT_LISTEN_PORT = DEFAULT_CONNECT_PORT+1;
 
     private static class AsyncLogger extends Thread {
         final PrintStream ps;
@@ -103,9 +105,9 @@ public class Tracer implements Runnable {
     }
 
     public static void main(String[] args) {
-        int listenPort = args.length > 0 ? Integer.parseInt(args[0]) : 5673;
+        int listenPort = args.length > 0 ? Integer.parseInt(args[0]) : DEFAULT_LISTEN_PORT;
         String connectHost = args.length > 1 ? args[1] : "localhost";
-        int connectPort = args.length > 2 ? Integer.parseInt(args[2]) : 5672;
+        int connectPort = args.length > 2 ? Integer.parseInt(args[2]) : DEFAULT_CONNECT_PORT;
 
         System.out.println("Usage: Tracer [<listenport> [<connecthost> [<connectport>]]]");
         System.out.println("Invoked as: Tracer " + listenPort + " " + connectHost + " " + connectPort);

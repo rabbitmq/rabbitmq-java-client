@@ -34,8 +34,6 @@ import com.rabbitmq.client.LongString;
  */
 public class ValueWriter
 {
-
-    /** Accumulates our output */
     private final DataOutputStream out;
 
     public ValueWriter(DataOutputStream out)
@@ -197,7 +195,7 @@ public class ValueWriter
         }
     }
 
-    public void writeArray(List<?> value)
+    public final void writeArray(List<?> value)
         throws IOException
     {
         if (value==null) {

@@ -27,7 +27,6 @@ import java.math.BigDecimal;
 import java.net.SocketTimeoutException;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 
@@ -234,22 +233,6 @@ public class Frame {
             sb.append(accumulator.size()).append(" bytes of accumulator)");
         }
         return sb.toString();
-    }
-
-    /**
-     * Utility for constructing a java.util.Map instance from an
-     * even-length array containing alternating String keys (on the
-     * even elements, starting at zero) and values (on the odd
-     * elements, starting at one).
-     */
-    public static Map<String, Object> buildTable(Object[] keysValues) {
-        Map<String, Object> result = new HashMap<String, Object>();
-        for (int index = 0; index < keysValues.length; index += 2) {
-            String key = (String) keysValues[index];
-            Object value = keysValues[index + 1];
-            result.put(key, value);
-        }
-        return result;
     }
 
     /** Computes the AMQP wire-protocol length of protocol-encoded table entries.

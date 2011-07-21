@@ -38,7 +38,7 @@ import java.util.Set;
  * @see com.rabbitmq.client.ConnectionFactory
  */
 public class JDKSaslConfig implements SaslConfig {
-    public static final String[] DEFAULT_PREFERRED_MECHANISMS = new String[]{"PLAIN"};
+    private static final String[] DEFAULT_PREFERRED_MECHANISMS = new String[]{"PLAIN"};
 
     private final ConnectionFactory factory;
     private final List<String> mechanisms;
@@ -93,7 +93,7 @@ public class JDKSaslConfig implements SaslConfig {
             return client.getMechanismName();
         }
 
-        public LongString handleChallenge(LongString challenge, ConnectionFactory factory) {
+        public LongString handleChallenge(LongString challenge, String username, String password) {
             try {
                 return LongStringHelper.asLongString(client.evaluateChallenge(challenge.getBytes()));
             } catch (SaslException e) {
