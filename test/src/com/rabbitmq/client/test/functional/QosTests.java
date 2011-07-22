@@ -398,25 +398,25 @@ public class QosTests extends BrokerTestCase
         String ctag = declareBindConsumeCtag(c);
 
         // Give zero credit, populate with 10 msgs, get nothing.
-        assertCredit(ctag, 0, 0, false);
+        assertCredit(ctag, 0, 0, 0, false);
         fill(10);
         drain(c, 0);
 
         // Give 5 credit, server says "5 credit, 10 avail", get 5 msgs.
-        assertCredit(ctag, 5, 10, false);
+        assertCredit(ctag, 0, 5, 10, false);
         drain(c, 5);
 
         // Give 5 credit, server says "5 credit, 5 avail", get 5 msgs.
-        assertCredit(ctag, 5, 5, false);
+        assertCredit(ctag, 5, 5, 5, false);
         drain(c, 5);
 
         // Give zero credit, populate with 5 msgs, get nothing.
-        assertCredit(ctag, 0, 0, false);
+        assertCredit(ctag, 10, 0, 0, false);
         fill(5);
         drain(c, 0);
 
         // Give 10 credit, with drain=true, server says "10 credit, 5 avail".
-        assertCredit(ctag, 10, 5, true);
+        assertCredit(ctag, 10, 10, 5, true);
         // Get 5 msgs, and the server sends a credit state to say "all your credit drained".
         drain(c, 5);
         assertCreditState(0, 0, true, credits);
@@ -426,10 +426,10 @@ public class QosTests extends BrokerTestCase
         drain(c, 0);
     }
 
-    private void assertCredit(final String ctag, final int credit,
+    private void assertCredit(final String ctag, final int count, final int credit,
                               final int available, final boolean drain)
             throws IOException, InterruptedException {
-        AMQP.Basic.CreditOk cr = channel.credit(ctag, credit, drain);
+        AMQP.Basic.CreditOk cr = channel.credit(ctag, count, credit, drain);
 
         assertEquals(available, cr.getAvailable());
     }

@@ -1037,8 +1037,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return (Channel.FlowOk) exnWrappingRpc(new Channel.Flow(a)).getMethod();
     }
 
-    public Basic.CreditOk credit(final String ctag, final int c, final boolean d) throws IOException {
-        return (Basic.CreditOk) exnWrappingRpc(new Basic.Credit(ctag, 0, c, d)).getMethod();
+    public Basic.CreditOk credit(final String ctag, final int count, final int credit, final boolean drain) throws IOException {
+        return (Basic.CreditOk) exnWrappingRpc(new Basic.Credit(ctag, count, credit, drain)).getMethod();
     }
 
     /** Public API - {@inheritDoc} */
