@@ -65,9 +65,8 @@ final class ConsumerDispatcher {
 
     public void handleConsumeOk(final Consumer delegate,
                                 final String consumerTag) {
-        if (this.shuttingDown) return;
-        execute(new Runnable() {
-
+        executeUnlessShuttingDown(
+        new Runnable() {
             public void run() {
                 try {
                     delegate.handleConsumeOk(consumerTag);
@@ -85,9 +84,8 @@ final class ConsumerDispatcher {
 
     public void handleCancelOk(final Consumer delegate,
                                final String consumerTag) {
-        if (this.shuttingDown) return;
-        execute(new Runnable() {
-
+        executeUnlessShuttingDown(
+        new Runnable() {
             public void run() {
                 try {
                     delegate.handleCancelOk(consumerTag);
@@ -104,8 +102,8 @@ final class ConsumerDispatcher {
     }
 
     public void handleRecoverOk(final Consumer delegate, final String consumerTag) {
-        if (this.shuttingDown) return;
-        execute(new Runnable() {
+        executeUnlessShuttingDown(
+        new Runnable() {
             public void run() {
                 delegate.handleRecoverOk(consumerTag);
             }
@@ -117,8 +115,8 @@ final class ConsumerDispatcher {
                                final Envelope envelope,
                                final AMQP.BasicProperties properties,
                                final byte[] body) throws IOException {
-        if (this.shuttingDown) return;
-        execute(new Runnable() {
+        executeUnlessShuttingDown(
+        new Runnable() {
             public void run() {
                 try {
                     delegate.handleDelivery(consumerTag,
@@ -176,6 +174,10 @@ final class ConsumerDispatcher {
                     consumerTag,
                     "handleShutdownSignal");
         }
+    }
+
+    private void executeUnlessShuttingDown(Runnable r) {
+        if (!this.shuttingDown) execute(r);
     }
 
     private void execute(Runnable r) {
