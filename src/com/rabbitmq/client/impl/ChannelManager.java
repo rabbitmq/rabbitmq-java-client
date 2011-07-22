@@ -85,7 +85,7 @@ public class ChannelManager {
         for (ChannelN channel : channels) {
             disconnectChannel(channel);
             channel.processShutdownSignal(signal, true, true);
-            shutdownSet.add(channel.getFutureShutdown());
+            shutdownSet.add(channel.getShutdownLatch());
         }
         scheduleShutdownProcessing();
     }

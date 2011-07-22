@@ -235,7 +235,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    public CountDownLatch getFutureShutdown() {
+    public CountDownLatch getShutdownLatch() {
         return this.finishedShutdownFlag;
     }
 
