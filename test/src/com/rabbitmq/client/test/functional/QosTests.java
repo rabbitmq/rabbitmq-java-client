@@ -77,7 +77,7 @@ public class QosTests extends BrokerTestCase
             long start = System.currentTimeMillis();
             for (int i = 0; i < n; i++) {
                 Delivery d = c.nextDelivery(1000);
-                assertNotNull(d);
+                assertNotNull("Expected " + n + " deliveries, got " + i, d);
                 res.offer(d);
             }
             long finish = System.currentTimeMillis();
