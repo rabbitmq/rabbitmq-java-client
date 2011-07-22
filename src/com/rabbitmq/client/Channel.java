@@ -88,6 +88,8 @@ public interface Channel extends ShutdownNotifier {
      */
     FlowOk flow(boolean active) throws IOException;
 
+    Basic.CreditOk credit(String consumerTag, int credit, boolean drain) throws IOException;
+
     /**
      * Return the current Channel.Flow settings.
      */
@@ -166,6 +168,25 @@ public interface Channel extends ShutdownNotifier {
      * Remove all {@link ConfirmListener}s.
      */
     void clearConfirmListeners();
+
+    /**
+     * Add a {@link CreditListener}.
+     * @param listener the listener to add
+     */
+    void addCreditListener(CreditListener listener);
+
+    /**
+     * Remove a {@link CreditListener}.
+     * @param listener the listener to remove
+     * @return <code><b>true</b></code> if the listener was found and removed,
+     * <code><b>false</b></code> otherwise
+     */
+    boolean removeCreditListener(CreditListener listener);
+
+    /**
+     * Remove all {@link CreditListener}s.
+     */
+    void clearCreditListeners();
 
     /**
      * Get the current default consumer. @see setDefaultConsumer for rationale.

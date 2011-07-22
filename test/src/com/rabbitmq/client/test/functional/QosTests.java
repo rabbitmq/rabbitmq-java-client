@@ -17,6 +17,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.CreditListener;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,6 +28,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -370,6 +374,75 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
+    private class Credit {
+        long credit;
+        long available;
+        boolean drain;
+    }
+
+    public void testCredit() throws IOException, InterruptedException
+    {
+        final BlockingQueue<Credit> credits = new LinkedBlockingQueue<Credit>();
+
+        channel.addCreditListener(new CreditListener() {
+            public void handleCredit(String consumerTag, long credit, long available, boolean drain) throws IOException {
+                Credit c = new Credit();
+                c.credit = credit;
+                c.available = available;
+                c.drain = drain;
+                credits.add(c);
+            }
+        });
+
+        QueueingConsumer c = new QueueingConsumer(channel);
+        String ctag = declareBindConsumeCtag(c);
+
+        // Give zero credit, populate with 10 msgs, get nothing.
+        assertCredit(ctag, 0, 0, false);
+        fill(10);
+        drain(c, 0);
+
+        // Give 5 credit, server says "5 credit, 10 avail", get 5 msgs.
+        assertCredit(ctag, 5, 10, false);
+        drain(c, 5);
+
+        // Give 5 credit, server says "5 credit, 5 avail", get 5 msgs.
+        assertCredit(ctag, 5, 5, false);
+        drain(c, 5);
+
+        // Give zero credit, populate with 5 msgs, get nothing.
+        assertCredit(ctag, 0, 0, false);
+        fill(5);
+        drain(c, 0);
+
+        // Give 10 credit, with drain=true, server says "10 credit, 5 avail".
+        assertCredit(ctag, 10, 5, true);
+        // Get 5 msgs, and the server sends a credit state to say "all your credit drained".
+        drain(c, 5);
+        assertCreditState(0, 0, true, credits);
+
+        // Populate 5 more msgs, but we don't get them because our credit drained.
+        fill(5);
+        drain(c, 0);
+    }
+
+    private void assertCredit(final String ctag, final int credit,
+                              final int available, final boolean drain)
+            throws IOException, InterruptedException {
+        AMQP.Basic.CreditOk cr = channel.credit(ctag, credit, drain);
+
+        assertEquals(available, cr.getAvailable());
+    }
+
+    private void assertCreditState(final int credit, final int available, final boolean drain,
+                                   BlockingQueue<Credit> credits)
+            throws IOException, InterruptedException {
+        Credit cr = credits.take();
+        assertEquals(credit, cr.credit);
+        assertEquals(available, cr.available);
+        assertEquals(drain, cr.drain);
+    }
+
     public void testNoConsumers() throws Exception {
         String q = declareBind(channel);
         fill(1);
@@ -500,6 +573,14 @@ public class QosTests extends BrokerTestCase
         String queue = declareBind(ch);
         ch.basicConsume(queue, noAck, c);
         return queue;
+    }
+
+    protected String declareBindConsumeCtag(QueueingConsumer c)
+        throws IOException
+    {
+        String queue = declareBind(channel);
+        String ctag = channel.basicConsume(queue, false, c);
+        return ctag;
     }
 
     protected String declareBind(Channel ch) throws IOException {

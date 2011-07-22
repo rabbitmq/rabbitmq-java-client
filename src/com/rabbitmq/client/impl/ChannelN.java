@@ -31,6 +31,7 @@ import com.rabbitmq.client.Command;
 import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.CreditListener;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.FlowListener;
 import com.rabbitmq.client.GetResponse;
@@ -81,9 +82,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     private final Collection<FlowListener> flowListeners = new CopyOnWriteArrayList<FlowListener>();
     /** The ConfirmListener collection. */
     private final Collection<ConfirmListener> confirmListeners = new CopyOnWriteArrayList<ConfirmListener>();
+    /** The CreditListener collection. */
+    private final Collection<CreditListener> creditListeners = new CopyOnWriteArrayList<CreditListener>();
 
     /** Sequence number of next published message requiring confirmation. */
     private long nextPublishSeqNo = 0L;
+
 
     /** The current default consumer, or null if there is none. */
     private volatile Consumer defaultConsumer = null;
@@ -155,6 +159,18 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     public void clearConfirmListeners() {
         confirmListeners.clear();
+    }
+
+    public void addCreditListener(CreditListener listener) {
+        creditListeners.add(listener);
+    }
+
+    public boolean removeCreditListener(CreditListener listener) {
+        return creditListeners.remove(listener);
+    }
+
+    public void clearCreditListeners() {
+        creditListeners.clear();
     }
 
     /** {@inheritDoc} */
@@ -314,6 +330,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 }
                 callFlowListeners(command, channelFlow);
                 return true;
+            } else if (method instanceof Basic.CreditState) {
+                Basic.CreditState creditState = (Basic.CreditState) method;
+                callCreditListeners(creditState);
+                return true;
             } else if (method instanceof Basic.Ack) {
                 Basic.Ack ack = (Basic.Ack) method;
                 callConfirmListeners(command, ack);
@@ -412,6 +432,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         try {
             for (ConfirmListener l : this.confirmListeners) {
                 l.handleNack(nack.getDeliveryTag(), nack.getMultiple());
+            }
+        } catch (Throwable ex) {
+            _connection.getExceptionHandler().handleConfirmListenerException(this, ex);
+        }
+    }
+
+    private void callCreditListeners(Basic.CreditState creditState) {
+        try {
+            for (CreditListener l : this.creditListeners) {
+                l.handleCredit(creditState.getConsumerTag(), creditState.getCredit(),
+                               creditState.getAvailable(), creditState.getDrain());
             }
         } catch (Throwable ex) {
             _connection.getExceptionHandler().handleConfirmListenerException(this, ex);
@@ -1004,6 +1035,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Public API - {@inheritDoc} */
     public Channel.FlowOk flow(final boolean a) throws IOException {
         return (Channel.FlowOk) exnWrappingRpc(new Channel.Flow(a)).getMethod();
+    }
+
+    public Basic.CreditOk credit(final String ctag, final int c, final boolean d) throws IOException {
+        return (Basic.CreditOk) exnWrappingRpc(new Basic.Credit(ctag, 0, c, d)).getMethod();
     }
 
     /** Public API - {@inheritDoc} */
