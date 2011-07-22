@@ -561,7 +561,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 // If Close was sent from within the MainLoop we
                 // will not have a continuation to return to, so
                 // we treat this as processed in that case.
-                return _channel0._activeRpc == null;
+                return !_channel0.isOutstandingRpc();
             } else { // Ignore all others.
                 return true;
             }

@@ -55,7 +55,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     private AMQCommand.Assembler _commandAssembler = AMQCommand.newAssembler();
 
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
-    public RpcContinuation _activeRpc = null;
+    private RpcContinuation _activeRpc = null;
 
     /** Whether transmission of content-bearing methods should be blocked */
     public boolean _blockContent = false;
@@ -169,6 +169,13 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                 }
             }
             _activeRpc = k;
+        }
+    }
+
+    public boolean isOutstandingRpc()
+    {
+        synchronized (_channelMutex) {
+            return (_activeRpc != null);
         }
     }
 
