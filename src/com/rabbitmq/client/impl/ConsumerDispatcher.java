@@ -24,7 +24,7 @@ import com.rabbitmq.utility.Utility;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.Future;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Dispatches notifications to a {@link Consumer} on an
@@ -43,8 +43,8 @@ final class ConsumerDispatcher {
     private final Channel channel;
 
     private volatile boolean shuttingDown = false;
-    private volatile boolean shutdownHandled = false;
-    private volatile Future<Boolean> shutdownDone;
+    private volatile boolean shutdownConsumersDriven = false;
+    private volatile CountDownLatch shutdownConsumersComplete;
 
     private volatile ShutdownSignalException shutdownSignal;
 
@@ -137,29 +137,29 @@ final class ConsumerDispatcher {
         });
     }
 
-    public Future<Boolean> handleShutdownSignal(final Map<String, Consumer> consumers,
+    public CountDownLatch handleShutdownSignal(final Map<String, Consumer> consumers,
                                      final ShutdownSignalException signal) {
         // ONLY CASE WHERE WE IGNORE shuttingDown
-        if (!this.shutdownHandled) {
-            final SimpleFutureValue<Boolean> done = new SimpleFutureValue<Boolean>();
-            this.shutdownDone = done;
-            this.shutdownHandled = true;
+        if (!this.shutdownConsumersDriven) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            this.shutdownConsumersComplete = latch;
+            this.shutdownConsumersDriven = true;
             // Execute shutdown processing even if there are no consumers.
             execute(new Runnable() {
                 public void run() {
                     notifyConsumersOfShutdown(consumers, signal);
                     ConsumerDispatcher.this.shutdown(signal);
-                    done.set(true);
+                    latch.countDown();
                 }
             });
         }
-        return this.shutdownDone;
+        return this.shutdownConsumersComplete;
     }
 
     private void notifyConsumersOfShutdown(Map<String, Consumer> consumers,
                                            ShutdownSignalException signal) {
-        for (String consumerTag : consumers.keySet()) {
-            notifyConsumerOfShutdown(consumerTag, consumers.get(consumerTag), signal);
+        for (Map.Entry<String, Consumer> consumerEntry : consumers.entrySet()) {
+            notifyConsumerOfShutdown(consumerEntry.getKey(), consumerEntry.getValue(), signal);
         }
     }
 

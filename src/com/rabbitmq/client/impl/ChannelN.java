@@ -21,10 +21,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Future;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -90,7 +90,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     private final ConsumerDispatcher dispatcher;
 
     /** Future boolean for shutting down */
-    private volatile Future<Boolean> finishedShutdownFlag = null;
+    private volatile CountDownLatch finishedShutdownFlag = null;
 
     /** Set of currently unconfirmed messages (i.e. messages that have
      *  not been ack'd or nack'd by the server yet. */
@@ -211,7 +211,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * Sends a ShutdownSignal to all active consumers.
      * @param signal an exception signalling channel shutdown
      */
-    private Future<Boolean> broadcastShutdownSignal(ShutdownSignalException signal) {
+    private CountDownLatch broadcastShutdownSignal(ShutdownSignalException signal) {
         Map<String, Consumer> snapshotConsumers;
         synchronized (_consumers) {
             snapshotConsumers = new HashMap<String, Consumer>(_consumers);
@@ -229,14 +229,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     {
         this.dispatcher.quiesce();
         super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
-        finishedShutdownFlag = broadcastShutdownSignal(signal);
+        this.finishedShutdownFlag = broadcastShutdownSignal(signal);
         synchronized (unconfirmedSet) {
             unconfirmedSet.notifyAll();
         }
     }
 
-    public Future<Boolean> getFutureShutdown() {
-        return finishedShutdownFlag;
+    public CountDownLatch getFutureShutdown() {
+        return this.finishedShutdownFlag;
     }
 
     public void releaseChannelNumber() {

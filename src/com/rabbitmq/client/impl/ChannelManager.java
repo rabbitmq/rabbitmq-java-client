@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Future;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.ShutdownSignalException;
@@ -42,7 +42,7 @@ public class ChannelManager {
 
     private final ConsumerWorkService workService;
 
-    private final Set<Future<Boolean>> shutdownSet = new HashSet<Future<Boolean>>();
+    private final Set<CountDownLatch> shutdownSet = new HashSet<CountDownLatch>();
 
     /** Maximum channel number available on this connection. */
     private final int _channelMax;
@@ -91,13 +91,13 @@ public class ChannelManager {
     }
 
     private void scheduleShutdownProcessing() {
-        final Set<Future<Boolean>> sdSet = new HashSet<Future<Boolean>>(shutdownSet);
+        final Set<CountDownLatch> sdSet = new HashSet<CountDownLatch>(shutdownSet);
         final ConsumerWorkService ssWorkService = workService;
         Thread shutdownThread = new Thread( new Runnable() {
             @Override
             public void run() {
-                for (Future<Boolean> bool : sdSet) {
-                    try { bool.get(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS); } catch (Throwable e) { }
+                for (CountDownLatch latch : sdSet) {
+                    try { latch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS); } catch (Throwable e) { }
                 }
                 ssWorkService.shutdown();
             }}, "ConsumerWorkServiceShutdown");
