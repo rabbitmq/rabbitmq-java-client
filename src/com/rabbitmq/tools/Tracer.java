@@ -173,18 +173,6 @@ public class Tracer implements Runnable {
         this(new ServerSocket(listenPort).accept(), id, host, port, logger, reportEnd, props);
     }
 
-//    public Tracer(int listenPort, String id, String host, int port) throws IOException {
-//        this(listenPort, id, host, port, new AsyncLogger(System.out), new BlockingCell<Exception>(), System.getProperties());
-//    }
-//
-//    public Tracer(int listenPort, String host, int port, Logger logger) throws IOException {
-//        this(listenPort, createId(listenPort), host, port, logger, new BlockingCell<Exception>(), System.getProperties());
-//    }
-//
-//    public Tracer(int listenPort, String host, int port) throws IOException {
-//        this(listenPort, createId(listenPort), host, port, new AsyncLogger(System.out), new BlockingCell<Exception>(), System.getProperties());
-//    }
-
     public Tracer(int listenPort, String id, String host, int port, Logger logger, Properties props) throws IOException {
         this(listenPort, id, host, port, logger, new BlockingCell<Exception>(), props);
     }
