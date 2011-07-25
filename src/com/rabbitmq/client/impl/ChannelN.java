@@ -162,13 +162,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public boolean waitForConfirms()
         throws InterruptedException
     {
-        long seqHead = this.getNextPublishSeqNo();
         synchronized (unconfirmedSet) {
             while (true) {
                 if (getCloseReason() != null) {
                     throw Utility.fixStackTrace(getCloseReason());
                 }
-                if (unconfirmedSet.headSet(seqHead).isEmpty()) {
+                if (unconfirmedSet.isEmpty()) {
                     boolean aux = onlyAcksReceived;
                     onlyAcksReceived = true;
                     return aux;
