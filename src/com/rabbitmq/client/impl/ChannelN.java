@@ -239,7 +239,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return this.finishedShutdownFlag;
     }
 
-    private void releaseChannelNumber() {
+    private void releaseChannel() {
         getConnection().disconnectChannel(this);
     }
 
@@ -420,7 +420,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     private void asyncShutdown(Command command) throws IOException {
-        releaseChannelNumber();
+        releaseChannel();
         ShutdownSignalException signal = new ShutdownSignalException(false,
                                                                      false,
                                                                      command,
@@ -519,7 +519,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 // channel number, and dissociate this ChannelN instance from
                 // our connection so that any further frames inbound on this
                 // channel can be caught as the errors they are.
-                releaseChannelNumber();
+                releaseChannel();
                 notifyListeners();
             }
         }

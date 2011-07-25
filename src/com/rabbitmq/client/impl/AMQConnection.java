@@ -144,7 +144,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public final void disconnectChannel(ChannelN channel) {
         ChannelManager cm = _channelManager;
         if (cm != null)
-            cm.disconnectChannel(channel);
+            cm.releaseChannelNumber(channel);
     }
 
     private final void ensureIsOpen()
