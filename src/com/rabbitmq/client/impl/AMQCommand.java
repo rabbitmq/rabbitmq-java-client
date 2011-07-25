@@ -148,7 +148,7 @@ public class AMQCommand implements Command {
      */
     public void transmit(AMQChannel channel) throws IOException {
         int channelNumber = channel.getChannelNumber();
-        AMQConnection connection = channel.getAMQConnection();
+        AMQConnection connection = channel.getConnection();
 
         connection.writeFrame(_method.toFrame(channelNumber));
 

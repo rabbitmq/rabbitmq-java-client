@@ -86,10 +86,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private static final Version clientVersion =
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
 
-    /** The special channel 0 */
+    /** The special channel 0 (<i>not</i> managed by the <code><b>_channelManager</b></code>) */
     private final AMQChannel _channel0 = new AMQChannel(this, 0) {
         @Override public boolean processAsync(Command c) throws IOException {
-            return _connection.processControlCommand(c);
+            return getConnection().processControlCommand(c);
         }
     };
 
@@ -324,10 +324,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         AMQP.Connection.Tune connTune = null;
         do {
             Method method = (challenge == null)
-                ? new AMQImpl.Connection.StartOk(_clientProperties,
-                                                 sm.getName(),
-                                                 response, "en_US")
-                : new AMQImpl.Connection.SecureOk(response);
+                ? new AMQP.Connection.StartOk.Builder()
+                                .clientProperties(_clientProperties)
+                                .mechanism(sm.getName())
+                                .response(response)
+                      .build()
+                : new AMQP.Connection.SecureOk.Builder().response(response).build();
 
             try {
                 Method serverResponse = _channel0.rpc(method).getMethod();
@@ -550,7 +552,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             if (method instanceof AMQP.Connection.Close) {
                 // Already shutting down, so just send back a CloseOk.
                 try {
-                    _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
+                    _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
                 } catch (IOException ioe) {
                     Utility.emptyStatement();
                 }
@@ -571,7 +573,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void handleConnectionClose(Command closeCommand) {
         ShutdownSignalException sse = shutdown(closeCommand, false, null, false);
         try {
-            _channel0.quiescingTransmit(new AMQImpl.Connection.CloseOk());
+            _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
         } catch (IOException ioe) {
             Utility.emptyStatement();
         }

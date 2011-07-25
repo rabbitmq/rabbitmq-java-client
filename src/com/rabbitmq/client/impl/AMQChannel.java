@@ -46,7 +46,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     protected final Object _channelMutex = new Object();
 
     /** The connection this channel is associated with. */
-    public final AMQConnection _connection;
+    private final AMQConnection _connection;
 
     /** This channel's channel number. */
     public final int _channelNumber;
@@ -76,14 +76,6 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      */
     public int getChannelNumber() {
         return _channelNumber;
-    }
-
-    /**
-     * Public API - Retrieves this channel's underlying connection.
-     * @return the connection
-     */
-    public Connection getConnection() {
-        return _connection;
     }
 
     /**
@@ -323,7 +315,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public AMQConnection getAMQConnection() {
+    public AMQConnection getConnection() {
         return _connection;
     }
 

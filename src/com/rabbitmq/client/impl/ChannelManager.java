@@ -29,13 +29,13 @@ import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.IntAllocator;
 
 /**
- * Manages a set of channels, indexed by channel number.
+ * Manages a set of channels, indexed by channel number (<code><b>1.._channelMax</b></code>).
  */
 
-public class ChannelManager {
+public final class ChannelManager {
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 10;
 
-    /** Mapping from channel number to AMQChannel instance */
+    /** Mapping from <code><b>1.._channelMax</b></code> to {@link ChannelN} instance */
     private final Map<Integer, ChannelN> _channelMap =
         Collections.synchronizedMap(new HashMap<Integer, ChannelN>());
     private final IntAllocator channelNumberAllocator;
@@ -152,7 +152,7 @@ public class ChannelManager {
     }
 
     /**
-     * Remove the argument channel from the channel map.
+     * Remove the channel from the channel map.
      * This method must be safe to call multiple times on the same channel. If
      * it is not then things go badly wrong.
      */

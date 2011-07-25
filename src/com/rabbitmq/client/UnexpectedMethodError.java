@@ -22,7 +22,7 @@ package com.rabbitmq.client;
  * expected. For instance, {@link Channel#basicGet} throws this if it
  * receives anything other than {@link AMQP.Basic.GetOk} or
  * {@link AMQP.Basic.GetEmpty}, and the
- * {@link com.rabbitmq.client.impl.AMQImpl.DefaultMethodVisitor}
+ * {@link com.rabbitmq.client.impl.AMQImpl.DefaultMethodVisitor DefaultMethodVisitor}
  * throws this as the action within each visitor case.
  */
 public class UnexpectedMethodError extends Error {

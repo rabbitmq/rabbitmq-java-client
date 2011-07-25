@@ -239,8 +239,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return this.finishedShutdownFlag;
     }
 
-    public void releaseChannelNumber() {
-        _connection.disconnectChannel(this);
+    private void releaseChannelNumber() {
+        getConnection().disconnectChannel(this);
     }
 
     /**
@@ -297,11 +297,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                    (BasicProperties) command.getContentHeader(),
                                                    command.getContentBody());
                 } catch (Throwable ex) {
-                    _connection.getExceptionHandler().handleConsumerException(this,
-                                                                              ex,
-                                                                              callback,
-                                                                              m.getConsumerTag(),
-                                                                              "handleDelivery");
+                    getConnection().getExceptionHandler().handleConsumerException(this,
+                                                                                  ex,
+                                                                                  callback,
+                                                                                  m.getConsumerTag(),
+                                                                                  "handleDelivery");
                 }
                 return true;
             } else if (method instanceof Basic.Return) {
@@ -345,11 +345,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     try {
                         callback.handleCancel(consumerTag);
                     } catch (Throwable ex) {
-                        _connection.getExceptionHandler().handleConsumerException(this,
-                                                                                  ex,
-                                                                                  callback,
-                                                                                  consumerTag,
-                                                                                  "handleCancel");
+                        getConnection().getExceptionHandler().handleConsumerException(this,
+                                                                                      ex,
+                                                                                      callback,
+                                                                                      consumerTag,
+                                                                                      "handleCancel");
                     }
                 }
                 return true;
@@ -385,7 +385,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                command.getContentBody());
             }
         } catch (Throwable ex) {
-            _connection.getExceptionHandler().handleReturnListenerException(this, ex);
+            getConnection().getExceptionHandler().handleReturnListenerException(this, ex);
         }
     }
 
@@ -395,7 +395,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 l.handleFlow(channelFlow.getActive());
             }
         } catch (Throwable ex) {
-            _connection.getExceptionHandler().handleFlowListenerException(this, ex);
+            getConnection().getExceptionHandler().handleFlowListenerException(this, ex);
         }
     }
 
@@ -405,7 +405,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 l.handleAck(ack.getDeliveryTag(), ack.getMultiple());
             }
         } catch (Throwable ex) {
-            _connection.getExceptionHandler().handleConfirmListenerException(this, ex);
+            getConnection().getExceptionHandler().handleConfirmListenerException(this, ex);
         }
     }
 
@@ -415,7 +415,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 l.handleNack(nack.getDeliveryTag(), nack.getMultiple());
             }
         } catch (Throwable ex) {
-            _connection.getExceptionHandler().handleConfirmListenerException(this, ex);
+            getConnection().getExceptionHandler().handleConfirmListenerException(this, ex);
         }
     }
 
