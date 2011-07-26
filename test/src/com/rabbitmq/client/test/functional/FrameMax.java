@@ -63,7 +63,8 @@ public class FrameMax extends BrokerTestCase {
                 GetResponse response = channel.basicGet(queueName, false);
                 howMuch -= response.getBody().length;
             } catch (Exception e) {
-                fail(e.getCause().toString());
+                e.printStackTrace();
+                fail("Exception in basicGet loop: " + e);
             }
         }
     }

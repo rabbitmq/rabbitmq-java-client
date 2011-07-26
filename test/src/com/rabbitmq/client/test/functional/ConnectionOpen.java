@@ -39,11 +39,8 @@ public class ConnectionOpen extends TestCase {
         ConnectionFactory factory = new ConnectionFactory();
         SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
         fh.sendHeader();
-        AMQCommand.Assembler a = AMQCommand.newAssembler();
-        AMQCommand command = null;
-        while (command == null) {
-            command = a.handleFrame(fh.readFrame());
-        }
+        AMQCommand command = new AMQCommand();
+        while (!command.handleFrame(fh.readFrame())) { }
         Method m = command.getMethod();
         //    System.out.println(m.getClass());
         assertTrue("First command must be Connection.start",

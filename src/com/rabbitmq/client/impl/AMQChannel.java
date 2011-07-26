@@ -49,10 +49,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     private final AMQConnection _connection;
 
     /** This channel's channel number. */
-    public final int _channelNumber;
+    private final int _channelNumber;
 
-    /** State machine assembling commands on their way in. */
-    private AMQCommand.Assembler _commandAssembler = AMQCommand.newAssembler();
+    /** Command being assembled */
+    private AMQCommand _command = new AMQCommand();
 
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
     private RpcContinuation _activeRpc = null;
@@ -84,10 +84,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * @param frame the incoming frame
      * @throws IOException if an error is encountered
      */
-    void handleFrame(Frame frame) throws IOException {
-        AMQCommand command = _commandAssembler.handleFrame(frame);
-        if (command != null) { // a complete command has rolled off the assembly line
-            _commandAssembler = AMQCommand.newAssembler(); // prepare for the next one
+    public void handleFrame(Frame frame) throws IOException {
+        AMQCommand command = _command;
+        if (command.handleFrame(frame)) { // a complete command has rolled off the assembly line
+            _command = new AMQCommand(); // prepare for the next one
             handleCompleteInboundCommand(command);
         }
     }

@@ -213,7 +213,7 @@ public class Tracer implements Runnable {
 
         public DataOutputStream o;
 
-        public HashMap<Integer, AMQCommand.Assembler> assemblers = new HashMap<Integer, AMQCommand.Assembler>();
+        public HashMap<Integer, AMQCommand> commands = new HashMap<Integer, AMQCommand>();
 
         public DirectionHandler(BlockingCell<Object> waitCell, boolean inBound, DataInputStream i, DataOutputStream o) {
             this.waitCell = waitCell;
@@ -282,15 +282,14 @@ public class Tracer implements Runnable {
                             reportFrame(f);
                         }
                     } else {
-                        AMQCommand.Assembler c = assemblers.get(f.channel);
+                        AMQCommand c = commands.get(f.channel);
                         if(c == null) {
-                          c = AMQCommand.newAssembler();
-                          assemblers.put(f.channel, c);
+                          c = new AMQCommand();
+                          commands.put(f.channel, c);
                         }
-                        AMQCommand cmd = c.handleFrame(f);
-                        if (cmd != null) {
-                            report(f.channel, cmd.toString(SUPPRESS_COMMAND_BODIES));
-                            assemblers.remove(f.channel);
+                        if (c.handleFrame(f)) {
+                            report(f.channel, c.toString(SUPPRESS_COMMAND_BODIES));
+                            commands.remove(f.channel);
                         }
                     }
                 }
