@@ -26,105 +26,88 @@ import com.rabbitmq.client.UnexpectedFrameError;
 /**
  * Class responsible for piecing together a command from a series of {@link Frame}s.
  * <p/><b>Concurrency</b><br/>
- * This class is <i>not</i> thread-safe.
+ * This class is thread-safe, since all methods are synchronised. Callers should not
+ * synchronise on objects of this class unless they are sole owners.
  * @see AMQCommand
  */
 final class CommandAssembler {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     /** Current state, used to decide how to handle each incoming frame. */
-    private int state;
-    
-    private static final int STATE_EXPECTING_METHOD = 0;
-    private static final int STATE_EXPECTING_CONTENT_HEADER = 1;
-    private static final int STATE_EXPECTING_CONTENT_BODY = 2;
-    private static final int STATE_COMPLETE = 3;
+    private enum CAState {
+        EXPECTING_METHOD, EXPECTING_CONTENT_HEADER, EXPECTING_CONTENT_BODY, COMPLETE;
+    }
+    private CAState state;
 
     /** The method for this command */
-    private Method _method;
+    private Method method;
     
     /** The content header for this command */
-    private AMQContentHeader _contentHeader;
+    private AMQContentHeader contentHeader;
 
-    /** The first (and usually only) fragment of the content body */
-    private byte[] _body0;
-    /** The remaining fragments of this command's content body - a list of byte[] */
-    private List<byte[]> _bodyN;
+    /** The fragments of this command's content body - a list of byte[] */
+    private final List<byte[]> bodyN;
     /** sum of the lengths of all fragments */
     private int bodyLength;
 
-    /**
-     * How many more bytes of content body are expected to arrive
-     * from the broker.
-     */
+    /** No bytes of content body not yet accumulated */
     private long remainingBodyBytes;
 
-    public CommandAssembler() {
-        this(null, null, null);
-    }
-
     public CommandAssembler(Method method, AMQContentHeader contentHeader, byte[] body) {
-        this._method = method;
-        this._contentHeader = contentHeader;
-        setContentBody(body);
-        resetState();
-    }
-
-    private void resetState() {
+        this.method = method;
+        this.contentHeader = contentHeader;
+        this.bodyN = new ArrayList<byte[]>(2);
+        this.bodyLength = 0;
         this.remainingBodyBytes = 0;
-        if (this._method == null) {
-            this.state = STATE_EXPECTING_METHOD;
-        } else if (this._contentHeader == null) {
-            this.state = this._method.hasContent() ? STATE_EXPECTING_CONTENT_HEADER : STATE_COMPLETE;
+        appendBodyFragment(body);
+        if (method == null) {
+            this.state = CAState.EXPECTING_METHOD;
+        } else if (contentHeader == null) {
+            this.state = method.hasContent() ? CAState.EXPECTING_CONTENT_HEADER : CAState.COMPLETE;
         } else {
-            this.remainingBodyBytes = this._contentHeader.getBodySize() - contentBodySize();
+            this.remainingBodyBytes = contentHeader.getBodySize() - this.bodyLength;
+            updateContentBodyState();
         }
     }
 
-    private int contentBodySize() {
-        return this.bodyLength;
+    public synchronized Method getMethod() {
+        return this.method;
     }
 
-    public Method getMethod() {
-        return _method;
-    }
-
-    public AMQContentHeader getContentHeader() {
-        return _contentHeader;
+    public synchronized AMQContentHeader getContentHeader() {
+        return this.contentHeader;
     }
 
     /** @return true if the command is complete */
-    public boolean isComplete() {
-        return (this.state == STATE_COMPLETE);
+    public synchronized boolean isComplete() {
+        return (this.state == CAState.COMPLETE);
     }
 
     /** Decides whether more body frames are expected */
     private void updateContentBodyState() {
-        this.state = (this.remainingBodyBytes > 0) ? STATE_EXPECTING_CONTENT_BODY : STATE_COMPLETE;
+        this.state = (this.remainingBodyBytes > 0) ? CAState.EXPECTING_CONTENT_BODY : CAState.COMPLETE;
     }
 
-    private boolean consumeMethodFrame(Frame f) throws IOException {
+    private void consumeMethodFrame(Frame f) throws IOException {
         if (f.type == AMQP.FRAME_METHOD) {
-            this._method = AMQImpl.readMethodFrom(f.getInputStream());
-            state = this._method.hasContent() ? STATE_EXPECTING_CONTENT_HEADER : STATE_COMPLETE;
-            return isComplete();
+            this.method = AMQImpl.readMethodFrom(f.getInputStream());
+            this.state = this.method.hasContent() ? CAState.EXPECTING_CONTENT_HEADER : CAState.COMPLETE;
         } else {
             throw new UnexpectedFrameError(f, AMQP.FRAME_METHOD);
         }
     }
 
-    private boolean consumeHeaderFrame(Frame f) throws IOException {
+    private void consumeHeaderFrame(Frame f) throws IOException {
         if (f.type == AMQP.FRAME_HEADER) {
-            this._contentHeader = AMQImpl.readContentHeaderFrom(f.getInputStream());
-            this.remainingBodyBytes = this._contentHeader.getBodySize();
+            this.contentHeader = AMQImpl.readContentHeaderFrom(f.getInputStream());
+            this.remainingBodyBytes = this.contentHeader.getBodySize();
             updateContentBodyState();
-            return isComplete();
         } else {
             throw new UnexpectedFrameError(f, AMQP.FRAME_HEADER);
         }
     }
 
-    private boolean consumeBodyFrame(Frame f) {
+    private void consumeBodyFrame(Frame f) {
         if (f.type == AMQP.FRAME_BODY) {
             byte[] fragment = f.getPayload();
             this.remainingBodyBytes -= fragment.length;
@@ -133,43 +116,29 @@ final class CommandAssembler {
                 throw new UnsupportedOperationException("%%%%%% FIXME unimplemented");
             }
             appendBodyFragment(fragment);
-            return isComplete();
         } else {
             throw new UnexpectedFrameError(f, AMQP.FRAME_BODY);
         }
     }
 
     /** Stitches together a fragmented content body into a single byte array */
-    private void coalesceContentBody() {
-        List<byte[]> oldFragments = _bodyN;
-        byte[] firstFragment = _body0 == null ? EMPTY_BYTE_ARRAY : _body0;
+    private byte[] coalesceContentBody() {
+        if (this.bodyLength == 0) return EMPTY_BYTE_ARRAY;
+        if (this.bodyN.size() == 1) return this.bodyN.get(0);
 
         byte[] body = new byte[bodyLength];
-        System.arraycopy(firstFragment, 0, body, 0, firstFragment.length);
-        int offset = firstFragment.length;
-        for (byte[] fragment : oldFragments) {
+        int offset = 0;
+        for (byte[] fragment : this.bodyN) {
             System.arraycopy(fragment, 0, body, offset, fragment.length);
             offset += fragment.length;
         }
-
-        setContentBody(body);
+        this.bodyN.clear();
+        this.bodyN.add(body);
+        return body;
     }
 
-    public byte[] getContentBody() {
-        if (_bodyN != null) {
-            coalesceContentBody();
-        }
-        return _body0 == null ? EMPTY_BYTE_ARRAY : _body0;
-    }
-
-    /**
-     * Set the Command's content body.
-     * @param body the body data
-     */
-    private void setContentBody(byte[] body) {
-        _body0 = body;
-        _bodyN = null;
-        bodyLength = byteArrayLength(_body0);
+    public synchronized byte[] getContentBody() {
+        return coalesceContentBody();
     }
 
     private static int byteArrayLength(byte[] ba) {
@@ -177,37 +146,26 @@ final class CommandAssembler {
     }
 
     private void appendBodyFragment(byte[] fragment) {
-        if (_body0 == null) {
-            _body0 = fragment;
-            bodyLength = byteArrayLength(fragment);
-        } else {
-            if (_bodyN == null) {
-                _bodyN = new ArrayList<byte[]>();
-            }
-            _bodyN.add(fragment);
-            bodyLength += byteArrayLength(fragment);
-        }
+        if (fragment == null || fragment.length == 0) return;
+        bodyN.add(fragment);
+        bodyLength += byteArrayLength(fragment);
     }
 
     /**
      * @param f frame to be incorporated
-     * @return true if command is complete
-     * @throws IOException if error reading in frame
+     * @return true if command becomes complete
+     * @throws IOException if error reading frame
      */
-    public boolean handleFrame(Frame f) throws IOException
+    public synchronized boolean handleFrame(Frame f) throws IOException
     {
         switch (this.state) {
-          case STATE_EXPECTING_METHOD:
-              return consumeMethodFrame(f);
-
-          case STATE_EXPECTING_CONTENT_HEADER:
-              return consumeHeaderFrame(f);
-
-          case STATE_EXPECTING_CONTENT_BODY:
-              return consumeBodyFrame(f);
+          case EXPECTING_METHOD:          consumeMethodFrame(f); break;
+          case EXPECTING_CONTENT_HEADER:  consumeHeaderFrame(f); break;
+          case EXPECTING_CONTENT_BODY:    consumeBodyFrame(f);   break;
 
           default:
               throw new AssertionError("Bad Command State " + this.state);
         }
+        return isComplete();
     }
 }

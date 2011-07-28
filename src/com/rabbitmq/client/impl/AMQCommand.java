@@ -28,7 +28,7 @@ import com.rabbitmq.client.Command;
  * method, header and body from a series of frames, unless these are
  * supplied at construction time.
  * <p/><b>Concurrency</b><br/>
- * This class is <i>not</i> thread-safe.
+ * This class is thread-safe.
  */
 public class AMQCommand implements Command {
 
@@ -38,13 +38,12 @@ public class AMQCommand implements Command {
      * <li>4 bytes of frame payload length</li>
      * <li>1 byte of payload trailer FRAME_END byte</li></ul>
      * See {@link #checkEmptyContentBodyFrameSize}, an assertion
-     * called at startup.
+     * checked at startup.
      */
     private static final int EMPTY_CONTENT_BODY_FRAME_SIZE = 8;
 
-    /** The current assembler for this command */
-    private CommandAssembler assembler;
-    
+    /** The assembler for this command - synchronised on - contains all the state */
+    private final CommandAssembler assembler;
 
     /** Construct a command ready to fill in by reading frames */
     public AMQCommand() {
@@ -71,7 +70,6 @@ public class AMQCommand implements Command {
 
     /** Public API - {@inheritDoc} */
     public Method getMethod() {
-        if (this.assembler == null) return null;
         return this.assembler.getMethod();
     }
 
@@ -85,9 +83,6 @@ public class AMQCommand implements Command {
         return this.assembler.getContentBody();
     }
 
-    public boolean isComplete() {
-        return assembler.isComplete();
-    }
     public boolean handleFrame(Frame f) throws IOException {
         return this.assembler.handleFrame(f);
     }
@@ -102,23 +97,28 @@ public class AMQCommand implements Command {
         int channelNumber = channel.getChannelNumber();
         AMQConnection connection = channel.getConnection();
 
-        Method m = getMethod();
-        connection.writeFrame(m.toFrame(channelNumber));
+        synchronized (assembler) {
+            Method m = this.assembler.getMethod();
+            connection.writeFrame(m.toFrame(channelNumber));
+            if (m.hasContent()) {
+                byte[] body = this.assembler.getContentBody();
 
-        if (m.hasContent()) {
-            byte[] body = getContentBody();
+                connection.writeFrame(this.assembler.getContentHeader()
+                        .toFrame(channelNumber, body.length));
 
-            connection.writeFrame(getContentHeader().toFrame(channelNumber, body.length));
+                int frameMax = connection.getFrameMax();
+                int bodyPayloadMax = (frameMax == 0) ? body.length : frameMax
+                        - EMPTY_CONTENT_BODY_FRAME_SIZE;
 
-            int frameMax = connection.getFrameMax();
-            int bodyPayloadMax = (frameMax == 0) ? body.length : frameMax - EMPTY_CONTENT_BODY_FRAME_SIZE;
+                for (int offset = 0; offset < body.length; offset += bodyPayloadMax) {
+                    int remaining = body.length - offset;
 
-            for (int offset = 0; offset < body.length; offset += bodyPayloadMax) {
-                int remaining = body.length - offset;
-
-                int fragmentLength = (remaining < bodyPayloadMax) ? remaining : bodyPayloadMax;
-                Frame frame = Frame.fromBodyFragment(channelNumber, body, offset, fragmentLength);
-                connection.writeFrame(frame);
+                    int fragmentLength = (remaining < bodyPayloadMax) ? remaining
+                            : bodyPayloadMax;
+                    Frame frame = Frame.fromBodyFragment(channelNumber, body,
+                            offset, fragmentLength);
+                    connection.writeFrame(frame);
+                }
             }
         }
     }
@@ -128,15 +128,29 @@ public class AMQCommand implements Command {
     }
 
     public String toString(boolean suppressBody){
-        byte[] body = getContentBody();
-        String contentStr;
-        try {
-            contentStr = suppressBody ? (body.length + " bytes of payload") :
-                ("\"" + new String(body) + "\"");
-        } catch (Exception e) {
-            contentStr = "|" + body.length + "|";
+        synchronized (assembler) {
+            return new StringBuilder()
+                .append('{')
+                .append(this.assembler.getMethod())
+                .append(", ")
+                .append(this.assembler.getContentHeader())
+                .append(", ")
+                .append(contentBodyStringBuilder(
+                        this.assembler.getContentBody(), suppressBody))
+                .append('}').toString();
         }
-        return "{" + getMethod() + "," + getContentHeader() + "," + contentStr + "}";
+    }
+
+    private static StringBuilder contentBodyStringBuilder(byte[] body, boolean suppressBody) {
+        try {
+            if (suppressBody) {
+                return new StringBuilder().append(body.length).append(" bytes of payload");
+            } else {
+                return new StringBuilder().append('\"').append(body).append('\"');
+            }
+        } catch (Exception e) {
+            return new StringBuilder().append('|').append(body.length).append('|');
+        }
     }
 
     /** Called to check internal code assumptions. */
