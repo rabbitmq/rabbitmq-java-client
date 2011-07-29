@@ -26,12 +26,16 @@ import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeUnit;
 
 public class Confirm extends BrokerTestCase
 {
@@ -65,48 +69,49 @@ public class Confirm extends BrokerTestCase
     }
 
     public void testTransient()
-        throws IOException, InterruptedException {
+        throws IOException, InterruptedException, TimeoutException
+    {
         confirmTest("", "confirm-test", false, false, false);
     }
 
     public void testPersistentSimple()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         confirmTest("", "confirm-test", true, false, false);
     }
 
     public void testNonDurable()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         confirmTest("", "confirm-test-nondurable", true, false, false);
     }
 
     public void testPersistentImmediate()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         confirmTest("", "confirm-test", true, false, true);
     }
 
     public void testPersistentImmediateNoConsumer()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         confirmTest("", "confirm-test-noconsumer", true, false, true);
     }
 
     public void testPersistentMandatory()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         confirmTest("", "confirm-test", true, true, false);
     }
 
     public void testPersistentMandatoryReturn()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         confirmTest("", "confirm-test-doesnotexist", true, true, false);
     }
 
     public void testMultipleQueues()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         confirmTest("amq.direct", "confirm-multiple-queues",
                     true, false, false);
@@ -118,43 +123,43 @@ public class Confirm extends BrokerTestCase
      * internal_sync that notifies the clients. */
 
     public void testQueueDelete()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         publishN("","confirm-test-noconsumer", true, false, false);
 
         channel.queueDelete("confirm-test-noconsumer");
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
     }
 
     public void testQueuePurge()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         publishN("", "confirm-test-noconsumer", true, false, false);
 
         channel.queuePurge("confirm-test-noconsumer");
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
     }
 
     public void testBasicReject()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         basicRejectCommon(false);
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
     }
 
     public void testQueueTTL()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         publishN("", "confirm-ttl", true, false, false);
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
     }
 
     public void testBasicRejectRequeue()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         basicRejectCommon(true);
 
@@ -164,11 +169,11 @@ public class Confirm extends BrokerTestCase
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
     }
 
     public void testBasicRecover()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         publishN("", "confirm-test-noconsumer", true, false, false);
 
@@ -186,7 +191,7 @@ public class Confirm extends BrokerTestCase
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
     }
 
     public void testSelect()
@@ -212,7 +217,7 @@ public class Confirm extends BrokerTestCase
     }
 
     public void testWaitForConfirms()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         final SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
@@ -238,28 +243,28 @@ public class Confirm extends BrokerTestCase
             publish("", "confirm-test", true, false, false);
         }
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
         if (!unconfirmedSet.isEmpty()) {
             fail("waitForConfirms returned with unconfirmed messages");
         }
     }
 
     public void testWaitForConfirmsNoOp()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         channel = connection.createChannel();
         // Don't enable Confirm mode
         publish("", "confirm-test", true, false, false);
-        channel.waitForConfirmsOrDie(); // Nop
+        waitForConfirms(); // Nop
     }
 
     public void testWaitForConfirmsException()
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         publishN("", "confirm-test", true, false, false);
         channel.close();
         try {
-            channel.waitForConfirmsOrDie();
+            waitForConfirms();
             fail("waitAcks worked on a closed channel");
         } catch (ShutdownSignalException sse) {
             if (!(sse.getReason() instanceof AMQP.Channel.Close))
@@ -274,11 +279,11 @@ public class Confirm extends BrokerTestCase
     public void confirmTest(String exchange, String queueName,
                             boolean persistent, boolean mandatory,
                             boolean immediate)
-        throws IOException, InterruptedException
+        throws IOException, InterruptedException, TimeoutException
     {
         publishN(exchange, queueName, persistent, mandatory, immediate);
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
     }
 
     private void publishN(String exchangeName, String queueName,
@@ -312,5 +317,27 @@ public class Confirm extends BrokerTestCase
                              persistent ? MessageProperties.PERSISTENT_BASIC
                                         : MessageProperties.BASIC,
                              "nop".getBytes());
+    }
+
+    protected void waitForConfirms()
+        throws InterruptedException, TimeoutException
+    {
+        try {
+            FutureTask<?> waiter = new FutureTask<Object>(new Runnable() {
+                    public void run() {
+                        try {
+                            channel.waitForConfirmsOrDie();
+                        } catch (IOException e) {
+                            throw (ShutdownSignalException)e.getCause();
+                        } catch (InterruptedException e) {
+                            fail("test interrupted");
+                        }
+                    }
+                }, null);
+            (Executors.newSingleThreadExecutor()).execute(waiter);
+            waiter.get(10, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+            throw (ShutdownSignalException)e.getCause();
+        }
     }
 }
