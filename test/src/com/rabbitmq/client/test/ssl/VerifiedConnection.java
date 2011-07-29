@@ -54,23 +54,19 @@ public class VerifiedConnection extends UnverifiedConnection {
             tmf.init(tks);
 
             String p12Path = System.getProperty("p12.path");
-	    System.out.println("p12.path = " + p12Path);
             assertNotNull(p12Path);
             String p12Passwd = System.getProperty("p12.passwd");
-	    System.out.println("p12.passwd = " + p12Passwd);
             assertNotNull(p12Passwd);
             KeyStore ks = KeyStore.getInstance("PKCS12");
             char [] p12Password = p12Passwd.toCharArray();
             ks.load(new FileInputStream(p12Path), p12Password);
 
-            System.out.println("got here");
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ks, p12Password);
             
             SSLContext c = SSLContext.getInstance("SSLv3");
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-            System.out.println("starting up connection");
             connectionFactory = new ConnectionFactory();
             connectionFactory.useSslProtocol(c);
         } catch (NoSuchAlgorithmException ex) {
