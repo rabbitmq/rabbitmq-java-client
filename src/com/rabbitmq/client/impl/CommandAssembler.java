@@ -141,14 +141,10 @@ final class CommandAssembler {
         return coalesceContentBody();
     }
 
-    private static int byteArrayLength(byte[] ba) {
-        return (ba == null) ? 0 : ba.length;
-    }
-
     private void appendBodyFragment(byte[] fragment) {
         if (fragment == null || fragment.length == 0) return;
         bodyN.add(fragment);
-        bodyLength += byteArrayLength(fragment);
+        bodyLength += fragment.length;
     }
 
     /**
