@@ -79,7 +79,7 @@ public abstract class Method implements com.rabbitmq.client.Method {
         DataOutputStream bodyOut = frame.getOutputStream();
         bodyOut.writeShort(protocolClassId());
         bodyOut.writeShort(protocolMethodId());
-        MethodArgumentWriter argWriter = new MethodArgumentWriter(bodyOut);
+        MethodArgumentWriter argWriter = new MethodArgumentWriter(new ValueWriter(bodyOut));
         writeArgumentsTo(argWriter);
         argWriter.flush();
         return frame;

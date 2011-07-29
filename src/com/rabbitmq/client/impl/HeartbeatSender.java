@@ -19,6 +19,7 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.AMQP;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -95,7 +96,7 @@ final class HeartbeatSender {
      * Shutdown the heartbeat process, if any.
      */
     public void shutdown() {
-        ScheduledExecutorService executorToShutdown = null;
+        ExecutorService executorToShutdown = null;
         synchronized (this.monitor) {
             if (this.future != null) {
                 this.future.cancel(true);

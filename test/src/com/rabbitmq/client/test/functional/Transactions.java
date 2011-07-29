@@ -18,12 +18,10 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.AMQP.BasicProperties;
 
 public class Transactions extends BrokerTestCase
 {

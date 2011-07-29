@@ -26,12 +26,11 @@ import com.rabbitmq.client.ShutdownSignalException;
 
 public class ShutdownNotifierComponent implements ShutdownNotifier {
 
-    /** Monitor for listeners and shutdownCause */
+    /** Monitor for shutdown listeners and shutdownCause */
     private final Object monitor = new Object();
 
     /** List of all shutdown listeners associated with the component */
-    private final List<ShutdownListener> shutdownListeners
-        = new ArrayList<ShutdownListener>();
+    private final List<ShutdownListener> shutdownListeners = new ArrayList<ShutdownListener>();
 
     /**
      * When this value is null, the component is in an "open"
@@ -52,7 +51,9 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
     }
 
     public ShutdownSignalException getCloseReason() {
-        return this.shutdownCause;
+        synchronized(this.monitor) {
+            return this.shutdownCause;
+        }
     }
 
     public void notifyListeners()
@@ -81,7 +82,9 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
     }
 
     public boolean isOpen() {
-        return this.shutdownCause == null;
+        synchronized(this.monitor) {
+            return this.shutdownCause == null;
+        }
     }
 
     public boolean setShutdownCauseIfOpen(ShutdownSignalException sse) {

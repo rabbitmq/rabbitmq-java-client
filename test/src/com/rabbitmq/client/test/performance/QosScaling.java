@@ -17,6 +17,7 @@
 
 package com.rabbitmq.client.test.performance;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -48,7 +49,7 @@ public class QosScaling {
 
         public Parameters(CommandLine cmd) {
             host         = cmd.getOptionValue("h", "localhost");
-            port         = CLIHelper.getOptionValue(cmd, "p", 5672);
+            port         = CLIHelper.getOptionValue(cmd, "p", AMQP.PROTOCOL.PORT);
             messageCount = CLIHelper.getOptionValue(cmd, "n", 2000);
             queueCount   = CLIHelper.getOptionValue(cmd, "q", 100);
             emptyCount   = CLIHelper.getOptionValue(cmd, "e", 0);

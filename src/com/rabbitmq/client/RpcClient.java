@@ -31,6 +31,8 @@ import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.impl.MethodArgumentReader;
 import com.rabbitmq.client.impl.MethodArgumentWriter;
+import com.rabbitmq.client.impl.ValueReader;
+import com.rabbitmq.client.impl.ValueWriter;
 import com.rabbitmq.utility.BlockingCell;
 
 /**
@@ -247,12 +249,12 @@ public class RpcClient {
         throws IOException, ShutdownSignalException, TimeoutException
     {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        MethodArgumentWriter writer = new MethodArgumentWriter(new DataOutputStream(buffer));
+        MethodArgumentWriter writer = new MethodArgumentWriter(new ValueWriter(new DataOutputStream(buffer)));
         writer.writeTable(message);
         writer.flush();
         byte[] reply = primitiveCall(buffer.toByteArray());
         MethodArgumentReader reader =
-            new MethodArgumentReader(new DataInputStream(new ByteArrayInputStream(reply)));
+            new MethodArgumentReader(new ValueReader(new DataInputStream(new ByteArrayInputStream(reply))));
         return reader.readTable();
     }
 

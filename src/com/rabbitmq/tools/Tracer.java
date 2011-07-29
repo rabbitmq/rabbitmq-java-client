@@ -249,7 +249,7 @@ public class Tracer implements Runnable {
         private final String directionIndicator;
         private final DataInputStream inStream;
         private final DataOutputStream outStream;
-        private final Map<Integer, AMQCommand.Assembler> assemblers;
+        private final Map<Integer, AMQCommand> commands;
 
         public DirectionHandler(BlockingCell<Exception> waitCell, boolean inBound,
                 DataInputStream inStream, DataOutputStream outStream, Properties props) {
@@ -264,7 +264,7 @@ public class Tracer implements Runnable {
             this.directionIndicator = (inBound ? " -> " : " <- ");
             this.inStream = inStream;
             this.outStream = outStream;
-            this.assemblers = new HashMap<Integer, AMQCommand.Assembler>();
+            this.commands = new HashMap<Integer, AMQCommand>();
         }
 
         private Frame readFrame() throws IOException {
@@ -323,16 +323,14 @@ public class Tracer implements Runnable {
                     } else if (this.noAssembleFrames) {
                         reportFrame(frame);
                     } else {
-                        AMQCommand.Assembler chanAsm = this.assemblers.get(frame.channel);
-                        if (chanAsm == null) {
-                            chanAsm = AMQCommand.newAssembler();
-                            this.assemblers.put(frame.channel, chanAsm);
+                        AMQCommand cmd = this.commands.get(frame.channel);
+                        if (cmd == null) {
+                            cmd = new AMQCommand();
+                            this.commands.put(frame.channel, cmd);
                         }
-                        AMQCommand cmd = chanAsm.handleFrame(frame);
-                        if (cmd != null) {
-                            report(frame.channel,
-                                    cmd.toString(this.suppressCommandBodies));
-                            this.assemblers.remove(frame.channel);
+                        if (cmd.handleFrame(frame)) {
+                            report(frame.channel, cmd.toString(this.suppressCommandBodies));
+                            commands.remove(frame.channel);
                         }
                     }
                 }

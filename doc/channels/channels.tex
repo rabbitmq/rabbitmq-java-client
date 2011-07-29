@@ -1,0 +1,245 @@
+\documentclass[a4paper,twoside,12pt]{article}
+\usepackage{zed-cm}
+\usepackage{graphicx}
+\markboth{Draft}{Version 0.1}
+\pagestyle{myheadings}
+
+\begin{document}
+\parskip 2 pt
+\parindent 10 pt
+
+\title{Channeling Work}
+\author{Steve Powell \and Rob Harrop}
+\maketitle
+% The following three commands ensure the title page is stamped as
+% confidential without a page number. Page numbering is started at the
+% table of contents.
+\thispagestyle{myheadings}
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+%=============================================================================
+\abstract{A short specification arising from Rob's investigation into serving messages on a collection of channels with a limited number of threads, preserving ordering constraints.}
+
+% Cntrl-Cmd-M -- \emph{}
+% Cntrl-Cmd-Z -- \zed{}
+% Cntrl-Cmd-X -- \axdef{}
+% Cntrl-Cmd-S -- \schema{}
+% Cntrl-Cmd-C -- \texttt{}
+
+
+% Type checking hacks
+\newcommand{\true}{true}
+\newcommand{\false}{false}
+\renewcommand{\emptyset}{\varnothing}
+
+%=====================================================================
+\clearpage
+\tableofcontents
+
+\clearpage
+\pagenumbering{arabic}
+
+%=====================================================================
+\section{Introduction}
+The primitives in this description are $Channel$s and items of $Work$.  It is assumed that work is a message transfer or acknowledgement of some kind. It is not important.  What is important is that a series of items of $Work$ needs to be done for a $Channel$ and we cannot allow two items of work to be processed for the same $Channel$ at the same time. So we introduce the primitive sets:
+\begin{zed}
+[ Channel, Work ]
+\end{zed}
+and with these we can describe the general state.
+
+%=====================================================================
+\section{The general state of things}
+The basic state of the system is a collection of $Channel$s with a sequence of items of work associated with each:
+\begin{schema}{Pool}
+pool : Channel \pfun \seq Work
+\end{schema}
+
+The $pool$ of known channels ($\dom pool$) is partitioned into those which are $dormant$, those $ready$ for work to be done, and those which are currently being processed ($inprogress$).
+
+We define a convenience schema for each partition.  This is to name them for use in explicitly stating preservation later.
+
+The $dormant$ ones have no work (but we cannot impose this constraint without the $pool$ -- we do it later):
+\begin{schema}{Dormant}
+dormant : \power Channel
+\end{schema}
+the $ready$ ones are ordered:
+\begin{schema}{Ready}
+ready : \iseq Channel
+\end{schema}
+and the rest are `in progress':
+\begin{schema}{InProgress}
+inprogress : \power Channel
+\end{schema}
+
+\subsection{The state of the union}
+We can now assemble the entire system state as follows:
+\begin{schema}{State}
+Pool \\
+Dormant \\
+Ready \\
+InProgress
+\where
+\langle dormant, \ran ready, inprogress \rangle \partition \dom pool
+\also
+\forall c : dormant @ pool ~ c = \langle \rangle
+\end{schema}
+where we make explicit that these channel collections partition those known (in $\dom pool$), and can also impose the constraint that the $dormant$ channels have no work.
+
+%ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
+\section{Work delivery}
+In general, as it comes in, work is added to the sequence of items associated with a channel in the $pool$. However, the precise change of state depends upon which partition the channel is in at the time.
+
+We therefore define three `deliver work' state transitions; one for each partition. In each case different partitions change as a result.  They share the same signature, and underlying pool change, however:
+\begin{schema}{DeliverWorkCommon}
+\Delta State \\
+w? : Work \\
+c? : Channel
+\where
+c? \in \dom pool \\
+pool ' = pool \oplus \{ c? \mapsto pool ~ c? \cat \langle w? \rangle \}
+\end{schema}
+each of them changes the $State$, and takes an item of work and a channel as input. In every case, the work is added to the $pool$.
+
+When the channel is dormant it moves into the ready queue (and the `in progress' partition remains unchanged):
+\begin{schema}{DeliverDormant}
+DeliverWorkCommon \\
+\Xi InProgress
+\where
+c? \in dormant \\
+dormant ' = dormant \setminus \{c?\} \\
+ready' = ready \cat \langle c? \rangle
+\end{schema}
+(Note that in this case the resulting sequence of work is simply $\langle w? \rangle$.) 
+
+When the channel is already `in progress' the partitions stay unchanged: 
+\begin{schema}{DeliverInProgress}
+DeliverWorkCommon \\
+\Xi InProgress \\
+\Xi Dormant \\
+\Xi Ready
+\where
+c? \in inprogress
+\end{schema}
+(and we need say nothing more).
+
+When the channel is ready (in the $ready$ queue) the partitions stay unchanged as well:
+\begin{schema}{DeliverReady}
+DeliverWorkCommon \\
+\Xi InProgress \\
+\Xi Dormant \\
+\Xi Ready
+\where
+c? \in \ran ready
+\end{schema}
+(and we need say nothing more).
+
+Since the preconditions of the $Deliver$ schemas are disjoint, we may combine them without introducing any further non-determinism:
+\begin{zed}
+DeliverWork\defs DeliverDormant \lor DeliverInProgress \lor DeliverReady
+\end{zed}
+
+\section{Start work}
+When there is time (and available computing resources) we can start some work.  We consider only doing one piece of work at a time, though it is easy to consider `batching' work items together.
+
+The operation that starts it picks a piece of work to do, and gives the work and channel as outputs.  The dormant channels are unaffected, and the channel moves from ready to `in progress':
+\begin{schema}{StartWork}
+\Delta State \\
+\Xi Dormant \\
+c! : Channel \\
+w! : Work
+\where
+ready \neq \langle \rangle \\
+\langle c! \rangle \cat ready' = ready \\
+inprogress' = inprogress \cup \{ c! \} \\
+\langle w! \rangle \cat pool' ~ c! = pool ~ c! \\
+\{ c! \} \ndres pool' = \{ c! \} \ndres pool
+\end{schema}
+where the channel simply gets `taken' from the front of the ready queue; the work gets `taken' from the front of the work queue for the channel; the channel gets put in the `in progress' partition and no other channels are affected.
+
+Notice that here, although apparently there might be no work left, the channel is not put into the $dormant$ partition until the current work is completed.  It is quite in order for non-$dormant$ channels to have no work \emph{pro tem}, though we expect such a channel to be placed in $dormant$ eventually.
+
+\section{Our work is done}
+After the work is completed the channel can be taken out of `in progress'. Of course, there might already be more work to do (or not) and these cases are distinguished.
+
+We define a `partial operation' to identify the essence of work completion:
+\begin{schema}{EndWorkCommon}
+\Delta State \\
+\Xi Pool \\
+c? : Channel
+\where
+c? \in inprogress \\
+inprogress' = inprogress \setminus \{c?\} \\
+pool' = pool
+\end{schema}
+This only happens for channels in $inprogress$ and this channel is always removed from there. None of the work queues change as a result of this transition. 
+
+If there is no more work to do, the channel becomes dormant (and the ready queue remains unchanged):
+\begin{schema}{EndWorkNoMoreToDo}
+EndWorkCommon \\
+\Xi Ready
+\where
+pool ~ c? = \langle \rangle \\
+dormant' = dormant \cup \{ c? \}
+\end{schema}
+(We could have deduced the dormant relation -- and, as it happens, the pool constraint -- from the core work and the fact that the ready queue does not change.)
+
+If there \emph{is} more work to do, the channel becomes $ready$ (though not so ready as some \emph{al}ready):
+\begin{schema}{EndWorkMoreToDo}
+EndWorkCommon \\
+\Xi Dormant
+\where
+pool ~ c? \neq \langle \rangle \\
+ready ' = ready \cat \langle c? \rangle
+\end{schema}
+The channel is placed on the `end' of the ready queue.
+
+Should we be so inclined, since the preconditions of the two $EndWork$ schemas are disjoint, we can unambiguously combine them:
+\begin{zed}
+EndWork \defs EndWorkMoreToDo \lor EndWorkNoMoreToDo
+\end{zed}
+
+\section{To begin with...}
+After constructing this description, we note that there is no channel creation nor deletion described, and that the initial state is not given.  This is an ideal opportunity to record our intentions in these areas.  We can even document the rules for pieces of work left over when a channel `crashes', in some way, or if the item of work `fails'.
+
+We limit this brief note to talk about the initial state.
+
+In the absence of channel creation or deletion, we will provide the set of channels initially:
+\begin{schema}{InitialState}
+State' \\
+cs? : \power Channel
+\where
+dormant' = cs? \\
+pool' = \{ c : cs? @ c \mapsto  \langle \rangle \}
+\end{schema}
+The set of channels is precisely the dormant set initially, and the pool records no work at all.
+The $\partition$ constraint on $State$ ensures that the rest of the initial state is determined:
+\begin{zed}
+InitialState \vdash ready' = \langle \rangle \land inprogress' = \emptyset 
+\end{zed}
+
+\section{Summary}
+Essentially, this simple arrangement makes sure that pieces of work for the same channel never overtake each other, even if there are free servers ready to do more work at all times.
+
+\begin{figure}[h]
+\centering
+\includegraphics*[scale=0.7]{worktransition.pdf}
+\caption{Channel state movements}
+\label{fig:statediag}
+\end{figure}
+The operations defined here can be diagrammed (see figure \ref{fig:statediag}) as transitions between three `states' of a channel, corresponding to the partitions of the $\dom pool$ collection.
+
+This picture was constructed \emph{after} the specification was written, and seems bleedin' obvious. 'Twas ever thus.
+
+This document fully type-checks (with Fuzz).
+
+\subsection{...footnote}
+\begin{figure}[h]
+\centering
+\includegraphics*[width=1.5\linewidth,angle=90]{whiteboard.JPG}
+\caption{board marks}
+\label{fig:whiteboard}
+\end{figure}
+Figure \ref{fig:whiteboard} is a picture of the ``whiteboard'' resulting from the original discussion and from which this document was created.
+
+\end{document}

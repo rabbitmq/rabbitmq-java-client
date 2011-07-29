@@ -30,12 +30,10 @@ import org.apache.commons.io.IOUtils;
 import com.rabbitmq.client.LongString;
 
 /**
- * Helper class to generates AMQP wire-protocol encoded values.
+ * Helper class to generate AMQP wire-protocol encoded values.
  */
 public class ValueWriter
 {
-
-    /** Accumulates our output */
     private final DataOutputStream out;
 
     public ValueWriter(DataOutputStream out)
@@ -197,7 +195,7 @@ public class ValueWriter
         }
     }
 
-    public void writeArray(List<?> value)
+    public final void writeArray(List<?> value)
         throws IOException
     {
         if (value==null) {

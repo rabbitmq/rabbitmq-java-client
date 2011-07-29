@@ -30,7 +30,6 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.impl.AMQChannel;
-import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.tools.Host;
 
 public class Permissions extends BrokerTestCase
@@ -220,7 +219,10 @@ public class Permissions extends BrokerTestCase
     {
         runTest(false, false, true, false, new WithName() {
                 public void with(String name) throws IOException {
-                    ((AMQChannel)channel).exnWrappingRpc(new AMQImpl.Queue.Purge(0, name, false));
+                    ((AMQChannel)channel)
+                    .exnWrappingRpc(new AMQP.Queue.Purge.Builder()
+                                                        .queue(name)
+                                    .build());
                 }});
     }
 

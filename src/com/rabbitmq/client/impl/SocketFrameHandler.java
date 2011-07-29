@@ -33,16 +33,13 @@ import com.rabbitmq.client.AMQP;
 
 public class SocketFrameHandler implements FrameHandler {
     /** The underlying socket */
-    public final Socket _socket;
+    private final Socket _socket;
 
-    /** Socket's inputstream - data from the broker */
-    public final DataInputStream _inputStream;
+    /** Socket's inputstream - data from the broker - synchronized on */
+    private final DataInputStream _inputStream;
 
-    /** Socket's outputstream - data to the broker */
-    public final DataOutputStream _outputStream;
-
-    // Note, we use each of these to synchronize on to make sure we
-    // don't try to use them twice simultaneously.
+    /** Socket's outputstream - data to the broker - synchronized on */
+    private final DataOutputStream _outputStream;
 
     /**
      * @param socket the socket to use
@@ -50,12 +47,17 @@ public class SocketFrameHandler implements FrameHandler {
     public SocketFrameHandler(Socket socket) throws IOException {
         _socket = socket;
 
-        _inputStream = new DataInputStream(new BufferedInputStream(_socket.getInputStream()));
-        _outputStream = new DataOutputStream(new BufferedOutputStream(_socket.getOutputStream()));
+        _inputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+        _outputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
     }
 
     public InetAddress getAddress() {
         return _socket.getInetAddress();
+    }
+
+    // For testing only
+    public DataInputStream getInputStream() {
+        return _inputStream;
     }
 
     public int getPort() {
@@ -82,7 +84,7 @@ public class SocketFrameHandler implements FrameHandler {
      * @param major major protocol version number
      * @param minor minor protocol version number
      * @throws IOException if there is a problem accessing the connection
-     * @see com.rabbitmq.client.impl.FrameHandler#sendHeader()
+     * @see #sendHeader()
      */
     public void sendHeader(int major, int minor) throws IOException {
         synchronized (_outputStream) {
@@ -104,7 +106,7 @@ public class SocketFrameHandler implements FrameHandler {
      * @param minor minor protocol version number
      * @param revision protocol revision number
      * @throws IOException if there is a problem accessing the connection
-     * @see com.rabbitmq.client.impl.FrameHandler#sendHeader()
+     * @see #sendHeader()
      */
   public void sendHeader(int major, int minor, int revision) throws IOException {
         synchronized (_outputStream) {
@@ -117,36 +119,16 @@ public class SocketFrameHandler implements FrameHandler {
         }
     }
 
-    /**
-     * Write a connection header to the underlying socket, containing
-     * the protocol version supported by this code, kickstarting the
-     * AMQP protocol version negotiation process.
-     *
-     * @throws IOException if there is a problem accessing the connection
-     * @see com.rabbitmq.client.impl.FrameHandler#sendHeader()
-     */
     public void sendHeader() throws IOException {
         sendHeader(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR, AMQP.PROTOCOL.REVISION);
     }
 
-    /**
-     * Read a {@link Frame} from the underlying socket.
-     * @see FrameHandler#readFrame()
-     * @return an incoming Frame, or null if there is none
-     * @throws IOException if there is a problem accessing the connection
-     */
     public Frame readFrame() throws IOException {
         synchronized (_inputStream) {
             return Frame.readFrom(_inputStream);
         }
     }
 
-    /**
-     * Write a {@link Frame} to the underlying socket.
-     * @param frame an incoming Frame, or null if there is none
-     * @throws IOException if there is a problem accessing the connection
-     * @see FrameHandler#writeFrame(Frame frame)
-     */
     public void writeFrame(Frame frame) throws IOException {
         synchronized (_outputStream) {
             frame.writeTo(_outputStream);
