@@ -24,20 +24,16 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.ConfirmBase;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.TimeUnit;
 
-public class Confirm extends BrokerTestCase
+public class Confirm extends ConfirmBase
 {
     private final static int NUM_MESSAGES = 1000;
 
@@ -317,27 +313,5 @@ public class Confirm extends BrokerTestCase
                              persistent ? MessageProperties.PERSISTENT_BASIC
                                         : MessageProperties.BASIC,
                              "nop".getBytes());
-    }
-
-    protected void waitForConfirms()
-        throws InterruptedException, TimeoutException
-    {
-        try {
-            FutureTask<?> waiter = new FutureTask<Object>(new Runnable() {
-                    public void run() {
-                        try {
-                            channel.waitForConfirmsOrDie();
-                        } catch (IOException e) {
-                            throw (ShutdownSignalException)e.getCause();
-                        } catch (InterruptedException e) {
-                            fail("test interrupted");
-                        }
-                    }
-                }, null);
-            (Executors.newSingleThreadExecutor()).execute(waiter);
-            waiter.get(10, TimeUnit.SECONDS);
-        } catch (ExecutionException e) {
-            throw (ShutdownSignalException)e.getCause();
-        }
     }
 }
