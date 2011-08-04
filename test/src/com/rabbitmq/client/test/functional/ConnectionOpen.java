@@ -66,7 +66,7 @@ public class ConnectionOpen extends TestCase {
         // supports.  We can really only test for the first bit.
         assertEquals("AMQP", new String(header));
         in.read(header);
-        assertEquals(in.available(), 0);
+        assertEquals(-1, in.read(header));
         // At this point the socket should have been closed.  We can't
         // directly test for this, since Socket.isClosed isn't very
         // reliable, but we can test whether trying to read more bytes
