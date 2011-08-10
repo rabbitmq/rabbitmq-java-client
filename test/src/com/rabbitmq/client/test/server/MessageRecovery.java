@@ -18,16 +18,13 @@ package com.rabbitmq.client.test.server;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.ConfirmBase;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
 public class MessageRecovery extends ConfirmBase
 {
 
     private final static String Q = "recovery-test";
 
     public void testMessageRecovery()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         channel.confirmSelect();
         channel.queueDeclare(Q, true, false, false, null);

@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.TimeoutException;
 
 public class Confirm extends ConfirmBase
 {
@@ -65,49 +64,49 @@ public class Confirm extends ConfirmBase
     }
 
     public void testTransient()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         confirmTest("", "confirm-test", false, false, false);
     }
 
     public void testPersistentSimple()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         confirmTest("", "confirm-test", true, false, false);
     }
 
     public void testNonDurable()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         confirmTest("", "confirm-test-nondurable", true, false, false);
     }
 
     public void testPersistentImmediate()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         confirmTest("", "confirm-test", true, false, true);
     }
 
     public void testPersistentImmediateNoConsumer()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         confirmTest("", "confirm-test-noconsumer", true, false, true);
     }
 
     public void testPersistentMandatory()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         confirmTest("", "confirm-test", true, true, false);
     }
 
     public void testPersistentMandatoryReturn()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         confirmTest("", "confirm-test-doesnotexist", true, true, false);
     }
 
     public void testMultipleQueues()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         confirmTest("amq.direct", "confirm-multiple-queues",
                     true, false, false);
@@ -119,7 +118,7 @@ public class Confirm extends ConfirmBase
      * internal_sync that notifies the clients. */
 
     public void testQueueDelete()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         publishN("","confirm-test-noconsumer", true, false, false);
 
@@ -129,7 +128,7 @@ public class Confirm extends ConfirmBase
     }
 
     public void testQueuePurge()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         publishN("", "confirm-test-noconsumer", true, false, false);
 
@@ -139,7 +138,7 @@ public class Confirm extends ConfirmBase
     }
 
     public void testBasicReject()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         basicRejectCommon(false);
 
@@ -147,7 +146,7 @@ public class Confirm extends ConfirmBase
     }
 
     public void testQueueTTL()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         publishN("", "confirm-ttl", true, false, false);
 
@@ -155,7 +154,7 @@ public class Confirm extends ConfirmBase
     }
 
     public void testBasicRejectRequeue()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         basicRejectCommon(true);
 
@@ -169,7 +168,7 @@ public class Confirm extends ConfirmBase
     }
 
     public void testBasicRecover()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         publishN("", "confirm-test-noconsumer", true, false, false);
 
@@ -191,7 +190,7 @@ public class Confirm extends ConfirmBase
     }
 
     public void testSelect()
-        throws IOException
+        throws Exception
     {
         channel.confirmSelect();
         try {
@@ -213,7 +212,7 @@ public class Confirm extends ConfirmBase
     }
 
     public void testWaitForConfirms()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         final SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
@@ -246,7 +245,7 @@ public class Confirm extends ConfirmBase
     }
 
     public void testWaitForConfirmsNoOp()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         channel = connection.createChannel();
         // Don't enable Confirm mode
@@ -255,7 +254,7 @@ public class Confirm extends ConfirmBase
     }
 
     public void testWaitForConfirmsException()
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         publishN("", "confirm-test", true, false, false);
         channel.close();
@@ -275,7 +274,7 @@ public class Confirm extends ConfirmBase
     public void confirmTest(String exchange, String queueName,
                             boolean persistent, boolean mandatory,
                             boolean immediate)
-        throws IOException, InterruptedException, TimeoutException
+        throws Exception
     {
         publishN(exchange, queueName, persistent, mandatory, immediate);
 
@@ -285,7 +284,7 @@ public class Confirm extends ConfirmBase
     private void publishN(String exchangeName, String queueName,
                           boolean persistent, boolean mandatory,
                           boolean immediate)
-        throws IOException
+        throws Exception
     {
         for (long i = 0; i < NUM_MESSAGES; i++) {
             publish(exchangeName, queueName, persistent, mandatory, immediate);
@@ -293,7 +292,7 @@ public class Confirm extends ConfirmBase
     }
 
     private void basicRejectCommon(boolean requeue)
-        throws IOException
+        throws Exception
     {
         publishN("", "confirm-test-noconsumer", true, false, false);
 
@@ -308,7 +307,7 @@ public class Confirm extends ConfirmBase
     protected void publish(String exchangeName, String queueName,
                            boolean persistent, boolean mandatory,
                            boolean immediate)
-        throws IOException {
+        throws Exception {
         channel.basicPublish(exchangeName, queueName, mandatory, immediate,
                              persistent ? MessageProperties.PERSISTENT_BASIC
                                         : MessageProperties.BASIC,
