@@ -68,6 +68,7 @@ public class MulticastMain {
             int portNumber       = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
             String exchangeType  = strArg(cmd, 't', "direct");
             String exchangeName  = strArg(cmd, 'e', exchangeType);
+            String queueName     = strArg(cmd, 'u', "");
             int samplingInterval = intArg(cmd, 'i', 1);
             int rateLimit        = intArg(cmd, 'r', 0);
             int producerCount    = intArg(cmd, 'x', 1);
@@ -82,6 +83,9 @@ public class MulticastMain {
             List<?> flags        = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
+
+            boolean exclusive  = "".equals(queueName);
+            boolean autoDelete = !exclusive;
 
             //setup
             String id = UUID.randomUUID().toString();
@@ -101,13 +105,15 @@ public class MulticastMain {
                 Channel channel = conn.createChannel();
                 if (consumerTxSize > 0) channel.txSelect();
                 channel.exchangeDeclare(exchangeName, exchangeType);
-                String queueName =
-                        channel.queueDeclare("", flags.contains("persistent"),
-                                             true, false, null).getQueue();
+                String qName =
+                        channel.queueDeclare(queueName,
+                                             flags.contains("persistent"),
+                                             exclusive, autoDelete,
+                                             null).getQueue();
                 QueueingConsumer consumer = new QueueingConsumer(channel);
                 if (prefetchCount > 0) channel.basicQos(prefetchCount);
-                channel.basicConsume(queueName, autoAck, consumer);
-                channel.queueBind(queueName, exchangeName, id);
+                channel.basicConsume(qName, autoAck, consumer);
+                channel.queueBind(qName, exchangeName, id);
                 Thread t =
                     new Thread(new Consumer(consumer, id,
                                             consumerTxSize, autoAck,
@@ -174,6 +180,7 @@ public class MulticastMain {
         options.addOption(new Option("p", "port",      true, "broker port"));
         options.addOption(new Option("t", "type",      true, "exchange type"));
         options.addOption(new Option("e", "exchange",  true, "exchange name"));
+        options.addOption(new Option("u", "queue",     true, "queue name"));
         options.addOption(new Option("i", "interval",  true, "sampling interval"));
         options.addOption(new Option("r", "rate",      true, "rate limit"));
         options.addOption(new Option("x", "producers", true, "producer count"));
