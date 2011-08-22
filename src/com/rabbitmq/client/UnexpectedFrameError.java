@@ -28,7 +28,7 @@ public class UnexpectedFrameError extends Error {
     private final int _expectedFrameType;
 
     public UnexpectedFrameError(Frame frame, int expectedFrameType) {
-        super("Received frame: " + frame + " (type " + frame.type + "), expected type " + expectedFrameType);
+        super("Received frame: " + frame + ", expected type " + expectedFrameType);
         _frame = frame;
         _expectedFrameType = expectedFrameType;
     }

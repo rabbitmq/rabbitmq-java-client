@@ -23,6 +23,7 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -86,7 +87,17 @@ public class AMQConnectionTest extends TestCase {
         MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, _mockFrameHandler.countHeadersSent());
         try {
-            new AMQConnection(factory, _mockFrameHandler, handler).start();
+            new AMQConnection(factory.getUsername(),
+                    factory.getPassword(),
+                    _mockFrameHandler,
+                    Executors.newFixedThreadPool(1),
+                    factory.getVirtualHost(),
+                    factory.getClientProperties(),
+                    factory.getRequestedFrameMax(),
+                    factory.getRequestedChannelMax(),
+                    factory.getRequestedHeartbeat(),
+                    factory.getSaslConfig(),
+                    handler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
            // As expected 
@@ -113,8 +124,8 @@ public class AMQConnectionTest extends TestCase {
 // add test that we time out if no initial Start command is received,
 // setting a timeout and having the FrameHandler return null
     
-     /** Mock frame handler to facilitate testing. */
-    public static class MockFrameHandler implements FrameHandler {
+    /** Mock frame handler to facilitate testing. */
+    private static class MockFrameHandler implements FrameHandler {
         /** How many times has sendHeader() been called? */
         private int _numHeadersSent;
         
@@ -129,7 +140,7 @@ public class AMQConnectionTest extends TestCase {
         }
 
         public void setExceptionOnReadingFrames(IOException exception) {
-            _exceptionOnReadingFrames = exception;            
+            _exceptionOnReadingFrames = exception;
         }
 
         public Frame readFrame() throws IOException {
@@ -170,7 +181,7 @@ public class AMQConnectionTest extends TestCase {
     }
 
     /** Mock frame handler to facilitate testing. */
-    public class MyExceptionHandler implements ExceptionHandler {
+    private class MyExceptionHandler implements ExceptionHandler {
         private List<Throwable> _handledExceptions = new ArrayList<Throwable>();
 
         public void handleUnexpectedConnectionDriverException(Connection conn, Throwable ex) {
@@ -201,5 +212,5 @@ public class AMQConnectionTest extends TestCase {
         public List<Throwable> getHandledExceptions() {
             return _handledExceptions;
         }
-    }    
+    }
 }

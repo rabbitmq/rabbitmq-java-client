@@ -27,6 +27,8 @@ import java.util.Map;
 
 import com.rabbitmq.client.impl.MethodArgumentReader;
 import com.rabbitmq.client.impl.MethodArgumentWriter;
+import com.rabbitmq.client.impl.ValueReader;
+import com.rabbitmq.client.impl.ValueWriter;
 
 /**
  * Subclass of RpcServer which uses AMQP wire-format encoded tables as
@@ -55,8 +57,9 @@ public class MapRpcServer extends RpcServer {
         throws IOException
     {
         MethodArgumentReader reader =
-            new MethodArgumentReader(new DataInputStream
-                                     (new ByteArrayInputStream(requestBody)));
+            new MethodArgumentReader(new ValueReader
+                                     (new DataInputStream
+                                      (new ByteArrayInputStream(requestBody))));
         Map<String, Object> request = reader.readTable();
         return request;
     }
@@ -65,7 +68,7 @@ public class MapRpcServer extends RpcServer {
         throws IOException
     {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        MethodArgumentWriter writer = new MethodArgumentWriter(new DataOutputStream(buffer));
+        MethodArgumentWriter writer = new MethodArgumentWriter(new ValueWriter(new DataOutputStream(buffer)));
         writer.writeTable(reply);
         writer.flush();
         return buffer.toByteArray();

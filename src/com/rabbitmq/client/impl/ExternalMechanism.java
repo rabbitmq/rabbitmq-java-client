@@ -18,7 +18,6 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.SaslMechanism;
-import com.rabbitmq.client.ConnectionFactory;
 
 /**
  * The EXTERNAL auth mechanism
@@ -28,7 +27,7 @@ public class ExternalMechanism implements SaslMechanism {
         return "EXTERNAL";
     }
 
-    public LongString handleChallenge(LongString challenge, ConnectionFactory factory) {
+    public LongString handleChallenge(LongString challenge, String username, String password) {
         return LongStringHelper.asLongString("");
     }
 }

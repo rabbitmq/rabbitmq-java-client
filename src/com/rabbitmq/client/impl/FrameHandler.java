@@ -23,26 +23,26 @@ import java.net.SocketTimeoutException;
 
 /**
  * Interface to a frame handler.
+ * <p/>
+ * <b>Concurrency</b><br/>
+ * Implementations must be thread-safe, and not allow frames to be interleaved, either while reading or writing.
  */
 
 public interface FrameHandler {
     /** Retrieve address of peer. */
-    public InetAddress getAddress();
+    InetAddress getAddress();
 
     /** Retrieve port number of peer. */
-    public int getPort();
+    int getPort();
 
     /**
      * Set the underlying socket's read timeout in milliseconds, if applicable.
-     *
-     * @param timeoutMs
-     *            The timeout in milliseconds
+     * @param timeoutMs The timeout in milliseconds
      */
     void setTimeout(int timeoutMs) throws SocketException;
 
     /**
-     * Get the underlying socket's timeout in milliseconds.
-     *
+     * Get the underlying socket's read timeout in milliseconds.
      * @return The timeout in milliseconds
      */
     int getTimeout() throws SocketException;
@@ -52,12 +52,12 @@ public interface FrameHandler {
      * protocol version negotiation process and putting the underlying
      * connection in a state such that the next layer of startup can
      * proceed.
+     * @throws IOException if there is a problem accessing the connection
      */
     void sendHeader() throws IOException;
 
     /**
      * Read a {@link Frame} from the underlying data connection.
-     *
      * @return an incoming Frame, or null if there is none
      * @throws IOException if there is a problem accessing the connection
      * @throws SocketTimeoutException if the underlying read times out
@@ -66,14 +66,11 @@ public interface FrameHandler {
 
     /**
      * Write a {@link Frame} to the underlying data connection.
-     *
      * @param frame the Frame to transmit
      * @throws IOException if there is a problem accessing the connection
      */
     void writeFrame(Frame frame) throws IOException;
 
-    /**
-     * Close the underlying data connection (complaint not permitted).
-     */
+    /** Close the underlying data connection (complaint not permitted). */
     void close();
 }
