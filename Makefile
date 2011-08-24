@@ -36,7 +36,7 @@ javadoc-archive:
 	ant javadoc
 	cp -Rp build/doc/api build/$(JAVADOC_ARCHIVE)
 	(cd build; tar -zcf $(JAVADOC_ARCHIVE).tar.gz $(JAVADOC_ARCHIVE))
-	(cd build; zip -r $(JAVADOC_ARCHIVE).zip $(JAVADOC_ARCHIVE))
+	(cd build; zip -q -r $(JAVADOC_ARCHIVE).zip $(JAVADOC_ARCHIVE))
 	(cd build; rm -rf $(JAVADOC_ARCHIVE))
 
 post-dist:
@@ -44,7 +44,7 @@ post-dist:
 	chmod a+x build/$(TARBALL_NAME)/*.sh
 	cp LICENSE* build/$(TARBALL_NAME)
 	(cd build; tar -zcf $(TARBALL_NAME).tar.gz $(TARBALL_NAME))
-	(cd build; zip -r $(TARBALL_NAME).zip $(TARBALL_NAME))
+	(cd build; zip -q -r $(TARBALL_NAME).zip $(TARBALL_NAME))
 	(cd build; rm -rf $(TARBALL_NAME))
 
 srcdist: distclean
@@ -60,7 +60,7 @@ srcdist: distclean
 			>> build/$(SRC_ARCHIVE)/README; \
 	fi
 	(cd build; tar -zcf $(SRC_ARCHIVE).tar.gz $(SRC_ARCHIVE))
-	(cd build; zip -r $(SRC_ARCHIVE).zip $(SRC_ARCHIVE))
+	(cd build; zip -q -r $(SRC_ARCHIVE).zip $(SRC_ARCHIVE))
 	(cd build; rm -rf $(SRC_ARCHIVE))
 
 stage-maven-bundle: maven-bundle
