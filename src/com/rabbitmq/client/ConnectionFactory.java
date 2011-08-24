@@ -72,7 +72,6 @@ public class ConnectionFactory implements Cloneable {
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
-    
 
     /** @return number of consumer threads in default {@link ExecutorService} */
     public int getNumConsumerThreads() {
@@ -82,10 +81,6 @@ public class ConnectionFactory implements Cloneable {
     /** @param numConsumerThreads threads in created private executor service */
     public void setNumConsumerThreads(int numConsumerThreads) {
         this.numConsumerThreads = numConsumerThreads;
-    }
-
-    /** Instantiate a ConnectionFactory with a default set of parameters */
-    public ConnectionFactory() {
     }
 
     /** @return the default host to use for connections */
