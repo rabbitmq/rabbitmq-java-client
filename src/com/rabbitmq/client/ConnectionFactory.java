@@ -41,23 +41,36 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
 
 public class ConnectionFactory implements Cloneable {
     
-    /** Default Executor threads        */ private static final int    DEFAULT_NUM_CONSUMER_THREADS = 5;
-    /** Default user name               */ private static final String DEFAULT_USER = "guest";
-    /** Default password                */ private static final String DEFAULT_PASS = "guest";
-    /** Default virtual host            */ private static final String DEFAULT_VHOST = "/";
+    /** Default Executor threads */
+    private static final int    DEFAULT_NUM_CONSUMER_THREADS = 5;
+    /** Default user name */
+    private static final String DEFAULT_USER = "guest";
+    /** Default password */
+    private static final String DEFAULT_PASS = "guest";
+    /** Default virtual host */
+    private static final String DEFAULT_VHOST = "/";
     /** Default maximum channel number;
-     *  zero for unlimited              */ private static final int    DEFAULT_CHANNEL_MAX = 0;
+     *  zero for unlimited */
+    private static final int    DEFAULT_CHANNEL_MAX = 0;
     /** Default maximum frame size;
-     *  zero means no limit             */ private static final int    DEFAULT_FRAME_MAX = 0;
+     *  zero means no limit */
+    private static final int    DEFAULT_FRAME_MAX = 0;
     /** Default heart-beat interval;
-     *  zero means no heart-beats       */ private static final int    DEFAULT_HEARTBEAT = 0;
-    /** The default host                */ private static final String DEFAULT_HOST = "localhost";
-    /** 'Use the default port' port     */ private static final int    USE_DEFAULT_PORT = -1;
-    /** The default non-ssl port        */ private static final int    DEFAULT_AMQP_PORT = AMQP.PROTOCOL.PORT;
-    /** The default ssl port            */ private static final int    DEFAULT_AMQP_OVER_SSL_PORT = 5671;
+     *  zero means no heart-beats */
+    private static final int    DEFAULT_HEARTBEAT = 0;
+    /** The default host */
+    private static final String DEFAULT_HOST = "localhost";
+    /** 'Use the default port' port */
+    private static final int    USE_DEFAULT_PORT = -1;
+    /** The default non-ssl port */
+    private static final int    DEFAULT_AMQP_PORT = AMQP.PROTOCOL.PORT;
+    /** The default ssl port */
+    private static final int    DEFAULT_AMQP_OVER_SSL_PORT = 5671;
     /** The default connection timeout;
-     *  zero means wait indefinitely    */ private static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
-    /** The default SSL protocol        */ private static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
+     *  zero means wait indefinitely */
+    private static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
+    /** The default SSL protocol */
+    private static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
     private int numConsumerThreads                = DEFAULT_NUM_CONSUMER_THREADS;
     private String username                       = DEFAULT_USER;
