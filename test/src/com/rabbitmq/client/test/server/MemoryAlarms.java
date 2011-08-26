@@ -22,9 +22,8 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.tools.Host;
 
-public class MemoryAlarms extends BrokerTestCase {
+public abstract class MemoryAlarms extends BrokerTestCase {
 
     private static final String Q = "Restart";
 
@@ -65,13 +64,9 @@ public class MemoryAlarms extends BrokerTestCase {
         channel.queueDelete(Q);
     }
 
-    protected void setMemoryAlarm() throws IOException, InterruptedException {
-        Host.executeCommand("cd ../rabbitmq-test; make set-memory-alarm");
-    }
+    protected abstract void setMemoryAlarm() throws IOException, InterruptedException;
 
-    protected void clearMemoryAlarm() throws IOException, InterruptedException {
-        Host.executeCommand("cd ../rabbitmq-test; make clear-memory-alarm");
-    }
+    protected abstract void clearMemoryAlarm() throws IOException, InterruptedException;
 
     public void testFlowControl() throws IOException, InterruptedException {
         basicPublishVolatile(Q);

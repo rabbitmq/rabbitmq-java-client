@@ -28,7 +28,8 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(EffectVisibilityCrossNodeTest.class);
         suite.addTestSuite(ExclusiveQueueDurability.class);
         suite.addTestSuite(AlternateExchangeEquivalence.class);
-        suite.addTestSuite(MemoryAlarms.class);
+        suite.addTestSuite(MemoryAlarmsBySetting.class);
+        suite.addTestSuite(MemoryAlarmsByThreshhold.class);
         suite.addTestSuite(MessageRecovery.class);
         suite.addTestSuite(Firehose.class);
         return suite;
