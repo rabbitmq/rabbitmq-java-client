@@ -38,64 +38,81 @@ public class Confirm extends ConfirmBase
 
     private static final String TTL_ARG = "x-message-ttl";
 
+    private DefaultConsumer defaultConsumer = null;
+
     @Override
-    protected void setUp() throws IOException {
-        super.setUp();
+    protected void createResources() throws IOException {
         channel.confirmSelect();
-        channel.queueDeclare("confirm-test", true, true, false, null);
-        channel.basicConsume("confirm-test", true,
-                             new DefaultConsumer(channel));
-        channel.queueDeclare("confirm-test-nondurable", false, true,
-                             false, null);
-        channel.basicConsume("confirm-test-nondurable", true,
-                             new DefaultConsumer(channel));
-        channel.queueDeclare("confirm-test-noconsumer", true,
-                             true, false, null);
-        channel.queueDeclare("confirm-test-2", true, true, false, null);
-        channel.basicConsume("confirm-test-2", true,
-                             new DefaultConsumer(channel));
-        Map<String, Object> argMap =
-            Collections.singletonMap(TTL_ARG, (Object)1);
-        channel.queueDeclare("confirm-ttl", true, true, false, argMap);
-        channel.queueBind("confirm-test", "amq.direct",
-                          "confirm-multiple-queues");
-        channel.queueBind("confirm-test-2", "amq.direct",
-                          "confirm-multiple-queues");
+        defaultConsumer = new DefaultConsumer(channel);
+    }
+
+    @Override
+    protected void releaseResources() throws IOException {
+        defaultConsumer = null;
+    }
+
+    private void declareQueue(String queueName, boolean durable)
+    throws IOException {
+        declareQueue(queueName, durable, null);
+    }
+
+    private void declareQueue(String queueName, boolean durable,
+                              Map<String, Object> args)
+    throws IOException {
+        channel.queueDeclare(queueName, durable, true, false, args);
+    }
+
+    private void declareConsumeQueue(String queueName, boolean durable)
+    throws IOException {
+        declareQueue(queueName, durable);
+        channel.basicConsume(queueName, true, defaultConsumer);
+    }
+
+    private void declareBindQueue(String queueName, boolean durable)
+    throws IOException {
+        declareConsumeQueue(queueName, durable);
+        channel.queueBind(queueName, "amq.direct", "confirm-multiple-queues");
     }
 
     public void testTransient()
         throws Exception
     {
+        declareConsumeQueue("confirm-test", true);
         confirmTest("", "confirm-test", false, false, false);
     }
 
     public void testPersistentSimple()
         throws Exception
     {
+        declareConsumeQueue("confirm-test", true);
         confirmTest("", "confirm-test", true, false, false);
     }
 
     public void testNonDurable()
         throws Exception
     {
+        declareConsumeQueue("confirm-test-nondurable", false);
         confirmTest("", "confirm-test-nondurable", true, false, false);
     }
 
     public void testPersistentImmediate()
         throws Exception
     {
+        declareConsumeQueue("confirm-test", true);
         confirmTest("", "confirm-test", true, false, true);
     }
 
     public void testPersistentImmediateNoConsumer()
         throws Exception
     {
+        declareQueue("confirm-test-noconsumer", true);
         confirmTest("", "confirm-test-noconsumer", true, false, true);
     }
 
     public void testPersistentMandatory()
         throws Exception
     {
+        declareConsumeQueue("confirm-test", true);
         confirmTest("", "confirm-test", true, true, false);
     }
 
@@ -108,6 +125,8 @@ public class Confirm extends ConfirmBase
     public void testMultipleQueues()
         throws Exception
     {
+        declareBindQueue("confirm-test", true);
+        declareBindQueue("confirm-test-2", true);
         confirmTest("amq.direct", "confirm-multiple-queues",
                     true, false, false);
     }
@@ -120,6 +139,8 @@ public class Confirm extends ConfirmBase
     public void testQueueDelete()
         throws Exception
     {
+        declareQueue("confirm-test-noconsumer", true);
+
         publishN("","confirm-test-noconsumer", true, false, false);
 
         channel.queueDelete("confirm-test-noconsumer");
@@ -130,6 +151,8 @@ public class Confirm extends ConfirmBase
     public void testQueuePurge()
         throws Exception
     {
+        declareQueue("confirm-test-noconsumer", true);
+
         publishN("", "confirm-test-noconsumer", true, false, false);
 
         channel.queuePurge("confirm-test-noconsumer");
@@ -140,7 +163,9 @@ public class Confirm extends ConfirmBase
     public void testBasicReject()
         throws Exception
     {
-        basicRejectCommon(false);
+        declareQueue("confirm-test-noconsumer", true);
+
+        basicRejectCommon("confirm-test-noconsumer", false);
 
         waitForConfirms();
     }
@@ -148,6 +173,9 @@ public class Confirm extends ConfirmBase
     public void testQueueTTL()
         throws Exception
     {
+        declareQueue("confirm-ttl", true,
+                Collections.singletonMap(TTL_ARG, (Object)Long.valueOf(1L)));
+
         publishN("", "confirm-ttl", true, false, false);
 
         waitForConfirms();
@@ -156,13 +184,15 @@ public class Confirm extends ConfirmBase
     public void testBasicRejectRequeue()
         throws Exception
     {
-        basicRejectCommon(true);
+        declareQueue("confirm-test-noconsumer", true);
+
+        basicRejectCommon("confirm-test-noconsumer", true);
 
         /* wait confirms to go through the broker */
-        Thread.sleep(1000);
+        //Thread.sleep(1000);
 
         channel.basicConsume("confirm-test-noconsumer", true,
-                             new DefaultConsumer(channel));
+                             defaultConsumer);
 
         waitForConfirms();
     }
@@ -170,6 +200,8 @@ public class Confirm extends ConfirmBase
     public void testBasicRecover()
         throws Exception
     {
+        declareQueue("confirm-test-noconsumer", true);
+
         publishN("", "confirm-test-noconsumer", true, false, false);
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
@@ -181,10 +213,10 @@ public class Confirm extends ConfirmBase
 
         channel.basicRecover(true);
 
-        Thread.sleep(1000);
+        //Thread.sleep(1000);
 
         channel.basicConsume("confirm-test-noconsumer", true,
-                             new DefaultConsumer(channel));
+                             defaultConsumer);
 
         waitForConfirms();
     }
@@ -214,6 +246,8 @@ public class Confirm extends ConfirmBase
     public void testWaitForConfirms()
         throws Exception
     {
+        declareConsumeQueue("confirm-test", true);
+
         final SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
         channel.addConfirmListener(new ConfirmListener() {
@@ -247,6 +281,8 @@ public class Confirm extends ConfirmBase
     public void testWaitForConfirmsNoOp()
         throws Exception
     {
+        declareConsumeQueue("confirm-test", true);
+
         channel = connection.createChannel();
         // Don't enable Confirm mode
         publish("", "confirm-test", true, false, false);
@@ -256,6 +292,8 @@ public class Confirm extends ConfirmBase
     public void testWaitForConfirmsException()
         throws Exception
     {
+        declareConsumeQueue("confirm-test", true);
+
         publishN("", "confirm-test", true, false, false);
         channel.close();
         try {
@@ -291,14 +329,14 @@ public class Confirm extends ConfirmBase
         }
     }
 
-    private void basicRejectCommon(boolean requeue)
+    private void basicRejectCommon(String queueName, boolean requeue)
         throws Exception
     {
-        publishN("", "confirm-test-noconsumer", true, false, false);
+        publishN("", queueName, true, false, false);
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
             GetResponse resp =
-                channel.basicGet("confirm-test-noconsumer", false);
+                channel.basicGet(queueName, false);
             long dtag = resp.getEnvelope().getDeliveryTag();
             channel.basicReject(dtag, requeue);
         }

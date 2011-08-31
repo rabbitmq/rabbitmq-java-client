@@ -82,20 +82,20 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** The ConfirmListener collection. */
     private final Collection<ConfirmListener> confirmListeners = new CopyOnWriteArrayList<ConfirmListener>();
 
-    /** Sequence number of next published message requiring confirmation. */
-    private long nextPublishSeqNo = 0L;
-
     /** The current default consumer, or null if there is none. */
     private volatile Consumer defaultConsumer = null;
 
     /** Set of currently unconfirmed messages (i.e. messages that have
-     *  not been ack'd or nack'd by the server yet. */
+     *  not been ack'd or nack'd by the server yet.
+     *  Used as monitor and protects nextPublishSeqNo and onlyAcksReceived. */
     private volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
-
+    /** Sequence number of next published message requiring confirmation.
+     * 0 means no confirmations. */
+    private volatile long nextPublishSeqNo = 0L;
     /** Whether any nacks have been received since the last
      * waitForConfirms(). */
-    private volatile boolean onlyAcksReceived = true;
+    private volatile boolean noNacksReceived = true;
 
     /**
      * Construct a new channel on the given connection with the given
@@ -167,8 +167,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     throw Utility.fixStackTrace(getCloseReason());
                 }
                 if (unconfirmedSet.isEmpty()) {
-                    boolean aux = onlyAcksReceived;
-                    onlyAcksReceived = true;
+                    boolean aux = noNacksReceived;
+                    noNacksReceived = true;
                     return aux;
                 }
                 unconfirmedSet.wait();
@@ -321,7 +321,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             } else if (method instanceof Basic.Nack) {
                 Basic.Nack nack = (Basic.Nack) method;
                 callConfirmListeners(command, nack);
-                handleAckNack(nack.getDeliveryTag(), nack.getMultiple(), false);
+                handleAckNack(nack.getDeliveryTag(), nack.getMultiple(), true);
                 return true;
             } else if (method instanceof Basic.RecoverOk) {
                 for (Consumer callback: _consumers.values()) {
@@ -551,9 +551,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
-        if (nextPublishSeqNo > 0) {
-            unconfirmedSet.add(getNextPublishSeqNo());
-            nextPublishSeqNo++;
+        synchronized(unconfirmedSet) {
+            if (nextPublishSeqNo > 0) {
+                unconfirmedSet.add(nextPublishSeqNo);
+                nextPublishSeqNo++;
+            }
         }
         BasicProperties useProps = props;
         if (props == null) {
@@ -994,7 +996,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Confirm.SelectOk confirmSelect()
         throws IOException
     {
-        if (nextPublishSeqNo == 0) nextPublishSeqNo = 1;
+        synchronized(unconfirmedSet) {
+            if (nextPublishSeqNo == 0) nextPublishSeqNo = 1;
+        }
         return (Confirm.SelectOk)
             exnWrappingRpc(new Confirm.Select(false)).getMethod();
 
@@ -1012,7 +1016,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Public API - {@inheritDoc} */
     public long getNextPublishSeqNo() {
-        return nextPublishSeqNo;
+        synchronized(unconfirmedSet) {
+            return nextPublishSeqNo;
+        }
     }
 
     public void asyncRpc(Method method) throws IOException {
@@ -1024,13 +1030,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     protected void handleAckNack(long seqNo, boolean multiple, boolean nack) {
-        if (multiple) {
-            unconfirmedSet.headSet(seqNo + 1).clear();
-        } else {
-            unconfirmedSet.remove(seqNo);
-        }
         synchronized (unconfirmedSet) {
-            onlyAcksReceived = onlyAcksReceived && !nack;
+            if (multiple) {
+                unconfirmedSet.headSet(seqNo + 1).clear();
+            } else {
+                unconfirmedSet.remove(seqNo);
+            }
+            noNacksReceived = noNacksReceived && !nack;
             if (unconfirmedSet.isEmpty())
                 unconfirmedSet.notifyAll();
         }
