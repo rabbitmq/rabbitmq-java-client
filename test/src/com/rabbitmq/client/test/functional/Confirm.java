@@ -74,6 +74,13 @@ public class Confirm extends ConfirmBase
         channel.queueBind(queueName, "amq.direct", "confirm-multiple-queues");
     }
 
+    public void testPersistentMandatory()
+    throws Exception
+    {
+        declareConsumeQueue("confirm-test", true);
+        confirmTest("", "confirm-test", true, true, false);
+    }
+
     public void testTransient()
         throws Exception
     {
@@ -107,13 +114,6 @@ public class Confirm extends ConfirmBase
     {
         declareQueue("confirm-test-noconsumer", true);
         confirmTest("", "confirm-test-noconsumer", true, false, true);
-    }
-
-    public void testPersistentMandatory()
-        throws Exception
-    {
-        declareConsumeQueue("confirm-test", true);
-        confirmTest("", "confirm-test", true, true, false);
     }
 
     public void testPersistentMandatoryReturn()
@@ -309,9 +309,9 @@ public class Confirm extends ConfirmBase
     }
 
     /* Publish NUM_MESSAGES messages and wait for confirmations. */
-    public void confirmTest(String exchange, String queueName,
-                            boolean persistent, boolean mandatory,
-                            boolean immediate)
+    private void confirmTest(String exchange, String queueName,
+                             boolean persistent, boolean mandatory,
+                             boolean immediate)
         throws Exception
     {
         publishN(exchange, queueName, persistent, mandatory, immediate);
@@ -342,10 +342,11 @@ public class Confirm extends ConfirmBase
         }
     }
 
-    protected void publish(String exchangeName, String queueName,
+    private void publish(String exchangeName, String queueName,
                            boolean persistent, boolean mandatory,
                            boolean immediate)
-        throws Exception {
+        throws Exception
+    {
         channel.basicPublish(exchangeName, queueName, mandatory, immediate,
                              persistent ? MessageProperties.PERSISTENT_BASIC
                                         : MessageProperties.BASIC,

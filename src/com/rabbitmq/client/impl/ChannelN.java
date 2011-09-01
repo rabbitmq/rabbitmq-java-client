@@ -88,14 +88,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Set of currently unconfirmed messages (i.e. messages that have
      *  not been ack'd or nack'd by the server yet.
      *  Used as monitor and protects nextPublishSeqNo and onlyAcksReceived. */
-    private volatile SortedSet<Long> unconfirmedSet =
+    private SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
     /** Sequence number of next published message requiring confirmation.
      * 0 means no confirmations. */
-    private volatile long nextPublishSeqNo = 0L;
+    private long nextPublishSeqNo = 0L;
     /** Whether any nacks have been received since the last
      * waitForConfirms(). */
-    private volatile boolean noNacksReceived = true;
+    private boolean noNacksReceived = true;
 
     /**
      * Construct a new channel on the given connection with the given
@@ -1036,7 +1036,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             } else {
                 unconfirmedSet.remove(seqNo);
             }
-            noNacksReceived = noNacksReceived && !nack;
+            noNacksReceived &= !nack;
             if (unconfirmedSet.isEmpty())
                 unconfirmedSet.notifyAll();
         }
