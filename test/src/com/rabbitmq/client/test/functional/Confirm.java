@@ -65,7 +65,9 @@ public class Confirm extends ConfirmBase
     private void declareConsumeQueue(String queueName, boolean durable)
     throws IOException {
         declareQueue(queueName, durable);
-        channel.basicConsume(queueName, true, defaultConsumer);
+        // we consume on a different channel to work around bug 24408
+        // (channels should permit pipelining of mandatory publishes)
+        connection.createChannel().basicConsume(queueName, true, defaultConsumer);
     }
 
     private void declareBindQueue(String queueName, boolean durable)
