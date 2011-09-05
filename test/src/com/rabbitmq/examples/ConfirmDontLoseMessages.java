@@ -50,9 +50,6 @@ public class ConfirmDontLoseMessages {
     }
 
     static class Publisher implements Runnable {
-        private volatile SortedSet<Long> unconfirmedSet =
-            Collections.synchronizedSortedSet(new TreeSet<Long>());
-
         public void run() {
             try {
                 long startTime = System.currentTimeMillis();
@@ -61,43 +58,16 @@ public class ConfirmDontLoseMessages {
                 Connection conn = connectionFactory.newConnection();
                 Channel ch = conn.createChannel();
                 ch.queueDeclare(QUEUE_NAME, true, false, false, null);
-                ch.addConfirmListener(new ConfirmListener() {
-                        public void handleAck(long seqNo, boolean multiple) {
-                            if (multiple) {
-                                unconfirmedSet.headSet(seqNo+1).clear();
-                            } else {
-                                unconfirmedSet.remove(seqNo);
-                            }
-                        }
-
-                        public void handleNack(long seqNo, boolean multiple) {
-                            int lost = 0;
-                            if (multiple) {
-                                SortedSet<Long> nackd =
-                                    unconfirmedSet.headSet(seqNo+1);
-                                lost = nackd.size();
-                                nackd.clear();
-                            } else {
-                                lost = 1;
-                                unconfirmedSet.remove(seqNo);
-                            }
-                            System.out.printf("Probably lost %d messages.\n",
-                                              lost);
-                        }
-                    });
                 ch.confirmSelect();
 
                 // Publish
                 for (long i = 0; i < msgCount; ++i) {
-                    unconfirmedSet.add(ch.getNextPublishSeqNo());
                     ch.basicPublish("", QUEUE_NAME,
                                     MessageProperties.PERSISTENT_BASIC,
                                     "nop".getBytes());
                 }
 
-                // Wait
-                while (unconfirmedSet.size() > 0)
-                    Thread.sleep(10);
+                ch.waitForConfirmsOrDie();
 
                 // Cleanup
                 ch.queueDelete(QUEUE_NAME);
