@@ -76,15 +76,8 @@ public class Confirm extends ConfirmBase
         channel.queueBind(queueName, "amq.direct", "confirm-multiple-queues");
     }
 
-    public void testPersistentMandatory()
-    throws Exception
-    {
-        declareConsumeQueue("confirm-test", true);
-        confirmTest("", "confirm-test", true, true, false);
-    }
-
     public void testTransient()
-        throws Exception
+    throws Exception
     {
         declareConsumeQueue("confirm-test", true);
         confirmTest("", "confirm-test", false, false, false);
@@ -97,11 +90,25 @@ public class Confirm extends ConfirmBase
         confirmTest("", "confirm-test", true, false, false);
     }
 
-    public void testNonDurable()
+    public void testTransientMandatory()
         throws Exception
     {
-        declareConsumeQueue("confirm-test-nondurable", false);
-        confirmTest("", "confirm-test-nondurable", true, false, false);
+        declareConsumeQueue("confirm-test", true);
+        confirmTest("", "confirm-test", false, true, false);
+    }
+
+    public void testPersistentMandatory()
+        throws Exception
+    {
+        declareConsumeQueue("confirm-test", true);
+        confirmTest("", "confirm-test", true, true, false);
+    }
+
+    public void testTransientImmediate()
+        throws Exception
+    {
+        declareConsumeQueue("confirm-test", true);
+        confirmTest("", "confirm-test", false, false, true);
     }
 
     public void testPersistentImmediate()
@@ -109,6 +116,27 @@ public class Confirm extends ConfirmBase
     {
         declareConsumeQueue("confirm-test", true);
         confirmTest("", "confirm-test", true, false, true);
+    }
+
+    public void testTransientMandatoryImmediate()
+        throws Exception
+    {
+        declareConsumeQueue("confirm-test", true);
+        confirmTest("", "confirm-test", false, true, true);
+    }
+
+    public void testPersistentMandatoryImmediate()
+        throws Exception
+    {
+        declareConsumeQueue("confirm-test", true);
+        confirmTest("", "confirm-test", true, true, true);
+    }
+
+    public void testNonDurable()
+        throws Exception
+    {
+        declareConsumeQueue("confirm-test-nondurable", false);
+        confirmTest("", "confirm-test-nondurable", true, false, false);
     }
 
     public void testPersistentImmediateNoConsumer()
