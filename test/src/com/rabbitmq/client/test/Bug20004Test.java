@@ -25,9 +25,9 @@ import java.io.IOException;
  * tests.
  */
 public class Bug20004Test extends BrokerTestCase {
-    public Exception caughtException = null;
-    public boolean completed = false;
-    public boolean created = false;
+    private volatile Exception caughtException = null;
+    private volatile boolean completed = false;
+    private volatile boolean created = false;
 
     protected void releaseResources()
         throws IOException
@@ -37,6 +37,7 @@ public class Bug20004Test extends BrokerTestCase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void testBug20004()
         throws IOException
     {

@@ -24,8 +24,7 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.test.BrokerTestCase;
-
+import com.rabbitmq.client.test.ConfirmBase;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -33,81 +32,90 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-public class Confirm extends BrokerTestCase
+public class Confirm extends ConfirmBase
 {
     private final static int NUM_MESSAGES = 1000;
 
     private static final String TTL_ARG = "x-message-ttl";
 
+    private DefaultConsumer defaultConsumer = null;
+
     @Override
-    protected void setUp() throws IOException {
-        super.setUp();
+    protected void createResources() throws IOException {
         channel.confirmSelect();
-        channel.queueDeclare("confirm-test", true, true, false, null);
-        channel.basicConsume("confirm-test", true,
-                             new DefaultConsumer(channel));
-        channel.queueDeclare("confirm-test-nondurable", false, true,
-                             false, null);
-        channel.basicConsume("confirm-test-nondurable", true,
-                             new DefaultConsumer(channel));
-        channel.queueDeclare("confirm-test-noconsumer", true,
-                             true, false, null);
-        channel.queueDeclare("confirm-test-2", true, true, false, null);
-        channel.basicConsume("confirm-test-2", true,
-                             new DefaultConsumer(channel));
-        Map<String, Object> argMap =
-            Collections.singletonMap(TTL_ARG, (Object)1);
-        channel.queueDeclare("confirm-ttl", true, true, false, argMap);
-        channel.queueBind("confirm-test", "amq.direct",
-                          "confirm-multiple-queues");
-        channel.queueBind("confirm-test-2", "amq.direct",
-                          "confirm-multiple-queues");
+        defaultConsumer = new DefaultConsumer(channel);
     }
 
-    public void testTransient()
-        throws IOException, InterruptedException {
-        confirmTest("", "confirm-test", false, false, false);
+    @Override
+    protected void releaseResources() throws IOException {
+        defaultConsumer = null;
     }
 
-    public void testPersistentSimple()
-        throws IOException, InterruptedException
+    private void declareQueue(String queueName, boolean durable)
+    throws IOException {
+        declareQueue(queueName, durable, null);
+    }
+
+    private void declareQueue(String queueName, boolean durable,
+                              Map<String, Object> args)
+    throws IOException {
+        channel.queueDeclare(queueName, durable, true, false, args);
+    }
+
+    private void declareConsumeQueue(String queueName, boolean durable)
+    throws IOException {
+        declareQueue(queueName, durable);
+        // we consume on a different channel to work around bug 24408
+        // (channels should permit pipelining of mandatory publishes)
+        connection.createChannel().basicConsume(queueName, true, defaultConsumer);
+    }
+
+    private void declareBindQueue(String queueName, boolean durable)
+    throws IOException {
+        declareConsumeQueue(queueName, durable);
+        channel.queueBind(queueName, "amq.direct", "confirm-multiple-queues");
+    }
+
+    public void testAllFlagsDurable() throws Exception
     {
-        confirmTest("", "confirm-test", true, false, false);
+        declareConsumeQueue("confirm-test", true);
+        confirmTestAllFlags("", "confirm-test");
     }
 
-    public void testNonDurable()
-        throws IOException, InterruptedException
+    public void testAllFlagsNondurable() throws Exception
     {
-        confirmTest("", "confirm-test-nondurable", true, false, false);
+        declareConsumeQueue("confirm-test-nondurable", false);
+        confirmTestAllFlags("", "confirm-test-nondurable");
     }
 
-    public void testPersistentImmediate()
-        throws IOException, InterruptedException
+    private void confirmTestAllFlags(String exchangeName, String queueName) throws Exception
     {
-        confirmTest("", "confirm-test", true, false, true);
+        for (int flags=0; flags<8; ++flags) {
+            boolean persistent = (flags & 4)!=0;
+            boolean mandatory  = (flags & 2)!=0;
+            boolean immediate  = (flags & 1)!=0;
+            confirmTest(exchangeName, queueName, persistent, mandatory, immediate);
+        }
     }
 
     public void testPersistentImmediateNoConsumer()
-        throws IOException, InterruptedException
+        throws Exception
     {
+        declareQueue("confirm-test-noconsumer", true);
         confirmTest("", "confirm-test-noconsumer", true, false, true);
     }
 
-    public void testPersistentMandatory()
-        throws IOException, InterruptedException
-    {
-        confirmTest("", "confirm-test", true, true, false);
-    }
-
     public void testPersistentMandatoryReturn()
-        throws IOException, InterruptedException
+        throws Exception
     {
         confirmTest("", "confirm-test-doesnotexist", true, true, false);
     }
 
     public void testMultipleQueues()
-        throws IOException, InterruptedException
+        throws Exception
     {
+        declareBindQueue("confirm-test", true);
+        declareBindQueue("confirm-test-2", true);
         confirmTest("amq.direct", "confirm-multiple-queues",
                     true, false, false);
     }
@@ -118,58 +126,71 @@ public class Confirm extends BrokerTestCase
      * internal_sync that notifies the clients. */
 
     public void testQueueDelete()
-        throws IOException, InterruptedException
+        throws Exception
     {
+        declareQueue("confirm-test-noconsumer", true);
+
         publishN("","confirm-test-noconsumer", true, false, false);
 
         channel.queueDelete("confirm-test-noconsumer");
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
     }
 
     public void testQueuePurge()
-        throws IOException, InterruptedException
+        throws Exception
     {
+        declareQueue("confirm-test-noconsumer", true);
+
         publishN("", "confirm-test-noconsumer", true, false, false);
 
         channel.queuePurge("confirm-test-noconsumer");
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
     }
 
     public void testBasicReject()
-        throws IOException, InterruptedException
+        throws Exception
     {
-        basicRejectCommon(false);
+        declareQueue("confirm-test-noconsumer", true);
 
-        channel.waitForConfirmsOrDie();
+        basicRejectCommon("confirm-test-noconsumer", false);
+
+        waitForConfirms();
     }
 
     public void testQueueTTL()
-        throws IOException, InterruptedException
+        throws Exception
     {
+        declareQueue("confirm-ttl", true,
+                Collections.singletonMap(TTL_ARG, (Object)Long.valueOf(1L)));
+
         publishN("", "confirm-ttl", true, false, false);
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
     }
 
     public void testBasicRejectRequeue()
-        throws IOException, InterruptedException
+        throws Exception
     {
-        basicRejectCommon(true);
+        declareQueue("confirm-test-noconsumer", true);
+
+        basicRejectCommon("confirm-test-noconsumer", true);
 
         /* wait confirms to go through the broker */
-        Thread.sleep(1000);
+        //Thread.sleep(1000);
 
         channel.basicConsume("confirm-test-noconsumer", true,
-                             new DefaultConsumer(channel));
+                             defaultConsumer);
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
     }
 
     public void testBasicRecover()
-        throws IOException, InterruptedException
+        throws Exception
     {
+        declareQueue("confirm-test-noconsumer", true);
+
         publishN("", "confirm-test-noconsumer", true, false, false);
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
@@ -181,16 +202,16 @@ public class Confirm extends BrokerTestCase
 
         channel.basicRecover(true);
 
-        Thread.sleep(1000);
+        //Thread.sleep(1000);
 
         channel.basicConsume("confirm-test-noconsumer", true,
-                             new DefaultConsumer(channel));
+                             defaultConsumer);
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
     }
 
     public void testSelect()
-        throws IOException
+        throws Exception
     {
         channel.confirmSelect();
         try {
@@ -212,8 +233,10 @@ public class Confirm extends BrokerTestCase
     }
 
     public void testWaitForConfirms()
-        throws IOException, InterruptedException
+        throws Exception
     {
+        declareConsumeQueue("confirm-test", true);
+
         final SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
         channel.addConfirmListener(new ConfirmListener() {
@@ -238,28 +261,32 @@ public class Confirm extends BrokerTestCase
             publish("", "confirm-test", true, false, false);
         }
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms();
         if (!unconfirmedSet.isEmpty()) {
             fail("waitForConfirms returned with unconfirmed messages");
         }
     }
 
     public void testWaitForConfirmsNoOp()
-        throws IOException, InterruptedException
+        throws Exception
     {
+        declareConsumeQueue("confirm-test", true);
+
         channel = connection.createChannel();
         // Don't enable Confirm mode
         publish("", "confirm-test", true, false, false);
-        channel.waitForConfirmsOrDie(); // Nop
+        waitForConfirms(); // Nop
     }
 
     public void testWaitForConfirmsException()
-        throws IOException, InterruptedException
+        throws Exception
     {
+        declareConsumeQueue("confirm-test", true);
+
         publishN("", "confirm-test", true, false, false);
         channel.close();
         try {
-            channel.waitForConfirmsOrDie();
+            waitForConfirms();
             fail("waitAcks worked on a closed channel");
         } catch (ShutdownSignalException sse) {
             if (!(sse.getReason() instanceof AMQP.Channel.Close))
@@ -271,43 +298,48 @@ public class Confirm extends BrokerTestCase
     }
 
     /* Publish NUM_MESSAGES messages and wait for confirmations. */
-    public void confirmTest(String exchange, String queueName,
-                            boolean persistent, boolean mandatory,
-                            boolean immediate)
-        throws IOException, InterruptedException
+    private void confirmTest(String exchange, String queueName,
+                             boolean persistent, boolean mandatory,
+                             boolean immediate)
+        throws Exception
     {
         publishN(exchange, queueName, persistent, mandatory, immediate);
 
-        channel.waitForConfirmsOrDie();
+        waitForConfirms("confirmTest(exchange='" + exchange
+                + "', queue='" + queueName
+                + "', persistent=" + persistent
+                + ", mandatory=" + mandatory
+                + ", immediate=" + immediate + ")");
     }
 
     private void publishN(String exchangeName, String queueName,
                           boolean persistent, boolean mandatory,
                           boolean immediate)
-        throws IOException
+        throws Exception
     {
         for (long i = 0; i < NUM_MESSAGES; i++) {
             publish(exchangeName, queueName, persistent, mandatory, immediate);
         }
     }
 
-    private void basicRejectCommon(boolean requeue)
-        throws IOException
+    private void basicRejectCommon(String queueName, boolean requeue)
+        throws Exception
     {
-        publishN("", "confirm-test-noconsumer", true, false, false);
+        publishN("", queueName, true, false, false);
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
             GetResponse resp =
-                channel.basicGet("confirm-test-noconsumer", false);
+                channel.basicGet(queueName, false);
             long dtag = resp.getEnvelope().getDeliveryTag();
             channel.basicReject(dtag, requeue);
         }
     }
 
-    protected void publish(String exchangeName, String queueName,
+    private void publish(String exchangeName, String queueName,
                            boolean persistent, boolean mandatory,
                            boolean immediate)
-        throws IOException {
+        throws Exception
+    {
         channel.basicPublish(exchangeName, queueName, mandatory, immediate,
                              persistent ? MessageProperties.PERSISTENT_BASIC
                                         : MessageProperties.BASIC,

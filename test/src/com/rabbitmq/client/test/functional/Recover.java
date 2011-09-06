@@ -77,6 +77,7 @@ public class Recover extends BrokerTestCase {
     }
 
     RecoverCallback recoverAsync = new RecoverCallback() {
+            @SuppressWarnings("deprecation")
             public void recover(Channel channel) throws IOException {
                 channel.basicRecoverAsync(true);
             }
