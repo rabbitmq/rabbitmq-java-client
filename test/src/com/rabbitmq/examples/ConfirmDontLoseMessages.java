@@ -18,12 +18,8 @@
 package com.rabbitmq.examples;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
