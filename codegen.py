@@ -417,6 +417,7 @@ def genJavaImpl(spec):
         print "import java.io.IOException;"
         print "import java.io.DataInputStream;"
         print "import java.lang.reflect.Constructor;"
+        print "import java.lang.reflect.Field;"
         print "import java.util.Collections;"
         print "import java.util.HashMap;"
         print "import java.util.Map;"
@@ -480,9 +481,12 @@ def genJavaImpl(spec):
                     return "false"
 
             def argument_debug_string():
+                anames = [a.name for a in m.arguments]
                 appendList = [ "%s=\")\n                   .append(this.%s)\n                   .append(\""
-                               % (a.name, java_field_name(a.name))
-                               for a in m.arguments ]
+                               % (name, java_field_name(name))
+                               for name in anames ]
+                if "class-id" in anames and "method-id" in anames:
+                    appendList.append("protocol-name='\")\n                   .append(getProtocolMethodName(this.classId, this.methodId))\n                   .append(\"'")
                 print
                 print "            public void appendArgumentDebugStringTo(StringBuilder acc) {"
                 print "                acc.append(\"(%s)\");" % ", ".join(appendList)
@@ -535,9 +539,22 @@ def genJavaImpl(spec):
                print "        public Object visit(%s.%s x) throws IOException { throw new UnexpectedMethodError(x); }" % (java_class_name(c.name), java_class_name(m.name))
         print "    }"
 
+    def printGetProtocolMethodNameMethod():
+        print
+        print "    public static String getProtocolMethodName(int classId, int methodId) {"
+        print "        Class<? extends Method> clazz = getMethodClass(classId, methodId);"
+        print "        if (clazz != null) {"
+        print "            try {"
+        print "                Field pmnField = clazz.getField(\"PROTOCOL_METHOD_NAME\");"
+        print "                return (String)pmnField.get(null);"
+        print "            } catch (Exception e) { /*ignore*/ }"
+        print "        }"
+        print "        return null;"
+        print "    }"
+
     def printGetMethodClassMethod():
         print
-        print "    public static Class<? extends Method> getMethodClass(int classId, int methodId) {"
+        print "    private static Class<? extends Method> getMethodClass(int classId, int methodId) {"
         print "        switch (classId) {"
         for c in spec.allClasses():
             print "            case %s:" % (c.index)
@@ -590,6 +607,7 @@ def genJavaImpl(spec):
     for c in spec.allClasses(): printClassMethods(spec,c)
     
     printMethodVisitor()
+    printGetProtocolMethodNameMethod()
     printGetMethodClassMethod()
     printMethodArgumentReader()
     printContentHeaderReader()
