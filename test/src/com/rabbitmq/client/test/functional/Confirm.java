@@ -76,67 +76,32 @@ public class Confirm extends ConfirmBase
         channel.queueBind(queueName, "amq.direct", "confirm-multiple-queues");
     }
 
-    public void testTransient()
-    throws Exception
+    public void testPersistentMandatoryImmediateDurable() throws Exception
     {
         declareConsumeQueue("confirm-test", true);
-        confirmTest("", "confirm-test", false, false, false);
+        for (int flags=0; flags<8; ++flags) {
+            System.out.print("Confirm durable (persistent&mandatory&immediate) = ("+flags+")");
+            confirmTestByFlags("", "confirm-test", flags);
+            System.out.println(" succeeded.");
+        }
     }
 
-    public void testPersistentSimple()
-        throws Exception
-    {
-        declareConsumeQueue("confirm-test", true);
-        confirmTest("", "confirm-test", true, false, false);
-    }
-
-    public void testTransientMandatory()
-        throws Exception
-    {
-        declareConsumeQueue("confirm-test", true);
-        confirmTest("", "confirm-test", false, true, false);
-    }
-
-    public void testPersistentMandatory()
-        throws Exception
-    {
-        declareConsumeQueue("confirm-test", true);
-        confirmTest("", "confirm-test", true, true, false);
-    }
-
-    public void testTransientImmediate()
-        throws Exception
-    {
-        declareConsumeQueue("confirm-test", true);
-        confirmTest("", "confirm-test", false, false, true);
-    }
-
-    public void testPersistentImmediate()
-        throws Exception
-    {
-        declareConsumeQueue("confirm-test", true);
-        confirmTest("", "confirm-test", true, false, true);
-    }
-
-    public void testTransientMandatoryImmediate()
-        throws Exception
-    {
-        declareConsumeQueue("confirm-test", true);
-        confirmTest("", "confirm-test", false, true, true);
-    }
-
-    public void testPersistentMandatoryImmediate()
-        throws Exception
-    {
-        declareConsumeQueue("confirm-test", true);
-        confirmTest("", "confirm-test", true, true, true);
-    }
-
-    public void testNonDurable()
-        throws Exception
+    public void testPersistentMandatoryImmediateNondurable() throws Exception
     {
         declareConsumeQueue("confirm-test-nondurable", false);
-        confirmTest("", "confirm-test-nondurable", true, false, false);
+        for (int flags=0; flags<8; ++flags) {
+            System.out.print("Confirm nondurable (persistent&mandatory&immediate) = ("+flags+")");
+            confirmTestByFlags("", "confirm-test-nondurable", flags);
+            System.out.println(" succeeded.");
+        }
+    }
+
+    private void confirmTestByFlags(String exchangeName, String queueName, int flags) throws Exception
+    {
+        boolean persistent = (flags & 4)!=0;
+        boolean mandatory  = (flags & 2)!=0;
+        boolean immediate  = (flags & 1)!=0;
+        confirmTest(exchangeName, queueName, persistent, mandatory, immediate);
     }
 
     public void testPersistentImmediateNoConsumer()
