@@ -76,32 +76,26 @@ public class Confirm extends ConfirmBase
         channel.queueBind(queueName, "amq.direct", "confirm-multiple-queues");
     }
 
-    public void testPersistentMandatoryImmediateDurable() throws Exception
+    public void testAllFlagsDurable() throws Exception
     {
         declareConsumeQueue("confirm-test", true);
-        for (int flags=0; flags<8; ++flags) {
-            System.out.print("Confirm durable (persistent&mandatory&immediate) = ("+flags+")");
-            confirmTestByFlags("", "confirm-test", flags);
-            System.out.println(" succeeded.");
-        }
+        confirmTestAllFlags("", "confirm-test");
     }
 
-    public void testPersistentMandatoryImmediateNondurable() throws Exception
+    public void testAllFlagsNondurable() throws Exception
     {
         declareConsumeQueue("confirm-test-nondurable", false);
-        for (int flags=0; flags<8; ++flags) {
-            System.out.print("Confirm nondurable (persistent&mandatory&immediate) = ("+flags+")");
-            confirmTestByFlags("", "confirm-test-nondurable", flags);
-            System.out.println(" succeeded.");
-        }
+        confirmTestAllFlags("", "confirm-test-nondurable");
     }
 
-    private void confirmTestByFlags(String exchangeName, String queueName, int flags) throws Exception
+    private void confirmTestAllFlags(String exchangeName, String queueName) throws Exception
     {
-        boolean persistent = (flags & 4)!=0;
-        boolean mandatory  = (flags & 2)!=0;
-        boolean immediate  = (flags & 1)!=0;
-        confirmTest(exchangeName, queueName, persistent, mandatory, immediate);
+        for (int flags=0; flags<8; ++flags) {
+            boolean persistent = (flags & 4)!=0;
+            boolean mandatory  = (flags & 2)!=0;
+            boolean immediate  = (flags & 1)!=0;
+            confirmTest(exchangeName, queueName, persistent, mandatory, immediate);
+        }
     }
 
     public void testPersistentImmediateNoConsumer()
@@ -311,7 +305,11 @@ public class Confirm extends ConfirmBase
     {
         publishN(exchange, queueName, persistent, mandatory, immediate);
 
-        waitForConfirms();
+        waitForConfirms("confirmTest(exchange='" + exchange
+                + "', queue='" + queueName
+                + "', persistent=" + persistent
+                + ", mandatory=" + mandatory
+                + ", immediate=" + immediate + ")");
     }
 
     private void publishN(String exchangeName, String queueName,

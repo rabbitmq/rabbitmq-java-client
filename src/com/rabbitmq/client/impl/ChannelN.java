@@ -182,7 +182,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     {
         if (!waitForConfirms()) {
             close(AMQP.REPLY_SUCCESS, "NACKS RECEIVED", true, null, false);
-            throw new IOException("nacks received");
+            throw new IOException("nacks received", getCloseReason());
         }
     }
 

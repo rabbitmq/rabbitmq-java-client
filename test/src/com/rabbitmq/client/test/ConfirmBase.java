@@ -25,9 +25,15 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 
+import junit.framework.AssertionFailedError;
+
 public class ConfirmBase extends BrokerTestCase {
-    protected void waitForConfirms()
-        throws InterruptedException, TimeoutException
+    protected void waitForConfirms() throws Exception
+    {
+        waitForConfirms("ConfirmBase.waitForConfirms");
+    }
+
+    protected void waitForConfirms(final String testTitle) throws Exception
     {
         try {
             FutureTask<?> waiter = new FutureTask<Object>(new Runnable() {
@@ -36,15 +42,20 @@ public class ConfirmBase extends BrokerTestCase {
                             channel.waitForConfirmsOrDie();
                         } catch (IOException e) {
                             throw (ShutdownSignalException)e.getCause();
-                        } catch (InterruptedException e) {
-                            fail("test interrupted");
+                        } catch (InterruptedException _) {
+                            fail(testTitle + ": interrupted");
                         }
                     }
                 }, null);
             (Executors.newSingleThreadExecutor()).execute(waiter);
             waiter.get(10, TimeUnit.SECONDS);
-        } catch (ExecutionException e) {
-            throw (ShutdownSignalException)e.getCause();
+        } catch (ExecutionException ee) {
+            Throwable t = ee.getCause();
+            if (t instanceof ShutdownSignalException) throw (ShutdownSignalException) t;
+            if (t instanceof AssertionFailedError) throw (AssertionFailedError) t;
+            throw (Exception)t;
+        } catch (TimeoutException _) {
+            fail(testTitle + ": timeout");
         }
     }
 }
