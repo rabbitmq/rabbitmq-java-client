@@ -429,7 +429,7 @@ def genJavaImpl(spec):
 
     def printClassMethods(spec, c):
         print
-        print "    public static class %s {" % (java_class_name(c.name))
+        print "    public final static class %s {" % (java_class_name(c.name))
         for m in c.allMethods():
 
             def getters():
@@ -503,7 +503,7 @@ def genJavaImpl(spec):
 
             #start
             print
-            print "        public static class %s" % (java_class_name(m.name),)
+            print "        public final static class %s" % (java_class_name(m.name),)
             print "            extends Method"
             print "            implements com.rabbitmq.client.AMQP.%s.%s" % (java_class_name(c.name), java_class_name(m.name))
             print "        {"
@@ -541,7 +541,7 @@ def genJavaImpl(spec):
 
     def printGetProtocolMethodNameMethod():
         print
-        print "    public static String getProtocolMethodName(int classId, int methodId) {"
+        print "    public final static String getProtocolMethodName(int classId, int methodId) {"
         print "        Class<? extends Method> clazz = getMethodClass(classId, methodId);"
         print "        if (clazz != null) {"
         print "            try {"
@@ -554,7 +554,7 @@ def genJavaImpl(spec):
 
     def printGetMethodClassMethod():
         print
-        print "    private static Class<? extends Method> getMethodClass(int classId, int methodId) {"
+        print "    private final static Class<? extends Method> getMethodClass(int classId, int methodId) {"
         print "        switch (classId) {"
         for c in spec.allClasses():
             print "            case %s:" % (c.index)
@@ -573,7 +573,7 @@ def genJavaImpl(spec):
 
     def printMethodArgumentReader():
         print
-        print "    public static Method readMethodFrom(DataInputStream in) throws IOException {"
+        print "    public final static Method readMethodFrom(DataInputStream in) throws IOException {"
         print "        int classId = in.readShort();"
         print "        int methodId = in.readShort();"
         print "        Class<? extends Method> clazz = getMethodClass(classId, methodId);"
@@ -588,7 +588,7 @@ def genJavaImpl(spec):
 
     def printContentHeaderReader():
         print
-        print "    public static AMQContentHeader readContentHeaderFrom(DataInputStream in) throws IOException {"
+        print "    public final static AMQContentHeader readContentHeaderFrom(DataInputStream in) throws IOException {"
         print "        int classId = in.readShort();"
         print "        switch (classId) {"
         for c in spec.allClasses():
@@ -602,7 +602,7 @@ def genJavaImpl(spec):
 
     printHeader()
     print
-    print "public class AMQImpl implements AMQP {"
+    print "public final class AMQImpl implements AMQP {"
 
     for c in spec.allClasses(): printClassMethods(spec,c)
     
