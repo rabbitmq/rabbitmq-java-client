@@ -416,6 +416,8 @@ def genJavaImpl(spec):
         print
         print "import java.io.IOException;"
         print "import java.io.DataInputStream;"
+        print "import java.lang.reflect.Constructor;"
+        print "import java.lang.reflect.Field;"
         print "import java.util.Collections;"
         print "import java.util.HashMap;"
         print "import java.util.Map;"
@@ -427,8 +429,7 @@ def genJavaImpl(spec):
 
     def printClassMethods(spec, c):
         print
-        print "    public static class %s {" % (java_class_name(c.name))
-        print "        public static final int INDEX = %s;" % (c.index)
+        print "    public final static class %s {" % (java_class_name(c.name))
         for m in c.allMethods():
 
             def getters():
@@ -464,9 +465,9 @@ def genJavaImpl(spec):
 
             def others():
                 print
-                print "            public int protocolClassId() { return %s; }" % (c.index)
-                print "            public int protocolMethodId() { return %s; }" % (m.index)
-                print "            public String protocolMethodName() { return \"%s.%s\";}" % (c.name, m.name)
+                print "            public int protocolClassId() { return PROTOCOL_CLASS_ID; }"
+                print "            public int protocolMethodId() { return PROTOCOL_METHOD_ID; }"
+                print "            public String protocolMethodName() { return PROTOCOL_METHOD_NAME; }"
                 print
                 print "            public boolean hasContent() { return %s; }" % (trueOrFalse(m.hasContent))
                 print
@@ -480,9 +481,12 @@ def genJavaImpl(spec):
                     return "false"
 
             def argument_debug_string():
+                anames = [a.name for a in m.arguments]
                 appendList = [ "%s=\")\n                   .append(this.%s)\n                   .append(\""
-                               % (a.name, java_field_name(a.name))
-                               for a in m.arguments ]
+                               % (name, java_field_name(name))
+                               for name in anames ]
+                if "class-id" in anames and "method-id" in anames:
+                    appendList.append("protocol-name='\")\n                   .append(getProtocolMethodName(this.classId, this.methodId))\n                   .append(\"'")
                 print
                 print "            public void appendArgumentDebugStringTo(StringBuilder acc) {"
                 print "                acc.append(\"(%s)\");" % ", ".join(appendList)
@@ -499,12 +503,13 @@ def genJavaImpl(spec):
 
             #start
             print
-            print "        public static class %s" % (java_class_name(m.name),)
+            print "        public final static class %s" % (java_class_name(m.name),)
             print "            extends Method"
             print "            implements com.rabbitmq.client.AMQP.%s.%s" % (java_class_name(c.name), java_class_name(m.name))
             print "        {"
-            print "            public static final int INDEX = %s;" % (m.index)
-            print
+            print "            private static final int PROTOCOL_CLASS_ID = %s;" % (c.index)
+            print "            private static final int PROTOCOL_METHOD_ID = %s;" % (m.index)
+            print "            public static final String PROTOCOL_METHOD_NAME = \"%s.%s\";" % (c.name, m.name)
             for a in m.arguments:
                 print "            private final %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
 
@@ -534,11 +539,22 @@ def genJavaImpl(spec):
                print "        public Object visit(%s.%s x) throws IOException { throw new UnexpectedMethodError(x); }" % (java_class_name(c.name), java_class_name(m.name))
         print "    }"
 
-    def printMethodArgumentReader():
+    def printGetProtocolMethodNameMethod():
         print
-        print "    public static Method readMethodFrom(DataInputStream in) throws IOException {"
-        print "        int classId = in.readShort();"
-        print "        int methodId = in.readShort();"
+        print "    public final static String getProtocolMethodName(int classId, int methodId) {"
+        print "        Class<? extends Method> clazz = getMethodClass(classId, methodId);"
+        print "        if (clazz != null) {"
+        print "            try {"
+        print "                Field pmnField = clazz.getField(\"PROTOCOL_METHOD_NAME\");"
+        print "                return (String)pmnField.get(null);"
+        print "            } catch (Exception e) { /*ignore*/ }"
+        print "        }"
+        print "        return null;"
+        print "    }"
+
+    def printGetMethodClassMethod():
+        print
+        print "    private final static Class<? extends Method> getMethodClass(int classId, int methodId) {"
         print "        switch (classId) {"
         for c in spec.allClasses():
             print "            case %s:" % (c.index)
@@ -546,18 +562,33 @@ def genJavaImpl(spec):
             for m in c.allMethods():
                 fq_name = java_class_name(c.name) + '.' + java_class_name(m.name)
                 print "                    case %s: {" % (m.index)
-                print "                        return new %s(new MethodArgumentReader(in));" % (fq_name)
+                print "                        return %s.class;" % (fq_name)
                 print "                    }"
             print "                    default: break;"
             print "                } break;"
         print "        }"
         print
+        print "        return null;"
+        print "    }"
+
+    def printMethodArgumentReader():
+        print
+        print "    public final static Method readMethodFrom(DataInputStream in) throws IOException {"
+        print "        int classId = in.readShort();"
+        print "        int methodId = in.readShort();"
+        print "        Class<? extends Method> clazz = getMethodClass(classId, methodId);"
+        print "        if (clazz != null) {"
+        print "            try {"
+        print "                Constructor<? extends Method> cons = clazz.getConstructor(MethodArgumentReader.class);"
+        print "                return cons.newInstance(new MethodArgumentReader(in));"
+        print "            } catch (Exception e) { /*ignore*/ }"
+        print "        }"
         print "        throw new UnknownClassOrMethodId(classId, methodId);"
         print "    }"
 
     def printContentHeaderReader():
         print
-        print "    public static AMQContentHeader readContentHeaderFrom(DataInputStream in) throws IOException {"
+        print "    public final static AMQContentHeader readContentHeaderFrom(DataInputStream in) throws IOException {"
         print "        int classId = in.readShort();"
         print "        switch (classId) {"
         for c in spec.allClasses():
@@ -571,11 +602,13 @@ def genJavaImpl(spec):
 
     printHeader()
     print
-    print "public class AMQImpl implements AMQP {"
+    print "public final class AMQImpl implements AMQP {"
 
     for c in spec.allClasses(): printClassMethods(spec,c)
     
     printMethodVisitor()
+    printGetProtocolMethodNameMethod()
+    printGetMethodClassMethod()
     printMethodArgumentReader()
     printContentHeaderReader()
 
