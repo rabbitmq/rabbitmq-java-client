@@ -72,6 +72,13 @@ def java_boxed_type(jtype):
 def java_type(spec, domain):
     return javaTypeMap[spec.resolveDomain(domain)]
 
+def java_const_name(nm):
+    out = ''
+    for c in nm:
+        if c.isalnum(): out += c.upper()
+        else:           out += '_'
+    return out
+
 def java_name(upperNext, name):
     out = ''
     for c in name:
@@ -416,8 +423,6 @@ def genJavaImpl(spec):
         print
         print "import java.io.IOException;"
         print "import java.io.DataInputStream;"
-        print "import java.lang.reflect.Constructor;"
-        print "import java.lang.reflect.Field;"
         print "import java.util.Collections;"
         print "import java.util.HashMap;"
         print "import java.util.Map;"
@@ -427,11 +432,71 @@ def genJavaImpl(spec):
         print "import com.rabbitmq.client.UnknownClassOrMethodId;"
         print "import com.rabbitmq.client.UnexpectedMethodError;"
 
+    def printMethodsEnum():
+        print "    public enum MethodCodex {"
+        first = True
+        for c in spec.allClasses():
+            for m in c.allMethods():
+                fullConstName = java_const_name(c.name + '-' + m.name)
+                fullClassName = java_class_name(c.name) + '.' + java_class_name(m.name)
+                consArgs = [ "rdr.read%s()" % (java_class_name(spec.resolveDomain(a.domain))) for a in m.arguments ]
+                if first:
+                    first = False
+                else:
+                    print "        },"
+                print "        %s(%s, %s, \"%s.%s\") {" % (fullConstName, c.index, m.index, c.name, m.name)
+                print "            Method readArgs(MethodArgumentReader rdr) throws IOException {"
+                print "                return new %s(%s);" % (fullClassName, ", ".join(consArgs))
+                print "            }"
+                print "            void writeArgs(MethodArgumentWriter writer, Method m) throws IOException {"
+                if m.arguments:
+                    print "                %s method = (%s) m;" % (fullClassName, fullClassName)
+                    for a in m.arguments:
+                        print "                writer.write%s(method.%s);" % (java_class_name(spec.resolveDomain(a.domain)), java_field_name(a.name))
+                print "            }"
+        print "        };"
+        print 
+        print "        private final int classId;      // must be >=0 and <256"
+        print "        private final int methodId;     // must be >=0 and <256"
+        print "        private final String methodName;"
+        print "        MethodCodex(int classId, int methodId, String methodName) {"
+        print "            this.classId = classId;"
+        print "            this.methodId = methodId;"
+        print "            this.methodName = methodName;"
+        print "        }"
+        print "        abstract Method readArgs(MethodArgumentReader rdr) throws IOException;"
+        print "        abstract void writeArgs(MethodArgumentWriter writer, Method m) throws IOException;"
+        print "        int getClassId() { return this.classId; }"
+        print "        int getMethodId() { return this.methodId; }"
+        print "        String getMethodName() { return this.methodName; }"
+        print "        private static final Map<Integer, MethodCodex> codexMap = new HashMap<Integer, MethodCodex>();"
+        print "        static {    // build index of MethodCodices"
+        print "            for (MethodCodex m : values()) {"
+        print "                int key = pack(m.classId, m.methodId);"
+        print "                if (codexMap.containsKey(key))"
+        print "                    throw new IllegalStateException(\"Protocol defines <classId,methodId>=<\"+ m.classId + \",\" + m.methodId + \"> more than once.\");"
+        print "                codexMap.put(pack(m.classId, m.methodId), m);"
+        print "            }"
+        print "        }"
+        print "        private static final int pack(int cid, int mid) {"
+        print "            return (cid<<8) | (0xff & mid);"
+        print "        }"
+        print "        public static final MethodCodex lookupCodex(int classId, int methodId) {"
+        print "            return codexMap.get(pack(classId, methodId));"
+        print "        }"
+        print "    }"
+
     def printClassMethods(spec, c):
         print
         print "    public final static class %s {" % (java_class_name(c.name))
         for m in c.allMethods():
 
+            def fields():
+                if m.arguments:
+                    print
+                    for a in m.arguments:
+                        print "            private final %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
+                    
             def getters():
                 if m.arguments:
                     print
@@ -458,27 +523,14 @@ def genJavaImpl(spec):
 
                 print "            }"
 
-                consArgs = [ "rdr.read%s()" % (java_class_name(spec.resolveDomain(a.domain))) for a in m.arguments ]
-                print "            public %s(MethodArgumentReader rdr) throws IOException {" % (java_class_name(m.name))
-                print "                this(%s);" % (", ".join(consArgs))
-                print "            }"
-
             def others():
                 print
-                print "            public int protocolClassId() { return PROTOCOL_CLASS_ID; }"
-                print "            public int protocolMethodId() { return PROTOCOL_METHOD_ID; }"
-                print "            public String protocolMethodName() { return PROTOCOL_METHOD_NAME; }"
+                print "            protected MethodCodex getCodex() { return %s.codex; }" % (java_class_name(m.name))
                 print
                 print "            public boolean hasContent() { return %s; }" % (trueOrFalse(m.hasContent))
                 print
                 print "            public Object visit(MethodVisitor visitor) throws IOException"
                 print "            {   return visitor.visit(this); }"
-
-            def trueOrFalse(truthVal):
-                if truthVal:
-                    return "true"
-                else:
-                    return "false"
 
             def argument_debug_string():
                 anames = [a.name for a in m.arguments]
@@ -492,14 +544,11 @@ def genJavaImpl(spec):
                 print "                acc.append(\"(%s)\");" % ", ".join(appendList)
                 print "            }"
 
-            def write_arguments():
-                print
-                print "            public void writeArgumentsTo(MethodArgumentWriter writer)"
-                print "                throws IOException"
-                print "            {"
-                for a in m.arguments:
-                    print "                writer.write%s(this.%s);" % (java_class_name(spec.resolveDomain(a.domain)), java_field_name(a.name))
-                print "            }"
+            def trueOrFalse(truthVal):
+                if truthVal:
+                    return "true"
+                else:
+                    return "false"
 
             #start
             print
@@ -507,20 +556,15 @@ def genJavaImpl(spec):
             print "            extends Method"
             print "            implements com.rabbitmq.client.AMQP.%s.%s" % (java_class_name(c.name), java_class_name(m.name))
             print "        {"
-            print "            private static final int PROTOCOL_CLASS_ID = %s;" % (c.index)
-            print "            private static final int PROTOCOL_METHOD_ID = %s;" % (m.index)
-            print "            public static final String PROTOCOL_METHOD_NAME = \"%s.%s\";" % (c.name, m.name)
-            for a in m.arguments:
-                print "            private final %s %s;" % (java_field_type(spec, a.domain), java_field_name(a.name))
+            print "            private static final MethodCodex codex = MethodCodex.%s;" % (java_const_name(c.name + '-' + m.name))
 
+            fields()
             getters()
             constructors()
             others()
-
             argument_debug_string()
-            write_arguments()
-
             print "        }"
+
         print "    }"
 
     def printMethodVisitor():
@@ -542,33 +586,11 @@ def genJavaImpl(spec):
     def printGetProtocolMethodNameMethod():
         print
         print "    public final static String getProtocolMethodName(int classId, int methodId) {"
-        print "        Class<? extends Method> clazz = getMethodClass(classId, methodId);"
-        print "        if (clazz != null) {"
-        print "            try {"
-        print "                Field pmnField = clazz.getField(\"PROTOCOL_METHOD_NAME\");"
-        print "                return (String)pmnField.get(null);"
-        print "            } catch (Exception e) { /*ignore*/ }"
+        print "        MethodCodex codex = MethodCodex.lookupCodex(classId, methodId);"
+        print "        if (codex != null) {"
+        print "            return codex.getMethodName();"
         print "        }"
-        print "        return null;"
-        print "    }"
-
-    def printGetMethodClassMethod():
-        print
-        print "    private final static Class<? extends Method> getMethodClass(int classId, int methodId) {"
-        print "        switch (classId) {"
-        for c in spec.allClasses():
-            print "            case %s:" % (c.index)
-            print "                switch (methodId) {"
-            for m in c.allMethods():
-                fq_name = java_class_name(c.name) + '.' + java_class_name(m.name)
-                print "                    case %s: {" % (m.index)
-                print "                        return %s.class;" % (fq_name)
-                print "                    }"
-            print "                    default: break;"
-            print "                } break;"
-        print "        }"
-        print
-        print "        return null;"
+        print "        return \"UNKNOWN_CLASSID_METHODID\";"
         print "    }"
 
     def printMethodArgumentReader():
@@ -576,12 +598,9 @@ def genJavaImpl(spec):
         print "    public final static Method readMethodFrom(DataInputStream in) throws IOException {"
         print "        int classId = in.readShort();"
         print "        int methodId = in.readShort();"
-        print "        Class<? extends Method> clazz = getMethodClass(classId, methodId);"
-        print "        if (clazz != null) {"
-        print "            try {"
-        print "                Constructor<? extends Method> cons = clazz.getConstructor(MethodArgumentReader.class);"
-        print "                return cons.newInstance(new MethodArgumentReader(in));"
-        print "            } catch (Exception e) { /*ignore*/ }"
+        print "        MethodCodex codex = MethodCodex.lookupCodex(classId, methodId);"
+        print "        if (codex != null) {"
+        print "            return codex.readArgs(new MethodArgumentReader(in));"
         print "        }"
         print "        throw new UnknownClassOrMethodId(classId, methodId);"
         print "    }"
@@ -600,15 +619,17 @@ def genJavaImpl(spec):
         print "        throw new UnknownClassOrMethodId(classId);"
         print "    }"
 
+    #start
     printHeader()
     print
     print "public final class AMQImpl implements AMQP {"
 
+    printMethodsEnum()
+
     for c in spec.allClasses(): printClassMethods(spec,c)
-    
+
     printMethodVisitor()
     printGetProtocolMethodNameMethod()
-    printGetMethodClassMethod()
     printMethodArgumentReader()
     printContentHeaderReader()
 
