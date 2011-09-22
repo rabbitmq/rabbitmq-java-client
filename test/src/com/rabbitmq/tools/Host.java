@@ -39,11 +39,11 @@ public class Host {
     public static void executeCommand(String command) throws IOException
     {
         Process pr = executeCommandProcess(command);
-        String stdout = capture(pr.getInputStream());
-        String stderr = capture(pr.getErrorStream());
 
         int ev = waitForExitValue(pr);
         if (ev != 0) {
+            String stdout = capture(pr.getInputStream());
+            String stderr = capture(pr.getErrorStream());
             throw new IOException("unexpected command exit value: " + ev +
                                   "\nstdout:\n" + stdout +
                                   "\nstderr:\n" + stderr + "\n");
