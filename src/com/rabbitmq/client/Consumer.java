@@ -38,8 +38,8 @@ import java.io.IOException;
  */
 public interface Consumer {
     /**
-     * Called when the consumer is registered by a call to
-     * {@link Channel#basicConsume(String, boolean, String, boolean, boolean, java.util.Map, Consumer) Channel.basicConsume}.
+     * Called when the consumer is registered by a call to any of the
+     * {@link Channel#basicConsume} methods.
      * @param consumerTag the <i>consumer tag</i> associated with the consumer
      */
     void handleConsumeOk(String consumerTag);

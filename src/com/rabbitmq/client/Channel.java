@@ -617,7 +617,7 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Start a consumer. Calls the consumer's {@link Consumer#handleConsumeOk}
-     * method before returning.
+     * method.
      * @param queue the name of the queue
      * @param autoAck true if the server should consider messages
      * acknowledged once delivered; false if the server should expect
@@ -636,7 +636,7 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Cancel a consumer. Calls the consumer's {@link Consumer#handleCancelOk}
-     * method before returning.
+     * method.
      * @param consumerTag a client- or server-generated consumer tag to establish context
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Cancel
