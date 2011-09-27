@@ -28,9 +28,9 @@ import java.io.IOException;
  * an independent thread.
  */
 public class Bug20004Test extends BrokerTestCase {
-    public volatile Exception caughtException = null;
-    public volatile boolean completed = false;
-    public volatile boolean created = false;
+    private volatile Exception caughtException = null;
+    private volatile boolean completed = false;
+    private volatile boolean created = false;
 
     protected void releaseResources()
         throws IOException

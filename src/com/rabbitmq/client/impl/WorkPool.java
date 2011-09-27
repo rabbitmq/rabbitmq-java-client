@@ -1,7 +1,6 @@
 package com.rabbitmq.client.impl;
 
 import java.util.Collection;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -74,7 +73,7 @@ public class WorkPool<K, W> {
         /** The set of clients which have work <i>in progress</i>. */
         private final Set<K> inProgress = new HashSet<K>();
         /** The pool of registered clients, with their work queues. */
-        private final Map<K, Deque<W>> pool = new HashMap<K, Deque<W>>();
+        private final Map<K, LinkedList<W>> pool = new HashMap<K, LinkedList<W>>();
 
     /**
      * Add client <code><b>key</b></code> to pool of item queues, with an empty queue.
@@ -128,7 +127,7 @@ public class WorkPool<K, W> {
         synchronized (this.monitor) {
             K nextKey = readyToInProgress();
             if (nextKey != null) {
-                Deque<W> queue = this.pool.get(nextKey);
+                LinkedList<W> queue = this.pool.get(nextKey);
                 drainTo(queue, to, size);
             }
             return nextKey;
@@ -136,17 +135,17 @@ public class WorkPool<K, W> {
     }
 
     /**
-     * Private implementation of <code><b>drainTo</b></code> (not implemented for <code><b>Deque&lt;W&gt;</b></code>s).
+     * Private implementation of <code><b>drainTo</b></code> (not implemented for <code><b>LinkedList&lt;W&gt;</b></code>s).
      * @param <W> element type
-     * @param deque to take (poll) elements from
+     * @param deList to take (poll) elements from
      * @param c to add elements to
-     * @param maxElements to take from deque
+     * @param maxElements to take from deList
      * @return number of elements actually taken
      */
-    private static <W> int drainTo(Deque<W> deque, Collection<W> c, int maxElements) {
+    private static <W> int drainTo(LinkedList<W> deList, Collection<W> c, int maxElements) {
         int n = 0;
         while (n < maxElements) {
-            W first = deque.poll();
+            W first = deList.poll();
             if (first == null)
                 break;
             c.add(first);
@@ -206,8 +205,8 @@ public class WorkPool<K, W> {
     }
 
     private boolean moreWorkItems(K key) {
-        Deque<W> deque = this.pool.get(key);
-        return (deque==null ? false : !deque.isEmpty());
+        LinkedList<W> leList = this.pool.get(key);
+        return (leList==null ? false : !leList.isEmpty());
     }
     
     /* State identification functions */

@@ -94,7 +94,6 @@ public final class ChannelManager {
         final Set<CountDownLatch> sdSet = new HashSet<CountDownLatch>(shutdownSet);
         final ConsumerWorkService ssWorkService = workService;
         Thread shutdownThread = new Thread( new Runnable() {
-            @Override
             public void run() {
                 for (CountDownLatch latch : sdSet) {
                     try { latch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS); } catch (Throwable e) { }
