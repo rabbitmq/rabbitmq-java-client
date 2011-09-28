@@ -26,8 +26,8 @@ public class AmqpUriTest extends BrokerTestCase
         /* From the spec */
         parseSuccess("amqp://user:pass@host:10000/vhost",
                      "user", "pass", "host", 10000, "vhost");
-        parseSuccess("amqp://user%61:%61pass@ho%61st:10000/v%2fhost",
-                     "usera", "apass", "hoast", 10000, "v/host");
+        parseSuccess("amqp://user%61:%61pass@host:10000/v%2fhost",
+                     "usera", "apass", "host", 10000, "v/host");
         parseSuccess("amqp://", "guest", "guest", "localhost", 5672, "/");
         parseSuccess("amqp://:@/", "", "", "localhost", 5672, "");
         parseSuccess("amqp://user@", "user", "guest", "localhost", 5672, "/");

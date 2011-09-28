@@ -187,7 +187,7 @@ public class ConnectionFactory implements Cloneable {
      * Convenience method for setting the fields in an AMQP URI: host,
      * port, username, password and virtual host.  If any part of the
      * URI is ommited, the ConnectionFactory's corresponding variable
-     * is left unchanged.
+     * is left unchanged.  Escapes in the hostname are not permitted.
      * @param uriString is the AMQP URI containing the data
      */
     public void setUri(String uriString)
