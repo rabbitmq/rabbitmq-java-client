@@ -21,8 +21,11 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
-import java.net.Socket;
 import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
@@ -178,6 +181,66 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setVirtualHost(String virtualHost) {
         this.virtualHost = virtualHost;
+    }
+
+    /**
+     * Convenience method for setting the fields in an AMQP URI: host,
+     * port, username, password and virtual host.  If any part of the
+     * URI is ommited, the ConnectionFactory's corresponding variable
+     * is left unchanged.
+     * @param uriString is the AMQP URI containing the data
+     */
+    public void setUri(String uriString)
+        throws URISyntaxException
+    {
+        URI uri = new URI(uriString);
+
+        if (!"amqp".equals(uri.getScheme())) {
+            throw new IllegalArgumentException("Wrong scheme in AMQP URI: " + uriString);
+        }
+
+        String host = uri.getHost();
+        if (host != null) {
+            setHost(host);
+        }
+
+        int port = uri.getPort();
+        if (port != -1) {
+            setPort(port);
+        }
+
+        String userInfo = uri.getRawUserInfo();
+        if (userInfo != null) {
+            String userPass[] = userInfo.split(":");
+            if (userPass.length > 2) {
+                throw new IllegalArgumentException("Bad user info in AMQP URI: " + uriString);
+            }
+
+            setUsername(uriDecode(userPass[0]));
+            if (userPass.length == 2) {
+                setPassword(uriDecode(userPass[1]));
+            }
+        }
+
+        String path = uri.getRawPath();
+        if (path != null && path.length() > 0) {
+            if (path.indexOf('/', 1) != -1) {
+                throw new IllegalArgumentException("Multiple segemnts in path of AMQP URI: " + uriString);
+            }
+
+            setVirtualHost(uriDecode(uri.getPath().substring(1)));
+        }
+    }
+
+    private String uriDecode(String s) {
+        try {
+            // URLDecode decodes '+' to a space, as for
+            // form encoding.  So protect plus signs.
+            return URLDecoder.decode(s.replace("+", "%2B"), "US-ASCII");
+        }
+        catch (java.io.UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

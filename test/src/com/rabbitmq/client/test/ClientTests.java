@@ -36,6 +36,7 @@ public class ClientTests extends TestCase {
         suite.addTestSuite(QueueingConsumerShutdownTests.class);
         suite.addTestSuite(com.rabbitmq.utility.IntAllocatorTests.class);
         suite.addTestSuite(AMQBuilderApiTest.class);
+        suite.addTestSuite(AmqpUriTest.class);
         return suite;
     }
 }
