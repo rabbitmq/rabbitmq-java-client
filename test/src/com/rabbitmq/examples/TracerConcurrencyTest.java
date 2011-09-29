@@ -27,7 +27,7 @@ import com.rabbitmq.client.ConnectionFactory;
  */
 public class TracerConcurrencyTest{
 
-  public String uri = "amqp://localhost";
+  public String uri = "amqp://localhost:5673";
   public int threadCount = 3;
 
   private final Object lock = new Object();
