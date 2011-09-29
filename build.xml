@@ -227,8 +227,7 @@
     <java fork="true" classname="${test.main}"
         failonerror="${haltOnFailureJava}" errorproperty="test.failure">
       <jvmarg value="-Xdebug"/>
-      <arg value="${broker.hostname}"/>
-      <arg value="${broker.port}"/>
+      <arg value="amqp://${broker.hostname}:${broker.port}"/>
       <classpath>
         <path refid="test.javac.classpath"/>
         <pathelement path="${javac.out}"/>

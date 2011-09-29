@@ -27,8 +27,7 @@ import com.rabbitmq.client.ConnectionFactory;
  */
 public class TracerConcurrencyTest{
 
-  public int port = 5673;
-  public String host = "localhost";
+  public String uri = "amqp://localhost";
   public int threadCount = 3;
 
   private final Object lock = new Object();
@@ -45,7 +44,7 @@ public class TracerConcurrencyTest{
     final Connection conn;
     try {
       conn = new ConnectionFactory()
-          {{setHost(host); setPort(port);}}.newConnection();
+          {{setUri(uri);}}.newConnection();
       Channel setup = conn.createChannel();
 
       setup.exchangeDeclare(EXCHANGE, "direct");

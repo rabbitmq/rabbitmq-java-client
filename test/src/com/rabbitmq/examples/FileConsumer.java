@@ -37,8 +37,7 @@ import com.rabbitmq.client.QueueingConsumer;
 public class FileConsumer {
     public static void main(String[] args) {
 	Options options = new Options();
-	options.addOption(new Option("h", "host", true, "broker host"));
-	options.addOption(new Option("p", "port", true, "broker port"));
+	options.addOption(new Option("h", "uri", true, "AMQP URI"));
 	options.addOption(new Option("q", "queue", true, "queue name"));
 	options.addOption(new Option("t", "type", true, "exchange type"));
 	options.addOption(new Option("e", "exchange", true, "exchange name"));
@@ -50,8 +49,7 @@ public class FileConsumer {
         try {
             CommandLine cmd = parser.parse(options, args);
 
-            String hostName = strArg(cmd, 'h', "localhost");
-            int portNumber = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
+            String uri = strArg(cmd, 'h', "amqp://localhost");
 	    String requestedQueueName = strArg(cmd, 'q', "");
 	    String exchangeType = strArg(cmd, 't', "direct");
 	    String exchange = strArg(cmd, 'e', null);
@@ -65,8 +63,7 @@ public class FileConsumer {
 	    }
 
             ConnectionFactory connFactory = new ConnectionFactory();
-            connFactory.setHost(hostName);
-            connFactory.setPort(portNumber);
+            connFactory.setUri(uri);
             Connection conn = connFactory.newConnection();
 
             final Channel ch = conn.createChannel();

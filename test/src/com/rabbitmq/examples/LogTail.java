@@ -26,13 +26,13 @@ import com.rabbitmq.client.QueueingConsumer;
 public class LogTail {
     public static void main(String[] args) {
         try {
-            ConnectionFactory cfconn = new ConnectionFactory();
-            if (args.length > 0) {
-                cfconn.setUri(args[0]);
-            }
+            String uri = (args.length > 0) ? args[0] : "amqp://localhost";
             String exchange = (args.length > 1) ? args[1] : "amq.rabbitmq.log";
 
+            ConnectionFactory cfconn = new ConnectionFactory();
+            cfconn.setUri(uri);
             Connection conn = cfconn.newConnection();
+
             Channel ch1 = conn.createChannel();
 
             String queueName = ch1.queueDeclare().getQueue();

@@ -18,6 +18,7 @@ package com.rabbitmq.examples;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,9 +73,8 @@ public class StressPersister {
         }
         return multiplier * Integer.parseInt(arg);
     }
-    
-    public String hostName;
-    public int portNumber;
+
+    public String uri;
 
     public String commentText;
     public int backlogSize;
@@ -86,10 +86,9 @@ public class StressPersister {
     public long topStartTime;
     public PrintWriter logOut;
 
-    public void configure(String[] args) throws ParseException {
+    public void configure(String[] args) throws ParseException, URISyntaxException {
         Options options = new Options();
-        options.addOption(new Option("h", "host", true, "broker host"));
-        options.addOption(new Option("p", "port", true, "broker port"));
+        options.addOption(new Option("h", "uri", true, "AMQP URI"));
         options.addOption(new Option("C", "comment", true, "comment text"));
         options.addOption(new Option("b", "backlog", true, "backlog size"));
         options.addOption(new Option("B", "bodysize", true, "body size"));
@@ -98,8 +97,7 @@ public class StressPersister {
         CommandLineParser parser = new GnuParser();
         CommandLine cmd = parser.parse(options, args);
 
-        hostName = strArg(cmd, 'h', "localhost");
-        portNumber = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
+        uri = strArg(cmd, 'h', "amqp://localhost");
 
         commentText = strArg(cmd, 'C', "");
         if ("".equals(commentText)) {
@@ -112,8 +110,7 @@ public class StressPersister {
         sampleGranularity = intArg(cmd, 's', Math.max(5, repeatCount / 250));
 
         connectionFactory = new ConnectionFactory();
-        connectionFactory.setHost(hostName);
-        connectionFactory.setPort(portNumber);
+        connectionFactory.setUri(uri);
     }
 
     public Connection newConnection() throws IOException {
