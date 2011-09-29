@@ -64,8 +64,6 @@ public class MulticastMain {
                 System.exit(0);
             }
 
-            String hostName      = strArg(cmd, 'h', "localhost");
-            int portNumber       = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
             String exchangeType  = strArg(cmd, 't', "direct");
             String exchangeName  = strArg(cmd, 'e', exchangeType);
             String queueName     = strArg(cmd, 'u', "");
@@ -83,7 +81,7 @@ public class MulticastMain {
             List<?> flags        = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
-            String uri           = strArg(cmd, 'u', null);
+            String uri           = strArg(cmd, 'h', "amqp://localhost");
 
             boolean exclusive  = "".equals(queueName);
             boolean autoDelete = !exclusive;
@@ -92,12 +90,7 @@ public class MulticastMain {
             String id = UUID.randomUUID().toString();
             Stats stats = new Stats(1000L * samplingInterval);
             ConnectionFactory factory = new ConnectionFactory();
-            if (uri != null) {
-                factory.setUri(uri);
-            } else {
-                factory.setHost(hostName);
-                factory.setPort(portNumber);
-            }
+            factory.setUri(uri);
             factory.setRequestedFrameMax(frameMax);
             factory.setRequestedHeartbeat(heartbeat);
 
@@ -181,8 +174,7 @@ public class MulticastMain {
     private static Options getOptions() {
         Options options = new Options();
         options.addOption(new Option("?", "help",      false,"show usage"));
-        options.addOption(new Option("h", "host",      true, "broker host"));
-        options.addOption(new Option("p", "port",      true, "broker port"));
+        options.addOption(new Option("h", "uri",       true, "AMQP URI"));
         options.addOption(new Option("t", "type",      true, "exchange type"));
         options.addOption(new Option("e", "exchange",  true, "exchange name"));
         options.addOption(new Option("u", "queue",     true, "queue name"));
@@ -202,7 +194,6 @@ public class MulticastMain {
         options.addOption(flag);
         options.addOption(new Option("M", "framemax",  true, "frame max"));
         options.addOption(new Option("b", "heartbeat", true, "heartbeat interval"));
-        options.addOption(new Option("u", "uri",       true, "AMQP URI"));
         return options;
     }
 
