@@ -83,6 +83,7 @@ public class MulticastMain {
             List<?> flags        = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
+            String uri           = strArg(cmd, 'u', null);
 
             boolean exclusive  = "".equals(queueName);
             boolean autoDelete = !exclusive;
@@ -91,8 +92,12 @@ public class MulticastMain {
             String id = UUID.randomUUID().toString();
             Stats stats = new Stats(1000L * samplingInterval);
             ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost(hostName);
-            factory.setPort(portNumber);
+            if (uri != null) {
+                factory.setUri(uri);
+            } else {
+                factory.setHost(hostName);
+                factory.setPort(portNumber);
+            }
             factory.setRequestedFrameMax(frameMax);
             factory.setRequestedHeartbeat(heartbeat);
 
@@ -197,6 +202,7 @@ public class MulticastMain {
         options.addOption(flag);
         options.addOption(new Option("M", "framemax",  true, "frame max"));
         options.addOption(new Option("b", "heartbeat", true, "heartbeat interval"));
+        options.addOption(new Option("u", "uri",       true, "AMQP URI"));
         return options;
     }
 
