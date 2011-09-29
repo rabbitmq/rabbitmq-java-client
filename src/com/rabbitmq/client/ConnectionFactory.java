@@ -228,7 +228,7 @@ public class ConnectionFactory implements Cloneable {
         String path = uri.getRawPath();
         if (path != null && path.length() > 0) {
             if (path.indexOf('/', 1) != -1) {
-                throw new IllegalArgumentException("Multiple segemnts in path of AMQP URI: " + uriString);
+                throw new IllegalArgumentException("Multiple segments in path of AMQP URI: " + uriString);
             }
 
             setVirtualHost(uriDecode(uri.getPath().substring(1)));
