@@ -579,7 +579,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicAck
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
+     * @see #basicConsume(String, boolean, String, boolean, boolean, Map, Consumer)
      */
     String basicConsume(String queue, Consumer callback) throws IOException;
 
@@ -595,7 +595,7 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
+     * @see #basicConsume(String, boolean, String, boolean, boolean, Map, Consumer)
      */
     String basicConsume(String queue, boolean autoAck, Consumer callback) throws IOException;
 
@@ -611,13 +611,13 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
+     * @see #basicConsume(String, boolean, String, boolean, boolean, Map, Consumer)
      */
     String basicConsume(String queue, boolean autoAck, String consumerTag, Consumer callback) throws IOException;
 
     /**
      * Start a consumer. Calls the consumer's {@link Consumer#handleConsumeOk}
-     * method before returning.
+     * method.
      * @param queue the name of the queue
      * @param autoAck true if the server should consider messages
      * acknowledged once delivered; false if the server should expect
@@ -636,7 +636,7 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Cancel a consumer. Calls the consumer's {@link Consumer#handleCancelOk}
-     * method before returning.
+     * method.
      * @param consumerTag a client- or server-generated consumer tag to establish context
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Cancel

@@ -38,8 +38,7 @@ public abstract class AMQContentHeader implements ContentHeader {
     }
     
     protected AMQContentHeader(DataInputStream in) throws IOException {
-        @SuppressWarnings("unused")
-        int weight = in.readShort(); // Not currently used
+        in.readShort(); // weight not currently used
         this.bodySize = in.readLong();
     }
     

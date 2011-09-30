@@ -42,7 +42,7 @@ public class ValueReader
      * Protected API - Cast an int to a long without extending the
      * sign bit of the int out into the high half of the long.
      */
-    protected static long unsignedExtend(int value)
+    private static final long unsignedExtend(int value)
     {
         long extended = value;
         return extended & INT_MASK;
@@ -59,10 +59,10 @@ public class ValueReader
         this.in = in;
     }
 
-    /** Public API - convenience method - reads a short string from a DataInput
+    /** Convenience method - reads a short string from a DataInput
      * Stream.
      */
-    public static final String readShortstr(DataInputStream in)
+    private static final String readShortstr(DataInputStream in)
         throws IOException
     {
         byte [] b = new byte[in.readUnsignedByte()];
@@ -77,10 +77,10 @@ public class ValueReader
         return readShortstr(this.in);
     }
 
-    /** Public API - convenience method - reads a 32-bit-length-prefix
+    /** Convenience method - reads a 32-bit-length-prefix
      * byte vector from a DataInputStream.
      */
-    public static final byte[] readBytes(final DataInputStream in)
+    private static final byte[] readBytes(final DataInputStream in)
         throws IOException
     {
         final long contentLength = unsignedExtend(in.readInt());
@@ -94,19 +94,10 @@ public class ValueReader
         }
     }
 
-    /** Public API - convenience method - reads a 32-bit-length-prefix
-     * byte vector
-     */
-    public byte[] readBytes()
-        throws IOException
-    {
-        return readBytes(this.in);
-    }
-
-    /** Public API - convenience method - reads a long string argument
+    /** Convenience method - reads a long string argument
      * from a DataInputStream.
      */
-    public static final LongString readLongstr(final DataInputStream in)
+    private static final LongString readLongstr(final DataInputStream in)
         throws IOException
     {
         return LongStringHelper.asLongString(readBytes(in));
@@ -142,10 +133,10 @@ public class ValueReader
     }
 
     /**
-     * Public API - reads a table argument from a given stream. Also
+     * Reads a table argument from a given stream. Also
      * called by {@link ContentHeaderPropertyReader}.
      */
-    public static final Map<String, Object> readTable(DataInputStream in)
+    private static final Map<String, Object> readTable(DataInputStream in)
         throws IOException
     {
         long tableLength = unsignedExtend(in.readInt());
@@ -163,7 +154,7 @@ public class ValueReader
         return table;
     }
 
-    public static final Object readFieldValue(DataInputStream in)
+    private static final Object readFieldValue(DataInputStream in)
         throws IOException {
         Object value = null;
         switch(in.readUnsignedByte()) {
@@ -220,7 +211,7 @@ public class ValueReader
     }
 
     /** Read a field-array */
-    public static List<Object> readArray(DataInputStream in)
+    private static final List<Object> readArray(DataInputStream in)
         throws IOException
     {
         long length = unsignedExtend(in.readInt());
@@ -248,8 +239,8 @@ public class ValueReader
         return in.readUnsignedByte();
     }
 
-    /** Public API - convenience method - reads a timestamp argument from the DataInputStream. */
-    public static final Date readTimestamp(DataInputStream in)
+    /** Convenience method - reads a timestamp argument from the DataInputStream. */
+    private static final Date readTimestamp(DataInputStream in)
         throws IOException
     {
         return new Date(in.readLong()*1000);

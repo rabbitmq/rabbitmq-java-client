@@ -34,6 +34,7 @@ public class ClientTests extends TestCase {
         suite.addTestSuite(CloseInMainLoop.class);
         suite.addTestSuite(ChannelNumberAllocationTests.class);
         suite.addTestSuite(QueueingConsumerShutdownTests.class);
+        suite.addTestSuite(MultiThreadedChannel.class);
         suite.addTestSuite(com.rabbitmq.utility.IntAllocatorTests.class);
         suite.addTestSuite(AMQBuilderApiTest.class);
         suite.addTestSuite(AmqpUriTest.class);

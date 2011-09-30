@@ -43,19 +43,19 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * so that clients can themselves use the channel to synchronize
      * on.
      */
-    public final Object _channelMutex = new Object();
+    protected final Object _channelMutex = new Object();
 
     /** The connection this channel is associated with. */
-    public final AMQConnection _connection;
+    private final AMQConnection _connection;
 
     /** This channel's channel number. */
-    public final int _channelNumber;
+    private final int _channelNumber;
 
-    /** State machine assembling commands on their way in. */
-    public AMQCommand.Assembler _commandAssembler = AMQCommand.newAssembler();
+    /** Command being assembled */
+    private AMQCommand _command = new AMQCommand();
 
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
-    public RpcContinuation _activeRpc = null;
+    private RpcContinuation _activeRpc = null;
 
     /** Whether transmission of content-bearing methods should be blocked */
     public boolean _blockContent = false;
@@ -79,23 +79,15 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     /**
-     * Public API - Retrieves this channel's underlying connection.
-     * @return the connection
-     */
-    public Connection getConnection() {
-        return _connection;
-    }
-
-    /**
      * Private API - When the Connection receives a Frame for this
      * channel, it passes it to this method.
      * @param frame the incoming frame
      * @throws IOException if an error is encountered
      */
     public void handleFrame(Frame frame) throws IOException {
-        AMQCommand command = _commandAssembler.handleFrame(frame);
-        if (command != null) { // a complete command has rolled off the assembly line
-            _commandAssembler = AMQCommand.newAssembler(); // prepare for the next one
+        AMQCommand command = _command;
+        if (command.handleFrame(frame)) { // a complete command has rolled off the assembly line
+            _command = new AMQCommand(); // prepare for the next one
             handleCompleteInboundCommand(command);
         }
     }
@@ -161,10 +153,21 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public void enqueueRpc(RpcContinuation k)
     {
         synchronized (_channelMutex) {
-            if (_activeRpc != null) {
-                throw new IllegalStateException("cannot execute more than one synchronous AMQP command at a time");
+            while (_activeRpc != null) {
+                try {
+                    _channelMutex.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
             _activeRpc = k;
+        }
+    }
+
+    public boolean isOutstandingRpc()
+    {
+        synchronized (_channelMutex) {
+            return (_activeRpc != null);
         }
     }
 
@@ -173,6 +176,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         synchronized (_channelMutex) {
             RpcContinuation result = _activeRpc;
             _activeRpc = null;
+            _channelMutex.notifyAll();
             return result;
         }
     }
@@ -311,7 +315,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public AMQConnection getAMQConnection() {
+    public AMQConnection getConnection() {
         return _connection;
     }
 

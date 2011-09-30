@@ -16,7 +16,6 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
@@ -99,8 +98,7 @@ public class UnexpectedFrames extends BrokerTestCase {
                     // send 0 bytes and hang waiting for a response.
                     Frame confusedFrame = new Frame(AMQP.FRAME_HEADER,
                                                     frame.channel,
-                                                    frame.payload);
-                    confusedFrame.accumulator = frame.accumulator;
+                                                    frame.getPayload());
                     return confusedFrame;
                 }
                 return frame;
@@ -123,13 +121,15 @@ public class UnexpectedFrames extends BrokerTestCase {
         expectUnexpectedFrameError(new Confuser() {
             public Frame confuse(Frame frame) throws IOException {
                 if (frame.type == AMQP.FRAME_HEADER) {
-                    byte[] payload = frame.accumulator.toByteArray();
+                    byte[] payload = frame.getPayload();
+                    Frame confusedFrame = new Frame(AMQP.FRAME_HEADER,
+                            frame.channel,
+                            payload);
                     // First two bytes = class ID, must match class ID from
                     // method.
                     payload[0] = 12;
                     payload[1] = 34;
-                    frame.accumulator = new ByteArrayOutputStream();
-                    frame.accumulator.write(payload, 0, payload.length);
+                    return confusedFrame;
                 }
                 return frame;
             }
