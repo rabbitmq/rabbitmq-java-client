@@ -66,7 +66,7 @@ public class CloseInMainLoop extends BrokerTestCase{
                                  "Internal error in Consumer " + consumerTag,
                                  false,
                                  exception,
-                                 AMQConnection.CONNECTION_CLOSING_TIMEOUT,
+                                 -1,
                                  false);
                     } catch (Throwable e) {
                         // Man, this clearly isn't our day.
