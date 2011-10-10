@@ -18,11 +18,15 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.ConnectionFactory;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.net.URISyntaxException;
 
 public class AmqpUriTest extends BrokerTestCase
 {
-    public void testUriParsing() throws URISyntaxException {
+    public void testUriParsing()
+        throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+    {
         /* From the spec (subset of the tests) */
         parseSuccess("amqp://user:pass@host:10000/vhost",
                      "user", "pass", "host", 10000, "vhost");
@@ -68,7 +72,7 @@ public class AmqpUriTest extends BrokerTestCase
 
     private void parseSuccess(String uri, String user, String password,
                               String host, int port, String vhost)
-        throws URISyntaxException
+        throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
         ConnectionFactory cf = new ConnectionFactory();
         cf.setUri(uri);

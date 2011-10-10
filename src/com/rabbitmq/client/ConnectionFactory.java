@@ -187,11 +187,16 @@ public class ConnectionFactory implements Cloneable {
      * @param uriString is the AMQP URI containing the data
      */
     public void setUri(String uriString)
-        throws URISyntaxException
+        throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
         URI uri = new URI(uriString);
 
-        if (!"amqp".equals(uri.getScheme())) {
+        if ("amqp".equals(uri.getScheme().toLowerCase())) {
+            // nothing special to do
+        } else if ("amqps".equals(uri.getScheme().toLowerCase())) {
+            setPort(DEFAULT_AMQP_OVER_SSL_PORT);
+            useSslProtocol();
+        } else {
             throw new IllegalArgumentException("Wrong scheme in AMQP URI: " + uriString);
         }
 

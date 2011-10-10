@@ -19,6 +19,8 @@ package com.rabbitmq.examples;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,7 +88,9 @@ public class StressPersister {
     public long topStartTime;
     public PrintWriter logOut;
 
-    public void configure(String[] args) throws ParseException, URISyntaxException {
+    public void configure(String[] args)
+        throws ParseException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+    {
         Options options = new Options();
         options.addOption(new Option("h", "uri", true, "AMQP URI"));
         options.addOption(new Option("C", "comment", true, "comment text"));

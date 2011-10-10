@@ -19,6 +19,8 @@ package com.rabbitmq.examples;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.net.URISyntaxException;
 
 import com.rabbitmq.client.AMQP;
@@ -75,7 +77,7 @@ public class TestMain {
         private final int protocolMinor;
 
         public TestConnectionFactory(int major, int minor, String uri)
-            throws URISyntaxException
+            throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
         {
             this.protocolMajor = major;
             this.protocolMinor = minor;
@@ -97,7 +99,7 @@ public class TestMain {
     }
 
     public static void runConnectionNegotiationTest(final String uri)
-        throws IOException, URISyntaxException
+        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
 
         Connection conn;
@@ -156,7 +158,7 @@ public class TestMain {
     }
 
     public static void runConnectionShutdownTests(final String uri)
-        throws IOException, URISyntaxException
+        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
         Connection conn;
         Channel ch;
@@ -180,7 +182,7 @@ public class TestMain {
     }
 
     public static void runProducerConsumerTest(String uri, int commitEvery)
-        throws IOException, URISyntaxException
+        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
         ConnectionFactory cfconnp = new ConnectionFactory();
         cfconnp.setUri(uri);
