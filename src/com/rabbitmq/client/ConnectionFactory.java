@@ -180,24 +180,20 @@ public class ConnectionFactory implements Cloneable {
      * Convenience method for setting the fields in an AMQP URI: host,
      * port, username, password and virtual host.  If any part of the
      * URI is ommited, the ConnectionFactory's corresponding variable
-     * is left unchanged.  Note that not all valid AMQP URIs are
-     * accepted; in particular, the hostname must be given if the
-     * port, username or password are given, and escapes in the
-     * hostname are not permitted.
-     * @param uriString is the AMQP URI containing the data
+     * is left unchanged.
+     * @param uri is the AMQP URI containing the data
      */
-    public void setUri(String uriString)
+    public void setUri(URI uri)
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
-        URI uri = new URI(uriString);
-
         if ("amqp".equals(uri.getScheme().toLowerCase())) {
             // nothing special to do
         } else if ("amqps".equals(uri.getScheme().toLowerCase())) {
             setPort(DEFAULT_AMQP_OVER_SSL_PORT);
             useSslProtocol();
         } else {
-            throw new IllegalArgumentException("Wrong scheme in AMQP URI: " + uriString);
+            throw new IllegalArgumentException("Wrong scheme in AMQP URI: " +
+                                               uri.getScheme());
         }
 
         String host = uri.getHost();
@@ -214,7 +210,8 @@ public class ConnectionFactory implements Cloneable {
         if (userInfo != null) {
             String userPass[] = userInfo.split(":");
             if (userPass.length > 2) {
-                throw new IllegalArgumentException("Bad user info in AMQP URI: " + uriString);
+                throw new IllegalArgumentException("Bad user info in AMQP " +
+                                                   "URI: " + userInfo);
             }
 
             setUsername(uriDecode(userPass[0]));
@@ -226,11 +223,29 @@ public class ConnectionFactory implements Cloneable {
         String path = uri.getRawPath();
         if (path != null && path.length() > 0) {
             if (path.indexOf('/', 1) != -1) {
-                throw new IllegalArgumentException("Multiple segments in path of AMQP URI: " + uriString);
+                throw new IllegalArgumentException("Multiple segments in " +
+                                                   "path of AMQP URI: " +
+                                                   path);
             }
 
             setVirtualHost(uriDecode(uri.getPath().substring(1)));
         }
+    }
+
+    /**
+     * Convenience method for setting the fields in an AMQP URI: host,
+     * port, username, password and virtual host.  If any part of the
+     * URI is ommited, the ConnectionFactory's corresponding variable
+     * is left unchanged.  Note that not all valid AMQP URIs are
+     * accepted; in particular, the hostname must be given if the
+     * port, username or password are given, and escapes in the
+     * hostname are not permitted.
+     * @param uriString is the AMQP URI containing the data
+     */
+    public void setUri(String uriString)
+        throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+    {
+        setUri(new URI(uriString));
     }
 
     private String uriDecode(String s) {
