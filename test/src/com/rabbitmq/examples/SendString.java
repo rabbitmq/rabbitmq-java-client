@@ -26,20 +26,18 @@ public class SendString {
     public static void main(String[] args) {
         try {
             if (args.length < 5) {
-                System.err.println("Usage: SendString <hostname> <exchange> <exchangetype> <routingkey> <message> [<portnumber>]");
+                System.err.println("Usage: SendString <uri> <exchange> <exchangetype> <routingkey> <message>");
                 System.exit(1);
             }
 
-            String hostName = args[0];
+            String uri = args[0];
             String exchange = args[1];
             String exchangeType = args[2];
             String routingKey = args[3];
             String message = args[4];
-            int portNumber = (args.length > 5) ? Integer.parseInt(args[5]) : AMQP.PROTOCOL.PORT;
 
-            ConnectionFactory cfconn = new ConnectionFactory(); 
-            cfconn.setHost(hostName); 
-            cfconn.setPort(portNumber);
+            ConnectionFactory cfconn = new ConnectionFactory();
+            cfconn.setUri(uri);
             Connection conn = cfconn.newConnection();
             Channel ch = conn.createChannel();
 

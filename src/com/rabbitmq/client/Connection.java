@@ -38,6 +38,14 @@ import java.util.Map;
  *
  * Channel channel = conn.createChannel();
  * </pre>
+ * Or, more compactly:
+ *
+ * <pre>
+ * ConnectionFactory factory = new ConnectionFactory();
+ * factory.setUri("amqp://username:password@hostName:portNumber/virtualHost");
+ * Connection conn = factory.newConnection();
+ * Channel channel = conn.createChannel()
+ * </pre>
  *
  * Current implementations are thread-safe for code at the client API level,
  * and in fact thread-safe internally except for code within RPC calls.

@@ -43,7 +43,7 @@ public class BufferPerformanceMetrics {
     public static double NANOSECONDS_PER_SECOND = 1000 * 1000 * 1000;
 
     public static void main(String[] args) throws Exception {
-        final String hostName = args.length > 0 ? args[0] : "localhost";
+        final String uri = args.length > 0 ? args[0] : "amqp://localhost";
 
         Random rnd = new Random();
 
@@ -64,8 +64,8 @@ public class BufferPerformanceMetrics {
 
             for(final boolean useNagle : new boolean[] { false, true }) {
                 ConnectionFactory factory = new ConnectionFactory() {
-                    { setHost(hostName); }
-                    
+                    { setUri(uri); }
+
                         public void configureSocket(Socket socket)
                             throws IOException {
                             socket.setTcpNoDelay(!useNagle);

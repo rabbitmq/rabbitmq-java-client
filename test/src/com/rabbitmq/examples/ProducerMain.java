@@ -68,14 +68,13 @@ public class ProducerMain implements Runnable {
 
     public static void main(String[] args) {
         try {
-            final String hostName = optArg("hostName", args, 0, "localhost");
-            final int portNumber = optArg("portNumber", args, 1, AMQP.PROTOCOL.PORT);
-            int rateLimit = optArg("rateLimit", args, 2, SEND_RATE);
-            int messageCount = optArg("messageCount", args, 3, LATENCY_MESSAGE_COUNT);
-            boolean sendCompletion = optArg("sendCompletion", args, 4, false);
-            int commitEvery = optArg("commitEvery", args, 5, -1);
-            boolean sendLatencyInfo = optArg("sendLatencyInfo", args, 6, true);
-            final Connection conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+            final String uri = optArg("uri", args, 0, "amqp://localhost");
+            int rateLimit = optArg("rateLimit", args, 1, SEND_RATE);
+            int messageCount = optArg("messageCount", args, 2, LATENCY_MESSAGE_COUNT);
+            boolean sendCompletion = optArg("sendCompletion", args, 3, false);
+            int commitEvery = optArg("commitEvery", args, 4, -1);
+            boolean sendLatencyInfo = optArg("sendLatencyInfo", args, 5, true);
+            final Connection conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
             //if (commitEvery > 0) { conn.getSocket().setTcpNoDelay(true); }
             System.out.println("Channel 0 fully open.");
             new ProducerMain(conn, rateLimit, messageCount, sendCompletion, commitEvery, sendLatencyInfo).run();
