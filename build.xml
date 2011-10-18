@@ -227,8 +227,7 @@
     <java fork="true" classname="${test.main}"
         failonerror="${haltOnFailureJava}" errorproperty="test.failure">
       <jvmarg value="-Xdebug"/>
-      <arg value="${broker.hostname}"/>
-      <arg value="${broker.port}"/>
+      <arg value="amqp://${broker.hostname}:${broker.port}"/>
       <classpath>
         <path refid="test.javac.classpath"/>
         <pathelement path="${javac.out}"/>
@@ -242,8 +241,7 @@
     	failonerror="${haltOnFailureJava}" errorproperty="test.failure">
       <jvmarg value="-Xdebug"/>
       <jvmarg value="-Dsilent=true"/>
-      <arg value="${broker.hostname}"/>
-      <arg value="${broker.port}"/>
+      <arg value="amqp://${broker.hostname}:${broker.port}"/>
       <classpath>
         <path refid="test.javac.classpath"/>
         <pathelement path="${javac.out}"/>
@@ -257,8 +255,7 @@
         failonerror="${haltOnFailureJava}" errorproperty="test.failure">
       <jvmarg value="-Xdebug"/>
       <jvmarg value="-Dsilent=true"/>
-      <arg value="${broker.hostname}"/>
-      <arg value="${broker.port}"/>
+      <arg value="amqp://${broker.hostname}:${broker.port}"/>
       <classpath>
         <path refid="test.javac.classpath"/>
         <pathelement path="${javac.out}"/>
@@ -270,8 +267,7 @@
   <target name="producer" depends="test-build">
     <java fork="true" classname="com.rabbitmq.examples.ProducerMain">
       <jvmarg value="-Xdebug"/>
-      <arg value="${broker.hostname}"/>
-      <arg value="${broker.port}"/>
+      <arg value="amqp://${broker.hostname}:${broker.port}"/>
       <arg value="${test.producer.rate-limit}"/>
       <arg value="${test.producer.message-count}"/>
       <arg value="${test.producer.send-completion}"/>
@@ -288,8 +284,7 @@
   <target name="consumer" depends="test-build">
     <java fork="true" classname="com.rabbitmq.examples.ConsumerMain">
       <jvmarg value="-Xdebug"/>
-      <arg value="${broker.hostname}"/>
-      <arg value="${broker.port}"/>
+      <arg value="amqp://${broker.hostname}:${broker.port}"/>
       <classpath>
         <path refid="test.javac.classpath"/>
         <pathelement path="${javac.out}"/>

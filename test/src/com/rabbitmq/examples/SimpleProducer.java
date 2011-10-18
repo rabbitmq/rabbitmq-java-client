@@ -25,16 +25,14 @@ import com.rabbitmq.client.ConnectionFactory;
 public class SimpleProducer {
     public static void main(String[] args) {
         try {
-            String hostName = (args.length > 0) ? args[0] : "localhost";
-            int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
-            String message = (args.length > 2) ? args[2] :
+            String uri = (args.length > 0) ? args[0] : "amqp://localhost";
+            String message = (args.length > 1) ? args[1] :
                 "the time is " + new java.util.Date().toString();
-            String exchange = (args.length > 3) ? args[3] : "";
-            String routingKey = (args.length > 4) ? args[4] : "SimpleQueue";
+            String exchange = (args.length > 2) ? args[2] : "";
+            String routingKey = (args.length > 3) ? args[3] : "SimpleQueue";
 
             ConnectionFactory cfconn = new ConnectionFactory();
-            cfconn.setHost(hostName);
-            cfconn.setPort(portNumber);
+            cfconn.setUri(uri);
             Connection conn = cfconn.newConnection();
 
             Channel ch = conn.createChannel();

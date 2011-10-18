@@ -19,6 +19,9 @@ package com.rabbitmq.examples;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.net.URISyntaxException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
@@ -39,28 +42,27 @@ import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
 public class TestMain {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, URISyntaxException {
         // Show what version this class was compiled with, to check conformance testing
         Class<?> clazz = TestMain.class;
         String javaVersion = System.getProperty("java.version");
         System.out.println(clazz.getName() + " : javac v" + getCompilerVersion(clazz) + " on " + javaVersion);
         try {
             boolean silent = Boolean.getBoolean("silent");
-            final String hostName = (args.length > 0) ? args[0] : "localhost";
-            final int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
-            runConnectionNegotiationTest(hostName, portNumber);
-            final Connection conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+            final String uri = (args.length > 0) ? args[0] : "amqp://localhost";
+            runConnectionNegotiationTest(uri);
+            final Connection conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
             if (!silent) {
                 System.out.println("Channel 0 fully open.");
             }
 
             new TestMain(conn, silent).run();
 
-            runProducerConsumerTest(hostName, portNumber, 500);
-            runProducerConsumerTest(hostName, portNumber, 0);
-            runProducerConsumerTest(hostName, portNumber, -1);
+            runProducerConsumerTest(uri, 500);
+            runProducerConsumerTest(uri, 0);
+            runProducerConsumerTest(uri, -1);
 
-            runConnectionShutdownTests(hostName, portNumber);
+            runConnectionShutdownTests(uri);
 
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
@@ -74,11 +76,12 @@ public class TestMain {
         private final int protocolMajor;
         private final int protocolMinor;
 
-        public TestConnectionFactory(int major, int minor, String hostName, int port) {
+        public TestConnectionFactory(int major, int minor, String uri)
+            throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+        {
             this.protocolMajor = major;
             this.protocolMinor = minor;
-            setHost(hostName);
-            setPort(port);
+            setUri(uri);
         }
 
         protected FrameHandler createFrameHandler(Address addr)
@@ -95,12 +98,14 @@ public class TestMain {
         }
     }
 
-    public static void runConnectionNegotiationTest(final String hostName, final int portNumber) throws IOException {
+    public static void runConnectionNegotiationTest(final String uri)
+        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+    {
 
         Connection conn;
 
         try {
-            conn = new TestConnectionFactory(0, 1, hostName, portNumber).newConnection();
+            conn = new TestConnectionFactory(0, 1, uri).newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
@@ -110,8 +115,7 @@ public class TestMain {
         factory.setUsername("invalid");
         factory.setPassword("invalid");
         try {
-            factory.setHost(hostName);
-            factory.setPort(portNumber);
+            factory.setUri(uri);
             conn = factory.newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
@@ -121,8 +125,7 @@ public class TestMain {
         factory.setRequestedChannelMax(10);
         factory.setRequestedFrameMax(8192);
         factory.setRequestedHeartbeat(1);
-        factory.setHost(hostName);
-        factory.setPort(portNumber);
+        factory.setUri(uri);
         conn = factory.newConnection();
         checkNegotiatedMaxValue("channel-max", 10, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 8192, conn.getFrameMax());
@@ -133,15 +136,14 @@ public class TestMain {
         factory.setRequestedChannelMax(0);
         factory.setRequestedFrameMax(0);
         factory.setRequestedHeartbeat(0);
-        factory.setHost(hostName);
-        factory.setPort(portNumber);
+        factory.setUri(uri);
         conn = factory.newConnection();
         checkNegotiatedMaxValue("channel-max", 0, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 0, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 0, conn.getHeartbeat());
         conn.close();
 
-        conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+        conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
         conn.close();
     }
 
@@ -155,16 +157,18 @@ public class TestMain {
         }
     }
 
-    public static void runConnectionShutdownTests(final String hostName, final int portNumber) throws IOException {
+    public static void runConnectionShutdownTests(final String uri)
+        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+    {
         Connection conn;
         Channel ch;
         // Test what happens when a connection is shut down w/o first
         // closing the channels.
-        conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+        conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
         ch = conn.createChannel();
         conn.close();
         // Test what happens when we provoke an error
-        conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+        conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
         ch = conn.createChannel();
         try {
             ch.exchangeDeclare("mumble", "invalid");
@@ -172,21 +176,21 @@ public class TestMain {
         } catch (IOException e) {
         }
         // Test what happens when we just kill the connection
-        conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+        conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
         ch = conn.createChannel();
         ((SocketFrameHandler)((AMQConnection)conn).getFrameHandler()).close();
     }
 
-    public static void runProducerConsumerTest(String hostName, int portNumber, int commitEvery) throws IOException {
+    public static void runProducerConsumerTest(String uri, int commitEvery)
+        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+    {
         ConnectionFactory cfconnp = new ConnectionFactory();
-        cfconnp.setHost(hostName);
-        cfconnp.setPort(portNumber);
+        cfconnp.setUri(uri);
         Connection connp = cfconnp.newConnection();
         ProducerMain p = new ProducerMain(connp, 2000, 10000, false, commitEvery, true);
         new Thread(p).start();
         ConnectionFactory cfconnc = new ConnectionFactory();
-        cfconnc.setHost(hostName);
-        cfconnc.setPort(portNumber);
+        cfconnc.setUri(uri);
         Connection connc = cfconnc.newConnection();
         ConsumerMain c = new ConsumerMain(connc, false, true);
         c.run();
