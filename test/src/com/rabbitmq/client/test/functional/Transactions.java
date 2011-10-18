@@ -347,30 +347,21 @@ public class Transactions extends BrokerTestCase
         throws IOException
     {
         openChannel();
-        try {
-            createResources();
-            for (int i = 0; i < 3; i++) {
-                basicPublish();
-            }
-            txSelect();
-            long tags[] = new long[3];
-            for (int i = 0; i < 3; i++) {
-                tags[i] = basicGet().getEnvelope().getDeliveryTag();
-            }
-            basicAck(tags[2], false);
-            basicAck(tags[1], false);
-            txRollback();
-            basicAck(tags[0], true);
-            basicAck(tags[1], false);
-            basicAck(tags[2], false);
-            txCommit();
-        } catch (IOException e) {
-            closeConnection();
-            openConnection();
-            openChannel();
-            throw e;
-        } finally {
-            closeChannel();
+        createResources();
+        for (int i = 0; i < 3; i++) {
+            basicPublish();
         }
+        txSelect();
+        long tags[] = new long[3];
+        for (int i = 0; i < 3; i++) {
+            tags[i] = basicGet().getEnvelope().getDeliveryTag();
+        }
+        basicAck(tags[2], false);
+        basicAck(tags[1], false);
+        txRollback();
+        basicAck(tags[0], true);
+        basicAck(tags[1], false);
+        basicAck(tags[2], false);
+        txCommit();
     }
 }
