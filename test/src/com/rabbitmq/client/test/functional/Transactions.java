@@ -347,7 +347,6 @@ public class Transactions extends BrokerTestCase
         throws IOException
     {
         openChannel();
-        createResources();
         for (int i = 0; i < 3; i++) {
             basicPublish();
         }
