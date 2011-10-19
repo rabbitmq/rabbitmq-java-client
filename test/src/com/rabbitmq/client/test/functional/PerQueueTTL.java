@@ -122,6 +122,16 @@ public class PerQueueTTL extends BrokerTestCase {
         declareQueue(TTL_QUEUE_NAME, 10L);
     }
 
+    public void testQueueRedeclareSemanticNonEquivalence() throws Exception {
+        declareQueue(TTL_QUEUE_NAME, 10);
+        try {
+            declareQueue(TTL_QUEUE_NAME, 10.0);
+            fail("Should not be able to redeclare with argument of different type");
+        } catch(IOException ex) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
+        }
+    }
+
     /*
      * Test messages expire when using basic get.
      */
