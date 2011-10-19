@@ -115,6 +115,13 @@ public class PerQueueTTL extends BrokerTestCase {
         }
     }
 
+    public void testQueueRedeclareSemanticEquivalence() throws Exception {
+        declareQueue(TTL_QUEUE_NAME, (byte)10);
+        declareQueue(TTL_QUEUE_NAME, 10);
+        declareQueue(TTL_QUEUE_NAME, (short)10);
+        declareQueue(TTL_QUEUE_NAME, 10L);
+    }
+
     /*
      * Test messages expire when using basic get.
      */
