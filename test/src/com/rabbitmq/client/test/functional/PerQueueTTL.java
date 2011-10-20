@@ -183,6 +183,34 @@ public class PerQueueTTL extends BrokerTestCase {
         assertNull(get());
     }
 
+    /*
+     * Test expiry of requeued messages
+     */
+    public void testExpiryWithRequeue() throws Exception {
+        long ttl = 1000;
+        declareQueue(TTL_QUEUE_NAME, ttl);
+        this.channel.queueBind(TTL_QUEUE_NAME, TTL_EXCHANGE, TTL_QUEUE_NAME);
+
+        byte[] msg1 = "one".getBytes();
+        byte[] msg2 = "two".getBytes();
+        byte[] msg3 = "three".getBytes();
+
+        basicPublishVolatile(msg1, TTL_EXCHANGE, TTL_QUEUE_NAME);
+        Thread.sleep(500);
+        basicPublishVolatile(msg2, TTL_EXCHANGE, TTL_QUEUE_NAME);
+        basicPublishVolatile(msg3, TTL_EXCHANGE, TTL_QUEUE_NAME);
+
+        expectBodyAndRemainingMessages("one", 2);
+        expectBodyAndRemainingMessages("two", 1);
+
+        closeChannel();
+        openChannel();
+
+        Thread.sleep(600);
+        expectBodyAndRemainingMessages("two", 1);
+        expectBodyAndRemainingMessages("three", 0);
+    }
+
 
     private byte[] get() throws IOException {
         GetResponse response = basicGet(TTL_QUEUE_NAME);
@@ -197,5 +225,10 @@ public class PerQueueTTL extends BrokerTestCase {
         return this.channel.queueDeclare(name, false, true, false, argMap);
     }
 
+    private void expectBodyAndRemainingMessages(String body, int messagesLeft) throws IOException {
+        GetResponse response = channel.basicGet(TTL_QUEUE_NAME, false);
+        assertEquals(body, new String(response.getBody()));
+        assertEquals(messagesLeft,  response.getMessageCount());
+    }
 
 }
