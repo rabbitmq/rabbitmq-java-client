@@ -54,9 +54,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
 
-    /** Timeout used while waiting for a connection.close-ok (milliseconds) */
-    public static final int CONNECTION_CLOSING_TIMEOUT = 10000;
-
     /**
      * Retrieve a copy of the default table of client properties that
      * will be sent to the server during connection startup. This
@@ -593,11 +590,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         @Override public void run() {
             try {
-                _appContinuation.uninterruptibleGet(CONNECTION_CLOSING_TIMEOUT);
-            } catch (TimeoutException ise) {
-                // Broker didn't close socket on time, force socket close
-                // FIXME: notify about timeout exception?
-                _frameHandler.close();
+                _appContinuation.uninterruptibleGet();
             } finally {
                 _running = false;
                 _channel0.notifyOutstandingRpc(cause);
@@ -695,8 +688,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * Protected API - Delegates to {@link
      * #close(int,String,boolean,Throwable,int,boolean) the
-     * six-argument close method}, passing
-     * {@link #CONNECTION_CLOSING_TIMEOUT} for the timeout, and
+     * six-argument close method}, passing -1 for the timeout, and
      * false for the abort flag.
      */
     public void close(int closeCode,
@@ -705,8 +697,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                       Throwable cause)
         throws IOException
     {
-        close(closeCode, closeMessage, initiatedByApplication, cause,
-                CONNECTION_CLOSING_TIMEOUT, false);
+        close(closeCode, closeMessage, initiatedByApplication, cause, -1, false);
     }
 
     /**
