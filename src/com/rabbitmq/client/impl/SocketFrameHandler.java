@@ -41,6 +41,9 @@ public class SocketFrameHandler implements FrameHandler {
     /** Socket's outputstream - data to the broker - synchronized on */
     private final DataOutputStream _outputStream;
 
+    /** Time to linger before closing the socket forcefully. */
+    public static final int SOCKET_CLOSING_TIMEOUT = 1;
+
     /**
      * @param socket the socket to use
      */
@@ -138,6 +141,7 @@ public class SocketFrameHandler implements FrameHandler {
 
     public void close() {
         try {
+            _socket.setSoLinger(true, SOCKET_CLOSING_TIMEOUT);
             _socket.close();
         } catch (IOException ioe) {
             // Ignore.
