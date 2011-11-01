@@ -43,6 +43,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
@@ -108,12 +109,10 @@ public class MulticastMain {
                                              flags.contains("persistent"),
                                              exclusive, autoDelete,
                                              null).getQueue();
-                QueueingConsumer consumer = new QueueingConsumer(channel);
                 if (prefetchCount > 0) channel.basicQos(prefetchCount);
-                channel.basicConsume(qName, autoAck, consumer);
                 channel.queueBind(qName, exchangeName, id);
                 Thread t =
-                    new Thread(new Consumer(consumer, id,
+                    new Thread(new Consumer(channel, id, qName,
                                             consumerTxSize, autoAck,
                                             stats, timeLimit));
                 consumerThreads[i] = t;
@@ -419,18 +418,21 @@ public class MulticastMain {
     public static class Consumer implements Runnable {
 
         private QueueingConsumer q;
+        private Channel          channel;
         private String           id;
+        private String           queueName;
         private int              txSize;
         private boolean          autoAck;
         private Stats            stats;
         private long             timeLimit;
 
-        public Consumer(QueueingConsumer q, String id,
-                        int txSize, boolean autoAck,
+        public Consumer(Channel channel, String id,
+                        String queueName, int txSize, boolean autoAck,
                         Stats stats, int timeLimit) {
 
-            this.q         = q;
+            this.channel   = channel;
             this.id        = id;
+            this.queueName = queueName;
             this.txSize    = txSize;
             this.autoAck   = autoAck;
             this.stats     = stats;
@@ -444,17 +446,24 @@ public class MulticastMain {
             startTime = now = System.currentTimeMillis();
             int totalMsgCount = 0;
 
-            Channel channel = q.getChannel();
-
             try {
+                q = new QueueingConsumer(channel);
+                channel.basicConsume(queueName, autoAck, q);
 
                 while (timeLimit == 0 || now < startTime + timeLimit) {
                     Delivery delivery;
-                    if (timeLimit == 0) {
-                        delivery = q.nextDelivery();
-                    } else {
-                        delivery = q.nextDelivery(startTime + timeLimit - now);
-                        if (delivery == null) break;
+                    try {
+                        if (timeLimit == 0) {
+                            delivery = q.nextDelivery();
+                        } else {
+                            delivery = q.nextDelivery(startTime + timeLimit - now);
+                            if (delivery == null) break;
+                        }
+                    } catch (ConsumerCancelledException e) {
+                        System.out.println("Consumer cancelled by broker. Re-consuming.");
+                        q = new QueueingConsumer(channel);
+                        channel.basicConsume(queueName, autoAck, q);
+                        continue;
                     }
 		    totalMsgCount++;
 
