@@ -58,6 +58,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(ConsumerCancelNotificiation.class);
         suite.addTestSuite(UnexpectedFrames.class);
         suite.addTestSuite(PerQueueTTL.class);
+        suite.addTestSuite(DeadLetterExchange.class);
         suite.addTestSuite(SaslMechanisms.class);
         suite.addTestSuite(UserIDHeader.class);
         suite.addTestSuite(InternalExchange.class);
