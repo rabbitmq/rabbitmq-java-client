@@ -11,37 +11,38 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class DeadLetterExchange extends BrokerTestCase {
-
-    private static final String DEAD_LETTER_EXCHANGE = "dead.letter.exchange";
-
-    private static final String DEAD_LETTER_EXCHANGE_ARG = "x-dead-letter-exchange";
-
+    private static final String DLX = "dead.letter.exchange";
+    private static final String DLX_ARG = "x-dead-letter-exchange";
     private static final String TEST_QUEUE_NAME = "test.queue.dead.letter";
-
-    private static final String DEAD_LETTER_QUEUE = "queue.dle";
-
+    private static final String DLQ = "queue.dle";
     private static final int MSG_COUNT = 10;
 
     @Override
     protected void createResources() throws IOException {
-        this.channel.exchangeDeclare(DEAD_LETTER_EXCHANGE, "direct");
-        this.channel.queueDeclare(DEAD_LETTER_QUEUE, false, true, false, null);
+        this.channel.exchangeDeclare(DLX, "direct");
+        this.channel.queueDeclare(DLQ, false, true, false, null);
     }
 
     @Override
     protected void releaseResources() throws IOException {
-        this.channel.exchangeDelete(DEAD_LETTER_EXCHANGE);
+        this.channel.exchangeDelete(DLX);
     }
 
-    public void testDeclareQueueWithNoDeadLetterExchange() throws IOException {
+    public void testDeclareQueueWithNoDeadLetterExchange()
+        throws IOException
+    {
         this.channel.queueDeclare(TEST_QUEUE_NAME, false, true, false, null);
     }
 
-    public void testDeclareQueueWithExistingDeadLetterExchange() throws IOException {
-        declareQueue(DEAD_LETTER_EXCHANGE);
+    public void testDeclareQueueWithExistingDeadLetterExchange()
+        throws IOException
+    {
+        declareQueue(DLX);
     }
 
-    public void testDeclareQueueWithInvalidDeadLetterExchangeArg() throws IOException {
+    public void testDeclareQueueWithInvalidDeadLetterExchangeArg()
+        throws IOException
+    {
         try {
             declareQueue(133);
             fail("x-dead-letter-exchange must be a valid exchange name");
@@ -52,7 +53,8 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     public void testDeclareQueueWithNonExistentDeadLetterExchange()
-        throws IOException {
+        throws IOException
+    {
         try {
             declareQueue("some.random.exchange.name");
             fail("x-dead-letter-exchange must be a existing exchange name");
@@ -69,10 +71,7 @@ public class DeadLetterExchange extends BrokerTestCase {
                 public void run() {
                     sleep(2000);
                 }
-            },
-            args,
-            PropertiesFactory.NULL, "expired");
-
+            }, args, PropertiesFactory.NULL, "expired");
     }
 
     public void testDeadLetterQueueDeleted() throws Exception {
@@ -98,67 +97,64 @@ public class DeadLetterExchange extends BrokerTestCase {
         args.put("x-expires", 1000);
 
         deadLetterTest(new Runnable() {
-                    public void run() {
-                        sleep(2000);
-                    }
-                }, args, PropertiesFactory.NULL, "queue_deleted");
+                public void run() {
+                    sleep(2000);
+                }
+            }, args, PropertiesFactory.NULL, "queue_deleted");
     }
 
     public void testDeadLetterOnReject() throws Exception {
         deadLetterTest(new Callable<Void>() {
-                    public Void call() throws Exception {
-                        for (int x = 0; x < MSG_COUNT; x++) {
-                            GetResponse getResponse =
-                                    channel.basicGet(TEST_QUEUE_NAME, false);
-                             channel.basicReject(
-                                     getResponse.getEnvelope().getDeliveryTag(),
-                                     false);
-
-                        }
-                        return null;
+                public Void call() throws Exception {
+                    for (int x = 0; x < MSG_COUNT; x++) {
+                        GetResponse getResponse =
+                            channel.basicGet(TEST_QUEUE_NAME, false);
+                        long tag = getResponse.getEnvelope().getDeliveryTag();
+                        channel.basicReject(tag, false);
                     }
-                }, null, PropertiesFactory.NULL, "rejected");
+                    return null;
+                }
+            }, null, PropertiesFactory.NULL, "rejected");
     }
 
     public void testDeadLetterOnNack() throws Exception {
         deadLetterTest(new Callable<Void>() {
-                    public Void call() throws Exception {
-                        for (int x = 0; x < MSG_COUNT; x++) {
-                            GetResponse getResponse =
-                                    channel.basicGet(TEST_QUEUE_NAME, false);
-                             channel.basicNack(
-                                     getResponse.getEnvelope().getDeliveryTag(),
-                                     false,
-                                     false);
-
-                        }
-                        return null;
+                public Void call() throws Exception {
+                    for (int x = 0; x < MSG_COUNT; x++) {
+                        GetResponse getResponse =
+                            channel.basicGet(TEST_QUEUE_NAME, false);
+                        long tag = getResponse.getEnvelope().getDeliveryTag();
+                        channel.basicNack(tag, false, false);
                     }
-                }, null, PropertiesFactory.NULL, "rejected");
+                    return null;
+                }
+            }, null, PropertiesFactory.NULL, "rejected");
     }
 
     private void deadLetterTest(final Runnable deathTrigger,
                                 Map<String, Object> queueDeclareArgs,
                                 PropertiesFactory propsFactory,
                                 String reason)
-        throws Exception {
+        throws Exception
+    {
         deadLetterTest(new Callable<Object>() {
-            public Object call() throws Exception {
-                deathTrigger.run();
-                return null;
-            }
-        }, queueDeclareArgs, propsFactory, reason);
+                public Object call() throws Exception {
+                    deathTrigger.run();
+                    return null;
+                }
+            }, queueDeclareArgs, propsFactory, reason);
     }
+
     private void deadLetterTest(Callable<?> deathTrigger,
                                 Map<String, Object> queueDeclareArgs,
                                 PropertiesFactory propsFactory,
                                 String reason)
-        throws Exception {
-
-        declareQueue(DEAD_LETTER_EXCHANGE, queueDeclareArgs);
+        throws Exception
+    {
+        declareQueue(DLX, queueDeclareArgs);
 
         this.channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
-        this.channel.queueBind(DEAD_LETTER_QUEUE, DEAD_LETTER_EXCHANGE, "test");
+        this.channel.queueBind(DLQ, DLX, "test");
 
         for(int x = 0; x < MSG_COUNT; x++) {
             this.channel.basicPublish("amq.direct", "test",
@@ -170,13 +166,14 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         for(int x = 0; x < MSG_COUNT; x++) {
             GetResponse getResponse =
-                this.channel.basicGet(DEAD_LETTER_QUEUE, true);
+                this.channel.basicGet(DLQ, true);
             assertNotNull("Message not dead-lettered", getResponse);
             assertEquals("test message", new String(getResponse.getBody()));
 
             Map<String, Object> headers = getResponse.getProps().getHeaders();
             assertNotNull(headers);
-            assertEquals(TEST_QUEUE_NAME, headers.get("x-death-queue").toString());
+            assertEquals(TEST_QUEUE_NAME,
+                         headers.get("x-death-queue").toString());
             assertEquals(reason, headers.get("x-death-reason").toString());
         }
     }
@@ -186,11 +183,12 @@ public class DeadLetterExchange extends BrokerTestCase {
             Thread.sleep(millis);
         }
         catch(InterruptedException ex) {
+            // whoosh
         }
     }
 
     private void declareQueue(Object deadLetterExchange) throws IOException {
-        declareQueue(deadLetterExchange, new HashMap<String, Object>());
+        declareQueue(deadLetterExchange, null);
     }
 
     private void declareQueue(Object deadLetterExchange,
@@ -199,7 +197,7 @@ public class DeadLetterExchange extends BrokerTestCase {
             args = new HashMap<String, Object>();
         }
 
-        args.put(DEAD_LETTER_EXCHANGE_ARG, deadLetterExchange);
+        args.put(DLX_ARG, deadLetterExchange);
         this.channel.queueDeclare(TEST_QUEUE_NAME, false, true, false, args);
     }
 
