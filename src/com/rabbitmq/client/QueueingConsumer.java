@@ -93,7 +93,7 @@ public class QueueingConsumer extends DefaultConsumer {
     // It is only there to wake up consumers. The canonical representation
     // of shutting down is the presence of _shutdown.
     // Invariant: This is never on _queue unless _shutdown != null.
-    private static final Delivery POISON = new Delivery(null, null, null);
+    private static final Delivery POISON = new Delivery(null, null, null, null);
 
     public QueueingConsumer(Channel ch) {
         this(ch, new LinkedBlockingQueue<Delivery>());
@@ -122,7 +122,7 @@ public class QueueingConsumer extends DefaultConsumer {
         throws IOException
     {
         checkShutdown();
-        this._queue.add(new Delivery(envelope, properties, body));
+        this._queue.add(new Delivery(consumerTag, envelope, properties, body));
     }
 
     /**
@@ -132,13 +132,23 @@ public class QueueingConsumer extends DefaultConsumer {
         private final Envelope _envelope;
         private final AMQP.BasicProperties _properties;
         private final byte[] _body;
+	private final String _consumerTag;
 
-        public Delivery(Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
+        public Delivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
+            _consumerTag = consumerTag;
             _envelope = envelope;
             _properties = properties;
             _body = body;
         }
 
+        /**
+         * Retrieve the consumer tag.  This should correlate with the consumer tag returned from calls to basicConsume.
+         * @return the consumer tag.
+         */
+        public String getConsumerTag() {
+	    return _consumerTag;
+        }
+        
         /**
          * Retrieve the message envelope.
          * @return the message envelope
