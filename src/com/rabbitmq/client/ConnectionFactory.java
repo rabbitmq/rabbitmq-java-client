@@ -466,12 +466,23 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Create a new broker connection
+     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newConnection(Address[] addrs) throws IOException {
+        return newConnection(Executors.newFixedThreadPool(this.numConsumerThreads),
+            addrs);
+    }
+
+    /**
+     * Create a new broker connection
      * @param executor thread execution service for consumers on the connection
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    private Connection newConnection(ExecutorService executor, Address[] addrs)
+    public Connection newConnection(ExecutorService executor, Address[] addrs)
         throws IOException
     {
         IOException lastException = null;
