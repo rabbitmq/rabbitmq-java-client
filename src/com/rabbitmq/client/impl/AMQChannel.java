@@ -153,15 +153,15 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public void enqueueRpc(RpcContinuation k)
     {
         synchronized (_channelMutex) {
-            boolean wasInterrupted = false;
+            boolean waitClearedInterruptStatus = false;
             while (_activeRpc != null) {
                 try {
                     _channelMutex.wait();
                 } catch (InterruptedException e) {
-                    wasInterrupted = true;
+                    waitClearedInterruptStatus = true;
                 }
             }
-            if (wasInterrupted) {
+            if (waitClearedInterruptStatus) {
                 Thread.currentThread().interrupt();
             }
             _activeRpc = k;
