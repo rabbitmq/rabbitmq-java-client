@@ -21,7 +21,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -43,8 +42,9 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory implements Cloneable {
-    
+
     /** Default Executor threads */
+    @Deprecated
     public static final int    DEFAULT_NUM_CONSUMER_THREADS = 5;
     /** Default user name */
     public static final String DEFAULT_USER = "guest";
@@ -76,7 +76,6 @@ public class ConnectionFactory implements Cloneable {
     /** The default SSL protocol */
     private static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
-    private int numConsumerThreads                = DEFAULT_NUM_CONSUMER_THREADS;
     private String username                       = DEFAULT_USER;
     private String password                       = DEFAULT_PASS;
     private String virtualHost                    = DEFAULT_VHOST;
@@ -91,13 +90,15 @@ public class ConnectionFactory implements Cloneable {
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
 
     /** @return number of consumer threads in default {@link ExecutorService} */
+    @Deprecated
     public int getNumConsumerThreads() {
-        return numConsumerThreads;
+        return DEFAULT_NUM_CONSUMER_THREADS;
     }
 
     /** @param numConsumerThreads threads in created private executor service */
+    @Deprecated
     public void setNumConsumerThreads(int numConsumerThreads) {
-        this.numConsumerThreads = numConsumerThreads;
+        throw new IllegalArgumentException("setNumConsumerThreads not supported -- create explicit ExecutorService instead.");
     }
 
     /** @return the default host to use for connections */
@@ -472,8 +473,7 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection(Address[] addrs) throws IOException {
-        return newConnection(Executors.newFixedThreadPool(this.numConsumerThreads),
-            addrs);
+        return newConnection(null, addrs);
     }
 
     /**
@@ -490,7 +490,7 @@ public class ConnectionFactory implements Cloneable {
         for (Address addr : addrs) {
             try {
                 FrameHandler frameHandler = createFrameHandler(addr);
-                AMQConnection conn = 
+                AMQConnection conn =
                     new AMQConnection(username,
                                       password,
                                       frameHandler,
@@ -518,7 +518,7 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection() throws IOException {
-        return newConnection(Executors.newFixedThreadPool(this.numConsumerThreads),
+        return newConnection(null,
                              new Address[] {new Address(getHost(), getPort())}
                             );
     }

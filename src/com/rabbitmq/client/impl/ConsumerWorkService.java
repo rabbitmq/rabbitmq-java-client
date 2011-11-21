@@ -18,16 +18,25 @@ package com.rabbitmq.client.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.rabbitmq.client.Channel;
 
 final class ConsumerWorkService {
     private static final int MAX_RUNNABLE_BLOCK_SIZE = 16;
+    private static final int DEFAULT_NUM_THREADS = 5;
     private final ExecutorService executor;
+    private final boolean privateExecutor;
     private final WorkPool<Channel, Runnable> workPool;
 
     public ConsumerWorkService(ExecutorService executor) {
-        this.executor = executor;
+        if (executor == null) {
+            privateExecutor = true;
+            this.executor = Executors.newFixedThreadPool(DEFAULT_NUM_THREADS);
+        } else {
+            privateExecutor = false;
+            this.executor = executor;
+        }
         this.workPool = new WorkPool<Channel, Runnable>();
     }
 
@@ -36,7 +45,8 @@ final class ConsumerWorkService {
      */
     public void shutdown() {
         this.workPool.unregisterAllKeys();
-        this.executor.shutdown();
+        if (privateExecutor)
+            this.executor.shutdown();
     }
 
     /**
