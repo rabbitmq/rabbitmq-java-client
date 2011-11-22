@@ -28,7 +28,6 @@ import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -120,9 +119,5 @@ public class FileConsumer {
 
     private static String strArg(CommandLine cmd, char opt, String def) {
         return cmd.getOptionValue(opt, def);
-    }
-
-    private static int intArg(CommandLine cmd, char opt, int def) {
-        return Integer.parseInt(cmd.getOptionValue(opt, Integer.toString(def)));
     }
 }

@@ -30,13 +30,6 @@ public class Transactions extends BrokerTestCase
 
     protected long latestTag = 0L;
 
-    protected void setUp()
-        throws IOException
-    {
-        super.setUp();
-        closeChannel();
-    }
-
     protected void createResources() throws IOException {
         channel.queueDeclare(Q, false, false, false, null);
     }
@@ -101,14 +94,12 @@ public class Transactions extends BrokerTestCase
     public void testCommitPublish()
         throws IOException
     {
-        openChannel();
         txSelect();
         basicPublish();
         assertNull(basicGet());
         txCommit();
         assertNotNull(basicGet());
         txCommit();
-        closeChannel();
     }
 
     /*
@@ -117,12 +108,10 @@ public class Transactions extends BrokerTestCase
     public void testRollbackPublish()
         throws IOException
     {
-        openChannel();
         txSelect();
         basicPublish();
         txRollback();
         assertNull(basicGet());
-        closeChannel();
     }
 
     /*
@@ -131,13 +120,11 @@ public class Transactions extends BrokerTestCase
     public void testRollbackPublishOnClose()
         throws IOException
     {
-        openChannel();
         txSelect();
         basicPublish();
         closeChannel();
         openChannel();
         assertNull(basicGet());
-        closeChannel();
     }
 
     /*
@@ -146,7 +133,6 @@ public class Transactions extends BrokerTestCase
     public void testRequeueOnClose()
         throws IOException
     {
-        openChannel();
         basicPublish();
         basicPublish();
         txSelect();
@@ -159,7 +145,6 @@ public class Transactions extends BrokerTestCase
         basicAck();
         assertNotNull(basicGet());
         basicAck();
-        closeChannel();
     }
 
     /*
@@ -169,7 +154,6 @@ public class Transactions extends BrokerTestCase
     public void testCommitAcks()
         throws IOException
     {
-        openChannel();
         basicPublish();
         basicPublish();
         txSelect();
@@ -183,7 +167,6 @@ public class Transactions extends BrokerTestCase
         assertNotNull(basicGet());
         basicAck();
         assertNull(basicGet());
-        closeChannel();
     }
 
     /*
@@ -193,7 +176,6 @@ public class Transactions extends BrokerTestCase
     public void testRollbackAcksAndReAck()
         throws IOException
     {
-        openChannel();
         basicPublish();
         txSelect();
         basicGet();
@@ -205,7 +187,6 @@ public class Transactions extends BrokerTestCase
         openChannel();
         assertNotNull(basicGet());
         basicAck();
-        closeChannel();
     }
 
     /*
@@ -214,7 +195,6 @@ public class Transactions extends BrokerTestCase
     public void testUnknownTagAck()
         throws IOException
     {
-        openChannel();
         basicPublish();
         txSelect();
         basicGet();
@@ -223,7 +203,6 @@ public class Transactions extends BrokerTestCase
         // "On a transacted channel, this check MUST be done immediately and
         // not delayed until a Tx.Commit."
         expectError(AMQP.PRECONDITION_FAILED);
-        openChannel();
     }
 
     /*
@@ -232,7 +211,6 @@ public class Transactions extends BrokerTestCase
     public void testNoRequeueOnRollback()
         throws IOException
     {
-        openChannel();
         basicPublish();
         basicPublish();
         txSelect();
@@ -241,7 +219,6 @@ public class Transactions extends BrokerTestCase
         basicGet();
         txRollback();
         assertNull(basicGet());
-        closeChannel();
     }
 
     /*
@@ -250,14 +227,12 @@ public class Transactions extends BrokerTestCase
     public void testAutoAck()
         throws IOException
     {
-        openChannel();
         basicPublish();
         txSelect();
         basicGet(true);
         closeChannel();
         openChannel();
         assertNull(basicGet());
-        closeChannel();
     }
 
     /*
@@ -266,7 +241,6 @@ public class Transactions extends BrokerTestCase
     public void testAckAll()
         throws IOException
     {
-        openChannel();
         basicPublish();
         basicPublish();
         txSelect();
@@ -277,13 +251,11 @@ public class Transactions extends BrokerTestCase
         closeChannel();
         openChannel();
         assertNull(basicGet());
-        closeChannel();
     }
 
     public void testNonTransactedCommit()
         throws IOException
     {
-        openChannel();
         try {
             txCommit();
             fail("Expected channel error");
@@ -295,7 +267,6 @@ public class Transactions extends BrokerTestCase
     public void testNonTransactedRollback()
         throws IOException
     {
-        openChannel();
         try {
             txRollback();
             fail("Expected channel error");
@@ -307,7 +278,6 @@ public class Transactions extends BrokerTestCase
     public void testRedeliverAckedUncommitted()
         throws IOException
     {
-        openChannel();
         txSelect();
         basicPublish();
         txCommit();
@@ -320,13 +290,11 @@ public class Transactions extends BrokerTestCase
 
         assertNull("Acked uncommitted message redelivered",
                    basicGet(true));
-        closeChannel();
     }
 
     public void testCommitWithDeletedQueue()
         throws IOException
     {
-        openChannel();
         txSelect();
         basicPublish();
         releaseResources();
@@ -338,15 +306,13 @@ public class Transactions extends BrokerTestCase
             openChannel();
             fail("commit failed");
         } finally {
-            createResources();
-            closeChannel();
+            createResources(); // To allow teardown to function cleanly
         }
     }
 
     public void testShuffleAcksBeforeRollback()
         throws IOException
     {
-        openChannel();
         for (int i = 0; i < 3; i++) {
             basicPublish();
         }
