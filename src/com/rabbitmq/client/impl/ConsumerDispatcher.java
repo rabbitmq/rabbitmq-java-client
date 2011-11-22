@@ -27,12 +27,12 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * Dispatches notifications to a {@link Consumer} on an
- * internally-managed executor service and work pool.
+ * Dispatches notifications to a {@link Consumer} on a
+ * {@link ConsumerWorkService}.
  * <p/>
  * Each {@link Channel} has a single {@link ConsumerDispatcher},
- * but the executor service and work pool may be shared with other channels, typically those on the same
- * {@link Connection}.
+ * but the {@link ConsumerWorkService} may be shared with other channels
+ * on the same {@link Connection}.
  */
 final class ConsumerDispatcher {
 

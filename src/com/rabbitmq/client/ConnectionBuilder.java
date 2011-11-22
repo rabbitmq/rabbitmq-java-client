@@ -24,7 +24,6 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -38,9 +37,8 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
 /**
  * Builder class for {@link Connection}s.
  */
-public class ConnectionBuilder {
+public final class ConnectionBuilder {
 
-    public static final int    DEFAULT_NUM_CONSUMER_THREADS = 5;
     public static final String DEFAULT_USER = "guest";
     public static final String DEFAULT_PASS = "guest";
     public static final String DEFAULT_VHOST = "/";
@@ -53,14 +51,26 @@ public class ConnectionBuilder {
     public static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
     public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
+    private static final ConnectionHelper DEFAULT_HELPER = new ConnectionHelper(){
+        /**
+         *  The default helper behaviour is to disable Nagle's
+         *  algorithm to get more consistently low latency.
+         */
+        public void configureSocket(Socket socket) throws IOException
+        {
+            // disable Nagle's algorithm, for more consistently low latency
+            socket.setTcpNoDelay(true);
+        }
+    };
+
     private int channelMax                       = DEFAULT_CHANNEL_MAX;
     private Map<String, Object> clientProperties = AMQConnection.defaultClientProperties();
     private int connectionTimeout                = DEFAULT_CONNECTION_TIMEOUT;
     private ExecutorService executor             = null;
     private int frameMax                         = DEFAULT_FRAME_MAX;
     private int heartbeat                        = DEFAULT_HEARTBEAT;
+    private ConnectionHelper helper              = DEFAULT_HELPER;
     private String host                          = DEFAULT_HOST;
-    private int numConsumerThreads               = DEFAULT_NUM_CONSUMER_THREADS;
     private String password                      = DEFAULT_PASS;
     private int port                             = DEFAULT_AMQP_PORT;
     private boolean portSet                      = false; //indicates whether to use default
@@ -75,11 +85,17 @@ public class ConnectionBuilder {
     }
     public ConnectionBuilder clientProperties(Map<String, Object> clientProperties)
     {
-        this.clientProperties = clientProperties; return this;
+        this.clientProperties = (clientProperties == null) ? AMQConnection.defaultClientProperties() : clientProperties;
+        return this;
     }
     public ConnectionBuilder clientProperty(String key, Object value)
     {
-        this.clientProperties.put(key, value); return this;
+        if (key != null)
+            if (value != null)
+                this.clientProperties.remove(key);
+            else
+                this.clientProperties.put(key, value);
+        return this;
     }
     public ConnectionBuilder connectionTimeout(int connectionTimeout)
     {
@@ -97,17 +113,19 @@ public class ConnectionBuilder {
     {
         this.heartbeat = heartbeat; return this;
     }
+    public ConnectionBuilder helper(ConnectionHelper helper)
+    {
+        this.helper = (helper == null) ? DEFAULT_HELPER : helper;
+        return this;
+    }
     public ConnectionBuilder host(String host)
     {
-        this.host = host; return this;
-    }
-    public ConnectionBuilder numConsumerThreads(int numConsumerThreads)
-    {
-        this.numConsumerThreads = numConsumerThreads; return this;
+        this.host = (host == null) ? DEFAULT_HOST : host;
+        return this;
     }
     public ConnectionBuilder password(String password)
     {
-        this.password = password; return this;
+        this.password = (password == null) ? DEFAULT_PASS : password; return this;
     }
     public ConnectionBuilder port(int port)
     {
@@ -115,11 +133,12 @@ public class ConnectionBuilder {
     }
     public ConnectionBuilder saslConfig(SaslConfig saslConfig)
     {
-        this.saslConfig = saslConfig; return this;
+        this.saslConfig = (saslConfig == null) ? DefaultSaslConfig.PLAIN : saslConfig;
+        return this;
     }
     public ConnectionBuilder socketFactory(SocketFactory socketFactory)
     {
-        this.socketFactory = socketFactory;
+        this.socketFactory = (socketFactory == null) ? SocketFactory.getDefault() : socketFactory;
         if (isSsl() && !this.portSet) this.port = DEFAULT_AMQP_OVER_SSL_PORT;
         return this;
     }
@@ -141,16 +160,19 @@ public class ConnectionBuilder {
     }
     public ConnectionBuilder ssl(SSLContext context)
     {
-        if (context != null) socketFactory(context.getSocketFactory());
-        return this;
+        if (context == null)
+            throw new IllegalArgumentException("Cannot use null SSLContext.");
+        return socketFactory(context.getSocketFactory());
     }
     public ConnectionBuilder username(String username)
     {
-        this.username = username; return this;
+        this.username = (username == null) ? DEFAULT_USER : username;
+        return this;
     }
     public ConnectionBuilder virtualHost(String virtualHost)
     {
-        this.virtualHost = virtualHost; return this;
+        this.virtualHost = (virtualHost == null) ? DEFAULT_VHOST : virtualHost;
+        return this;
     }
     public ConnectionBuilder uri(String uriString)
     {
@@ -244,7 +266,7 @@ public class ConnectionBuilder {
         Socket socket = null;
         try {
             socket = this.socketFactory.createSocket();
-            configureSocket(socket);
+            this.helper.configureSocket(socket);
             socket.connect(new InetSocketAddress(this.host, this.port), this.connectionTimeout);
             return new SocketFrameHandler(socket);
         } catch (IOException ioe) {
@@ -262,22 +284,5 @@ public class ConnectionBuilder {
         catch (java.io.UnsupportedEncodingException e) {
             throw new IllegalArgumentException(e);
         }
-    }
-
-    /**
-     *  A hook to insert custom configuration of the sockets
-     *  used to connect to an AMQP server before they connect.
-     *
-     *  The default behaviour of this method is to disable Nagle's
-     *  algorithm to get more consistently low latency.  However it
-     *  may be overridden freely and there is no requirement to retain
-     *  this behaviour.
-     *
-     *  @param socket The socket that is to be used for the Connection
-     */
-    protected void configureSocket(Socket socket) throws IOException
-    {
-        // disable Nagle's algorithm, for more consistently low latency
-        socket.setTcpNoDelay(true);
     }
 }
