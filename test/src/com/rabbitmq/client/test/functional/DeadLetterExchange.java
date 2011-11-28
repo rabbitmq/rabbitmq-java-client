@@ -18,6 +18,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     private static final String TEST_QUEUE_NAME = "test.queue.dead.letter";
     private static final String DLQ = "queue.dle";
     private static final int MSG_COUNT = 10;
+    private static final int MSG_COUNT_MANY = 1000;
 
     @Override
     protected void createResources() throws IOException {
@@ -141,11 +142,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(DLQ, DLX, "test");
         channel.queueBind(DLQ2, DLX, "test");
 
-        for(int x = 0; x < MSG_COUNT; x++) {
-            channel.basicPublish("amq.direct", "test",
-                                  PropertiesFactory.NULL.create(x),
-                                 "test message".getBytes());
-        }
+        publishN(MSG_COUNT, PropertiesFactory.NULL);
 
         channel.queuePurge(TEST_QUEUE_NAME);
         sleep(100);
@@ -171,6 +168,39 @@ public class DeadLetterExchange extends BrokerTestCase {
             } else {
                 fail("message was dead-lettered more times than expected");
             }
+        }
+    }
+
+    public void testDeadLetterSelf() throws Exception {
+        channel.queueDelete(DLQ);
+        declareQueue(DLQ, DLX, null);
+
+        declareQueue(DLX);
+
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+        channel.queueBind(DLQ, DLX, "test");
+
+        publishN(MSG_COUNT_MANY, PropertiesFactory.NULL);
+
+        channel.queuePurge(TEST_QUEUE_NAME);
+        sleep(100);
+        channel.queuePurge(DLQ);
+
+        // The messages have been purged once from TEST_QUEUE_NAME and
+        // once from DLQ.
+        for(int x = 0; x < MSG_COUNT_MANY; x++) {
+            GetResponse getResponse =
+                this.channel.basicGet(DLQ, true);
+            assertNotNull("Message not dead-lettered", getResponse);
+            assertEquals("test message", new String(getResponse.getBody()));
+
+            Map<String, Object> headers = getResponse.getProps().getHeaders();
+            assertNotNull(headers);
+            ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
+            assertNotNull(death);
+            assertEquals(2, death.size());
+            assertDeathReason(death, 0, DLQ, "queue_purged");
+            assertDeathReason(death, 1, TEST_QUEUE_NAME, "queue_purged");
         }
     }
 
@@ -200,11 +230,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
         channel.queueBind(DLQ, DLX, "test");
 
-        for(int x = 0; x < MSG_COUNT; x++) {
-            channel.basicPublish("amq.direct", "test",
-                                 propsFactory.create(x),
-                                 "test message".getBytes());
-        }
+        publishN(MSG_COUNT, propsFactory);
 
         deathTrigger.call();
 
@@ -243,6 +269,16 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         args.put(DLX_ARG, deadLetterExchange);
         this.channel.queueDeclare(queue, false, true, false, args);
+    }
+
+    private void publishN(int n, PropertiesFactory propsFactory)
+        throws IOException
+    {
+        for(int x = 0; x < n; x++) {
+            channel.basicPublish("amq.direct", "test",
+                                 propsFactory.create(x),
+                                 "test message".getBytes());
+        }
     }
 
     private void assertDeathReason(List<Object> death, int num,
