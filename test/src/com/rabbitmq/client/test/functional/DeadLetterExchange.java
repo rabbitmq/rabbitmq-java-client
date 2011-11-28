@@ -16,25 +16,25 @@ public class DeadLetterExchange extends BrokerTestCase {
     private static final String DLX = "dead.letter.exchange";
     private static final String DLX_ARG = "x-dead-letter-exchange";
     private static final String TEST_QUEUE_NAME = "test.queue.dead.letter";
-    private static final String DLQ = "queue.dle";
+    private static final String DLQ = "queue.dlq";
     private static final int MSG_COUNT = 10;
     private static final int MSG_COUNT_MANY = 1000;
 
     @Override
     protected void createResources() throws IOException {
-        this.channel.exchangeDeclare(DLX, "direct");
-        this.channel.queueDeclare(DLQ, false, true, false, null);
+        channel.exchangeDeclare(DLX, "direct");
+        channel.queueDeclare(DLQ, false, true, false, null);
     }
 
     @Override
     protected void releaseResources() throws IOException {
-        this.channel.exchangeDelete(DLX);
+        channel.exchangeDelete(DLX);
     }
 
     public void testDeclareQueueWithNoDeadLetterExchange()
         throws IOException
     {
-        this.channel.queueDeclare(TEST_QUEUE_NAME, false, true, false, null);
+        channel.queueDeclare(TEST_QUEUE_NAME, false, true, false, null);
     }
 
     public void testDeclareQueueWithExistingDeadLetterExchange()
@@ -142,7 +142,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     {
         declareQueue(DLX);
 
-        final String DLQ2 = "queue.dle2";
+        final String DLQ2 = "queue.dlq2";
         channel.queueDeclare(DLQ2, false, true, false, null);
 
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
@@ -174,7 +174,7 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         // There should now be two copies of each message on DLQ2: one
         // with one set of death headers, and another with two sets.
-        consumeN(DLQ2, MSG_COUNT * 2, new WithResponse() {
+        consumeN(DLQ2, MSG_COUNT*2, new WithResponse() {
                 @SuppressWarnings("unchecked")
                 public void process(GetResponse getResponse) {
                     Map<String, Object> headers = getResponse.getProps().getHeaders();
@@ -285,7 +285,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         }
 
         args.put(DLX_ARG, deadLetterExchange);
-        this.channel.queueDeclare(queue, false, true, false, args);
+        channel.queueDeclare(queue, false, true, false, args);
     }
 
     private void publishN(int n, PropertiesFactory propsFactory)
@@ -301,13 +301,15 @@ public class DeadLetterExchange extends BrokerTestCase {
     private void consumeN(String queue, int n, WithResponse withResponse)
         throws IOException
     {
-        for(int x = 0; x < MSG_COUNT; x++) {
+        for(int x = 0; x < n; x++) {
             GetResponse getResponse =
-                this.channel.basicGet(queue, true);
+                channel.basicGet(queue, true);
             assertNotNull("Message not dead-lettered", getResponse);
             assertEquals("test message", new String(getResponse.getBody()));
             withResponse.process(getResponse);
         }
+        GetResponse getResponse = channel.basicGet(queue, true);
+        assertNull("expected empty queue", getResponse);
     }
 
     @SuppressWarnings("unchecked")
