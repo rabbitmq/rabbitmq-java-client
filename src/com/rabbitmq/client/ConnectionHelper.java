@@ -20,8 +20,10 @@ import java.net.Socket;
 
 /**
  * Helper class for the {@link ConnectionBuilder} class.
+ * <br/>
+ * Overriding methods may call the default behaviour by referring to the super class method.
  */
-public interface ConnectionHelper {
+public abstract class ConnectionHelper {
     /**
      *  A hook to configure sockets used to connect to an AMQP server
      *  before the connection is established.
@@ -29,5 +31,9 @@ public interface ConnectionHelper {
      *  @param socket the socket to be used for the {@link Connection}
      *  @throws IOException if thrown, the connection fails.
      */
-    void configureSocket(Socket socket) throws IOException;
+    public void configureSocket(Socket socket) throws IOException
+    {
+        // disable Nagle's algorithm, for more consistently low latency
+        socket.setTcpNoDelay(true);
+    }
 }

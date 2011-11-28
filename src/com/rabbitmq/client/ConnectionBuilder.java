@@ -16,8 +16,6 @@
 package com.rabbitmq.client;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -32,36 +30,54 @@ import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.SocketFrameHandler;
 
 /**
  * Builder class for {@link Connection}s.
+ * <p/>
+ * Builder attribute methods may be chained, for example:
+ * <br/>
+ * <pre>
+ * Connection conn = <b>new</b> ConnectionBuilder()
+ *                   .ssl().connectionTimeout(200).build();</pre>
+ * To obtain the defaults, or the currently
+ * configured attribute values of a builder,
+ * call the <code>get</code>...<code>()</code> methods.
+ * All of these getter methods return <i>copies</i> of the attributes,
+ * <i>except</i> for {@link ConnectionBuilder#getSaslConfig() getSaslConfig()}
+ * and {@link ConnectionBuilder#getSocketFactory() getSocketFactory()}.
+ * <p/>
+ * In particular,
+ * {@link ConnectionBuilder#getClientProperties() getClientProperties}
+ * will return a map which, if modified, will not affect the
+ * {@link ConnectionBuilder}, nor any {@link Connection}s built from it.
+ * <p/>
+ * Similarly, {@link ConnectionBuilder#clientProperties(Map) clientProperties(Map)}
+ * will also copy
+ * the map. A simpler way to update client properties in-place, is to use
+ * {@link ConnectionBuilder#clientProperty(String, Object) clientProperty(Key, Value)}.
+ * Note that the {@link Object}s in the client properties map are never copied.
+ * <p/>
+ * <b>Concurrency</b><br/>
+ * This class is <i>not</i> thread-safe.
+ * Do not share objects of this class, nor its modifiable attributes, among threads.
  */
 public final class ConnectionBuilder {
 
-    public static final String DEFAULT_USER = "guest";
-    public static final String DEFAULT_PASS = "guest";
-    public static final String DEFAULT_VHOST = "/";
-    public static final int    DEFAULT_CHANNEL_MAX = 0;
-    public static final int    DEFAULT_FRAME_MAX = 0;
-    public static final int    DEFAULT_HEARTBEAT = 0;
-    public static final String DEFAULT_HOST = "localhost";
-    public static final int    DEFAULT_AMQP_PORT = AMQP.PROTOCOL.PORT;
-    public static final int    DEFAULT_AMQP_OVER_SSL_PORT = 5671;
-    public static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
-    public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
+    private static final String DEFAULT_USER = "guest";
+    private static final String DEFAULT_PASS = "guest";
+    private static final String DEFAULT_VHOST = "/";
+    private static final int    DEFAULT_CHANNEL_MAX = 0;
+    private static final int    DEFAULT_FRAME_MAX = 0;
+    private static final int    DEFAULT_HEARTBEAT = 0;
+    private static final String DEFAULT_HOST = "localhost";
+    private static final int    DEFAULT_AMQP_PORT = AMQP.PROTOCOL.PORT;
+    private static final int    DEFAULT_AMQP_OVER_SSL_PORT = 5671;
+    private static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
+    private static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
-    private static final ConnectionHelper DEFAULT_HELPER = new ConnectionHelper(){
-        /**
-         *  The default helper behaviour is to disable Nagle's
-         *  algorithm to get more consistently low latency.
-         */
-        public void configureSocket(Socket socket) throws IOException
-        {
-            // disable Nagle's algorithm, for more consistently low latency
-            socket.setTcpNoDelay(true);
-        }
-    };
+    private static final ConnectionHelper DEFAULT_HELPER = new ConnectionHelper(){};
+
+    private final ConnectionFrameHandler connectionFrameHandler;
 
     private int channelMax                       = DEFAULT_CHANNEL_MAX;
     private Map<String, Object> clientProperties = AMQConnection.defaultClientProperties();
@@ -79,13 +95,19 @@ public final class ConnectionBuilder {
     private String username                      = DEFAULT_USER;
     private String virtualHost                   = DEFAULT_VHOST;
 
+    public ConnectionBuilder() {
+        this(new ConnectionFrameHandler(){});
+    }
+
     public ConnectionBuilder channelMax(int channelMax)
     {
         this.channelMax = channelMax; return this;
     }
     public ConnectionBuilder clientProperties(Map<String, Object> clientProperties)
     {
-        this.clientProperties = (clientProperties == null) ? AMQConnection.defaultClientProperties() : clientProperties;
+        this.clientProperties = (clientProperties == null)
+                ? AMQConnection.defaultClientProperties()
+                : new HashMap<String, Object>(clientProperties);
         return this;
     }
     public ConnectionBuilder clientProperty(String key, Object value)
@@ -142,6 +164,9 @@ public final class ConnectionBuilder {
         if (isSsl() && !this.portSet) this.port = DEFAULT_AMQP_OVER_SSL_PORT;
         return this;
     }
+    public ConnectionBuilder ssl(boolean sslOn) {
+        return (sslOn ? ssl() : socketFactory(null));
+    }
     public ConnectionBuilder ssl()
     {   return ssl(DEFAULT_SSL_PROTOCOL);
     }
@@ -184,9 +209,9 @@ public final class ConnectionBuilder {
     public ConnectionBuilder uri(URI uri)
     {
         //garner settings and check validity
-        boolean setSsl = false;
+        boolean setSsl;
         String lScheme = uri.getScheme().toLowerCase();
-             if (lScheme.equals("amqp"))  { }
+             if (lScheme.equals("amqp"))  { setSsl = false;}
         else if (lScheme.equals("amqps")) { setSsl = true; }
         else {
             throw new IllegalArgumentException(
@@ -228,7 +253,7 @@ public final class ConnectionBuilder {
         }
 
         // garnered without incident -- now set them
-        if (setSsl) ssl();
+        ssl(setSsl);
         if (uHost != null) host(uHost);
         if (uSetPort) port(uPort);
         if (uUser != null) username(uUser);
@@ -238,9 +263,24 @@ public final class ConnectionBuilder {
         return this;
     }
 
-    public Connection build() throws IOException
+    public Map<String, Object> getClientProperties()
+    { return new HashMap<String, Object>(this.clientProperties); }
+    public int getConnectionTimeout() { return this.connectionTimeout; }
+    public String getHost() { return this.host; }
+    public String getPassword() { return this.password; }
+    public int getPort() { return this.port; }
+    public int getChannelMax() { return this.channelMax; }
+    public int getFrameMax() { return this.frameMax; }
+    public int getHeartbeat() { return this.heartbeat; }
+    public SaslConfig getSaslConfig() { return this.saslConfig; }
+    public SocketFactory getSocketFactory() { return this.socketFactory; }
+    public String getUsername() { return this.username; }
+    public String getVirtualHost() { return this.virtualHost; }
+
+    public Connection build()
+        throws IOException
     {
-        FrameHandler frameHandler = createFrameHandler();
+        FrameHandler frameHandler = this.connectionFrameHandler.createFrameHandler(this, this.helper);
         Map<String, Object> clientProperties = new HashMap<String, Object>(this.clientProperties);
         AMQConnection conn =
             new AMQConnection(this.username,
@@ -261,19 +301,6 @@ public final class ConnectionBuilder {
     {
         return (this.socketFactory instanceof SSLSocketFactory);
     }
-    private FrameHandler createFrameHandler() throws IOException
-    {
-        Socket socket = null;
-        try {
-            socket = this.socketFactory.createSocket();
-            this.helper.configureSocket(socket);
-            socket.connect(new InetSocketAddress(this.host, this.port), this.connectionTimeout);
-            return new SocketFrameHandler(socket);
-        } catch (IOException ioe) {
-            if (socket != null) try {socket.close();} catch (Exception e) {};
-            throw ioe;
-        }
-    }
 
     private static String uriDecode(String s) {
         try {
@@ -284,5 +311,9 @@ public final class ConnectionBuilder {
         catch (java.io.UnsupportedEncodingException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    ConnectionBuilder(ConnectionFrameHandler connectionFrameHandler) {
+        this.connectionFrameHandler = connectionFrameHandler;
     }
 }
