@@ -129,6 +129,30 @@ public class DeadLetterExchange extends BrokerTestCase {
             }, null, PropertiesFactory.NULL, "rejected");
     }
 
+    public void testDeadLetterNoDeadLetterQueue() throws IOException {
+        channel.queueDelete(DLQ);
+        declareQueue(DLX);
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+        publishN(MSG_COUNT, PropertiesFactory.NULL);
+        channel.queuePurge(TEST_QUEUE_NAME);
+    }
+
+    public void testDeadLetterMultipleDeadLetterQueues()
+        throws IOException
+    {
+        declareQueue(DLX);
+
+        final String DLQ2 = "queue.dle2";
+        channel.queueDeclare(DLQ2, false, true, false, null);
+
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+        channel.queueBind(DLQ, DLX, "test");
+        channel.queueBind(DLQ2, DLX, "test");
+
+        publishN(MSG_COUNT, PropertiesFactory.NULL);
+        channel.queuePurge(TEST_QUEUE_NAME);
+    }
+
     public void testDeadLetterTwice() throws Exception {
         channel.queueDelete(DLQ);
         declareQueue(DLQ, DLX, null);
@@ -186,7 +210,7 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         // The messages have been purged once from TEST_QUEUE_NAME and
         // once from DLQ.
-        consumeN(DLQ, MSG_COUNT, new WithResponse() {
+        consumeN(DLQ, MSG_COUNT_MANY, new WithResponse() {
                 @SuppressWarnings("unchecked")
                 public void process(GetResponse getResponse) {
                     Map<String, Object> headers = getResponse.getProps().getHeaders();
