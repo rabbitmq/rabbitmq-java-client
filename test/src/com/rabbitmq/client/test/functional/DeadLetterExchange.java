@@ -40,6 +40,12 @@ public class DeadLetterExchange extends BrokerTestCase {
         declareQueue(DLX);
     }
 
+    public void testDeclareQueueWithNonExistingDeadLetterExchange()
+        throws IOException
+    {
+        declareQueue("some.random.exchange.name");
+    }
+
     public void testDeclareQueueWithInvalidDeadLetterExchangeArg()
         throws IOException
     {
@@ -50,17 +56,6 @@ public class DeadLetterExchange extends BrokerTestCase {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
         }
 
-    }
-
-    public void testDeclareQueueWithNonExistentDeadLetterExchange()
-        throws IOException
-    {
-        try {
-            declareQueue("some.random.exchange.name");
-            fail("x-dead-letter-exchange must be a existing exchange name");
-        } catch(IOException ex) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
-        }
     }
 
     public void testDeadLetterQueueTTLExpiredMessages() throws Exception {
