@@ -150,25 +150,23 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         // There should now be two copies of each message on DLQ2: one
         // with one set of death headers, and another with two sets.
-        for(int x = 0; x < MSG_COUNT * 2; x++) {
-            GetResponse getResponse =
-                this.channel.basicGet(DLQ2, true);
-            assertNotNull("Message not dead-lettered", getResponse);
-            assertEquals("test message", new String(getResponse.getBody()));
-
-            Map<String, Object> headers = getResponse.getProps().getHeaders();
-            assertNotNull(headers);
-            ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
-            assertNotNull(death);
-            if (death.size() == 1) {
-                assertDeathReason(death, 0, TEST_QUEUE_NAME, "queue_purged");
-            } else if (death.size() == 2) {
-                assertDeathReason(death, 0, DLQ, "queue_deleted");
-                assertDeathReason(death, 1, TEST_QUEUE_NAME, "queue_purged");
-            } else {
-                fail("message was dead-lettered more times than expected");
-            }
-        }
+        consumeN(DLQ2, MSG_COUNT * 2, new WithResponse() {
+                @SuppressWarnings("unchecked")
+                public void process(GetResponse getResponse) {
+                    Map<String, Object> headers = getResponse.getProps().getHeaders();
+                    assertNotNull(headers);
+                    ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
+                    assertNotNull(death);
+                    if (death.size() == 1) {
+                        assertDeathReason(death, 0, TEST_QUEUE_NAME, "queue_purged");
+                    } else if (death.size() == 2) {
+                        assertDeathReason(death, 0, DLQ, "queue_deleted");
+                        assertDeathReason(death, 1, TEST_QUEUE_NAME, "queue_purged");
+                    } else {
+                        fail("message was dead-lettered more times than expected");
+                    }
+                }
+            });
     }
 
     public void testDeadLetterSelf() throws Exception {
@@ -188,20 +186,18 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         // The messages have been purged once from TEST_QUEUE_NAME and
         // once from DLQ.
-        for(int x = 0; x < MSG_COUNT_MANY; x++) {
-            GetResponse getResponse =
-                this.channel.basicGet(DLQ, true);
-            assertNotNull("Message not dead-lettered", getResponse);
-            assertEquals("test message", new String(getResponse.getBody()));
-
-            Map<String, Object> headers = getResponse.getProps().getHeaders();
-            assertNotNull(headers);
-            ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
-            assertNotNull(death);
-            assertEquals(2, death.size());
-            assertDeathReason(death, 0, DLQ, "queue_purged");
-            assertDeathReason(death, 1, TEST_QUEUE_NAME, "queue_purged");
-        }
+        consumeN(DLQ, MSG_COUNT, new WithResponse() {
+                @SuppressWarnings("unchecked")
+                public void process(GetResponse getResponse) {
+                    Map<String, Object> headers = getResponse.getProps().getHeaders();
+                    assertNotNull(headers);
+                    ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
+                    assertNotNull(death);
+                    assertEquals(2, death.size());
+                    assertDeathReason(death, 0, DLQ, "queue_purged");
+                    assertDeathReason(death, 1, TEST_QUEUE_NAME, "queue_purged");
+                }
+            });
     }
 
     private void deadLetterTest(final Runnable deathTrigger,
@@ -218,11 +214,10 @@ public class DeadLetterExchange extends BrokerTestCase {
             }, queueDeclareArgs, propsFactory, reason);
     }
 
-    @SuppressWarnings("unchecked")
     private void deadLetterTest(Callable<?> deathTrigger,
                                 Map<String, Object> queueDeclareArgs,
                                 PropertiesFactory propsFactory,
-                                String reason)
+                                final String reason)
         throws Exception
     {
         declareQueue(TEST_QUEUE_NAME, DLX, queueDeclareArgs);
@@ -234,19 +229,17 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         deathTrigger.call();
 
-        for(int x = 0; x < MSG_COUNT; x++) {
-            GetResponse getResponse =
-                this.channel.basicGet(DLQ, true);
-            assertNotNull("Message not dead-lettered", getResponse);
-            assertEquals("test message", new String(getResponse.getBody()));
-
-            Map<String, Object> headers = getResponse.getProps().getHeaders();
-            assertNotNull(headers);
-            ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
-            assertNotNull(death);
-            assertEquals(1, death.size());
-            assertDeathReason(death, 0, TEST_QUEUE_NAME, reason);
-        }
+        consumeN(DLQ, MSG_COUNT, new WithResponse() {
+                @SuppressWarnings("unchecked")
+                public void process(GetResponse getResponse) {
+                    Map<String, Object> headers = getResponse.getProps().getHeaders();
+                    assertNotNull(headers);
+                    ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
+                    assertNotNull(death);
+                    assertEquals(1, death.size());
+                    assertDeathReason(death, 0, TEST_QUEUE_NAME, reason);
+                }
+            });
     }
 
     private void sleep(long millis) {
@@ -281,6 +274,19 @@ public class DeadLetterExchange extends BrokerTestCase {
         }
     }
 
+    private void consumeN(String queue, int n, WithResponse withResponse)
+        throws IOException
+    {
+        for(int x = 0; x < MSG_COUNT; x++) {
+            GetResponse getResponse =
+                this.channel.basicGet(queue, true);
+            assertNotNull("Message not dead-lettered", getResponse);
+            assertEquals("test message", new String(getResponse.getBody()));
+            withResponse.process(getResponse);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private void assertDeathReason(List<Object> death, int num,
                                    String queue, String reason) {
         Map<String, Object> deathHeader =
@@ -298,5 +304,9 @@ public class DeadLetterExchange extends BrokerTestCase {
             };
 
         AMQP.BasicProperties create(int msgNum);
+    }
+
+    private static interface WithResponse {
+        public void process(GetResponse response);
     }
 }
