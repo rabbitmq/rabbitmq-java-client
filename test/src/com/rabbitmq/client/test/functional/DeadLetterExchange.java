@@ -5,6 +5,7 @@ import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -140,6 +141,7 @@ public class DeadLetterExchange extends BrokerTestCase {
             }, queueDeclareArgs, propsFactory, reason);
     }
 
+    @SuppressWarnings("unchecked")
     private void deadLetterTest(Callable<?> deathTrigger,
                                 Map<String, Object> queueDeclareArgs,
                                 PropertiesFactory propsFactory,
@@ -167,9 +169,13 @@ public class DeadLetterExchange extends BrokerTestCase {
 
             Map<String, Object> headers = getResponse.getProps().getHeaders();
             assertNotNull(headers);
+            ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
+            assertNotNull(death);
+            assertEquals(1, death.size());
+            Map<String, Object> deathHeader = (Map<String, Object>)death.get(0);
             assertEquals(TEST_QUEUE_NAME,
-                         headers.get("x-death-queue").toString());
-            assertEquals(reason, headers.get("x-death-reason").toString());
+                         deathHeader.get("x-death-queue").toString());
+            assertEquals(reason, deathHeader.get("x-death-reason").toString());
         }
     }
 
