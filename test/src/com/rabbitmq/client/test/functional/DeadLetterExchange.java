@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -127,6 +128,52 @@ public class DeadLetterExchange extends BrokerTestCase {
             }, null, PropertiesFactory.NULL, "rejected");
     }
 
+    public void testDeadLetterTwice() throws Exception {
+        channel.queueDelete(DLQ);
+        declareQueue(DLQ, DLX, null);
+
+        declareQueue(DLX);
+
+        final String DLQ2 = "queue.dle2";
+        channel.queueDeclare(DLQ2, false, true, false, null);
+
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+        channel.queueBind(DLQ, DLX, "test");
+        channel.queueBind(DLQ2, DLX, "test");
+
+        for(int x = 0; x < MSG_COUNT; x++) {
+            channel.basicPublish("amq.direct", "test",
+                                  PropertiesFactory.NULL.create(x),
+                                 "test message".getBytes());
+        }
+
+        channel.queuePurge(TEST_QUEUE_NAME);
+        sleep(100);
+        channel.queueDelete(DLQ);
+
+        // There should now be two copies of each message on DLQ2: one
+        // with one set of death headers, and another with two sets.
+        for(int x = 0; x < MSG_COUNT * 2; x++) {
+            GetResponse getResponse =
+                this.channel.basicGet(DLQ2, true);
+            assertNotNull("Message not dead-lettered", getResponse);
+            assertEquals("test message", new String(getResponse.getBody()));
+
+            Map<String, Object> headers = getResponse.getProps().getHeaders();
+            assertNotNull(headers);
+            ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
+            assertNotNull(death);
+            if (death.size() == 1) {
+                assertDeathReason(death, 0, TEST_QUEUE_NAME, "queue_purged");
+            } else if (death.size() == 2) {
+                assertDeathReason(death, 0, DLQ, "queue_deleted");
+                assertDeathReason(death, 1, TEST_QUEUE_NAME, "queue_purged");
+            } else {
+                fail("message was dead-lettered more times than expected");
+            }
+        }
+    }
+
     private void deadLetterTest(final Runnable deathTrigger,
                                 Map<String, Object> queueDeclareArgs,
                                 PropertiesFactory propsFactory,
@@ -148,15 +195,15 @@ public class DeadLetterExchange extends BrokerTestCase {
                                 String reason)
         throws Exception
     {
-        declareQueue(DLX, queueDeclareArgs);
+        declareQueue(TEST_QUEUE_NAME, DLX, queueDeclareArgs);
 
-        this.channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
-        this.channel.queueBind(DLQ, DLX, "test");
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+        channel.queueBind(DLQ, DLX, "test");
 
         for(int x = 0; x < MSG_COUNT; x++) {
-            this.channel.basicPublish("amq.direct", "test",
-                                      propsFactory.create(x),
-                                      "test message".getBytes());
+            channel.basicPublish("amq.direct", "test",
+                                 propsFactory.create(x),
+                                 "test message".getBytes());
         }
 
         deathTrigger.call();
@@ -172,36 +219,40 @@ public class DeadLetterExchange extends BrokerTestCase {
             ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
             assertNotNull(death);
             assertEquals(1, death.size());
-            Map<String, Object> deathHeader = (Map<String, Object>)death.get(0);
-            assertEquals(TEST_QUEUE_NAME,
-                         deathHeader.get("x-death-queue").toString());
-            assertEquals(reason, deathHeader.get("x-death-reason").toString());
+            assertDeathReason(death, 0, TEST_QUEUE_NAME, reason);
         }
     }
 
     private void sleep(long millis) {
         try {
             Thread.sleep(millis);
-        }
-        catch(InterruptedException ex) {
+        } catch(InterruptedException ex) {
             // whoosh
         }
     }
 
     private void declareQueue(Object deadLetterExchange) throws IOException {
-        declareQueue(deadLetterExchange, null);
+        declareQueue(TEST_QUEUE_NAME, deadLetterExchange, null);
     }
 
-    private void declareQueue(Object deadLetterExchange,
+    private void declareQueue(String queue, Object deadLetterExchange,
                               Map<String, Object> args) throws IOException {
-        if(args == null) {
+        if (args == null) {
             args = new HashMap<String, Object>();
         }
 
         args.put(DLX_ARG, deadLetterExchange);
-        this.channel.queueDeclare(TEST_QUEUE_NAME, false, true, false, args);
+        this.channel.queueDeclare(queue, false, true, false, args);
     }
 
+    private void assertDeathReason(List<Object> death, int num,
+                                   String queue, String reason) {
+        Map<String, Object> deathHeader =
+            (Map<String, Object>)death.get(num);
+        assertEquals(queue,
+                     deathHeader.get("x-death-queue").toString());
+        assertEquals(reason, deathHeader.get("x-death-reason").toString());
+    }
 
     private static interface PropertiesFactory {
         static final PropertiesFactory NULL = new PropertiesFactory(){
