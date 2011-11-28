@@ -107,8 +107,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @see Connection#createChannel
      * @param connection The connection associated with this channel
      * @param channelNumber The channel number to be associated with this channel
-     * @param workPool pool in which this channel's consumer work is stored
-     * @param executor service which executes the work in the workPool
+     * @param workService service for managing this channel's consumer callbacks
      */
     public ChannelN(AMQConnection connection, int channelNumber,
                     ConsumerWorkService workService) {
@@ -651,7 +650,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Exchange.BindOk exchangeBind(String destination, String source,
             String routingKey, Map<String, Object> arguments)
             throws IOException {
-        return (Exchange.BindOk) 
+        return (Exchange.BindOk)
                exnWrappingRpc(new Exchange.Bind.Builder()
                                .destination(destination)
                                .source(source)

@@ -21,7 +21,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -43,39 +42,40 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory implements Cloneable {
-    
+
     /** Default Executor threads */
-    private static final int    DEFAULT_NUM_CONSUMER_THREADS = 5;
+    @Deprecated
+    public static final int    DEFAULT_NUM_CONSUMER_THREADS = 5;
     /** Default user name */
-    private static final String DEFAULT_USER = "guest";
+    public static final String DEFAULT_USER = "guest";
     /** Default password */
-    private static final String DEFAULT_PASS = "guest";
+    public static final String DEFAULT_PASS = "guest";
     /** Default virtual host */
-    private static final String DEFAULT_VHOST = "/";
+    public static final String DEFAULT_VHOST = "/";
     /** Default maximum channel number;
      *  zero for unlimited */
-    private static final int    DEFAULT_CHANNEL_MAX = 0;
+    public static final int    DEFAULT_CHANNEL_MAX = 0;
     /** Default maximum frame size;
      *  zero means no limit */
-    private static final int    DEFAULT_FRAME_MAX = 0;
+    public static final int    DEFAULT_FRAME_MAX = 0;
     /** Default heart-beat interval;
      *  zero means no heart-beats */
-    private static final int    DEFAULT_HEARTBEAT = 0;
+    public static final int    DEFAULT_HEARTBEAT = 0;
     /** The default host */
-    private static final String DEFAULT_HOST = "localhost";
+    public static final String DEFAULT_HOST = "localhost";
     /** 'Use the default port' port */
-    private static final int    USE_DEFAULT_PORT = -1;
+    public static final int    USE_DEFAULT_PORT = -1;
     /** The default non-ssl port */
-    private static final int    DEFAULT_AMQP_PORT = AMQP.PROTOCOL.PORT;
+    public static final int    DEFAULT_AMQP_PORT = AMQP.PROTOCOL.PORT;
     /** The default ssl port */
-    private static final int    DEFAULT_AMQP_OVER_SSL_PORT = 5671;
+    public static final int    DEFAULT_AMQP_OVER_SSL_PORT = 5671;
     /** The default connection timeout;
      *  zero means wait indefinitely */
-    private static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
+    public static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
+
     /** The default SSL protocol */
     private static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
-    private int numConsumerThreads                = DEFAULT_NUM_CONSUMER_THREADS;
     private String username                       = DEFAULT_USER;
     private String password                       = DEFAULT_PASS;
     private String virtualHost                    = DEFAULT_VHOST;
@@ -90,13 +90,15 @@ public class ConnectionFactory implements Cloneable {
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
 
     /** @return number of consumer threads in default {@link ExecutorService} */
+    @Deprecated
     public int getNumConsumerThreads() {
-        return numConsumerThreads;
+        return DEFAULT_NUM_CONSUMER_THREADS;
     }
 
     /** @param numConsumerThreads threads in created private executor service */
+    @Deprecated
     public void setNumConsumerThreads(int numConsumerThreads) {
-        this.numConsumerThreads = numConsumerThreads;
+        throw new IllegalArgumentException("setNumConsumerThreads not supported -- create explicit ExecutorService instead.");
     }
 
     /** @return the default host to use for connections */
@@ -466,19 +468,29 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Create a new broker connection
+     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newConnection(Address[] addrs) throws IOException {
+        return newConnection(null, addrs);
+    }
+
+    /**
+     * Create a new broker connection
      * @param executor thread execution service for consumers on the connection
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    private Connection newConnection(ExecutorService executor, Address[] addrs)
+    public Connection newConnection(ExecutorService executor, Address[] addrs)
         throws IOException
     {
         IOException lastException = null;
         for (Address addr : addrs) {
             try {
                 FrameHandler frameHandler = createFrameHandler(addr);
-                AMQConnection conn = 
+                AMQConnection conn =
                     new AMQConnection(username,
                                       password,
                                       frameHandler,
@@ -506,7 +518,7 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection() throws IOException {
-        return newConnection(Executors.newFixedThreadPool(this.numConsumerThreads),
+        return newConnection(null,
                              new Address[] {new Address(getHost(), getPort())}
                             );
     }
