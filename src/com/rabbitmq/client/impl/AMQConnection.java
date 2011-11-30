@@ -376,11 +376,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                       .virtualHost(_virtualHost)
                                     .build());
         } catch (IOException ioe) {
-            setHeartbeat(0);
+            _heartbeatSender.shutdown();
             _frameHandler.close();
             throw ioe;
         } catch (ShutdownSignalException sse) {
-            setHeartbeat(0);
+            _heartbeatSender.shutdown();
             _frameHandler.close();
             throw AMQChannel.wrap(sse);
         }
