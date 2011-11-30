@@ -517,19 +517,12 @@ public class ConnectionFactory implements Cloneable {
                 conn.start();
                 return conn;
             } catch (IOException e) {
-                quietTryConnectionClose(conn);
                 lastException = e;
             }
         }
 
         throw (lastException != null) ? lastException
                                       : new IOException("failed to connect");
-    }
-
-    private static void quietTryConnectionClose(AMQConnection connection)
-    {
-        if (connection != null)
-            try { connection.close(); } catch(Exception _) {/*ignore exceptions*/}
     }
 
     /**

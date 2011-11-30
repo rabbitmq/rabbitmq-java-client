@@ -99,9 +99,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * @return the wrapped exception
      */
     public static IOException wrap(ShutdownSignalException ex) {
-        IOException ioe = new IOException();
-        ioe.initCause(ex);
-        return ioe;
+        return wrap(ex, null);
     }
 
     public static IOException wrap(ShutdownSignalException ex, String message) {
