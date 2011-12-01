@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.impl;
 
 import java.io.EOFException;
@@ -258,10 +257,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Connection.Start/.StartOk, Connection.Tune/.TuneOk, and then
      * calls Connection.Open and waits for the OpenOk. Sets heart-beat
      * and frame max values after tuning has taken place.
-     * @throws IOException if an error is encountered;
+     * @throws IOException if an error is encountered
+     * either before, or during, protocol negotiation;
      * sub-classes {@link ProtocolVersionMismatchException} and
      * {@link PossibleAuthenticationFailureException} will be thrown in the
-     * corresponding circumstances.
+     * corresponding circumstances. If an exception is thrown, connection
+     * resources allocated can all be garbage collected when the connection
+     * object is no longer referenced.
      */
     public void start()
         throws IOException
@@ -278,17 +280,22 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         // initiator) is to wait for a connection.start method to
         // arrive.
         _channel0.enqueueRpc(connStartBlocker);
-        // The following two lines are akin to AMQChannel's
-        // transmit() method for this pseudo-RPC.
-        _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
-        _frameHandler.sendHeader();
+        try {
+            // The following two lines are akin to AMQChannel's
+            // transmit() method for this pseudo-RPC.
+            _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
+            _frameHandler.sendHeader();
+        } catch (IOException ioe) {
+            _frameHandler.close();
+            throw ioe;
+        }
 
         // start the main loop going
-        Thread ml = new MainLoop();
-        ml.setName("AMQP Connection " + getHostAddress() + ":" + getPort());
-        ml.start();
+        new MainLoop("AMQP Connection " + getHostAddress() + ":" + getPort()).start();
+        // after this point clear-up of MainLoop is triggered by closing the frameHandler.
 
         AMQP.Connection.Start connStart = null;
+        AMQP.Connection.Tune connTune = null;
         try {
             connStart =
                 (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
@@ -300,70 +307,84 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                             connStart.getVersionMinor());
 
             if (!Version.checkVersion(clientVersion, serverVersion)) {
-                _frameHandler.close(); //this will cause mainLoop to terminate
                 throw new ProtocolVersionMismatchException(clientVersion,
                                                            serverVersion);
             }
+
+            String[] mechanisms = connStart.getMechanisms().toString().split(" ");
+            SaslMechanism sm = this.saslConfig.getSaslMechanism(mechanisms);
+            if (sm == null) {
+                throw new IOException("No compatible authentication mechanism found - " +
+                        "server offered [" + connStart.getMechanisms() + "]");
+            }
+
+            LongString challenge = null;
+            LongString response = sm.handleChallenge(null, this.username, this.password);
+
+            do {
+                Method method = (challenge == null)
+                    ? new AMQP.Connection.StartOk.Builder()
+                                    .clientProperties(_clientProperties)
+                                    .mechanism(sm.getName())
+                                    .response(response)
+                          .build()
+                    : new AMQP.Connection.SecureOk.Builder().response(response).build();
+
+                try {
+                    Method serverResponse = _channel0.rpc(method).getMethod();
+                    if (serverResponse instanceof AMQP.Connection.Tune) {
+                        connTune = (AMQP.Connection.Tune) serverResponse;
+                    } else {
+                        challenge = ((AMQP.Connection.Secure) serverResponse).getChallenge();
+                        response = sm.handleChallenge(challenge, this.username, this.password);
+                    }
+                } catch (ShutdownSignalException e) {
+                    throw new PossibleAuthenticationFailureException(e);
+                }
+            } while (connTune == null);
         } catch (ShutdownSignalException sse) {
+            _frameHandler.close();
+            throw AMQChannel.wrap(sse);
+        } catch(IOException ioe) {
+            _frameHandler.close();
+            throw ioe;
+        }
+
+        try {
+            int channelMax =
+                negotiatedMaxValue(this.requestedChannelMax,
+                                   connTune.getChannelMax());
+            _channelManager = new ChannelManager(this._workService, channelMax);
+
+            int frameMax =
+                negotiatedMaxValue(this.requestedFrameMax,
+                                   connTune.getFrameMax());
+            this._frameMax = frameMax;
+
+            int heartbeat =
+                negotiatedMaxValue(this.requestedHeartbeat,
+                                   connTune.getHeartbeat());
+
+            setHeartbeat(heartbeat);
+
+            _channel0.transmit(new AMQP.Connection.TuneOk.Builder()
+                                .channelMax(channelMax)
+                                .frameMax(frameMax)
+                                .heartbeat(heartbeat)
+                              .build());
+            _channel0.exnWrappingRpc(new AMQP.Connection.Open.Builder()
+                                      .virtualHost(_virtualHost)
+                                    .build());
+        } catch (IOException ioe) {
+            _heartbeatSender.shutdown();
+            _frameHandler.close();
+            throw ioe;
+        } catch (ShutdownSignalException sse) {
+            _heartbeatSender.shutdown();
+            _frameHandler.close();
             throw AMQChannel.wrap(sse);
         }
 
-        String[] mechanisms = connStart.getMechanisms().toString().split(" ");
-        SaslMechanism sm = this.saslConfig.getSaslMechanism(mechanisms);
-        if (sm == null) {
-            throw new IOException("No compatible authentication mechanism found - " +
-                    "server offered [" + connStart.getMechanisms() + "]");
-        }
-
-        LongString challenge = null;
-        LongString response = sm.handleChallenge(null, this.username, this.password);
-
-        AMQP.Connection.Tune connTune = null;
-        do {
-            Method method = (challenge == null)
-                ? new AMQP.Connection.StartOk.Builder()
-                                .clientProperties(_clientProperties)
-                                .mechanism(sm.getName())
-                                .response(response)
-                      .build()
-                : new AMQP.Connection.SecureOk.Builder().response(response).build();
-
-            try {
-                Method serverResponse = _channel0.rpc(method).getMethod();
-                if (serverResponse instanceof AMQP.Connection.Tune) {
-                    connTune = (AMQP.Connection.Tune) serverResponse;
-                } else {
-                    challenge = ((AMQP.Connection.Secure) serverResponse).getChallenge();
-                    response = sm.handleChallenge(challenge, this.username, this.password);
-                }
-            } catch (ShutdownSignalException e) {
-                throw new PossibleAuthenticationFailureException(e);
-            }
-        } while (connTune == null);
-
-        int channelMax =
-            negotiatedMaxValue(this.requestedChannelMax,
-                               connTune.getChannelMax());
-        _channelManager = new ChannelManager(this._workService, channelMax);
-
-        int frameMax =
-            negotiatedMaxValue(this.requestedFrameMax,
-                               connTune.getFrameMax());
-        this._frameMax = frameMax;
-
-        int heartbeat =
-            negotiatedMaxValue(this.requestedHeartbeat,
-                               connTune.getHeartbeat());
-        setHeartbeat(heartbeat);
-
-        _channel0.transmit(new AMQP.Connection.TuneOk.Builder()
-                            .channelMax(channelMax)
-                            .frameMax(frameMax)
-                            .heartbeat(heartbeat)
-                          .build());
-        _channel0.exnWrappingRpc(new AMQP.Connection.Open.Builder()
-                                  .virtualHost(_virtualHost)
-                                .build());
         return;
     }
 
@@ -451,6 +472,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     private class MainLoop extends Thread {
+
+        /**
+         * @param name of thread
+         */
+        MainLoop(String name) {
+            super(name);
+        }
 
         /**
          * Channel reader thread main loop. Reads a frame, and if it is
@@ -582,7 +610,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     private class SocketCloseWait extends Thread {
-        private ShutdownSignalException cause;
+        private final ShutdownSignalException cause;
 
         public SocketCloseWait(ShutdownSignalException sse) {
             cause = sse;
@@ -614,7 +642,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                                                   reason, this);
         sse.initCause(cause);
         if (!setShutdownCauseIfOpen(sse)) {
-            if (initiatedByApplication) 
+            if (initiatedByApplication)
                 throw new AlreadyClosedException("Attempt to use closed connection", this);
         }
 

@@ -438,10 +438,22 @@ public class ConnectionFactory implements Cloneable {
 
         String hostName = addr.getHost();
         int portNumber = portOrDefault(addr.getPort());
-        Socket socket = factory.createSocket();
-        configureSocket(socket);
-        socket.connect(new InetSocketAddress(hostName, portNumber), connectionTimeout);
-        return createFrameHandler(socket);
+        Socket socket = null;
+        try {
+            socket = factory.createSocket();
+            configureSocket(socket);
+            socket.connect(new InetSocketAddress(hostName, portNumber),
+                    connectionTimeout);
+            return createFrameHandler(socket);
+        } catch (IOException ioe) {
+            quietTrySocketClose(socket);
+            throw ioe;
+        }
+    }
+
+    private static void quietTrySocketClose(Socket socket) {
+        if (socket != null)
+            try { socket.close(); } catch (Exception _) {/*ignore exceptions*/}
     }
 
     protected FrameHandler createFrameHandler(Socket sock)
@@ -488,9 +500,10 @@ public class ConnectionFactory implements Cloneable {
     {
         IOException lastException = null;
         for (Address addr : addrs) {
+            AMQConnection conn = null;
             try {
                 FrameHandler frameHandler = createFrameHandler(addr);
-                AMQConnection conn =
+                conn =
                     new AMQConnection(username,
                                       password,
                                       frameHandler,
