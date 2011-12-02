@@ -438,10 +438,22 @@ public class ConnectionFactory implements Cloneable {
 
         String hostName = addr.getHost();
         int portNumber = portOrDefault(addr.getPort());
-        Socket socket = factory.createSocket();
-        configureSocket(socket);
-        socket.connect(new InetSocketAddress(hostName, portNumber), connectionTimeout);
-        return createFrameHandler(socket);
+        Socket socket = null;
+        try {
+            socket = factory.createSocket();
+            configureSocket(socket);
+            socket.connect(new InetSocketAddress(hostName, portNumber),
+                    connectionTimeout);
+            return createFrameHandler(socket);
+        } catch (IOException ioe) {
+            quietTrySocketClose(socket);
+            throw ioe;
+        }
+    }
+
+    private static void quietTrySocketClose(Socket socket) {
+        if (socket != null)
+            try { socket.close(); } catch (Exception _) {/*ignore exceptions*/}
     }
 
     protected FrameHandler createFrameHandler(Socket sock)

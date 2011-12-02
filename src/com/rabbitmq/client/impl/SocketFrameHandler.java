@@ -140,11 +140,7 @@ public class SocketFrameHandler implements FrameHandler {
     }
 
     public void close() {
-        try {
-            _socket.setSoLinger(true, SOCKET_CLOSING_TIMEOUT);
-            _socket.close();
-        } catch (IOException ioe) {
-            // Ignore.
-        }
+        try { _socket.setSoLinger(true, SOCKET_CLOSING_TIMEOUT); } catch (Exception _) {}
+        try { _socket.close();                                   } catch (Exception _) {}
     }
 }
