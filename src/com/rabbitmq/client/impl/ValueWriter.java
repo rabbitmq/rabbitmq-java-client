@@ -189,10 +189,6 @@ public class ValueWriter
             writeOctet('A');
             writeArray((List<?>)value);
         }
-        else if(value instanceof Object[]) {
-            writeOctet('A');
-            writeArray((Object[])value);
-        }
         else {
             throw new IllegalArgumentException
                 ("Invalid value type: " + value.getClass().getName());
@@ -207,20 +203,6 @@ public class ValueWriter
         }
         else {
             out.writeInt((int)Frame.arraySize(value));
-            for (Object item : value) {
-                writeFieldValue(item);
-            }
-        }
-    }
-
-    public final void writeArray(Object[] value)
-        throws IOException
-    {
-        if (value==null) {
-            out.write(0);
-        }
-        else {
-            out.writeInt(value.length);
             for (Object item : value) {
                 writeFieldValue(item);
             }
