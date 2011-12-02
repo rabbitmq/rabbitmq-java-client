@@ -500,10 +500,9 @@ public class ConnectionFactory implements Cloneable {
     {
         IOException lastException = null;
         for (Address addr : addrs) {
-            AMQConnection conn = null;
             try {
                 FrameHandler frameHandler = createFrameHandler(addr);
-                conn =
+                AMQConnection conn =
                     new AMQConnection(username,
                                       password,
                                       frameHandler,
