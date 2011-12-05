@@ -5,6 +5,7 @@ import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,8 +16,10 @@ import java.util.concurrent.Callable;
 public class DeadLetterExchange extends BrokerTestCase {
     private static final String DLX = "dead.letter.exchange";
     private static final String DLX_ARG = "x-dead-letter-exchange";
+    private static final String DLX_RK_ARG = "x-dead-letter-routing-key";
     private static final String TEST_QUEUE_NAME = "test.queue.dead.letter";
     private static final String DLQ = "queue.dlq";
+    private static final String DLQ2 = "queue.dlq2";
     private static final int MSG_COUNT = 10;
     private static final int MSG_COUNT_MANY = 1000;
 
@@ -142,7 +145,6 @@ public class DeadLetterExchange extends BrokerTestCase {
     {
         declareQueue(DLX);
 
-        final String DLQ2 = "queue.dlq2";
         channel.queueDeclare(DLQ2, false, true, false, null);
 
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
@@ -155,11 +157,10 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     public void testDeadLetterTwice() throws Exception {
         channel.queueDelete(DLQ);
-        declareQueue(DLQ, DLX, null);
+        declareQueue(DLQ, DLX, null, null);
 
         declareQueue(DLX);
 
-        final String DLQ2 = "queue.dle2";
         channel.queueDeclare(DLQ2, false, true, false, null);
 
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
@@ -195,7 +196,7 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     public void testDeadLetterSelf() throws Exception {
         channel.queueDelete(DLQ);
-        declareQueue(DLQ, DLX, null);
+        declareQueue(DLQ, DLX, null, null);
 
         declareQueue(DLX);
 
@@ -224,6 +225,50 @@ public class DeadLetterExchange extends BrokerTestCase {
             });
     }
 
+    public void testDeadLetterNewRK() throws Exception {
+        declareQueue(TEST_QUEUE_NAME, DLX, "test-other", null);
+
+        channel.queueDeclare(DLQ2, false, true, false, null);
+
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+        channel.queueBind(DLQ, DLX, "test");
+        channel.queueBind(DLQ2, DLX, "test-other");
+
+        publishN(MSG_COUNT, new PropertiesFactory() {
+                public AMQP.BasicProperties create(int msgNum) {
+                    Map<String, Object> headers = new HashMap<String, Object>();
+                    headers.put("CC", Arrays.asList(new String[]{"foo"}));
+                    headers.put("BCC", Arrays.asList(new String[]{"bar"}));
+                    return (new AMQP.BasicProperties.Builder())
+                        .headers(headers)
+                        .build();
+                }
+            });
+
+        channel.queuePurge(TEST_QUEUE_NAME);
+
+        consumeN(DLQ, 0, new WithResponse() {
+                public void process(GetResponse getResponse) {
+                }
+            });
+        consumeN(DLQ2, MSG_COUNT, new WithResponse() {
+                @SuppressWarnings("unchecked")
+                public void process(GetResponse getResponse) {
+                    Map<String, Object> headers = getResponse.getProps().getHeaders();
+                    assertNotNull(headers);
+                    assertNull(headers.get("CC"));
+                    assertNull(headers.get("BCC"));
+
+                    ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
+                    assertNotNull(death);
+                    assertEquals(1, death.size());
+                    assertDeathReason(death, 0, TEST_QUEUE_NAME,
+                                      "queue_purged", "amq.direct",
+                                      Arrays.asList(new String[]{"test", "foo"}));
+                }
+            });
+    }
+
     private void deadLetterTest(final Runnable deathTrigger,
                                 Map<String, Object> queueDeclareArgs,
                                 PropertiesFactory propsFactory,
@@ -244,7 +289,7 @@ public class DeadLetterExchange extends BrokerTestCase {
                                 final String reason)
         throws Exception
     {
-        declareQueue(TEST_QUEUE_NAME, DLX, queueDeclareArgs);
+        declareQueue(TEST_QUEUE_NAME, DLX, null, queueDeclareArgs);
 
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
         channel.queueBind(DLQ, DLX, "test");
@@ -275,16 +320,20 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     private void declareQueue(Object deadLetterExchange) throws IOException {
-        declareQueue(TEST_QUEUE_NAME, deadLetterExchange, null);
+        declareQueue(TEST_QUEUE_NAME, deadLetterExchange, null, null);
     }
 
     private void declareQueue(String queue, Object deadLetterExchange,
+                              Object deadLetterRoutingKey,
                               Map<String, Object> args) throws IOException {
         if (args == null) {
             args = new HashMap<String, Object>();
         }
 
         args.put(DLX_ARG, deadLetterExchange);
+        if (deadLetterRoutingKey != null) {
+            args.put(DLX_RK_ARG, deadLetterRoutingKey);
+        }
         channel.queueDeclare(queue, false, true, false, args);
     }
 
@@ -314,11 +363,30 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     @SuppressWarnings("unchecked")
     private void assertDeathReason(List<Object> death, int num,
+                                   String queue, String reason,
+                                   String exchange, List<String> routingKeys)
+    {
+        Map<String, Object> deathHeader =
+            (Map<String, Object>)death.get(num);
+        assertEquals(exchange, deathHeader.get("exchange").toString());
+
+        List<String> deathRKs = new ArrayList<String>();
+        for (Object rk : (ArrayList)deathHeader.get("routing-keys")) {
+            deathRKs.add(rk.toString());
+        }
+        Collections.sort(deathRKs);
+        Collections.sort(routingKeys);
+        assertEquals(routingKeys, deathRKs);
+
+        assertDeathReason(death, num, queue, reason);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void assertDeathReason(List<Object> death, int num,
                                    String queue, String reason) {
         Map<String, Object> deathHeader =
             (Map<String, Object>)death.get(num);
-        assertEquals(queue,
-                     deathHeader.get("queue").toString());
+        assertEquals(queue, deathHeader.get("queue").toString());
         assertEquals(reason, deathHeader.get("reason").toString());
     }
 
