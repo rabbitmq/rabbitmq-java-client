@@ -7,7 +7,6 @@ GNUPG_PATH=~
 
 WEB_URL=http://www.rabbitmq.com/
 NEXUS_STAGE_URL=http://oss.sonatype.org/service/local/staging/deploy/maven2
-MAVEN_NEXUS_VERSION=1.7
 
 AMQP_CODEGEN_DIR=$(shell fgrep sibling.codegen.dir build.properties | sed -e 's:sibling\.codegen\.dir=::')
 
@@ -78,8 +77,8 @@ stage-and-promote-maven-bundle: maven-bundle
 	    amqp-client-$(VERSION).jar \
 	    amqp-client-$(VERSION)-javadoc.jar \
 	    amqp-client-$(VERSION)-sources.jar && \
-	  mvn org.sonatype.plugins:nexus-maven-plugin:$(MAVEN_NEXUS_VERSION):staging-close \
-	      org.sonatype.plugins:nexus-maven-plugin:$(MAVEN_NEXUS_VERSION):staging-promote \
+	  mvn org.sonatype.plugins:nexus-maven-plugin:staging-close \
+	      org.sonatype.plugins:nexus-maven-plugin:staging-promote \
 	    -Dnexus.url=http://oss.sonatype.org \
 	    -Dnexus.username=$$NEXUS_USERNAME \
 	    -Dnexus.password=$$NEXUS_PASSWORD \
