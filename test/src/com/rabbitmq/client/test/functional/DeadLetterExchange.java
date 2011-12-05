@@ -318,8 +318,8 @@ public class DeadLetterExchange extends BrokerTestCase {
         Map<String, Object> deathHeader =
             (Map<String, Object>)death.get(num);
         assertEquals(queue,
-                     deathHeader.get("x-death-queue").toString());
-        assertEquals(reason, deathHeader.get("x-death-reason").toString());
+                     deathHeader.get("queue").toString());
+        assertEquals(reason, deathHeader.get("reason").toString());
     }
 
     private static interface PropertiesFactory {
