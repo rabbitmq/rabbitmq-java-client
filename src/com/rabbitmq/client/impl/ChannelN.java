@@ -91,14 +91,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Future boolean for shutting down */
     private volatile CountDownLatch finishedShutdownFlag = null;
 
-    /** Indicates if <code>confirmSelect</code> has been enabled */
-    private volatile boolean confirmation = false;
     /** Set of currently unconfirmed messages (i.e. messages that have
      *  not been ack'd or nack'd by the server yet). */
     private volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
-    /** Sequence number of next published message requiring confirmation.*/
-    private AtomicLong nextPublishSeqNo = new AtomicLong(1L);
 
     /** Whether any nacks have been received since the last waitForConfirms(). */
     private volatile boolean onlyAcksReceived = true;
@@ -554,23 +550,22 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
-        rememberConfirmIfNecessary();
         BasicProperties useProps = props;
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
         }
-        transmit(new AMQCommand(new Basic.Publish.Builder()
-                                    .exchange(exchange)
-                                    .routingKey(routingKey)
-                                    .mandatory(mandatory)
-                                    .immediate(immediate)
-                                .build(),
-                                useProps, body));
+        rememberConfirmIfNecessary(transmitAndGetSeq(new AMQCommand(new Basic.Publish.Builder()
+                                                                      .exchange(exchange)
+                                                                      .routingKey(routingKey)
+                                                                      .mandatory(mandatory)
+                                                                      .immediate(immediate)
+                                                                    .build(),
+                                                                    useProps, body)));
     }
 
-    private void rememberConfirmIfNecessary() {
-        if (this.confirmation) {
-            unconfirmedSet.add(this.nextPublishSeqNo.getAndIncrement());
+    private void rememberConfirmIfNecessary(long seqNo) {
+        if (seqNo > 0) {
+            unconfirmedSet.add(seqNo);
         }
     }
 
@@ -983,9 +978,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Confirm.SelectOk confirmSelect()
         throws IOException
     {
-        this.confirmation = true;
-        return (Confirm.SelectOk)
+        Confirm.SelectOk response = (Confirm.SelectOk)
             exnWrappingRpc(new Confirm.Select.Builder().nowait(false).build()).getMethod();
+        setConfirmation();
+        return response;
     }
 
     /** Public API - {@inheritDoc} */
@@ -1000,7 +996,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Public API - {@inheritDoc} */
     public long getNextPublishSeqNo() {
-        return nextPublishSeqNo.get();
+        return getNextSeqNo();
     }
 
     public void asyncRpc(Method method) throws IOException {

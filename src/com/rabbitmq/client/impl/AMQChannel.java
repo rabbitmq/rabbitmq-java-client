@@ -19,6 +19,7 @@ package com.rabbitmq.client.impl;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Command;
@@ -56,6 +57,11 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
 
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
     private RpcContinuation _activeRpc = null;
+
+    /** when confirmation is on */
+    private volatile boolean confirmation = false;
+    /** When confirmation is on, identifies the sequence number of the next transmit */
+    private AtomicLong nextSeqNo = new AtomicLong(1L);
 
     /** Whether transmission of content-bearing methods should be blocked */
     public boolean _blockContent = false;
@@ -287,10 +293,31 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     public void transmit(AMQCommand c) throws IOException {
+        transmitAndGetSeq(c);
+    }
+
+    protected long transmitAndGetSeq(AMQCommand c) throws IOException {
         synchronized (_channelMutex) {
             ensureIsOpen();
             quiescingTransmit(c);
+            return getAndIncrementSeqNoIfNecessary();
         }
+    }
+
+    protected void setConfirmation() {
+        this.confirmation = true;
+    }
+
+    private long getAndIncrementSeqNoIfNecessary() {
+        if (this.confirmation)
+            return this.nextSeqNo.getAndIncrement();
+        return 0;
+    }
+
+    protected long getNextSeqNo() {
+        if (this.confirmation)
+            return this.nextSeqNo.get();
+        return 0;
     }
 
     public void quiescingTransmit(Method m) throws IOException {
