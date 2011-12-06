@@ -30,9 +30,9 @@ import java.util.concurrent.CountDownLatch;
  * Dispatches notifications to a {@link Consumer} on an
  * internally-managed executor service and work pool.
  * <p/>
- * Each {@link Channel} has a single <code>ConsumerDispatcher</code>,
- * but the executor service and work pool may be shared with other channels,
- * typically those on the same {@link Connection}.
+ * Each {@link Channel} has a single {@link ConsumerDispatcher},
+ * but the executor service and work pool may be shared with other channels, typically those on the same
+ * {@link Connection}.
  */
 final class ConsumerDispatcher {
 
