@@ -26,6 +26,8 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Command;
@@ -80,9 +82,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** The ConfirmListener collection. */
     private final Collection<ConfirmListener> confirmListeners = new CopyOnWriteArrayList<ConfirmListener>();
 
-    /** Sequence number of next published message requiring confirmation.*/
-    private long nextPublishSeqNo = 0L;
-
     /** The current default consumer, or null if there is none. */
     private volatile Consumer defaultConsumer = null;
 
@@ -92,10 +91,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Future boolean for shutting down */
     private volatile CountDownLatch finishedShutdownFlag = null;
 
+    /** Indicates if <code>confirmSelect</code> has been enabled */
+    private volatile boolean confirmation = false;
     /** Set of currently unconfirmed messages (i.e. messages that have
-     *  not been ack'd or nack'd by the server yet. */
+     *  not been ack'd or nack'd by the server yet). */
     private volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
+    /** Sequence number of next published message requiring confirmation.*/
+    private AtomicLong nextPublishSeqNo = new AtomicLong(1L);
 
     /** Whether any nacks have been received since the last waitForConfirms(). */
     private volatile boolean onlyAcksReceived = true;
@@ -551,10 +554,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
-        if (nextPublishSeqNo > 0) {
-            unconfirmedSet.add(getNextPublishSeqNo());
-            nextPublishSeqNo++;
-        }
+        rememberConfirmIfNecessary();
         BasicProperties useProps = props;
         if (props == null) {
             useProps = MessageProperties.MINIMAL_BASIC;
@@ -566,6 +566,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                     .immediate(immediate)
                                 .build(),
                                 useProps, body));
+    }
+
+    private void rememberConfirmIfNecessary() {
+        if (this.confirmation) {
+            unconfirmedSet.add(this.nextPublishSeqNo.getAndIncrement());
+        }
     }
 
     /** Public API - {@inheritDoc} */
@@ -977,10 +983,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Confirm.SelectOk confirmSelect()
         throws IOException
     {
-        if (nextPublishSeqNo == 0) nextPublishSeqNo = 1;
+        this.confirmation = true;
         return (Confirm.SelectOk)
-            exnWrappingRpc(new Confirm.Select(false)).getMethod();
-
+            exnWrappingRpc(new Confirm.Select.Builder().nowait(false).build()).getMethod();
     }
 
     /** Public API - {@inheritDoc} */
@@ -995,7 +1000,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Public API - {@inheritDoc} */
     public long getNextPublishSeqNo() {
-        return nextPublishSeqNo;
+        return nextPublishSeqNo.get();
     }
 
     public void asyncRpc(Method method) throws IOException {
