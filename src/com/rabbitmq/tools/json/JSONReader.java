@@ -1,6 +1,6 @@
 /*
-Copyright 2006, 2007 Frank Carver
-Copyright 2007 Tony Garnock-Jones
+   Copyright (c) 2006-2007 Frank Carver
+   Copyright (c) 2007-2011 VMware, Inc. All Rights Reserved
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -207,7 +207,7 @@ public class JSONReader {
         int value = 0;
         for (int i = 0; i < 4; ++i) {
             switch (next()) {
-            case '0': case '1': case '2': case '3': case '4': 
+            case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
                 value = (value << 4) + c - '0';
                 break;
