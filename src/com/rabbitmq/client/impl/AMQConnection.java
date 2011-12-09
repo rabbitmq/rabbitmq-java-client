@@ -614,7 +614,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                                                   reason, this);
         sse.initCause(cause);
         if (!setShutdownCauseIfOpen(sse)) {
-            if (initiatedByApplication) 
+            if (initiatedByApplication)
                 throw new AlreadyClosedException("Attempt to use closed connection", this);
         }
 
