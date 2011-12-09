@@ -71,7 +71,7 @@ public class BasicRpcClient {
     private final String consumerTag;
 
     /** Map from request correlation ID to continuation BlockingCell */
-    private final Map<String, BlockingCell<Object>> continuationMap = new HashMap<String, BlockingCell<Object>>();
+    private final Map<String, BlockingCell<RpcReturn>> continuationMap = new HashMap<String, BlockingCell<RpcReturn>>();
     /** Contains the most recently-used request correlation ID */
     private int correlationId;
 
@@ -140,20 +140,18 @@ public class BasicRpcClient {
     }
 
     /**
-     * Registers a consumer on the reply queue.
-     *
-     * @throws IOException if an error is encountered
-     * @return the newly created and registered consumer
+     * Returns an RPC consumer.
+     * @return the newly created consumer
      */
-    private static Consumer createConsumer(Channel channel, final Map<String, BlockingCell<Object>> continuationMap) throws IOException {
+    private static Consumer createConsumer(Channel channel, final Map<String, BlockingCell<RpcReturn>> continuationMap) {
         return new DefaultConsumer(channel) {
             @Override
             public void handleShutdownSignal(String consumerTag,
                     ShutdownSignalException signal) {
                 synchronized (continuationMap) {
-                    for (Entry<String, BlockingCell<Object>> entry : continuationMap
+                    for (Entry<String, BlockingCell<RpcReturn>> entry : continuationMap
                             .entrySet()) {
-                        entry.getValue().set(signal);
+                        entry.getValue().set(new RpcReturn(signal));
                     }
                 }
             }
@@ -164,13 +162,29 @@ public class BasicRpcClient {
                     throws IOException {
                 synchronized (continuationMap) {
                     String replyId = properties.getCorrelationId();
-                    BlockingCell<Object> blocker = continuationMap
+                    BlockingCell<RpcReturn> blocker = continuationMap
                             .get(replyId);
                     continuationMap.remove(replyId);
-                    blocker.set(body);
+                    blocker.set(new RpcReturn(body));
                 }
             }
         };
+    }
+
+    private static class RpcReturn {
+        private ShutdownSignalException signal;
+        private byte[] result;
+        private RpcReturn(byte[] result, ShutdownSignalException signal) {
+            this.result = result;
+            this.signal = signal;
+        }
+        public RpcReturn(byte[] result) { this(result, null); }
+        public RpcReturn(ShutdownSignalException signal) { this(null, signal); }
+
+        public ShutdownSignalException getSignal() { return this.signal; }
+        public byte[] getResult() { return this.result; }
+
+        public boolean shutdown() { return this.signal != null; }
     }
 
     private void publish(String exchange, String routingKey, AMQP.BasicProperties props, byte[] message)
@@ -181,7 +195,7 @@ public class BasicRpcClient {
     private byte[] primitiveCall(String exchange, String routingKey, AMQP.BasicProperties props, byte[] message)
             throws IOException, ShutdownSignalException, TimeoutException {
         checkConsumer();
-        BlockingCell<Object> k = new BlockingCell<Object>();
+        BlockingCell<RpcReturn> k = new BlockingCell<RpcReturn>();
         synchronized (this.continuationMap) {
             this.correlationId++;
             String replyId = "" + this.correlationId;
@@ -191,17 +205,18 @@ public class BasicRpcClient {
             this.continuationMap.put(replyId, k);
         }
         publish(exchange, routingKey, props, message);
-        Object reply = k.uninterruptibleGet(this.timeout);
-        if (reply instanceof ShutdownSignalException) {
-            ShutdownSignalException sig = (ShutdownSignalException) reply;
-            ShutdownSignalException wrapper = new ShutdownSignalException(
-                    sig.isHardError(), sig.isInitiatedByApplication(),
-                    sig.getReason(), sig.getReference());
-            wrapper.initCause(sig);
-            throw wrapper;
+        RpcReturn reply = k.uninterruptibleGet(this.timeout);
+        if (reply.shutdown()) {
+            throw wrapSSE(reply.getSignal());
         } else {
-            return (byte[]) reply;
+            return reply.getResult();
         }
+    }
+
+    private static ShutdownSignalException wrapSSE(ShutdownSignalException sig) {
+        return (ShutdownSignalException) new ShutdownSignalException(
+                sig.isHardError(), sig.isInitiatedByApplication(),
+                sig.getReason(), sig.getReference()).initCause(sig);
     }
 
     /**
