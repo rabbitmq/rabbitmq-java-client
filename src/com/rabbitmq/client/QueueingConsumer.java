@@ -64,7 +64,7 @@ import com.rabbitmq.utility.Utility;
  * <code>Connection's</code> thread. This had two main drawbacks. Firstly, the
  * <code>Consumer</code> could stall the processing of all
  * <code>Channels</code> on the <code>Connection</code>. Secondly, if a
- * <code>Consumer</code> made a recursive synchronous call into its 
+ * <code>Consumer</code> made a recursive synchronous call into its
  * <code>Channel</code> the client would deadlock.
  * <p/>
  * <code>QueueingConsumer</code> provided client code with an easy way to
@@ -121,7 +121,7 @@ public class QueueingConsumer extends DefaultConsumer {
                                byte[] body)
         throws IOException
     {
-        checkShutdown();
+//        checkShutdown();
         this._queue.add(new Delivery(envelope, properties, body));
     }
 
