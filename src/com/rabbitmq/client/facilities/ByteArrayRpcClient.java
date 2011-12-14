@@ -51,7 +51,7 @@ import com.rabbitmq.utility.BlockingCell;
  * This class is thread-safe. Multiple calls may be issued on multiple threads
  * without blocking each other.
  */
-public class BasicRpcClient {
+public class ByteArrayRpcClient implements RpcClient<byte[], byte[]> {
     /**
      * NO_TIMEOUT value must match convention on
      * {@link BlockingCell#uninterruptibleGet(int)}
@@ -82,7 +82,7 @@ public class BasicRpcClient {
      * @param timeout time (ms) to allow for response
      * @throws IOException if an error is encountered
      */
-    public BasicRpcClient(Channel channel, int timeout) throws IOException {
+    public ByteArrayRpcClient(Channel channel, int timeout) throws IOException {
         this.channel = channel;
         if (timeout < NO_TIMEOUT)
             throw new IllegalArgumentException(
@@ -107,7 +107,7 @@ public class BasicRpcClient {
      * @throws IOException if an error is encountered
      * @see #setupReplyQueue
      */
-    public BasicRpcClient(Channel channel)
+    public ByteArrayRpcClient(Channel channel)
             throws IOException {
         this(channel, NO_TIMEOUT);
     }
