@@ -35,42 +35,42 @@ import com.rabbitmq.client.impl.ValueWriter;
 /**
  * An AMQP wire-protocol table RPC client.
  * <p/>
- * This class delegates RPC calls to a {@link RpcClient RpcClient&lt;byte[], byte[]&gt;}, and translates tables (maps
- * from {@link String} to {@link Object}) into and from byte arrays using AMQP wire-protocol table encoding. There are some restrictions on
- * the values appearing in the table: <br>
- * they must be of type {@link String}, {@link LongString}, {@link Integer},
- * {@link java.math.BigDecimal}, {@link Date}, or (recursively) a {@link Map} of the enclosing type.
+ * This class delegates RPC calls to a {@link RpcCaller RpcCaller&lt;byte[], byte[]&gt;} injected
+ * into the constructor, and translates tables (maps from {@link String} to {@link Object}) into and
+ * from byte arrays using AMQP wire-protocol table encoding.
  * <p/>
- * The client delegates to a byte-array RPC client, initialised in the constructor.
+ * The values appearing in the table must be of type {@link String}, {@link LongString},
+ * {@link Integer}, {@link java.math.BigDecimal BigDecimal}, {@link Date}, or (recursively) a
+ * {@link Map} from {@link String}s to these types.
  * <p/>
  * <b>Concurrency Semantics</b><br/>
- * The class is thread-safe, if the delegate {@link RpcClient} is thread-safe.
+ * The class is thread-safe, if the delegate {@link RpcCaller} is thread-safe.
  */
 public class TableRpcClient implements
         RpcClient<Map<String, Object>, Map<String, Object>> {
 
-    private final RpcClient<byte[], byte[]> rpcClient;
+    private final RpcCaller<byte[], byte[]> rpcCaller;
+    private final String exchange;
+    private final String routingKey;
 
-    public TableRpcClient(RpcClient<byte[], byte[]> rpcClient) {
-        this.rpcClient = rpcClient;
+    public TableRpcClient(String exchange, String routingKey,
+            RpcCaller<byte[], byte[]> rpcCaller) {
+        this.exchange = exchange;
+        this.routingKey = routingKey;
+        this.rpcCaller = rpcCaller;
     }
 
-    public Map<String, Object> call(String exchange, String routingKey,
-            Map<String, Object> request) throws IOException, TimeoutException,
-            ShutdownSignalException {
+    public Map<String, Object> call(Map<String, Object> request)
+            throws IOException, TimeoutException, ShutdownSignalException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         MethodArgumentWriter writer = new MethodArgumentWriter(new ValueWriter(
                 new DataOutputStream(buffer)));
         writer.writeTable(request);
         writer.flush();
-        byte[] reply = this.rpcClient.call(exchange, routingKey,
+        byte[] reply = this.rpcCaller.call(this.exchange, this.routingKey,
                 buffer.toByteArray());
         MethodArgumentReader reader = new MethodArgumentReader(new ValueReader(
                 new DataInputStream(new ByteArrayInputStream(reply))));
         return reader.readTable();
-    }
-
-    public void close() throws IOException {
-        this.rpcClient.close();
     }
 }
