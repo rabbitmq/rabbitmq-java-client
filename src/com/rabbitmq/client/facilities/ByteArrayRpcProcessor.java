@@ -17,6 +17,8 @@
 package com.rabbitmq.client.facilities;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
@@ -33,8 +35,11 @@ import com.rabbitmq.client.ShutdownSignalException;
  */
 public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
 
+    private static final long STOP_TIMEOUT_SECONDS = 3L;
     /** Ever started */
     private volatile boolean started = false;
+    /** Ever stopped */
+    private volatile boolean stopped = false;
 
     /** Channel we are communicating on */
     private final Channel channel;
@@ -43,8 +48,9 @@ public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
 
     /** Monitor/lock for consumer, */
     private final Object monitor = new Object();
-    /** Consumer attached to the request queue */
-    private Consumer consumer;
+    /** ConsumerTag for consumer attached to the request queue */
+    private String consumerTag;
+    private final CountDownLatch stopLatch;
 
     /**
      * Create a basic processor receiving byte array requests on a Rabbit Queue on a given channel.
@@ -57,91 +63,67 @@ public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
             throws IOException {
         this.channel = channel;
         this.queueName = channel.queueDeclarePassive(queueName).getQueue();
+        this.stopLatch = new CountDownLatch(1);
     }
 
     public void start(RpcHandler<byte[], byte[]> rpcHandler) throws IOException {
         if (this.started) throw new IOException("Already started.");
         synchronized (this.monitor) {
-            this.consumer = this.makeConsumer(rpcHandler, this.channel);
+            Consumer consumer = this.makeConsumer(rpcHandler);
+            this.consumerTag = this.channel.basicConsume(this.queueName,
+                    consumer);
+            this.started = true;
         }
-
     }
 
     public void stop() throws IOException {
-        // TODO Auto-generated method stub
-
-    }
-
-    /**
-     * If the passed-in queue name is null, creates a server-named temporary exclusive autodelete
-     * queue to use; otherwise expects the queue to have already been declared.
-     */
-    public RpcServer(Channel channel, String queueName) throws IOException {
-        _channel = channel;
-        if (queueName == null || queueName.equals("")) {
-            _queueName = channel.queueDeclare().getQueue();
-        } else {
-            _queueName = queueName;
+        if (this.started) {
+            if (!this.stopped) {
+                synchronized (this.monitor) {
+                    this.channel.basicCancel(this.consumerTag);
+                    this.stopped = true;
+                }
+            }
+            try {
+                this.stopLatch.await(STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            } catch (InterruptedException _) {/* do nothing */}
         }
-        _consumer = setupConsumer();
     }
 
-    /**
-     * Public API - cancels the consumer, thus deleting the queue, if it was a temporary queue, and
-     * marks the RpcServer as closed.
-     * @throws IOException if an error is encountered
-     */
-    public void close() throws IOException {
-        if (_consumer != null) {
-            _channel.basicCancel(_consumer.getConsumerTag());
-            _consumer = null;
-        }
-        terminateMainloop();
-    }
-
-    /**
-     * Registers our consumer on the request queue.
-     * @throws IOException if an error is encountered
-     * @return the newly created and registered consumer
-     */
     private Consumer makeConsumer(RpcHandler<byte[], byte[]> rpcHandler)
             throws IOException {
-        Consumer consumer = new ByteArrayProcessorConsumer(this.channel,
-                rpcHandler);
-        this.channel.basicConsume(this.queueName, consumer);
-        return consumer;
+        return new ByteArrayProcessorConsumer(this.channel, rpcHandler,
+                this.stopLatch);
     }
 
     private static class ByteArrayProcessorConsumer implements Consumer {
 
         private final Channel channel;
         private final RpcHandler<byte[], byte[]> rpcHandler;
+        private final CountDownLatch stopLatch;
 
         ByteArrayProcessorConsumer(Channel channel,
-                RpcHandler<byte[], byte[]> rpcHandler) {
+                RpcHandler<byte[], byte[]> rpcHandler, CountDownLatch stopLatch) {
             this.channel = channel;
             this.rpcHandler = rpcHandler;
+            this.stopLatch = stopLatch;
         }
 
         public void handleConsumeOk(String consumerTag) {
-            // TODO called by basicConsume()
         }
 
         public void handleCancelOk(String consumerTag) {
-            // TODO we got cancelled explicitly
+            this.stopLatch.countDown();
         }
 
         public void handleCancel(String consumerTag) throws IOException {
-            // TODO handle queue-deletion before cancel
         }
 
         public void handleShutdownSignal(String consumerTag,
                 ShutdownSignalException sig) {
-            // TODO the channel or connection went down
         }
 
         public void handleRecoverOk(String consumerTag) {
-            // TODO Auto-generated method stub
         }
 
         public void handleDelivery(String consumerTag, Envelope envelope,
@@ -159,124 +141,4 @@ public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
             }
         }
     }
-
-    /**
-     * Public API - main server loop. Call this to begin processing requests. Request processing
-     * will continue until the Channel (or its underlying Connection) is shut down, or until
-     * terminateMainloop() is called. Note that if the mainloop is blocked waiting for a request,
-     * the termination flag is not checked until a request is received, so a good time to call
-     * terminateMainloop() is during a request handler.
-     * @return the exception that signalled the Channel shutdown, or null for orderly shutdown
-     */
-    public ShutdownSignalException mainloop() throws IOException {
-        try {
-            while (_mainloopRunning) {
-                QueueingConsumer.Delivery request;
-                try {
-                    request = _consumer.nextDelivery();
-                } catch (InterruptedException ie) {
-                    continue;
-                }
-                processRequest(request);
-                _channel.basicAck(request.getEnvelope().getDeliveryTag(), false);
-            }
-            return null;
-        } catch (ShutdownSignalException sse) {
-            return sse;
-        }
-    }
-
-    /**
-     * Call this method to terminate the mainloop. Note that if the mainloop is blocked waiting for
-     * a request, the termination flag is not checked until a request is received, so a good time to
-     * call terminateMainloop() is during a request handler.
-     */
-    public void terminateMainloop() {
-        _mainloopRunning = false;
-    }
-
-    /**
-     * Private API - Process a single request. Called from mainloop().
-     */
-    public void processRequest(QueueingConsumer.Delivery request)
-            throws IOException {
-        AMQP.BasicProperties requestProperties = request.getProperties();
-        String correlationId = requestProperties.getCorrelationId();
-        String replyTo = requestProperties.getReplyTo();
-        if (correlationId != null && replyTo != null) {
-            AMQP.BasicProperties replyProperties = new AMQP.BasicProperties.Builder()
-                    .correlationId(correlationId).build();
-            byte[] replyBody = handleCall(request, replyProperties);
-            _channel.basicPublish("", replyTo, replyProperties, replyBody);
-        } else {
-            handleCast(request);
-        }
-    }
-
-    /**
-     * Lowest-level response method. Calls
-     * handleCall(AMQP.BasicProperties,byte[],AMQP.BasicProperties).
-     */
-    public byte[] handleCall(QueueingConsumer.Delivery request,
-            AMQP.BasicProperties replyProperties) {
-        return handleCall(request.getProperties(), request.getBody(),
-                replyProperties);
-    }
-
-    /**
-     * Mid-level response method. Calls handleCall(byte[],AMQP.BasicProperties).
-     */
-    public byte[] handleCall(AMQP.BasicProperties requestProperties,
-            byte[] requestBody, AMQP.BasicProperties replyProperties) {
-        return handleCall(requestBody, replyProperties);
-    }
-
-    /**
-     * High-level response method. Returns an empty response by default - override this (or other
-     * handleCall and handleCast methods) in subclasses.
-     */
-    public byte[] handleCall(byte[] requestBody,
-            AMQP.BasicProperties replyProperties) {
-        return new byte[0];
-    }
-
-    /**
-     * Lowest-level handler method. Calls handleCast(AMQP.BasicProperties,byte[]).
-     */
-    public void handleCast(QueueingConsumer.Delivery request) {
-        handleCast(request.getProperties(), request.getBody());
-    }
-
-    /**
-     * Mid-level handler method. Calls handleCast(byte[]).
-     */
-    public void handleCast(AMQP.BasicProperties requestProperties,
-            byte[] requestBody) {
-        handleCast(requestBody);
-    }
-
-    /**
-     * High-level handler method. Does nothing by default - override this (or other handleCast and
-     * handleCast methods) in subclasses.
-     */
-    public void handleCast(byte[] requestBody) {
-        // Does nothing.
-    }
-
-    /**
-     * Retrieve the channel.
-     * @return the channel to which this server is connected
-     */
-    public Channel getChannel() {
-        return _channel;
-    }
-
-    /**
-     * Retrieve the queue name.
-     * @return the queue which this server is consuming from
-     */
-    public String getQueueName() {
-        return _queueName;
-    }
-
 }
