@@ -1,4 +1,4 @@
-//The contents of this file are subject to the Mozilla Public License
+// The contents of this file are subject to the Mozilla Public License
 //Version 1.1 (the "License"); you may not use this file except in
 //compliance with the License. You may obtain a copy of the License
 //at http://www.mozilla.org/MPL/
@@ -46,31 +46,37 @@ import com.rabbitmq.client.impl.ValueWriter;
  * <b>Concurrency Semantics</b><br/>
  * The class is thread-safe, if the delegate {@link RpcCaller} is thread-safe.
  */
-public class TableRpcClient implements
-        RpcClient<Map<String, Object>, Map<String, Object>> {
+public class TableRpcClient implements RpcClient<Map<String, Object>, Map<String, Object>> {
 
     private final RpcCaller<byte[], byte[]> rpcCaller;
     private final String exchange;
     private final String routingKey;
 
-    public TableRpcClient(String exchange, String routingKey,
-            RpcCaller<byte[], byte[]> rpcCaller) {
+    /**
+     * Construct an {@link RpcClient} which calls a fixed RPC Server (identified by
+     * <code>exchange</code> and <code>routingKey</code>) using the supplied {@link RpcCaller
+     * RpcCaller&lt;byte[], byte[]&gt;}.
+     *
+     * @param exchange to supply to caller
+     * @param routingKey to supply to caller
+     * @param rpcCaller to call remote procedure with
+     */
+    public TableRpcClient(String exchange, String routingKey, RpcCaller<byte[], byte[]> rpcCaller) {
         this.exchange = exchange;
         this.routingKey = routingKey;
         this.rpcCaller = rpcCaller;
     }
 
-    public Map<String, Object> call(Map<String, Object> request)
-            throws IOException, TimeoutException, ShutdownSignalException {
+    public Map<String, Object> call(Map<String, Object> request) throws IOException,
+            TimeoutException, ShutdownSignalException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         MethodArgumentWriter writer = new MethodArgumentWriter(new ValueWriter(
                 new DataOutputStream(buffer)));
         writer.writeTable(request);
         writer.flush();
-        byte[] reply = this.rpcCaller.call(this.exchange, this.routingKey,
-                buffer.toByteArray());
-        MethodArgumentReader reader = new MethodArgumentReader(new ValueReader(
-                new DataInputStream(new ByteArrayInputStream(reply))));
+        byte[] reply = this.rpcCaller.call(this.exchange, this.routingKey, buffer.toByteArray());
+        MethodArgumentReader reader = new MethodArgumentReader(new ValueReader(new DataInputStream(
+                new ByteArrayInputStream(reply))));
         return reader.readTable();
     }
 }

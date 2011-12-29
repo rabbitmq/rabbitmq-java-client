@@ -36,8 +36,16 @@ public class StringRpcClient implements RpcClient<String, String> {
     private final String exchange;
     private final String routingKey;
 
-    public StringRpcClient(String exchange, String routingKey,
-            RpcCaller<byte[], byte[]> rpcCaller) {
+    /**
+     * Construct an {@link RpcClient} which calls a fixed RPC Server (identified by
+     * <code>exchange</code> and <code>routingKey</code>) using the supplied {@link RpcCaller
+     * RpcCaller&lt;byte[], byte[]&gt;}.
+     *
+     * @param exchange to supply to caller
+     * @param routingKey to supply to caller
+     * @param rpcCaller to use to make remote call
+     */
+    public StringRpcClient(String exchange, String routingKey, RpcCaller<byte[], byte[]> rpcCaller) {
         this.exchange = exchange;
         this.routingKey = routingKey;
         this.rpcCaller = rpcCaller;

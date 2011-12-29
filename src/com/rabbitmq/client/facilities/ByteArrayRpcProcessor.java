@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.ShutdownSignalException;
 
@@ -45,33 +44,34 @@ public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
     private final Channel channel;
     /** Queue we receive requests from */
     private final String queueName;
+    /** Latch for stopping */
+    private final CountDownLatch stopLatch;
 
     /** Monitor/lock for consumer, */
     private final Object monitor = new Object();
     /** ConsumerTag for consumer attached to the request queue */
     private String consumerTag;
-    private final CountDownLatch stopLatch;
 
     /**
      * Create a basic processor receiving byte array requests on a Rabbit Queue on a given channel.
      * The channel and queue must already exist.
+     *
      * @param channel through which to communicate with RabbitMQ
      * @param queueName of existing queue accessible on this <code>channel</code>
      * @throws IOException if the queue does not exist or the <code>channel</code> is not valid
      */
-    public ByteArrayRpcProcessor(Channel channel, String queueName)
-            throws IOException {
+    public ByteArrayRpcProcessor(Channel channel, String queueName) throws IOException {
         this.channel = channel;
         this.queueName = channel.queueDeclarePassive(queueName).getQueue();
         this.stopLatch = new CountDownLatch(1);
     }
 
     public void start(RpcHandler<byte[], byte[]> rpcHandler) throws IOException {
-        if (this.started) throw new IOException("Already started.");
+        if (this.started)
+            throw new IOException("Already started.");
         synchronized (this.monitor) {
             Consumer consumer = this.makeConsumer(rpcHandler);
-            this.consumerTag = this.channel.basicConsume(this.queueName,
-                    consumer);
+            this.consumerTag = this.channel.basicConsume(this.queueName, consumer);
             this.started = true;
         }
     }
@@ -86,27 +86,32 @@ public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
             }
             try {
                 this.stopLatch.await(STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            } catch (InterruptedException _) {/* do nothing */}
+            } catch (InterruptedException _) {/* do nothing */
+            }
         }
     }
 
-    private Consumer makeConsumer(RpcHandler<byte[], byte[]> rpcHandler)
-            throws IOException {
-        return new ByteArrayProcessorConsumer(this.channel, rpcHandler,
-                this.stopLatch);
+    private Consumer makeConsumer(RpcHandler<byte[], byte[]> rpcHandler) throws IOException {
+        return new ByteArrayProcessorConsumer(this.channel, rpcHandler, this.stopLatch, true);
     }
 
+    /**
+     * A {@link Consumer} that passes the message bodies to an {@link RpcHandler RpcHandler&lt;byte[], byte[]&gt;}, replies with the
+     * response if there is one expected and optionally acknowledges receipt of the message.
+     */
     private static class ByteArrayProcessorConsumer implements Consumer {
 
         private final Channel channel;
         private final RpcHandler<byte[], byte[]> rpcHandler;
         private final CountDownLatch stopLatch;
+        private final boolean autoAck;
 
-        ByteArrayProcessorConsumer(Channel channel,
-                RpcHandler<byte[], byte[]> rpcHandler, CountDownLatch stopLatch) {
+        ByteArrayProcessorConsumer(Channel channel, RpcHandler<byte[], byte[]> rpcHandler,
+                CountDownLatch stopLatch, boolean autoAck) {
             this.channel = channel;
             this.rpcHandler = rpcHandler;
             this.stopLatch = stopLatch;
+            this.autoAck = autoAck;
         }
 
         public void handleConsumeOk(String consumerTag) {
@@ -119,8 +124,7 @@ public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
         public void handleCancel(String consumerTag) throws IOException {
         }
 
-        public void handleShutdownSignal(String consumerTag,
-                ShutdownSignalException sig) {
+        public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
         }
 
         public void handleRecoverOk(String consumerTag) {
@@ -131,14 +135,15 @@ public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
             String correlationId = properties.getCorrelationId();
             String replyTo = properties.getReplyTo();
             if (correlationId != null && replyTo != null) {
-                BasicProperties replyProperties = new BasicProperties.Builder()
-                        .correlationId(correlationId).build();
+                BasicProperties replyProperties = new BasicProperties.Builder().correlationId(
+                        correlationId).build();
                 byte[] replyBody = this.rpcHandler.handleCall(body);
-                this.channel.basicPublish("", replyTo, replyProperties,
-                        replyBody);
+                this.channel.basicPublish("", replyTo, replyProperties, replyBody);
             } else {
                 this.rpcHandler.handleCast(body);
             }
+            if (this.autoAck)
+                this.channel.basicAck(envelope.getDeliveryTag(), false);
         }
     }
 }

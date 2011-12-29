@@ -33,6 +33,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 public interface RpcCaller<P, R> {
     /**
      * Start the mechanism by which calls are made.
+     * @throws IOException on mechanism error
      */
     void open() throws IOException;
 
@@ -51,6 +52,7 @@ public interface RpcCaller<P, R> {
 
     /**
      * Close the caller. All calls extant are cancelled.
+     * @throws IOException on mechanism error
      */
     void close() throws IOException;
 }
