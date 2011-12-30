@@ -18,6 +18,7 @@ package com.rabbitmq.client.facilities;
 
 /**
  * Call handler for a (remote) procedure (RPC) with or without a reply.
+ *
  * @param <P> the call parameter type
  * @param <R> the result type
  */
@@ -25,6 +26,7 @@ public interface RpcHandler<P, R> {
 
     /**
      * Handle a call expecting a result
+     *
      * @param parm parameter
      * @return result
      */
@@ -32,6 +34,7 @@ public interface RpcHandler<P, R> {
 
     /**
      * Handle a call <i>not</i> expecting a result
+     *
      * @param parm parameter
      */
     void handleCast(P parm);

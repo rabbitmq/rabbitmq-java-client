@@ -44,6 +44,8 @@ public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
     private final Channel channel;
     /** Queue we receive requests from */
     private final String queueName;
+    /** Whether acks are automatic or we do them after processing. */
+    private final boolean autoAck;
     /** Latch for stopping */
     private final CountDownLatch stopLatch;
 
@@ -58,20 +60,25 @@ public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
      *
      * @param channel through which to communicate with RabbitMQ
      * @param queueName of existing queue accessible on this <code>channel</code>
+     * @param autoAck set to true if acknowledgements are automatic on receipt, or false if they are to be explicit after processing
      * @throws IOException if the queue does not exist or the <code>channel</code> is not valid
      */
-    public ByteArrayRpcProcessor(Channel channel, String queueName) throws IOException {
+    public ByteArrayRpcProcessor(Channel channel, String queueName, boolean autoAck) throws IOException {
         this.channel = channel;
         this.queueName = channel.queueDeclarePassive(queueName).getQueue();
         this.stopLatch = new CountDownLatch(1);
+        this.autoAck = autoAck;
     }
 
     public void start(RpcHandler<byte[], byte[]> rpcHandler) throws IOException {
+        if (rpcHandler == null)
+            throw new NullPointerException("RpcHandler cannot be null");
         if (this.started)
             throw new IOException("Already started.");
         synchronized (this.monitor) {
             Consumer consumer = this.makeConsumer(rpcHandler);
-            this.consumerTag = this.channel.basicConsume(this.queueName, consumer);
+            this.consumerTag = this.channel.basicConsume(this.queueName, this.autoAck,
+                    consumer);
             this.started = true;
         }
     }
@@ -92,12 +99,13 @@ public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
     }
 
     private Consumer makeConsumer(RpcHandler<byte[], byte[]> rpcHandler) throws IOException {
-        return new ByteArrayProcessorConsumer(this.channel, rpcHandler, this.stopLatch, true);
+        return new ByteArrayProcessorConsumer(this.channel, rpcHandler, this.stopLatch, this.autoAck);
     }
 
     /**
-     * A {@link Consumer} that passes the message bodies to an {@link RpcHandler RpcHandler&lt;byte[], byte[]&gt;}, replies with the
-     * response if there is one expected and optionally acknowledges receipt of the message.
+     * A {@link Consumer} that passes the message bodies to an {@link RpcHandler
+     * RpcHandler&lt;byte[], byte[]&gt;}, replies with the response if there is one expected and
+     * optionally acknowledges receipt of the message if not automatic.
      */
     private static class ByteArrayProcessorConsumer implements Consumer {
 
@@ -142,8 +150,12 @@ public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
             } else {
                 this.rpcHandler.handleCast(body);
             }
-            if (this.autoAck)
+            if (!this.autoAck)
                 this.channel.basicAck(envelope.getDeliveryTag(), false);
         }
+    }
+
+    public boolean autoAck() {
+        return this.autoAck;
     }
 }

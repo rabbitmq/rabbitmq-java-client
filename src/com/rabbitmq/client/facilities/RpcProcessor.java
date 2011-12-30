@@ -20,19 +20,27 @@ import java.io.IOException;
 
 /**
  * When started, a processor asynchronously listens for requests received and passes them to the
- * handler, returning a result if one is expected. Each request is processed serially. <br/>
+ * handler, returning a result if one is expected. Each request is processed serially.<br/>
  * When stopped, the asynchronous listening is stopped. Any in-process requests are finished before
  * stop() returns.
  * <p/>
  * <b>Concurrent Semantics</b><br/>
  * Implementations must be thread-safe and serially call the handler methods.
+ *
  * @param <P> request parameter type
  * @param <R> request result type
  */
 public interface RpcProcessor<P, R> {
 
     /**
+     * @return true if requests are to be acknowledged automatically, false if they are acknowledged
+     *         after (successful) processing
+     */
+    boolean autoAck();
+
+    /**
      * Start listening for requests asynchronously.
+     *
      * @param rpcHandler handler to pass requests to
      * @throws IOException if the listener fails, or if the process has already been started.
      */
@@ -40,6 +48,7 @@ public interface RpcProcessor<P, R> {
 
     /**
      * Stop listening for requests
+     *
      * @throws IOException if listening cannot be stopped, or if it stops with errors
      */
     void stop() throws IOException;
