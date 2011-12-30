@@ -1,6 +1,6 @@
 /*
-Copyright 2006, 2007 Frank Carver
-Copyright 2007 Tony Garnock-Jones
+   Copyright (c) 2006-2007 Frank Carver
+   Copyright (c) 2007-2011 VMware, Inc. All Rights Reserved
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

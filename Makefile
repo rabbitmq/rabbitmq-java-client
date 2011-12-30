@@ -63,7 +63,7 @@ srcdist: distclean
 	(cd build; zip -q -r $(SRC_ARCHIVE).zip $(SRC_ARCHIVE))
 	(cd build; rm -rf $(SRC_ARCHIVE))
 
-stage-maven-bundle: maven-bundle
+stage-and-promote-maven-bundle: maven-bundle
 	( \
 	  cd build/bundle; \
 	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
@@ -78,22 +78,12 @@ stage-maven-bundle: maven-bundle
 	    amqp-client-$(VERSION)-javadoc.jar \
 	    amqp-client-$(VERSION)-sources.jar && \
 	  mvn org.sonatype.plugins:nexus-maven-plugin:staging-close \
-	    -Dnexus.url=http://oss.sonatype.org \
-	    -Dnexus.username=$$NEXUS_USERNAME \
-	    -Dnexus.password=$$NEXUS_PASSWORD \
-	    -B \
-	    -Dnexus.description="Public release of $$VERSION" \
-	)
-
-promote-maven-bundle:
-	( \
-	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
-	  NEXUS_PASSWORD=`cat $(GNUPG_PATH)/../nexus/password`; \
-	  mvn org.sonatype.plugins:nexus-maven-plugin:staging-promote \
+	      org.sonatype.plugins:nexus-maven-plugin:staging-promote \
 	    -Dnexus.url=http://oss.sonatype.org \
 	    -Dnexus.username=$$NEXUS_USERNAME \
 	    -Dnexus.password=$$NEXUS_PASSWORD \
 	    -Dnexus.promote.autoSelectOverride=true \
-	    -DtargetRepositoryId=releases \
 	    -B \
+	    -Dnexus.description="Public release of $$VERSION" \
 	)
+
