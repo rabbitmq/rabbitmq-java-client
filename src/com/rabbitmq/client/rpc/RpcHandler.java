@@ -14,7 +14,7 @@
 // Copyright (c) 2011 VMware, Inc.  All rights reserved.
 //
 
-package com.rabbitmq.client.facilities;
+package com.rabbitmq.client.rpc;
 
 /**
  * Call handler for a (remote) procedure (RPC) with or without a reply.

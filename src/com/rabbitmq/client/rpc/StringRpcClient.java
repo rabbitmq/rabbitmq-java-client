@@ -14,7 +14,7 @@
 // Copyright (c) 2011 VMware, Inc.  All rights reserved.
 //
 
-package com.rabbitmq.client.facilities;
+package com.rabbitmq.client.rpc;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;

@@ -14,7 +14,7 @@
 // Copyright (c) 2011 VMware, Inc.  All rights reserved.
 //
 
-package com.rabbitmq.client.facilities;
+package com.rabbitmq.client.rpc;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -153,9 +153,5 @@ public class ByteArrayRpcProcessor implements RpcProcessor<byte[], byte[]> {
             if (!this.autoAck)
                 this.channel.basicAck(envelope.getDeliveryTag(), false);
         }
-    }
-
-    public boolean autoAck() {
-        return this.autoAck;
     }
 }

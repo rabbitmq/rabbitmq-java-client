@@ -14,7 +14,7 @@
 // Copyright (c) 2011 VMware, Inc.  All rights reserved.
 //
 
-package com.rabbitmq.client.facilities;
+package com.rabbitmq.client.rpc;
 
 import java.io.IOException;
 
@@ -31,12 +31,6 @@ import java.io.IOException;
  * @param <R> request result type
  */
 public interface RpcProcessor<P, R> {
-
-    /**
-     * @return true if requests are to be acknowledged automatically, false if they are acknowledged
-     *         after (successful) processing
-     */
-    boolean autoAck();
 
     /**
      * Start listening for requests asynchronously.
