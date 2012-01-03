@@ -59,7 +59,7 @@ public final class ChannelManager {
         }
         _channelMax = channelMax;
         channelNumberAllocator = new IntAllocator(1, channelMax);
-        
+
         this.workService = workService;
     }
 
@@ -86,6 +86,7 @@ public final class ChannelManager {
             releaseChannelNumber(channel);
             channel.processShutdownSignal(signal, true, true);
             shutdownSet.add(channel.getShutdownLatch());
+            channel.notifyListeners();
         }
         scheduleShutdownProcessing();
     }
