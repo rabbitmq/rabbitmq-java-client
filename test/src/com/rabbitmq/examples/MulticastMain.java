@@ -213,9 +213,9 @@ public class MulticastMain {
     }
 
     private static String formatRate(double rate) {
-        if (rate > 10)     return String.format("%d", (long) rate);
-        else if (rate > 1) return String.format("%1.1f", rate);
-        else               return String.format("%1.2f", rate);
+        if (rate < 1)       return String.format("%1.2f", rate);
+        else if (rate < 10) return String.format("%1.1f", rate);
+        else                return String.format("%d", (long) rate);
     }
 
     public static class Producer implements Runnable, ReturnListener,
