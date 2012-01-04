@@ -212,6 +212,12 @@ public class MulticastMain {
         return Arrays.asList(vals);
     }
 
+    private static String formatRate(double rate) {
+        if (rate < 1)       return String.format("%1.2f", rate);
+        else if (rate < 10) return String.format("%1.1f", rate);
+        else                return String.format("%d", (long) rate);
+    }
+
     public static class Producer implements Runnable, ReturnListener,
                                             ConfirmListener
     {
@@ -339,7 +345,7 @@ public class MulticastMain {
             }
 
             System.out.println("sending rate avg: " +
-                               (totalMsgCount * 1000L / (now - startTime)) +
+                               formatRate(totalMsgCount * 1000.0 / (now - startTime)) +
                                " msg/s");
 
         }
@@ -368,25 +374,25 @@ public class MulticastMain {
                 Thread.sleep(pause);
             }
             if (elapsed > interval) {
-                long sendRate, returnRate, confirmRate, nackRate;
+                double sendRate, returnRate, confirmRate, nackRate;
                 synchronized(this) {
-                    sendRate     = msgCount     * 1000L / elapsed;
-                    returnRate   = returnCount  * 1000L / elapsed;
-                    confirmRate  = confirmCount * 1000L / elapsed;
-                    nackRate     = nackCount    * 1000L / elapsed;
+                    sendRate     = msgCount     * 1000.0 / elapsed;
+                    returnRate   = returnCount  * 1000.0 / elapsed;
+                    confirmRate  = confirmCount * 1000.0 / elapsed;
+                    nackRate     = nackCount    * 1000.0 / elapsed;
                     msgCount     = 0;
                     returnCount  = 0;
                     confirmCount = 0;
                     nackCount    = 0;
                 }
-                System.out.print("sending rate: " + sendRate + " msg/s");
+                System.out.print("sending rate: " + formatRate(sendRate) + " msg/s");
                 if (mandatory || immediate) {
-                    System.out.print(", returns: " + returnRate + " ret/s");
+                    System.out.print(", returns: " + formatRate(returnRate) + " ret/s");
                 }
                 if (confirm >= 0) {
-                    System.out.print(", confirms: " + confirmRate + " c/s");
+                    System.out.print(", confirms: " + formatRate(confirmRate) + " c/s");
                     if (nackRate > 0) {
-                        System.out.print(", nacks: " + nackRate + " n/s");
+                        System.out.print(", nacks: " + formatRate(nackRate) + " n/s");
                     }
                 }
                 System.out.println();
@@ -498,7 +504,7 @@ public class MulticastMain {
             long elapsed = now - startTime;
             if (elapsed > 0) {
                 System.out.println("recving rate avg: " +
-                                   (totalMsgCount * 1000L / elapsed) +
+                                   formatRate(totalMsgCount * 1000.0 / elapsed) +
                                    " msg/s");
             }
         }
@@ -543,7 +549,7 @@ public class MulticastMain {
             long elapsed = now - lastStatsTime;
             if (elapsed > interval) {
                 System.out.println("recving rate: " +
-                                   (1000L * msgCount / elapsed) +
+                                   formatRate(1000.0 * msgCount / elapsed) +
                                    " msg/s" +
                                    (latencyCount > 0 ?
                                     ", min/avg/max latency: " +
