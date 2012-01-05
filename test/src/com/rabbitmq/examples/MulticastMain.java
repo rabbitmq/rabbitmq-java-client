@@ -134,7 +134,7 @@ public class MulticastMain {
                                                 flags, producerTxSize,
                                                 1000L * samplingInterval,
                                                 rateLimit, minMsgSize, timeLimit,
-                                                confirm);
+                                                confirm, stats);
                 channel.addReturnListener(p);
                 channel.addConfirmListener(p);
                 Thread t = new Thread(p);
@@ -213,9 +213,10 @@ public class MulticastMain {
     }
 
     private static String formatRate(double rate) {
-        if (rate < 1)       return String.format("%1.2f", rate);
+        if (rate == 0.0)    return String.format("%d", (long)rate);
+        else if (rate < 1)  return String.format("%1.2f", rate);
         else if (rate < 10) return String.format("%1.1f", rate);
-        else                return String.format("%d", (long) rate);
+        else                return String.format("%d", (long)rate);
     }
 
     public static class Producer implements Runnable, ReturnListener,
@@ -232,24 +233,23 @@ public class MulticastMain {
         private int     rateLimit;
         private long    timeLimit;
 
+        private Stats   stats;
+
         private byte[]  message;
 
         private long    startTime;
         private long    lastStatsTime;
         private int     msgCount;
-        private int     returnCount;
 
         private long      confirm;
         private Semaphore confirmPool;
-        private long      confirmCount;
-        private long      nackCount;
         private volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
         public Producer(Channel channel, String exchangeName, String id,
                         List<?> flags, int txSize,
                         long interval, int rateLimit, int minMsgSize, int timeLimit,
-                        long confirm)
+                        long confirm, Stats stats)
             throws IOException {
 
             this.channel      = channel;
@@ -267,16 +267,17 @@ public class MulticastMain {
             if (confirm > 0) {
                 this.confirmPool  = new Semaphore((int)confirm);
             }
+            this.stats        = stats;
         }
 
-        public synchronized void handleReturn(int replyCode,
-                                              String replyText,
-                                              String exchange,
-                                              String routingKey,
-                                              AMQP.BasicProperties properties,
-                                              byte[] body)
+        public void handleReturn(int replyCode,
+                                 String replyText,
+                                 String exchange,
+                                 String routingKey,
+                                 AMQP.BasicProperties properties,
+                                 byte[] body)
             throws IOException {
-            returnCount++;
+            stats.handleReturn();
         }
 
         public void handleAck(long seqNo, boolean multiple) {
@@ -298,12 +299,10 @@ public class MulticastMain {
                 unconfirmedSet.remove(seqNo);
                 numConfirms = 1;
             }
-            synchronized (this) {
-                if (nack) {
-                    nackCount += numConfirms;
-                } else {
-                    confirmCount += numConfirms;
-                }
+            if (nack) {
+                stats.handleNack(numConfirms);
+            } else {
+                stats.handleConfirm(numConfirms);
             }
 
             if (confirmPool != null) {
@@ -336,6 +335,7 @@ public class MulticastMain {
                         channel.txCommit();
                     }
                     now = System.currentTimeMillis();
+                    stats.handleSend();
                 }
 
             } catch (IOException e) {
@@ -372,31 +372,6 @@ public class MulticastMain {
                 0 : (msgCount * 1000L / rateLimit - elapsed);
             if (pause > 0) {
                 Thread.sleep(pause);
-            }
-            if (elapsed > interval) {
-                double sendRate, returnRate, confirmRate, nackRate;
-                synchronized(this) {
-                    sendRate     = msgCount     * 1000.0 / elapsed;
-                    returnRate   = returnCount  * 1000.0 / elapsed;
-                    confirmRate  = confirmCount * 1000.0 / elapsed;
-                    nackRate     = nackCount    * 1000.0 / elapsed;
-                    msgCount     = 0;
-                    returnCount  = 0;
-                    confirmCount = 0;
-                    nackCount    = 0;
-                }
-                System.out.print("sending rate: " + formatRate(sendRate) + " msg/s");
-                if (mandatory || immediate) {
-                    System.out.print(", returns: " + formatRate(returnRate) + " ret/s");
-                }
-                if (confirm >= 0) {
-                    System.out.print(", confirms: " + formatRate(confirmRate) + " c/s");
-                    if (nackRate > 0) {
-                        System.out.print(", nacks: " + formatRate(nackRate) + " n/s");
-                    }
-                }
-                System.out.println();
-                lastStatsTime = now;
             }
         }
 
@@ -490,7 +465,7 @@ public class MulticastMain {
 
                     now = System.currentTimeMillis();
 
-                    stats.collectStats(now, id.equals(envelope.getRoutingKey()) ? (nano - msgNano) : 0L);
+                    stats.handleRecv(id.equals(envelope.getRoutingKey()) ? (nano - msgNano) : 0L);
                 }
 
             } catch (IOException e) {
@@ -513,14 +488,20 @@ public class MulticastMain {
 
     public static class Stats {
 
-        private long    interval;
+        private long interval;
 
-        private long    lastStatsTime;
-        private int     msgCount;
-        private int     latencyCount;
-        private long    minLatency;
-        private long    maxLatency;
-        private long    cumulativeLatency;
+        private long lastStatsTime;
+
+        private int  sendCount;
+        private int  returnCount;
+        private int  confirmCount;
+        private int  nackCount;
+        private int  recvCount;
+
+        private int  latencyCount;
+        private long minLatency;
+        private long maxLatency;
+        private long cumulativeLatency;
 
         public Stats(long interval) {
             this.interval = interval;
@@ -529,37 +510,84 @@ public class MulticastMain {
 
         private void reset(long t) {
             lastStatsTime     = t;
-            msgCount          = 0;
+
+            sendCount         = 0;
+            returnCount       = 0;
+            confirmCount      = 0;
+            nackCount         = 0;
+            recvCount         = 0;
+
             latencyCount      = 0;
             minLatency        = Long.MAX_VALUE;
             maxLatency        = Long.MIN_VALUE;
             cumulativeLatency = 0L;
         }
 
-        public synchronized void collectStats(long now, long latency) {
-            msgCount++;
+        private void report() {
+            long now = System.currentTimeMillis();
+            long elapsed = now - lastStatsTime;
+            if (elapsed > interval) {
+                double sendRate, returnRate, confirmRate, nackRate;
+                sendRate     = sendCount    * 1000.0 / elapsed;
+                returnRate   = returnCount  * 1000.0 / elapsed;
+                confirmRate  = confirmCount * 1000.0 / elapsed;
+                nackRate     = nackCount    * 1000.0 / elapsed;
 
+                System.out.print("sending rate: " + formatRate(sendRate) + " msg/s");
+                if (returnRate > 0) {
+                    System.out.print(", returns: " + formatRate(returnRate) + " ret/s");
+                }
+                if (confirmRate > 0) {
+                    System.out.print(", confirms: " + formatRate(confirmRate) + " c/s");
+                }
+                if (nackRate > 0) {
+                    System.out.print(", nacks: " + formatRate(nackRate) + " n/s");
+                }
+
+                System.out.print(", recving rate: " +
+                                 formatRate(1000.0 * recvCount / elapsed) +
+                                 " msg/s" +
+                                 (latencyCount > 0 ?
+                                  ", min/avg/max latency: " +
+                                  minLatency/1000L + "/" +
+                                  cumulativeLatency / (1000L * latencyCount) + "/" +
+                                  maxLatency/1000L + " microseconds" :
+                                  ""));
+                System.out.println();
+                reset(now);
+            }
+        }
+
+
+        public synchronized void handleSend() {
+            sendCount++;
+            report();
+        }
+
+        public synchronized void handleReturn() {
+            returnCount++;
+            report();
+        }
+
+        public synchronized void handleConfirm(int numConfirms) {
+            confirmCount+=numConfirms;
+            report();
+        }
+
+        public synchronized void handleNack(int numAcks) {
+            nackCount+=numAcks;
+            report();
+        }
+
+        public synchronized void handleRecv(long latency) {
+            recvCount++;
             if (latency > 0) {
                 minLatency = Math.min(minLatency, latency);
                 maxLatency = Math.max(maxLatency, latency);
                 cumulativeLatency += latency;
                 latencyCount++;
             }
-
-            long elapsed = now - lastStatsTime;
-            if (elapsed > interval) {
-                System.out.println("recving rate: " +
-                                   formatRate(1000.0 * msgCount / elapsed) +
-                                   " msg/s" +
-                                   (latencyCount > 0 ?
-                                    ", min/avg/max latency: " +
-                                    minLatency/1000L + "/" +
-                                    cumulativeLatency / (1000L * latencyCount) + "/" +
-                                    maxLatency/1000L + " microseconds" :
-                                    ""));
-                reset(now);
-            }
-
+            report();
         }
 
     }
