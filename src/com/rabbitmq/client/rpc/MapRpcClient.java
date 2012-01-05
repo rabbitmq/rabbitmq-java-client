@@ -39,14 +39,14 @@ import com.rabbitmq.client.impl.ValueWriter;
  * into the constructor, and translates tables (maps from {@link String} to {@link Object}) into and
  * from byte arrays using AMQP wire-protocol table encoding.
  * <p/>
- * The values appearing in the table must be of type {@link String}, {@link LongString},
+ * The values in the table must be of type {@link String}, {@link LongString},
  * {@link Integer}, {@link java.math.BigDecimal BigDecimal}, {@link Date}, or (recursively) a
  * {@link Map} from {@link String}s to these types.
  * <p/>
  * <b>Concurrency Semantics</b><br/>
  * The class is thread-safe, if the delegate {@link RpcCaller} is thread-safe.
  */
-public class TableRpcClient implements RpcClient<Map<String, Object>, Map<String, Object>> {
+public class MapRpcClient implements RpcClient<Map<String, Object>, Map<String, Object>> {
 
     private final RpcCaller<byte[], byte[]> rpcCaller;
     private final String exchange;
@@ -61,7 +61,7 @@ public class TableRpcClient implements RpcClient<Map<String, Object>, Map<String
      * @param routingKey to supply to caller
      * @param rpcCaller to call remote procedure with
      */
-    public TableRpcClient(String exchange, String routingKey, RpcCaller<byte[], byte[]> rpcCaller) {
+    public MapRpcClient(String exchange, String routingKey, RpcCaller<byte[], byte[]> rpcCaller) {
         this.exchange = exchange;
         this.routingKey = routingKey;
         this.rpcCaller = rpcCaller;

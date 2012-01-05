@@ -13,31 +13,8 @@
 // The Initial Developer of the Original Code is VMware, Inc.
 // Copyright (c) 2011 VMware, Inc.  All rights reserved.
 //
-
 package com.rabbitmq.client.rpc;
 
-import java.io.IOException;
+public interface RpcServer<P, R> {
 
-/**
- * Call handler for a (remote) procedure (RPC) with or without a reply.
- *
- * @param <P> the call parameter type
- * @param <R> the result type
- */
-public interface RpcHandler<P, R> {
-
-    /**
-     * Handle a call expecting a result
-     *
-     * @param parm parameter
-     * @return result
-     */
-    R handleCall(P parm) throws IOException;
-
-    /**
-     * Handle a call <i>not</i> expecting a result
-     *
-     * @param parm parameter
-     */
-    void handleCast(P parm) throws IOException;
 }
