@@ -89,7 +89,13 @@ public class MulticastMain {
 
             //setup
             String id = UUID.randomUUID().toString();
-            Stats stats = new Stats(1000L * samplingInterval);
+            Stats stats = new Stats(1000L * samplingInterval,
+                                    producerCount > 0,
+                                    consumerCount > 0,
+                                    (flags.contains("mandatory") ||
+                                     flags.contains("immediate")),
+                                    confirm != -1);
+
             ConnectionFactory factory = new ConnectionFactory();
             factory.setUri(uri);
             factory.setRequestedFrameMax(frameMax);
@@ -488,24 +494,36 @@ public class MulticastMain {
 
     public static class Stats {
 
-        private long interval;
+        private long    interval;
+        private boolean sendStatsEnabled;
+        private boolean recvStatsEnabled;
+        private boolean returnStatsEnabled;
+        private boolean confirmStatsEnabled;
 
-        private long lastStatsTime;
+        private long    startTime;
+        private long    lastStatsTime;
 
-        private int  sendCount;
-        private int  returnCount;
-        private int  confirmCount;
-        private int  nackCount;
-        private int  recvCount;
+        private int     sendCount;
+        private int     returnCount;
+        private int     confirmCount;
+        private int     nackCount;
+        private int     recvCount;
 
-        private int  latencyCount;
-        private long minLatency;
-        private long maxLatency;
-        private long cumulativeLatency;
+        private int     latencyCount;
+        private long    minLatency;
+        private long    maxLatency;
+        private long    cumulativeLatency;
 
-        public Stats(long interval) {
-            this.interval = interval;
-            reset(System.currentTimeMillis());
+        public Stats(long interval,
+                     boolean sendStatsEnabled, boolean recvStatsEnabled,
+                     boolean returnStatsEnabled, boolean confirmStatsEnabled) {
+            this.interval            = interval;
+            this.sendStatsEnabled    = sendStatsEnabled;
+            this.recvStatsEnabled    = recvStatsEnabled;
+            this.returnStatsEnabled  = returnStatsEnabled;
+            this.confirmStatsEnabled = confirmStatsEnabled;
+            startTime = System.currentTimeMillis();
+            reset(startTime);
         }
 
         private void reset(long t) {
@@ -523,36 +541,33 @@ public class MulticastMain {
             cumulativeLatency = 0L;
         }
 
+        private void showRate(String descr, long count, boolean display,
+                              long elapsed) {
+            if (display) {
+                System.out.print(", " + descr + ": " + formatRate(1000.0 * count / elapsed) + " msg/s");
+            }
+        }
+
         private void report() {
             long now = System.currentTimeMillis();
             long elapsed = now - lastStatsTime;
-            if (elapsed > interval) {
-                double sendRate, returnRate, confirmRate, nackRate;
-                sendRate     = sendCount    * 1000.0 / elapsed;
-                returnRate   = returnCount  * 1000.0 / elapsed;
-                confirmRate  = confirmCount * 1000.0 / elapsed;
-                nackRate     = nackCount    * 1000.0 / elapsed;
 
-                System.out.print("sending rate: " + formatRate(sendRate) + " msg/s");
-                if (returnRate > 0) {
-                    System.out.print(", returns: " + formatRate(returnRate) + " ret/s");
-                }
-                if (confirmRate > 0) {
-                    System.out.print(", confirms: " + formatRate(confirmRate) + " c/s");
-                }
-                if (nackRate > 0) {
-                    System.out.print(", nacks: " + formatRate(nackRate) + " n/s");
-                }
+            if (elapsed >= interval) {
+                System.out.print("time: " + String.format("%.3f", (now - startTime)/1000.0) + "s");
 
-                System.out.print(", recving rate: " +
-                                 formatRate(1000.0 * recvCount / elapsed) +
-                                 " msg/s" +
-                                 (latencyCount > 0 ?
+                showRate("sent",      sendCount,    sendStatsEnabled,                        elapsed);
+                showRate("returned",  returnCount,  sendStatsEnabled && returnStatsEnabled,  elapsed);
+                showRate("confirmed", confirmCount, sendStatsEnabled && confirmStatsEnabled, elapsed);
+                showRate("nacked",    nackCount,    sendStatsEnabled && confirmStatsEnabled, elapsed);
+                showRate("received",  recvCount,    recvStatsEnabled,                        elapsed);
+
+                System.out.print((latencyCount > 0 ?
                                   ", min/avg/max latency: " +
                                   minLatency/1000L + "/" +
                                   cumulativeLatency / (1000L * latencyCount) + "/" +
                                   maxLatency/1000L + " microseconds" :
                                   ""));
+
                 System.out.println();
                 reset(now);
             }
