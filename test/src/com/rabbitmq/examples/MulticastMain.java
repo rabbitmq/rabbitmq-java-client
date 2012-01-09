@@ -138,7 +138,6 @@ public class MulticastMain {
                 channel.exchangeDeclare(exchangeName, exchangeType);
                 final Producer p = new Producer(channel, exchangeName, id,
                                                 flags, producerTxSize,
-                                                1000L * samplingInterval,
                                                 rateLimit, minMsgSize, timeLimit,
                                                 confirm, stats);
                 channel.addReturnListener(p);
@@ -235,7 +234,6 @@ public class MulticastMain {
         private boolean immediate;
         private boolean persistent;
         private int     txSize;
-        private long    interval;
         private int     rateLimit;
         private long    timeLimit;
 
@@ -247,14 +245,13 @@ public class MulticastMain {
         private long    lastStatsTime;
         private int     msgCount;
 
-        private long      confirm;
         private Semaphore confirmPool;
         private volatile SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
         public Producer(Channel channel, String exchangeName, String id,
                         List<?> flags, int txSize,
-                        long interval, int rateLimit, int minMsgSize, int timeLimit,
+                        int rateLimit, int minMsgSize, int timeLimit,
                         long confirm, Stats stats)
             throws IOException {
 
@@ -265,11 +262,9 @@ public class MulticastMain {
             this.immediate    = flags.contains("immediate");
             this.persistent   = flags.contains("persistent");
             this.txSize       = txSize;
-            this.interval     = interval;
             this.rateLimit    = rateLimit;
             this.timeLimit    = 1000L * timeLimit;
             this.message      = new byte[minMsgSize];
-            this.confirm      = confirm;
             if (confirm > 0) {
                 this.confirmPool  = new Semaphore((int)confirm);
             }
@@ -321,8 +316,7 @@ public class MulticastMain {
 
         public void run() {
 
-            long now;
-            now = startTime = lastStatsTime = System.currentTimeMillis();
+            long now = startTime = lastStatsTime = System.currentTimeMillis();
             msgCount = 0;
             int totalMsgCount = 0;
 
