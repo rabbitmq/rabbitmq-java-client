@@ -17,26 +17,33 @@ package com.rabbitmq.client.rpc;
 
 import java.io.IOException;
 
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.Envelope;
+
 /**
  * An {@link RpcHandler RpcHandler&lt;byte[], byte[], IOException&gt;} which delegates to an
  * injected {@link RpcHandler RpcHandler&lt;String, String, IOException&gt;}
  */
-public class ByteArrayToStringRpcHandler implements RpcHandler<byte[], byte[]> {
+public class ByteArrayRpcHandlerFromString implements
+        RpcHandler<byte[], byte[]> {
 
     private final RpcHandler<String, String> delegateHandler;
 
-    public ByteArrayToStringRpcHandler(
+    public ByteArrayRpcHandlerFromString(
             RpcHandler<String, String> delegateHandler) {
         this.delegateHandler = delegateHandler;
     }
 
-    public byte[] handleCall(byte[] parm) throws IOException {
-        return this.delegateHandler.handleCall(new String(parm, "UTF-8"))
-                .getBytes("UTF-8");
+    public byte[] handleCall(Envelope envelope, BasicProperties requestProps,
+            byte[] parm, BasicProperties replyProps) throws IOException {
+        return this.delegateHandler.handleCall(envelope, requestProps,
+                new String(parm, "UTF-8"), replyProps).getBytes("UTF-8");
     }
 
-    public void handleCast(byte[] parm) throws IOException {
-        this.delegateHandler.handleCast(new String(parm, "UTF-8"));
+    public void handleCast(Envelope envelope, BasicProperties requestProps,
+            byte[] parm) throws IOException {
+        this.delegateHandler.handleCast(envelope, requestProps, new String(
+                parm, "UTF-8"));
     }
 
 }

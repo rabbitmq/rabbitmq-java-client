@@ -24,28 +24,27 @@ import com.rabbitmq.client.ShutdownSignalException;
 /**
  * A {@link String} based RPC client.
  * <p/>
- * This class delegates to a {@link RpcCaller RpcCaller&lt;byte[], byte[]&gt;} injected into the
- * constructor, and translates {@link String}s into and from byte arrays, using UTF-8 encoding.
+ * This class delegates to a {@link RpcCaller} injected into the constructor, and translates
+ * {@link String}s into and from byte arrays, using UTF-8 encoding.
  * <p/>
  * <b>Concurrency Semantics</b><br/>
  * The class is thread-safe, if the delegate is thread-safe.
  */
 public class StringRpcClient implements RpcClient<String, String> {
 
-    private final RpcCaller<byte[], byte[]> rpcCaller;
+    private final RpcCaller rpcCaller;
     private final String exchange;
     private final String routingKey;
 
     /**
      * Construct an {@link RpcClient} which calls a fixed RPC Server (identified by
-     * <code>exchange</code> and <code>routingKey</code>) using the supplied {@link RpcCaller
-     * RpcCaller&lt;byte[], byte[]&gt;}.
-     *
+     * <code>exchange</code> and <code>routingKey</code>) using the supplied {@link RpcCaller}.
      * @param exchange to supply to caller
      * @param routingKey to supply to caller
      * @param rpcCaller to use to make remote call
      */
-    public StringRpcClient(String exchange, String routingKey, RpcCaller<byte[], byte[]> rpcCaller) {
+    public StringRpcClient(String exchange, String routingKey,
+            RpcCaller rpcCaller) {
         this.exchange = exchange;
         this.routingKey = routingKey;
         this.rpcCaller = rpcCaller;

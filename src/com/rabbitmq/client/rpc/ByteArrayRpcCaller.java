@@ -49,7 +49,7 @@ import com.rabbitmq.utility.BlockingCell;
  * This class is thread-safe. Multiple calls may be issued on multiple threads without blocking each
  * other.
  */
-public class ByteArrayRpcCaller implements RpcCaller<byte[], byte[]> {
+public class ByteArrayRpcCaller implements RpcCaller {
     /** NO_TIMEOUT value must match convention on {@link BlockingCell#uninterruptibleGet(int)} */
     public final static int NO_TIMEOUT = -1;
 
@@ -91,8 +91,8 @@ public class ByteArrayRpcCaller implements RpcCaller<byte[], byte[]> {
     }
 
     /**
-     * Construct a new {@link RpcCaller} that will communicate on the given channel, sending
-     * requests on it and waiting for responses.
+     * Construct a {@link RpcCaller} that will communicate on the given channel, sending requests on
+     * it and waiting for responses.
      * <p/>
      * Waits forever for responses (that is, no timeout).
      * @param channel the channel to use for communication

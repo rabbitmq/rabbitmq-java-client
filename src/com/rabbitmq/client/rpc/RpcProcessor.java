@@ -18,6 +18,8 @@ package com.rabbitmq.client.rpc;
 
 import java.io.IOException;
 
+import com.rabbitmq.client.Channel;
+
 /**
  * When started, a processor asynchronously listens for requests received and passes them to the
  * handler, returning a result if one is expected. Each request is processed serially.<br/>
@@ -26,24 +28,21 @@ import java.io.IOException;
  * <p/>
  * <b>Concurrent Semantics</b><br/>
  * Implementations must be thread-safe and serially call the handler methods.
- *
- * @param <P> request parameter type
- * @param <R> request result type
  */
-public interface RpcProcessor<P, R> {
+public interface RpcProcessor {
 
     /**
-     * Start listening for requests asynchronously.
-     *
-     * @param rpcHandler handler to pass requests to
-     * @throws IOException if the listener fails, or if the process has already been started.
+     * Start processing requests.
+     * @param channel to process requests from
+     * @throws IOException if the listener fails to be started, or if the process has already been
+     *             started, or the channel is not available
      */
-    void start(RpcHandler<P, R> rpcHandler) throws IOException;
+    void start(Channel channel) throws IOException;
 
     /**
      * Stop listening for requests
-     *
-     * @throws IOException if listening cannot be stopped, or if it stops with errors
+     * @throws IOException if listening cannot be stopped, or if it stops with errors, or is already
+     *             stopped.
      */
     void stop() throws IOException;
 

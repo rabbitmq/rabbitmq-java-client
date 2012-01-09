@@ -22,6 +22,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.impl.MethodArgumentReader;
 import com.rabbitmq.client.impl.MethodArgumentWriter;
 import com.rabbitmq.client.impl.ValueReader;
@@ -32,20 +34,23 @@ import com.rabbitmq.client.impl.ValueWriter;
  * {@link RpcHandler RpcHandler&lt;Map, Map&gt;} converting to and from byte arrays using the AMQP
  * wire-format for table encoding.
  */
-public class ByteArrayToMapRpcHandler implements RpcHandler<byte[], byte[]> {
+public class ByteArrayRpcHandlerFromMap implements RpcHandler<byte[], byte[]> {
     private final RpcHandler<Map<String, Object>, Map<String, Object>> delegateHandler;
 
-    public ByteArrayToMapRpcHandler(
+    public ByteArrayRpcHandlerFromMap(
             RpcHandler<Map<String, Object>, Map<String, Object>> delegateHandler) {
         this.delegateHandler = delegateHandler;
     }
 
-    public byte[] handleCall(byte[] parm) throws IOException {
-        return encode(this.delegateHandler.handleCall(decode(parm)));
+    public byte[] handleCall(Envelope envelope, BasicProperties requestProps,
+            byte[] parm, BasicProperties replyProps) throws IOException {
+        return encode(this.delegateHandler.handleCall(envelope, requestProps,
+                decode(parm), replyProps));
     }
 
-    public void handleCast(byte[] parm) throws IOException {
-        this.delegateHandler.handleCast(decode(parm));
+    public void handleCast(Envelope envelope, BasicProperties requestProps,
+            byte[] parm) throws IOException {
+        this.delegateHandler.handleCast(envelope, requestProps, decode(parm));
     }
 
     private static Map<String, Object> decode(byte[] body) throws IOException {

@@ -22,15 +22,13 @@ import java.util.concurrent.TimeoutException;
 import com.rabbitmq.client.ShutdownSignalException;
 
 /**
- * An <code>RpcCaller</code> is a mechanism for calling Remote Procedures.
+ * An <code>RpcCaller</code> is a byte-array mechanism for calling Remote Procedures.
  * <p/>
  * <b>Concurrency Semantics</b><br/>
  * Implementations must be thread-safe, and close will cancel all waits for responses in-flight.
  * Calls and responses may interleave, but callers will block until their results are returned.
- * @param <P> parameter type
- * @param <R> result type
  */
-public interface RpcCaller<P, R> {
+public interface RpcCaller {
     /**
      * Start the mechanism by which calls are made.
      * @throws IOException on mechanism error
@@ -47,8 +45,8 @@ public interface RpcCaller<P, R> {
      * @throws ShutdownSignalException if the connection is shutdown before a result is returned
      * @throws TimeoutException if no response is received within a given time.
      */
-    R call(String exchange, String routingKey, P parameter) throws IOException,
-            ShutdownSignalException, TimeoutException;
+    byte[] call(String exchange, String routingKey, byte[] parameter)
+            throws IOException, ShutdownSignalException, TimeoutException;
 
     /**
      * Close the caller. All calls extant are cancelled.
