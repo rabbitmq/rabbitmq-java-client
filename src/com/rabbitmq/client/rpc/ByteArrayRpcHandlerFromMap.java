@@ -37,30 +37,36 @@ import com.rabbitmq.client.impl.ValueWriter;
 public class ByteArrayRpcHandlerFromMap implements RpcHandler<byte[], byte[]> {
     private final RpcHandler<Map<String, Object>, Map<String, Object>> delegateHandler;
 
+    /**
+     * Create a new {@link RpcHandler RpcHandler&lt;byte[], byte[]&gt;} which converts and delegates
+     * to a {@link RpcHandler RpcHandler&lt;Map, Map&gt;}
+     *
+     * @param delegateHandler to delegate to
+     */
     public ByteArrayRpcHandlerFromMap(
             RpcHandler<Map<String, Object>, Map<String, Object>> delegateHandler) {
         this.delegateHandler = delegateHandler;
     }
 
-    public byte[] handleCall(Envelope envelope, BasicProperties requestProps,
-            byte[] parm, BasicProperties replyProps) throws IOException {
-        return encode(this.delegateHandler.handleCall(envelope, requestProps,
-                decode(parm), replyProps));
+    public byte[] handleCall(Envelope envelope, BasicProperties requestProps, byte[] parm,
+            BasicProperties replyProps) throws IOException {
+        return encode(this.delegateHandler.handleCall(envelope, requestProps, decode(parm),
+                replyProps));
     }
 
-    public void handleCast(Envelope envelope, BasicProperties requestProps,
-            byte[] parm) throws IOException {
+    public void handleCast(Envelope envelope, BasicProperties requestProps, byte[] parm)
+            throws IOException {
         this.delegateHandler.handleCast(envelope, requestProps, decode(parm));
     }
 
     private static Map<String, Object> decode(byte[] body) throws IOException {
-        MethodArgumentReader reader = new MethodArgumentReader(new ValueReader(
-                new DataInputStream(new ByteArrayInputStream(body))));
+        MethodArgumentReader reader = new MethodArgumentReader(new ValueReader(new DataInputStream(
+                new ByteArrayInputStream(body))));
         Map<String, Object> request = reader.readTable();
         return request;
     }
 
-    public static byte[] encode(Map<String, Object> reply) throws IOException {
+    private static byte[] encode(Map<String, Object> reply) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         MethodArgumentWriter writer = new MethodArgumentWriter(new ValueWriter(
                 new DataOutputStream(buffer)));
