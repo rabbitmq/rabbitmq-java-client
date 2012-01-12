@@ -122,7 +122,6 @@ public class MulticastMain {
                                             consumerTxSize, autoAck,
                                             stats, timeLimit));
                 consumerThreads[i] = t;
-                t.start();
             }
             Thread[] producerThreads = new Thread[producerCount];
             Connection[] producerConnections = new Connection[producerCount];
@@ -144,7 +143,14 @@ public class MulticastMain {
                 channel.addConfirmListener(p);
                 Thread t = new Thread(p);
                 producerThreads[i] = t;
-                t.start();
+            }
+
+            for (int i = 0; i < consumerCount; i++) {
+                consumerThreads[i].start();
+            }
+
+            for (int i = 0; i < producerCount; i++) {
+                producerThreads[i].start();
             }
 
             for (int i = 0; i < producerCount; i++) {
