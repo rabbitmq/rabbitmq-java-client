@@ -62,9 +62,9 @@ public class RpcServer implements Iterable<RpcProcessor> {
             if (this.closed) {
                 throw new IOException("RpcServer is already closed.");
             }
-            if (processors.contains(processor))
+            if (this.processors.contains(processor))
                 throw new IOException("RpcProcessor already in RpcServer.");
-            processors.add(processor);
+            this.processors.add(processor);
             processor.start(this.channel);
         }
     }
@@ -81,14 +81,14 @@ public class RpcServer implements Iterable<RpcProcessor> {
             }
             this.closed = true;
             IOException lastIOe = null;
-            for (RpcProcessor rpcProcessor : processors) {
+            for (RpcProcessor rpcProcessor : this.processors) {
                 try {
                     rpcProcessor.stop();
                 } catch (IOException ioe) {
                     lastIOe = ioe;
                 }
             }
-            processors.clear();
+            this.processors.clear();
             if (lastIOe != null) {
                 IOException ioe = new IOException("Cannot stop all processors.");
                 ioe.initCause(lastIOe);
