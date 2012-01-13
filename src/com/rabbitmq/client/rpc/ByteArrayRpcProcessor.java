@@ -17,6 +17,9 @@
 package com.rabbitmq.client.rpc;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -154,7 +157,7 @@ public class ByteArrayRpcProcessor implements RpcProcessor {
             if (correlationId != null && replyTo != null) {
                 BasicProperties replyProperties = new BasicProperties.Builder()
                         .correlationId(correlationId).build();
-                byte[] replyBody = this.rpcHandler.handleCall(envelope,
+                byte[] replyBody = wrapHandleCall(envelope,
                         properties, body, replyProperties);
                 this.channel.basicPublish("", replyTo, replyProperties,
                         replyBody);
@@ -163,6 +166,40 @@ public class ByteArrayRpcProcessor implements RpcProcessor {
             }
             if (!this.autoAck)
                 this.channel.basicAck(envelope.getDeliveryTag(), false);
+        }
+
+        private byte[] wrapHandleCall(Envelope envelope, BasicProperties requestProps, byte[] body, BasicProperties replyProps) {
+            try {
+                byte[] replyBody = this.rpcHandler.handleCall(envelope,
+                        requestProps, body, replyProps);
+                return replyBody;
+            } catch (RpcException re) {
+                // Rpc infrastructure error, e.g. conversion error
+                setExceptionReplyProps(replyProps, re);
+                return exceptionReplyBody(re);
+            } catch (Throwable t) {
+                setExceptionReplyProps(replyProps, ServiceException.newServiceException(t.getMessage(), t));
+                return exceptionReplyBody(t);
+            }
+        }
+
+        private static void setExceptionReplyProps(BasicProperties replyProps, Throwable t) {
+            String exceptionTypeName = t.getClass().getSimpleName();
+            Map<String, Object> headers = replyProps.getHeaders();
+            if (headers==null) headers = new HashMap<String, Object>();
+            headers.put(RpcException.RPC_EXCEPTION_HEADER, exceptionTypeName);
+            //TODO: change so that we don't have to use this deprecated interface
+            replyProps.setHeaders(headers);
+        }
+
+        private static byte[] exceptionReplyBody(Throwable t) {
+            byte[] body = null;
+            try {
+                body = t.getMessage().getBytes("UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                body = "<message text not encoded>".getBytes();
+            }
+            return body;
         }
     }
 }

@@ -16,8 +16,6 @@
 
 package com.rabbitmq.client.rpc;
 
-import java.io.IOException;
-
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Envelope;
 
@@ -33,11 +31,11 @@ public interface RpcHandler<P, R> {
      * @param envelope message envelope of request
      * @param requestProperties AMQP properties of the (remote) request
      * @param parm parameter
-     * @param replyProperties AMQP properties to be used on reply (mutable)
+     * @param replyProperties AMQP properties that will be used on reply (mutable)
      * @return result
      */
     R handleCall(Envelope envelope, BasicProperties requestProperties, P parm,
-            BasicProperties replyProperties) throws IOException;
+            BasicProperties replyProperties);
 
     /**
      * Handle a call <i>not</i> delivering a result
@@ -45,6 +43,5 @@ public interface RpcHandler<P, R> {
      * @param requestProperties AMQP properties of the request
      * @param parm parameter
      */
-    void handleCast(Envelope envelope, BasicProperties requestProperties, P parm)
-            throws IOException;
+    void handleCast(Envelope envelope, BasicProperties requestProperties, P parm);
 }

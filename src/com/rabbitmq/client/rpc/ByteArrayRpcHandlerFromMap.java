@@ -32,7 +32,7 @@ import com.rabbitmq.client.impl.ValueWriter;
 /**
  * An {@link RpcHandler RpcHandler&lt;byte[], byte[]&gt;} which delegates to an injected
  * {@link RpcHandler RpcHandler&lt;Map, Map&gt;} converting to and from byte arrays using the AMQP
- * wire-format for table encoding.
+ * wire-format for table encoding. Conversion errors are reflected as Rpc run-time exceptions.
  */
 public class ByteArrayRpcHandlerFromMap implements RpcHandler<byte[], byte[]> {
     private final RpcHandler<Map<String, Object>, Map<String, Object>> delegateHandler;
@@ -49,29 +49,36 @@ public class ByteArrayRpcHandlerFromMap implements RpcHandler<byte[], byte[]> {
     }
 
     public byte[] handleCall(Envelope envelope, BasicProperties requestProps, byte[] parm,
-            BasicProperties replyProps) throws IOException {
+            BasicProperties replyProps) {
         return encode(this.delegateHandler.handleCall(envelope, requestProps, decode(parm),
                 replyProps));
     }
 
-    public void handleCast(Envelope envelope, BasicProperties requestProps, byte[] parm)
-            throws IOException {
+    public void handleCast(Envelope envelope, BasicProperties requestProps, byte[] parm) {
         this.delegateHandler.handleCast(envelope, requestProps, decode(parm));
     }
 
-    private static Map<String, Object> decode(byte[] body) throws IOException {
-        MethodArgumentReader reader = new MethodArgumentReader(new ValueReader(new DataInputStream(
-                new ByteArrayInputStream(body))));
-        Map<String, Object> request = reader.readTable();
-        return request;
+    private static Map<String, Object> decode(byte[] body) {
+        try {
+            MethodArgumentReader reader = new MethodArgumentReader(new ValueReader(new DataInputStream(
+                    new ByteArrayInputStream(body))));
+            Map<String, Object> request = reader.readTable();
+            return request;
+        } catch (IOException e) {
+            throw RpcException.newRpcException("Decoding conversion error.", e);
+        }
     }
 
-    private static byte[] encode(Map<String, Object> reply) throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        MethodArgumentWriter writer = new MethodArgumentWriter(new ValueWriter(
-                new DataOutputStream(buffer)));
-        writer.writeTable(reply);
-        writer.flush();
-        return buffer.toByteArray();
+    private static byte[] encode(Map<String, Object> reply) {
+        try {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            MethodArgumentWriter writer = new MethodArgumentWriter(new ValueWriter(
+                    new DataOutputStream(buffer)));
+            writer.writeTable(reply);
+            writer.flush();
+            return buffer.toByteArray();
+        } catch (IOException e) {
+            throw RpcException.newRpcException("Encoding conversion error.", e);
+        }
     }
 }

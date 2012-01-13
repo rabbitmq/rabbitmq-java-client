@@ -42,8 +42,12 @@ public interface RpcCaller {
      * @param parameter the parameter for the procedure call
      * @return the result of the call
      * @throws IOException if a communication error occurs
-     * @throws ShutdownSignalException if the connection is shutdown before a result is returned
-     * @throws TimeoutException if no response is received within a given time.
+     * @throws ShutdownSignalException if the connection or channel is shutdown before a result is
+     *             returned
+     * @throws TimeoutException if no response is received within a given time
+     * @throws RpcException (unchecked) if the Rpc system fails, for example, if encoding or
+     *             decoding errors occur, or the message is lost
+     * @throws ServiceException (unchecked) if the call handler on the server throws an exception
      */
     byte[] call(String exchange, String routingKey, byte[] parameter)
             throws IOException, ShutdownSignalException, TimeoutException;

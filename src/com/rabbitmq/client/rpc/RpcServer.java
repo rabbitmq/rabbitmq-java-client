@@ -24,7 +24,11 @@ import com.rabbitmq.client.Channel;
 
 /**
  * An {@link RpcServer} starts {@link RpcProcessor}s on a particular {@link Channel}. It keeps track
- * of them so that they may all be stopped when the server is closed.
+ * of them so that they may all be stopped when the server is closed. All the processors share the
+ * same channel.
+ * <p/>
+ * An iterator is provided so that it is possible to iterate over the processors in this server by
+ * using <i>foreach</i>: <code><b>for</b> ( RpcProcessor proc : rpcServer ) {...}</code>.
  */
 public class RpcServer implements Iterable<RpcProcessor> {
 
@@ -39,10 +43,20 @@ public class RpcServer implements Iterable<RpcProcessor> {
         this.processors = new HashSet<RpcProcessor>();
     }
 
+    /**
+     * Create a new {@link RpcServer} which manages {@link RpcProcessor}s working on a channel.
+     * @param channel that {@link RpcProcessor}s are attached to.
+     * @return a new RpcServer with no processors.
+     */
     public static RpcServer newServer(Channel channel) {
         return new RpcServer(channel);
     }
 
+    /**
+     * Add a {@link RpcProcessor} to this server and start it on the server's channel.
+     * @param processor to add
+     * @throws IOException if the processor (object) is already in this server
+     */
     public void startProcessor(RpcProcessor processor) throws IOException {
         synchronized (this.monitor) {
             if (this.closed) {
@@ -55,6 +69,11 @@ public class RpcServer implements Iterable<RpcProcessor> {
         }
     }
 
+    /**
+     * Stop all the processors on this server and remove them from the server. After the server is
+     * closed no further processors may be started on it.
+     * @throws IOException if any processor fails to stop.
+     */
     public void close() throws IOException {
         synchronized (this.monitor) {
             if (this.closed) {

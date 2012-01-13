@@ -37,8 +37,8 @@ import com.rabbitmq.utility.BlockingCell;
  * for the replies. Can send requests to multiple servers concurrently. The server (to which the
  * request is sent) is identified by an exchange and routing-key, supplied on each request. Although
  * each thread that sends a request blocks until the reply is received, multiple threads can send a
- * request without holding each other up. Responses are subject to a (fixed) timeout period, after
- * which the response is deemed to be null.
+ * request without holding each other up. Responses are subject to a (specified) timeout period,
+ * after which a {@link TimeoutException} is thrown.
  * <p/>
  * This class manages a single queue used as a reply-to queue on all the requests. The queue
  * persists until the client is closed. After it is closed it cannot be re-opened.
@@ -49,7 +49,7 @@ import com.rabbitmq.utility.BlockingCell;
  * This class is thread-safe. Multiple calls may be issued on multiple threads without blocking each
  * other.
  */
-public class ByteArrayRpcCaller implements RpcCaller {
+public class StandardRpcCaller implements RpcCaller {
     /** NO_TIMEOUT value must match convention on {@link BlockingCell#uninterruptibleGet(int)} */
     public final static int NO_TIMEOUT = -1;
 
@@ -80,7 +80,7 @@ public class ByteArrayRpcCaller implements RpcCaller {
      * @param channel the channel to use for communication
      * @param timeout time (ms) to allow for each response
      */
-    public ByteArrayRpcCaller(Channel channel, int timeout) {
+    public StandardRpcCaller(Channel channel, int timeout) {
         this.channel = channel;
         if (timeout < NO_TIMEOUT)
             throw new IllegalArgumentException(
@@ -97,7 +97,7 @@ public class ByteArrayRpcCaller implements RpcCaller {
      * Waits forever for responses (that is, no timeout).
      * @param channel the channel to use for communication
      */
-    public ByteArrayRpcCaller(Channel channel) {
+    public StandardRpcCaller(Channel channel) {
         this(channel, NO_TIMEOUT);
     }
 
@@ -163,11 +163,22 @@ public class ByteArrayRpcCaller implements RpcCaller {
                     String replyId = properties.getCorrelationId();
                     BlockingCell<RpcReturn> blocker = continuationMap
                             .get(replyId);
+                    if (blocker == null) return; // ignore if we don't recognise it.
+
                     continuationMap.remove(replyId);
-                    blocker.set(new RpcReturn(body));
+                    blocker.set(StandardRpcCaller.createRpcReturn(body,
+                            properties.getHeaders()));
                 }
             }
         };
+    }
+
+    static RpcReturn createRpcReturn(byte[] body, Map<String, Object> hdrs) {
+        if (hdrs == null) return new RpcReturn(body);
+        if (hdrs.containsKey(RpcException.RPC_EXCEPTION_HEADER))
+            return new RpcReturn(hdrs.get(RpcException.RPC_EXCEPTION_HEADER)
+                    .toString(), body);
+        return new RpcReturn(body);
     }
 
     /**
@@ -176,18 +187,25 @@ public class ByteArrayRpcCaller implements RpcCaller {
     private static class RpcReturn {
         private final ShutdownSignalException signal;
         private final byte[] result;
+        private final String exceptionHeader;
 
-        private RpcReturn(byte[] result, ShutdownSignalException signal) {
+        private RpcReturn(byte[] result, ShutdownSignalException signal,
+                String exceptionHeader) {
             this.result = result;
             this.signal = signal;
+            this.exceptionHeader = exceptionHeader;
         }
 
         public RpcReturn(byte[] result) {
-            this(result, null);
+            this(result, null, null);
         }
 
         public RpcReturn(ShutdownSignalException signal) {
-            this(null, signal);
+            this(null, signal, null);
+        }
+
+        public RpcReturn(String exceptionHeader, byte[] exceptionMsg) {
+            this(exceptionMsg, null, exceptionHeader);
         }
 
         public ShutdownSignalException getSignal() {
@@ -198,8 +216,16 @@ public class ByteArrayRpcCaller implements RpcCaller {
             return this.result;
         }
 
+        public String getExceptionHeader() {
+            return this.exceptionHeader;
+        }
+
         public boolean shutdown() {
             return this.signal != null;
+        }
+
+        public boolean exception() {
+            return this.exceptionHeader != null;
         }
     }
 
@@ -228,9 +254,27 @@ public class ByteArrayRpcCaller implements RpcCaller {
         RpcReturn reply = k.uninterruptibleGet(this.timeout);
         if (reply.shutdown()) {
             throw wrapSSE(reply.getSignal());
+        } else if (reply.exception()) {
+            throw newRuntimeException(reply.getExceptionHeader(),
+                    reply.getResult());
         } else {
             return reply.getResult();
         }
+    }
+
+    private static RuntimeException newRuntimeException(String exceptionHeader,
+            byte[] message) {
+        RuntimeException rte = null;
+        if (exceptionHeader == RpcException.RPC_EXCEPTION_HEADER_RPC_EXCEPTION) {
+            rte = RpcException.newRpcException(new String(message));
+        } else if (exceptionHeader == RpcException.RPC_EXCEPTION_HEADER_SERVICE_EXCEPTION) {
+            rte = ServiceException.newServiceException(new String(message));
+        } else {
+            rte = new RuntimeException(
+                    "Rpc call returned unexpected exception: "
+                            + exceptionHeader + ":" + new String(message));
+        }
+        return rte;
     }
 
     private static ShutdownSignalException wrapSSE(ShutdownSignalException sig) {
