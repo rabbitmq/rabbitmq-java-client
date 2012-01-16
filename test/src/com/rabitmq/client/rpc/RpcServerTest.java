@@ -105,7 +105,23 @@ public class RpcServerTest extends TestCase {
      */
     public void testCloseEmpty() throws Exception {
         this.rpcServer.close();
-        assertEquals("Should be (still) empty after close()", 0,
+        assertEquals("Should (still) be empty after close()", 0,
+                numberOfProcessors(this.rpcServer));
+    }
+
+    /**
+     * Test double close of empty rpcServer
+     * @throws Exception test
+     */
+    public void testCloseDouble() throws Exception {
+        this.rpcServer.close();
+        try {
+            this.rpcServer.close();
+        } catch (Exception e) {
+            assertEquals("Wrong class for exception", "IOException",
+                    e.getClass().getSimpleName());
+        }
+        assertEquals("Should (still) be empty after double close()", 0,
                 numberOfProcessors(this.rpcServer));
     }
 
