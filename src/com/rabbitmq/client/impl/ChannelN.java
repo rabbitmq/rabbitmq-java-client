@@ -462,8 +462,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         close(closeCode, closeMessage, true, null, true);
     }
 
+    // TODO: method should be private
     /**
-     * SHOULD BE PRIVATE<br/>
      * Protected API - Close channel with code and message, indicating
      * the source of the closure and a causing exception (null if
      * none).
