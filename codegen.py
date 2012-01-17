@@ -264,12 +264,12 @@ def genJavaApi(spec):
                 print "            if (this.%s != null) writer.write%s(this.%s);" % (jfName, jfClass, jfName)
         print "        }"
 
-    def printAppendArgumentDebugStringTo(c):
+    def printAppendPropertyDebugStringTo(c):
         appendList = [ "%s=\")\n               .append(this.%s)\n               .append(\""
                        % (f.name, java_field_name(f.name))
                        for f in c.fields ]
         print
-        print "        public void appendArgumentDebugStringTo(StringBuilder acc) {"
+        print "        public void appendPropertyDebugStringTo(StringBuilder acc) {"
         print "            acc.append(\"(%s)\");" % (", ".join(appendList))
         print "        }"
 
@@ -386,7 +386,7 @@ def genJavaApi(spec):
             printSetter(jType, jName)
 
         printWritePropertiesTo(c)
-        printAppendArgumentDebugStringTo(c)
+        printAppendPropertyDebugStringTo(c)
         printPropertiesBuilderClass(c)
 
         print "    }"
