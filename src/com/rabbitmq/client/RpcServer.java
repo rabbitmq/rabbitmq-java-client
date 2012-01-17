@@ -170,7 +170,7 @@ public class RpcServer {
      * Mid-level response method. Calls
      * handleCall(byte[],AMQP.BasicProperties).
      */
-    public byte[] handleCall(AMQP.BasicProperties requestProperties,
+    public byte[] handleCall(@SuppressWarnings("unused") AMQP.BasicProperties requestProperties,
                              byte[] requestBody,
                              AMQP.BasicProperties replyProperties)
     {
@@ -182,8 +182,8 @@ public class RpcServer {
      * default - override this (or other handleCall and handleCast
      * methods) in subclasses.
      */
-    public byte[] handleCall(byte[] requestBody,
-                             AMQP.BasicProperties replyProperties)
+    public byte[] handleCall(@SuppressWarnings("unused") byte[] requestBody,
+                             @SuppressWarnings("unused") AMQP.BasicProperties replyProperties)
     {
         return new byte[0];
     }
@@ -201,7 +201,7 @@ public class RpcServer {
      * Mid-level handler method. Calls
      * handleCast(byte[]).
      */
-    public void handleCast(AMQP.BasicProperties requestProperties, byte[] requestBody)
+    public void handleCast(@SuppressWarnings("unused") AMQP.BasicProperties requestProperties, byte[] requestBody)
     {
         handleCast(requestBody);
     }
@@ -211,7 +211,7 @@ public class RpcServer {
      * this (or other handleCast and handleCast methods) in
      * subclasses.
      */
-    public void handleCast(byte[] requestBody)
+    public void handleCast(@SuppressWarnings("unused") byte[] requestBody)
     {
         // Does nothing.
     }

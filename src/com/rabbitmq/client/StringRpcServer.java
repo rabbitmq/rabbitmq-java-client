@@ -54,7 +54,7 @@ public class StringRpcServer extends RpcServer {
     /**
      * Delegates to handleStringCall(String).
      */
-    public String handleStringCall(String request, AMQP.BasicProperties replyProperties)
+    public String handleStringCall(String request, @SuppressWarnings("unused") AMQP.BasicProperties replyProperties)
     {
         return handleStringCall(request);
     }
@@ -62,7 +62,7 @@ public class StringRpcServer extends RpcServer {
     /**
      * Default implementation - override in subclasses. Returns the empty string.
      */
-    public String handleStringCall(String request)
+    public String handleStringCall(@SuppressWarnings("unused") String request)
     {
         return "";
     }
@@ -84,7 +84,7 @@ public class StringRpcServer extends RpcServer {
     /**
      * Default implementation - override in subclasses. Does nothing.
      */
-    public void handleStringCast(String requestBody) {
+    public void handleStringCast(@SuppressWarnings("unused") String requestBody) {
         // Do nothing.
     }
 }

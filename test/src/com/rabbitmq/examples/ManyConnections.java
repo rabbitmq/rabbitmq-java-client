@@ -60,7 +60,7 @@ public class ManyConnections {
                             + " thread...");
                     new Thread(new Runnable() {
                         public void run() {
-                            runChannel(threadNumber, conn, ch);
+                            runChannel(threadNumber, ch);
                         }
                     }).start();
                 }
@@ -74,7 +74,7 @@ public class ManyConnections {
         }
     }
 
-    public static void runChannel(int threadNumber, Connection conn, Channel ch) {
+    public static void runChannel(int threadNumber, Channel ch) {
         try {
             int delayLen = (int) (1000 / rate);
             long startTime = System.currentTimeMillis();

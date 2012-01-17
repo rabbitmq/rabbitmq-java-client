@@ -78,7 +78,7 @@ public class MapRpcServer extends RpcServer {
      * Delegates to handleMapCall(Map<String, Object>).
      */
     public Map<String, Object> handleMapCall(Map<String, Object> request,
-                                             AMQP.BasicProperties replyProperties)
+                 @SuppressWarnings("unused") AMQP.BasicProperties replyProperties)
     {
         return handleMapCall(request);
     }
@@ -86,7 +86,7 @@ public class MapRpcServer extends RpcServer {
     /**
      * Default implementation - override in subclasses. Returns the empty string.
      */
-    public Map<String, Object> handleMapCall(Map<String, Object> request)
+    public Map<String, Object> handleMapCall(@SuppressWarnings("unused") Map<String, Object> request)
     {
         return new HashMap<String, Object>();
     }
@@ -106,7 +106,7 @@ public class MapRpcServer extends RpcServer {
     /**
      * Default implementation - override in subclasses. Does nothing.
      */
-    public void handleMapCast(Map<String, Object> requestBody) {
+    public void handleMapCast(@SuppressWarnings("unused") Map<String, Object> requestBody) {
         // Do nothing.
     }
 }

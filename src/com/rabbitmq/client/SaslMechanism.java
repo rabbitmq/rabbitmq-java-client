@@ -16,16 +16,13 @@
 
 package com.rabbitmq.client;
 
-import java.io.IOException;
-
 /**
  * Our own view of a SASL authentication mechanism, introduced to remove a
  * dependency on javax.security.sasl.
  */
 public interface SaslMechanism {
     /**
-     * The name of this mechanism (e.g. PLAIN)
-     * @return
+     * @return the name of this mechanism (e.g. PLAIN)
      */
     String getName();
 
@@ -35,7 +32,7 @@ public interface SaslMechanism {
      * @param username name of user
      * @param password for username
      * @return response
-     * @throws IOException
+     * @throws RuntimeException of various sorts
      */
     LongString handleChallenge(LongString challenge, String username, String password);
 }

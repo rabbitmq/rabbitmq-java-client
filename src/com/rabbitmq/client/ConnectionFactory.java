@@ -97,7 +97,7 @@ public class ConnectionFactory implements Cloneable {
 
     /** @param numConsumerThreads threads in created private executor service */
     @Deprecated
-    public void setNumConsumerThreads(int numConsumerThreads) {
+    public void setNumConsumerThreads(@SuppressWarnings("unused") int numConsumerThreads) {
         throw new IllegalArgumentException("setNumConsumerThreads not supported -- create explicit ExecutorService instead.");
     }
 
