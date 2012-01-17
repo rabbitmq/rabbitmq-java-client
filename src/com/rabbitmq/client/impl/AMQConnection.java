@@ -578,9 +578,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 // Already shutting down, so just send back a CloseOk.
                 try {
                     _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
-                } catch (IOException ioe) {
-                    Utility.emptyStatement();
-                }
+                } catch (IOException ioe) { } // ignore
                 return true;
             } else if (method instanceof AMQP.Connection.CloseOk) {
                 // It's our final "RPC". Time to shut down.
@@ -599,9 +597,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ShutdownSignalException sse = shutdown(closeCommand, false, null, false);
         try {
             _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
-        } catch (IOException ioe) {
-            Utility.emptyStatement();
-        }
+        } catch (IOException _) { } // ignore
         _brokerInitiatedShutdown = true;
         Thread scw = new SocketCloseWait(sse);
         scw.setName("AMQP Connection Closing Monitor " +
@@ -708,9 +704,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     {
         try {
             close(closeCode, closeMessage, true, null, timeout, true);
-        } catch (IOException e) {
-            Utility.emptyStatement();
-        }
+        } catch (IOException _) { } // ignore
     }
 
     /**
