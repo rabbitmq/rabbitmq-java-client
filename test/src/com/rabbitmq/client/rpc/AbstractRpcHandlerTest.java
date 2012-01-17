@@ -13,33 +13,14 @@
 //  The Initial Developer of the Original Code is VMware, Inc.
 //  Copyright (c) 2012 VMware, Inc.  All rights reserved.
 //
-package com.rabitmq.client.rpc;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
+package com.rabbitmq.client.rpc;
 
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.rpc.RpcCaller;
+import junit.framework.TestCase;
 
 /**
- *
+ * Test {@link AbstractRpcHandler}.
  */
-public class StubRpcCaller implements RpcCaller {
-
-    public void open() throws IOException {
-        // TODO Auto-generated method stub
-
-    }
-
-    public byte[] call(String exchange, String routingKey, byte[] parameter)
-            throws IOException, ShutdownSignalException, TimeoutException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public void close() throws IOException {
-        // TODO Auto-generated method stub
-
-    }
+public class AbstractRpcHandlerTest extends TestCase {
 
 }

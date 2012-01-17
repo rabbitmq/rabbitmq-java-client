@@ -13,13 +13,11 @@
 //  The Initial Developer of the Original Code is VMware, Inc.
 //  Copyright (c) 2012 VMware, Inc.  All rights reserved.
 //
-package com.rabitmq.client.rpc;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.rpc.RpcProcessor;
-import com.rabbitmq.client.rpc.RpcServer;
+package com.rabbitmq.client.rpc;
 
 import junit.framework.TestCase;
+
+import com.rabbitmq.client.Channel;
 
 /**
  * Unit test the class {@link RpcServer}
