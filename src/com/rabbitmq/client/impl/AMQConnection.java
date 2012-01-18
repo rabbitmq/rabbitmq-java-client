@@ -578,7 +578,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 // Already shutting down, so just send back a CloseOk.
                 try {
                     _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
-                } catch (IOException ioe) { } // ignore
+                } catch (IOException _) { } // ignore
                 return true;
             } else if (method instanceof AMQP.Connection.CloseOk) {
                 // It's our final "RPC". Time to shut down.
