@@ -83,6 +83,7 @@ stage-and-promote-maven-bundle: maven-bundle
 	    -Dnexus.username=$$NEXUS_USERNAME \
 	    -Dnexus.password=$$NEXUS_PASSWORD \
 	    -Dnexus.promote.autoSelectOverride=true \
+	    -DtargetRepositoryId=releases \
 	    -B \
 	    -Dnexus.description="Public release of $$VERSION" \
 	)
