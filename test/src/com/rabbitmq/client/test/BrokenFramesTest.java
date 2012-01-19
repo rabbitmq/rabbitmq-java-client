@@ -65,18 +65,18 @@ public class BrokenFramesTest extends TestCase {
         frames.add(new Frame(AMQP.FRAME_HEADER, 0));
         myFrameHandler.setFrames(frames.iterator());
 
-        AMQConnection conn = new AMQConnection(factory.getUsername(),
-                                               factory.getPassword(),
-                                               myFrameHandler,
-                                               Executors.newFixedThreadPool(1),
-                                               factory.getVirtualHost(),
-                                               factory.getClientProperties(),
-                                               factory.getRequestedFrameMax(),
-                                               factory.getRequestedChannelMax(),
-                                               factory.getRequestedHeartbeat(),
-                                               factory.getSaslConfig());
         try {
-            conn.start();
+            new AMQConnection(factory.getUsername(),
+                              factory.getPassword(),
+                              myFrameHandler,
+                              Executors.newFixedThreadPool(1),
+                              factory.getVirtualHost(),
+                              factory.getClientProperties(),
+                              factory.getRequestedFrameMax(),
+                              factory.getRequestedChannelMax(),
+                              factory.getRequestedHeartbeat(),
+                              factory.getSaslConfig())
+            .start();
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);

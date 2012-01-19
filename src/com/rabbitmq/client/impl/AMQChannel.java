@@ -99,9 +99,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * @return the wrapped exception
      */
     public static IOException wrap(ShutdownSignalException ex) {
-        IOException ioe = new IOException();
-        ioe.initCause(ex);
-        return ioe;
+        return wrap(ex, null);
     }
 
     public static IOException wrap(ShutdownSignalException ex, String message) {
@@ -153,12 +151,16 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public void enqueueRpc(RpcContinuation k)
     {
         synchronized (_channelMutex) {
+            boolean waitClearedInterruptStatus = false;
             while (_activeRpc != null) {
                 try {
                     _channelMutex.wait();
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    waitClearedInterruptStatus = true;
                 }
+            }
+            if (waitClearedInterruptStatus) {
+                Thread.currentThread().interrupt();
             }
             _activeRpc = k;
         }

@@ -63,6 +63,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(InternalExchange.class);
         suite.addTestSuite(CcRoutes.class);
         suite.addTestSuite(WorkPoolTests.class);
+        suite.addTestSuite(HAQueues.class);
         return suite;
     }
 }

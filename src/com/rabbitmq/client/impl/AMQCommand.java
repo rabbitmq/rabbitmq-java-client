@@ -146,7 +146,7 @@ public class AMQCommand implements Command {
             if (suppressBody) {
                 return new StringBuilder().append(body.length).append(" bytes of payload");
             } else {
-                return new StringBuilder().append('\"').append(body).append('\"');
+                return new StringBuilder().append('\"').append(new String(body, "UTF-8")).append('\"');
             }
         } catch (Exception e) {
             return new StringBuilder().append('|').append(body.length).append('|');
