@@ -231,7 +231,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    public CountDownLatch getShutdownLatch() {
+    CountDownLatch getShutdownLatch() {
         return this.finishedShutdownFlag;
     }
 
@@ -385,7 +385,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    private void callFlowListeners(Command command, Channel.Flow channelFlow) {
+    private void callFlowListeners(@SuppressWarnings("unused") Command command, Channel.Flow channelFlow) {
         try {
             for (FlowListener l : this.flowListeners) {
                 l.handleFlow(channelFlow.getActive());
@@ -395,7 +395,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    private void callConfirmListeners(Command command, Basic.Ack ack) {
+    private void callConfirmListeners(@SuppressWarnings("unused") Command command, Basic.Ack ack) {
         try {
             for (ConfirmListener l : this.confirmListeners) {
                 l.handleAck(ack.getDeliveryTag(), ack.getMultiple());
@@ -405,7 +405,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    private void callConfirmListeners(Command command, Basic.Nack nack) {
+    private void callConfirmListeners(@SuppressWarnings("unused") Command command, Basic.Nack nack) {
         try {
             for (ConfirmListener l : this.confirmListeners) {
                 l.handleNack(nack.getDeliveryTag(), nack.getMultiple());
@@ -460,10 +460,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         close(closeCode, closeMessage, true, null, true);
     }
 
+    // TODO: method should be private
     /**
      * Protected API - Close channel with code and message, indicating
      * the source of the closure and a causing exception (null if
      * none).
+     * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
+     * @param closeMessage a message indicating the reason for closing the connection
+     * @param initiatedByApplication true if this comes from an API call, false otherwise
+     * @param cause exception triggering close
+     * @param abort true if we should close and ignore errors
+     * @throws IOException if an error is encountered
      */
     public void close(int closeCode,
                       String closeMessage,
@@ -905,14 +912,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void basicCancel(final String consumerTag)
         throws IOException
     {
+        final Consumer originalConsumer = _consumers.get(consumerTag);
+        if (originalConsumer == null)
+            throw new IOException("Unknown consumerTag");
         BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>() {
             public Consumer transformReply(AMQCommand replyCommand) {
-                replyCommand.getMethod(); // discard result
-                Consumer callback = _consumers.remove(consumerTag);
-                // We need to call back inside the connection thread
-                // in order avoid races with 'deliver' commands
-                dispatcher.handleCancelOk(callback, consumerTag);
-                return callback;
+                replyCommand.getMethod();
+                _consumers.remove(consumerTag); //may already have been removed
+                dispatcher.handleCancelOk(originalConsumer, consumerTag);
+                return originalConsumer;
             }
         };
 
