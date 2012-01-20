@@ -22,23 +22,41 @@ import java.util.concurrent.TimeoutException;
 import com.rabbitmq.client.ShutdownSignalException;
 
 /**
- * A RpcClient calls a <i>Remote Procedure</i> with a single parameter of generic type
- * <code>T</code>. The result is also of generic type <code>R</code>.
+ * An <code>RpcClient</code> is a mechanism for calling Remote Procedures.
  * <p/>
- * <b>Concurrent Semantics</b><br/>
- * Implementations must be thread-safe and may or may not permit interleaved requests.
- * @param <P> the type of the parameter
- * @param <R> the type of the response
+ * <b>Concurrency Semantics</b><br/>
+ * Implementations must be thread-safe, and close will cancel all waits for responses in-flight.
+ * Calls and responses may interleave, but callers will block until their results are returned.
+ * @param <P> Parameter type
+ * @param <R> Response type
  */
 public interface RpcClient<P, R> {
     /**
-     * Perform a Remote Procedure Call, blocking until a response is received.
-     * @param request the request to send
-     * @return the response received
-     * @throws ShutdownSignalException if the connection dies before a response is received.
-     * @throws IOException if an error is encountered
-     * @throws TimeoutException if a response is not received within a configured timeout
+     * Start the mechanism by which calls are made.
+     * @throws IOException on mechanism error
      */
-    R call(P request) throws IOException, TimeoutException,
-            ShutdownSignalException;
+    void open() throws IOException;
+
+    /**
+     * Call the Procedure identified by the <code>exchange</code> and <code>routingKey</code>.
+     * @param exchange the exchange to route the call through
+     * @param routingKey the key on the exchange to identify the callee
+     * @param parameter the parameter for the procedure call
+     * @return the result of the call
+     * @throws IOException if a communication error occurs
+     * @throws ShutdownSignalException if the connection or channel is shutdown before a result is
+     *             returned
+     * @throws TimeoutException if no response is received within a given time
+     * @throws RpcException (unchecked) if the Rpc system fails, for example, if encoding or
+     *             decoding errors occur, or the message is lost
+     * @throws ServiceException (unchecked) if the call handler on the server throws an exception
+     */
+    R call(String exchange, String routingKey, P parameter)
+            throws IOException, ShutdownSignalException, TimeoutException;
+
+    /**
+     * Close the caller. All calls extant are cancelled.
+     * @throws IOException on mechanism error
+     */
+    void close() throws IOException;
 }

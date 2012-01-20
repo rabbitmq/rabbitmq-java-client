@@ -36,11 +36,15 @@ public class AbstractRpcHandlerTest extends TestCase {
     private volatile boolean castHandled = false;
 
     private class DummyARH extends AbstractRpcHandler<ClassA, ClassB> {
+        public DummyARH() {}
+
+        @Override
         public ClassB handleCall(ClassA parm) {
             assertEquals("parm not preserved", passedParm, parm);
             callHandled = true;
             return fixedResult;
         }
+        @Override
         public void handleCast(ClassA parm) {
             assertEquals("parm not preserved", passedParm, parm);
             castHandled = true;

@@ -24,7 +24,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 /**
  * A {@link String} based RPC client.
  * <p/>
- * This class delegates to a {@link RpcCaller} injected into the constructor, and translates
+ * This class delegates to a {@link RpcClient} injected into the constructor translating
  * {@link String}s into and from byte arrays, using UTF-8 encoding.
  * <p/>
  * <b>Concurrency Semantics</b><br/>
@@ -32,27 +32,27 @@ import com.rabbitmq.client.ShutdownSignalException;
  */
 public class StringRpcClient implements RpcClient<String, String> {
 
-    private final RpcCaller rpcCaller;
-    private final String exchange;
-    private final String routingKey;
+    private final RpcClient<byte[], byte[]> rpcClient;
 
     /**
-     * Construct an {@link RpcClient} which calls a fixed RPC Server (identified by
-     * <code>exchange</code> and <code>routingKey</code>) using the supplied {@link RpcCaller}.
-     * @param exchange to supply to caller
-     * @param routingKey to supply to caller
-     * @param rpcCaller to use to make remote call
+     * Construct an {@link RpcClient} using the supplied {@link RpcClient}.
+     * @param rpcClient to use to make remote call
      */
-    public StringRpcClient(String exchange, String routingKey,
-            RpcCaller rpcCaller) {
-        this.exchange = exchange;
-        this.routingKey = routingKey;
-        this.rpcCaller = rpcCaller;
+    public StringRpcClient(RpcClient<byte[], byte[]> rpcClient) {
+        this.rpcClient = rpcClient;
     }
 
-    public String call(String request) throws IOException, TimeoutException,
+    public String call(String exchange, String routingKey, String request) throws IOException, TimeoutException,
             ShutdownSignalException {
-        return new String(this.rpcCaller.call(this.exchange, this.routingKey,
+        return new String(this.rpcClient.call(exchange, routingKey,
                 request.getBytes("UTF-8")), "UTF-8");
+    }
+
+    public void open() throws IOException {
+        this.rpcClient.open();
+    }
+
+    public void close() throws IOException {
+        this.rpcClient.close();
     }
 }
