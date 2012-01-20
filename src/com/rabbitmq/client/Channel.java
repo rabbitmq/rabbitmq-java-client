@@ -638,7 +638,7 @@ public interface Channel extends ShutdownNotifier {
      * Cancel a consumer. Calls the consumer's {@link Consumer#handleCancelOk}
      * method.
      * @param consumerTag a client- or server-generated consumer tag to establish context
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered, or if the consumerTag is unknown
      * @see com.rabbitmq.client.AMQP.Basic.Cancel
      * @see com.rabbitmq.client.AMQP.Basic.CancelOk
      */
@@ -649,12 +649,12 @@ public interface Channel extends ShutdownNotifier {
      * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
      * the new, deprecated method basic.recover_async is asynchronous.
      * <p/>
-     * Equivalent to calling <code>basicRecover(true)</code>, messages 
-     * will be requeued and possibly delivered to a different consumer. 
+     * Equivalent to calling <code>basicRecover(true)</code>, messages
+     * will be requeued and possibly delivered to a different consumer.
      * @see #basicRecover(boolean)
      */
      Basic.RecoverOk basicRecover() throws IOException;
-  
+
     /**
      * Ask the broker to resend unacknowledged messages.  In 0-8
      * basic.recover is asynchronous; in 0-9-1 it is synchronous, and

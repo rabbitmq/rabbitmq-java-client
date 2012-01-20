@@ -217,14 +217,18 @@ public class ProducerMain implements Runnable {
     }
 
     public void report(long totalDelta) {
-        System.out.println("PRODUCER - Message count: " + _messageCount);
-        System.out.println("Total time, milliseconds: " + totalDelta);
-        System.out.println("Overall messages-per-second: " + (_messageCount / (totalDelta / 1000.0)));
+        System.out
+                .println("PRODUCER -       Overall: "
+                        + String.format("%d messages in %dms, a rate of %.2f msgs/sec", _messageCount,
+                                totalDelta,
+                                (_messageCount / (totalDelta / 1000.0))));
     }
 
     public void summariseProgress(long startTime, long now, int sent, long previousReportTime, int previousSent) {
         int countOverInterval = sent - previousSent;
         double intervalRate = countOverInterval / ((now - previousReportTime) / 1000.0);
-        System.out.println((now - startTime) + " ms: Sent " + sent + " - " + countOverInterval + " since last report (" + (int) intervalRate + " Hz)");
+        System.out.println((now - startTime) + " ms: Sent " + sent + " - "
+                + countOverInterval + " since last report ("
+                + (int) intervalRate + " Hz)");
     }
 }
