@@ -121,10 +121,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @throws IOException if any problem is encountered
      */
     public void open() throws IOException {
-        // wait for the Channel.OpenOk response, then ignore it
-        Channel.OpenOk openOk =
-            (Channel.OpenOk) exnWrappingRpc(new Channel.Open(UNSPECIFIED_OUT_OF_BAND)).getMethod();
-        Utility.use(openOk);
+        // wait for the Channel.OpenOk response, and ignore it
+        exnWrappingRpc(new Channel.Open(UNSPECIFIED_OUT_OF_BAND));
     }
 
     public void addReturnListener(ReturnListener listener) {
@@ -919,8 +917,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             throw new IOException("Unknown consumerTag");
         BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>() {
             public Consumer transformReply(AMQCommand replyCommand) {
-                Basic.CancelOk dummy = (Basic.CancelOk) replyCommand.getMethod();
-                Utility.use(dummy);
+                replyCommand.getMethod();
                 _consumers.remove(consumerTag); //may already have been removed
                 dispatcher.handleCancelOk(originalConsumer, consumerTag);
                 return originalConsumer;
@@ -930,8 +927,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         rpc(new Basic.Cancel(consumerTag, false), k);
 
         try {
-            Consumer callback = k.getReply();
-            Utility.use(callback);
+            k.getReply(); // discard result
         } catch(ShutdownSignalException ex) {
             throw wrap(ex);
         }
