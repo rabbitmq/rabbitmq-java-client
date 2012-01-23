@@ -19,13 +19,13 @@ package com.rabbitmq.client.impl;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.Map;
 import java.util.List;
-
-import org.apache.commons.io.IOUtils;
 
 import com.rabbitmq.client.LongString;
 
@@ -61,7 +61,18 @@ public class ValueWriter
         throws IOException
     {
         writeLong((int)str.length());
-        IOUtils.copy(str.getStream(), out);
+        copy(str.getStream(), out);
+    }
+
+    private static final int COPY_BUFFER_SIZE = 4096;
+
+    private static void copy(InputStream input, OutputStream output) throws IOException {
+        byte[] buffer = new byte[COPY_BUFFER_SIZE];
+        int biteSize = input.read(buffer);
+        while (-1 != biteSize) {
+            output.write(buffer, 0, biteSize);
+            biteSize = input.read(buffer);
+        }
     }
 
     /** Public API - encodes a long string from a String. */
