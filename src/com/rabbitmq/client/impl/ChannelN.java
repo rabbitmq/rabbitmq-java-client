@@ -215,9 +215,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void waitForConfirmsOrDie(long timeout)
         throws IOException, InterruptedException, TimeoutException
     {
-        if (!waitForConfirms(timeout)) {
-            close(AMQP.REPLY_SUCCESS, "NACKS RECEIVED", true, null, false);
-            throw new IOException("nacks received");
+        try {
+            if (!waitForConfirms(timeout)) {
+                close(AMQP.REPLY_SUCCESS, "NACKS RECEIVED", true, null, false);
+                throw new IOException("nacks received");
+            }
+        } catch (TimeoutException e) {
+            close(AMQP.PRECONDITION_FAILED, "TIMEOUT WAITING FOR ACK");
+            throw(e);
         }
     }
 
