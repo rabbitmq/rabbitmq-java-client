@@ -4,5 +4,5 @@ Bundle-Name: ${bundle.name}
 Bundle-Vendor: SpringSource
 Bundle-Version: ${impl.version}
 Import-Template: 
- org.apache.commons.io.*;version="[1.4,2)",
+ org.apache.commons.io.*;version="[1.2,2)",
  javax.*;version=0
