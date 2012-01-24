@@ -61,7 +61,16 @@ public class DeadLetterExchange extends BrokerTestCase {
         } catch(IOException ex) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
         }
+    }
 
+    public void testDeclareQueueWithInvalidDeadLetterRoutingKeyArg()
+        throws IOException
+    {
+        try {
+            declareQueue("foo", "amq.direct", 144, null);
+        } catch(IOException ex) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
+        }
     }
 
     public void testDeadLetterQueueTTLExpiredMessages() throws Exception {
