@@ -88,6 +88,42 @@ public class Transactions extends BrokerTestCase
         basicAck(latestTag, false);
     }
 
+    private void basicNack(long tag, boolean multiple, boolean requeue)
+        throws IOException
+    {
+        channel.basicNack(tag, multiple, requeue);
+    }
+
+    private void basicNack(boolean requeue)
+        throws IOException
+    {
+        basicNack(latestTag, false, requeue);
+    }
+
+    private void basicNack()
+        throws IOException
+    {
+        basicNack(latestTag, false, true);
+    }
+
+    private void basicReject(long tag, boolean requeue)
+        throws IOException
+    {
+        channel.basicReject(tag, requeue);
+    }
+
+    private void basicReject(boolean requeue)
+        throws IOException
+    {
+        basicReject(latestTag, requeue);
+    }
+
+    private void basicReject()
+        throws IOException
+    {
+        basicReject(latestTag, true);
+    }
+
     /*
       publishes are embargoed until commit
      */
@@ -329,4 +365,75 @@ public class Transactions extends BrokerTestCase
         basicAck(tags[2], false);
         txCommit();
     }
+
+    /*
+      messages with nacks get requeued after the transaction commit.
+      messages with nacks with requeue = false are not requeued.
+    */
+    public void testCommitNacks()
+        throws IOException
+    {
+        basicPublish();
+        basicPublish();
+        txSelect();
+        basicGet();
+        basicNack();
+        basicGet();
+        basicNack(false);
+        assertNull(basicGet());
+        txCommit();
+        assertNotNull(basicGet());
+        basicGet();
+        assertNull(basicGet());
+    }
+
+    public void testRollbackNacks()
+        throws IOException
+    {
+        basicPublish();
+        basicPublish();
+        txSelect();
+        basicGet();
+        basicNack(false);
+        basicGet();
+        basicAck();
+        txRollback();
+        assertNull(basicGet());
+    }
+
+    /*
+      messages with rejects get requeued after the transaction commit.
+      messages with rejects with requeue = false are not requeued.
+    */
+    public void testCommitRejects()
+        throws IOException
+    {
+        basicPublish();
+        basicPublish();
+        txSelect();
+        basicGet();
+        basicReject();
+        basicGet();
+        basicReject(false);
+        assertNull(basicGet());
+        txCommit();
+        assertNotNull(basicGet());
+        basicGet();
+        assertNull(basicGet());
+    }
+
+    public void testRollbackRejects()
+        throws IOException
+    {
+        basicPublish();
+        basicPublish();
+        txSelect();
+        basicGet();
+        basicReject(false);
+        basicGet();
+        basicAck();
+        txRollback();
+        assertNull(basicGet());
+    }
+
 }
