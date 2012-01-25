@@ -401,6 +401,29 @@ public class Transactions extends BrokerTestCase
         assertNull(basicGet());
     }
 
+    public void testCommitAcksAndNacks()
+        throws IOException
+    {
+        for (int i = 0; i < 3; i++) {
+            basicPublish();
+        }
+        txSelect();
+        long tags[] = new long[3];
+        for (int i = 0; i < 3; i++) {
+            tags[i] = basicGet().getEnvelope().getDeliveryTag();
+        }
+        basicAck(tags[1], false);
+        basicAck(tags[0], false);
+        basicNack(tags[2], false, false);
+        txRollback();
+        basicAck(tags[2], false);
+        basicNack(tags[0], false, true);
+        basicNack(tags[1], false, false);
+        txCommit();
+        assertNotNull(basicGet());
+        assertNull(basicGet());
+    }
+
     /*
       messages with rejects get requeued after the transaction commit.
       messages with rejects with requeue = false are not requeued.
@@ -435,5 +458,4 @@ public class Transactions extends BrokerTestCase
         txRollback();
         assertNull(basicGet());
     }
-
 }
