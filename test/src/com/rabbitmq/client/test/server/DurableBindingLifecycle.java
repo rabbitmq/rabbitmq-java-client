@@ -44,7 +44,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
             alternateConnection = null;
             alternateChannel = null;
 
-            Host.executeCommand("cd ../rabbitmq-test; make restart-secondary-node");
+            Host.executeCommand("cd ../rabbitmq-test; make restart-secondary-nodes");
         }
         restartPrimary();
     }
