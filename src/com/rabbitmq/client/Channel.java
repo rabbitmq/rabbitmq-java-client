@@ -18,6 +18,7 @@ package com.rabbitmq.client;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.AMQP.Exchange;
@@ -726,12 +727,30 @@ public interface Channel extends ShutdownNotifier {
      */
     boolean waitForConfirms() throws InterruptedException;
 
+    /**
+     * Wait until all messages published since the last call have been
+     * either ack'd or nack'd by the broker; or until timeout elapses.
+     * If the timeout expires a TimeoutException is thrown.  When
+     * called on a non-Confirm channel, waitForConfirms returns true
+     * immediately.
+     * @return whether all the messages were ack'd (and none were nack'd)
+     */
+    boolean waitForConfirms(long timeout) throws InterruptedException, TimeoutException;
+
     /** Wait until all messages published since the last call have
      * been either ack'd or nack'd by the broker.  If any of the
      * messages were nack'd, waitForConfirmsOrDie will throw an
      * IOException.  When called on a non-Confirm channel, it will
      * return immediately. */
     void waitForConfirmsOrDie() throws IOException, InterruptedException;
+
+    /** Wait until all messages published since the last call have
+     * been either ack'd or nack'd by the broker; or until timeout elapses.
+     * If the timeout expires a TimeoutException is thrown.  If any of the
+     * messages were nack'd, waitForConfirmsOrDie will throw an
+     * IOException.  When called on a non-Confirm channel, it will
+     * return immediately. */
+    void waitForConfirmsOrDie(long timeout) throws IOException, InterruptedException, TimeoutException;
 
     /**
      * Asynchronously send a method over this channel.

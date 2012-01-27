@@ -121,10 +121,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @throws IOException if any problem is encountered
      */
     public void open() throws IOException {
-        // wait for the Channel.OpenOk response, then ignore it
-        Channel.OpenOk openOk =
-            (Channel.OpenOk) exnWrappingRpc(new Channel.Open(UNSPECIFIED_OUT_OF_BAND)).getMethod();
-        Utility.use(openOk);
+        // wait for the Channel.OpenOk response, and ignore it
+        exnWrappingRpc(new Channel.Open(UNSPECIFIED_OUT_OF_BAND));
     }
 
     public void addReturnListener(ReturnListener listener) {
@@ -167,6 +165,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public boolean waitForConfirms()
         throws InterruptedException
     {
+        boolean confirms = false;
+        try {
+            confirms = waitForConfirms(0L);
+        } catch (TimeoutException e) { }
+        return confirms;
+    }
+
+    /** {@inheritDoc} */
+    public boolean waitForConfirms(long timeout)
+            throws InterruptedException, TimeoutException {
+        long startTime = System.currentTimeMillis();
         synchronized (unconfirmedSet) {
             while (true) {
                 if (getCloseReason() != null) {
@@ -177,7 +186,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     onlyAcksReceived = true;
                     return aux;
                 }
-                unconfirmedSet.wait();
+                if (timeout == 0L) {
+                    unconfirmedSet.wait();
+                } else {
+                    long elapsed = System.currentTimeMillis() - startTime;
+                    if (timeout > elapsed) {
+                        unconfirmedSet.wait(timeout - elapsed);
+                    } else {
+                        throw new TimeoutException();
+                    }
+                }
             }
         }
     }
@@ -186,9 +204,23 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void waitForConfirmsOrDie()
         throws IOException, InterruptedException
     {
-        if (!waitForConfirms()) {
-            close(AMQP.REPLY_SUCCESS, "NACKS RECEIVED", true, null, false);
-            throw new IOException("nacks received");
+        try {
+            waitForConfirmsOrDie(0L);
+        } catch (TimeoutException e) { }
+    }
+
+    /** {@inheritDoc} */
+    public void waitForConfirmsOrDie(long timeout)
+        throws IOException, InterruptedException, TimeoutException
+    {
+        try {
+            if (!waitForConfirms(timeout)) {
+                close(AMQP.REPLY_SUCCESS, "NACKS RECEIVED", true, null, false);
+                throw new IOException("nacks received");
+            }
+        } catch (TimeoutException e) {
+            close(AMQP.PRECONDITION_FAILED, "TIMEOUT WAITING FOR ACK");
+            throw(e);
         }
     }
 
@@ -919,8 +951,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             throw new IOException("Unknown consumerTag");
         BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>() {
             public Consumer transformReply(AMQCommand replyCommand) {
-                Basic.CancelOk dummy = (Basic.CancelOk) replyCommand.getMethod();
-                Utility.use(dummy);
+                replyCommand.getMethod();
                 _consumers.remove(consumerTag); //may already have been removed
                 dispatcher.handleCancelOk(originalConsumer, consumerTag);
                 return originalConsumer;
@@ -930,8 +961,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         rpc(new Basic.Cancel(consumerTag, false), k);
 
         try {
-            Consumer callback = k.getReply();
-            Utility.use(callback);
+            k.getReply(); // discard result
         } catch(ShutdownSignalException ex) {
             throw wrap(ex);
         }
