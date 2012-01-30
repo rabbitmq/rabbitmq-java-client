@@ -31,6 +31,7 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(MemoryAlarms.class);
         suite.addTestSuite(MessageRecovery.class);
         suite.addTestSuite(Firehose.class);
+        suite.addTestSuite(PersistenceGuarantees.class);
         return suite;
     }
 }
