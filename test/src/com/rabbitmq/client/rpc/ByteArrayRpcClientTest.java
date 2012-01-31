@@ -16,6 +16,8 @@
 package com.rabbitmq.client.rpc;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -24,12 +26,20 @@ import junit.framework.TestCase;
  */
 public class ByteArrayRpcClientTest extends TestCase {
 
+    private static <K,V> Map<K,V> newMap() { return new HashMap<K,V>(); }
+
     private final StubChannel stubChannel = new StubChannel();
     private final ByteArrayRpcClient baRpcClient = new ByteArrayRpcClient(this.stubChannel);
 
     private static final String exchange = "exchange";
     private static final String routingKey = "routingKey";
     private static final byte[] message = new byte[]{1,2,3,4,5};
+    private static final byte[] replyMessage = new byte[]{5,4,3,2,1};
+
+    private static final Map<byte[], byte[]> resultMap = newMap();
+    static {
+        resultMap.put(message, replyMessage);
+    }
 
     /**
      * Test open() basic
@@ -64,11 +74,29 @@ public class ByteArrayRpcClientTest extends TestCase {
             assertTrue("Call after close expected IOException", e instanceof IOException);
         }
     }
+
+    private static void assertArrayEquals(String msg, byte[] exp, byte[] act) {
+        assertEquals(msg + " (incorrect size)", exp.length, act.length);
+        for (int i=0; i<exp.length; i++) {
+            assertEquals(msg + " (index "+i+")", exp[i], act[i]);
+        }
+    }
+
     /**
-     * Test close() basic
+     * Test call() with argument
      * @throws Exception test
      */
-    public void testClose() throws Exception {
+    public void testCallStandard() throws Exception {
+        this.baRpcClient.open();
+        assertArrayEquals("Incorrect returned value", replyMessage, this.baRpcClient.call(exchange, routingKey, message));
+        this.baRpcClient.close();
+    }
 
+    /**
+     * Test close() as very first action
+     * @throws Exception test
+     */
+    public void testCloseNoop() throws Exception {
+        this.baRpcClient.close();
     }
 }
