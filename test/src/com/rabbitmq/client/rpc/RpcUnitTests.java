@@ -30,6 +30,7 @@ public class RpcUnitTests extends TestCase {
         TestSuite suite = new TestSuite("rpc-unit");
         suite.addTestSuite(RpcServerTest.class);
         suite.addTestSuite(AbstractRpcHandlerTest.class);
+        suite.addTestSuite(ByteArrayRpcClientTest.class);
         return suite;
     }
 }

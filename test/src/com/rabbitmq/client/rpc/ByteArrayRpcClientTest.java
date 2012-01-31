@@ -22,7 +22,7 @@ import junit.framework.TestCase;
 /**
  * Tests for {@link ByteArrayRpcClient}
  */
-public class ByteArrayRpcClientTests extends TestCase {
+public class ByteArrayRpcClientTest extends TestCase {
 
     private final StubChannel stubChannel = new StubChannel();
     private final ByteArrayRpcClient baRpcClient = new ByteArrayRpcClient(this.stubChannel);
