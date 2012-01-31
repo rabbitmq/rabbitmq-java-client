@@ -94,35 +94,44 @@ public class Transactions extends BrokerTestCase
         channel.basicNack(tag, multiple, requeue);
     }
 
-    private void basicNack(boolean requeue)
-        throws IOException
-    {
-        basicNack(latestTag, false, requeue);
-    }
-
-    private void basicNack()
-        throws IOException
-    {
-        basicNack(latestTag, false, true);
-    }
-
     private void basicReject(long tag, boolean requeue)
         throws IOException
     {
         channel.basicReject(tag, requeue);
     }
 
-    private void basicReject(boolean requeue)
-        throws IOException
-    {
-        basicReject(latestTag, requeue);
+    private abstract class GenericNack {
+        abstract public void nack(long tag, boolean requeue)
+            throws IOException;
+
+        public void nack(boolean requeue)
+            throws IOException
+        {
+            nack(latestTag, requeue);
+        }
+
+        public void nack()
+            throws IOException
+        {
+            nack(latestTag, true);
+        }
     }
 
-    private void basicReject()
-        throws IOException
-    {
-        basicReject(latestTag, true);
-    }
+    private GenericNack genNack = new GenericNack() {
+            public void nack(long tag, boolean requeue)
+                throws IOException
+            {
+                basicNack(tag, false, requeue);
+            }
+        };
+
+    private GenericNack genReject = new GenericNack() {
+            public void nack(long tag, boolean requeue)
+                throws IOException
+            {
+                basicReject(tag, requeue);
+            }
+        };
 
     /*
       publishes are embargoed until commit
@@ -370,35 +379,34 @@ public class Transactions extends BrokerTestCase
       messages with nacks get requeued after the transaction commit.
       messages with nacks with requeue = false are not requeued.
     */
-    public void testCommitNacks()
+    public void commitNacks(GenericNack genNack)
         throws IOException
     {
         basicPublish();
         basicPublish();
         txSelect();
         basicGet();
-        basicNack();
+        genNack.nack();
         basicGet();
-        basicNack(false);
+        genNack.nack(false);
         assertNull(basicGet());
         txCommit();
         assertNotNull(basicGet());
-        basicGet();
         assertNull(basicGet());
     }
 
-    public void testRollbackNacks()
+    public void rollbackNacks(GenericNack genNack)
         throws IOException
     {
         basicPublish();
         txSelect();
         basicGet();
-        basicNack(true);
+        genNack.nack(true);
         txRollback();
         assertNull(basicGet());
     }
 
-    public void testCommitAcksAndNacks()
+    public void commitAcksAndNacks(GenericNack genNack)
         throws IOException
     {
         for (int i = 0; i < 3; i++) {
@@ -411,45 +419,49 @@ public class Transactions extends BrokerTestCase
         }
         basicAck(tags[1], false);
         basicAck(tags[0], false);
-        basicNack(tags[2], false, false);
+        genNack.nack(tags[2], false);
         txRollback();
         basicAck(tags[2], false);
-        basicNack(tags[0], false, true);
-        basicNack(tags[1], false, false);
+        genNack.nack(tags[0], true);
+        genNack.nack(tags[1], false);
         txCommit();
         assertNotNull(basicGet());
         assertNull(basicGet());
     }
 
-    /*
-      messages with rejects get requeued after the transaction commit.
-      messages with rejects with requeue = false are not requeued.
-    */
+    public void testCommitNacks()
+        throws IOException
+    {
+        commitNacks(genNack);
+    }
+
+    public void testRollbackNacks()
+        throws IOException
+    {
+        rollbackNacks(genNack);
+    }
+
+    public void testCommitAcksAndNacks()
+        throws IOException
+    {
+        commitAcksAndNacks(genNack);
+    }
+
     public void testCommitRejects()
         throws IOException
     {
-        basicPublish();
-        basicPublish();
-        txSelect();
-        basicGet();
-        basicReject();
-        basicGet();
-        basicReject(false);
-        assertNull(basicGet());
-        txCommit();
-        assertNotNull(basicGet());
-        basicGet();
-        assertNull(basicGet());
+        commitNacks(genReject);
     }
 
     public void testRollbackRejects()
         throws IOException
     {
-        basicPublish();
-        txSelect();
-        basicGet();
-        basicReject(true);
-        txRollback();
-        assertNull(basicGet());
+        rollbackNacks(genReject);
+    }
+
+    public void testCommitAcksAndRejects()
+        throws IOException
+    {
+        commitAcksAndNacks(genReject);
     }
 }
