@@ -391,12 +391,9 @@ public class Transactions extends BrokerTestCase
         throws IOException
     {
         basicPublish();
-        basicPublish();
         txSelect();
         basicGet();
-        basicNack(false);
-        basicGet();
-        basicAck();
+        basicNack(true);
         txRollback();
         assertNull(basicGet());
     }
@@ -449,12 +446,9 @@ public class Transactions extends BrokerTestCase
         throws IOException
     {
         basicPublish();
-        basicPublish();
         txSelect();
         basicGet();
-        basicReject(false);
-        basicGet();
-        basicAck();
+        basicReject(true);
         txRollback();
         assertNull(basicGet());
     }
