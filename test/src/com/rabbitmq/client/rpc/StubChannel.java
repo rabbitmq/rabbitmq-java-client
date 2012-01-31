@@ -319,7 +319,11 @@ public class StubChannel implements Channel {
     }
 
     public void basicCancel(String consumerTag) throws IOException {
-        throw new UnsupportedOperationException();
+        if (consumerTag == null || !consumerTag.equals(this.consumerTag))
+            throw new IllegalStateException("Unknown consumerTag");
+        this.consumer.handleCancelOk(consumerTag);
+        this.consumer = null;
+        this.consumerTag = null;
     }
 
     public RecoverOk basicRecover() throws IOException {

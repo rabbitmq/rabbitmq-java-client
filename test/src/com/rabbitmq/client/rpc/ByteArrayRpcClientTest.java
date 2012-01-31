@@ -55,6 +55,7 @@ public class ByteArrayRpcClientTest extends TestCase {
      * @throws Exception test
      */
     public void testCallAfterClose() throws Exception {
+        this.baRpcClient.open();
         this.baRpcClient.close();
         try {
             this.baRpcClient.call(exchange, routingKey, message);
