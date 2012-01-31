@@ -36,7 +36,7 @@ public class ByteArrayRpcClientTest extends TestCase {
      * @throws Exception test
      */
     public void testOpen() throws Exception {
-
+        this.baRpcClient.open();
     }
     /**
      * Test <code>call(...)</code> before open

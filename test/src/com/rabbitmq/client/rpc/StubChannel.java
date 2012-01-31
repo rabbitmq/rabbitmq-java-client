@@ -42,397 +42,332 @@ import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 
 /**
- *
+ * Stub implementation of Channel for tests
  */
 public class StubChannel implements Channel {
 
     public void addShutdownListener(ShutdownListener listener) {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public void removeShutdownListener(ShutdownListener listener) {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public ShutdownSignalException getCloseReason() {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public void notifyListeners() {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public boolean isOpen() {
-        // TODO Auto-generated method stub
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     public int getChannelNumber() {
-        // TODO Auto-generated method stub
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     public Connection getConnection() {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public void close() throws IOException {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public void close(int closeCode, String closeMessage) throws IOException {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public FlowOk flow(boolean active) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public FlowOk getFlow() {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public void abort() throws IOException {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public void abort(int closeCode, String closeMessage) throws IOException {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public void addReturnListener(ReturnListener listener) {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public boolean removeReturnListener(ReturnListener listener) {
-        // TODO Auto-generated method stub
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     public void clearReturnListeners() {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public void addFlowListener(FlowListener listener) {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public boolean removeFlowListener(FlowListener listener) {
-        // TODO Auto-generated method stub
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     public void clearFlowListeners() {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public void addConfirmListener(ConfirmListener listener) {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public boolean removeConfirmListener(ConfirmListener listener) {
-        // TODO Auto-generated method stub
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     public void clearConfirmListeners() {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public Consumer getDefaultConsumer() {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public void setDefaultConsumer(Consumer consumer) {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
-    public void basicQos(int prefetchSize, int prefetchCount, boolean global)
-            throws IOException {
-        // TODO Auto-generated method stub
-
+    public void basicQos(int prefetchSize, int prefetchCount, boolean global) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     public void basicQos(int prefetchCount) throws IOException {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
-    public void basicPublish(String exchange, String routingKey,
-            BasicProperties props, byte[] body) throws IOException {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void basicPublish(String exchange, String routingKey,
-            boolean mandatory, boolean immediate, BasicProperties props,
-            byte[] body) throws IOException {
-        // TODO Auto-generated method stub
-
-    }
-
-    public DeclareOk exchangeDeclare(String exchange, String type)
+    public void basicPublish(String exchange, String routingKey, BasicProperties props, byte[] body)
             throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    public DeclareOk exchangeDeclare(String exchange, String type,
-            boolean durable) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+    public void basicPublish(String exchange, String routingKey, boolean mandatory,
+            boolean immediate, BasicProperties props, byte[] body) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
-    public DeclareOk exchangeDeclare(String exchange, String type,
-            boolean durable, boolean autoDelete, Map<String, Object> arguments)
+    public DeclareOk exchangeDeclare(String exchange, String type) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    public DeclareOk exchangeDeclare(String exchange, String type, boolean durable)
             throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    public DeclareOk exchangeDeclare(String exchange, String type,
-            boolean durable, boolean autoDelete, boolean internal,
-            Map<String, Object> arguments) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+    public DeclareOk exchangeDeclare(String exchange, String type, boolean durable,
+            boolean autoDelete, Map<String, Object> arguments) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    public DeclareOk exchangeDeclare(String exchange, String type, boolean durable,
+            boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     public DeclareOk exchangeDeclarePassive(String name) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    public DeleteOk exchangeDelete(String exchange, boolean ifUnused)
-            throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+    public DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     public DeleteOk exchangeDelete(String exchange) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    public BindOk exchangeBind(String destination, String source,
-            String routingKey) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public BindOk exchangeBind(String destination, String source,
-            String routingKey, Map<String, Object> arguments)
+    public BindOk exchangeBind(String destination, String source, String routingKey)
             throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    public UnbindOk exchangeUnbind(String destination, String source,
-            String routingKey) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public UnbindOk exchangeUnbind(String destination, String source,
-            String routingKey, Map<String, Object> arguments)
-            throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclare()
-            throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclare(String queue,
-            boolean durable, boolean exclusive, boolean autoDelete,
+    public BindOk exchangeBind(String destination, String source, String routingKey,
             Map<String, Object> arguments) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclarePassive(
-            String queue) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public com.rabbitmq.client.AMQP.Queue.DeleteOk queueDelete(String queue)
+    public UnbindOk exchangeUnbind(String destination, String source, String routingKey)
             throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    public com.rabbitmq.client.AMQP.Queue.DeleteOk queueDelete(String queue,
-            boolean ifUnused, boolean ifEmpty) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+    public UnbindOk exchangeUnbind(String destination, String source, String routingKey,
+            Map<String, Object> arguments) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
-    public com.rabbitmq.client.AMQP.Queue.BindOk queueBind(String queue,
-            String exchange, String routingKey) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+    public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclare() throws IOException {
+        String queue = generateQueueName();
+        return this.queueDeclare(queue, false, true, true, null);
     }
 
-    public com.rabbitmq.client.AMQP.Queue.BindOk queueBind(String queue,
-            String exchange, String routingKey, Map<String, Object> arguments)
+    private String queueName = null;
+    private String generateQueueName() {
+        return "QN-1";
+    }
+
+    public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclare(String queue, boolean durable,
+            boolean exclusive, boolean autoDelete, Map<String, Object> arguments)
             throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        if (this.queueName != null)
+            throw new IllegalStateException("Only supports one queue");
+
+        this.queueName = queue;
+        return new com.rabbitmq.client.AMQP.Queue.DeclareOk
+               .Builder()
+               .consumerCount(this.consumer == null ? 0 : 1)
+               .messageCount(0)
+               .queue(queue)
+               .build();
     }
 
-    public com.rabbitmq.client.AMQP.Queue.UnbindOk queueUnbind(String queue,
-            String exchange, String routingKey) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
+    private Consumer consumer = null;
 
-    public com.rabbitmq.client.AMQP.Queue.UnbindOk queueUnbind(String queue,
-            String exchange, String routingKey, Map<String, Object> arguments)
+    public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclarePassive(String queue)
             throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
+    }
+
+    public com.rabbitmq.client.AMQP.Queue.DeleteOk queueDelete(String queue) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    public com.rabbitmq.client.AMQP.Queue.DeleteOk queueDelete(String queue, boolean ifUnused,
+            boolean ifEmpty) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    public com.rabbitmq.client.AMQP.Queue.BindOk queueBind(String queue, String exchange,
+            String routingKey) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    public com.rabbitmq.client.AMQP.Queue.BindOk queueBind(String queue, String exchange,
+            String routingKey, Map<String, Object> arguments) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    public com.rabbitmq.client.AMQP.Queue.UnbindOk queueUnbind(String queue, String exchange,
+            String routingKey) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    public com.rabbitmq.client.AMQP.Queue.UnbindOk queueUnbind(String queue, String exchange,
+            String routingKey, Map<String, Object> arguments) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     public PurgeOk queuePurge(String queue) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    public GetResponse basicGet(String queue, boolean autoAck)
-            throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+    public GetResponse basicGet(String queue, boolean autoAck) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     public void basicAck(long deliveryTag, boolean multiple) throws IOException {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
-    public void basicNack(long deliveryTag, boolean multiple, boolean requeue)
+    public void basicNack(long deliveryTag, boolean multiple, boolean requeue) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    public void basicReject(long deliveryTag, boolean requeue) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    public String basicConsume(String queue, Consumer callback) throws IOException {
+        return this.basicConsume(queue, false, callback);
+    }
+
+    public String basicConsume(String queue, boolean autoAck, Consumer callback) throws IOException {
+        return this.basicConsume(queue, autoAck, generateConsumerTag(), callback);
+    }
+
+    private String consumerTag = null;
+    private String generateConsumerTag() {
+        return "CT-1";
+    }
+
+    public String basicConsume(String queue, boolean autoAck, String consumerTag, Consumer callback)
             throws IOException {
-        // TODO Auto-generated method stub
-
+        return this.basicConsume(queue, autoAck, consumerTag, false, false, null, callback);
     }
 
-    public void basicReject(long deliveryTag, boolean requeue)
-            throws IOException {
-        // TODO Auto-generated method stub
-
-    }
-
-    public String basicConsume(String queue, Consumer callback)
-            throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public String basicConsume(String queue, boolean autoAck, Consumer callback)
-            throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public String basicConsume(String queue, boolean autoAck,
-            String consumerTag, Consumer callback) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public String basicConsume(String queue, boolean autoAck,
-            String consumerTag, boolean noLocal, boolean exclusive,
-            Map<String, Object> arguments, Consumer callback)
-            throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+    public String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal,
+            boolean exclusive, Map<String, Object> arguments, Consumer callback) throws IOException {
+        if (this.consumer != null)
+            throw new IllegalStateException("Only one consumer implemented");
+        this.consumer = callback;
+        return this.consumerTag = consumerTag;
     }
 
     public void basicCancel(String consumerTag) throws IOException {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public RecoverOk basicRecover() throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public RecoverOk basicRecover(boolean requeue) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public void basicRecoverAsync(boolean requeue) throws IOException {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public SelectOk txSelect() throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public CommitOk txCommit() throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public RollbackOk txRollback() throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
-    public com.rabbitmq.client.AMQP.Confirm.SelectOk confirmSelect()
-            throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+    public com.rabbitmq.client.AMQP.Confirm.SelectOk confirmSelect() throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     public long getNextPublishSeqNo() {
-        // TODO Auto-generated method stub
-        return 0;
+        throw new UnsupportedOperationException();
     }
 
     public boolean waitForConfirms() throws InterruptedException {
-        // TODO Auto-generated method stub
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     public void waitForConfirmsOrDie() throws IOException, InterruptedException {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public void asyncRpc(Method method) throws IOException {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException();
     }
 
     public Command rpc(Method method) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
 }
