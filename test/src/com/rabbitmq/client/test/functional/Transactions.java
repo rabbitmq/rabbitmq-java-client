@@ -88,19 +88,7 @@ public class Transactions extends BrokerTestCase
         basicAck(latestTag, false);
     }
 
-    private void basicNack(long tag, boolean multiple, boolean requeue)
-        throws IOException
-    {
-        channel.basicNack(tag, multiple, requeue);
-    }
-
-    private void basicReject(long tag, boolean requeue)
-        throws IOException
-    {
-        channel.basicReject(tag, requeue);
-    }
-
-    private abstract class GenericNack {
+    private abstract class NackMethod {
         abstract public void nack(long tag, boolean requeue)
             throws IOException;
 
@@ -117,19 +105,19 @@ public class Transactions extends BrokerTestCase
         }
     }
 
-    private GenericNack genNack = new GenericNack() {
+    private NackMethod basicNack = new NackMethod() {
             public void nack(long tag, boolean requeue)
                 throws IOException
             {
-                basicNack(tag, false, requeue);
+                channel.basicNack(tag, false, requeue);
             }
         };
 
-    private GenericNack genReject = new GenericNack() {
+    private NackMethod basicReject = new NackMethod() {
             public void nack(long tag, boolean requeue)
                 throws IOException
             {
-                basicReject(tag, requeue);
+                channel.basicReject(tag, requeue);
             }
         };
 
@@ -379,34 +367,34 @@ public class Transactions extends BrokerTestCase
       messages with nacks get requeued after the transaction commit.
       messages with nacks with requeue = false are not requeued.
     */
-    public void commitNacks(GenericNack genNack)
+    public void commitNacks(NackMethod method)
         throws IOException
     {
         basicPublish();
         basicPublish();
         txSelect();
         basicGet();
-        genNack.nack();
+        method.nack();
         basicGet();
-        genNack.nack(false);
+        method.nack(false);
         assertNull(basicGet());
         txCommit();
         assertNotNull(basicGet());
         assertNull(basicGet());
     }
 
-    public void rollbackNacks(GenericNack genNack)
+    public void rollbackNacks(NackMethod method)
         throws IOException
     {
         basicPublish();
         txSelect();
         basicGet();
-        genNack.nack(true);
+        method.nack(true);
         txRollback();
         assertNull(basicGet());
     }
 
-    public void commitAcksAndNacks(GenericNack genNack)
+    public void commitAcksAndNacks(NackMethod method)
         throws IOException
     {
         for (int i = 0; i < 3; i++) {
@@ -419,11 +407,11 @@ public class Transactions extends BrokerTestCase
         }
         basicAck(tags[1], false);
         basicAck(tags[0], false);
-        genNack.nack(tags[2], false);
+        method.nack(tags[2], false);
         txRollback();
         basicAck(tags[2], false);
-        genNack.nack(tags[0], true);
-        genNack.nack(tags[1], false);
+        method.nack(tags[0], true);
+        method.nack(tags[1], false);
         txCommit();
         assertNotNull(basicGet());
         assertNull(basicGet());
@@ -432,36 +420,36 @@ public class Transactions extends BrokerTestCase
     public void testCommitNacks()
         throws IOException
     {
-        commitNacks(genNack);
+        commitNacks(basicNack);
     }
 
     public void testRollbackNacks()
         throws IOException
     {
-        rollbackNacks(genNack);
+        rollbackNacks(basicNack);
     }
 
     public void testCommitAcksAndNacks()
         throws IOException
     {
-        commitAcksAndNacks(genNack);
+        commitAcksAndNacks(basicNack);
     }
 
     public void testCommitRejects()
         throws IOException
     {
-        commitNacks(genReject);
+        commitNacks(basicReject);
     }
 
     public void testRollbackRejects()
         throws IOException
     {
-        rollbackNacks(genReject);
+        rollbackNacks(basicReject);
     }
 
     public void testCommitAcksAndRejects()
         throws IOException
     {
-        commitAcksAndNacks(genReject);
+        commitAcksAndNacks(basicReject);
     }
 }
