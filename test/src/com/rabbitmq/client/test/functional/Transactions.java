@@ -88,39 +88,6 @@ public class Transactions extends BrokerTestCase
         basicAck(latestTag, false);
     }
 
-    private abstract class NackMethod {
-        abstract public void nack(long tag, boolean requeue)
-            throws IOException;
-
-        public void nack(boolean requeue)
-            throws IOException
-        {
-            nack(latestTag, requeue);
-        }
-
-        public void nack()
-            throws IOException
-        {
-            nack(latestTag, true);
-        }
-    }
-
-    private NackMethod basicNack = new NackMethod() {
-            public void nack(long tag, boolean requeue)
-                throws IOException
-            {
-                channel.basicNack(tag, false, requeue);
-            }
-        };
-
-    private NackMethod basicReject = new NackMethod() {
-            public void nack(long tag, boolean requeue)
-                throws IOException
-            {
-                channel.basicReject(tag, requeue);
-            }
-        };
-
     /*
       publishes are embargoed until commit
      */
@@ -362,6 +329,39 @@ public class Transactions extends BrokerTestCase
         basicAck(tags[2], false);
         txCommit();
     }
+
+    private abstract class NackMethod {
+        abstract public void nack(long tag, boolean requeue)
+            throws IOException;
+
+        public void nack(boolean requeue)
+            throws IOException
+        {
+            nack(latestTag, requeue);
+        }
+
+        public void nack()
+            throws IOException
+        {
+            nack(latestTag, true);
+        }
+    }
+
+    private NackMethod basicNack = new NackMethod() {
+            public void nack(long tag, boolean requeue)
+                throws IOException
+            {
+                channel.basicNack(tag, false, requeue);
+            }
+        };
+
+    private NackMethod basicReject = new NackMethod() {
+            public void nack(long tag, boolean requeue)
+                throws IOException
+            {
+                channel.basicReject(tag, requeue);
+            }
+        };
 
     /*
       messages with nacks get requeued after the transaction commit.
