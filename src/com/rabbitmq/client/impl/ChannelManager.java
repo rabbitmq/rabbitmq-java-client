@@ -59,7 +59,7 @@ public final class ChannelManager {
         }
         _channelMax = channelMax;
         channelNumberAllocator = new IntAllocator(1, channelMax);
-        
+
         this.workService = workService;
     }
 
