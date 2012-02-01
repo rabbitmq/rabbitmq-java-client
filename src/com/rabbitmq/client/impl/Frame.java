@@ -297,6 +297,9 @@ public class Frame {
         else if(value instanceof List) {
             acc += 4 + arraySize((List<?>)value);
         }
+        else if(value instanceof Object[]) {
+            acc += 4 + arraySize((Object[])value);
+        }
         else if(value == null) {
         }
         else {
@@ -305,7 +308,7 @@ public class Frame {
         return acc;
     }
 
-    /** Computes the AMQP wire-protocol length of an encoded field-array */
+    /** Computes the AMQP wire-protocol length of an encoded field-array of type List<?> */
     public static long arraySize(List<?> values)
         throws UnsupportedEncodingException
     {
@@ -315,7 +318,16 @@ public class Frame {
         }
         return acc;
     }
-  
+
+    /** Computes the AMQP wire-protocol length of an encoded field-array of type Object[] */
+    public static long arraySize(Object[] values) throws UnsupportedEncodingException {
+        long acc = 0;
+        for (Object value : values) {
+            acc += fieldValueSize(value);
+        }
+        return acc;
+    }
+
     /** Computes the AMQP wire-protocol length of a protocol-encoded long string. */
     private static int longStrSize(String str)
         throws UnsupportedEncodingException
