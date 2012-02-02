@@ -162,9 +162,8 @@ public class QueueLifecycle extends BrokerTestCase {
         Map<String, Object> args = new HashMap<String, Object>();
         String[] arr = new String[]{"foo", "bar", "baz"};
         args.put("my-key", arr);
-//        args.put("my-key", Arrays.asList(arr));
         String queueName = "argumentArraysQueue";
-        channel.queueDeclare(queueName, true, true, false, args).getQueue();
-        verifyQueueExists(queueName);
+        channel.queueDeclare(queueName, true, true, false, args);
+        verifyQueue(queueName, true, true, false, args);
     }
 }
