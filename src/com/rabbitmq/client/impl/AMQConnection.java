@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -72,7 +72,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 "version", LongStringHelper.asLongString(ClientVersion.VERSION),
                 "platform", LongStringHelper.asLongString("Java"),
                 "copyright", LongStringHelper.asLongString(
-                    "Copyright (C) 2007-2011 VMware, Inc."),
+                    "Copyright (C) 2007-2012 VMware, Inc."),
                 "information", LongStringHelper.asLongString(
                     "Licensed under the MPL. See http://www.rabbitmq.com/"),
                 "capabilities", capabilities
