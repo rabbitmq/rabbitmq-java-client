@@ -158,13 +158,13 @@ public class QueueLifecycle extends BrokerTestCase {
         verifyQueueMissing(name);
     }
 
-    public void testArgumentArrays() throws Exception {
+    public void testArgumentArrays() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
-        args.put("my-key", new String[]{"foo", "bar", "baz"});
+        String[] arr = new String[]{"foo", "bar", "baz"};
+        args.put("my-key", arr);
+//        args.put("my-key", Arrays.asList(arr));
         String queueName = "argumentArraysQueue";
         channel.queueDeclare(queueName, true, true, false, args).getQueue();
-        args = new HashMap<String, Object>();
-        args.put("my-key", Arrays.asList(new String[]{"foo", "bar", "baz"}));
         verifyQueueExists(queueName);
     }
 }

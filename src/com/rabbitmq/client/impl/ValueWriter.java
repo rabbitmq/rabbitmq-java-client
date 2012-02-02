@@ -231,7 +231,7 @@ public class ValueWriter
             out.write(0);
         }
         else {
-            out.writeInt(value.length);
+            out.writeInt((int)Frame.arraySize(value));
             for (Object item : value) {
                 writeFieldValue(item);
             }
