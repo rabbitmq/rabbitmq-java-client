@@ -51,6 +51,7 @@ final class ConsumerWorkService {
 
     /**
      * Stop executing all consumer work for a particular channel
+     * @param channel to stop consumer work for
      */
     public void stopWork(Channel channel) {
         this.workPool.unregisterKey(channel);
