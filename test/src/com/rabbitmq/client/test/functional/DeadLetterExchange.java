@@ -219,37 +219,6 @@ public class DeadLetterExchange extends BrokerTestCase {
             });
     }
 
-    public void testDeadLetterSelf() throws Exception {
-        channel.queueDelete(DLQ);
-        declareQueue(DLQ, DLX, null, null);
-
-        declareQueue(DLX);
-
-        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
-        channel.queueBind(DLQ, DLX, "test");
-
-        publishN(MSG_COUNT_MANY, PropertiesFactory.NULL);
-
-        channel.queuePurge(TEST_QUEUE_NAME);
-        sleep(100);
-        channel.queuePurge(DLQ);
-
-        // The messages have been purged once from TEST_QUEUE_NAME and
-        // once from DLQ.
-        consumeN(DLQ, MSG_COUNT_MANY, new WithResponse() {
-                @SuppressWarnings("unchecked")
-                public void process(GetResponse getResponse) {
-                    Map<String, Object> headers = getResponse.getProps().getHeaders();
-                    assertNotNull(headers);
-                    ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
-                    assertNotNull(death);
-                    assertEquals(2, death.size());
-                    assertDeathReason(death, 0, DLQ, "queue_purged");
-                    assertDeathReason(death, 1, TEST_QUEUE_NAME, "queue_purged");
-                }
-            });
-    }
-
     public void testDeadLetterNewRK() throws Exception {
         declareQueue(TEST_QUEUE_NAME, DLX, "test-other", null);
 
