@@ -45,8 +45,16 @@ class SimpleScenarioStats extends Stats {
     }
 
     public void print() {
-        System.out.println("Sent: " + 1000.0 * sendCountTotal / elapsed + " msg/s");
-        System.out.println("Recv: " + 1000.0 * recvCountTotal / elapsed + " msg/s");
+        System.out.println("Sent: " + getSendRate() + " msg/s");
+        System.out.println("Recv: " + getRecvRate() + " msg/s");
         System.out.println("Avg latency: " + cumulativeLatencyTotal / (1000L * latencyCountTotal) + "us");
+    }
+
+    public double getSendRate() {
+        return 1000.0 * sendCountTotal / elapsed;
+    }
+
+    public double getRecvRate() {
+        return 1000.0 * recvCountTotal / elapsed;
     }
 }

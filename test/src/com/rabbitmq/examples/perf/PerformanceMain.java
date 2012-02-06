@@ -26,6 +26,7 @@ public class PerformanceMain {
     public static void main(String[] args) throws IOException, InterruptedException {
         simple();
         varying();
+        ratevslatency();
     }
 
     private static void simple() throws IOException, InterruptedException {
@@ -38,6 +39,13 @@ public class PerformanceMain {
     private static void varying() throws IOException, InterruptedException {
         ProducerConsumerParams params = new ProducerConsumerParams();
         VaryingScenario scenario = new VaryingScenario(factory, params, "minMsgSize", new Object[] {0, 100, 10000, 1000000});
+        scenario.run();
+        scenario.getStats().print();
+    }
+
+    private static void ratevslatency() throws IOException, InterruptedException {
+        ProducerConsumerParams params = new ProducerConsumerParams();
+        RateVsLatencyScenario scenario = new RateVsLatencyScenario(factory, params);
         scenario.run();
         scenario.getStats().print();
     }
