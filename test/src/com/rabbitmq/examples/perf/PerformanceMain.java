@@ -82,10 +82,6 @@ public class PerformanceMain {
     private static class ScenarioStats extends Stats {
         private static final int ignoreFirst = 3;
 
-        private int sent;
-        private int recved;
-        private long latency;
-        private long totalLatencyCount;
         private long elapsed;
         private long ignored = ignoreFirst;
 
@@ -99,20 +95,24 @@ public class PerformanceMain {
         protected void report(long now, long elapsed) {
             if (ignored > 0) {
                 ignored--;
-                return;
+            }
+            else if (ignored == 0) {
+                cumulativeLatencyTotal = 0;
+                latencyCountTotal      = 0;
+                sendCountTotal         = 0;
+                recvCountTotal         = 0;
+                ignored = -1;
+            }
+            else {
+                this.elapsed += elapsed;
             }
 
-            this.elapsed += elapsed;
-            this.sent += sendCount;
-            this.recved += recvCount;
-            this.latency += cumulativeLatency;
-            this.totalLatencyCount += latencyCount;
         }
 
         public void print() {
-            System.out.println("Sent: " + 1000.0 * sent / elapsed + " msg/s");
-            System.out.println("Recv: " + 1000.0 * recved / elapsed + " msg/s");
-            System.out.println("Avg latency: " + latency / (1000L * totalLatencyCount) + "us");
+            System.out.println("Sent: " + 1000.0 * sendCountTotal / elapsed + " msg/s");
+            System.out.println("Recv: " + 1000.0 * recvCountTotal / elapsed + " msg/s");
+            System.out.println("Avg latency: " + cumulativeLatencyTotal / (1000L * latencyCountTotal) + "us");
         }
     }
 }

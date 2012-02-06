@@ -21,7 +21,6 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ReturnListener;
-import com.rabbitmq.examples.MulticastMain;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -123,7 +122,6 @@ public class Producer implements Runnable, ReturnListener,
     }
 
     public void run() {
-
         long now = startTime = lastStatsTime = System.currentTimeMillis();
         msgCount = 0;
         int totalMsgCount = 0;
@@ -151,11 +149,6 @@ public class Producer implements Runnable, ReturnListener,
         } catch (InterruptedException e) {
             throw new RuntimeException (e);
         }
-
-        System.out.println("sending rate avg: " +
-                           MulticastMain.formatRate(totalMsgCount * 1000.0 / (now - startTime)) +
-                           " msg/s");
-
     }
 
     private void publish(byte[] msg)

@@ -100,6 +100,8 @@ public class MulticastMain {
             p.setTimeLimit(        timeLimit);
 
             p.run();
+
+            stats.printFinal();
         }
         catch( ParseException exp ) {
             System.err.println("Parsing failed. Reason: " + exp.getMessage());
@@ -158,13 +160,6 @@ public class MulticastMain {
         return Arrays.asList(vals);
     }
 
-    public static String formatRate(double rate) {
-        if (rate == 0.0)    return String.format("%d", (long)rate);
-        else if (rate < 1)  return String.format("%1.2f", rate);
-        else if (rate < 10) return String.format("%1.1f", rate);
-        else                return String.format("%d", (long)rate);
-    }
-
     private static class PrintlnStats extends Stats {
         public PrintlnStats(long interval,
                             boolean sendStatsEnabled, boolean recvStatsEnabled,
@@ -176,16 +171,16 @@ public class MulticastMain {
         protected void report(long now, long elapsed) {
             System.out.print("time: " + String.format("%.3f", (now - startTime)/1000.0) + "s");
 
-            showRate("sent",      sendCount,    sendStatsEnabled,                        elapsed);
-            showRate("returned",  returnCount,  sendStatsEnabled && returnStatsEnabled,  elapsed);
-            showRate("confirmed", confirmCount, sendStatsEnabled && confirmStatsEnabled, elapsed);
-            showRate("nacked",    nackCount,    sendStatsEnabled && confirmStatsEnabled, elapsed);
-            showRate("received",  recvCount,    recvStatsEnabled,                        elapsed);
+            showRate("sent", sendCountInterval,    sendStatsEnabled,                        elapsed);
+            showRate("returned", returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsed);
+            showRate("confirmed", confirmCountInterval, sendStatsEnabled && confirmStatsEnabled, elapsed);
+            showRate("nacked", nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsed);
+            showRate("received", recvCountInterval,    recvStatsEnabled,                        elapsed);
 
-            System.out.print((latencyCount > 0 ?
+            System.out.print((latencyCountInterval > 0 ?
                               ", min/avg/max latency: " +
                               minLatency/1000L + "/" +
-                              cumulativeLatency / (1000L * latencyCount) + "/" +
+                              cumulativeLatencyInterval / (1000L * latencyCountInterval) + "/" +
                               maxLatency/1000L + " microseconds" :
                               ""));
 
@@ -195,8 +190,30 @@ public class MulticastMain {
         private void showRate(String descr, long count, boolean display,
                               long elapsed) {
             if (display) {
-                System.out.print(", " + descr + ": " + MulticastMain.formatRate(1000.0 * count / elapsed) + " msg/s");
+                System.out.print(", " + descr + ": " + formatRate(1000.0 * count / elapsed) + " msg/s");
             }
+        }
+
+        public void printFinal() {
+            long now = System.currentTimeMillis();
+
+            System.out.println("sending rate avg: " +
+                               formatRate(sendCountTotal * 1000.0 / (now - startTime)) +
+                               " msg/s");
+
+            long elapsed = now - startTime;
+            if (elapsed > 0) {
+                System.out.println("recving rate avg: " +
+                                   formatRate(recvCountTotal * 1000.0 / elapsed) +
+                                   " msg/s");
+            }
+        }
+
+        private static String formatRate(double rate) {
+            if (rate == 0.0)    return String.format("%d", (long)rate);
+            else if (rate < 1)  return String.format("%1.2f", rate);
+            else if (rate < 10) return String.format("%1.1f", rate);
+            else                return String.format("%d", (long)rate);
         }
     }
 }

@@ -21,7 +21,6 @@ import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.examples.MulticastMain;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -52,7 +51,6 @@ public class Consumer implements Runnable {
     }
 
     public void run() {
-
         long now;
         long startTime;
         startTime = now = System.currentTimeMillis();
@@ -77,7 +75,7 @@ public class Consumer implements Runnable {
                     channel.basicConsume(queueName, autoAck, q);
                     continue;
                 }
-        totalMsgCount++;
+                totalMsgCount++;
 
                 DataInputStream d = new DataInputStream(new ByteArrayInputStream(delivery.getBody()));
                 d.readInt();
@@ -106,13 +104,5 @@ public class Consumer implements Runnable {
         } catch (ShutdownSignalException e) {
             throw new RuntimeException(e);
         }
-
-        long elapsed = now - startTime;
-        if (elapsed > 0) {
-            System.out.println("recving rate avg: " +
-                               MulticastMain.formatRate(totalMsgCount * 1000.0 / elapsed) +
-                               " msg/s");
-        }
     }
-
 }

@@ -26,16 +26,21 @@ public abstract class Stats {
     protected long    startTime;
     protected long    lastStatsTime;
 
-    protected int     sendCount;
-    protected int     returnCount;
-    protected int     confirmCount;
-    protected int     nackCount;
-    protected int     recvCount;
+    protected int     sendCountInterval;
+    protected int     returnCountInterval;
+    protected int     confirmCountInterval;
+    protected int     nackCountInterval;
+    protected int     recvCountInterval;
 
-    protected int     latencyCount;
+    protected int     sendCountTotal;
+    protected int     recvCountTotal;
+
+    protected int     latencyCountInterval;
+    protected int     latencyCountTotal;
     protected long    minLatency;
     protected long    maxLatency;
-    protected long    cumulativeLatency;
+    protected long    cumulativeLatencyInterval;
+    protected long    cumulativeLatencyTotal;
 
     public Stats(long interval,
                  boolean sendStatsEnabled, boolean recvStatsEnabled,
@@ -50,18 +55,18 @@ public abstract class Stats {
     }
 
     private void reset(long t) {
-        lastStatsTime     = t;
+        lastStatsTime             = t;
 
-        sendCount         = 0;
-        returnCount       = 0;
-        confirmCount      = 0;
-        nackCount         = 0;
-        recvCount         = 0;
+        sendCountInterval         = 0;
+        returnCountInterval       = 0;
+        confirmCountInterval      = 0;
+        nackCountInterval         = 0;
+        recvCountInterval         = 0;
 
-        latencyCount      = 0;
-        minLatency        = Long.MAX_VALUE;
-        maxLatency        = Long.MIN_VALUE;
-        cumulativeLatency = 0L;
+        minLatency                = Long.MAX_VALUE;
+        maxLatency                = Long.MIN_VALUE;
+        latencyCountInterval      = 0;
+        cumulativeLatencyInterval = 0L;
     }
 
     private void report() {
@@ -77,32 +82,36 @@ public abstract class Stats {
     protected abstract void report(long now, long elapsed);
 
     public synchronized void handleSend() {
-        sendCount++;
+        sendCountInterval++;
+        sendCountTotal++;
         report();
     }
 
     public synchronized void handleReturn() {
-        returnCount++;
+        returnCountInterval++;
         report();
     }
 
     public synchronized void handleConfirm(int numConfirms) {
-        confirmCount+=numConfirms;
+        confirmCountInterval +=numConfirms;
         report();
     }
 
     public synchronized void handleNack(int numAcks) {
-        nackCount+=numAcks;
+        nackCountInterval +=numAcks;
         report();
     }
 
     public synchronized void handleRecv(long latency) {
-        recvCount++;
+        recvCountInterval++;
+        recvCountTotal++;
         if (latency > 0) {
             minLatency = Math.min(minLatency, latency);
             maxLatency = Math.max(maxLatency, latency);
-            cumulativeLatency += latency;
-            latencyCount++;
+            cumulativeLatencyInterval += latency;
+            cumulativeLatencyTotal += latency;
+            latencyCountInterval++;
+            latencyCountTotal++;
         }
         report();
     }
