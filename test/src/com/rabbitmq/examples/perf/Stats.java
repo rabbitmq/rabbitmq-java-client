@@ -18,10 +18,6 @@ package com.rabbitmq.examples.perf;
 
 public abstract class Stats {
     protected long    interval;
-    protected boolean sendStatsEnabled;
-    protected boolean recvStatsEnabled;
-    protected boolean returnStatsEnabled;
-    protected boolean confirmStatsEnabled;
 
     protected long    startTime;
     protected long    lastStatsTime;
@@ -42,14 +38,8 @@ public abstract class Stats {
     protected long    cumulativeLatencyInterval;
     protected long    cumulativeLatencyTotal;
 
-    public Stats(long interval,
-                 boolean sendStatsEnabled, boolean recvStatsEnabled,
-                 boolean returnStatsEnabled, boolean confirmStatsEnabled) {
-        this.interval            = interval;
-        this.sendStatsEnabled    = sendStatsEnabled;
-        this.recvStatsEnabled    = recvStatsEnabled;
-        this.returnStatsEnabled  = returnStatsEnabled;
-        this.confirmStatsEnabled = confirmStatsEnabled;
+    public Stats(long interval) {
+        this.interval = interval;
         startTime = System.currentTimeMillis();
         reset(startTime);
     }

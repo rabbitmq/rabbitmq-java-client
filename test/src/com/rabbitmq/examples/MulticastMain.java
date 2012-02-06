@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import com.rabbitmq.examples.perf.ProducerConsumerParams;
 import com.rabbitmq.examples.perf.ProducerConsumerSet;
 import com.rabbitmq.examples.perf.Stats;
 import org.apache.commons.cli.CommandLine;
@@ -67,7 +68,6 @@ public class MulticastMain {
             boolean exclusive  = "".equals(queueName);
 
             //setup
-            String id = UUID.randomUUID().toString();
             PrintlnStats stats = new PrintlnStats(1000L * samplingInterval,
                                     producerCount > 0,
                                     consumerCount > 0,
@@ -81,7 +81,7 @@ public class MulticastMain {
             factory.setRequestedHeartbeat(heartbeat);
 
 
-            ProducerConsumerSet p = new ProducerConsumerSet(id, stats, factory);
+            ProducerConsumerParams p = new ProducerConsumerParams();
             p.setAutoAck(          autoAck);
             p.setAutoDelete(       !exclusive);
             p.setConfirm(          confirm);
@@ -99,7 +99,8 @@ public class MulticastMain {
             p.setRateLimit(        rateLimit);
             p.setTimeLimit(        timeLimit);
 
-            p.run();
+            ProducerConsumerSet set = new ProducerConsumerSet(stats, factory, p);
+            set.run();
 
             stats.printFinal();
         }
@@ -161,21 +162,30 @@ public class MulticastMain {
     }
 
     private static class PrintlnStats extends Stats {
+        private boolean sendStatsEnabled;
+        private boolean recvStatsEnabled;
+        private boolean returnStatsEnabled;
+        private boolean confirmStatsEnabled;
+
         public PrintlnStats(long interval,
                             boolean sendStatsEnabled, boolean recvStatsEnabled,
                             boolean returnStatsEnabled, boolean confirmStatsEnabled) {
-            super(interval, sendStatsEnabled, recvStatsEnabled, returnStatsEnabled, confirmStatsEnabled);
+            super(interval);
+            this.sendStatsEnabled = sendStatsEnabled;
+            this.recvStatsEnabled = recvStatsEnabled;
+            this.returnStatsEnabled = returnStatsEnabled;
+            this.confirmStatsEnabled = confirmStatsEnabled;
         }
 
         @Override
         protected void report(long now, long elapsed) {
             System.out.print("time: " + String.format("%.3f", (now - startTime)/1000.0) + "s");
 
-            showRate("sent", sendCountInterval,    sendStatsEnabled,                        elapsed);
-            showRate("returned", returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsed);
+            showRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsed);
+            showRate("returned",  returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsed);
             showRate("confirmed", confirmCountInterval, sendStatsEnabled && confirmStatsEnabled, elapsed);
-            showRate("nacked", nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsed);
-            showRate("received", recvCountInterval,    recvStatsEnabled,                        elapsed);
+            showRate("nacked",    nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsed);
+            showRate("received",  recvCountInterval,    recvStatsEnabled,                        elapsed);
 
             System.out.print((latencyCountInterval > 0 ?
                               ", min/avg/max latency: " +

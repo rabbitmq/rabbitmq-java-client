@@ -21,163 +21,86 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.UUID;
 
 public class ProducerConsumerSet {
-    private String exchangeType;
-    private String exchangeName;
-    private String queueName;
-    private int rateLimit;
-    private int producerCount;
-    private int consumerCount;
-    private int producerTxSize;
-    private int consumerTxSize;
-    private long confirm;
-    private boolean autoAck;
-    private int prefetchCount;
-    private int minMsgSize;
-    private int timeLimit;
-    private List<?> flags;
-    private boolean exclusive;
-    private boolean autoDelete;
     private final String id;
     private final Stats stats;
     private final ConnectionFactory factory;
+    private final ProducerConsumerParams p;
 
-    public ProducerConsumerSet(String id, Stats stats, ConnectionFactory factory) {
-        this.id = id;
+    public ProducerConsumerSet(Stats stats, ConnectionFactory factory,
+                               ProducerConsumerParams params) {
+        this.id = UUID.randomUUID().toString();
         this.stats = stats;
         this.factory = factory;
+        this.p = params;
     }
 
     public void run() throws IOException, InterruptedException {
-        Thread[] consumerThreads = new Thread[consumerCount];
-        Connection[] consumerConnections = new Connection[consumerCount];
-        for (int i = 0; i < consumerCount; i++) {
+        Thread[] consumerThreads = new Thread[p.consumerCount];
+        Connection[] consumerConnections = new Connection[p.consumerCount];
+        for (int i = 0; i < p.consumerCount; i++) {
             System.out.println("starting consumer #" + i);
             Connection conn = factory.newConnection();
             consumerConnections[i] = conn;
             Channel channel = conn.createChannel();
-            if (consumerTxSize > 0) channel.txSelect();
-            channel.exchangeDeclare(exchangeName, exchangeType);
+            if (p.consumerTxSize > 0) channel.txSelect();
+            channel.exchangeDeclare(p.exchangeName, p.exchangeType);
             String qName =
-                    channel.queueDeclare(queueName,
-                                         flags.contains("persistent"),
-                                         exclusive, autoDelete,
+                    channel.queueDeclare(p.queueName,
+                                         p.flags.contains("persistent"),
+                                         p.exclusive, p.autoDelete,
                                          null).getQueue();
-            if (prefetchCount > 0) channel.basicQos(prefetchCount);
-            channel.queueBind(qName, exchangeName, id);
+            if (p.prefetchCount > 0) channel.basicQos(p.prefetchCount);
+            channel.queueBind(qName, p.exchangeName, id);
             Thread t =
                 new Thread(new Consumer(channel, id, qName,
-                                        consumerTxSize, autoAck,
-                                        stats, timeLimit));
+                                        p.consumerTxSize, p.autoAck,
+                                        stats, p.timeLimit));
             consumerThreads[i] = t;
         }
 
-        Thread[] producerThreads = new Thread[producerCount];
-        Connection[] producerConnections = new Connection[producerCount];
-        Channel[] producerChannels = new Channel[producerCount];
-        for (int i = 0; i < producerCount; i++) {
+        Thread[] producerThreads = new Thread[p.producerCount];
+        Connection[] producerConnections = new Connection[p.producerCount];
+        Channel[] producerChannels = new Channel[p.producerCount];
+        for (int i = 0; i < p.producerCount; i++) {
             System.out.println("starting producer #" + i);
             Connection conn = factory.newConnection();
             producerConnections[i] = conn;
             Channel channel = conn.createChannel();
             producerChannels[i] = channel;
-            if (producerTxSize > 0) channel.txSelect();
-            if (confirm >= 0) channel.confirmSelect();
-            channel.exchangeDeclare(exchangeName, exchangeType);
-            final Producer p = new Producer(channel, exchangeName, id,
-                                            flags, producerTxSize,
-                                            rateLimit, minMsgSize, timeLimit,
-                                            confirm, stats);
-            channel.addReturnListener(p);
-            channel.addConfirmListener(p);
-            Thread t = new Thread(p);
+            if (p.producerTxSize > 0) channel.txSelect();
+            if (p.confirm >= 0) channel.confirmSelect();
+            channel.exchangeDeclare(p.exchangeName, p.exchangeType);
+            final Producer producer = new Producer(channel, p.exchangeName, id,
+                                                   p.flags, p.producerTxSize,
+                                                   p.rateLimit, p.minMsgSize, p.timeLimit,
+                                                   p.confirm, stats);
+            channel.addReturnListener(producer);
+            channel.addConfirmListener(producer);
+            Thread t = new Thread(producer);
             producerThreads[i] = t;
         }
 
-        for (int i = 0; i < consumerCount; i++) {
+        for (int i = 0; i < p.consumerCount; i++) {
             consumerThreads[i].start();
         }
 
-        for (int i = 0; i < producerCount; i++) {
+        for (int i = 0; i < p.producerCount; i++) {
             producerThreads[i].start();
         }
 
-        for (int i = 0; i < producerCount; i++) {
+        for (int i = 0; i < p.producerCount; i++) {
             producerThreads[i].join();
             producerChannels[i].clearReturnListeners();
             producerChannels[i].clearConfirmListeners();
             producerConnections[i].close();
         }
 
-        for (int i = 0; i < consumerCount; i++) {
+        for (int i = 0; i < p.consumerCount; i++) {
             consumerThreads[i].join();
             consumerConnections[i].close();
         }
-    }
-
-    public void setExchangeType(String exchangeType) {
-        this.exchangeType = exchangeType;
-    }
-
-    public void setExchangeName(String exchangeName) {
-        this.exchangeName = exchangeName;
-    }
-
-    public void setQueueName(String queueName) {
-        this.queueName = queueName;
-    }
-
-    public void setRateLimit(int rateLimit) {
-        this.rateLimit = rateLimit;
-    }
-
-    public void setProducerCount(int producerCount) {
-        this.producerCount = producerCount;
-    }
-
-    public void setConsumerCount(int consumerCount) {
-        this.consumerCount = consumerCount;
-    }
-
-    public void setProducerTxSize(int producerTxSize) {
-        this.producerTxSize = producerTxSize;
-    }
-
-    public void setConsumerTxSize(int consumerTxSize) {
-        this.consumerTxSize = consumerTxSize;
-    }
-
-    public void setConfirm(long confirm) {
-        this.confirm = confirm;
-    }
-
-    public void setAutoAck(boolean autoAck) {
-        this.autoAck = autoAck;
-    }
-
-    public void setPrefetchCount(int prefetchCount) {
-        this.prefetchCount = prefetchCount;
-    }
-
-    public void setMinMsgSize(int minMsgSize) {
-        this.minMsgSize = minMsgSize;
-    }
-
-    public void setTimeLimit(int timeLimit) {
-        this.timeLimit = timeLimit;
-    }
-
-    public void setFlags(List<?> flags) {
-        this.flags = flags;
-    }
-
-    public void setExclusive(boolean exclusive) {
-        this.exclusive = exclusive;
-    }
-
-    public void setAutoDelete(boolean autoDelete) {
-        this.autoDelete = autoDelete;
     }
 }
