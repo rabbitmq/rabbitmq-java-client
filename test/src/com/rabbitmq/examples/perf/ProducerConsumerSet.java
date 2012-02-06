@@ -117,145 +117,67 @@ public class ProducerConsumerSet {
         }
     }
 
-
-    public String getId() {
-        return id;
-    }
-
-    public Stats getStats() {
-        return stats;
-    }
-
-    public ConnectionFactory getFactory() {
-        return factory;
-    }
-
-    public String getExchangeType() {
-        return exchangeType;
-    }
-
     public void setExchangeType(String exchangeType) {
         this.exchangeType = exchangeType;
-    }
-
-    public String getExchangeName() {
-        return exchangeName;
     }
 
     public void setExchangeName(String exchangeName) {
         this.exchangeName = exchangeName;
     }
 
-    public String getQueueName() {
-        return queueName;
-    }
-
     public void setQueueName(String queueName) {
         this.queueName = queueName;
-    }
-
-    public int getRateLimit() {
-        return rateLimit;
     }
 
     public void setRateLimit(int rateLimit) {
         this.rateLimit = rateLimit;
     }
 
-    public int getProducerCount() {
-        return producerCount;
-    }
-
     public void setProducerCount(int producerCount) {
         this.producerCount = producerCount;
-    }
-
-    public int getConsumerCount() {
-        return consumerCount;
     }
 
     public void setConsumerCount(int consumerCount) {
         this.consumerCount = consumerCount;
     }
 
-    public int getProducerTxSize() {
-        return producerTxSize;
-    }
-
     public void setProducerTxSize(int producerTxSize) {
         this.producerTxSize = producerTxSize;
-    }
-
-    public int getConsumerTxSize() {
-        return consumerTxSize;
     }
 
     public void setConsumerTxSize(int consumerTxSize) {
         this.consumerTxSize = consumerTxSize;
     }
 
-    public long getConfirm() {
-        return confirm;
-    }
-
     public void setConfirm(long confirm) {
         this.confirm = confirm;
-    }
-
-    public boolean isAutoAck() {
-        return autoAck;
     }
 
     public void setAutoAck(boolean autoAck) {
         this.autoAck = autoAck;
     }
 
-    public int getPrefetchCount() {
-        return prefetchCount;
-    }
-
     public void setPrefetchCount(int prefetchCount) {
         this.prefetchCount = prefetchCount;
-    }
-
-    public int getMinMsgSize() {
-        return minMsgSize;
     }
 
     public void setMinMsgSize(int minMsgSize) {
         this.minMsgSize = minMsgSize;
     }
 
-    public int getTimeLimit() {
-        return timeLimit;
-    }
-
     public void setTimeLimit(int timeLimit) {
         this.timeLimit = timeLimit;
-    }
-
-    public List<?> getFlags() {
-        return flags;
     }
 
     public void setFlags(List<?> flags) {
         this.flags = flags;
     }
 
-    public boolean isExclusive() {
-        return exclusive;
-    }
-
     public void setExclusive(boolean exclusive) {
         this.exclusive = exclusive;
-    }
-
-    public boolean isAutoDelete() {
-        return autoDelete;
     }
 
     public void setAutoDelete(boolean autoDelete) {
         this.autoDelete = autoDelete;
     }
 }
-
