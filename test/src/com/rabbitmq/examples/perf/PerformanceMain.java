@@ -26,6 +26,7 @@ public class PerformanceMain {
     public static void main(String[] args) throws IOException, InterruptedException {
         simple();
         varying();
+        varying2d();
         ratevslatency();
     }
 
@@ -38,7 +39,18 @@ public class PerformanceMain {
 
     private static void varying() throws IOException, InterruptedException {
         ProducerConsumerParams params = new ProducerConsumerParams();
-        VaryingScenario scenario = new VaryingScenario(factory, params, "minMsgSize", new Object[] {0, 100, 10000, 1000000});
+        VaryingScenario scenario = new VaryingScenario(factory, params,
+                    new Variable("minMsgSize", 0, 100, 1000, 10000));
+        scenario.run();
+        scenario.getStats().print();
+    }
+
+    private static void varying2d() throws IOException, InterruptedException {
+        ProducerConsumerParams params = new ProducerConsumerParams();
+        params.setConsumerCount(0);
+        VaryingScenario scenario = new VaryingScenario(factory, params,
+                    new Variable("minMsgSize", 0, 1000, 10000),
+                    new Variable("producerCount", 1, 2, 5, 10));
         scenario.run();
         scenario.getStats().print();
     }

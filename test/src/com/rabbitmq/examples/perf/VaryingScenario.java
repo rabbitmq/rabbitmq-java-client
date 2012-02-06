@@ -23,29 +23,48 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class VaryingScenario {
     private ConnectionFactory factory;
     private ProducerConsumerParams params;
     private VaryingScenarioStats stats;
-    private String variable;
-    private Object[] values;
+    private Variable[] variables;
 
     public VaryingScenario(ConnectionFactory factory, ProducerConsumerParams params,
-                           String variable, Object[] values) {
+                           Variable... variables) {
         this.factory = factory;
         this.params = params;
-        this.variable = variable;
-        this.values = values;
+        this.variables = variables;
     }
 
     public void run() throws IOException, InterruptedException {
-        stats = new VaryingScenarioStats(variable);
+        stats = new VaryingScenarioStats(variables);
+        run(variables, new ArrayList<NameValue>());
+    }
 
-        for (Object value : values) {
-            setValue(params, variable, value);
-            new ProducerConsumerSet(stats.next(value), factory, params).run();
+    private void run(Variable[] variables, List<NameValue> values) throws IOException, InterruptedException {
+        if (variables.length > 0) {
+            Variable variable = variables[0];
+            Variable[] rest = rest(variables);
+            for (Object value : variable.getValues()) {
+                List<NameValue> values2 = new ArrayList<NameValue>(values);
+                values2.add(new NameValue(variable.getName(), value));
+                run(rest, values2);
+            }
         }
+        else {
+            for (NameValue nv : values) {
+                setValue(params, nv.getName(), nv.getValue());
+            }
+            new ProducerConsumerSet(stats.next(values), factory, params).run();
+        }
+    }
+
+    private Variable[] rest(Variable[] variables) {
+        return Arrays.copyOfRange(variables, 1, variables.length);
     }
 
     private static void setValue(Object obj, String name, Object value) {
@@ -53,7 +72,7 @@ public class VaryingScenario {
             PropertyDescriptor[] props = Introspector.getBeanInfo(obj.getClass()).getPropertyDescriptors();
             for (PropertyDescriptor prop : props) {
                 if (prop.getName().equals(name)) {
-                    prop.getWriteMethod().invoke(obj, new Object[]{value});
+                    prop.getWriteMethod().invoke(obj, value);
                     return;
                 }
             }

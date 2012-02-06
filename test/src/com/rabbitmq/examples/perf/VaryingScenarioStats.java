@@ -22,26 +22,31 @@ import java.util.List;
 import java.util.Map;
 
 public class VaryingScenarioStats {
-    private String variable;
-    private Map<Object, SimpleScenarioStats> results = new HashMap<Object, SimpleScenarioStats>();
-    private List<Object> values = new ArrayList<Object>();
+    private Variable[] variables;
+    private Map<List<NameValue>, SimpleScenarioStats> results = new HashMap<List<NameValue>, SimpleScenarioStats>();
+    private List<List<NameValue>> keys = new ArrayList<List<NameValue>>();
 
-    public VaryingScenarioStats(String variable) {
-        this.variable = variable;
+    public VaryingScenarioStats(Variable[] variables) {
+        this.variables = variables;
     }
 
-    public SimpleScenarioStats next(Object value) {
+    public SimpleScenarioStats next(List<NameValue> value) {
         SimpleScenarioStats stats = new SimpleScenarioStats(1000L);
+        keys.add(value);
         results.put(value, stats);
-        values.add(value);
         return stats;
     }
 
     public void print() {
-        System.out.println("Results varying " + variable);
-        for (Object value : values) {
-            System.out.println("Results for " + value);
-            results.get(value).print();
+        System.out.print("Results varying ");
+        for (Variable variable : variables) {
+            System.out.print(variable.getName() + " ");
+        }
+        System.out.println();
+
+        for (List<NameValue> key : keys) {
+            System.out.println("Results for " + key);
+            results.get(key).print();
         }
     }
 }
