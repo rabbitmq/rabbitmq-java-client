@@ -16,19 +16,21 @@
 
 package com.rabbitmq.examples.perf;
 
-import java.util.ArrayList;
-import java.util.List;
+public class OptionValue {
+    private final String name;
+    private final ProducerConsumerParams params;
 
-public class ProducerConsumerVariable implements Variable {
-    private final List<ProducerConsumerVariableValue> values = new ArrayList<ProducerConsumerVariableValue>();
-
-    public ProducerConsumerVariable(String name, Object... values) {
-        for (Object v : values) {
-            this.values.add(new ProducerConsumerVariableValue(name, v));
-        }
+    public OptionValue(String name, ProducerConsumerParams params) {
+        this.name = name;
+        this.params = params;
     }
 
-    public List<ProducerConsumerVariableValue> getValues() {
-        return values;
+    public ProducerConsumerParams getParams() {
+        return params;
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

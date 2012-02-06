@@ -22,13 +22,13 @@ import java.util.List;
 import java.util.Map;
 
 public class VaryingScenarioStats implements ScenarioStats {
-    private Map<List<VariableValue>, SimpleScenarioStats> results = new HashMap<List<VariableValue>, SimpleScenarioStats>();
-    private List<List<VariableValue>> keys = new ArrayList<List<VariableValue>>();
+    private Map<Object, SimpleScenarioStats> results = new HashMap<Object, SimpleScenarioStats>();
+    private List<Object> keys = new ArrayList<Object>();
 
     public VaryingScenarioStats() {
     }
 
-    public SimpleScenarioStats next(List<VariableValue> value) {
+    public SimpleScenarioStats next(List<?> value) {
         SimpleScenarioStats stats = new SimpleScenarioStats(1000L);
         keys.add(value);
         results.put(value, stats);
@@ -37,7 +37,7 @@ public class VaryingScenarioStats implements ScenarioStats {
 
     @Override
     public void print() {
-        for (List<VariableValue> key : keys) {
+        for (Object key : keys) {
             System.out.println("Results for " + key);
             results.get(key).print();
         }

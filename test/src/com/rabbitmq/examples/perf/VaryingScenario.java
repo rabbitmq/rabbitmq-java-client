@@ -27,7 +27,7 @@ public class VaryingScenario implements Scenario {
     private String name;
     private ConnectionFactory factory;
     private ProducerConsumerParams params;
-    private VaryingScenarioStats stats;
+    private VaryingScenarioStats stats = new VaryingScenarioStats();
     private Variable[] variables;
 
     public VaryingScenario(String name, ConnectionFactory factory,
@@ -40,7 +40,6 @@ public class VaryingScenario implements Scenario {
 
     @Override
     public void run() throws IOException, InterruptedException {
-        stats = new VaryingScenarioStats();
         run(variables, new ArrayList<VariableValue>());
     }
 

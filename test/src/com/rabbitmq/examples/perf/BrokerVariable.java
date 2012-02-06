@@ -27,11 +27,6 @@ public class BrokerVariable implements Variable {
     }
 
     @Override
-    public String getName() {
-        return "Broker Configuration";
-    }
-
-    @Override
     public List<BrokerVariableValue> getValues() {
         List<BrokerVariableValue> values = new ArrayList<BrokerVariableValue>();
         for (Broker b : brokers) {

@@ -48,7 +48,7 @@ class ProducerConsumerVariableValue implements VariableValue {
                     return;
                 }
             }
-            throw new RuntimeException("Could not find property " + name);
+            throw new RuntimeException("Could not find property " + name + " in " + obj.getClass());
         } catch (IntrospectionException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
@@ -58,6 +58,7 @@ class ProducerConsumerVariableValue implements VariableValue {
         }
     }
 
+    @Override
     public String toString() {
         return name + "=" + value;
     }
