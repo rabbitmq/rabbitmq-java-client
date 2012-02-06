@@ -100,7 +100,7 @@ public class MulticastMain {
             p.setTimeLimit(        timeLimit);
 
             ProducerConsumerSet set = new ProducerConsumerSet(stats, factory, p);
-            set.run();
+            set.run(true);
 
             stats.printFinal();
         }

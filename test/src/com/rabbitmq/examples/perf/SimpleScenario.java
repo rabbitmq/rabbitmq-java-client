@@ -20,23 +20,36 @@ import com.rabbitmq.client.ConnectionFactory;
 
 import java.io.IOException;
 
-public class SimpleScenario {
+public class SimpleScenario implements Scenario {
+    private String name;
     private ConnectionFactory factory;
     private ProducerConsumerParams params;
     private SimpleScenarioStats stats;
 
     public SimpleScenario(ConnectionFactory factory, ProducerConsumerParams params) {
+        this("untitled", factory, params);
+    }
+
+    public SimpleScenario(String name, ConnectionFactory factory, ProducerConsumerParams params) {
+        this.name = name;
         this.factory = factory;
         this.params = params;
     }
 
+    @Override
     public void run() throws IOException, InterruptedException {
         stats = new SimpleScenarioStats(1000L);
         ProducerConsumerSet set = new ProducerConsumerSet(stats, factory, params);
         set.run();
     }
 
+    @Override
     public SimpleScenarioStats getStats() {
         return stats;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

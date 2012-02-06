@@ -23,21 +23,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class VaryingScenario {
+public class VaryingScenario implements Scenario {
+    private String name;
     private ConnectionFactory factory;
     private ProducerConsumerParams params;
     private VaryingScenarioStats stats;
     private Variable[] variables;
 
-    public VaryingScenario(ConnectionFactory factory, ProducerConsumerParams params,
-                           Variable... variables) {
+    public VaryingScenario(String name, ConnectionFactory factory,
+                           ProducerConsumerParams params, Variable... variables) {
+        this.name = name;
         this.factory = factory;
         this.params = params;
         this.variables = variables;
     }
 
+    @Override
     public void run() throws IOException, InterruptedException {
-        stats = new VaryingScenarioStats(variables);
+        stats = new VaryingScenarioStats();
         run(variables, new ArrayList<VariableValue>());
     }
 
@@ -56,6 +59,8 @@ public class VaryingScenario {
                 value.setup(params);
             }
             new ProducerConsumerSet(stats.next(values), factory, params).run();
+            System.out.print("#");
+            System.out.flush();
             for (VariableValue value : values) {
                 value.teardown(params);
             }
@@ -66,7 +71,13 @@ public class VaryingScenario {
         return Arrays.copyOfRange(variables, 1, variables.length);
     }
 
-    public VaryingScenarioStats getStats() {
+    @Override
+    public ScenarioStats getStats() {
         return stats;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

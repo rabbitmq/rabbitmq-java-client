@@ -38,10 +38,16 @@ public class ProducerConsumerSet {
     }
 
     public void run() throws IOException, InterruptedException {
+        run(false);
+    }
+
+    public void run(boolean announceStartup) throws IOException, InterruptedException {
         Thread[] consumerThreads = new Thread[p.consumerCount];
         Connection[] consumerConnections = new Connection[p.consumerCount];
         for (int i = 0; i < p.consumerCount; i++) {
-            System.out.println("starting consumer #" + i);
+            if (announceStartup) {
+                System.out.println("starting consumer #" + i);
+            }
             Connection conn = factory.newConnection();
             consumerConnections[i] = conn;
             Channel channel = conn.createChannel();
@@ -65,7 +71,9 @@ public class ProducerConsumerSet {
         Connection[] producerConnections = new Connection[p.producerCount];
         Channel[] producerChannels = new Channel[p.producerCount];
         for (int i = 0; i < p.producerCount; i++) {
-            System.out.println("starting producer #" + i);
+            if (announceStartup) {
+                System.out.println("starting producer #" + i);
+            }
             Connection conn = factory.newConnection();
             producerConnections[i] = conn;
             Channel channel = conn.createChannel();

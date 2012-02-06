@@ -21,13 +21,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class VaryingScenarioStats {
-    private Variable[] variables;
+public class VaryingScenarioStats implements ScenarioStats {
     private Map<List<VariableValue>, SimpleScenarioStats> results = new HashMap<List<VariableValue>, SimpleScenarioStats>();
     private List<List<VariableValue>> keys = new ArrayList<List<VariableValue>>();
 
-    public VaryingScenarioStats(Variable[] variables) {
-        this.variables = variables;
+    public VaryingScenarioStats() {
     }
 
     public SimpleScenarioStats next(List<VariableValue> value) {
@@ -37,13 +35,8 @@ public class VaryingScenarioStats {
         return stats;
     }
 
+    @Override
     public void print() {
-        System.out.print("Results varying ");
-        for (Variable variable : variables) {
-            System.out.print(variable.getName() + " ");
-        }
-        System.out.println();
-
         for (List<VariableValue> key : keys) {
             System.out.println("Results for " + key);
             results.get(key).print();

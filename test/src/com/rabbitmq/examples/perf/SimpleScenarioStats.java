@@ -16,7 +16,7 @@
 
 package com.rabbitmq.examples.perf;
 
-class SimpleScenarioStats extends Stats {
+class SimpleScenarioStats extends Stats implements ScenarioStats {
     private static final int ignoreFirst = 3;
 
     private long elapsed;
@@ -43,6 +43,7 @@ class SimpleScenarioStats extends Stats {
         }
     }
 
+    @Override
     public void print() {
         System.out.println("Sent: " + getSendRate() + " msg/s");
         System.out.println("Recv: " + getRecvRate() + " msg/s");

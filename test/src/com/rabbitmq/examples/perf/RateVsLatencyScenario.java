@@ -20,16 +20,19 @@ import com.rabbitmq.client.ConnectionFactory;
 
 import java.io.IOException;
 
-public class RateVsLatencyScenario {
+public class RateVsLatencyScenario implements Scenario {
+    private String name;
     private ConnectionFactory factory;
     private ProducerConsumerParams params;
     private VaryingScenario impl;
 
-    public RateVsLatencyScenario(ConnectionFactory factory, ProducerConsumerParams params) {
+    public RateVsLatencyScenario(String name, ConnectionFactory factory, ProducerConsumerParams params) {
+        this.name = name;
         this.factory = factory;
         this.params = params;
     }
 
+    @Override
     public void run() throws IOException, InterruptedException {
         SimpleScenario s = new SimpleScenario(factory, params);
         s.run();
@@ -40,11 +43,18 @@ public class RateVsLatencyScenario {
         for (int i = 0; i < rates.length; i++) {
             rates[i] = (int) (factors[i] * maxRate);
         }
-        impl = new VaryingScenario(factory, params, new ProducerConsumerVariable("rateLimit", (Object[]) rates));
+        impl = new VaryingScenario("untitled", factory, params,
+                new ProducerConsumerVariable("rateLimit", (Object[]) rates));
         impl.run();
     }
 
-    public VaryingScenarioStats getStats() {
+    @Override
+    public ScenarioStats getStats() {
         return impl.getStats();
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

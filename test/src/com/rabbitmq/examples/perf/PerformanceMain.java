@@ -23,62 +23,58 @@ import java.io.IOException;
 public class PerformanceMain {
     private static final ConnectionFactory factory = new ConnectionFactory();
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws Exception {
         runStaticBrokerTests();
-        varyingBroker();
+        runTests(new Scenario[]{varyingBroker()});
     }
 
-    private static void runStaticBrokerTests() throws IOException, InterruptedException {
+    private static void runStaticBrokerTests() throws Exception {
         Broker broker = Broker.DEFAULT;
         broker.start();
-
-        simple();
-        varying();
-        varying2d();
-        ratevslatency();
-
+        runTests(new Scenario[]{simple(), varying(), varying2d(), ratevslatency()});
         broker.stop();
     }
 
-    private static void simple() throws IOException, InterruptedException {
-        ProducerConsumerParams params = new ProducerConsumerParams();
-        SimpleScenario scenario = new SimpleScenario(factory, params);
-        scenario.run();
-        scenario.getStats().print();
+    private static void runTests(Scenario[] scenarios) throws Exception {
+        for (Scenario scenario : scenarios) {
+            System.out.println();
+            System.out.print("Running scenario '" + scenario.getName() + "' ");
+            scenario.run();
+            System.out.println();
+            System.out.println();
+            scenario.getStats().print();
+        }
     }
 
-    private static void varying() throws IOException, InterruptedException {
+    private static Scenario simple() throws IOException, InterruptedException {
         ProducerConsumerParams params = new ProducerConsumerParams();
-        VaryingScenario scenario = new VaryingScenario(factory, params,
+        return new SimpleScenario("simplest", factory, params);
+    }
+
+    private static Scenario varying() throws IOException, InterruptedException {
+        ProducerConsumerParams params = new ProducerConsumerParams();
+        return new VaryingScenario("message_sizes", factory, params,
                     var("minMsgSize", 0, 100, 1000, 10000));
-        scenario.run();
-        scenario.getStats().print();
     }
 
-    private static void varying2d() throws IOException, InterruptedException {
+    private static Scenario varying2d() throws IOException, InterruptedException {
         ProducerConsumerParams params = new ProducerConsumerParams();
         params.setConsumerCount(0);
-        VaryingScenario scenario = new VaryingScenario(factory, params,
+        return new VaryingScenario("message_sizes_and_producers", factory, params,
                     var("minMsgSize", 0, 1000, 10000),
                     var("producerCount", 1, 2, 5, 10));
-        scenario.run();
-        scenario.getStats().print();
     }
 
-    private static void varyingBroker() throws IOException, InterruptedException {
+    private static Scenario varyingBroker() throws IOException, InterruptedException {
         ProducerConsumerParams params = new ProducerConsumerParams();
-        VaryingScenario scenario = new VaryingScenario(factory, params,
+        return new VaryingScenario("message_sizes_and_broker_config", factory, params,
                     var("minMsgSize", 0, 1000, 10000),
                     new BrokerVariable(Broker.DEFAULT, Broker.HIPE, Broker.COARSE, Broker.HIPE_COARSE));
-        scenario.run();
-        scenario.getStats().print();
     }
 
-    private static void ratevslatency() throws IOException, InterruptedException {
+    private static Scenario ratevslatency() throws IOException, InterruptedException {
         ProducerConsumerParams params = new ProducerConsumerParams();
-        RateVsLatencyScenario scenario = new RateVsLatencyScenario(factory, params);
-        scenario.run();
-        scenario.getStats().print();
+        return new RateVsLatencyScenario("rate_vs_latency", factory, params);
     }
 
     private static Variable var(String name, Object... values) {
