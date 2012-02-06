@@ -40,7 +40,7 @@ public class RateVsLatencyScenario {
         for (int i = 0; i < rates.length; i++) {
             rates[i] = (int) (factors[i] * maxRate);
         }
-        impl = new VaryingScenario(factory, params, new Variable("rateLimit", (Object[]) rates));
+        impl = new VaryingScenario(factory, params, new ProducerConsumerVariable("rateLimit", (Object[]) rates));
         impl.run();
     }
 

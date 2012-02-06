@@ -16,24 +16,27 @@
 
 package com.rabbitmq.examples.perf;
 
-class NameValue {
-    private final String name;
-    private final Object value;
+import java.util.ArrayList;
+import java.util.List;
 
-    NameValue(String name, Object value) {
-        this.name = name;
-        this.value = value;
+public class BrokerVariable implements Variable {
+    private final Broker[] brokers;
+
+    public BrokerVariable(Broker... brokers) {
+        this.brokers = brokers;
     }
 
+    @Override
     public String getName() {
-        return name;
+        return "Broker Configuration";
     }
 
-    public Object getValue() {
-        return value;
-    }
-
-    public String toString() {
-        return name + "=" + value;
+    @Override
+    public List<BrokerVariableValue> getValues() {
+        List<BrokerVariableValue> values = new ArrayList<BrokerVariableValue>();
+        for (Broker b : brokers) {
+            values.add(new BrokerVariableValue(b));
+        }
+        return values;
     }
 }

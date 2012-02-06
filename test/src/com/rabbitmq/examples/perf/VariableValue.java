@@ -16,9 +16,7 @@
 
 package com.rabbitmq.examples.perf;
 
-import java.util.List;
-
-public interface Variable {
-    public String getName();
-    public List<? extends VariableValue> getValues();
+public interface VariableValue {
+    public void setup(ProducerConsumerParams params);
+    public void teardown(ProducerConsumerParams params);
 }

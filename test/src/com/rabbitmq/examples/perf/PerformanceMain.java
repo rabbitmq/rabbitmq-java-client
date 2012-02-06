@@ -24,10 +24,20 @@ public class PerformanceMain {
     private static final ConnectionFactory factory = new ConnectionFactory();
 
     public static void main(String[] args) throws IOException, InterruptedException {
+        runStaticBrokerTests();
+        varyingBroker();
+    }
+
+    private static void runStaticBrokerTests() throws IOException, InterruptedException {
+        Broker broker = Broker.DEFAULT;
+        broker.start();
+
         simple();
         varying();
         varying2d();
         ratevslatency();
+
+        broker.stop();
     }
 
     private static void simple() throws IOException, InterruptedException {
@@ -40,7 +50,7 @@ public class PerformanceMain {
     private static void varying() throws IOException, InterruptedException {
         ProducerConsumerParams params = new ProducerConsumerParams();
         VaryingScenario scenario = new VaryingScenario(factory, params,
-                    new Variable("minMsgSize", 0, 100, 1000, 10000));
+                    var("minMsgSize", 0, 100, 1000, 10000));
         scenario.run();
         scenario.getStats().print();
     }
@@ -49,8 +59,17 @@ public class PerformanceMain {
         ProducerConsumerParams params = new ProducerConsumerParams();
         params.setConsumerCount(0);
         VaryingScenario scenario = new VaryingScenario(factory, params,
-                    new Variable("minMsgSize", 0, 1000, 10000),
-                    new Variable("producerCount", 1, 2, 5, 10));
+                    var("minMsgSize", 0, 1000, 10000),
+                    var("producerCount", 1, 2, 5, 10));
+        scenario.run();
+        scenario.getStats().print();
+    }
+
+    private static void varyingBroker() throws IOException, InterruptedException {
+        ProducerConsumerParams params = new ProducerConsumerParams();
+        VaryingScenario scenario = new VaryingScenario(factory, params,
+                    var("minMsgSize", 0, 1000, 10000),
+                    new BrokerVariable(Broker.DEFAULT, Broker.HIPE, Broker.COARSE, Broker.HIPE_COARSE));
         scenario.run();
         scenario.getStats().print();
     }
@@ -60,5 +79,9 @@ public class PerformanceMain {
         RateVsLatencyScenario scenario = new RateVsLatencyScenario(factory, params);
         scenario.run();
         scenario.getStats().print();
+    }
+
+    private static Variable var(String name, Object... values) {
+        return new ProducerConsumerVariable(name, values);
     }
 }

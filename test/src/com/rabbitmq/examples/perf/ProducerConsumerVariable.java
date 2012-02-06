@@ -16,9 +16,25 @@
 
 package com.rabbitmq.examples.perf;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public interface Variable {
-    public String getName();
-    public List<? extends VariableValue> getValues();
+public class ProducerConsumerVariable implements Variable {
+    private final String name;
+    private final List<ProducerConsumerVariableValue> values = new ArrayList<ProducerConsumerVariableValue>();
+
+    public ProducerConsumerVariable(String name, Object... values) {
+        this.name = name;
+        for (Object v : values) {
+            this.values.add(new ProducerConsumerVariableValue(name, v));
+        }
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public List<ProducerConsumerVariableValue> getValues() {
+        return values;
+    }
 }
