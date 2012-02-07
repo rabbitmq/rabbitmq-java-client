@@ -38,7 +38,7 @@ public class RateVsLatencyScenario implements Scenario {
         s.run();
         SimpleScenarioStats m = s.getStats();
         int maxRate = (int) (m.getRecvRate() + m.getSendRate()) / 2;
-        Double[] factors = new Double[]{0.8, 0.9, 0.95, 0.97, 0.99, 1.1};
+        Double[] factors = new Double[]{0.8, 0.9, 0.95, 0.97, 0.99, 1.01, 1.1};
         Integer [] rates = new Integer[factors.length];
         for (int i = 0; i < rates.length; i++) {
             rates[i] = (int) (factors[i] * maxRate);
