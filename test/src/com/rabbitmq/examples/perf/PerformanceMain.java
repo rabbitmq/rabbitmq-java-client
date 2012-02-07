@@ -57,10 +57,8 @@ public class PerformanceMain {
 
     private static void runTests(Scenario[] scenarios) throws Exception {
         for (Scenario scenario : scenarios) {
-            System.out.println();
             System.out.print("Running scenario '" + scenario.getName() + "' ");
             scenario.run();
-            System.out.println();
             System.out.println();
             results.put(scenario.getName(), scenario.getStats().results());
         }
