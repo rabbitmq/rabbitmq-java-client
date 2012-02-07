@@ -44,7 +44,7 @@ public class PerformanceMain {
     private static void writeJSON() throws IOException {
         FileWriter outFile = new FileWriter("results.js");
         PrintWriter out = new PrintWriter(outFile);
-        out.println(new JSONWriter().write(results));
+        out.println(new JSONWriter(true).write(results));
         outFile.close();
     }
 
