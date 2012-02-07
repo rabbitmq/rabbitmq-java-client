@@ -36,7 +36,7 @@ public class PerformanceMain {
     private static void runStaticBrokerTests() throws Exception {
         Broker broker = Broker.DEFAULT;
         broker.start();
-        runTests(new Scenario[]{simple(), multiple(), varying(), varying2d(), ratevslatency()});
+        runTests(new Scenario[]{no_ack(), ack(), ack_confirm(), ack_confirm_persist(), varying(), varying2d(), ratevslatency()});
         broker.stop();
     }
 
@@ -51,29 +51,30 @@ public class PerformanceMain {
         }
     }
 
-    private static Scenario simple() throws IOException, InterruptedException {
+    private static Scenario no_ack() throws IOException, InterruptedException {
         ProducerConsumerParams params = new ProducerConsumerParams();
-        return new SimpleScenario("simplest", factory, params);
+        return new SimpleScenario("no_ack", factory, params);
     }
 
-    private static Scenario multiple() throws IOException, InterruptedException {
-        // TODO builder?
-        ProducerConsumerParams no_acks = new ProducerConsumerParams();
-        ProducerConsumerParams acks = new ProducerConsumerParams();
-        acks.setAutoAck(false);
-        ProducerConsumerParams acks_confirms = new ProducerConsumerParams();
-        acks_confirms.setAutoAck(false);
-        acks_confirms.setConfirm(1000);
-        ProducerConsumerParams a_c_persistent = new ProducerConsumerParams();
-        a_c_persistent.setAutoAck(false);
-        a_c_persistent.setConfirm(1000);
-        a_c_persistent.setFlags(PERSISTENT);
+    private static Scenario ack() throws IOException, InterruptedException {
+        ProducerConsumerParams params = new ProducerConsumerParams();
+        params.setAutoAck(false);
+        return new SimpleScenario("ack", factory, params);
+    }
 
-        return new MultipleScenario("message_options", factory,
-            opt("no_acks",        no_acks),
-            opt("acks",           acks),
-            opt("acks_confirms",  acks_confirms),
-            opt("a_c_persistent", a_c_persistent));
+    private static Scenario ack_confirm() throws IOException, InterruptedException {
+        ProducerConsumerParams params = new ProducerConsumerParams();
+        params.setAutoAck(false);
+        params.setConfirm(1000);
+        return new SimpleScenario("ack_confirm", factory, params);
+    }
+
+    private static Scenario ack_confirm_persist() throws IOException, InterruptedException {
+        ProducerConsumerParams params = new ProducerConsumerParams();
+        params.setAutoAck(false);
+        params.setConfirm(1000);
+        params.setFlags(PERSISTENT);
+        return new SimpleScenario("ack_confirm_persist", factory, params);
     }
 
     private static Scenario varying() throws IOException, InterruptedException {
@@ -104,9 +105,5 @@ public class PerformanceMain {
 
     private static Variable var(String name, Object... values) {
         return new ProducerConsumerVariable(name, values);
-    }
-
-    private static OptionValue opt(String name, ProducerConsumerParams params) {
-        return new OptionValue(name, params);
     }
 }

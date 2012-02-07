@@ -51,6 +51,7 @@ public class Broker {
         try {
             writeConfig();
 
+            System.out.println("Starting broker '" + name + "'...");
             String pidfile = BASE + "pid";
             ProcessBuilder pb = new ProcessBuilder(SCRIPTS + "rabbitmq-server");
             pb.environment().put("RABBITMQ_PID_FILE", pidfile);
@@ -76,6 +77,7 @@ public class Broker {
     }
 
     public void stop() {
+        System.out.println("Stopping broker '" + name + "' ...");
         try {
             Host.executeCommand(SCRIPTS + "rabbitmqctl stop");
         } catch (IOException e) {
