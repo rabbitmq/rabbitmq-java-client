@@ -17,20 +17,35 @@
 package com.rabbitmq.examples.perf;
 
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.tools.json.JSONWriter;
 
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PerformanceMain {
     private static final ConnectionFactory factory = new ConnectionFactory();
 
-    private static final List<?> NO_FLAGS = Arrays.asList();
+    //private static final List<?> NO_FLAGS = Arrays.asList();
     private static final List<?> PERSISTENT = Arrays.asList("persistent");
+
+    private static Map<String, Object> results = new HashMap<String, Object>();
 
     public static void main(String[] args) throws Exception {
         runStaticBrokerTests();
         runTests(new Scenario[]{varyingBroker()});
+        writeJSON();
+    }
+
+    private static void writeJSON() throws IOException {
+        FileWriter outFile = new FileWriter("results.js");
+        PrintWriter out = new PrintWriter(outFile);
+        out.println(new JSONWriter().write(results));
+        outFile.close();
     }
 
     private static void runStaticBrokerTests() throws Exception {
@@ -47,7 +62,7 @@ public class PerformanceMain {
             scenario.run();
             System.out.println();
             System.out.println();
-            scenario.getStats().print();
+            results.put(scenario.getName(), scenario.getStats().results());
         }
     }
 

@@ -19,4 +19,7 @@ package com.rabbitmq.examples.perf;
 public interface VariableValue {
     public void setup(MulticastParams params);
     public void teardown(MulticastParams params);
+
+    public String getName();
+    public Object getValue();
 }

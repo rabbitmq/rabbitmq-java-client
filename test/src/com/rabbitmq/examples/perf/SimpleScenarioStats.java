@@ -16,47 +16,71 @@
 
 package com.rabbitmq.examples.perf;
 
-class SimpleScenarioStats extends Stats implements ScenarioStats {
-    private static final int ignoreFirst = 3;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-    private long elapsed;
-    private long ignored = ignoreFirst;
+class SimpleScenarioStats extends Stats implements ScenarioStats {
+    private static final int IGNORE_FIRST = 3;
+
+    private List<Map<String, Object>> samples = new ArrayList<Map<String, Object>>();
 
     public SimpleScenarioStats(long interval) {
         super(interval);
     }
 
     @Override
-    protected void report(long now, long elapsed) {
-        if (ignored > 0) {
-            ignored--;
-        }
-        else if (ignored == 0) {
+    protected void report(long now) {
+        if (samples.size() == IGNORE_FIRST) {
             cumulativeLatencyTotal = 0;
             latencyCountTotal      = 0;
             sendCountTotal         = 0;
             recvCountTotal         = 0;
-            ignored = -1;
+            elapsedTotal           = 0;
         }
-        else {
-            this.elapsed += elapsed;
+
+        Map<String, Object> sample = new HashMap<String, Object>();
+        sample.put("send_rate", rate(sendCountInterval, elapsedInterval));
+        sample.put("recv_rate", rate(recvCountInterval, elapsedInterval));
+        if (latencyCountInterval > 0) {
+            sample.put("avg_latency", intervalAverageLatency());
+            sample.put("min_latency", minLatency / 1000L);
+            sample.put("max_latency", maxLatency / 1000L);
         }
+        samples.add(sample);
     }
 
     @Override
-    public void print() {
-        System.out.println("Sent: " + getSendRate() + " msg/s");
-        System.out.println("Recv: " + getRecvRate() + " msg/s");
+    public Map<String, Object> results() {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("send_rate", getSendRate());
+        map.put("recv_rate", getRecvRate());
         if (latencyCountTotal > 0) {
-            System.out.println("Avg latency: " + cumulativeLatencyTotal / (1000L * latencyCountTotal) + "us");
+            map.put("avg_latency", overallAverageLatency());
         }
+        map.put("samples", samples);
+
+        return map;
     }
 
     public double getSendRate() {
-        return 1000.0 * sendCountTotal / elapsed;
+        return rate(sendCountTotal, elapsedTotal);
     }
 
     public double getRecvRate() {
-        return 1000.0 * recvCountTotal / elapsed;
+        return rate(recvCountTotal, elapsedTotal);
+    }
+
+    private double rate(long count, long elapsed) {
+        return 1000.0 * count / elapsed;
+    }
+
+    private long overallAverageLatency() {
+        return cumulativeLatencyTotal / (1000L * latencyCountTotal);
+    }
+
+    private long intervalAverageLatency() {
+        return cumulativeLatencyInterval / (1000L * latencyCountInterval);
     }
 }

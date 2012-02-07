@@ -17,5 +17,5 @@
 package com.rabbitmq.examples.perf;
 
 public interface ScenarioStats {
-    public void print();
+    public Object results();
 }

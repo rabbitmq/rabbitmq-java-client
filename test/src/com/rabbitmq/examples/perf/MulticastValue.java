@@ -59,7 +59,12 @@ class MulticastValue implements VariableValue {
     }
 
     @Override
-    public String toString() {
-        return name + "=" + value;
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public Object getValue() {
+        return value;
     }
 }

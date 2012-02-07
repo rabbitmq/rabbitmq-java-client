@@ -177,14 +177,14 @@ public class MulticastMain {
         }
 
         @Override
-        protected void report(long now, long elapsed) {
+        protected void report(long now) {
             System.out.print("time: " + String.format("%.3f", (now - startTime)/1000.0) + "s");
 
-            showRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsed);
-            showRate("returned",  returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsed);
-            showRate("confirmed", confirmCountInterval, sendStatsEnabled && confirmStatsEnabled, elapsed);
-            showRate("nacked",    nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsed);
-            showRate("received",  recvCountInterval,    recvStatsEnabled,                        elapsed);
+            showRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval);
+            showRate("returned",  returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsedInterval);
+            showRate("confirmed", confirmCountInterval, sendStatsEnabled && confirmStatsEnabled, elapsedInterval);
+            showRate("nacked",    nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsedInterval);
+            showRate("received",  recvCountInterval,    recvStatsEnabled,                        elapsedInterval);
 
             System.out.print((latencyCountInterval > 0 ?
                               ", min/avg/max latency: " +

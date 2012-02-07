@@ -38,6 +38,9 @@ public abstract class Stats {
     protected long    cumulativeLatencyInterval;
     protected long    cumulativeLatencyTotal;
 
+    protected long    elapsedInterval;
+    protected long    elapsedTotal;
+
     public Stats(long interval) {
         this.interval = interval;
         startTime = System.currentTimeMillis();
@@ -61,15 +64,16 @@ public abstract class Stats {
 
     private void report() {
         long now = System.currentTimeMillis();
-        long elapsed = now - lastStatsTime;
+        elapsedInterval = now - lastStatsTime;
 
-        if (elapsed >= interval) {
-            report(now, elapsed);
+        if (elapsedInterval >= interval) {
+            elapsedTotal += elapsedInterval;
+            report(now);
             reset(now);
         }
     }
 
-    protected abstract void report(long now, long elapsed);
+    protected abstract void report(long now);
 
     public synchronized void handleSend() {
         sendCountInterval++;

@@ -34,7 +34,12 @@ public class BrokerValue implements VariableValue {
     }
 
     @Override
-    public String toString() {
+    public String getName() {
+        return "broker_type";
+    }
+
+    @Override
+    public String getValue() {
         return broker.getName();
     }
 }
