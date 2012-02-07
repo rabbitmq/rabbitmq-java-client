@@ -41,12 +41,12 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
         }
 
         Map<String, Object> sample = new HashMap<String, Object>();
-        sample.put("send_rate", rate(sendCountInterval, elapsedInterval));
-        sample.put("recv_rate", rate(recvCountInterval, elapsedInterval));
+        sample.put("send-rate", rate(sendCountInterval, elapsedInterval));
+        sample.put("recv-rate", rate(recvCountInterval, elapsedInterval));
         if (latencyCountInterval > 0) {
-            sample.put("avg_latency", intervalAverageLatency());
-            sample.put("min_latency", minLatency / 1000L);
-            sample.put("max_latency", maxLatency / 1000L);
+            sample.put("avg-latency", intervalAverageLatency());
+            sample.put("min-latency", minLatency / 1000L);
+            sample.put("max-latency", maxLatency / 1000L);
         }
         samples.add(sample);
     }
@@ -54,10 +54,10 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
     @Override
     public Map<String, Object> results() {
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("send_rate", getSendRate());
-        map.put("recv_rate", getRecvRate());
+        map.put("send-rate", getSendRate());
+        map.put("recv-rate", getRecvRate());
         if (latencyCountTotal > 0) {
-            map.put("avg_latency", overallAverageLatency());
+            map.put("avg-latency", overallAverageLatency());
         }
         map.put("samples", samples);
 
