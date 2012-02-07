@@ -19,7 +19,7 @@ package com.rabbitmq.examples.perf;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProducerConsumerParams {
+public class MulticastParams {
     protected long confirm = -1;
     protected int consumerCount = 1;
     protected int producerCount = 1;

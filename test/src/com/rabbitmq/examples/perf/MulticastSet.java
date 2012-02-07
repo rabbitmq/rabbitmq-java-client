@@ -23,14 +23,14 @@ import com.rabbitmq.client.ConnectionFactory;
 import java.io.IOException;
 import java.util.UUID;
 
-public class ProducerConsumerSet {
+public class MulticastSet {
     private final String id;
     private final Stats stats;
     private final ConnectionFactory factory;
-    private final ProducerConsumerParams p;
+    private final MulticastParams p;
 
-    public ProducerConsumerSet(Stats stats, ConnectionFactory factory,
-                               ProducerConsumerParams params) {
+    public MulticastSet(Stats stats, ConnectionFactory factory,
+                        MulticastParams params) {
         this.id = UUID.randomUUID().toString();
         this.stats = stats;
         this.factory = factory;

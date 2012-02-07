@@ -52,25 +52,25 @@ public class PerformanceMain {
     }
 
     private static Scenario no_ack() throws IOException, InterruptedException {
-        ProducerConsumerParams params = new ProducerConsumerParams();
+        MulticastParams params = new MulticastParams();
         return new SimpleScenario("no_ack", factory, params);
     }
 
     private static Scenario ack() throws IOException, InterruptedException {
-        ProducerConsumerParams params = new ProducerConsumerParams();
+        MulticastParams params = new MulticastParams();
         params.setAutoAck(false);
         return new SimpleScenario("ack", factory, params);
     }
 
     private static Scenario ack_confirm() throws IOException, InterruptedException {
-        ProducerConsumerParams params = new ProducerConsumerParams();
+        MulticastParams params = new MulticastParams();
         params.setAutoAck(false);
         params.setConfirm(1000);
         return new SimpleScenario("ack_confirm", factory, params);
     }
 
     private static Scenario ack_confirm_persist() throws IOException, InterruptedException {
-        ProducerConsumerParams params = new ProducerConsumerParams();
+        MulticastParams params = new MulticastParams();
         params.setAutoAck(false);
         params.setConfirm(1000);
         params.setFlags(PERSISTENT);
@@ -78,13 +78,13 @@ public class PerformanceMain {
     }
 
     private static Scenario varying() throws IOException, InterruptedException {
-        ProducerConsumerParams params = new ProducerConsumerParams();
+        MulticastParams params = new MulticastParams();
         return new VaryingScenario("message_sizes", factory, params,
                     var("minMsgSize", 0, 100, 1000, 10000));
     }
 
     private static Scenario varying2d() throws IOException, InterruptedException {
-        ProducerConsumerParams params = new ProducerConsumerParams();
+        MulticastParams params = new MulticastParams();
         params.setConsumerCount(0);
         return new VaryingScenario("message_sizes_and_producers", factory, params,
                     var("minMsgSize", 0, 1000, 10000),
@@ -92,18 +92,18 @@ public class PerformanceMain {
     }
 
     private static Scenario varyingBroker() throws IOException, InterruptedException {
-        ProducerConsumerParams params = new ProducerConsumerParams();
+        MulticastParams params = new MulticastParams();
         return new VaryingScenario("message_sizes_and_broker_config", factory, params,
                     var("minMsgSize", 0, 1000, 10000),
                     new BrokerVariable(Broker.DEFAULT, Broker.HIPE, Broker.COARSE, Broker.HIPE_COARSE));
     }
 
     private static Scenario ratevslatency() throws IOException, InterruptedException {
-        ProducerConsumerParams params = new ProducerConsumerParams();
+        MulticastParams params = new MulticastParams();
         return new RateVsLatencyScenario("rate_vs_latency", factory, params);
     }
 
     private static Variable var(String name, Object... values) {
-        return new ProducerConsumerVariable(name, values);
+        return new MulticastVariable(name, values);
     }
 }

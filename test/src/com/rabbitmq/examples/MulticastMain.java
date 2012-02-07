@@ -18,10 +18,9 @@ package com.rabbitmq.examples;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
-import com.rabbitmq.examples.perf.ProducerConsumerParams;
-import com.rabbitmq.examples.perf.ProducerConsumerSet;
+import com.rabbitmq.examples.perf.MulticastParams;
+import com.rabbitmq.examples.perf.MulticastSet;
 import com.rabbitmq.examples.perf.Stats;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -81,7 +80,7 @@ public class MulticastMain {
             factory.setRequestedHeartbeat(heartbeat);
 
 
-            ProducerConsumerParams p = new ProducerConsumerParams();
+            MulticastParams p = new MulticastParams();
             p.setAutoAck(          autoAck);
             p.setAutoDelete(       !exclusive);
             p.setConfirm(          confirm);
@@ -99,7 +98,7 @@ public class MulticastMain {
             p.setRateLimit(        rateLimit);
             p.setTimeLimit(        timeLimit);
 
-            ProducerConsumerSet set = new ProducerConsumerSet(stats, factory, p);
+            MulticastSet set = new MulticastSet(stats, factory, p);
             set.run(true);
 
             stats.printFinal();

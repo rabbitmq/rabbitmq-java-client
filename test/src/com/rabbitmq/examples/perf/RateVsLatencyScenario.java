@@ -23,10 +23,10 @@ import java.io.IOException;
 public class RateVsLatencyScenario implements Scenario {
     private String name;
     private ConnectionFactory factory;
-    private ProducerConsumerParams params;
+    private MulticastParams params;
     private VaryingScenario impl;
 
-    public RateVsLatencyScenario(String name, ConnectionFactory factory, ProducerConsumerParams params) {
+    public RateVsLatencyScenario(String name, ConnectionFactory factory, MulticastParams params) {
         this.name = name;
         this.factory = factory;
         this.params = params;
@@ -44,7 +44,7 @@ public class RateVsLatencyScenario implements Scenario {
             rates[i] = (int) (factors[i] * maxRate);
         }
         impl = new VaryingScenario("untitled", factory, params,
-                new ProducerConsumerVariable("rateLimit", (Object[]) rates));
+                new MulticastVariable("rateLimit", (Object[]) rates));
         impl.run();
     }
 

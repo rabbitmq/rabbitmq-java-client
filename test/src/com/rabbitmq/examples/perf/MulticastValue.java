@@ -21,22 +21,22 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 
-class ProducerConsumerVariableValue implements VariableValue {
+class MulticastValue implements VariableValue {
     private final String name;
     private final Object value;
 
-    ProducerConsumerVariableValue(String name, Object value) {
+    MulticastValue(String name, Object value) {
         this.name = name;
         this.value = value;
     }
 
     @Override
-    public void setup(ProducerConsumerParams params) {
+    public void setup(MulticastParams params) {
         setValue(params, name, value);
     }
 
     @Override
-    public void teardown(ProducerConsumerParams params) {
+    public void teardown(MulticastParams params) {
     }
 
     private static void setValue(Object obj, String name, Object value) {

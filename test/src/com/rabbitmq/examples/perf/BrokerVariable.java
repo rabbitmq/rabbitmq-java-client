@@ -27,10 +27,10 @@ public class BrokerVariable implements Variable {
     }
 
     @Override
-    public List<BrokerVariableValue> getValues() {
-        List<BrokerVariableValue> values = new ArrayList<BrokerVariableValue>();
+    public List<BrokerValue> getValues() {
+        List<BrokerValue> values = new ArrayList<BrokerValue>();
         for (Broker b : brokers) {
-            values.add(new BrokerVariableValue(b));
+            values.add(new BrokerValue(b));
         }
         return values;
     }

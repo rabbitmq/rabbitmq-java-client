@@ -26,12 +26,12 @@ import java.util.List;
 public class VaryingScenario implements Scenario {
     private String name;
     private ConnectionFactory factory;
-    private ProducerConsumerParams params;
+    private MulticastParams params;
     private VaryingScenarioStats stats = new VaryingScenarioStats();
     private Variable[] variables;
 
     public VaryingScenario(String name, ConnectionFactory factory,
-                           ProducerConsumerParams params, Variable... variables) {
+                           MulticastParams params, Variable... variables) {
         this.name = name;
         this.factory = factory;
         this.params = params;
@@ -57,7 +57,7 @@ public class VaryingScenario implements Scenario {
             for (VariableValue value : values) {
                 value.setup(params);
             }
-            new ProducerConsumerSet(stats.next(values), factory, params).run();
+            new MulticastSet(stats.next(values), factory, params).run();
             System.out.print("#");
             System.out.flush();
             for (VariableValue value : values) {

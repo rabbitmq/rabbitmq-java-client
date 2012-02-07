@@ -16,19 +16,25 @@
 
 package com.rabbitmq.examples.perf;
 
-import java.util.ArrayList;
-import java.util.List;
+public class BrokerValue implements VariableValue {
+    private final Broker broker;
 
-public class ProducerConsumerVariable implements Variable {
-    private final List<ProducerConsumerVariableValue> values = new ArrayList<ProducerConsumerVariableValue>();
-
-    public ProducerConsumerVariable(String name, Object... values) {
-        for (Object v : values) {
-            this.values.add(new ProducerConsumerVariableValue(name, v));
-        }
+    public BrokerValue(Broker broker) {
+        this.broker = broker;
     }
 
-    public List<ProducerConsumerVariableValue> getValues() {
-        return values;
+    @Override
+    public void setup(MulticastParams params) {
+        broker.start();
+    }
+
+    @Override
+    public void teardown(MulticastParams params) {
+        broker.stop();
+    }
+
+    @Override
+    public String toString() {
+        return broker.getName();
     }
 }

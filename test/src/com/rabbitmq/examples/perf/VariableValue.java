@@ -17,6 +17,6 @@
 package com.rabbitmq.examples.perf;
 
 public interface VariableValue {
-    public void setup(ProducerConsumerParams params);
-    public void teardown(ProducerConsumerParams params);
+    public void setup(MulticastParams params);
+    public void teardown(MulticastParams params);
 }
