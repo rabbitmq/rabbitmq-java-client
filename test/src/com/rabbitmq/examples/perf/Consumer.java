@@ -35,11 +35,12 @@ public class Consumer implements Runnable {
     private int              txSize;
     private boolean          autoAck;
     private Stats stats;
+    private int              msgLimit;
     private long             timeLimit;
 
     public Consumer(Channel channel, String id,
                     String queueName, int txSize, boolean autoAck,
-                    Stats stats, int timeLimit) {
+                    Stats stats, int msgLimit, int timeLimit) {
 
         this.channel   = channel;
         this.id        = id;
@@ -47,6 +48,7 @@ public class Consumer implements Runnable {
         this.txSize    = txSize;
         this.autoAck   = autoAck;
         this.stats     = stats;
+        this.msgLimit  = msgLimit;
         this.timeLimit = 1000L * timeLimit;
     }
 
@@ -60,7 +62,8 @@ public class Consumer implements Runnable {
             q = new QueueingConsumer(channel);
             channel.basicConsume(queueName, autoAck, q);
 
-            while (timeLimit == 0 || now < startTime + timeLimit) {
+            while ((timeLimit == 0 || now < startTime + timeLimit) &&
+                   totalMsgCount < msgLimit) {
                 QueueingConsumer.Delivery delivery;
                 try {
                     if (timeLimit == 0) {

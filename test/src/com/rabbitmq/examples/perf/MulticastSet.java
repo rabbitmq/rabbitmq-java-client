@@ -63,8 +63,19 @@ public class MulticastSet {
             Thread t =
                 new Thread(new Consumer(channel, id, qName,
                                         p.consumerTxSize, p.autoAck,
-                                        stats, p.timeLimit));
+                                        stats, p.msgLimit, p.timeLimit));
             consumerThreads[i] = t;
+        }
+
+        if (p.consumerCount == 0 && !p.queueName.equals("")) {
+            Connection conn = factory.newConnection();
+            Channel channel = conn.createChannel();
+            channel.queueDeclare(p.queueName,
+                                 p.flags.contains("persistent"),
+                                 p.exclusive, p.autoDelete,
+                                 null).getQueue();
+            channel.queueBind(p.queueName, p.exchangeName, id);
+            conn.close();
         }
 
         Thread[] producerThreads = new Thread[p.producerCount];
@@ -83,7 +94,8 @@ public class MulticastSet {
             channel.exchangeDeclare(p.exchangeName, p.exchangeType);
             final Producer producer = new Producer(channel, p.exchangeName, id,
                                                    p.flags, p.producerTxSize,
-                                                   p.rateLimit, p.minMsgSize, p.timeLimit,
+                                                   p.rateLimit, p.msgLimit,
+                                                   p.minMsgSize, p.timeLimit,
                                                    p.confirm, stats);
             channel.addReturnListener(producer);
             channel.addConfirmListener(producer);

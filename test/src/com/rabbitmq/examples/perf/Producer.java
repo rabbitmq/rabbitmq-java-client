@@ -42,6 +42,7 @@ public class Producer implements Runnable, ReturnListener,
     private boolean persistent;
     private int     txSize;
     private int     rateLimit;
+    private int     msgLimit;
     private long    timeLimit;
 
     private Stats stats;
@@ -58,7 +59,7 @@ public class Producer implements Runnable, ReturnListener,
 
     public Producer(Channel channel, String exchangeName, String id,
                     List<?> flags, int txSize,
-                    int rateLimit, int minMsgSize, int timeLimit,
+                    int rateLimit, int msgLimit, int minMsgSize, int timeLimit,
                     long confirm, Stats stats)
         throws IOException {
 
@@ -70,6 +71,7 @@ public class Producer implements Runnable, ReturnListener,
         this.persistent   = flags.contains("persistent");
         this.txSize       = txSize;
         this.rateLimit    = rateLimit;
+        this.msgLimit     = msgLimit;
         this.timeLimit    = 1000L * timeLimit;
         this.message      = new byte[minMsgSize];
         if (confirm > 0) {
@@ -128,7 +130,8 @@ public class Producer implements Runnable, ReturnListener,
 
         try {
 
-            while (timeLimit == 0 || now < startTime + timeLimit) {
+            while ((timeLimit == 0 || now < startTime + timeLimit) &&
+                   msgCount < msgLimit) {
                 if (confirmPool != null) {
                     confirmPool.acquire();
                 }

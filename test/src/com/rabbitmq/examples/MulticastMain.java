@@ -59,6 +59,7 @@ public class MulticastMain {
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
+            int msgLimit         = intArg(cmd, 'C', 0);
             List<?> flags        = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
@@ -91,6 +92,7 @@ public class MulticastMain {
             p.setExclusive(        exclusive);
             p.setFlags(            flags);
             p.setMinMsgSize(       minMsgSize);
+            p.setMsgLimit(         msgLimit);
             p.setPrefetchCount(    prefetchCount);
             p.setProducerCount(    producerCount);
             p.setProducerTxSize(   producerTxSize);
@@ -136,6 +138,7 @@ public class MulticastMain {
         options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
         options.addOption(new Option("s", "size",      true, "message size"));
         options.addOption(new Option("z", "time",      true, "time limit"));
+        options.addOption(new Option("C", "messages",  true, "message limit"));
         Option flag =     new Option("f", "flag",      true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(flag);
