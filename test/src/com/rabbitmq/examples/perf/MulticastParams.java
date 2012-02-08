@@ -30,7 +30,8 @@ public class MulticastParams {
 
     protected int timeLimit = 10;
     protected int rateLimit = 0;
-    protected int msgCount = 0;
+    protected int producerMsgCount = 0;
+    protected int consumerMsgCount = 0;
 
     protected String exchangeName = "direct";
     protected String exchangeType = "direct";
@@ -94,8 +95,12 @@ public class MulticastParams {
         this.timeLimit = timeLimit;
     }
 
-    public void setMsgCount(int msgCount) {
-        this.msgCount = msgCount;
+    public void setProducerMsgCount(int producerMsgCount) {
+        this.producerMsgCount = producerMsgCount;
+    }
+
+    public void setConsumerMsgCount(int consumerMsgCount) {
+        this.consumerMsgCount = consumerMsgCount;
     }
 
     public void setFlags(List<?> flags) {

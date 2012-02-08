@@ -63,7 +63,7 @@ public class MulticastSet {
             Thread t =
                 new Thread(new Consumer(channel, id, qName,
                                         p.consumerTxSize, p.autoAck,
-                                        stats, p.msgCount, p.timeLimit));
+                                        stats, p.consumerMsgCount, p.timeLimit));
             consumerThreads[i] = t;
         }
 
@@ -94,7 +94,7 @@ public class MulticastSet {
             channel.exchangeDeclare(p.exchangeName, p.exchangeType);
             final Producer producer = new Producer(channel, p.exchangeName, id,
                                                    p.flags, p.producerTxSize,
-                                                   p.rateLimit, p.msgCount,
+                                                   p.rateLimit, p.producerMsgCount,
                                                    p.minMsgSize, p.timeLimit,
                                                    p.confirm, stats);
             channel.addReturnListener(producer);

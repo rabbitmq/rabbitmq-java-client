@@ -59,7 +59,8 @@ public class MulticastMain {
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
-            int msgCount         = intArg(cmd, 'C', 0);
+            int producerMsgCount = intArg(cmd, 'C', 0);
+            int consumerMsgCount = intArg(cmd, 'D', 0);
             List<?> flags        = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
@@ -86,15 +87,16 @@ public class MulticastMain {
             p.setAutoDelete(       !exclusive);
             p.setConfirm(          confirm);
             p.setConsumerCount(    consumerCount);
+            p.setConsumerMsgCount( consumerMsgCount);
             p.setConsumerTxSize(   consumerTxSize);
             p.setExchangeName(     exchangeName);
             p.setExchangeType(     exchangeType);
             p.setExclusive(        exclusive);
             p.setFlags(            flags);
             p.setMinMsgSize(       minMsgSize);
-            p.setMsgCount(         msgCount);
             p.setPrefetchCount(    prefetchCount);
             p.setProducerCount(    producerCount);
+            p.setProducerMsgCount( producerMsgCount);
             p.setProducerTxSize(   producerTxSize);
             p.setQueueName(        queueName);
             p.setRateLimit(        rateLimit);
@@ -138,7 +140,8 @@ public class MulticastMain {
         options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
         options.addOption(new Option("s", "size",      true, "message size"));
         options.addOption(new Option("z", "time",      true, "time limit"));
-        options.addOption(new Option("C", "count",     true, "message count"));
+        options.addOption(new Option("C", "count",     true, "producer message count"));
+        options.addOption(new Option("D", "count",     true, "consumer message count"));
         Option flag =     new Option("f", "flag",      true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(flag);
