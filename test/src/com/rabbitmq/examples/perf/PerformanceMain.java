@@ -122,13 +122,13 @@ public class PerformanceMain {
         params.setConsumerCount(0);
         return new VaryingScenario("message-sizes-and-producers", factory, params,
                     var("minMsgSize", 0, 1000, 10000),
-                    var("producerCount", 1, 2, 5, 10));
+                    var("producerCount", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
     }
 
     private static Scenario varyingBroker() throws IOException, InterruptedException {
         MulticastParams params = new MulticastParams();
         return new VaryingScenario("message-sizes-and-broker-config", factory, params,
-                    var("minMsgSize", 0, 1000, 10000),
+                    var("minMsgSize", 0, 500, 1000, 2000, 5000, 10000),
                     new BrokerVariable(Broker.DEFAULT, Broker.HIPE, Broker.COARSE, Broker.HIPE_COARSE));
     }
 
