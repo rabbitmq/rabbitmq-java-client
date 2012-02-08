@@ -78,7 +78,7 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
     }
 
     private double rate(long count, long elapsed) {
-        return 1000.0 * count / elapsed;
+        return elapsed == 0 ? 0.0 : (1000.0 * count / elapsed);
     }
 
     private long overallAverageLatency() {
