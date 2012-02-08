@@ -30,7 +30,7 @@ public class MulticastParams {
 
     protected int timeLimit = 10;
     protected int rateLimit = 0;
-    protected int msgLimit = 0;
+    protected int msgCount = 0;
 
     protected String exchangeName = "direct";
     protected String exchangeType = "direct";
@@ -94,8 +94,8 @@ public class MulticastParams {
         this.timeLimit = timeLimit;
     }
 
-    public void setMsgLimit(int msgLimit) {
-        this.msgLimit = msgLimit;
+    public void setMsgCount(int msgCount) {
+        this.msgCount = msgCount;
     }
 
     public void setFlags(List<?> flags) {
