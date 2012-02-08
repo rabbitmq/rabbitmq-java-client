@@ -45,7 +45,7 @@ public class Producer implements Runnable, ReturnListener,
     private int     msgLimit;
     private long    timeLimit;
 
-    private Stats stats;
+    private Stats   stats;
 
     private byte[]  message;
 

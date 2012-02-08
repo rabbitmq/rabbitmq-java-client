@@ -51,7 +51,8 @@ public class PerformanceMain {
     private static void runStaticBrokerTests() throws Exception {
         Broker broker = Broker.DEFAULT;
         broker.start();
-        runTests(new Scenario[]{no_ack(), ack(), ack_confirm(), ack_confirm_persist(), varying(), varying2d(), ratevslatency()});
+        runTests(new Scenario[]{no_ack(), ack(), ack_confirm(), ack_confirm_persist(),
+                                fill_drain_queue(), varying(), varying2d(), ratevslatency()});
         broker.stop();
     }
 
@@ -88,6 +89,26 @@ public class PerformanceMain {
         params.setConfirm(1000);
         params.setFlags(PERSISTENT);
         return new SimpleScenario("ack-confirm-persist", factory, params);
+    }
+
+    private static Scenario fill_drain_queue() throws IOException, InterruptedException {
+        MulticastParams fill = new MulticastParams();
+        fill.setConsumerCount(0);
+        fill.setQueueName("test");
+        fill.setExclusive(false);
+        fill.setAutoDelete(true);
+        fill.setTimeLimit(0);
+
+        MulticastParams drain = new MulticastParams();
+        drain.setProducerCount(0);
+        drain.setQueueName("test");
+        drain.setExclusive(false);
+        drain.setAutoDelete(true);
+        drain.setTimeLimit(0);
+
+        return new VaryingScenario("fill-drain-queue", factory,
+                new MulticastParams[]{fill, drain},
+                var("msgCount", 10000, 50000, 100000, 250000, 500000, 750000, 1000000));
     }
 
     private static Scenario varying() throws IOException, InterruptedException {

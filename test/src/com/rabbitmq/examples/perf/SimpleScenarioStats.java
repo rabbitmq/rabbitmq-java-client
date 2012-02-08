@@ -25,6 +25,7 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
     private static final int IGNORE_FIRST = 3;
 
     private List<Map<String, Object>> samples = new ArrayList<Map<String, Object>>();
+    private long elapsedTotalWithIgnore;
 
     public SimpleScenarioStats(long interval) {
         super(interval);
@@ -37,12 +38,16 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
             latencyCountTotal      = 0;
             sendCountTotal         = 0;
             recvCountTotal         = 0;
-            elapsedTotal           = 0;
+            elapsedTotalWithIgnore = 0;
+        }
+        else {
+            elapsedTotalWithIgnore = elapsedTotal;
         }
 
         Map<String, Object> sample = new HashMap<String, Object>();
         sample.put("send-rate", rate(sendCountInterval, elapsedInterval));
         sample.put("recv-rate", rate(recvCountInterval, elapsedInterval));
+        sample.put("elapsed",   elapsedTotal);
         if (latencyCountInterval > 0) {
             sample.put("avg-latency", intervalAverageLatency());
             sample.put("min-latency", minLatency / 1000L);
@@ -65,11 +70,11 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
     }
 
     public double getSendRate() {
-        return rate(sendCountTotal, elapsedTotal);
+        return rate(sendCountTotal, elapsedTotalWithIgnore);
     }
 
     public double getRecvRate() {
-        return rate(recvCountTotal, elapsedTotal);
+        return rate(recvCountTotal, elapsedTotalWithIgnore);
     }
 
     private double rate(long count, long elapsed) {

@@ -23,14 +23,14 @@ import java.io.IOException;
 public class SimpleScenario implements Scenario {
     private String name;
     private ConnectionFactory factory;
-    private MulticastParams params;
+    private MulticastParams[] params;
     private SimpleScenarioStats stats;
 
-    public SimpleScenario(ConnectionFactory factory, MulticastParams params) {
+    public SimpleScenario(ConnectionFactory factory, MulticastParams... params) {
         this("untitled", factory, params);
     }
 
-    public SimpleScenario(String name, ConnectionFactory factory, MulticastParams params) {
+    public SimpleScenario(String name, ConnectionFactory factory, MulticastParams... params) {
         this.name = name;
         this.factory = factory;
         this.params = params;
@@ -39,8 +39,11 @@ public class SimpleScenario implements Scenario {
     @Override
     public void run() throws IOException, InterruptedException {
         stats = new SimpleScenarioStats(1000L);
-        MulticastSet set = new MulticastSet(stats, factory, params);
-        set.run();
+        for (MulticastParams p : params) {
+            MulticastSet set = new MulticastSet(stats, factory, p);
+            set.run();
+            stats.reset();
+        }
     }
 
     @Override

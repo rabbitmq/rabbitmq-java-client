@@ -62,15 +62,19 @@ public abstract class Stats {
         cumulativeLatencyInterval = 0L;
     }
 
-    private void report() {
+    private void report(boolean force) {
         long now = System.currentTimeMillis();
         elapsedInterval = now - lastStatsTime;
 
-        if (elapsedInterval >= interval) {
+        if (elapsedInterval >= interval || force) {
             elapsedTotal += elapsedInterval;
             report(now);
             reset(now);
         }
+    }
+
+    public void reset() {
+        report(true);
     }
 
     protected abstract void report(long now);
@@ -78,22 +82,22 @@ public abstract class Stats {
     public synchronized void handleSend() {
         sendCountInterval++;
         sendCountTotal++;
-        report();
+        report(false);
     }
 
     public synchronized void handleReturn() {
         returnCountInterval++;
-        report();
+        report(false);
     }
 
     public synchronized void handleConfirm(int numConfirms) {
         confirmCountInterval +=numConfirms;
-        report();
+        report(false);
     }
 
     public synchronized void handleNack(int numAcks) {
         nackCountInterval +=numAcks;
-        report();
+        report(false);
     }
 
     public synchronized void handleRecv(long latency) {
@@ -107,7 +111,7 @@ public abstract class Stats {
             latencyCountInterval++;
             latencyCountTotal++;
         }
-        report();
+        report(false);
     }
 
 }

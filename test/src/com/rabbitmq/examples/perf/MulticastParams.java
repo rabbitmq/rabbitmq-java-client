@@ -103,6 +103,11 @@ public class MulticastParams {
         this.consumerMsgCount = consumerMsgCount;
     }
 
+    public void setMsgCount(int msgCount) {
+        setProducerMsgCount(msgCount);
+        setConsumerMsgCount(msgCount);
+    }
+
     public void setFlags(List<?> flags) {
         this.flags = flags;
     }

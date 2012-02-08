@@ -26,12 +26,17 @@ import java.util.List;
 public class VaryingScenario implements Scenario {
     private String name;
     private ConnectionFactory factory;
-    private MulticastParams params;
+    private MulticastParams[] params;
     private VaryingScenarioStats stats = new VaryingScenarioStats();
     private Variable[] variables;
 
     public VaryingScenario(String name, ConnectionFactory factory,
                            MulticastParams params, Variable... variables) {
+        this(name, factory, new MulticastParams[]{params}, variables);
+    }
+
+    public VaryingScenario(String name, ConnectionFactory factory,
+                           MulticastParams[] params, Variable... variables) {
         this.name = name;
         this.factory = factory;
         this.params = params;
@@ -54,15 +59,20 @@ public class VaryingScenario implements Scenario {
             }
         }
         else {
-            for (VariableValue value : values) {
-                value.setup(params);
+            SimpleScenarioStats stats0 = stats.next(values);
+            for (MulticastParams p : params) {
+                for (VariableValue value : values) {
+                    value.setup(p);
+                }
+                MulticastSet set = new MulticastSet(stats0, factory, p);
+                set.run();
+                stats0.reset();
+                for (VariableValue value : values) {
+                    value.teardown(p);
+                }
             }
-            new MulticastSet(stats.next(values), factory, params).run();
             System.out.print("#");
             System.out.flush();
-            for (VariableValue value : values) {
-                value.teardown(params);
-            }
         }
     }
 
