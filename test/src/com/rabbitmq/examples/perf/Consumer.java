@@ -63,7 +63,7 @@ public class Consumer implements Runnable {
             channel.basicConsume(queueName, autoAck, q);
 
             while ((timeLimit == 0 || now < startTime + timeLimit) &&
-                   totalMsgCount < msgLimit) {
+                   (msgLimit == 0 || totalMsgCount < msgLimit)) {
                 QueueingConsumer.Delivery delivery;
                 try {
                     if (timeLimit == 0) {

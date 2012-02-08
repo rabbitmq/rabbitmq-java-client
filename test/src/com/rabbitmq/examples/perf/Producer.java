@@ -131,7 +131,7 @@ public class Producer implements Runnable, ReturnListener,
         try {
 
             while ((timeLimit == 0 || now < startTime + timeLimit) &&
-                   msgCount < msgLimit) {
+                   (msgLimit == 0 || msgCount < msgLimit)) {
                 if (confirmPool != null) {
                     confirmPool.acquire();
                 }
