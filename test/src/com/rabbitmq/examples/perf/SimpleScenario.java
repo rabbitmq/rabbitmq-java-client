@@ -42,7 +42,6 @@ public class SimpleScenario implements Scenario {
         for (MulticastParams p : params) {
             MulticastSet set = new MulticastSet(stats, factory, p);
             set.run();
-            stats.reset();
         }
     }
 

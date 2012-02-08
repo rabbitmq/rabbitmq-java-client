@@ -66,7 +66,6 @@ public class VaryingScenario implements Scenario {
                 }
                 MulticastSet set = new MulticastSet(stats0, factory, p);
                 set.run();
-                stats0.reset();
                 for (VariableValue value : values) {
                     value.teardown(p);
                 }
