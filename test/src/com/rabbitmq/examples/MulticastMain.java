@@ -140,8 +140,8 @@ public class MulticastMain {
         options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
         options.addOption(new Option("s", "size",      true, "message size"));
         options.addOption(new Option("z", "time",      true, "time limit"));
-        options.addOption(new Option("C", "count",     true, "producer message count"));
-        options.addOption(new Option("D", "count",     true, "consumer message count"));
+        options.addOption(new Option("C", "pmessages", true, "producer message count"));
+        options.addOption(new Option("D", "cmessages", true, "consumer message count"));
         Option flag =     new Option("f", "flag",      true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(flag);
