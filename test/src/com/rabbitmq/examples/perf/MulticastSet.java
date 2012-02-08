@@ -70,6 +70,7 @@ public class MulticastSet {
         if (p.consumerCount == 0 && !p.queueName.equals("")) {
             Connection conn = factory.newConnection();
             Channel channel = conn.createChannel();
+            channel.exchangeDeclare(p.exchangeName, p.exchangeType);
             channel.queueDeclare(p.queueName,
                                  p.flags.contains("persistent"),
                                  p.exclusive, p.autoDelete,
