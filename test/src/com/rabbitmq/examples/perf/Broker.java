@@ -18,9 +18,12 @@ package com.rabbitmq.examples.perf;
 
 import com.rabbitmq.tools.Host;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 
 public class Broker {
@@ -47,25 +50,35 @@ public class Broker {
         this.config = config;
     }
 
-    public void start() {
+    public void start() throws IOException {
+        Process pr = null;
         try {
             writeConfig();
 
             System.out.println("Starting broker '" + name + "'...");
-            String pidfile = BASE + "pid";
             ProcessBuilder pb = new ProcessBuilder(SCRIPTS + "rabbitmq-server");
-            pb.environment().put("RABBITMQ_PID_FILE", pidfile);
+            pb.environment().put("RABBITMQ_PID_FILE", pidfile());
             pb.environment().put("RABBITMQ_LOG_BASE", BASE + "logs");
             pb.environment().put("RABBITMQ_MNESIA_DIR", BASE + "db");
             pb.environment().put("RABBITMQ_PLUGINS_EXPAND_DIR", BASE + "plugins-expand");
             pb.environment().put("RABBITMQ_CONFIG_FILE", BASE + "rabbitmq");
 
-            pb.start();
-            Host.executeCommand(SCRIPTS + "rabbitmqctl wait " + pidfile);
+            pr = pb.start();
+
+            Host.executeCommand(SCRIPTS + "rabbitmqctl wait " + pidfile());
 
         } catch (IOException e) {
+            System.out.println("Broker start failed!");
+            String stdout = capture(pr.getInputStream());
+            String stderr = capture(pr.getErrorStream());
+            System.out.println(stdout);
+            System.out.println(stderr);
             throw new RuntimeException(e);
         }
+    }
+
+    private String pidfile() {
+        return BASE + "pid";
     }
 
     private void writeConfig() throws IOException {
@@ -79,7 +92,7 @@ public class Broker {
     public void stop() {
         System.out.println("Stopping broker '" + name + "' ...");
         try {
-            Host.executeCommand(SCRIPTS + "rabbitmqctl stop");
+            Host.executeCommand(SCRIPTS + "rabbitmqctl stop " + pidfile());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -87,5 +100,18 @@ public class Broker {
 
     public String getName() {
         return name;
+    }
+
+
+    private static String capture(InputStream is)
+        throws IOException
+    {
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        String line;
+        StringBuilder buff = new StringBuilder();
+        while ((line = br.readLine()) != null) {
+            buff.append(line);
+        }
+        return buff.toString();
     }
 }
