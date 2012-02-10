@@ -28,7 +28,7 @@ public class MulticastParams {
     protected int prefetchCount = 0;
     protected int minMsgSize = 0;
 
-    protected int timeLimit = 10;
+    protected int timeLimit = 0;
     protected int rateLimit = 0;
     protected int producerMsgCount = 0;
     protected int consumerMsgCount = 0;

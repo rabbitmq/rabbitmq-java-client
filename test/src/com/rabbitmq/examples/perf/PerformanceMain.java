@@ -32,12 +32,14 @@ public class PerformanceMain {
 
     //private static final List<?> NO_FLAGS = Arrays.asList();
     private static final List<?> PERSISTENT = Arrays.asList("persistent");
+    private static final List<?> MANDATORY = Arrays.asList("mandatory");
+    private static final List<?> IMMEDIATE = Arrays.asList("immediate");
 
     private static Map<String, Object> results = new HashMap<String, Object>();
 
     public static void main(String[] args) throws Exception {
         runStaticBrokerTests();
-        runTests(new Scenario[]{varyingBroker()});
+        runTests(new Scenario[]{message_size_broker_config()});
         writeJSON();
     }
 
@@ -49,11 +51,12 @@ public class PerformanceMain {
     }
 
     private static void runStaticBrokerTests() throws Exception {
-        Broker broker = Broker.DEFAULT;
+        Broker broker = Broker.HIPE_COARSE;
         broker.start();
-        runTests(new Scenario[]{no_ack(), ack(), ack_confirm(), ack_confirm_persist(),
-                                fill_drain_queue("small", 500000), fill_drain_queue("large", 1000000),
-                                varying(), varying2d(), ratevslatency()});
+        runTests(new Scenario[]{no_consume(), no_ack(), no_ack_mandatory(), no_ack_immediate(), ack(),
+                                ack_confirm(), ack_confirm_persist(), fill_drain_queue("small", 500000),
+                                fill_drain_queue("large", 1000000), consumers(),
+                                message_sizes(), message_size_vs_producers(), rate_vs_latency()});
         broker.stop();
     }
 
@@ -66,26 +69,44 @@ public class PerformanceMain {
         }
     }
 
+    private static Scenario no_consume() throws IOException, InterruptedException {
+        MulticastParams params = params();
+        params.setConsumerCount(0);
+        return new SimpleScenario("no-consume", factory, params);
+    }
+
     private static Scenario no_ack() throws IOException, InterruptedException {
-        MulticastParams params = new MulticastParams();
+        MulticastParams params = params();
         return new SimpleScenario("no-ack", factory, params);
     }
 
+    private static Scenario no_ack_mandatory() throws IOException, InterruptedException {
+        MulticastParams params = params();
+        params.setFlags(MANDATORY);
+        return new SimpleScenario("no-ack-mandatory", factory, params);
+    }
+
+    private static Scenario no_ack_immediate() throws IOException, InterruptedException {
+        MulticastParams params = params();
+        params.setFlags(IMMEDIATE);
+        return new SimpleScenario("no-ack-immediate", factory, params);
+    }
+
     private static Scenario ack() throws IOException, InterruptedException {
-        MulticastParams params = new MulticastParams();
+        MulticastParams params = params();
         params.setAutoAck(false);
         return new SimpleScenario("ack", factory, params);
     }
 
     private static Scenario ack_confirm() throws IOException, InterruptedException {
-        MulticastParams params = new MulticastParams();
+        MulticastParams params = params();
         params.setAutoAck(false);
         params.setConfirm(1000);
         return new SimpleScenario("ack-confirm", factory, params);
     }
 
     private static Scenario ack_confirm_persist() throws IOException, InterruptedException {
-        MulticastParams params = new MulticastParams();
+        MulticastParams params = params();
         params.setAutoAck(false);
         params.setConfirm(1000);
         params.setFlags(PERSISTENT);
@@ -109,34 +130,48 @@ public class PerformanceMain {
         params.setQueueName("test");
         params.setExclusive(false);
         params.setAutoDelete(true);
-        params.setTimeLimit(0);
         return params;
     }
 
-    private static Scenario varying() throws IOException, InterruptedException {
-        MulticastParams params = new MulticastParams();
+    private static Scenario message_sizes() throws IOException, InterruptedException {
+        MulticastParams params = params();
         return new VaryingScenario("message-sizes", factory, params,
-                    var("minMsgSize", 0, 100, 1000, 10000));
+                    var("minMsgSize", 0, 100, 200, 300, 400, 500, 6000, 700, 800, 900, 1000,
+                                      1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 5000));
     }
 
-    private static Scenario varying2d() throws IOException, InterruptedException {
-        MulticastParams params = new MulticastParams();
+    private static Scenario consumers() throws IOException, InterruptedException {
+        MulticastParams params = params();
+        params.setAutoAck(false);
+        return new VaryingScenario("consumers", factory, params,
+                    var("consumerCount", 1, 2, 5, 10, 50, 100),
+                    var("prefetchCount", 1, 10, 100, 1000, 10000));
+    }
+
+    private static Scenario message_size_vs_producers() throws IOException, InterruptedException {
+        MulticastParams params = params();
         params.setConsumerCount(0);
         return new VaryingScenario("message-sizes-and-producers", factory, params,
                     var("minMsgSize", 0, 1000, 10000),
                     var("producerCount", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
     }
 
-    private static Scenario varyingBroker() throws IOException, InterruptedException {
-        MulticastParams params = new MulticastParams();
+    private static Scenario message_size_broker_config() throws IOException, InterruptedException {
+        MulticastParams params = params();
         return new VaryingScenario("message-sizes-and-broker-config", factory, params,
-                    var("minMsgSize", 0, 500, 1000, 2000, 5000, 10000),
+                    var("minMsgSize", 0, 500, 1000, 1500, 2000),
                     new BrokerVariable(Broker.DEFAULT, Broker.HIPE, Broker.COARSE, Broker.HIPE_COARSE));
     }
 
-    private static Scenario ratevslatency() throws IOException, InterruptedException {
-        MulticastParams params = new MulticastParams();
+    private static Scenario rate_vs_latency() throws IOException, InterruptedException {
+        MulticastParams params = params();
         return new RateVsLatencyScenario("rate-vs-latency", factory, params);
+    }
+
+    private static MulticastParams params() {
+        MulticastParams p = new MulticastParams();
+        p.setTimeLimit(30);
+        return p;
     }
 
     private static Variable var(String name, Object... values) {
