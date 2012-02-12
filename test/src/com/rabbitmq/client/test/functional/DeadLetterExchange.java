@@ -219,6 +219,21 @@ public class DeadLetterExchange extends BrokerTestCase {
             });
     }
 
+    public void testDeadLetterSelf() throws Exception {
+        declareQueue(TEST_QUEUE_NAME, "amq.direct", "test", null);
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+
+        publishN(MSG_COUNT_MANY, PropertiesFactory.NULL);
+        channel.queuePurge(TEST_QUEUE_NAME);
+        sleep(100);
+
+        // The messages will NOT be dead-lettered to self.
+        consumeN(TEST_QUEUE_NAME, 0, new WithResponse() {
+                public void process(GetResponse getResponse) {
+                }
+            });
+    }
+
     public void testDeadLetterNewRK() throws Exception {
         declareQueue(TEST_QUEUE_NAME, DLX, "test-other", null);
 
