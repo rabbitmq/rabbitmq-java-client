@@ -89,6 +89,12 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     }
 
+    public void testDeadLetterEmpty() throws Exception {
+        declareQueue(TEST_QUEUE_NAME, DLX, null, null);
+        channel.queuePurge(TEST_QUEUE_NAME);
+        channel.queueDelete(TEST_QUEUE_NAME);
+    }
+
     public void testDeadLetterQueueTTLExpiredMessages() throws Exception {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-message-ttl", 1000);
