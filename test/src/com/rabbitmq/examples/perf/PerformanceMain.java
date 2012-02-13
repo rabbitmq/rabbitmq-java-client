@@ -157,7 +157,7 @@ public class PerformanceMain {
         MulticastParams params = params();
         params.setAutoAck(false);
         return new VaryingScenario("consumers", factory, params,
-                    var("consumerCount", 1, 2, 5, 10, 50, 100, 1000),
+                    var("consumerCount", 1, 2, 5, 10, 50, 100, 500),
                     var("prefetchCount", 1, 2, 5, 10, 20, 50, 10000));
     }
 
