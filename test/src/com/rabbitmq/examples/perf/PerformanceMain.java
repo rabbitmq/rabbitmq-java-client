@@ -53,7 +53,7 @@ public class PerformanceMain {
     private static void runStaticBrokerTests() throws Exception {
         Broker broker = Broker.HIPE_COARSE;
         broker.start();
-        runTests(new Scenario[]{no_consume(), no_ack(), no_ack_mandatory(), no_ack_immediate(), ack(),
+        runTests(new Scenario[]{no_ack_long(), no_consume(), no_ack(), no_ack_mandatory(), no_ack_immediate(), ack(),
                                 ack_confirm(), ack_confirm_persist(), ack_persist(), fill_drain_queue("small", 500000),
                                 fill_drain_queue("large", 1000000), consumers(),
                                 message_sizes(), message_size_vs_producers(), rate_vs_latency()});
@@ -67,6 +67,12 @@ public class PerformanceMain {
             System.out.println();
             results.put(scenario.getName(), scenario.getStats().results());
         }
+    }
+
+    private static Scenario no_ack_long() throws IOException, InterruptedException {
+        MulticastParams params = params();
+        params.setTimeLimit(500);
+        return new SimpleScenario("no-ack-long", factory, 10000, params);
     }
 
     private static Scenario no_consume() throws IOException, InterruptedException {

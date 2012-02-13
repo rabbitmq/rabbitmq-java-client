@@ -34,7 +34,7 @@ public class RateVsLatencyScenario implements Scenario {
 
     @Override
     public void run() throws Exception {
-        SimpleScenario s = new SimpleScenario(factory, params);
+        SimpleScenario s = new SimpleScenario("untitled", factory, params);
         s.run();
         SimpleScenarioStats m = s.getStats();
         int maxRate = (int) (m.getRecvRate() + m.getSendRate()) / 2;
