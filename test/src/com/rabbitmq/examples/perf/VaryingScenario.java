@@ -44,11 +44,11 @@ public class VaryingScenario implements Scenario {
     }
 
     @Override
-    public void run() throws IOException, InterruptedException {
+    public void run() throws Exception {
         run(variables, new ArrayList<VariableValue>());
     }
 
-    private void run(Variable[] variables, List<VariableValue> values) throws IOException, InterruptedException {
+    private void run(Variable[] variables, List<VariableValue> values) throws Exception {
         if (variables.length > 0) {
             Variable variable = variables[0];
             Variable[] rest = rest(variables);

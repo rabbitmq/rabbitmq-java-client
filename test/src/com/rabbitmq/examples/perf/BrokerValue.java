@@ -16,6 +16,8 @@
 
 package com.rabbitmq.examples.perf;
 
+import java.io.IOException;
+
 public class BrokerValue implements VariableValue {
     private final Broker broker;
 
@@ -24,7 +26,7 @@ public class BrokerValue implements VariableValue {
     }
 
     @Override
-    public void setup(MulticastParams params) {
+    public void setup(MulticastParams params) throws IOException {
         broker.start();
     }
 

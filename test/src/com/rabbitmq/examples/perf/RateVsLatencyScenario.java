@@ -33,7 +33,7 @@ public class RateVsLatencyScenario implements Scenario {
     }
 
     @Override
-    public void run() throws IOException, InterruptedException {
+    public void run() throws Exception {
         SimpleScenario s = new SimpleScenario(factory, params);
         s.run();
         SimpleScenarioStats m = s.getStats();
