@@ -54,7 +54,7 @@ public class PerformanceMain {
         Broker broker = Broker.HIPE_COARSE;
         broker.start();
         runTests(new Scenario[]{no_consume(), no_ack(), no_ack_mandatory(), no_ack_immediate(), ack(),
-                                ack_confirm(), ack_confirm_persist(), fill_drain_queue("small", 500000),
+                                ack_confirm(), ack_confirm_persist(), ack_persist(), fill_drain_queue("small", 500000),
                                 fill_drain_queue("large", 1000000), consumers(),
                                 message_sizes(), message_size_vs_producers(), rate_vs_latency()});
         broker.stop();
@@ -101,16 +101,23 @@ public class PerformanceMain {
     private static Scenario ack_confirm() throws IOException, InterruptedException {
         MulticastParams params = params();
         params.setAutoAck(false);
-        params.setConfirm(1000);
+        params.setConfirm(10000);
         return new SimpleScenario("ack-confirm", factory, params);
     }
 
     private static Scenario ack_confirm_persist() throws IOException, InterruptedException {
         MulticastParams params = params();
         params.setAutoAck(false);
-        params.setConfirm(1000);
+        params.setConfirm(10000);
         params.setFlags(PERSISTENT);
         return new SimpleScenario("ack-confirm-persist", factory, params);
+    }
+
+    private static Scenario ack_persist() throws IOException, InterruptedException {
+        MulticastParams params = params();
+        params.setAutoAck(false);
+        params.setFlags(PERSISTENT);
+        return new SimpleScenario("ack-persist", factory, params);
     }
 
     private static Scenario fill_drain_queue(String name, int count) throws IOException, InterruptedException {
@@ -136,16 +143,16 @@ public class PerformanceMain {
     private static Scenario message_sizes() throws IOException, InterruptedException {
         MulticastParams params = params();
         return new VaryingScenario("message-sizes", factory, params,
-                    var("minMsgSize", 0, 100, 200, 300, 400, 500, 6000, 700, 800, 900, 1000,
-                                      1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 5000));
+                    var("minMsgSize", 0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+                                      1200, 1400, 1600, 1800, 2000, 3000, 4000, 5000));
     }
 
     private static Scenario consumers() throws IOException, InterruptedException {
         MulticastParams params = params();
         params.setAutoAck(false);
         return new VaryingScenario("consumers", factory, params,
-                    var("consumerCount", 1, 2, 5, 10, 50, 100),
-                    var("prefetchCount", 1, 10, 100, 1000, 10000));
+                    var("consumerCount", 1, 2, 5, 10, 50, 100, 1000),
+                    var("prefetchCount", 1, 2, 5, 10, 20, 50, 10000));
     }
 
     private static Scenario message_size_vs_producers() throws IOException, InterruptedException {
