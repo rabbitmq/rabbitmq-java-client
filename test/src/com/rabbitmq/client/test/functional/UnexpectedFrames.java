@@ -145,12 +145,6 @@ public class UnexpectedFrames extends BrokerTestCase {
         //NB: the frame confuser relies on the encoding of the
         //method field to be at least 8 bytes long
         channel.basicPublish("", "routing key", null, "Hello".getBytes());
-        // TODO remove when bug 24086 is fixed.
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         expectError(AMQP.UNEXPECTED_FRAME);
     }
 
