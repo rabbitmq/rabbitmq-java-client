@@ -106,35 +106,6 @@ public class DeadLetterExchange extends BrokerTestCase {
             }, args, PropertiesFactory.NULL, "expired");
     }
 
-    public void testDeadLetterQueueDeleted() throws Exception {
-        deadLetterTest(new Callable<Void>() {
-                public Void call() throws Exception{
-                    channel.queueDelete(TEST_QUEUE_NAME);
-                    return null;
-                }
-            }, null, PropertiesFactory.NULL, "queue_deleted");
-    }
-
-    public void testDeadLetterQueuePurged() throws Exception {
-        deadLetterTest(new Callable<Void>() {
-                public Void call() throws Exception{
-                    channel.queuePurge(TEST_QUEUE_NAME);
-                    return null;
-                }
-            }, null, PropertiesFactory.NULL, "queue_purged");
-    }
-
-    public void testDeadLetterQueueLeaseExpire() throws Exception {
-        Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-expires", 1000);
-
-        deadLetterTest(new Runnable() {
-                public void run() {
-                    sleep(2000);
-                }
-            }, args, PropertiesFactory.NULL, "queue_deleted");
-    }
-
     public void testDeadLetterOnReject() throws Exception {
         deadLetterTest(new Callable<Void>() {
                 public Void call() throws Exception {
@@ -187,10 +158,13 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     public void testDeadLetterTwice() throws Exception {
-        channel.queueDelete(DLQ);
-        declareQueue(DLQ, DLX, null, null);
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-message-ttl", 1);
 
-        declareQueue(DLX);
+        declareQueue(TEST_QUEUE_NAME, DLX, null, args);
+
+        channel.queueDelete(DLQ);
+        declareQueue(DLQ, DLX, null, args);
 
         channel.queueDeclare(DLQ2, false, true, false, null);
 
@@ -200,9 +174,7 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         publishN(MSG_COUNT, PropertiesFactory.NULL);
 
-        channel.queuePurge(TEST_QUEUE_NAME);
         sleep(100);
-        channel.queueDelete(DLQ);
 
         // There should now be two copies of each message on DLQ2: one
         // with one set of death headers, and another with two sets.
@@ -214,10 +186,10 @@ public class DeadLetterExchange extends BrokerTestCase {
                     ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
                     assertNotNull(death);
                     if (death.size() == 1) {
-                        assertDeathReason(death, 0, TEST_QUEUE_NAME, "queue_purged");
+                        assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired");
                     } else if (death.size() == 2) {
-                        assertDeathReason(death, 0, DLQ, "queue_deleted");
-                        assertDeathReason(death, 1, TEST_QUEUE_NAME, "queue_purged");
+                        assertDeathReason(death, 0, DLQ, "expired");
+                        assertDeathReason(death, 1, TEST_QUEUE_NAME, "expired");
                     } else {
                         fail("message was dead-lettered more times than expected");
                     }
@@ -241,7 +213,9 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     public void testDeadLetterNewRK() throws Exception {
-        declareQueue(TEST_QUEUE_NAME, DLX, "test-other", null);
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-message-ttl", 1);
+        declareQueue(TEST_QUEUE_NAME, DLX, "test-other", args);
 
         channel.queueDeclare(DLQ2, false, true, false, null);
 
@@ -260,7 +234,7 @@ public class DeadLetterExchange extends BrokerTestCase {
                 }
             });
 
-        channel.queuePurge(TEST_QUEUE_NAME);
+        sleep(100);
 
         consumeN(DLQ, 0, new WithResponse() {
                 public void process(GetResponse getResponse) {
@@ -278,7 +252,7 @@ public class DeadLetterExchange extends BrokerTestCase {
                     assertNotNull(death);
                     assertEquals(1, death.size());
                     assertDeathReason(death, 0, TEST_QUEUE_NAME,
-                                      "queue_purged", "amq.direct",
+                                      "expired", "amq.direct",
                                       Arrays.asList(new String[]{"test", "foo"}));
                 }
             });
