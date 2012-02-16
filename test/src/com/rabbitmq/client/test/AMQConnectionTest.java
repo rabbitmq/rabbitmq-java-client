@@ -44,8 +44,8 @@ import com.rabbitmq.client.impl.FrameHandler;
 public class AMQConnectionTest extends TestCase {
     // private static final String CLOSE_MESSAGE = "terminated by test";
 
-    /** 
-     * Build a suite of tests 
+    /**
+     * Build a suite of tests
      * @return the test suite for this class
      */
     public static TestSuite suite() {
@@ -79,7 +79,7 @@ public class AMQConnectionTest extends TestCase {
     }
 
     /** Check the AMQConnection does send exactly 1 initial header, and deal correctly with
-     * the frame handler throwing an exception when we try to read data 
+     * the frame handler throwing an exception when we try to read data
      */
     public void testConnectionSendsSingleHeaderAndTimesOut() {
         IOException exception = new SocketTimeoutException();
@@ -100,14 +100,14 @@ public class AMQConnectionTest extends TestCase {
                     handler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
-           // As expected 
+           // As expected
         }
         assertEquals(1, _mockFrameHandler.countHeadersSent());
         // _connection.close(0, CLOSE_MESSAGE);
         List<Throwable> exceptionList = handler.getHandledExceptions();
         assertEquals(Collections.<Throwable>singletonList(exception), exceptionList);
     }
-   
+
     /** Check we can open a connection once, but not twice.
      * @throws IOException */
 //    public void testCanOpenConnectionOnceOnly() throws IOException {
@@ -121,18 +121,46 @@ public class AMQConnectionTest extends TestCase {
 //        }
 //    }
 
-// add test that we time out if no initial Start command is received,
-// setting a timeout and having the FrameHandler return null
-    
+    /**
+     * Test that we catch timeout between connect and negotiation of the connection being finished.
+     */
+    public void testConnectionHangInNegotiation() {
+        MyExceptionHandler handler = new MyExceptionHandler();
+        assertEquals(0, _mockFrameHandler.countHeadersSent());
+        try {
+            new AMQConnection(factory.getUsername(),
+                    factory.getPassword(),
+                    _mockFrameHandler,
+                    Executors.newFixedThreadPool(1),
+                    factory.getVirtualHost(),
+                    factory.getClientProperties(),
+                    factory.getRequestedFrameMax(),
+                    factory.getRequestedChannelMax(),
+                    factory.getRequestedHeartbeat(),
+                    factory.getSaslConfig(),
+                    handler).start();
+            fail("Connection should have thrown exception");
+        } catch(IOException signal) {
+           // As expected
+        }
+        assertEquals(1, _mockFrameHandler.countHeadersSent());
+        // _connection.close(0, CLOSE_MESSAGE);
+        List<Throwable> exceptionList = handler.getHandledExceptions();
+        assertEquals("Only one exception expected", 1, exceptionList.size());
+        assertEquals("Wrong type of exception returned.", SocketTimeoutException.class, exceptionList.get(0).getClass());
+    }
+
     /** Mock frame handler to facilitate testing. */
     private static class MockFrameHandler implements FrameHandler {
         /** How many times has sendHeader() been called? */
         private int _numHeadersSent;
-        
+
+        private int timeout;
+
         /** An optional exception for us to throw on reading frames */
         private IOException _exceptionOnReadingFrames;
 
-        /** count how many headers we've sent 
+        /** count how many headers we've sent
          * @return the number of sent headers
          */
         public int countHeadersSent() {
@@ -147,16 +175,15 @@ public class AMQConnectionTest extends TestCase {
             if (_exceptionOnReadingFrames != null) {
                 throw _exceptionOnReadingFrames;
             }
-            return null;
-            // throw new SocketTimeoutException(); // simulate a socket timeout
+            return null; // simulate a socket timeout
         }
 
         public void sendHeader() throws IOException {
-            _numHeadersSent++;            
+            _numHeadersSent++;
         }
 
         public void setTimeout(int timeoutMs) throws SocketException {
-            // no need to implement this: don't bother changing the timeout
+            this.timeout = timeoutMs;
         }
 
         public void writeFrame(Frame frame) throws IOException {
@@ -168,7 +195,7 @@ public class AMQConnectionTest extends TestCase {
         }
 
         public int getTimeout() throws SocketException {
-            return 0;
+            return this.timeout;
         }
 
         public InetAddress getAddress() {
@@ -208,7 +235,7 @@ public class AMQConnectionTest extends TestCase {
         {
             fail("handleConsumerException " + consumerTag + " " + methodName + ": " + ex);
         }
-        
+
         public List<Throwable> getHandledExceptions() {
             return _handledExceptions;
         }
