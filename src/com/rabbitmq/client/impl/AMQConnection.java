@@ -20,6 +20,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -107,6 +108,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /** Flag indicating whether the client received Connection.Close message from the broker */
     private volatile boolean _brokerInitiatedShutdown;
+
+    /** Flag indicating we are still negotiating the connection in start */
+    private volatile boolean _inConnectionNegotiation;
 
     /** Manages heart-beat sending for this connection */
     private final HeartbeatSender _heartbeatSender;
@@ -248,6 +252,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         this._heartbeatSender = new HeartbeatSender(frameHandler);
         this._brokerInitiatedShutdown = false;
+
+        this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
     }
 
     /**
@@ -384,6 +390,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             _frameHandler.close();
             throw AMQChannel.wrap(sse);
         }
+
+        // We can now respond to errors having finished tailoring the connection
+        this._inConnectionNegotiation = false;
 
         return;
     }
@@ -538,7 +547,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Called when a frame-read operation times out
      * @throws MissedHeartbeatException if heart-beats have been missed
      */
-    private void handleSocketTimeout() throws MissedHeartbeatException {
+    private void handleSocketTimeout() throws SocketTimeoutException {
+        if (_inConnectionNegotiation) {
+            throw new SocketTimeoutException("Timeout during Connection negotiation");
+        }
+
         if (_heartbeat == 0) { // No heart-beating
             return;
         }
