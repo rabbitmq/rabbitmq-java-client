@@ -125,12 +125,13 @@ public class AMQConnectionTest extends TestCase {
      * Test that we catch timeout between connect and negotiation of the connection being finished.
      */
     public void testConnectionHangInNegotiation() {
+        this._mockFrameHandler.setTimeoutCount(10); // to limit hang
         MyExceptionHandler handler = new MyExceptionHandler();
-        assertEquals(0, _mockFrameHandler.countHeadersSent());
+        assertEquals(0, this._mockFrameHandler.countHeadersSent());
         try {
             new AMQConnection(factory.getUsername(),
                     factory.getPassword(),
-                    _mockFrameHandler,
+                    this._mockFrameHandler,
                     Executors.newFixedThreadPool(1),
                     factory.getVirtualHost(),
                     factory.getClientProperties(),
@@ -143,7 +144,7 @@ public class AMQConnectionTest extends TestCase {
         } catch(IOException signal) {
            // As expected
         }
-        assertEquals(1, _mockFrameHandler.countHeadersSent());
+        assertEquals(1, this._mockFrameHandler.countHeadersSent());
         // _connection.close(0, CLOSE_MESSAGE);
         List<Throwable> exceptionList = handler.getHandledExceptions();
         assertEquals("Only one exception expected", 1, exceptionList.size());
@@ -160,6 +161,8 @@ public class AMQConnectionTest extends TestCase {
         /** An optional exception for us to throw on reading frames */
         private IOException _exceptionOnReadingFrames;
 
+        private int timeoutCount = 0;
+
         /** count how many headers we've sent
          * @return the number of sent headers
          */
@@ -171,9 +174,17 @@ public class AMQConnectionTest extends TestCase {
             _exceptionOnReadingFrames = exception;
         }
 
+        public void setTimeoutCount(int timeoutCount) {
+            this.timeoutCount = timeoutCount;
+        }
+
         public Frame readFrame() throws IOException {
             if (_exceptionOnReadingFrames != null) {
                 throw _exceptionOnReadingFrames;
+            }
+            if (this.timeoutCount > 0) {
+                if (--this.timeoutCount == 0)
+                    throw new IOException("Mock Framehandler: too many timeouts.");
             }
             return null; // simulate a socket timeout
         }
@@ -207,7 +218,7 @@ public class AMQConnectionTest extends TestCase {
         }
     }
 
-    /** Mock frame handler to facilitate testing. */
+    /** Exception handler to facilitate testing. */
     private class MyExceptionHandler implements ExceptionHandler {
         private List<Throwable> _handledExceptions = new ArrayList<Throwable>();
 
