@@ -106,6 +106,23 @@ public class DeadLetterExchange extends BrokerTestCase {
             }, args, PropertiesFactory.NULL, "expired");
     }
 
+    public void testDeadLetterExchangeDeleteTwice()
+        throws IOException
+    {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-message-ttl", 1);
+
+        declareQueue(TEST_QUEUE_NAME, DLX, null, args);
+
+        publishN(MSG_COUNT_MANY, PropertiesFactory.NULL);
+        channel.queueDelete(TEST_QUEUE_NAME);
+        try {
+            channel.queueDelete(TEST_QUEUE_NAME);
+        } catch (IOException ex) {
+            checkShutdownSignal(AMQP.NOT_FOUND, ex);
+        }
+    }
+
     public void testDeadLetterOnReject() throws Exception {
         deadLetterTest(new Callable<Void>() {
                 public Void call() throws Exception {
