@@ -210,8 +210,11 @@ public class DeadLetterExchange extends BrokerTestCase {
         declareQueue(TEST_QUEUE_NAME, "amq.direct", "test", null, 1);
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
 
-        publishN(MSG_COUNT_MANY, PropertiesFactory.NULL);
-        sleep(100);
+        publishN(MSG_COUNT, PropertiesFactory.NULL);
+        // This test hangs if the queue doesn't process ALL the
+        // messages before being deleted, so make sure the next
+        // sleep is long enough.
+        sleep(200);
 
         // The messages will NOT be dead-lettered to self.
         consumeN(TEST_QUEUE_NAME, 0, new WithResponse() {
