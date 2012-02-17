@@ -109,10 +109,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     public void testDeadLetterExchangeDeleteTwice()
         throws IOException
     {
-        Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-message-ttl", 1);
-
-        declareQueue(TEST_QUEUE_NAME, DLX, null, args);
+        declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
 
         publishN(MSG_COUNT_MANY, PropertiesFactory.NULL);
         channel.queueDelete(TEST_QUEUE_NAME);
@@ -153,16 +150,15 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     public void testDeadLetterNoDeadLetterQueue() throws IOException {
         channel.queueDelete(DLQ);
-        declareQueue(DLX);
+        declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
         publishN(MSG_COUNT, PropertiesFactory.NULL);
-        channel.queuePurge(TEST_QUEUE_NAME);
     }
 
     public void testDeadLetterMultipleDeadLetterQueues()
         throws IOException
     {
-        declareQueue(DLX);
+        declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
 
         channel.queueDeclare(DLQ2, false, true, false, null);
 
@@ -171,17 +167,13 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(DLQ2, DLX, "test");
 
         publishN(MSG_COUNT, PropertiesFactory.NULL);
-        channel.queuePurge(TEST_QUEUE_NAME);
     }
 
     public void testDeadLetterTwice() throws Exception {
-        Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-message-ttl", 1);
-
-        declareQueue(TEST_QUEUE_NAME, DLX, null, args);
+        declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
 
         channel.queueDelete(DLQ);
-        declareQueue(DLQ, DLX, null, args);
+        declareQueue(DLQ, DLX, null, null, 1);
 
         channel.queueDeclare(DLQ2, false, true, false, null);
 
@@ -215,11 +207,10 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     public void testDeadLetterSelf() throws Exception {
-        declareQueue(TEST_QUEUE_NAME, "amq.direct", "test", null);
+        declareQueue(TEST_QUEUE_NAME, "amq.direct", "test", null, 1);
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
 
         publishN(MSG_COUNT_MANY, PropertiesFactory.NULL);
-        channel.queuePurge(TEST_QUEUE_NAME);
         sleep(100);
 
         // The messages will NOT be dead-lettered to self.
@@ -230,9 +221,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     public void testDeadLetterNewRK() throws Exception {
-        Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-message-ttl", 1);
-        declareQueue(TEST_QUEUE_NAME, DLX, "test-other", args);
+        declareQueue(TEST_QUEUE_NAME, DLX, "test-other", null, 1);
 
         channel.queueDeclare(DLQ2, false, true, false, null);
 
@@ -334,8 +323,20 @@ public class DeadLetterExchange extends BrokerTestCase {
     private void declareQueue(String queue, Object deadLetterExchange,
                               Object deadLetterRoutingKey,
                               Map<String, Object> args) throws IOException {
+        declareQueue(queue, deadLetterExchange, deadLetterRoutingKey, args, 0);
+    }
+
+    private void declareQueue(String queue, Object deadLetterExchange,
+                              Object deadLetterRoutingKey,
+                              Map<String, Object> args, int ttl)
+        throws IOException
+    {
         if (args == null) {
             args = new HashMap<String, Object>();
+        }
+
+        if (ttl > 0){
+            args.put("x-message-ttl", 1);
         }
 
         args.put(DLX_ARG, deadLetterExchange);
