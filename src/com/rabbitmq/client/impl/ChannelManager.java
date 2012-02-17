@@ -86,6 +86,7 @@ public final class ChannelManager {
             releaseChannelNumber(channel);
             channel.processShutdownSignal(signal, true, true);
             shutdownSet.add(channel.getShutdownLatch());
+            channel.notifyListeners();
         }
         scheduleShutdownProcessing();
     }
