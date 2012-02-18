@@ -175,7 +175,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @param password for <code><b>username</b></code>
      * @param frameHandler for sending and receiving frames on this connection
      * @param executor thread pool service for consumer threads for channels on this connection
-     * @param virtualHost
+     * @param virtualHost virtual host of this connection
      * @param clientProperties client info used in negotiating with the server
      * @param requestedFrameMax max size of frame offered
      * @param requestedChannelMax max number of channels offered
@@ -211,7 +211,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @param password for <code><b>username</b></code>
      * @param frameHandler for sending and receiving frames on this connection
      * @param executor thread pool service for consumer threads for channels on this connection
-     * @param virtualHost
+     * @param virtualHost virtual host of this connection
      * @param clientProperties client info used in negotiating with the server
      * @param requestedFrameMax max size of frame offered
      * @param requestedChannelMax max number of channels offered
@@ -623,10 +623,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Protected API - causes all attached channels to terminate with
-     * a ShutdownSignal built from the argument, and stops this
-     * connection from accepting further work from the application.
-     *
+     * Protected API - causes all attached channels to terminate (shutdown) with a ShutdownSignal
+     * built from the argument, and stops this connection from accepting further work from the
+     * application. {@link com.rabbitmq.client.ShutdownListener ShutdownListener}s for the
+     * connection are notified when the main loop terminates.
+     * @param reason object being shutdown
+     * @param initiatedByApplication true if caused by a client command
+     * @param cause trigger exception which caused shutdown
+     * @param notifyRpc true if outstanding rpc should be informed of shutdown
      * @return a shutdown signal built using the given arguments
      */
     public ShutdownSignalException shutdown(Object reason,
@@ -722,6 +726,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         close(closeCode, closeMessage, initiatedByApplication, cause, -1, false);
     }
 
+    // TODO: Make this private
     /**
      * Protected API - Close this connection with the given code, message, source
      * and timeout value for all the close operations to complete.
