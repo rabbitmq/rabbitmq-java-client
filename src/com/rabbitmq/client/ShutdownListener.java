@@ -19,8 +19,14 @@ package com.rabbitmq.client;
 
 import java.util.EventListener;
 
+/**
+ * Interface that can receive information about the shutdown of connections and
+ * channels. Note that when a connection is shut down, any channels are also
+ * considered shut down and any ShutdownListeners then have will fire.
+ *
+ * @see ShutdownNotifier
+ * @see ShutdownSignalException
+ */
 public interface ShutdownListener extends EventListener {
-
     public void shutdownCompleted(ShutdownSignalException cause);
-
 }
