@@ -62,7 +62,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     {
         try {
             declareQueue("foo", "amq.direct", 144, null);
-            fail("x-dead-letter-routink-key must be a string");
+            fail("x-dead-letter-routing-key must be a string");
         } catch (IOException ex) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
         }
