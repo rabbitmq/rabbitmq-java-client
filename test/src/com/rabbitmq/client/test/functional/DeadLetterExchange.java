@@ -34,12 +34,6 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.exchangeDelete(DLX);
     }
 
-    public void testDeclareQueueWithNoDeadLetterExchange()
-        throws IOException
-    {
-        channel.queueDeclare(TEST_QUEUE_NAME, false, true, false, null);
-    }
-
     public void testDeclareQueueWithExistingDeadLetterExchange()
         throws IOException
     {
