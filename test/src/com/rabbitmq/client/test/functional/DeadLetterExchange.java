@@ -333,7 +333,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         }
 
         if (ttl > 0){
-            args.put("x-message-ttl", 1);
+            args.put("x-message-ttl", ttl);
         }
 
         args.put(DLX_ARG, deadLetterExchange);
