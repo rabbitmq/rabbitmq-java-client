@@ -135,9 +135,7 @@ public class BrokerTestCase extends TestCase
 
     public void checkShutdownSignal(int expectedCode, ShutdownSignalException sse) {
         Command closeCommand = (Command) sse.getReason();
-        channel = null;
         if (sse.isHardError()) {
-            connection = null;
             AMQP.Connection.Close closeMethod = (AMQP.Connection.Close) closeCommand.getMethod();
             assertEquals(expectedCode, closeMethod.getReplyCode());
         } else {

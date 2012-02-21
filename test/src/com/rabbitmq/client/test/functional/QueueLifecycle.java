@@ -18,7 +18,6 @@
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -99,6 +98,21 @@ public class QueueLifecycle extends BrokerTestCase {
         args.put("assumed-to-be-semantically-void", "bar");
         verifyQueue(q, false, false, false, args);
 
+    }
+
+    public void testQueueDeclarePassive() throws Exception {
+        String q = "passivetestqueue";
+        declareDurableQueue(q);
+        channel.queueDeclarePassive(q);
+
+        deleteQueue(q);
+        try {
+            channel.queueDeclarePassive(q);
+            fail("Passive declare should throw an exception");
+        } catch(IOException ioe) {
+            checkShutdownSignal(AMQP.NOT_FOUND, ioe);
+        }
+        assertFalse("Channel has not been closed.", channel.isOpen());
     }
 
     // not equivalent in various ways
