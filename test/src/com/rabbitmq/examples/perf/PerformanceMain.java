@@ -55,8 +55,8 @@ public class PerformanceMain {
         broker.start();
         runTests(new Scenario[]{no_ack_long(), no_consume(), no_ack(), no_ack_mandatory(), no_ack_immediate(), ack(),
                                 ack_confirm(), ack_confirm_persist(), ack_persist(), fill_drain_queue("small", 500000),
-                                fill_drain_queue("large", 1000000), consumers(),
-                                message_sizes(), message_size_vs_producers(), rate_vs_latency()});
+                                fill_drain_queue("large", 2000000), consumers(), headline_publish(), headline_consume(),
+                                message_sizes_small(), message_sizes_large(), message_size_vs_producers(), rate_vs_latency()});
         broker.stop();
     }
 
@@ -73,6 +73,20 @@ public class PerformanceMain {
         MulticastParams params = params();
         params.setTimeLimit(500);
         return new SimpleScenario("no-ack-long", factory, 10000, params);
+    }
+
+    private static Scenario headline_publish() throws IOException, InterruptedException {
+        MulticastParams params = params();
+        params.setProducerCount(10);
+        params.setConsumerCount(0);
+        return new SimpleScenario("headline-publish", factory, params);
+    }
+
+    private static Scenario headline_consume() throws IOException, InterruptedException {
+        MulticastParams params = params();
+        params.setProducerCount(1);
+        params.setConsumerCount(20);
+        return new SimpleScenario("headline-consume", factory, params);
     }
 
     private static Scenario no_consume() throws IOException, InterruptedException {
@@ -146,11 +160,17 @@ public class PerformanceMain {
         return params;
     }
 
-    private static Scenario message_sizes() throws IOException, InterruptedException {
+    private static Scenario message_sizes_small() throws IOException, InterruptedException {
         MulticastParams params = params();
-        return new VaryingScenario("message-sizes", factory, params,
+        return new VaryingScenario("message-sizes-small", factory, params,
                     var("minMsgSize", 0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
                                       1200, 1400, 1600, 1800, 2000, 3000, 4000, 5000));
+    }
+
+    private static Scenario message_sizes_large() throws IOException, InterruptedException {
+        MulticastParams params = params();
+        return new VaryingScenario("message-sizes-large", factory, params,
+                    var("minMsgSize", 5000, 10000, 20000, 50000, 100000, 500000, 1000000));
     }
 
     private static Scenario consumers() throws IOException, InterruptedException {
@@ -165,14 +185,14 @@ public class PerformanceMain {
         MulticastParams params = params();
         params.setConsumerCount(0);
         return new VaryingScenario("message-sizes-and-producers", factory, params,
-                    var("minMsgSize", 0, 1000, 10000),
+                    var("minMsgSize", 0, 1000, 10000, 100000),
                     var("producerCount", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
     }
 
     private static Scenario message_size_broker_config() throws IOException, InterruptedException {
         MulticastParams params = params();
         return new VaryingScenario("message-sizes-and-broker-config", factory, params,
-                    var("minMsgSize", 0, 500, 1000, 1500, 2000),
+                    var("minMsgSize", 0, 1000, 2000, 5000),
                     new BrokerVariable(Broker.DEFAULT, Broker.HIPE, Broker.COARSE, Broker.HIPE_COARSE));
     }
 
