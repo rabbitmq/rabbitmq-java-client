@@ -97,7 +97,7 @@ public class DeadLetterExchange extends BrokerTestCase {
                 public void run() {
                     sleep(2000);
                 }
-            }, args, PropertiesFactory.NULL, "expired");
+            }, args, "expired");
     }
 
     public void testDeadLetterExchangeDeleteTwice()
@@ -105,7 +105,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     {
         declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
 
-        publishN(MSG_COUNT_MANY, PropertiesFactory.NULL);
+        publishN(MSG_COUNT_MANY);
         channel.queueDelete(TEST_QUEUE_NAME);
         try {
             channel.queueDelete(TEST_QUEUE_NAME);
@@ -126,7 +126,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueDelete(DLQ);
         declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
-        publishN(MSG_COUNT, PropertiesFactory.NULL);
+        publishN(MSG_COUNT);
     }
 
     public void testDeadLetterMultipleDeadLetterQueues()
@@ -140,7 +140,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(DLQ, DLX, "test");
         channel.queueBind(DLQ2, DLX, "test");
 
-        publishN(MSG_COUNT, PropertiesFactory.NULL);
+        publishN(MSG_COUNT);
     }
 
     public void testDeadLetterTwice() throws Exception {
@@ -155,7 +155,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(DLQ, DLX, "test");
         channel.queueBind(DLQ2, DLX, "test");
 
-        publishN(MSG_COUNT, PropertiesFactory.NULL);
+        publishN(MSG_COUNT);
 
         sleep(100);
 
@@ -184,7 +184,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         declareQueue(TEST_QUEUE_NAME, "amq.direct", "test", null, 1);
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
 
-        publishN(MSG_COUNT, PropertiesFactory.NULL);
+        publishN(MSG_COUNT);
         // This test hangs if the queue doesn't process ALL the
         // messages before being deleted, so make sure the next
         // sleep is long enough.
@@ -206,16 +206,13 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(DLQ, DLX, "test");
         channel.queueBind(DLQ2, DLX, "test-other");
 
-        publishN(MSG_COUNT, new PropertiesFactory() {
-                public AMQP.BasicProperties create(int msgNum) {
-                    Map<String, Object> headers = new HashMap<String, Object>();
-                    headers.put("CC", Arrays.asList(new String[]{"foo"}));
-                    headers.put("BCC", Arrays.asList(new String[]{"bar"}));
-                    return (new AMQP.BasicProperties.Builder())
-                        .headers(headers)
-                        .build();
-                }
-            });
+        Map<String, Object> headers = new HashMap<String, Object>();
+        headers.put("CC", Arrays.asList(new String[]{"foo"}));
+        headers.put("BCC", Arrays.asList(new String[]{"bar"}));
+
+        publishN(MSG_COUNT, (new AMQP.BasicProperties.Builder())
+                               .headers(headers)
+                               .build());
 
         sleep(100);
 
@@ -256,12 +253,11 @@ public class DeadLetterExchange extends BrokerTestCase {
                     }
                     return null;
                 }
-            }, null, PropertiesFactory.NULL, "rejected");
+            }, null, "rejected");
     }
 
     private void deadLetterTest(final Runnable deathTrigger,
                                 Map<String, Object> queueDeclareArgs,
-                                PropertiesFactory propsFactory,
                                 String reason)
         throws Exception
     {
@@ -270,12 +266,11 @@ public class DeadLetterExchange extends BrokerTestCase {
                     deathTrigger.run();
                     return null;
                 }
-            }, queueDeclareArgs, propsFactory, reason);
+            }, queueDeclareArgs, reason);
     }
 
     private void deadLetterTest(Callable<?> deathTrigger,
                                 Map<String, Object> queueDeclareArgs,
-                                PropertiesFactory propsFactory,
                                 final String reason)
         throws Exception
     {
@@ -284,7 +279,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
         channel.queueBind(DLQ, DLX, "test");
 
-        publishN(MSG_COUNT, propsFactory);
+        publishN(MSG_COUNT);
 
         deathTrigger.call();
 
@@ -341,12 +336,15 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueDeclare(queue, false, true, false, args);
     }
 
-    private void publishN(int n, PropertiesFactory propsFactory)
+    private void publishN(int n) throws IOException {
+        publishN(n, null);
+    }
+
+    private void publishN(int n, AMQP.BasicProperties props)
         throws IOException
     {
         for(int x = 0; x < n; x++) {
-            channel.basicPublish("amq.direct", "test",
-                                 propsFactory.create(x),
+            channel.basicPublish("amq.direct", "test", props,
                                  "test message".getBytes());
         }
     }
@@ -392,16 +390,6 @@ public class DeadLetterExchange extends BrokerTestCase {
             (Map<String, Object>)death.get(num);
         assertEquals(queue, deathHeader.get("queue").toString());
         assertEquals(reason, deathHeader.get("reason").toString());
-    }
-
-    private static interface PropertiesFactory {
-        static final PropertiesFactory NULL = new PropertiesFactory(){
-                public AMQP.BasicProperties create(int msgNum) {
-                    return null;
-                }
-            };
-
-        AMQP.BasicProperties create(int msgNum);
     }
 
     private static interface WithResponse {
