@@ -87,6 +87,8 @@ public class DeadLetterExchange extends BrokerTestCase {
         declareQueue(TEST_QUEUE_NAME, DLX, null, null);
         channel.queuePurge(TEST_QUEUE_NAME);
         channel.queueDelete(TEST_QUEUE_NAME);
+        // Nothing was dead-lettered.
+        consumeN(DLQ, 0, WithResponse.NULL);
     }
 
     public void testDeadLetterQueueTTLExpiredMessages() throws Exception {
@@ -191,10 +193,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         sleep(200);
 
         // The messages will NOT be dead-lettered to self.
-        consumeN(TEST_QUEUE_NAME, 0, new WithResponse() {
-                public void process(GetResponse getResponse) {
-                }
-            });
+        consumeN(TEST_QUEUE_NAME, 0, WithResponse.NULL);
     }
 
     public void testDeadLetterNewRK() throws Exception {
@@ -216,10 +215,7 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         sleep(100);
 
-        consumeN(DLQ, 0, new WithResponse() {
-                public void process(GetResponse getResponse) {
-                }
-            });
+        consumeN(DLQ, 0, WithResponse.NULL);
         consumeN(DLQ2, MSG_COUNT, new WithResponse() {
                 @SuppressWarnings("unchecked")
                 public void process(GetResponse getResponse) {
@@ -393,6 +389,11 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     private static interface WithResponse {
+        static final WithResponse NULL = new WithResponse() {
+                public void process(GetResponse getResponse) {
+                }
+            };
+
         public void process(GetResponse response);
     }
 }
