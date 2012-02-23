@@ -115,31 +115,11 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     public void testDeadLetterOnReject() throws Exception {
-        deadLetterTest(new Callable<Void>() {
-                public Void call() throws Exception {
-                    for (int x = 0; x < MSG_COUNT; x++) {
-                        GetResponse getResponse =
-                            channel.basicGet(TEST_QUEUE_NAME, false);
-                        long tag = getResponse.getEnvelope().getDeliveryTag();
-                        channel.basicReject(tag, false);
-                    }
-                    return null;
-                }
-            }, null, PropertiesFactory.NULL, "rejected");
+        rejectionTest(false);
     }
 
     public void testDeadLetterOnNack() throws Exception {
-        deadLetterTest(new Callable<Void>() {
-                public Void call() throws Exception {
-                    for (int x = 0; x < MSG_COUNT; x++) {
-                        GetResponse getResponse =
-                            channel.basicGet(TEST_QUEUE_NAME, false);
-                        long tag = getResponse.getEnvelope().getDeliveryTag();
-                        channel.basicNack(tag, false, false);
-                    }
-                    return null;
-                }
-            }, null, PropertiesFactory.NULL, "rejected");
+        rejectionTest(true);
     }
 
     public void testDeadLetterNoDeadLetterQueue() throws IOException {
@@ -259,6 +239,24 @@ public class DeadLetterExchange extends BrokerTestCase {
                                       Arrays.asList(new String[]{"test", "foo"}));
                 }
             });
+    }
+
+    public void rejectionTest(final boolean useNack) throws Exception {
+        deadLetterTest(new Callable<Void>() {
+                public Void call() throws Exception {
+                    for (int x = 0; x < MSG_COUNT; x++) {
+                        GetResponse getResponse =
+                            channel.basicGet(TEST_QUEUE_NAME, false);
+                        long tag = getResponse.getEnvelope().getDeliveryTag();
+                        if (useNack) {
+                            channel.basicNack(tag, false, false);
+                        } else {
+                            channel.basicReject(tag, false);
+                        }
+                    }
+                    return null;
+                }
+            }, null, PropertiesFactory.NULL, "rejected");
     }
 
     private void deadLetterTest(final Runnable deathTrigger,
