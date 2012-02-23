@@ -1,0 +1,85 @@
+Overview
+========
+
+A number of examples are packaged with the source distribution and
+with the tests jar in the binary distribution. These examples vary in
+complexity from simple clients and servers through to complex test
+harnesses that are used for testing the RabbitMQ server.
+
+The source code for the examples can be found in the
+test/src/com/rabbitmq/examples directory of the source distribution.
+
+
+Running the Examples
+====================
+
+The script runjava.sh or runjava.bat can be found in the top level
+directory of the binary distribution or in the scripts directory of
+the source distribution.
+
+This script can be used to run the examples.  For instance, if you are
+using the binary distribution and if you have a RabbitMQ broker
+running and you open two shell or console windows you can test basic
+connectivity like this:
+
+shell-1$ ./runjava.sh com.rabbitmq.examples.SimpleConsumer
+
+shell-2$ ./runjava.sh com.rabbitmq.examples.SimpleProducer
+
+shell-1$ ./runjava.sh com.rabbitmq.examples.SimpleConsumer
+Message: the time is Fri Feb 26 08:28:58 GMT 2010
+
+Running the examples from the source distribution requries two more
+preliminary steps:
+
+shell-1$ ant dist
+
+shell-1$ cd build/dist/
+
+Now, the examples can be run exactly as detailed above.
+
+The more complex examples will require additional command line
+arguments and it is best to examine the source of the examples to
+determine what arguments are available.
+
+All examples live in the com.rabbitmq.examples package, so just add
+that package name to the examples described below to produce the full
+classname that is required as the first argument to the runjava
+script.
+
+
+Simple Examples
+===============
+
+SimpleProducer - Sends a message to an exchange.
+SimpleConsumer - Reads a message from a queue.
+SimpleTopicProducer - Sends a message to a topic exchange.
+SimpleTopicConsumer - Reads a message from a topic queue.
+SendString - Send a string to an exchange.
+FileProducer - Sends a file to an exchange.
+FileConsumer - Reads a file from a queue.
+HelloClient - Performs a simple RPC call over AMQP.
+HelloServer - Acts as an RPC server over AMQP.
+HelloJsonClient - Performs a simple JSON-RPC call over AMQP.
+HelloJsonServer - Acts as a JSON-RPC server over AMQP.
+LogTail - Tails the server logs.
+SendString - Sends a user-supplied message over AMQP.
+
+
+More Complex Examples
+=====================
+
+Most of these examples are used in testing and tuning the RabbitMQ
+server.
+
+BufferPerformanceMetrics - Tests buffer sizing.
+ChannelCreationPerformance - Test different Channel creation strategies.
+ConsumerMain - Measures performance of Consumers.
+ManyConnections - Tests many connections.
+MulticastMain - Measures performance of multiple consumers and producers.
+ProducerMain - Measures performance of Producers.
+SpammyTopicProducer - Sends lots of different topic messages over AMQP.
+StressPersister - Stress test for persister.
+TestMain - RabbitMQ server regression tests.
+TracerConcurrencyTest - Tests correct concurrency behaviour of RabbitMQ tracer.
+
