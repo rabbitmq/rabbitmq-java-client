@@ -31,7 +31,11 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     @Override
     protected void releaseResources() throws IOException {
-        channel.exchangeDelete(DLX);
+        try {
+            channel.exchangeDelete(DLX);
+        } catch (IOException err) {
+            // whoosh!
+        }
     }
 
     public void testDeclareQueueWithExistingDeadLetterExchange()
@@ -85,8 +89,11 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     public void testDeadLetterEmpty() throws Exception {
         declareQueue(TEST_QUEUE_NAME, DLX, null, null);
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+
         channel.queuePurge(TEST_QUEUE_NAME);
         channel.queueDelete(TEST_QUEUE_NAME);
+
         // Nothing was dead-lettered.
         consumeN(DLQ, 0, WithResponse.NULL);
     }
@@ -102,10 +109,24 @@ public class DeadLetterExchange extends BrokerTestCase {
             }, args, "expired");
     }
 
+    public void testDeadLetterNonExistingDLX() throws Exception {
+        declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+
+        channel.exchangeDelete(DLX);
+
+        publishN(MSG_COUNT);
+        sleep(100);
+
+        // Nothing was dead-lettered.
+        consumeN(DLQ, 0, WithResponse.NULL);
+    }
+
     public void testDeadLetterExchangeDeleteTwice()
         throws IOException
     {
         declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
 
         publishN(MSG_COUNT_MANY);
         channel.queueDelete(TEST_QUEUE_NAME);
@@ -126,8 +147,10 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     public void testDeadLetterNoDeadLetterQueue() throws IOException {
         channel.queueDelete(DLQ);
+
         declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+
         publishN(MSG_COUNT);
     }
 
