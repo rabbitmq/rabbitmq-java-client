@@ -109,17 +109,24 @@ public class DeadLetterExchange extends BrokerTestCase {
             }, args, "expired");
     }
 
-    public void testDeadLetterNonExistingDLX() throws Exception {
+    public void testDeadLetterDeletedDLX() throws Exception {
         declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+        channel.queueBind(DLQ, DLX, "test");
 
         channel.exchangeDelete(DLX);
+        publishN(MSG_COUNT);
+        sleep(100);
+
+        consumeN(DLQ, 0, WithResponse.NULL);
+
+        channel.exchangeDeclare(DLX, "direct");
+        channel.queueBind(DLQ, DLX, "test");
 
         publishN(MSG_COUNT);
         sleep(100);
 
-        // Nothing was dead-lettered.
-        consumeN(DLQ, 0, WithResponse.NULL);
+        consumeN(DLQ, MSG_COUNT, WithResponse.NULL);
     }
 
     public void testDeadLetterExchangeDeleteTwice()
@@ -374,7 +381,8 @@ public class DeadLetterExchange extends BrokerTestCase {
         for(int x = 0; x < n; x++) {
             GetResponse getResponse =
                 channel.basicGet(queue, true);
-            assertNotNull("Message not dead-lettered", getResponse);
+            assertNotNull("Messages not dead-lettered (" + (n-x) + " left)",
+                          getResponse);
             assertEquals("test message", new String(getResponse.getBody()));
             withResponse.process(getResponse);
         }
