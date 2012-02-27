@@ -20,6 +20,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -108,6 +109,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Flag indicating whether the client received Connection.Close message from the broker */
     private volatile boolean _brokerInitiatedShutdown;
 
+    /** Flag indicating we are still negotiating the connection in start */
+    private volatile boolean _inConnectionNegotiation;
+
     /** Manages heart-beat sending for this connection */
     private final HeartbeatSender _heartbeatSender;
 
@@ -175,7 +179,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @param password for <code><b>username</b></code>
      * @param frameHandler for sending and receiving frames on this connection
      * @param executor thread pool service for consumer threads for channels on this connection
-     * @param virtualHost
+     * @param virtualHost virtual host of this connection
      * @param clientProperties client info used in negotiating with the server
      * @param requestedFrameMax max size of frame offered
      * @param requestedChannelMax max number of channels offered
@@ -211,7 +215,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @param password for <code><b>username</b></code>
      * @param frameHandler for sending and receiving frames on this connection
      * @param executor thread pool service for consumer threads for channels on this connection
-     * @param virtualHost
+     * @param virtualHost virtual host of this connection
      * @param clientProperties client info used in negotiating with the server
      * @param requestedFrameMax max size of frame offered
      * @param requestedChannelMax max number of channels offered
@@ -248,6 +252,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         this._heartbeatSender = new HeartbeatSender(frameHandler);
         this._brokerInitiatedShutdown = false;
+
+        this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
     }
 
     /**
@@ -384,6 +390,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             _frameHandler.close();
             throw AMQChannel.wrap(sse);
         }
+
+        // We can now respond to errors having finished tailoring the connection
+        this._inConnectionNegotiation = false;
 
         return;
     }
@@ -538,7 +547,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Called when a frame-read operation times out
      * @throws MissedHeartbeatException if heart-beats have been missed
      */
-    private void handleSocketTimeout() throws MissedHeartbeatException {
+    private void handleSocketTimeout() throws SocketTimeoutException {
+        if (_inConnectionNegotiation) {
+            throw new SocketTimeoutException("Timeout during Connection negotiation");
+        }
+
         if (_heartbeat == 0) { // No heart-beating
             return;
         }
@@ -623,10 +636,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Protected API - causes all attached channels to terminate with
-     * a ShutdownSignal built from the argument, and stops this
-     * connection from accepting further work from the application.
-     *
+     * Protected API - causes all attached channels to terminate (shutdown) with a ShutdownSignal
+     * built from the argument, and stops this connection from accepting further work from the
+     * application. {@link com.rabbitmq.client.ShutdownListener ShutdownListener}s for the
+     * connection are notified when the main loop terminates.
+     * @param reason object being shutdown
+     * @param initiatedByApplication true if caused by a client command
+     * @param cause trigger exception which caused shutdown
+     * @param notifyRpc true if outstanding rpc should be informed of shutdown
      * @return a shutdown signal built using the given arguments
      */
     public ShutdownSignalException shutdown(Object reason,
@@ -722,6 +739,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         close(closeCode, closeMessage, initiatedByApplication, cause, -1, false);
     }
 
+    // TODO: Make this private
     /**
      * Protected API - Close this connection with the given code, message, source
      * and timeout value for all the close operations to complete.

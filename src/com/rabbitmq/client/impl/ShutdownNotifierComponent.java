@@ -24,6 +24,11 @@ import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownNotifier;
 import com.rabbitmq.client.ShutdownSignalException;
 
+/**
+ * A class that manages {@link ShutdownListener}s and remembers the reason for a shutdown. Both
+ * {@link com.rabbitmq.client.Channel Channel}s and {@link com.rabbitmq.client.Connection
+ * Connection}s have shutdown listeners.
+ */
 public class ShutdownNotifierComponent implements ShutdownNotifier {
 
     /** Monitor for shutdown listeners and shutdownCause */
@@ -87,6 +92,11 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
         }
     }
 
+    /**
+     * Internal: this is the means of registering shutdown.
+     * @param sse the reason for the shutdown
+     * @return <code>true</code> if the component is open; <code>false</code> otherwise.
+     */
     public boolean setShutdownCauseIfOpen(ShutdownSignalException sse) {
         synchronized (this.monitor) {
             if (isOpen()) {

@@ -32,7 +32,7 @@ public class CloseInMainLoop extends BrokerTestCase{
 
   class SpecialConnection extends AMQConnection{
     private AtomicBoolean validShutdown = new AtomicBoolean(false);
-    
+
     public boolean hadValidShutdown(){
       if(isOpen()) throw new IllegalStateException("hadValidShutdown called while connection is still open");
       return validShutdown.get();
@@ -61,6 +61,7 @@ public class CloseInMainLoop extends BrokerTestCase{
                                                     String consumerTag,
                                                     String methodName) {
                     try {
+                        // TODO: change this to call 4-parameter close and make 6-parm one private
                       ((AMQConnection) channel.getConnection())
                           .close(AMQP.INTERNAL_ERROR,
                                  "Internal error in Consumer " + consumerTag,
