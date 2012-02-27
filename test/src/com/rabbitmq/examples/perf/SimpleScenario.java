@@ -24,6 +24,7 @@ public class SimpleScenario implements Scenario {
     private String name;
     private ConnectionFactory factory;
     private MulticastParams[] params;
+    private long interval;
     private SimpleScenarioStats stats;
 
     public SimpleScenario(String name, ConnectionFactory factory, MulticastParams... params) {
@@ -34,11 +35,12 @@ public class SimpleScenario implements Scenario {
         this.name = name;
         this.factory = factory;
         this.params = params;
-        this.stats = new SimpleScenarioStats(interval);
+        this.interval = interval;
     }
 
     @Override
     public void run() throws IOException, InterruptedException {
+        this.stats = new SimpleScenarioStats(interval);
         for (MulticastParams p : params) {
             MulticastSet set = new MulticastSet(stats, factory, p);
             set.run();
