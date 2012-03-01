@@ -18,7 +18,6 @@ package com.rabbitmq.examples.perf;
 
 import com.rabbitmq.client.ConnectionFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -65,6 +64,7 @@ public class VaryingScenario implements Scenario {
                     value.setup(p);
                 }
                 MulticastSet set = new MulticastSet(stats0, factory, p);
+                stats0.setMinMsgSize(p.minMsgSize);
                 set.run();
                 for (VariableValue value : values) {
                     value.teardown(p);

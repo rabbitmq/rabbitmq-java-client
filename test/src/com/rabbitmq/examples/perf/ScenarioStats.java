@@ -16,6 +16,8 @@
 
 package com.rabbitmq.examples.perf;
 
+import java.util.Map;
+
 public interface ScenarioStats {
-    public Object results();
+    public Map<String, Object> results();
 }

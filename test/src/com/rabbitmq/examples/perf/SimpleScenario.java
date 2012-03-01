@@ -43,6 +43,7 @@ public class SimpleScenario implements Scenario {
         this.stats = new SimpleScenarioStats(interval);
         for (MulticastParams p : params) {
             MulticastSet set = new MulticastSet(stats, factory, p);
+            stats.setMinMsgSize(p.minMsgSize);
             set.run();
         }
     }

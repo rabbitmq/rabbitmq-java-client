@@ -35,7 +35,7 @@ public class VaryingScenarioStats implements ScenarioStats {
     }
 
     @Override
-    public Object results() {
+    public Map<String, Object> results() {
         Map<String, Object> map = new HashMap<String, Object>();
 
         List<String> dimensions = new ArrayList<String>();

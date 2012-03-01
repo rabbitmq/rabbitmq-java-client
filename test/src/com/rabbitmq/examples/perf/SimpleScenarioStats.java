@@ -26,6 +26,7 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
 
     private List<Map<String, Object>> samples = new ArrayList<Map<String, Object>>();
     private long elapsedTotalToIgnore;
+    private long minMsgSize;
 
     public SimpleScenarioStats(long interval) {
         super(interval);
@@ -42,8 +43,10 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
         }
 
         Map<String, Object> sample = new HashMap<String, Object>();
-        sample.put("send-rate", rate(sendCountInterval, elapsedInterval));
-        sample.put("recv-rate", rate(recvCountInterval, elapsedInterval));
+        sample.put("send-msg-rate", rate(sendCountInterval, elapsedInterval));
+        sample.put("send-bytes-rate", rate(sendCountInterval, elapsedInterval) * minMsgSize);
+        sample.put("recv-msg-rate", rate(recvCountInterval, elapsedInterval));
+        sample.put("recv-bytes-rate", rate(recvCountInterval, elapsedInterval) * minMsgSize);
         sample.put("elapsed",   elapsedTotal);
         if (latencyCountInterval > 0) {
             sample.put("avg-latency", intervalAverageLatency());
@@ -56,13 +59,19 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
     @Override
     public Map<String, Object> results() {
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("send-rate", getSendRate());
-        map.put("recv-rate", getRecvRate());
+        map.put("send-msg-rate", getSendRate());
+        map.put("send-bytes-rate", getSendRate() * minMsgSize);
+        map.put("recv-msg-rate", getRecvRate());
+        map.put("recv-bytes-rate", getRecvRate() * minMsgSize);
         if (latencyCountTotal > 0) {
             map.put("avg-latency", overallAverageLatency());
         }
         map.put("samples", samples);
         return map;
+    }
+
+    public void setMinMsgSize(long minMsgSize) {
+        this.minMsgSize = minMsgSize;
     }
 
     public double getSendRate() {
