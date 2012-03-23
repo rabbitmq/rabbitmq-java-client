@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
@@ -175,6 +176,23 @@ public class PerQueueTTL extends BrokerTestCase {
         expectBodyAndRemainingMessages(MSG[2], 0);
     }
 
+    /*
+     * Test expiry of requeued messages after being consumed instantly
+     */
+    public void testExpiryWithRequeueAfterConsume() throws Exception {
+        declareAndBindQueue(100);
+        QueueingConsumer c = new QueueingConsumer(channel);
+        channel.basicConsume(TTL_QUEUE_NAME, c);
+
+        publish(MSG[0]);
+        assertNotNull(c.nextDelivery());
+
+        closeChannel();
+        Thread.sleep(150);
+        openChannel();
+
+        assertNull("Requeued message not expired", get());
+    }
 
     private String get() throws IOException {
         GetResponse response = basicGet(TTL_QUEUE_NAME);
