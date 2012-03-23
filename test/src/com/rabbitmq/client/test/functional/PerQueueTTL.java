@@ -117,13 +117,13 @@ public class PerQueueTTL extends BrokerTestCase {
      * Test messages expire when using basic get.
      */
     public void testPublishAndGetWithExpiry() throws Exception {
-        declareAndBindQueue(2000);
+        declareAndBindQueue(200);
 
         publish(MSG[0]);
-        Thread.sleep(1500);
+        Thread.sleep(150);
 
         publish(MSG[1]);
-        Thread.sleep(1000);
+        Thread.sleep(100);
 
         publish(MSG[2]);
 
@@ -136,19 +136,19 @@ public class PerQueueTTL extends BrokerTestCase {
      * Test get expiry for messages sent under a transaction
      */
     public void testTransactionalPublishWithGet() throws Exception {
-        declareAndBindQueue(1000);
+        declareAndBindQueue(100);
 
         this.channel.txSelect();
 
         publish(MSG[0]);
-        Thread.sleep(1500);
+        Thread.sleep(150);
 
         publish(MSG[1]);
         this.channel.txCommit();
-        Thread.sleep(500);
+        Thread.sleep(50);
 
         assertEquals(MSG[0], new String(get()));
-        Thread.sleep(800);
+        Thread.sleep(80);
 
         assertNull(get());
     }
@@ -157,10 +157,10 @@ public class PerQueueTTL extends BrokerTestCase {
      * Test expiry of requeued messages
      */
     public void testExpiryWithRequeue() throws Exception {
-        declareAndBindQueue(1000);
+        declareAndBindQueue(100);
 
         publish(MSG[0]);
-        Thread.sleep(500);
+        Thread.sleep(50);
         publish(MSG[1]);
         publish(MSG[2]);
 
@@ -170,7 +170,7 @@ public class PerQueueTTL extends BrokerTestCase {
         closeChannel();
         openChannel();
 
-        Thread.sleep(600);
+        Thread.sleep(60);
         expectBodyAndRemainingMessages(MSG[1], 1);
         expectBodyAndRemainingMessages(MSG[2], 0);
     }
