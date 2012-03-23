@@ -127,8 +127,8 @@ public class PerQueueTTL extends BrokerTestCase {
 
         publish(MSG[2]);
 
-        assertEquals(MSG[1], new String(get()));
-        assertEquals(MSG[2], new String(get()));
+        assertEquals(MSG[1], get());
+        assertEquals(MSG[2], get());
 
     }
 
@@ -147,7 +147,7 @@ public class PerQueueTTL extends BrokerTestCase {
         this.channel.txCommit();
         Thread.sleep(50);
 
-        assertEquals(MSG[0], new String(get()));
+        assertEquals(MSG[0], get());
         Thread.sleep(80);
 
         assertNull(get());
@@ -176,12 +176,9 @@ public class PerQueueTTL extends BrokerTestCase {
     }
 
 
-    private byte[] get() throws IOException {
+    private String get() throws IOException {
         GetResponse response = basicGet(TTL_QUEUE_NAME);
-        if(response == null) {
-            return null;
-        }
-        return response.getBody();
+        return response == null ? null : new String(response.getBody());
     }
 
     private void publish(String msg) throws IOException {
