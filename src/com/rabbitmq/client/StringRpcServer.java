@@ -30,6 +30,8 @@ public class StringRpcServer extends RpcServer {
     public StringRpcServer(Channel channel, String queueName) throws IOException
     { super(channel, queueName); }
 
+    public static String STRING_ENCODING = "UTF-8";
+
     /**
      * Overridden to do UTF-8 processing, and delegate to
      * handleStringCall. If UTF-8 is not understood by this JVM, falls
@@ -39,13 +41,13 @@ public class StringRpcServer extends RpcServer {
     {
         String request;
         try {
-            request = new String(requestBody, "UTF-8");
+            request = new String(requestBody, STRING_ENCODING);
         } catch (UnsupportedEncodingException uee) {
             request = new String(requestBody);
         }
         String reply = handleStringCall(request, replyProperties);
         try {
-            return reply.getBytes("UTF-8");
+            return reply.getBytes(STRING_ENCODING);
         } catch (UnsupportedEncodingException uee) {
             return reply.getBytes();
         }
@@ -75,7 +77,7 @@ public class StringRpcServer extends RpcServer {
     public void handleCast(byte[] requestBody)
     {
         try {
-            handleStringCast(new String(requestBody, "UTF-8"));
+            handleStringCast(new String(requestBody, STRING_ENCODING));
         } catch (UnsupportedEncodingException uee) {
             handleStringCast(new String(requestBody));
         }
