@@ -17,7 +17,12 @@
 
 package com.rabbitmq.client;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -227,13 +232,13 @@ public class RpcClient {
         byte[] request;
         try {
             request = message.getBytes(StringRpcServer.STRING_ENCODING);
-        } catch (UnsupportedEncodingException uee) {
+        } catch (IOException _) {
             request = message.getBytes();
         }
         byte[] reply = primitiveCall(request);
         try {
             return new String(reply, StringRpcServer.STRING_ENCODING);
-        } catch (UnsupportedEncodingException uee) {
+        } catch (IOException _) {
            return new String(reply);
         }
     }

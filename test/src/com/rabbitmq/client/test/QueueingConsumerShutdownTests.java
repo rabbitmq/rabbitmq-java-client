@@ -16,10 +16,13 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
 
 public class QueueingConsumerShutdownTests extends BrokerTestCase{
   static final String QUEUE = "some-queue";
@@ -52,7 +55,7 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
     }
 
     connection.close();
-    
+
     // Far longer than this could reasonably take
     assertTrue(latch.await(5, TimeUnit.SECONDS));
     assertEquals(0, count.get());
