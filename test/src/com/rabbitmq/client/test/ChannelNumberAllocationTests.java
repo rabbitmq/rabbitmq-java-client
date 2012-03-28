@@ -16,9 +16,16 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
 import junit.framework.TestCase;
-import java.util.*;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 
 public class ChannelNumberAllocationTests extends TestCase{
   static int CHANNEL_COUNT = 100;

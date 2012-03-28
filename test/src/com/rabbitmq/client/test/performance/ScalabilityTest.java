@@ -17,17 +17,26 @@
 
 package com.rabbitmq.client.test.performance;
 
-import com.rabbitmq.client.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Random;
+import java.util.Stack;
+import java.util.UUID;
+import java.util.Vector;
+import java.util.concurrent.CountDownLatch;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.FileOutputStream;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.ReturnListener;
 
 /**
  * This tests the scalability of the routing tables in two aspects:
