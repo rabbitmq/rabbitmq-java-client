@@ -18,7 +18,6 @@
 package com.rabbitmq.client;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 /**
  * Subclass of RpcServer which accepts UTF-8 string requests.
@@ -42,13 +41,13 @@ public class StringRpcServer extends RpcServer {
         String request;
         try {
             request = new String(requestBody, STRING_ENCODING);
-        } catch (UnsupportedEncodingException uee) {
+        } catch (IOException _) {
             request = new String(requestBody);
         }
         String reply = handleStringCall(request, replyProperties);
         try {
             return reply.getBytes(STRING_ENCODING);
-        } catch (UnsupportedEncodingException uee) {
+        } catch (IOException _) {
             return reply.getBytes();
         }
     }
@@ -71,14 +70,14 @@ public class StringRpcServer extends RpcServer {
 
     /**
      * Overridden to do UTF-8 processing, and delegate to
-     * handleStringCast. If UTF-8 is not understood by this JVM, falls
-     * back to the platform default.
+     * handleStringCast. If requestBody cannot be interpreted as UTF-8
+     * tries the platform default.
      */
     public void handleCast(byte[] requestBody)
     {
         try {
             handleStringCast(new String(requestBody, STRING_ENCODING));
-        } catch (UnsupportedEncodingException uee) {
+        } catch (IOException _) {
             handleStringCast(new String(requestBody));
         }
     }
