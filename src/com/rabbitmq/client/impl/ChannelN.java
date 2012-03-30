@@ -354,7 +354,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             } else if (method instanceof Basic.Nack) {
                 Basic.Nack nack = (Basic.Nack) method;
                 callConfirmListeners(command, nack);
-                handleAckNack(nack.getDeliveryTag(), nack.getMultiple(), false);
+                handleAckNack(nack.getDeliveryTag(), nack.getMultiple(), true);
                 return true;
             } else if (method instanceof Basic.RecoverOk) {
                 for (Map.Entry<String, Consumer> entry : _consumers.entrySet()) {
