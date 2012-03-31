@@ -72,17 +72,22 @@ final class HeartbeatSender {
             }
 
             if (heartbeatSeconds > 0) {
-                // wake every heartbeatSeconds / 2 to avoid the worst case
-                // where the last activity comes just after the last heartbeat
-                long interval = SECONDS.toNanos(heartbeatSeconds) / 2;
+                
+                long interval = SECONDS.toNanos(heartbeatSeconds);
                 ScheduledExecutorService executor = createExecutorIfNecessary();
                 Runnable task = new HeartbeatRunnable(interval);
+                
                 this.future = executor.scheduleAtFixedRate(
                     task, interval, interval, TimeUnit.NANOSECONDS);
             }
         }
     }
 
+    public void setExecutor(ScheduledExecutorService executor)
+    {
+        this.executor = executor;
+    }       
+    
     private ScheduledExecutorService createExecutorIfNecessary() {
         synchronized (this.monitor) {
             if (this.executor == null) {
@@ -127,11 +132,7 @@ final class HeartbeatSender {
 
         public void run() {
             try {
-                long now = System.nanoTime();
-
-                if (now > (lastActivityTime + this.heartbeatNanos)) {
-                    frameHandler.writeFrame(new Frame(AMQP.FRAME_HEARTBEAT, 0));
-                }
+                frameHandler.writeFrame(new Frame(AMQP.FRAME_HEARTBEAT, 0));
             } catch (IOException e) {
                 // ignore
             }
