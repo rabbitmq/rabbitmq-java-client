@@ -17,6 +17,7 @@ package com.rabbitmq.client.rpc;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP.Basic.RecoverOk;
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -363,6 +364,16 @@ public class StubChannel implements Channel {
     }
 
     public void waitForConfirmsOrDie() throws IOException, InterruptedException {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean waitForConfirms(long timeout) throws InterruptedException,
+            TimeoutException {
+        throw new UnsupportedOperationException();
+    }
+
+    public void waitForConfirmsOrDie(long timeout) throws IOException,
+            InterruptedException, TimeoutException {
         throw new UnsupportedOperationException();
     }
 
