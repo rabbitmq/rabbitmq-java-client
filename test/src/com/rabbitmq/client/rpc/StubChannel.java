@@ -35,6 +35,7 @@ import com.rabbitmq.client.Command;
 import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.FlowListener;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.Method;
@@ -47,6 +48,15 @@ import com.rabbitmq.client.ShutdownSignalException;
  */
 public class StubChannel implements Channel {
 
+    private Map<byte[], byte[]> replyMap;
+
+    StubChannel() {
+        this(null);
+    };
+
+    StubChannel(Map<byte[], byte[]> replyMap) {
+        this.replyMap = replyMap;
+    }
     public void addShutdownListener(ShutdownListener listener) {
         throw new UnsupportedOperationException();
     }
@@ -151,14 +161,24 @@ public class StubChannel implements Channel {
         throw new UnsupportedOperationException();
     }
 
-    public void basicPublish(String exchange, String routingKey, BasicProperties props, byte[] body)
-            throws IOException {
-        throw new UnsupportedOperationException();
+    public void basicPublish(String exchange, String routingKey,
+            BasicProperties props, byte[] body) throws IOException {
+        this.basicPublish(exchange, routingKey, false, false, props, body);
     }
 
+    private long deliveryTag = 0;
     public void basicPublish(String exchange, String routingKey, boolean mandatory,
             boolean immediate, BasicProperties props, byte[] body) throws IOException {
-        throw new UnsupportedOperationException();
+        if (this.consumer != null) {
+            Envelope envelope = new Envelope(this.deliveryTag, false, exchange, routingKey);
+            if (this.replyMap != null)
+                if (this.replyMap.containsKey(body))
+                    this.consumer.handleDelivery(routingKey, envelope, props, this.replyMap.get(body));
+                else
+                    throw new UnsupportedOperationException("No reply in replyMap");
+            else
+                throw new UnsupportedOperationException("No replyMap set");
+        }
     }
 
     public DeclareOk exchangeDeclare(String exchange, String type) throws IOException {
@@ -237,8 +257,6 @@ public class StubChannel implements Channel {
                .build();
     }
 
-    private Consumer consumer = null;
-
     public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclarePassive(String queue)
             throws IOException {
         throw new UnsupportedOperationException();
@@ -301,14 +319,16 @@ public class StubChannel implements Channel {
         return this.basicConsume(queue, autoAck, generateConsumerTag(), callback);
     }
 
-    private String consumerTag = null;
-    private String generateConsumerTag() {
-        return "CT-1";
-    }
-
     public String basicConsume(String queue, boolean autoAck, String consumerTag, Consumer callback)
             throws IOException {
         return this.basicConsume(queue, autoAck, consumerTag, false, false, null, callback);
+    }
+
+    private Consumer consumer = null;
+
+    private String consumerTag = null;
+    private String generateConsumerTag() {
+        return "CT-1";
     }
 
     public String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal,

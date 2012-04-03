@@ -26,19 +26,19 @@ import junit.framework.TestCase;
  */
 public class ByteArrayRpcClientTest extends TestCase {
 
-    private static <K,V> Map<K,V> newMap() { return new HashMap<K,V>(); }
-
-    private final StubChannel stubChannel = new StubChannel();
+    private final StubChannel stubChannel = new StubChannel(resultMap);
     private final ByteArrayRpcClient baRpcClient = new ByteArrayRpcClient(this.stubChannel);
 
     private static final String exchange = "exchange";
     private static final String routingKey = "routingKey";
-    private static final byte[] message = new byte[]{1,2,3,4,5};
-    private static final byte[] replyMessage = new byte[]{5,4,3,2,1};
+    private static final byte[] testMessage = new byte[]{1,2,3,4,5};
+    private static final byte[] testReplyMessage = new byte[]{5,4,3,2,1};
+
+    private static <K,V> Map<K,V> newMap() { return new HashMap<K,V>(); }
 
     private static final Map<byte[], byte[]> resultMap = newMap();
     static {
-        resultMap.put(message, replyMessage);
+        resultMap.put(testMessage, testReplyMessage);
     }
 
     /**
@@ -54,7 +54,7 @@ public class ByteArrayRpcClientTest extends TestCase {
      */
     public void testCallBeforeOpen() throws Exception {
         try {
-            this.baRpcClient.call(exchange, routingKey, message);
+            this.baRpcClient.call(exchange, routingKey, testMessage);
             fail("Should throw exception");
         } catch (Exception e) {
             assertTrue("Call before open expected IOException", e instanceof IOException);
@@ -68,7 +68,7 @@ public class ByteArrayRpcClientTest extends TestCase {
         this.baRpcClient.open();
         this.baRpcClient.close();
         try {
-            this.baRpcClient.call(exchange, routingKey, message);
+            this.baRpcClient.call(exchange, routingKey, testMessage);
             fail("Should throw exception");
         } catch (Exception e) {
             assertTrue("Call after close expected IOException", e instanceof IOException);
@@ -88,7 +88,7 @@ public class ByteArrayRpcClientTest extends TestCase {
      */
     public void testCallStandard() throws Exception {
         this.baRpcClient.open();
-        assertArrayEquals("Incorrect returned value", replyMessage, this.baRpcClient.call(exchange, routingKey, message));
+        assertArrayEquals("Incorrect returned value", testReplyMessage, this.baRpcClient.call(exchange, routingKey, testMessage));
         this.baRpcClient.close();
     }
 

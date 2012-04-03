@@ -238,7 +238,7 @@ public class ByteArrayRpcClient implements RpcClient<byte[], byte[]> {
             ShutdownSignalException, TimeoutException {
         BlockingCell<RpcReturn> k;
         synchronized (this.monitor) {
-            checkIsOpen();
+            this.checkIsOpen();
             k = new BlockingCell<RpcReturn>();
             synchronized (this.continuationMap) {
                 this.correlationId++;
@@ -248,7 +248,7 @@ public class ByteArrayRpcClient implements RpcClient<byte[], byte[]> {
                         .replyTo(this.replyQueue).build();
                 this.continuationMap.put(replyId, k);
             }
-            publish(exchange, routingKey, props, message);
+            this.publish(exchange, routingKey, props, message);
         }
         RpcReturn reply = k.uninterruptibleGet(this.timeout);
         if (reply.shutdown()) {
