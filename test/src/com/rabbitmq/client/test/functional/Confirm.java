@@ -83,16 +83,18 @@ public class Confirm extends BrokerTestCase
         confirmTest("", "confirm-test-nondurable", true, false, false);
     }
 
-    public void testPersistentImmediateNoConsumer()
+    public void testImmediateNoConsumer()
         throws IOException, InterruptedException
     {
-        confirmTest("", "confirm-test-noconsumer", true, false, true);
+        confirmTest("", "confirm-test-noconsumer", false, false, true);
+        confirmTest("", "confirm-test-noconsumer",  true, false, true);
     }
 
-    public void testPersistentMandatoryReturn()
+    public void testMandatoryNoRoute()
         throws IOException, InterruptedException
     {
-        confirmTest("", "confirm-test-doesnotexist", true, true, false);
+        confirmTest("", "confirm-test-doesnotexist", false, true, false);
+        confirmTest("", "confirm-test-doesnotexist",  true, true, false);
     }
 
     public void testMultipleQueues()
