@@ -60,19 +60,18 @@ public class PerQueueTTL extends BrokerTestCase {
         }
     }
 
+    public void testTTLAllowZero() throws Exception {
+        try {
+            declareQueue(0);
+        } catch (IOException e) {
+            fail("Should be able to declare a queue with zero for x-message-ttl");
+        }
+    }
+
     public void testCreateQueueWithInvalidTTL() throws Exception {
         try {
             declareQueue(TTL_INVALID_QUEUE_NAME, "foobar");
             fail("Should not be able to declare a queue with a non-long value for x-message-ttl");
-        } catch (IOException e) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
-        }
-    }
-
-    public void testTTLMustBeGtZero() throws Exception {
-        try {
-            declareQueue(TTL_INVALID_QUEUE_NAME, 0);
-            fail("Should not be able to declare a queue with zero for x-message-ttl");
         } catch (IOException e) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
@@ -130,7 +129,6 @@ public class PerQueueTTL extends BrokerTestCase {
 
         assertEquals(MSG[1], get());
         assertEquals(MSG[2], get());
-
     }
 
     /*
