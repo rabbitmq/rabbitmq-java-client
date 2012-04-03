@@ -63,15 +63,18 @@ public class Confirm extends BrokerTestCase
                           "confirm-multiple-queues");
     }
 
-    public void testTransient()
-        throws IOException, InterruptedException {
-        confirmTest("", "confirm-test", false, false, false);
-    }
-
-    public void testPersistentSimple()
+    public void testPersistentMandatoryImmediateCombinations()
         throws IOException, InterruptedException
     {
-        confirmTest("", "confirm-test", true, false, false);
+        boolean b[] = { false, true };
+        for (boolean persistent : b) {
+            for (boolean mandatory : b) {
+                for (boolean immediate : b) {
+                    confirmTest("", "confirm-test",
+                                persistent, mandatory, immediate);
+                        }
+            }
+        }
     }
 
     public void testNonDurable()
@@ -80,22 +83,10 @@ public class Confirm extends BrokerTestCase
         confirmTest("", "confirm-test-nondurable", true, false, false);
     }
 
-    public void testPersistentImmediate()
-        throws IOException, InterruptedException
-    {
-        confirmTest("", "confirm-test", true, false, true);
-    }
-
     public void testPersistentImmediateNoConsumer()
         throws IOException, InterruptedException
     {
         confirmTest("", "confirm-test-noconsumer", true, false, true);
-    }
-
-    public void testPersistentMandatory()
-        throws IOException, InterruptedException
-    {
-        confirmTest("", "confirm-test", true, true, false);
     }
 
     public void testPersistentMandatoryReturn()
