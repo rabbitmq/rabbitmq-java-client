@@ -14,7 +14,7 @@
 // Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
 //
 
-package com.rabbitmq.client.rpc;
+package com.rabbitmq.rpc;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -29,7 +29,6 @@ import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.ShutdownSignalException;
-
 import com.rabbitmq.utility.BlockingCell;
 
 /**

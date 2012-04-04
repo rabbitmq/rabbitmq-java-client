@@ -16,7 +16,7 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.rpc.RpcUnitTests;
+import com.rabbitmq.rpc.RpcUnitTests;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;

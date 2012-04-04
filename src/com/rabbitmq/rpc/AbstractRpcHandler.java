@@ -1,4 +1,4 @@
-package com.rabbitmq.client.rpc;
+package com.rabbitmq.rpc;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Envelope;

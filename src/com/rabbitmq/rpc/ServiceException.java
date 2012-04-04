@@ -14,7 +14,7 @@
 // Copyright (c) 2011 VMware, Inc.  All rights reserved.
 //
 
-package com.rabbitmq.client.rpc;
+package com.rabbitmq.rpc;
 
 /**
  * This {@link RuntimeException} indicates errors that occur in the handling code on the

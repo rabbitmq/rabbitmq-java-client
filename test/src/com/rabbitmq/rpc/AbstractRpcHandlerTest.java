@@ -14,12 +14,12 @@
 //  Copyright (c) 2012 VMware, Inc.  All rights reserved.
 //
 
-package com.rabbitmq.client.rpc;
+package com.rabbitmq.rpc;
+
+import junit.framework.TestCase;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Envelope;
-
-import junit.framework.TestCase;
 
 /**
  * Test {@link AbstractRpcHandler}.

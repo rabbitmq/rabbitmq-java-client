@@ -13,7 +13,7 @@
 // The Initial Developer of the Original Code is VMware, Inc.
 // Copyright (c) 2011 VMware, Inc.  All rights reserved.
 //
-package com.rabbitmq.client.rpc;
+package com.rabbitmq.rpc;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

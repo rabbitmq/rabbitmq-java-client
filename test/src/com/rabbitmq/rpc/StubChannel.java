@@ -13,7 +13,7 @@
 //  The Initial Developer of the Original Code is VMware, Inc.
 //  Copyright (c) 2012 VMware, Inc.  All rights reserved.
 //
-package com.rabbitmq.client.rpc;
+package com.rabbitmq.rpc;
 
 import java.io.IOException;
 import java.util.Map;
