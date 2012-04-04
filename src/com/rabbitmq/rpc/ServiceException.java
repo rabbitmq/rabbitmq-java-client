@@ -30,7 +30,7 @@ public class ServiceException extends RuntimeException {
     }
 
     static ServiceException newServiceException(String reason, Throwable cause) {
-        return (ServiceException) new ServiceException(reason).initCause(cause);
+        return (ServiceException) newServiceException(reason).initCause(cause);
     }
 
     static ServiceException newServiceException(String reason) {

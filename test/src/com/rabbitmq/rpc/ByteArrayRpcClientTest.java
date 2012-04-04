@@ -15,7 +15,7 @@
 //
 package com.rabbitmq.rpc;
 
-import java.io.IOException;
+import java.io.EOFException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -57,7 +57,7 @@ public class ByteArrayRpcClientTest extends TestCase {
             this.baRpcClient.call(exchange, routingKey, testMessage);
             fail("Should throw exception");
         } catch (Exception e) {
-            assertTrue("Call before open expected IOException", e instanceof IOException);
+            assertTrue("Call before open expected EOFException", e instanceof EOFException);
         }
     }
     /**
@@ -71,7 +71,7 @@ public class ByteArrayRpcClientTest extends TestCase {
             this.baRpcClient.call(exchange, routingKey, testMessage);
             fail("Should throw exception");
         } catch (Exception e) {
-            assertTrue("Call after close expected IOException", e instanceof IOException);
+            assertTrue("Call after close expected EOFException", e instanceof EOFException);
         }
     }
 

@@ -37,7 +37,7 @@ public class RpcException extends RuntimeException {
     }
 
     static RpcException newRpcException(String reason, Throwable cause) {
-        return (RpcException) new RpcException(reason).initCause(cause);
+        return (RpcException) newRpcException(reason).initCause(cause);
     }
 
     static RpcException newRpcException(String reason) {
