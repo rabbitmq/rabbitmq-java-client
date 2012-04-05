@@ -20,6 +20,7 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
@@ -190,6 +191,25 @@ public class PerQueueTTL extends BrokerTestCase {
         openChannel();
 
         assertNull("Requeued message not expired", get());
+    }
+
+    public void testZeroTTLDelivery() throws Exception {
+        declareAndBindQueue(0);
+
+        // when there is no consumer, message should expire
+        publish(MSG[0]);
+        assertNull(get());
+
+        // when there is a consumer, message should be delivered
+        QueueingConsumer c = new QueueingConsumer(channel);
+        channel.basicConsume(TTL_QUEUE_NAME, c);
+        publish(MSG[0]);
+        Delivery d = c.nextDelivery(100);
+        assertNotNull(d);
+
+        // requeued messages should expire
+        channel.basicReject(d.getEnvelope().getDeliveryTag(), true);
+        assertNull(c.nextDelivery(100));
     }
 
     private String get() throws IOException {
