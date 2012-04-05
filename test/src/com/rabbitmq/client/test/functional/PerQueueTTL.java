@@ -185,7 +185,7 @@ public class PerQueueTTL extends BrokerTestCase {
         channel.basicConsume(TTL_QUEUE_NAME, c);
 
         publish(MSG[0]);
-        assertNotNull(c.nextDelivery());
+        assertNotNull(c.nextDelivery(100));
 
         closeChannel();
         Thread.sleep(150);
