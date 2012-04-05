@@ -385,7 +385,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         assertEquals(exchange, deathHeader.get("exchange").toString());
 
         List<String> deathRKs = new ArrayList<String>();
-        for (Object rk : (ArrayList)deathHeader.get("routing-keys")) {
+        for (Object rk : (ArrayList<?>)deathHeader.get("routing-keys")) {
             deathRKs.add(rk.toString());
         }
         Collections.sort(deathRKs);
