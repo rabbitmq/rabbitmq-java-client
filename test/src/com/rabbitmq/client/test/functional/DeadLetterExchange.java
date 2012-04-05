@@ -84,14 +84,11 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     public void testDeadLetterQueueTTLExpiredMessages() throws Exception {
-        Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-message-ttl", 1000);
+        ttlTest(1000);
+    }
 
-        deadLetterTest(new Runnable() {
-                public void run() {
-                    sleep(2000);
-                }
-            }, args, "expired");
+    public void testDeadLetterQueueZeroTTLExpiredMessages() throws Exception {
+        ttlTest(0);
     }
 
     public void testDeadLetterDeletedDLX() throws Exception {
@@ -307,6 +304,14 @@ public class DeadLetterExchange extends BrokerTestCase {
                                       Arrays.asList(new String[]{"test"}));
                 }
             });
+    }
+
+    private void ttlTest(final long ttl) throws Exception {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-message-ttl", ttl);
+        deadLetterTest(new Runnable() {
+                public void run() { sleep(ttl + 1000); }
+            }, args, "expired");
     }
 
     private void sleep(long millis) {
