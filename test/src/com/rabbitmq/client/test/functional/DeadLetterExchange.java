@@ -310,7 +310,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-message-ttl", ttl);
         deadLetterTest(new Runnable() {
-                public void run() { sleep(ttl + 1000); }
+                public void run() { sleep(ttl + 1500); }
             }, args, "expired");
     }
 
