@@ -138,7 +138,7 @@
       <arg value="-alias"/>
       <arg value="server1"/>
       <arg value="-file"/>
-      <arg value="${SSL_CERTS_DIR}/testca/cacert.pem"/>
+      <arg value="${SSL_CERTS_DIR}/serverca/cacert.pem"/>
       <arg value="-keystore"/>
       <arg value="${CLIENT_KEYSTORE}"/>
       <arg value="-noprompt"/>
@@ -149,25 +149,16 @@
       <arg value="-u"/>
       <arg value="${TMPDIR}/tmp.XXXXXXXXXX"/>
     </exec>
-    <!-- can't create an empty keystore, so add cert in and then delete it! -->
+    <!-- Now a CA that isn't used by the server -->
     <exec executable="keytool" failonerror="true" osfamily="unix">
       <arg line="-import"/>
       <arg value="-alias"/>
       <arg value="server1"/>
       <arg value="-file"/>
-      <arg value="${SSL_CERTS_DIR}/testca/cacert.pem"/>
+      <arg value="${SSL_CERTS_DIR}/clientca/cacert.pem"/>
       <arg value="-keystore"/>
       <arg value="${CLIENT_KEYSTORE_EMPTY}"/>
       <arg value="-noprompt"/>
-      <arg value="-storepass"/>
-      <arg value="${CLIENT_KEYSTORE_PHRASE}"/>
-    </exec>
-    <exec executable="keytool" failonerror="true" osfamily="unix">
-      <arg line="-delete"/>
-      <arg value="-alias"/>
-      <arg value="server1"/>
-      <arg value="-keystore"/>
-      <arg value="${CLIENT_KEYSTORE_EMPTY}"/>
       <arg value="-storepass"/>
       <arg value="${CLIENT_KEYSTORE_PHRASE}"/>
     </exec>
@@ -323,7 +314,8 @@
     </junit>
   </target>
 
-  <target name="test-ssl" depends="test-build, make-client-keystore" if="SSL_AVAILABLE">
+  <target name="test-ssl" depends="test-build, make-client-keystore"
+      if="SSL_AVAILABLE">
     <junit printSummary="withOutAndErr"
         haltOnFailure="${haltOnFailureJunit}"
         failureproperty="test.failure"
