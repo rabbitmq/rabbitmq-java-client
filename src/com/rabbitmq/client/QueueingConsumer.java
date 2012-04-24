@@ -42,7 +42,7 @@ import com.rabbitmq.utility.Utility;
  * ch1.{@link Channel#queueBind queueBind}(queueName, exchangeName, queueName);
  *
  * // Create the QueueingConsumer and have it consume from the queue
- * QueueingConsumer consumer = new {@link QueueingConsumer#QueueingConsumer QueueingConsumer}(ch1);
+ * QueueingConsumer consumer = new {@link QueueingConsumer#QueueingConsumer(Channel) QueueingConsumer}(ch1);
  * ch1.{@link Channel#basicConsume basicConsume}(queueName, false, consumer);
  *
  * // Process deliveries
@@ -54,7 +54,7 @@ import com.rabbitmq.utility.Utility;
  * </pre>
  *
  *
- * <p>For a more complete example, see LogTail in the test/src/com/rabbitmq/examples
+ * <p>For a more complete example, see LogTail in the <code>test/src/com/rabbitmq/examples</code>
  * directory of the source distribution.</p>
  * <p/>
  * <b>deprecated</b> <i><code>QueueingConsumer</code> was introduced to allow
@@ -121,7 +121,6 @@ public class QueueingConsumer extends DefaultConsumer {
                                byte[] body)
         throws IOException
     {
-//        checkShutdown();
         this._queue.add(new Delivery(envelope, properties, body));
     }
 
@@ -165,14 +164,6 @@ public class QueueingConsumer extends DefaultConsumer {
     }
 
     /**
-     * Check if we are in shutdown mode and if so throw an exception.
-     */
-    private void checkShutdown() {
-        if (_shutdown != null)
-            throw Utility.fixStackTrace(_shutdown);
-    }
-
-    /**
      * If delivery is not POISON nor null, return it.
      * <p/>
      * If delivery, _shutdown and _cancelled are all null, return null.
@@ -207,6 +198,7 @@ public class QueueingConsumer extends DefaultConsumer {
      * @return the next message
      * @throws InterruptedException if an interrupt is received while waiting
      * @throws ShutdownSignalException if the connection is shut down while waiting
+     * @throws ConsumerCancelledException if this consumer is cancelled while waiting
      */
     public Delivery nextDelivery()
         throws InterruptedException, ShutdownSignalException, ConsumerCancelledException
@@ -220,6 +212,7 @@ public class QueueingConsumer extends DefaultConsumer {
      * @return the next message or null if timed out
      * @throws InterruptedException if an interrupt is received while waiting
      * @throws ShutdownSignalException if the connection is shut down while waiting
+     * @throws ConsumerCancelledException if this consumer is cancelled while waiting
      */
     public Delivery nextDelivery(long timeout)
         throws InterruptedException, ShutdownSignalException, ConsumerCancelledException
