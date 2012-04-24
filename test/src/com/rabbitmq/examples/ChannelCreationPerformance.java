@@ -11,13 +11,17 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 
 class ChannelCreationPerformance {
     static Connection connect() throws Exception{

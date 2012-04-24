@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -165,6 +165,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public boolean waitForConfirms()
         throws InterruptedException
     {
+        boolean confirms = false;
+        try {
+            confirms = waitForConfirms(0L);
+        } catch (TimeoutException e) { }
+        return confirms;
+    }
+
+    /** {@inheritDoc} */
+    public boolean waitForConfirms(long timeout)
+            throws InterruptedException, TimeoutException {
+        long startTime = System.currentTimeMillis();
         synchronized (unconfirmedSet) {
             while (true) {
                 if (getCloseReason() != null) {
@@ -175,7 +186,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     onlyAcksReceived = true;
                     return aux;
                 }
-                unconfirmedSet.wait();
+                if (timeout == 0L) {
+                    unconfirmedSet.wait();
+                } else {
+                    long elapsed = System.currentTimeMillis() - startTime;
+                    if (timeout > elapsed) {
+                        unconfirmedSet.wait(timeout - elapsed);
+                    } else {
+                        throw new TimeoutException();
+                    }
+                }
             }
         }
     }
@@ -184,9 +204,23 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void waitForConfirmsOrDie()
         throws IOException, InterruptedException
     {
-        if (!waitForConfirms()) {
-            close(AMQP.REPLY_SUCCESS, "NACKS RECEIVED", true, null, false);
-            throw new IOException("nacks received");
+        try {
+            waitForConfirmsOrDie(0L);
+        } catch (TimeoutException e) { }
+    }
+
+    /** {@inheritDoc} */
+    public void waitForConfirmsOrDie(long timeout)
+        throws IOException, InterruptedException, TimeoutException
+    {
+        try {
+            if (!waitForConfirms(timeout)) {
+                close(AMQP.REPLY_SUCCESS, "NACKS RECEIVED", true, null, false);
+                throw new IOException("nacks received");
+            }
+        } catch (TimeoutException e) {
+            close(AMQP.PRECONDITION_FAILED, "TIMEOUT WAITING FOR ACK");
+            throw(e);
         }
     }
 
@@ -320,7 +354,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             } else if (method instanceof Basic.Nack) {
                 Basic.Nack nack = (Basic.Nack) method;
                 callConfirmListeners(command, nack);
-                handleAckNack(nack.getDeliveryTag(), nack.getMultiple(), false);
+                handleAckNack(nack.getDeliveryTag(), nack.getMultiple(), true);
                 return true;
             } else if (method instanceof Basic.RecoverOk) {
                 for (Map.Entry<String, Consumer> entry : _consumers.entrySet()) {

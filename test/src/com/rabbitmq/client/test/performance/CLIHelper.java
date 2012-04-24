@@ -11,15 +11,21 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.performance;
 
-import org.apache.commons.cli.*;
-
 import java.util.Iterator;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 /**
  * Super class for handling repetative CLI stuff
@@ -29,7 +35,7 @@ public class CLIHelper {
     private Options options = new Options();
 
     public static CLIHelper defaultHelper() {
-        Options opts = new Options(); 
+        Options opts = new Options();
         opts.addOption(new Option( "help", "print this message"));
         opts.addOption(new Option("h", "host", true, "broker host"));
         opts.addOption(new Option("p", "port", true, "broker port"));
@@ -48,7 +54,7 @@ public class CLIHelper {
     }
 
     public CommandLine parseCommandLine(String [] args) {
-        CommandLineParser parser = new GnuParser();        
+        CommandLineParser parser = new GnuParser();
         CommandLine commandLine = null;
         try {
             commandLine = parser.parse(options, args);

@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2011-2012 VMware, Inc.  All rights reserved.
 
 package com.rabbitmq.client.impl;
 
@@ -51,6 +51,7 @@ final class ConsumerWorkService {
 
     /**
      * Stop executing all consumer work for a particular channel
+     * @param channel to stop consumer work for
      */
     public void stopWork(Channel channel) {
         this.workPool.unregisterKey(channel);

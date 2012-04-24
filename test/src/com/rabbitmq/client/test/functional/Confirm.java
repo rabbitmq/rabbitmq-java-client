@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -54,24 +54,24 @@ public class Confirm extends BrokerTestCase
         channel.queueDeclare("confirm-test-2", true, true, false, null);
         channel.basicConsume("confirm-test-2", true,
                              new DefaultConsumer(channel));
-        Map<String, Object> argMap =
-            Collections.singletonMap(TTL_ARG, (Object)1);
-        channel.queueDeclare("confirm-ttl", true, true, false, argMap);
         channel.queueBind("confirm-test", "amq.direct",
                           "confirm-multiple-queues");
         channel.queueBind("confirm-test-2", "amq.direct",
                           "confirm-multiple-queues");
     }
 
-    public void testTransient()
-        throws IOException, InterruptedException {
-        confirmTest("", "confirm-test", false, false, false);
-    }
-
-    public void testPersistentSimple()
+    public void testPersistentMandatoryImmediateCombinations()
         throws IOException, InterruptedException
     {
-        confirmTest("", "confirm-test", true, false, false);
+        boolean b[] = { false, true };
+        for (boolean persistent : b) {
+            for (boolean mandatory : b) {
+                for (boolean immediate : b) {
+                    confirmTest("", "confirm-test",
+                                persistent, mandatory, immediate);
+                        }
+            }
+        }
     }
 
     public void testNonDurable()
@@ -80,28 +80,18 @@ public class Confirm extends BrokerTestCase
         confirmTest("", "confirm-test-nondurable", true, false, false);
     }
 
-    public void testPersistentImmediate()
+    public void testImmediateNoConsumer()
         throws IOException, InterruptedException
     {
-        confirmTest("", "confirm-test", true, false, true);
+        confirmTest("", "confirm-test-noconsumer", false, false, true);
+        confirmTest("", "confirm-test-noconsumer",  true, false, true);
     }
 
-    public void testPersistentImmediateNoConsumer()
+    public void testMandatoryNoRoute()
         throws IOException, InterruptedException
     {
-        confirmTest("", "confirm-test-noconsumer", true, false, true);
-    }
-
-    public void testPersistentMandatory()
-        throws IOException, InterruptedException
-    {
-        confirmTest("", "confirm-test", true, true, false);
-    }
-
-    public void testPersistentMandatoryReturn()
-        throws IOException, InterruptedException
-    {
-        confirmTest("", "confirm-test-doesnotexist", true, true, false);
+        confirmTest("", "confirm-test-doesnotexist", false, true, false);
+        confirmTest("", "confirm-test-doesnotexist",  true, true, false);
     }
 
     public void testMultipleQueues()
@@ -147,9 +137,16 @@ public class Confirm extends BrokerTestCase
     public void testQueueTTL()
         throws IOException, InterruptedException
     {
-        publishN("", "confirm-ttl", true, false, false);
+        for (int ttl : new int[]{ 1, 0 }) {
+            Map<String, Object> argMap =
+                Collections.singletonMap(TTL_ARG, (Object)ttl);
+            channel.queueDeclare("confirm-ttl", true, true, false, argMap);
 
-        channel.waitForConfirmsOrDie();
+            publishN("", "confirm-ttl", true, false, false);
+            channel.waitForConfirmsOrDie();
+
+            channel.queueDelete("confirm-ttl");
+        }
     }
 
     public void testBasicRejectRequeue()
