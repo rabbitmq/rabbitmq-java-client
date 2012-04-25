@@ -12,13 +12,8 @@ public class WorkPoolTests extends TestCase {
 
     private WorkPool<String, Object> pool = new WorkPool<String, Object>();
 
-    public void testUnkownKey() {
-        try {
-            this.pool.addWorkItem("test", new Object());
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
+    public void testUnknownKey() {
+        assertFalse(this.pool.addWorkItem("test", new Object()));
     }
 
     public void testBasicInOut() throws InterruptedException {

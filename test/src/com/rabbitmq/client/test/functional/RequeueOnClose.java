@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -27,9 +26,9 @@ import com.rabbitmq.client.ShutdownSignalException;
 public abstract class RequeueOnClose
     extends BrokerTestCase
 {
-    public static final String Q = "RequeueOnClose";
-    public static final int GRATUITOUS_DELAY = 100;
-    public static final int MESSAGE_COUNT = 2000;
+    private static final String Q = "RequeueOnClose";
+    private static final int GRATUITOUS_DELAY = 100;
+    private static final int MESSAGE_COUNT = 2000;
 
     protected abstract void open() throws IOException;
 
