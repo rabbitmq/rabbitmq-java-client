@@ -18,16 +18,24 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 
+/**
+ * Test Requeue of messages on different types of close.
+ * Methods {@link #open} and {@link #close} must be implemented by a concrete subclass.
+ */
 public abstract class RequeueOnClose
     extends BrokerTestCase
 {
     private static final String Q = "RequeueOnClose";
-    private static final int GRATUITOUS_DELAY = 100;
     private static final int MESSAGE_COUNT = 2000;
 
     protected abstract void open() throws IOException;
@@ -46,7 +54,7 @@ public abstract class RequeueOnClose
         // Override to disable the default behaviour from BrokerTestCase.
     }
 
-    public void injectMessage()
+    private void injectMessage()
         throws IOException
     {
         channel.queueDeclare(Q, false, false, false, null);
@@ -55,13 +63,13 @@ public abstract class RequeueOnClose
         channel.basicPublish("", Q, null, "RequeueOnClose message".getBytes());
     }
 
-    public GetResponse getMessage()
+    private GetResponse getMessage()
         throws IOException
     {
         return channel.basicGet(Q, false);
     }
 
-    public void publishAndGet(int count, boolean doAck)
+    private void publishAndGet(int count, boolean doAck)
         throws IOException, InterruptedException
     {
         openConnection();
@@ -71,33 +79,40 @@ public abstract class RequeueOnClose
             GetResponse r1 = getMessage();
             if (doAck) channel.basicAck(r1.getEnvelope().getDeliveryTag(), false);
             close();
-            Thread.sleep(GRATUITOUS_DELAY);
             open();
-            GetResponse r2 = getMessage();
-            if (doAck && r2 != null) {
-                fail("Expected missing second basicGet (repeat="+repeat+")");
-            } else if (!doAck && r2 == null) {
-                fail("Expected present second basicGet (repeat="+repeat+")");
+            if (doAck) {
+                assertNull("Expected missing second basicGet (repeat="+repeat+")", getMessage());
+            } else {
+                assertNotNull("Expected present second basicGet (repeat="+repeat+")", getMessage());
             }
             close();
         }
         closeConnection();
     }
 
-    public void testNormal()
-        throws IOException, InterruptedException
+    /**
+     * Test we don't requeue acknowledged messages (using get)
+     * @throws Exception test
+     */
+    public void testNormal() throws Exception
     {
         publishAndGet(3, true);
     }
 
-    public void testRequeueing()
-        throws IOException, InterruptedException
+    /**
+     * Test we requeue unacknowledged messages (using get)
+     * @throws Exception test
+     */
+    public void testRequeueing() throws Exception
     {
         publishAndGet(3, false);
     }
 
-    public void testRequeueingConsumer()
-        throws IOException, InterruptedException, ShutdownSignalException
+    /**
+     * Test we requeue unacknowledged message (using consumer)
+     * @throws Exception test
+     */
+    public void testRequeueingConsumer() throws Exception
     {
         openConnection();
         open();
@@ -106,14 +121,13 @@ public abstract class RequeueOnClose
         channel.basicConsume(Q, c);
         c.nextDelivery();
         close();
-        Thread.sleep(GRATUITOUS_DELAY);
         open();
         assertNotNull(getMessage());
         close();
         closeConnection();
     }
 
-    public void publishLotsAndGet()
+    private void publishLotsAndGet()
         throws IOException, InterruptedException, ShutdownSignalException
     {
         openConnection();
@@ -130,22 +144,113 @@ public abstract class RequeueOnClose
         close();
         open();
         for (int i = 0; i < MESSAGE_COUNT; i++) {
-            GetResponse r = channel.basicGet(Q, true);
             assertNotNull("only got " + i + " out of " + MESSAGE_COUNT +
-                          " messages", r);
+                          " messages", channel.basicGet(Q, true));
         }
-        assertNull(channel.basicGet(Q, true));
+        assertNull("got more messages than " + MESSAGE_COUNT + " expected", channel.basicGet(Q, true));
         channel.queueDelete(Q);
         close();
         closeConnection();
     }
 
-    public void testRequeueInFlight()
-        throws IOException, InterruptedException, ShutdownSignalException
+    /**
+     * Test close while consuming many messages successfully requeues unacknowledged messages
+     * @throws Exception test
+     */
+    public void testRequeueInFlight() throws Exception
     {
         for (int i = 0; i < 5; i++) {
             publishLotsAndGet();
         }
     }
 
+    /**
+     * Test close while consuming partially not acked with cancel successfully requeues unacknowledged messages
+     * @throws Exception test
+     */
+    public void testRequeueInFlightConsumerNoAck() throws Exception
+    {
+        for (int i = 0; i < 5; i++) {
+            publishLotsAndConsumeSome(false);
+        }
+    }
+
+    /**
+     * Test close while consuming partially acked with cancel successfully requeues unacknowledged messages
+     * @throws Exception test
+     */
+    public void testRequeueInFlightConsumerAck() throws Exception
+    {
+        for (int i = 0; i < 5; i++) {
+            publishLotsAndConsumeSome(true);
+        }
+    }
+
+    private static final int MESSAGES_TO_CONSUME = 20;
+
+    private void publishLotsAndConsumeSome(boolean ack)
+        throws IOException, InterruptedException, ShutdownSignalException
+    {
+        openConnection();
+        open();
+        channel.queueDeclare(Q, false, false, false, null);
+        channel.queueDelete(Q);
+        channel.queueDeclare(Q, false, false, false, null);
+        for (int i = 0; i < MESSAGE_COUNT; i++) {
+            channel.basicPublish("", Q, null, "in flight message".getBytes());
+        }
+
+        CountDownLatch latch = new CountDownLatch(1);
+        PartialConsumer c = new PartialConsumer(channel, MESSAGES_TO_CONSUME, ack, latch);
+        channel.basicConsume(Q, c);
+        latch.await();  // wait for consumer
+
+        close();
+        open();
+        int requeuedMsgCount = (ack) ? MESSAGE_COUNT - MESSAGES_TO_CONSUME : MESSAGE_COUNT;
+        for (int i = 0; i < requeuedMsgCount; i++) {
+            assertNotNull("only got " + i + " out of " + requeuedMsgCount + " messages",
+                    channel.basicGet(Q, true));
+        }
+        int countMoreMsgs = 0;
+        while (null != channel.basicGet(Q, true)) {
+            countMoreMsgs++;
+        }
+        assertTrue("got " + countMoreMsgs + " more messages than " + requeuedMsgCount + " expected", 0==countMoreMsgs);
+        channel.queueDelete(Q);
+        close();
+        closeConnection();
+    }
+
+    private class PartialConsumer extends DefaultConsumer {
+
+        private volatile int count;
+        private Channel channel;
+        private CountDownLatch latch;
+        private volatile boolean acknowledge;
+
+        public PartialConsumer(Channel channel, int count, boolean acknowledge, CountDownLatch latch) {
+            super(channel);
+            this.count = count;
+            this.channel = channel;
+            this.latch = latch;
+            this.acknowledge = acknowledge;
+        }
+
+        @Override
+        public void handleDelivery(String consumerTag,
+                Envelope envelope,
+                AMQP.BasicProperties properties,
+                byte[] body)
+        throws IOException
+        {
+            if (this.acknowledge)
+                this.channel.basicAck(envelope.getDeliveryTag(), false);
+            if (--this.count == 0) {
+                this.channel.basicCancel(this.getConsumerTag());
+                this.acknowledge = false; // don't acknowledge any more
+                this.latch.countDown();
+            }
+        }
+    }
 }

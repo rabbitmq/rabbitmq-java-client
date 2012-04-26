@@ -968,14 +968,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
 
-     /** Public API - {@inheritDoc} */
+    /** Public API - {@inheritDoc} */
     public Basic.RecoverOk basicRecover()
         throws IOException
     {
         return basicRecover(true);
     }
 
-     /** Public API - {@inheritDoc} */
+    /** Public API - {@inheritDoc} */
     public Basic.RecoverOk basicRecover(boolean requeue)
         throws IOException
     {

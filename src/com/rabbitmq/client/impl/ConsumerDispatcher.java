@@ -45,7 +45,7 @@ final class ConsumerDispatcher {
     private volatile boolean shutdownConsumersDriven = false;
     private volatile CountDownLatch shutdownConsumersComplete;
 
-    private volatile ShutdownSignalException shutdownSignal;
+    private volatile ShutdownSignalException shutdownSignal = null;
 
     public ConsumerDispatcher(AMQConnection connection,
                               Channel channel,
