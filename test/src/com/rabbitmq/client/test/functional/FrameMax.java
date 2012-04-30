@@ -87,8 +87,8 @@ public class FrameMax extends BrokerTestCase {
             super(socket);
         }
 
-        public Frame readFrame() throws IOException {
-            Frame f = super.readFrame();
+        public Frame readFrame(boolean firstFrame) throws IOException {
+            Frame f = super.readFrame(firstFrame);
             int size = f.getPayload().length;
             if (size > REAL_FRAME_MAX)
                 fail("Received frame of size " + size

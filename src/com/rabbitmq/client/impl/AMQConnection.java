@@ -496,10 +496,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
          * shutdown().
          */
         @Override public void run() {
+            boolean firstIteration = true;
             try {
                 while (_running) {
-                    Frame frame = _frameHandler.readFrame();
-
+                    Frame frame = _frameHandler.readFrame(firstIteration);
+                    firstIteration = false;
                     if (frame != null) {
                         _missedHeartbeats = 0;
                         if (frame.type == AMQP.FRAME_HEARTBEAT) {

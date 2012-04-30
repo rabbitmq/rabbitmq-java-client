@@ -178,7 +178,7 @@ public class AMQConnectionTest extends TestCase {
             this.timeoutCount = timeoutCount;
         }
 
-        public Frame readFrame() throws IOException {
+        public Frame readFrame(boolean _firstFrame) throws IOException {
             if (_exceptionOnReadingFrames != null) {
                 throw _exceptionOnReadingFrames;
             }

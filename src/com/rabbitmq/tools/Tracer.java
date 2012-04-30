@@ -267,8 +267,8 @@ public class Tracer implements Runnable {
             this.commands = new HashMap<Integer, AMQCommand>();
         }
 
-        private Frame readFrame() throws IOException {
-            return Frame.readFrom(this.inStream);
+        private Frame readFrame(boolean firstFrame) throws IOException {
+            return Frame.readFrom(this.inStream, firstFrame);
         }
 
         private void report(int channel, Object object) {
@@ -301,8 +301,8 @@ public class Tracer implements Runnable {
             }
         }
 
-        private void doFrame() throws IOException {
-            Frame frame = readFrame();
+        private void doFrame(boolean firstFrame) throws IOException {
+            Frame frame = readFrame(firstFrame);
 
             if (frame != null) {
                 if (this.silentMode) {
@@ -338,9 +338,11 @@ public class Tracer implements Runnable {
         }
 
         public void run() {
+            boolean firstIteration = true;
             try {
                 while (true) {
-                    doFrame();
+                    doFrame(firstIteration);
+                    firstIteration = false;
                 }
             } catch (Exception e) {
                 this.waitCell.setIfUnset(e);

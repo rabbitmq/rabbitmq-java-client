@@ -87,7 +87,7 @@ public class Frame {
      *
      * @return a new Frame if we read a frame successfully, otherwise null
      */
-    public static Frame readFrom(DataInputStream is) throws IOException {
+    public static Frame readFrom(DataInputStream is, boolean firstFrame) throws IOException {
         int type;
         int channel;
 
@@ -98,21 +98,22 @@ public class Frame {
             return null; // failed
         }
 
-        if (type == 'A') {
+        if (firstFrame && type == 'A') {
             /*
              * Probably an AMQP.... header indicating a version
              * mismatch.
-             */
-            /*
-             * Otherwise meaningless, so try to read the version,
-             * and throw an exception, whether we read the version
-             * okay or not.
              */
             protocolVersionMismatch(is);
         }
 
         channel = is.readUnsignedShort();
         int payloadSize = is.readInt();
+        if (firstFrame &&  (type != 1 || channel != 0 || payloadSize > AMQP.FRAME_MIN_SIZE)) {
+            throw new MalformedFrameException("Invalid protocol header from server. " +
+                                              "Received frame type " + type + ", channel " +
+                                              channel + " and payload size " + payloadSize +
+                                              " instead of 1, 0 and <" + AMQP.FRAME_MIN_SIZE);
+        }
         byte[] payload = new byte[payloadSize];
         is.readFully(payload);
 

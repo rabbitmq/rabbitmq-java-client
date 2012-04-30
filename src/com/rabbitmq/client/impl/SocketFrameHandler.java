@@ -126,9 +126,9 @@ public class SocketFrameHandler implements FrameHandler {
         sendHeader(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR, AMQP.PROTOCOL.REVISION);
     }
 
-    public Frame readFrame() throws IOException {
+    public Frame readFrame(boolean firstFrame) throws IOException {
         synchronized (_inputStream) {
-            return Frame.readFrom(_inputStream);
+            return Frame.readFrom(_inputStream, firstFrame);
         }
     }
 

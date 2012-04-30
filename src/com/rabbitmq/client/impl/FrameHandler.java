@@ -58,11 +58,12 @@ public interface FrameHandler {
 
     /**
      * Read a {@link Frame} from the underlying data connection.
+     * @param firstFrame Whether the first frame is being received
      * @return an incoming Frame, or null if there is none
      * @throws IOException if there is a problem accessing the connection
      * @throws SocketTimeoutException if the underlying read times out
      */
-    Frame readFrame() throws IOException;
+    Frame readFrame(boolean firstFrame) throws IOException;
 
     /**
      * Write a {@link Frame} to the underlying data connection.

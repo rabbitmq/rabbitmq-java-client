@@ -143,7 +143,7 @@ public class BrokenFramesTest extends TestCase {
 			this.frames = frames;
 		}
 
-		public Frame readFrame() throws IOException {
+		public Frame readFrame(boolean _firstFrame) throws IOException {
         	return frames.next();
         }
 

@@ -40,7 +40,7 @@ public class ConnectionOpen extends TestCase {
         SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
         fh.sendHeader();
         AMQCommand command = new AMQCommand();
-        while (!command.handleFrame(fh.readFrame())) { }
+        while (!command.handleFrame(fh.readFrame(true))) { }
         Method m = command.getMethod();
         //    System.out.println(m.getClass());
         assertTrue("First command must be Connection.start",
@@ -75,7 +75,7 @@ public class ConnectionOpen extends TestCase {
             fh.setTimeout(500);
             // NB the frame handler will return null if the socket times out
             try {
-                fh.readFrame();
+                fh.readFrame(false);
                 fail("Expected socket read to fail due to socket being closed");
             } catch (MalformedFrameException mfe) {
                 fail("Expected nothing, rather than a badly-formed something");
