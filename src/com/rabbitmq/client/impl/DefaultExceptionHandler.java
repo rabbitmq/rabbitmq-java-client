@@ -73,16 +73,7 @@ public class DefaultExceptionHandler implements ExceptionHandler {
             System.err.println("Failure during close of channel " + channel + " after " + exception
                     + ":");
             ioe.printStackTrace();
-            AMQConnection conn = (AMQConnection) channel.getConnection();
-            try {
-                conn.close(AMQP.INTERNAL_ERROR, "Internal error closing channel for " + what,
-                        false, ioe);
-            } catch (IOException ioeH) {
-                // TODO: log the failure
-                System.err.println("Failure during close of connection " + conn + " after " + ioe
-                        + ":");
-                ioeH.printStackTrace();
-            }
+            channel.getConnection().abort(AMQP.INTERNAL_ERROR, "Internal error closing channel for " + what);
         }
     }
 }
