@@ -24,6 +24,9 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
 
+/**
+ * Default implementation of {@link ExceptionHandler} used by {@link AMQConnection}.
+ */
 public class DefaultExceptionHandler implements ExceptionHandler {
     public void handleUnexpectedConnectionDriverException(Connection conn, Throwable exception) {
         // TODO: Log this somewhere, just in case we have a bug like
@@ -58,15 +61,17 @@ public class DefaultExceptionHandler implements ExceptionHandler {
 
     protected void handleChannelKiller(Channel channel, Throwable exception, String what) {
         // TODO: log the exception
-        System.err.println(what + " threw an exception for channel " + channel + ":");
+        System.err.println("DefaultExceptionHandler: " + what + " threw an exception for channel "
+                + channel + ":");
         exception.printStackTrace();
         try {
             channel.close();
         } catch (AlreadyClosedException ace) {
-            //noop
+            // noop
         } catch (IOException ioe) {
             // TODO: log the failure
-            System.err.println("Failure during close of channel " + channel + " after " + exception + ":");
+            System.err.println("Failure during close of channel " + channel + " after " + exception
+                    + ":");
             ioe.printStackTrace();
             AMQConnection conn = (AMQConnection) channel.getConnection();
             try {
@@ -74,7 +79,8 @@ public class DefaultExceptionHandler implements ExceptionHandler {
                         false, ioe);
             } catch (IOException ioeH) {
                 // TODO: log the failure
-                System.err.println("Failure during close of connection " + conn + " after " + ioe + ":");
+                System.err.println("Failure during close of connection " + conn + " after " + ioe
+                        + ":");
                 ioeH.printStackTrace();
             }
         }
