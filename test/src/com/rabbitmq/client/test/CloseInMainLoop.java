@@ -16,15 +16,24 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.impl.*;
-import com.rabbitmq.client.*;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.SocketFactory;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Command;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.DefaultExceptionHandler;
+import com.rabbitmq.client.impl.SocketFrameHandler;
 
 public class CloseInMainLoop extends BrokerTestCase{
 
@@ -32,7 +41,7 @@ public class CloseInMainLoop extends BrokerTestCase{
 
   class SpecialConnection extends AMQConnection{
     private AtomicBoolean validShutdown = new AtomicBoolean(false);
-    
+
     public boolean hadValidShutdown(){
       if(isOpen()) throw new IllegalStateException("hadValidShutdown called while connection is still open");
       return validShutdown.get();
@@ -61,6 +70,7 @@ public class CloseInMainLoop extends BrokerTestCase{
                                                     String consumerTag,
                                                     String methodName) {
                     try {
+                        // TODO: change this to call 4-parameter close and make 6-parm one private
                       ((AMQConnection) channel.getConnection())
                           .close(AMQP.INTERNAL_ERROR,
                                  "Internal error in Consumer " + consumerTag,

@@ -62,7 +62,7 @@ public class MulticastSet {
             channel.queueBind(qName, p.exchangeName, id);
             Thread t =
                 new Thread(new Consumer(channel, id, qName,
-                                        p.consumerTxSize, p.autoAck,
+                                        p.consumerTxSize, p.autoAck, p.multiAckEvery,
                                         stats, p.consumerMsgCount, p.timeLimit));
             consumerThreads[i] = t;
         }

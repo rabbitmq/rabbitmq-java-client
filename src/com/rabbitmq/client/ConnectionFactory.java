@@ -256,7 +256,7 @@ public class ConnectionFactory implements Cloneable {
             // form encoding.  So protect plus signs.
             return URLDecoder.decode(s.replace("+", "%2B"), "US-ASCII");
         }
-        catch (java.io.UnsupportedEncodingException e) {
+        catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

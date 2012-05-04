@@ -624,7 +624,8 @@ public interface Channel extends ShutdownNotifier {
      * acknowledged once delivered; false if the server should expect
      * explicit acknowledgements
      * @param consumerTag a client-generated consumer tag to establish context
-     * @param noLocal flag set to true unless server local buffering is required
+     * @param noLocal true if the server should not deliver to this consumer
+     * messages published on this channel's connection
      * @param exclusive true if this is an exclusive consumer
      * @param callback an interface to the consumer object
      * @param arguments a set of arguments for the consume

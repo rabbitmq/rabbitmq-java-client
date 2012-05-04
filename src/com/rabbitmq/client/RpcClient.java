@@ -229,7 +229,18 @@ public class RpcClient {
     public String stringCall(String message)
         throws IOException, ShutdownSignalException, TimeoutException
     {
-        return new String(primitiveCall(message.getBytes()));
+        byte[] request;
+        try {
+            request = message.getBytes(StringRpcServer.STRING_ENCODING);
+        } catch (IOException _) {
+            request = message.getBytes();
+        }
+        byte[] reply = primitiveCall(request);
+        try {
+            return new String(reply, StringRpcServer.STRING_ENCODING);
+        } catch (IOException _) {
+           return new String(reply);
+        }
     }
 
     /**

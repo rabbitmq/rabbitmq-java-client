@@ -39,6 +39,7 @@ public class MulticastParams {
 
     protected List<?> flags = new ArrayList<Object>();
 
+    protected int multiAckEvery = 0;
     protected boolean autoAck = true;
     protected boolean exclusive = true;
     protected boolean autoDelete = false;
@@ -81,6 +82,10 @@ public class MulticastParams {
 
     public void setAutoAck(boolean autoAck) {
         this.autoAck = autoAck;
+    }
+
+    public void setMultiAckEvery(int multiAckEvery) {
+        this.multiAckEvery = multiAckEvery;
     }
 
     public void setPrefetchCount(int prefetchCount) {

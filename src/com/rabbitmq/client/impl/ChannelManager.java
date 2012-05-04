@@ -30,7 +30,6 @@ import com.rabbitmq.utility.IntAllocator;
 /**
  * Manages a set of channels, indexed by channel number (<code><b>1.._channelMax</b></code>).
  */
-
 public final class ChannelManager {
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 10;
 
@@ -77,6 +76,10 @@ public final class ChannelManager {
         }
     }
 
+    /**
+     * Handle shutdown. All the managed {@link com.rabbitmq.client.Channel Channel}s are shutdown.
+     * @param signal reason for shutdown
+     */
     public void handleSignal(ShutdownSignalException signal) {
         Set<ChannelN> channels;
         synchronized(this.monitor) {
@@ -86,6 +89,7 @@ public final class ChannelManager {
             releaseChannelNumber(channel);
             channel.processShutdownSignal(signal, true, true);
             shutdownSet.add(channel.getShutdownLatch());
+            channel.notifyListeners();
         }
         scheduleShutdownProcessing();
     }

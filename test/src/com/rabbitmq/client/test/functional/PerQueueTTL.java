@@ -19,6 +19,8 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
@@ -30,13 +32,12 @@ import java.util.Map;
  */
 public class PerQueueTTL extends BrokerTestCase {
 
-    private static final String TTL_EXCHANGE = "ttl.exchange";
-
-    private static final String TTL_ARG = "x-message-ttl";
-
-    private static final String TTL_QUEUE_NAME = "queue.ttl";
-
+    private static final String TTL_EXCHANGE           = "ttl.exchange";
+    private static final String TTL_ARG                = "x-message-ttl";
+    private static final String TTL_QUEUE_NAME         = "queue.ttl";
     private static final String TTL_INVALID_QUEUE_NAME = "invalid.queue.ttl";
+
+    private static final String[] MSG = {"one", "two", "three"};
 
     @Override
     protected void createResources() throws IOException {
@@ -48,33 +49,23 @@ public class PerQueueTTL extends BrokerTestCase {
         this.channel.exchangeDelete(TTL_EXCHANGE);
     }
 
-    public void testCreateQueueWithByteTTL() throws IOException {
-        try {
-            declareQueue(TTL_QUEUE_NAME, (byte)200);
-        }   catch(IOException ex) {
-            fail("Should be able to use byte for queue TTL");
-        }
-    }
-    public void testCreateQueueWithShortTTL() throws IOException {
-        try {
-            declareQueue(TTL_QUEUE_NAME, (short)200);
-        }   catch(IOException ex) {
-            fail("Should be able to use short for queue TTL");
-        }
-    }
-    public void testCreateQueueWithIntTTL() throws IOException {
-        try {
-            declareQueue(TTL_QUEUE_NAME, 200);
-        }   catch(IOException ex) {
-            fail("Should be able to use int for queue TTL");
+    public void testCreateQueueTTLTypes() throws IOException {
+        Object[] args = { (byte)200, (short)200, 200, 200L };
+        for (Object ttl : args) {
+            try {
+                declareQueue(ttl);
+            } catch(IOException ex) {
+                fail("Should be able to use " + ttl.getClass().getName() +
+                     " for x-message-ttl");
+            }
         }
     }
 
-    public void testCreateQueueWithLongTTL() throws IOException {
+    public void testTTLAllowZero() throws Exception {
         try {
-            declareQueue(TTL_QUEUE_NAME, 200L);
-        }   catch(IOException ex) {
-            fail("Should be able to use long for queue TTL");
+            declareQueue(0);
+        } catch (IOException e) {
+            fail("Should be able to declare a queue with zero for x-message-ttl");
         }
     }
 
@@ -87,46 +78,37 @@ public class PerQueueTTL extends BrokerTestCase {
         }
     }
 
-    public void testTTLMustBeGtZero() throws Exception {
-        try {
-            declareQueue(TTL_INVALID_QUEUE_NAME, 0);
-            fail("Should not be able to declare a queue with zero for x-message-ttl");
-        } catch (IOException e) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
-        }
-    }
-
     public void testTTLMustBePositive() throws Exception {
         try {
             declareQueue(TTL_INVALID_QUEUE_NAME, -10);
-            fail("Should not be able to declare a queue with zero for x-message-ttl");
+            fail("Should not be able to declare a queue with negative value for x-message-ttl");
         } catch (IOException e) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
     }
 
     public void testQueueRedeclareEquivalence() throws Exception {
-        declareQueue(TTL_QUEUE_NAME, 10);
+        declareQueue(10);
         try {
-            declareQueue(TTL_QUEUE_NAME, 20);
-            fail("Should not be able to redeclare with different TTL");
+            declareQueue(20);
+            fail("Should not be able to redeclare with different x-message-ttl");
         } catch(IOException ex) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
         }
     }
 
     public void testQueueRedeclareSemanticEquivalence() throws Exception {
-        declareQueue(TTL_QUEUE_NAME, (byte)10);
-        declareQueue(TTL_QUEUE_NAME, 10);
-        declareQueue(TTL_QUEUE_NAME, (short)10);
-        declareQueue(TTL_QUEUE_NAME, 10L);
+        declareQueue((byte)10);
+        declareQueue(10);
+        declareQueue((short)10);
+        declareQueue(10L);
     }
 
     public void testQueueRedeclareSemanticNonEquivalence() throws Exception {
-        declareQueue(TTL_QUEUE_NAME, 10);
+        declareQueue(10);
         try {
-            declareQueue(TTL_QUEUE_NAME, 10.0);
-            fail("Should not be able to redeclare with argument of different type");
+            declareQueue(10.0);
+            fail("Should not be able to redeclare with x-message-ttl argument of different type");
         } catch(IOException ex) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
         }
@@ -136,49 +118,37 @@ public class PerQueueTTL extends BrokerTestCase {
      * Test messages expire when using basic get.
      */
     public void testPublishAndGetWithExpiry() throws Exception {
-        long ttl = 2000;
-        declareQueue(TTL_QUEUE_NAME, ttl);
-        this.channel.queueBind(TTL_QUEUE_NAME, TTL_EXCHANGE, TTL_QUEUE_NAME);
+        declareAndBindQueue(200);
 
-        byte[] msg1 = "one".getBytes();
-        byte[] msg2 = "two".getBytes();
-        byte[] msg3 = "three".getBytes();
+        publish(MSG[0]);
+        Thread.sleep(150);
 
-        basicPublishVolatile(msg1, TTL_EXCHANGE, TTL_QUEUE_NAME);
-        Thread.sleep(1500);
+        publish(MSG[1]);
+        Thread.sleep(100);
 
-        basicPublishVolatile(msg2, TTL_EXCHANGE, TTL_QUEUE_NAME);
-        Thread.sleep(1000);
+        publish(MSG[2]);
 
-        basicPublishVolatile(msg3, TTL_EXCHANGE, TTL_QUEUE_NAME);
-
-        assertEquals("two", new String(get()));
-        assertEquals("three", new String(get()));
-
+        assertEquals(MSG[1], get());
+        assertEquals(MSG[2], get());
     }
-    
+
     /*
      * Test get expiry for messages sent under a transaction
      */
     public void testTransactionalPublishWithGet() throws Exception {
-        long ttl = 1000;
-        declareQueue(TTL_QUEUE_NAME, ttl);
-        this.channel.queueBind(TTL_QUEUE_NAME, TTL_EXCHANGE, TTL_QUEUE_NAME);
-
-        byte[] msg1 = "one".getBytes();
-        byte[] msg2 = "two".getBytes();
+        declareAndBindQueue(100);
 
         this.channel.txSelect();
 
-        basicPublishVolatile(msg1, TTL_EXCHANGE, TTL_QUEUE_NAME);
-        Thread.sleep(1500);
+        publish(MSG[0]);
+        Thread.sleep(150);
 
-        basicPublishVolatile(msg2, TTL_EXCHANGE, TTL_QUEUE_NAME);
+        publish(MSG[1]);
         this.channel.txCommit();
-        Thread.sleep(500);
+        Thread.sleep(50);
 
-        assertEquals("one", new String(get()));
-        Thread.sleep(800);
+        assertEquals(MSG[0], get());
+        Thread.sleep(80);
 
         assertNull(get());
     }
@@ -187,37 +157,77 @@ public class PerQueueTTL extends BrokerTestCase {
      * Test expiry of requeued messages
      */
     public void testExpiryWithRequeue() throws Exception {
-        long ttl = 1000;
-        declareQueue(TTL_QUEUE_NAME, ttl);
-        this.channel.queueBind(TTL_QUEUE_NAME, TTL_EXCHANGE, TTL_QUEUE_NAME);
+        declareAndBindQueue(100);
 
-        byte[] msg1 = "one".getBytes();
-        byte[] msg2 = "two".getBytes();
-        byte[] msg3 = "three".getBytes();
+        publish(MSG[0]);
+        Thread.sleep(50);
+        publish(MSG[1]);
+        publish(MSG[2]);
 
-        basicPublishVolatile(msg1, TTL_EXCHANGE, TTL_QUEUE_NAME);
-        Thread.sleep(500);
-        basicPublishVolatile(msg2, TTL_EXCHANGE, TTL_QUEUE_NAME);
-        basicPublishVolatile(msg3, TTL_EXCHANGE, TTL_QUEUE_NAME);
-
-        expectBodyAndRemainingMessages("one", 2);
-        expectBodyAndRemainingMessages("two", 1);
+        expectBodyAndRemainingMessages(MSG[0], 2);
+        expectBodyAndRemainingMessages(MSG[1], 1);
 
         closeChannel();
         openChannel();
 
-        Thread.sleep(600);
-        expectBodyAndRemainingMessages("two", 1);
-        expectBodyAndRemainingMessages("three", 0);
+        Thread.sleep(60);
+        expectBodyAndRemainingMessages(MSG[1], 1);
+        expectBodyAndRemainingMessages(MSG[2], 0);
     }
 
+    /*
+     * Test expiry of requeued messages after being consumed instantly
+     */
+    public void testExpiryWithRequeueAfterConsume() throws Exception {
+        declareAndBindQueue(100);
+        QueueingConsumer c = new QueueingConsumer(channel);
+        channel.basicConsume(TTL_QUEUE_NAME, c);
 
-    private byte[] get() throws IOException {
+        publish(MSG[0]);
+        assertNotNull(c.nextDelivery(100));
+
+        closeChannel();
+        Thread.sleep(150);
+        openChannel();
+
+        assertNull("Requeued message not expired", get());
+    }
+
+    public void testZeroTTLDelivery() throws Exception {
+        declareAndBindQueue(0);
+
+        // when there is no consumer, message should expire
+        publish(MSG[0]);
+        assertNull(get());
+
+        // when there is a consumer, message should be delivered
+        QueueingConsumer c = new QueueingConsumer(channel);
+        channel.basicConsume(TTL_QUEUE_NAME, c);
+        publish(MSG[0]);
+        Delivery d = c.nextDelivery(100);
+        assertNotNull(d);
+
+        // requeued messages should expire
+        channel.basicReject(d.getEnvelope().getDeliveryTag(), true);
+        assertNull(c.nextDelivery(100));
+    }
+
+    private String get() throws IOException {
         GetResponse response = basicGet(TTL_QUEUE_NAME);
-        if(response == null) {
-            return null;
-        }
-        return response.getBody();
+        return response == null ? null : new String(response.getBody());
+    }
+
+    private void publish(String msg) throws IOException {
+        basicPublishVolatile(msg.getBytes(), TTL_EXCHANGE, TTL_QUEUE_NAME);
+    }
+
+    private void declareAndBindQueue(Object ttlValue) throws IOException {
+        declareQueue(ttlValue);
+        this.channel.queueBind(TTL_QUEUE_NAME, TTL_EXCHANGE, TTL_QUEUE_NAME);
+    }
+
+    private AMQP.Queue.DeclareOk declareQueue(Object ttlValue) throws IOException {
+        return declareQueue(TTL_QUEUE_NAME, ttlValue);
     }
 
     private AMQP.Queue.DeclareOk declareQueue(String name, Object ttlValue) throws IOException {

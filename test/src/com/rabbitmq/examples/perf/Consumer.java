@@ -34,22 +34,24 @@ public class Consumer implements Runnable {
     private String           queueName;
     private int              txSize;
     private boolean          autoAck;
+    private int              multiAckEvery;
     private Stats stats;
     private int              msgLimit;
     private long             timeLimit;
 
     public Consumer(Channel channel, String id,
                     String queueName, int txSize, boolean autoAck,
-                    Stats stats, int msgLimit, int timeLimit) {
+                    int multiAckEvery, Stats stats, int msgLimit, int timeLimit) {
 
-        this.channel   = channel;
-        this.id        = id;
-        this.queueName = queueName;
-        this.txSize    = txSize;
-        this.autoAck   = autoAck;
-        this.stats     = stats;
-        this.msgLimit  = msgLimit;
-        this.timeLimit = 1000L * timeLimit;
+        this.channel       = channel;
+        this.id            = id;
+        this.queueName     = queueName;
+        this.txSize        = txSize;
+        this.autoAck       = autoAck;
+        this.multiAckEvery = multiAckEvery;
+        this.stats         = stats;
+        this.msgLimit      = msgLimit;
+        this.timeLimit     = 1000L * timeLimit;
     }
 
     public void run() {
@@ -88,7 +90,11 @@ public class Consumer implements Runnable {
                 Envelope envelope = delivery.getEnvelope();
 
                 if (!autoAck) {
-                    channel.basicAck(envelope.getDeliveryTag(), false);
+                    if (multiAckEvery == 0) {
+                        channel.basicAck(envelope.getDeliveryTag(), false);
+                    } else if (totalMsgCount % multiAckEvery == 0) {
+                        channel.basicAck(envelope.getDeliveryTag(), true);
+                    }
                 }
 
                 if (txSize != 0 && totalMsgCount % txSize == 0) {
