@@ -65,7 +65,7 @@ public class DefaultExceptionHandler implements ExceptionHandler {
                 + channel + ":");
         exception.printStackTrace();
         try {
-            channel.close();
+            channel.close(AMQP.REPLY_SUCCESS, "Closed due to exception from " + what);
         } catch (AlreadyClosedException ace) {
             // noop
         } catch (IOException ioe) {
