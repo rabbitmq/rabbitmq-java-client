@@ -17,7 +17,7 @@
 
 package com.rabbitmq.client;
 
-/*
+/**
  * Thrown when application tries to perform an action on connection/channel
  * which was already closed
  */
