@@ -87,7 +87,7 @@ public class JSONReader {
         Object ret = null;
         skipWhiteSpace();
 
-        if (c == '"') {
+        if (c == '"' || c == '\'') {
             next();
             ret = string();
         } else if (c == '[') {
@@ -181,7 +181,7 @@ public class JSONReader {
 
     private Object string() {
         buf.setLength(0);
-        while (c != '"') {
+        while (c != '"' && c != '\'') {
             if (c == '\\') {
                 next();
                 if (c == 'u') {
