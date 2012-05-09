@@ -19,6 +19,7 @@ package com.rabbitmq.examples.perf;
 import com.rabbitmq.client.ConnectionFactory;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class SimpleScenario implements Scenario {
     private String name;
