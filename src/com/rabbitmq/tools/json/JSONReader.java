@@ -59,9 +59,22 @@ public class JSONReader {
     }
 
     private void skipWhiteSpace() {
-        while (Character.isWhitespace(c)) {
-            next();
-        }
+        boolean cont;
+
+        do {
+            cont = true;
+            if (Character.isWhitespace(c)) {
+                next();
+            }
+            else if (c == '/' && next() == '/') {
+                while (c != '\n') {
+                    next();
+                }
+            }
+            else {
+                cont = false;
+            }
+        } while (cont);
     }
 
     public Object read(String string) {
