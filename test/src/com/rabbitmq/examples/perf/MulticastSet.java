@@ -27,14 +27,14 @@ public class MulticastSet {
     private final String id;
     private final Stats stats;
     private final ConnectionFactory factory;
-    private final MulticastParams p;
+    private final MulticastParams params;
 
     public MulticastSet(Stats stats, ConnectionFactory factory,
                         MulticastParams params) {
         this.id = UUID.randomUUID().toString();
         this.stats = stats;
         this.factory = factory;
-        this.p = params;
+        this.params = params;
     }
 
     public void run() throws IOException, InterruptedException {
@@ -42,47 +42,30 @@ public class MulticastSet {
     }
 
     public void run(boolean announceStartup) throws IOException, InterruptedException {
-        Thread[] consumerThreads = new Thread[p.consumerCount];
-        Connection[] consumerConnections = new Connection[p.consumerCount];
-        for (int i = 0; i < p.consumerCount; i++) {
+        Thread[] consumerThreads = new Thread[params.getConsumerCount()];
+        Connection[] consumerConnections = new Connection[consumerThreads.length];
+        for (int i = 0; i < consumerConnections.length; i++) {
             if (announceStartup) {
                 System.out.println("starting consumer #" + i);
             }
             Connection conn = factory.newConnection();
             consumerConnections[i] = conn;
             Channel channel = conn.createChannel();
-            if (p.consumerTxSize > 0) channel.txSelect();
-            channel.exchangeDeclare(p.exchangeName, p.exchangeType);
-            String qName =
-                    channel.queueDeclare(p.queueName,
-                                         p.flags.contains("persistent"),
-                                         p.exclusive, p.autoDelete,
-                                         null).getQueue();
-            if (p.prefetchCount > 0) channel.basicQos(p.prefetchCount);
-            channel.queueBind(qName, p.exchangeName, id);
-            Thread t =
-                new Thread(new Consumer(channel, id, qName,
-                                        p.consumerTxSize, p.autoAck, p.multiAckEvery,
-                                        stats, p.consumerMsgCount, p.timeLimit));
+            Thread t = new Thread(params.createConsumer(channel, stats, id));
             consumerThreads[i] = t;
         }
 
-        if (p.consumerCount == 0 && !p.queueName.equals("")) {
+        if (params.shouldConfigureQueue()) {
             Connection conn = factory.newConnection();
             Channel channel = conn.createChannel();
-            channel.exchangeDeclare(p.exchangeName, p.exchangeType);
-            channel.queueDeclare(p.queueName,
-                                 p.flags.contains("persistent"),
-                                 p.exclusive, p.autoDelete,
-                                 null).getQueue();
-            channel.queueBind(p.queueName, p.exchangeName, id);
+            params.configureQueue(channel, id);
             conn.close();
         }
 
-        Thread[] producerThreads = new Thread[p.producerCount];
-        Connection[] producerConnections = new Connection[p.producerCount];
-        Channel[] producerChannels = new Channel[p.producerCount];
-        for (int i = 0; i < p.producerCount; i++) {
+        Thread[] producerThreads = new Thread[params.getProducerCount()];
+        Connection[] producerConnections = new Connection[producerThreads.length];
+        Channel[] producerChannels = new Channel[producerConnections.length];
+        for (int i = 0; i < producerChannels.length; i++) {
             if (announceStartup) {
                 System.out.println("starting producer #" + i);
             }
@@ -90,36 +73,26 @@ public class MulticastSet {
             producerConnections[i] = conn;
             Channel channel = conn.createChannel();
             producerChannels[i] = channel;
-            if (p.producerTxSize > 0) channel.txSelect();
-            if (p.confirm >= 0) channel.confirmSelect();
-            channel.exchangeDeclare(p.exchangeName, p.exchangeType);
-            final Producer producer = new Producer(channel, p.exchangeName, id,
-                                                   p.flags, p.producerTxSize,
-                                                   p.rateLimit, p.producerMsgCount,
-                                                   p.minMsgSize, p.timeLimit,
-                                                   p.confirm, stats);
-            channel.addReturnListener(producer);
-            channel.addConfirmListener(producer);
-            Thread t = new Thread(producer);
+            Thread t = new Thread(params.createProducer(channel, stats, id));
             producerThreads[i] = t;
         }
 
-        for (int i = 0; i < p.consumerCount; i++) {
-            consumerThreads[i].start();
+        for (Thread consumerThread : consumerThreads) {
+            consumerThread.start();
         }
 
-        for (int i = 0; i < p.producerCount; i++) {
-            producerThreads[i].start();
+        for (Thread producerThread : producerThreads) {
+            producerThread.start();
         }
 
-        for (int i = 0; i < p.producerCount; i++) {
+        for (int i = 0; i < producerThreads.length; i++) {
             producerThreads[i].join();
             producerChannels[i].clearReturnListeners();
             producerChannels[i].clearConfirmListeners();
             producerConnections[i].close();
         }
 
-        for (int i = 0; i < p.consumerCount; i++) {
+        for (int i = 0; i < consumerThreads.length; i++) {
             consumerThreads[i].join();
             consumerConnections[i].close();
         }

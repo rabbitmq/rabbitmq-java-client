@@ -16,33 +16,36 @@
 
 package com.rabbitmq.examples.perf;
 
+import com.rabbitmq.client.Channel;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MulticastParams {
-    protected long confirm = -1;
-    protected int consumerCount = 1;
-    protected int producerCount = 1;
-    protected int consumerTxSize = 0;
-    protected int producerTxSize = 0;
-    protected int prefetchCount = 0;
-    protected int minMsgSize = 0;
+    private long confirm = -1;
+    private int consumerCount = 1;
+    private int producerCount = 1;
+    private int consumerTxSize = 0;
+    private int producerTxSize = 0;
+    private int prefetchCount = 0;
+    private int minMsgSize = 0;
 
-    protected int timeLimit = 0;
-    protected int rateLimit = 0;
-    protected int producerMsgCount = 0;
-    protected int consumerMsgCount = 0;
+    private int timeLimit = 0;
+    private int rateLimit = 0;
+    private int producerMsgCount = 0;
+    private int consumerMsgCount = 0;
 
-    protected String exchangeName = "direct";
-    protected String exchangeType = "direct";
-    protected String queueName = "";
+    private String exchangeName = "direct";
+    private String exchangeType = "direct";
+    private String queueName = "";
 
-    protected List<?> flags = new ArrayList<Object>();
+    private List<?> flags = new ArrayList<Object>();
 
-    protected int multiAckEvery = 0;
-    protected boolean autoAck = true;
-    protected boolean exclusive = true;
-    protected boolean autoDelete = false;
+    private int multiAckEvery = 0;
+    private boolean autoAck = true;
+    private boolean exclusive = true;
+    private boolean autoDelete = false;
 
     public void setExchangeType(String exchangeType) {
         this.exchangeType = exchangeType;
@@ -123,5 +126,59 @@ public class MulticastParams {
 
     public void setAutoDelete(boolean autoDelete) {
         this.autoDelete = autoDelete;
+    }
+
+    public int getConsumerCount() {
+        return consumerCount;
+    }
+
+    public int getProducerCount() {
+        return producerCount;
+    }
+
+    public int getMinMsgSize() {
+        return minMsgSize;
+    }
+
+    public Producer createProducer(Channel channel, Stats stats, String id) throws IOException {
+        if (producerTxSize > 0) channel.txSelect();
+        if (confirm >= 0) channel.confirmSelect();
+        channel.exchangeDeclare(exchangeName, exchangeType);
+        final Producer producer = new Producer(channel, exchangeName, id,
+                                               flags, producerTxSize,
+                                               rateLimit, producerMsgCount,
+                                               minMsgSize, timeLimit,
+                                               confirm, stats);
+        channel.addReturnListener(producer);
+        channel.addConfirmListener(producer);
+        return producer;
+    }
+
+    public Consumer createConsumer(Channel channel, Stats stats, String id) throws IOException {
+        if (consumerTxSize > 0) channel.txSelect();
+        channel.exchangeDeclare(exchangeName, exchangeType);
+        String qName =
+                channel.queueDeclare(queueName,
+                                     flags.contains("persistent"),
+                                     exclusive, autoDelete,
+                                     null).getQueue();
+        if (prefetchCount > 0) channel.basicQos(prefetchCount);
+        channel.queueBind(qName, exchangeName, id);
+        return new Consumer(channel, id, qName,
+                                         consumerTxSize, autoAck, multiAckEvery,
+                                         stats, consumerMsgCount, timeLimit);
+    }
+
+    public boolean shouldConfigureQueue() {
+        return consumerCount == 0 && !queueName.equals("");
+    }
+
+    public void configureQueue(Channel channel, String id) throws IOException {
+        channel.exchangeDeclare(exchangeName, exchangeType);
+        channel.queueDeclare(queueName,
+                             flags.contains("persistent"),
+                             exclusive, autoDelete,
+                             null).getQueue();
+        channel.queueBind(queueName, exchangeName, id);
     }
 }

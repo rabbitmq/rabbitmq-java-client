@@ -19,7 +19,6 @@ package com.rabbitmq.examples.perf;
 import com.rabbitmq.client.ConnectionFactory;
 
 import java.io.IOException;
-import java.util.Map;
 
 public class SimpleScenario implements Scenario {
     private String name;
@@ -44,7 +43,7 @@ public class SimpleScenario implements Scenario {
         this.stats = new SimpleScenarioStats(interval);
         for (MulticastParams p : params) {
             MulticastSet set = new MulticastSet(stats, factory, p);
-            stats.setMinMsgSize(p.minMsgSize);
+            stats.setup(p);
             set.run();
         }
     }

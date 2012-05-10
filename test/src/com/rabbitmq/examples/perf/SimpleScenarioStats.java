@@ -70,8 +70,8 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
         return map;
     }
 
-    public void setMinMsgSize(long minMsgSize) {
-        this.minMsgSize = minMsgSize;
+    public void setup(MulticastParams params) {
+        this.minMsgSize = params.getMinMsgSize();
     }
 
     public double getSendRate() {
