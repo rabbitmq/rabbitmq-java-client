@@ -21,6 +21,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -88,6 +89,8 @@ public class ConnectionFactory implements Cloneable {
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
+    
+    private ScheduledExecutorService heartbeatExecutor;
 
     /** @return number of consumer threads in default {@link ExecutorService} */
     @Deprecated
@@ -337,6 +340,11 @@ public class ConnectionFactory implements Cloneable {
     public Map<String, Object> getClientProperties() {
         return _clientProperties;
     }
+    
+    public void setHeartbeatExecutor(ScheduledExecutorService executor)
+    {
+        this.heartbeatExecutor = executor;
+    }
 
     /**
      * Replace the table of client properties that will be sent to the
@@ -513,6 +521,7 @@ public class ConnectionFactory implements Cloneable {
                                       requestedChannelMax,
                                       requestedHeartbeat,
                                       saslConfig);
+                conn.setHeartbeatExecutor(heartbeatExecutor);
                 conn.start();
                 return conn;
             } catch (IOException e) {

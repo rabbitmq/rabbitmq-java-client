@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -155,6 +156,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
+    public void setHeartbeatExecutor(ScheduledExecutorService executor)
+    {
+        this._heartbeatSender.setExecutor(executor);
+    }    
+    
     /** {@inheritDoc} */
     public InetAddress getAddress() {
         return _frameHandler.getAddress();
