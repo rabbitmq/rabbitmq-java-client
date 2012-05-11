@@ -76,6 +76,7 @@ public class MulticastMain {
             int consumerTxSize   = intArg(cmd, 'n', 0);
             long confirm         = intArg(cmd, 'c', -1);
             boolean autoAck      = cmd.hasOption('a');
+            int multiAckEvery    = intArg(cmd, 'A', 0);
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
@@ -120,7 +121,7 @@ public class MulticastMain {
                 Thread t =
                     new Thread(new Consumer(channel, id, qName,
                                             consumerTxSize, autoAck,
-                                            stats, timeLimit));
+                                            multiAckEvery, stats, timeLimit));
                 consumerThreads[i] = t;
             }
             Thread[] producerThreads = new Thread[producerCount];
@@ -183,27 +184,28 @@ public class MulticastMain {
 
     private static Options getOptions() {
         Options options = new Options();
-        options.addOption(new Option("?", "help",      false,"show usage"));
-        options.addOption(new Option("h", "uri",       true, "AMQP URI"));
-        options.addOption(new Option("t", "type",      true, "exchange type"));
-        options.addOption(new Option("e", "exchange",  true, "exchange name"));
-        options.addOption(new Option("u", "queue",     true, "queue name"));
-        options.addOption(new Option("i", "interval",  true, "sampling interval"));
-        options.addOption(new Option("r", "rate",      true, "rate limit"));
-        options.addOption(new Option("x", "producers", true, "producer count"));
-        options.addOption(new Option("y", "consumers", true, "consumer count"));
-        options.addOption(new Option("m", "ptxsize",   true, "producer tx size"));
-        options.addOption(new Option("n", "ctxsize",   true, "consumer tx size"));
-        options.addOption(new Option("c", "confirm",   true, "max unconfirmed publishes"));
-        options.addOption(new Option("a", "autoack",   false,"auto ack"));
-        options.addOption(new Option("q", "qos",       true, "qos prefetch count"));
-        options.addOption(new Option("s", "size",      true, "message size"));
-        options.addOption(new Option("z", "time",      true, "time limit"));
-        Option flag =     new Option("f", "flag",      true, "message flag");
+        options.addOption(new Option("?", "help",          false,"show usage"));
+        options.addOption(new Option("h", "uri",           true, "AMQP URI"));
+        options.addOption(new Option("t", "type",          true, "exchange type"));
+        options.addOption(new Option("e", "exchange",      true, "exchange name"));
+        options.addOption(new Option("u", "queue",         true, "queue name"));
+        options.addOption(new Option("i", "interval",      true, "sampling interval"));
+        options.addOption(new Option("r", "rate",          true, "rate limit"));
+        options.addOption(new Option("x", "producers",     true, "producer count"));
+        options.addOption(new Option("y", "consumers",     true, "consumer count"));
+        options.addOption(new Option("m", "ptxsize",       true, "producer tx size"));
+        options.addOption(new Option("n", "ctxsize",       true, "consumer tx size"));
+        options.addOption(new Option("c", "confirm",       true, "max unconfirmed publishes"));
+        options.addOption(new Option("a", "autoack",       false,"auto ack"));
+        options.addOption(new Option("A", "multiAckEvery", true, "multi ack every"));
+        options.addOption(new Option("q", "qos",           true, "qos prefetch count"));
+        options.addOption(new Option("s", "size",          true, "message size"));
+        options.addOption(new Option("z", "time",          true, "time limit"));
+        Option flag =     new Option("f", "flag",          true, "message flag");
         flag.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(flag);
-        options.addOption(new Option("M", "framemax",  true, "frame max"));
-        options.addOption(new Option("b", "heartbeat", true, "heartbeat interval"));
+        options.addOption(new Option("M", "framemax",      true, "frame max"));
+        options.addOption(new Option("b", "heartbeat",     true, "heartbeat interval"));
         return options;
     }
 
@@ -410,20 +412,22 @@ public class MulticastMain {
         private String           queueName;
         private int              txSize;
         private boolean          autoAck;
+        private int              multiAckEvery;
         private Stats            stats;
         private long             timeLimit;
 
         public Consumer(Channel channel, String id,
                         String queueName, int txSize, boolean autoAck,
-                        Stats stats, int timeLimit) {
+                        int multiAckEvery, Stats stats, int timeLimit) {
 
-            this.channel   = channel;
-            this.id        = id;
-            this.queueName = queueName;
-            this.txSize    = txSize;
-            this.autoAck   = autoAck;
-            this.stats     = stats;
-            this.timeLimit = 1000L * timeLimit;
+            this.channel       = channel;
+            this.id            = id;
+            this.queueName     = queueName;
+            this.txSize        = txSize;
+            this.autoAck       = autoAck;
+            this.multiAckEvery = multiAckEvery;
+            this.stats         = stats;
+            this.timeLimit     = 1000L * timeLimit;
         }
 
         public void run() {
@@ -462,7 +466,11 @@ public class MulticastMain {
                     Envelope envelope = delivery.getEnvelope();
 
                     if (!autoAck) {
-                        channel.basicAck(envelope.getDeliveryTag(), false);
+                        if (multiAckEvery == 0) {
+                            channel.basicAck(envelope.getDeliveryTag(), false);
+                        } else if (totalMsgCount % multiAckEvery == 0) {
+                            channel.basicAck(envelope.getDeliveryTag(), true);
+                        }
                     }
 
                     if (txSize != 0 && totalMsgCount % txSize == 0) {

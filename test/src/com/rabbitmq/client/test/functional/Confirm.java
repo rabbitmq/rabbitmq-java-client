@@ -54,9 +54,6 @@ public class Confirm extends BrokerTestCase
         channel.queueDeclare("confirm-test-2", true, true, false, null);
         channel.basicConsume("confirm-test-2", true,
                              new DefaultConsumer(channel));
-        Map<String, Object> argMap =
-            Collections.singletonMap(TTL_ARG, (Object)1);
-        channel.queueDeclare("confirm-ttl", true, true, false, argMap);
         channel.queueBind("confirm-test", "amq.direct",
                           "confirm-multiple-queues");
         channel.queueBind("confirm-test-2", "amq.direct",
@@ -140,9 +137,16 @@ public class Confirm extends BrokerTestCase
     public void testQueueTTL()
         throws IOException, InterruptedException
     {
-        publishN("", "confirm-ttl", true, false, false);
+        for (int ttl : new int[]{ 1, 0 }) {
+            Map<String, Object> argMap =
+                Collections.singletonMap(TTL_ARG, (Object)ttl);
+            channel.queueDeclare("confirm-ttl", true, true, false, argMap);
 
-        channel.waitForConfirmsOrDie();
+            publishN("", "confirm-ttl", true, false, false);
+            channel.waitForConfirmsOrDie();
+
+            channel.queueDelete("confirm-ttl");
+        }
     }
 
     public void testBasicRejectRequeue()
