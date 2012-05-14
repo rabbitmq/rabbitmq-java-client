@@ -121,6 +121,7 @@ public class QueueingConsumer extends DefaultConsumer {
                                byte[] body)
         throws IOException
     {
+//        checkShutdown();
         this._queue.add(new Delivery(envelope, properties, body));
     }
 
@@ -161,6 +162,14 @@ public class QueueingConsumer extends DefaultConsumer {
         public byte[] getBody() {
             return _body;
         }
+    }
+
+    /**
+     * Check if we are in shutdown mode and if so throw an exception.
+     */
+    private void checkShutdown() {
+        if (_shutdown != null)
+            throw Utility.fixStackTrace(_shutdown);
     }
 
     /**
