@@ -14,19 +14,21 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
+package com.rabbitmq.examples.perf;
 
-package com.rabbitmq.client;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * Thrown when application tries to perform an action on connection/channel
- * which was already closed
- */
-public class AlreadyClosedException extends ShutdownSignalException {
-    /** Default for suppressing warnings without version check. */
-    private static final long serialVersionUID = 1L;
+public class MulticastVariable implements Variable {
+    private final List<MulticastValue> values = new ArrayList<MulticastValue>();
 
-    public AlreadyClosedException(String s, Object ref)
-    {
-        super(true, true, s, ref);
+    public MulticastVariable(String name, Object... values) {
+        for (Object v : values) {
+            this.values.add(new MulticastValue(name, v));
+        }
+    }
+
+    public List<MulticastValue> getValues() {
+        return values;
     }
 }

@@ -59,9 +59,22 @@ public class JSONReader {
     }
 
     private void skipWhiteSpace() {
-        while (Character.isWhitespace(c)) {
-            next();
-        }
+        boolean cont;
+
+        do {
+            cont = true;
+            if (Character.isWhitespace(c)) {
+                next();
+            }
+            else if (c == '/' && next() == '/') {
+                while (c != '\n') {
+                    next();
+                }
+            }
+            else {
+                cont = false;
+            }
+        } while (cont);
     }
 
     public Object read(String string) {
@@ -74,7 +87,7 @@ public class JSONReader {
         Object ret = null;
         skipWhiteSpace();
 
-        if (c == '"') {
+        if (c == '"' || c == '\'') {
             next();
             ret = string();
         } else if (c == '[') {
@@ -168,7 +181,7 @@ public class JSONReader {
 
     private Object string() {
         buf.setLength(0);
-        while (c != '"') {
+        while (c != '"' && c != '\'') {
             if (c == '\\') {
                 next();
                 if (c == 'u') {

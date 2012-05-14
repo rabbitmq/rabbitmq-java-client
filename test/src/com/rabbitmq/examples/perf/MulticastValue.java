@@ -14,19 +14,33 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
+package com.rabbitmq.examples.perf;
 
-package com.rabbitmq.client;
+class MulticastValue implements VariableValue {
+    private final String name;
+    private final Object value;
 
-/**
- * Thrown when application tries to perform an action on connection/channel
- * which was already closed
- */
-public class AlreadyClosedException extends ShutdownSignalException {
-    /** Default for suppressing warnings without version check. */
-    private static final long serialVersionUID = 1L;
+    MulticastValue(String name, Object value) {
+        this.name = name;
+        this.value = value;
+    }
 
-    public AlreadyClosedException(String s, Object ref)
-    {
-        super(true, true, s, ref);
+    @Override
+    public void setup(MulticastParams params) {
+        PerfUtil.setValue(params, name, value);
+    }
+
+    @Override
+    public void teardown(MulticastParams params) {
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public Object getValue() {
+        return value;
     }
 }

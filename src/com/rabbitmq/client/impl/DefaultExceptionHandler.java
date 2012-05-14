@@ -19,10 +19,14 @@ package com.rabbitmq.client.impl;
 import java.io.IOException;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
 
+/**
+ * Default implementation of {@link ExceptionHandler} used by {@link AMQConnection}.
+ */
 public class DefaultExceptionHandler implements ExceptionHandler {
     public void handleUnexpectedConnectionDriverException(Connection conn, Throwable exception) {
         // TODO: Log this somewhere, just in case we have a bug like
@@ -55,23 +59,21 @@ public class DefaultExceptionHandler implements ExceptionHandler {
                                               + " for channel " + channel);
     }
 
-    protected void handleChannelKiller(Channel channel,
-                                       Throwable exception,
-                                       String what)
-    {
-        // TODO: Convert to logging framework
-        System.err.println(what + " threw an exception for channel " +
-                           channel + ":");
+    protected void handleChannelKiller(Channel channel, Throwable exception, String what) {
+        // TODO: log the exception
+        System.err.println("DefaultExceptionHandler: " + what + " threw an exception for channel "
+                + channel + ":");
         exception.printStackTrace();
         try {
-            ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
-                                                            "Internal error in " + what,
-                                                            false,
-                                                            exception);
+            channel.close(AMQP.REPLY_SUCCESS, "Closed due to exception from " + what);
+        } catch (AlreadyClosedException ace) {
+            // noop
         } catch (IOException ioe) {
-            // Man, this clearly isn't our day.
-            // Ignore the exception? TODO: Log the nested failure
+            // TODO: log the failure
+            System.err.println("Failure during close of channel " + channel + " after " + exception
+                    + ":");
+            ioe.printStackTrace();
+            channel.getConnection().abort(AMQP.INTERNAL_ERROR, "Internal error closing channel for " + what);
         }
-
     }
 }

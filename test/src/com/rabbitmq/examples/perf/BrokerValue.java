@@ -14,19 +14,34 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
+package com.rabbitmq.examples.perf;
 
-package com.rabbitmq.client;
+import java.io.IOException;
 
-/**
- * Thrown when application tries to perform an action on connection/channel
- * which was already closed
- */
-public class AlreadyClosedException extends ShutdownSignalException {
-    /** Default for suppressing warnings without version check. */
-    private static final long serialVersionUID = 1L;
+public class BrokerValue implements VariableValue {
+    private final Broker broker;
 
-    public AlreadyClosedException(String s, Object ref)
-    {
-        super(true, true, s, ref);
+    public BrokerValue(Broker broker) {
+        this.broker = broker;
+    }
+
+    @Override
+    public void setup(MulticastParams params) throws IOException {
+        broker.start();
+    }
+
+    @Override
+    public void teardown(MulticastParams params) {
+        broker.stop();
+    }
+
+    @Override
+    public String getName() {
+        return "broker_type";
+    }
+
+    @Override
+    public String getValue() {
+        return broker.getName();
     }
 }
