@@ -1,6 +1,5 @@
-package com.rabbitmq.client.test.impl;
+package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.impl.WorkPool;
 import junit.framework.TestCase;
 
 import java.util.ArrayList;

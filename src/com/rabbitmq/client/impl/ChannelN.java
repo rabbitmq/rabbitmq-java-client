@@ -241,12 +241,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * Sends a ShutdownSignal to all active consumers.
      * @param signal an exception signalling channel shutdown
      */
-    private CountDownLatch broadcastShutdownSignal(ShutdownSignalException signal) {
+    private void broadcastShutdownSignal(ShutdownSignalException signal) {
         Map<String, Consumer> snapshotConsumers;
         synchronized (_consumers) {
             snapshotConsumers = new HashMap<String, Consumer>(_consumers);
         }
-        return this.dispatcher.handleShutdownSignal(snapshotConsumers, signal);
+        this.finishedShutdownFlag = this.dispatcher.handleShutdownSignal(snapshotConsumers, signal);
     }
 
     /**
@@ -257,9 +257,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                 boolean ignoreClosed,
                                                 boolean notifyRpc)
     {
-        this.dispatcher.quiesce();
         super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
-        this.finishedShutdownFlag = broadcastShutdownSignal(signal);
         synchronized (unconfirmedSet) {
             unconfirmedSet.notifyAll();
         }
@@ -526,7 +524,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             signal.initCause(cause);
         }
 
-        BlockingRpcContinuation<AMQCommand> k = new SimpleBlockingRpcContinuation();
+        BlockingRpcContinuation<AMQCommand> k = new BlockingRpcContinuation<AMQCommand>(){
+            @Override
+            public AMQCommand transformReply(AMQCommand command) {
+                ChannelN.this.dispatcher.quiesce();
+                broadcastShutdownSignal(getCloseReason());
+
+                return command;
+            }};
         boolean notify = false;
         try {
             // Synchronize the block below to avoid race conditions in case
@@ -536,10 +541,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 quiescingRpc(reason, k);
             }
 
-            // Now that we're in quiescing state, channel.close was sent and
-            // we wait for the reply. We ignore the result.
-            // (It's NOT always close-ok.)
-            notify = true;
+                // Now that we're in quiescing state, channel.close was sent and
+                // we wait for the reply. We ignore the result.
+                // (It's NOT always close-ok.)
+                notify = true;
             k.getReply(-1);
         } catch (TimeoutException ise) {
             // Will never happen since we wait infinitely
