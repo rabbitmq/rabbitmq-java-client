@@ -25,22 +25,18 @@ public class BrokerValue implements VariableValue {
         this.broker = broker;
     }
 
-    @Override
     public void setup(MulticastParams params) throws IOException {
         broker.start();
     }
 
-    @Override
     public void teardown(MulticastParams params) {
         broker.stop();
     }
 
-    @Override
     public String getName() {
         return "broker_type";
     }
 
-    @Override
     public String getValue() {
         return broker.getName();
     }
