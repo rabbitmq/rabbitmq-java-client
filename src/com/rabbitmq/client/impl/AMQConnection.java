@@ -41,6 +41,7 @@ import com.rabbitmq.client.ProtocolVersionMismatchException;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
@@ -651,6 +652,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                          Throwable cause,
                          boolean notifyRpc)
     {
+        ShutdownSignalException sse = startShutdown(reason, initiatedByApplication, cause, notifyRpc);
+        finishShutdown(sse);
+        return sse;
+    }
+
+    private ShutdownSignalException startShutdown(Object reason,
+                         boolean initiatedByApplication,
+                         Throwable cause,
+                         boolean notifyRpc)
+    {
         ShutdownSignalException sse = new ShutdownSignalException(true,initiatedByApplication,
                                                                   reason, this);
         sse.initCause(cause);
@@ -664,10 +675,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         _channel0.processShutdownSignal(sse, !initiatedByApplication, notifyRpc);
 
+        return sse;
+    }
+
+    private void finishShutdown(ShutdownSignalException sse) {
         ChannelManager cm = _channelManager;
         if (cm != null) cm.handleSignal(sse);
-
-        return sse;
     }
 
     /** Public API - {@inheritDoc} */
@@ -762,10 +775,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     .replyText(closeMessage)
                 .build();
 
-            shutdown(reason, initiatedByApplication, cause, true);
+            final ShutdownSignalException sse = startShutdown(reason, initiatedByApplication, cause, true);
             if(sync){
-              AMQChannel.SimpleBlockingRpcContinuation k =
-                  new AMQChannel.SimpleBlockingRpcContinuation();
+                BlockingRpcContinuation<AMQCommand> k = new BlockingRpcContinuation<AMQCommand>(){
+                    @Override
+                    public AMQCommand transformReply(AMQCommand command) {
+                        AMQConnection.this.finishShutdown(sse);
+                        return command;
+                    }};
+
               _channel0.quiescingRpc(reason, k);
               k.getReply(timeout);
             } else {

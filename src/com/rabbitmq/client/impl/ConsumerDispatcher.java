@@ -144,7 +144,7 @@ final class ConsumerDispatcher {
             // Execute shutdown processing even if there are no consumers.
             execute(new Runnable() {
                 public void run() {
-                    notifyConsumersOfShutdown(consumers, signal);
+                    ConsumerDispatcher.this.notifyConsumersOfShutdown(consumers, signal);
                     ConsumerDispatcher.this.shutdown(signal);
                     ConsumerDispatcher.this.workService.stopWork(ConsumerDispatcher.this.channel);
                     latch.countDown();

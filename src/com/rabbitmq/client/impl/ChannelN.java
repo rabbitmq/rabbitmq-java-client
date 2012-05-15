@@ -239,6 +239,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /**
      * Sends a ShutdownSignal to all active consumers.
+     * Idempotent.
      * @param signal an exception signalling channel shutdown
      */
     private void broadcastShutdownSignal(ShutdownSignalException signal) {
@@ -250,6 +251,28 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /**
+     * Start to shutdown -- defer rest of processing until ready
+     */
+    private void startProcessShutdownSignal(ShutdownSignalException signal,
+                                                boolean ignoreClosed,
+                                                boolean notifyRpc)
+    {   super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
+    }
+
+    /**
+     * Finish shutdown processing -- idempotent
+     */
+    private void finishProcessShutdownSignal()
+    {
+        this.dispatcher.quiesce();
+        broadcastShutdownSignal(getCloseReason());
+
+        synchronized (unconfirmedSet) {
+            unconfirmedSet.notifyAll();
+        }
+    }
+
+    /**
      * Protected API - overridden to quiesce consumer work and broadcast the signal
      * to all consumers after calling the superclass's method.
      */
@@ -257,10 +280,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                 boolean ignoreClosed,
                                                 boolean notifyRpc)
     {
-        super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
-        synchronized (unconfirmedSet) {
-            unconfirmedSet.notifyAll();
-        }
+        startProcessShutdownSignal(signal, ignoreClosed, notifyRpc);
+        finishProcessShutdownSignal();
     }
 
     CountDownLatch getShutdownLatch() {
@@ -527,9 +548,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         BlockingRpcContinuation<AMQCommand> k = new BlockingRpcContinuation<AMQCommand>(){
             @Override
             public AMQCommand transformReply(AMQCommand command) {
-                ChannelN.this.dispatcher.quiesce();
-                broadcastShutdownSignal(getCloseReason());
-
+                ChannelN.this.finishProcessShutdownSignal();
                 return command;
             }};
         boolean notify = false;
@@ -537,7 +556,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             // Synchronize the block below to avoid race conditions in case
             // connnection wants to send Connection-CloseOK
             synchronized (_channelMutex) {
-                processShutdownSignal(signal, !initiatedByApplication, true);
+                startProcessShutdownSignal(signal, !initiatedByApplication, true);
                 quiescingRpc(reason, k);
             }
 
