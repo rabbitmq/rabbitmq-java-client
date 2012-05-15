@@ -25,21 +25,17 @@ class MulticastValue implements VariableValue {
         this.value = value;
     }
 
-    @Override
     public void setup(MulticastParams params) {
         PerfUtil.setValue(params, name, value);
     }
 
-    @Override
     public void teardown(MulticastParams params) {
     }
 
-    @Override
     public String getName() {
         return name;
     }
 
-    @Override
     public Object getValue() {
         return value;
     }

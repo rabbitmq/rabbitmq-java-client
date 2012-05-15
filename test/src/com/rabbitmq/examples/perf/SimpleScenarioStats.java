@@ -32,7 +32,6 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
         super(interval);
     }
 
-    @Override
     protected void report(long now) {
         if (samples.size() == IGNORE_FIRST) {
             cumulativeLatencyTotal = 0;
@@ -56,7 +55,6 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
         samples.add(sample);
     }
 
-    @Override
     public Map<String, Object> results() {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("send-msg-rate", getSendRate());

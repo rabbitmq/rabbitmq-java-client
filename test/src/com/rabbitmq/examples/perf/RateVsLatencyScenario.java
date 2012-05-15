@@ -18,8 +18,6 @@ package com.rabbitmq.examples.perf;
 
 import com.rabbitmq.client.ConnectionFactory;
 
-import java.io.IOException;
-
 public class RateVsLatencyScenario implements Scenario {
     private String name;
     private ConnectionFactory factory;
@@ -32,7 +30,6 @@ public class RateVsLatencyScenario implements Scenario {
         this.params = params;
     }
 
-    @Override
     public void run() throws Exception {
         SimpleScenario s = new SimpleScenario("untitled", factory, params);
         s.run();
@@ -48,12 +45,10 @@ public class RateVsLatencyScenario implements Scenario {
         impl.run();
     }
 
-    @Override
     public ScenarioStats getStats() {
         return impl.getStats();
     }
 
-    @Override
     public String getName() {
         return name;
     }
