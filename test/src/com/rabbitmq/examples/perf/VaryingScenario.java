@@ -19,7 +19,6 @@ package com.rabbitmq.examples.perf;
 import com.rabbitmq.client.ConnectionFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class VaryingScenario implements Scenario {
@@ -42,7 +41,6 @@ public class VaryingScenario implements Scenario {
         this.variables = variables;
     }
 
-    @Override
     public void run() throws Exception {
         run(variables, new ArrayList<VariableValue>());
     }
@@ -76,15 +74,15 @@ public class VaryingScenario implements Scenario {
     }
 
     private Variable[] rest(Variable[] variables) {
-        return Arrays.copyOfRange(variables, 1, variables.length);
+        Variable[] tail = new Variable[variables.length - 1];
+        System.arraycopy(variables, 1, tail, 0, tail.length);
+        return tail;
     }
 
-    @Override
     public ScenarioStats getStats() {
         return stats;
     }
 
-    @Override
     public String getName() {
         return name;
     }

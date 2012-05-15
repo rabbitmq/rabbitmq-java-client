@@ -38,7 +38,6 @@ public class SimpleScenario implements Scenario {
         this.interval = interval;
     }
 
-    @Override
     public void run() throws IOException, InterruptedException {
         this.stats = new SimpleScenarioStats(interval);
         for (MulticastParams p : params) {
@@ -48,12 +47,10 @@ public class SimpleScenario implements Scenario {
         }
     }
 
-    @Override
     public SimpleScenarioStats getStats() {
         return stats;
     }
 
-    @Override
     public String getName() {
         return name;
     }

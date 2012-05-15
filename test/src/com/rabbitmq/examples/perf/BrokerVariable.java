@@ -26,7 +26,6 @@ public class BrokerVariable implements Variable {
         this.brokers = brokers;
     }
 
-    @Override
     public List<BrokerValue> getValues() {
         List<BrokerValue> values = new ArrayList<BrokerValue>();
         for (Broker b : brokers) {
