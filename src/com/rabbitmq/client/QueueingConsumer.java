@@ -121,7 +121,7 @@ public class QueueingConsumer extends DefaultConsumer {
                                byte[] body)
         throws IOException
     {
-//        checkShutdown();
+        checkShutdown();
         this._queue.add(new Delivery(envelope, properties, body));
     }
 
