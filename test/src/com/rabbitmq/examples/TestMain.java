@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -39,7 +39,6 @@ import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.utility.BlockingCell;
-import com.rabbitmq.utility.Utility;
 
 public class TestMain {
     public static void main(String[] args) throws IOException, URISyntaxException {
@@ -199,9 +198,7 @@ public class TestMain {
     public static void sleep(int ms) {
         try {
             Thread.sleep(ms);
-        } catch (InterruptedException ie) {
-            Utility.emptyStatement();
-        }
+        } catch (InterruptedException _) { } // ignore
     }
 
     private Connection _connection;
@@ -232,7 +229,7 @@ public class TestMain {
         final int batchSize = 5;
 
         _ch1 = createChannel();
-        
+
         String queueName =_ch1.queueDeclare().getQueue();
 
         sendLotsOfTrivialMessages(batchSize, queueName);
@@ -488,7 +485,7 @@ public class TestMain {
         unsetChannelReturnListener();
 
         log("Completed basic.return testing.");
-        
+
     }
 
     private void unsetChannelReturnListener() {

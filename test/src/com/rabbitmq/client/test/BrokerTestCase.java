@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -169,7 +169,7 @@ public class BrokerTestCase extends TestCase
     for (int i = 0; i < count; i++) {
       r = basicGet(q);
       assertNotNull(r);
-      assertEquals(r.getEnvelope().isRedeliver(), redelivered);
+      assertEquals(redelivered, r.getEnvelope().isRedeliver());
     }
     assertNull(basicGet(q));
   }

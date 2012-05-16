@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -31,6 +31,7 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(MemoryAlarms.class);
         suite.addTestSuite(MessageRecovery.class);
         suite.addTestSuite(Firehose.class);
+        suite.addTestSuite(PersistenceGuarantees.class);
         return suite;
     }
 }

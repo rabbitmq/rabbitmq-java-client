@@ -1,6 +1,6 @@
 /*
    Copyright (c) 2006-2007 Frank Carver
-   Copyright (c) 2007-2011 VMware, Inc. All Rights Reserved
+   Copyright (c) 2007-2012 VMware, Inc. All Rights Reserved
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -59,9 +59,22 @@ public class JSONReader {
     }
 
     private void skipWhiteSpace() {
-        while (Character.isWhitespace(c)) {
-            next();
-        }
+        boolean cont;
+
+        do {
+            cont = true;
+            if (Character.isWhitespace(c)) {
+                next();
+            }
+            else if (c == '/' && next() == '/') {
+                while (c != '\n') {
+                    next();
+                }
+            }
+            else {
+                cont = false;
+            }
+        } while (cont);
     }
 
     public Object read(String string) {
@@ -74,7 +87,7 @@ public class JSONReader {
         Object ret = null;
         skipWhiteSpace();
 
-        if (c == '"') {
+        if (c == '"' || c == '\'') {
             next();
             ret = string();
         } else if (c == '[') {
@@ -168,7 +181,7 @@ public class JSONReader {
 
     private Object string() {
         buf.setLength(0);
-        while (c != '"') {
+        while (c != '"' && c != '\'') {
             if (c == '\\') {
                 next();
                 if (c == 'u') {

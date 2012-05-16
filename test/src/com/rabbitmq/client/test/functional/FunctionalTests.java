@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -58,6 +58,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(ConsumerCancelNotificiation.class);
         suite.addTestSuite(UnexpectedFrames.class);
         suite.addTestSuite(PerQueueTTL.class);
+        suite.addTestSuite(DeadLetterExchange.class);
         suite.addTestSuite(SaslMechanisms.class);
         suite.addTestSuite(UserIDHeader.class);
         suite.addTestSuite(InternalExchange.class);

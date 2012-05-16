@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.utility;
@@ -33,9 +33,9 @@ public class Utility {
           this.setStackTrace(throwable.getStackTrace());
         }
 
-        @Override public Throwable fillInStackTrace(){ 
-            return this; 
-        } 
+        @Override public Throwable fillInStackTrace(){
+            return this;
+        }
     }
 
     public static <T extends Throwable & SensibleClone<T>> T fixStackTrace(T throwable) {
@@ -44,19 +44,19 @@ public class Utility {
       if(throwable.getCause() == null) {
         // We'd like to preserve the original stack trace in the cause.
         // Unfortunately Java doesn't let you set the cause once it's been
-        // set once. This means we have to choose between either 
+        // set once. This means we have to choose between either
         //  - not preserving the type
         //  - sometimes losing the original stack trace
         //  - performing nasty reflective voodoo which may or may not work
         // We only lose the original stack trace when there's a root cause
-        // which will hopefully be enlightening enough on its own that it 
-        // doesn't matter too much. 
+        // which will hopefully be enlightening enough on its own that it
+        // doesn't matter too much.
         try {
           throwable.initCause(new ThrowableCreatedElsewhere(throwable));
         } catch(IllegalStateException e) {
-          // This exception was explicitly initialised with a null cause. 
-          // Alas this means we can't set the cause even though it has none. 
-          // Thanks. 
+          // This exception was explicitly initialised with a null cause.
+          // Alas this means we can't set the cause even though it has none.
+          // Thanks.
         }
       }
 
@@ -70,7 +70,7 @@ public class Utility {
       return throwable;
     }
 
-  
+
     public static String makeStackTrace(Throwable throwable) {
         ByteArrayOutputStream baOutStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(baOutStream, false);
@@ -79,23 +79,5 @@ public class Utility {
         String text = baOutStream.toString();
         printStream.close(); // closes baOutStream
         return text;
-    }
-
-    /**
-     * Used to indicate that we are not, in fact, using a variable, also to silence compiler warnings.
-     *
-     * @param value the object we're pretending to use
-     */
-    public static void use(Object value) {
-        if (value != null) {
-            return;
-        }
-    }
-
-    /**
-     * Similarly, for situations where an empty statement is required
-     */
-    public static void emptyStatement() {
-        use(null);
     }
 }

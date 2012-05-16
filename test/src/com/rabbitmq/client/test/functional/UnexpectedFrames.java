@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test.functional;
@@ -145,12 +145,6 @@ public class UnexpectedFrames extends BrokerTestCase {
         //NB: the frame confuser relies on the encoding of the
         //method field to be at least 8 bytes long
         channel.basicPublish("", "routing key", null, "Hello".getBytes());
-        // TODO remove when bug 24086 is fixed.
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         expectError(AMQP.UNEXPECTED_FRAME);
     }
 
