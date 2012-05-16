@@ -169,7 +169,7 @@ public class BrokerTestCase extends TestCase
     for (int i = 0; i < count; i++) {
       r = basicGet(q);
       assertNotNull(r);
-      assertEquals(r.getEnvelope().isRedeliver(), redelivered);
+      assertEquals(redelivered, r.getEnvelope().isRedeliver());
     }
     assertNull(basicGet(q));
   }
