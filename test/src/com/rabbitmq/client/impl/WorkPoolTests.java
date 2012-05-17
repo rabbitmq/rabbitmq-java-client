@@ -6,16 +6,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Unit tests for {@link WorkPool}
  */
 public class WorkPoolTests extends TestCase {
 
     private WorkPool<String, Object> pool = new WorkPool<String, Object>();
 
-    public void testUnknownKey() {
+    /**
+     * Test unknown key tolerated silently
+     * @throws Exception untested
+     */
+    public void testUnknownKey() throws Exception{
         assertFalse(this.pool.addWorkItem("test", new Object()));
     }
 
-    public void testBasicInOut() throws InterruptedException {
+    /**
+     * Test add work and remove work
+     * @throws Exception untested
+     */
+    public void testBasicInOut() throws Exception {
         Object one = new Object();
         Object two = new Object();
 
@@ -41,6 +50,10 @@ public class WorkPoolTests extends TestCase {
         assertNull("Shouldn't be more work", this.pool.nextWorkBlock(workList, 1));
     }
 
+    /**
+     * Test add work when work in progress.
+     * @throws Exception untested
+     */
     public void testWorkInWhileInProgress() throws Exception {
         Object one = new Object();
         Object two = new Object();
@@ -65,6 +78,10 @@ public class WorkPoolTests extends TestCase {
         assertEquals(two, workList.get(0));
     }
 
+    /**
+     * Test multiple work keys.
+     * @throws Exception untested
+     */
     public void testInterleavingKeys() throws Exception {
         Object one = new Object();
         Object two = new Object();
@@ -92,6 +109,10 @@ public class WorkPoolTests extends TestCase {
         assertEquals(two, workList.get(0));
     }
 
+    /**
+     * Test removal of key (with work)
+     * @throws Exception untested
+     */
     public void testUnregisterKey() throws Exception {
         Object one = new Object();
         Object two = new Object();
@@ -113,6 +134,10 @@ public class WorkPoolTests extends TestCase {
         assertEquals(two, workList.get(0));
     }
 
+    /**
+     * Test removal of all keys (with work).
+     * @throws Exception untested
+     */
     public void testUnregisterAllKeys() throws Exception {
         Object one = new Object();
         Object two = new Object();
