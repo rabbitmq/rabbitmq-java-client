@@ -560,10 +560,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 quiescingRpc(reason, k);
             }
 
-                // Now that we're in quiescing state, channel.close was sent and
-                // we wait for the reply. We ignore the result.
-                // (It's NOT always close-ok.)
-                notify = true;
+            // Now that we're in quiescing state, channel.close was sent and
+            // we wait for the reply. We ignore the result.
+            // (It's NOT always close-ok.)
+            notify = true;
             k.getReply(-1);
         } catch (TimeoutException ise) {
             // Will never happen since we wait infinitely
