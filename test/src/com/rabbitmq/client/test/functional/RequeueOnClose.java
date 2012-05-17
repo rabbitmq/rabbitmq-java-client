@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -24,12 +23,16 @@ import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 
+/**
+ * Test Requeue of messages on different types of close.
+ * Methods {@link #open} and {@link #close} must be implemented by a concrete subclass.
+ */
 public abstract class RequeueOnClose
     extends BrokerTestCase
 {
-    public static final String Q = "RequeueOnClose";
-    public static final int GRATUITOUS_DELAY = 100;
-    public static final int MESSAGE_COUNT = 2000;
+    private static final String Q = "RequeueOnClose";
+    private static final int GRATUITOUS_DELAY = 100;
+    private static final int MESSAGE_COUNT = 2000;
 
     protected abstract void open() throws IOException;
 
@@ -47,7 +50,7 @@ public abstract class RequeueOnClose
         // Override to disable the default behaviour from BrokerTestCase.
     }
 
-    public void injectMessage()
+    private void injectMessage()
         throws IOException
     {
         channel.queueDeclare(Q, false, false, false, null);
@@ -56,13 +59,13 @@ public abstract class RequeueOnClose
         channel.basicPublish("", Q, null, "RequeueOnClose message".getBytes());
     }
 
-    public GetResponse getMessage()
+    private GetResponse getMessage()
         throws IOException
     {
         return channel.basicGet(Q, false);
     }
 
-    public void publishAndGet(int count, boolean doAck)
+    private void publishAndGet(int count, boolean doAck)
         throws IOException, InterruptedException
     {
         openConnection();
@@ -85,20 +88,29 @@ public abstract class RequeueOnClose
         closeConnection();
     }
 
-    public void testNormal()
-        throws IOException, InterruptedException
+    /**
+     * Test we don't requeue acknowledged messages (using get)
+     * @throws Exception test
+     */
+    public void testNormal() throws Exception
     {
         publishAndGet(3, true);
     }
 
-    public void testRequeueing()
-        throws IOException, InterruptedException
+    /**
+     * Test we requeue unacknowledged messages (using get)
+     * @throws Exception test
+     */
+    public void testRequeueing() throws Exception
     {
         publishAndGet(3, false);
     }
 
-    public void testRequeueingConsumer()
-        throws IOException, InterruptedException, ShutdownSignalException
+    /**
+     * Test we requeue unacknowledged message (using consumer)
+     * @throws Exception test
+     */
+    public void testRequeueingConsumer() throws Exception
     {
         openConnection();
         open();
@@ -114,7 +126,7 @@ public abstract class RequeueOnClose
         closeConnection();
     }
 
-    public void publishLotsAndGet()
+    private void publishLotsAndGet()
         throws IOException, InterruptedException, ShutdownSignalException
     {
         openConnection();
@@ -141,8 +153,11 @@ public abstract class RequeueOnClose
         closeConnection();
     }
 
-    public void testRequeueInFlight()
-        throws IOException, InterruptedException, ShutdownSignalException
+    /**
+     * Test close while consuming many messages successfully requeues unacknowledged messages
+     * @throws Exception test
+     */
+    public void testRequeueInFlight() throws Exception
     {
         for (int i = 0; i < 5; i++) {
             publishLotsAndGet();
