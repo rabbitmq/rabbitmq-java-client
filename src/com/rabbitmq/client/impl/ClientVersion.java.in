@@ -16,6 +16,10 @@
 
 package com.rabbitmq.client.impl;
 
+/**
+ * Publicly available Client Version information
+ */
 public class ClientVersion {
+    /** Full version string */
     public static final String VERSION = "@VERSION@";
 }
