@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client;
 
 import java.io.DataInputStream;
@@ -28,10 +27,13 @@ import java.io.IOException;
  */
 public interface LongString
 {
+    /** Maximum length of a long string */
     public static final long MAX_LENGTH = 0xffffffffL;
 
     /**
-     * @return the length of the {@link LongString} in bytes >= 0 <= MAX_LENGTH
+     * @return the length of the {@link LongString} in bytes
+     * <br/>
+     * <code>0 <= length() <= MAX_LENGTH</code>
      */
     public long length();
 

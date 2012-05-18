@@ -29,7 +29,9 @@ import java.util.Set;
 public class DefaultSaslConfig implements SaslConfig {
     private final String mechanism;
 
+    /** default SaslConfig plain */
     public static final DefaultSaslConfig PLAIN = new DefaultSaslConfig("PLAIN");
+    /** default SaslConfig external */
     public static final DefaultSaslConfig EXTERNAL = new DefaultSaslConfig("EXTERNAL");
 
     /**
