@@ -640,7 +640,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * built from the argument, and stops this connection from accepting further work from the
      * application. {@link com.rabbitmq.client.ShutdownListener ShutdownListener}s for the
      * connection are notified when the main loop terminates.
-     * @param reason object being shutdown
+     * @param reason Object being shutdown, or Exception trigger, or String description
      * @param initiatedByApplication true if caused by a client command
      * @param cause trigger exception which caused shutdown
      * @param notifyRpc true if outstanding rpc should be informed of shutdown

@@ -183,7 +183,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public void ensureIsOpen()
+    private void ensureIsOpen()
         throws AlreadyClosedException
     {
         if (!isOpen()) {
