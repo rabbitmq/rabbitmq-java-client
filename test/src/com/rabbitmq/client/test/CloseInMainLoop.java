@@ -125,7 +125,7 @@ public class CloseInMainLoop extends BrokerTestCase{
 
     channel.basicPublish("x", "k", null, new byte[10]);
 
-    assertTrue(closeLatch.await(200, TimeUnit.MILLISECONDS));
+    assertTrue(closeLatch.await(1000, TimeUnit.MILLISECONDS));
     assertTrue(connection.hadValidShutdown());
   }
 
