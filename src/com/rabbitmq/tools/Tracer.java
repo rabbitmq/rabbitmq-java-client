@@ -97,6 +97,15 @@ public class Tracer implements Runnable {
                 .append(" = ").append(getBoolProperty(propName, props)).toString());
     }
 
+    /**
+     * <b>Usage:</b>
+     * <br/>
+     * <code>Tracer [&lt;listenport&gt; [&lt;connecthost&gt; [&lt;connectport&gt;]]]</code>
+     * <p/>
+     * Serially traces connections on the <code>&lt;listenport&gt;</code>, logging
+     * frames received and passing them to the connect host and port.
+     * @param args see Usage
+     */
     public static void main(String[] args) {
         int listenPort = args.length > 0 ? Integer.parseInt(args[0]) : DEFAULT_LISTEN_PORT;
         String connectHost = args.length > 1 ? args[1] : DEFAULT_CONNECT_HOST;
@@ -173,18 +182,42 @@ public class Tracer implements Runnable {
         this(new ServerSocket(listenPort).accept(), id, host, port, logger, reportEnd, props);
     }
 
+    /**
+     * Tracer
+     * @param listenPort to listen on
+     * @param id identification in tracing
+     * @param host to listen to
+     * @param port to connect on to
+     * @param logger to write trace output to
+     * @param props properties used to modify behaviour
+     * @throws IOException on socket errors
+     */
     public Tracer(int listenPort, String id, String host, int port, Logger logger, Properties props) throws IOException {
         this(listenPort, id, host, port, logger, new BlockingCell<Exception>(), props);
     }
 
+    /**
+     * Tracer, default port, connection, {@link AsyncLogger} and system properties
+     * @param id identification in tracing
+     * @throws IOException on socket errors
+     */
     public Tracer(String id) throws IOException {
-        this(DEFAULT_LISTEN_PORT, id, DEFAULT_CONNECT_HOST, DEFAULT_CONNECT_PORT, new AsyncLogger(System.out), new BlockingCell<Exception>(), System.getProperties());
+        this(id, System.getProperties());
     }
 
+    /**
+     * Tracer, default port, connection, {@link AsyncLogger}
+     * @param id identification in tracing
+     * @param props properties used to modify behaviour
+     * @throws IOException on socket errors
+     */
     public Tracer(String id, Properties props) throws IOException {
         this(DEFAULT_LISTEN_PORT, id, DEFAULT_CONNECT_HOST, DEFAULT_CONNECT_PORT, new AsyncLogger(System.out), new BlockingCell<Exception>(), props);
     }
 
+    /**
+     * Start Tracer tracing
+     */
     public void start() {
         if (this.started.compareAndSet(false, true)) {
             this.logger.start();
@@ -227,6 +260,10 @@ public class Tracer implements Runnable {
         }
     }
 
+    /**
+     * Log message with timestamp and tracer identification
+     * @param message to log
+     */
     public void log(String message) {
         StringBuilder sb = new StringBuilder();
         this.logger.log(sb.append(System.currentTimeMillis())
@@ -235,6 +272,10 @@ public class Tracer implements Runnable {
                         .toString());
     }
 
+    /**
+     * Log (uncaught) exception with timestamp and tracer identification
+     * @param e exception to log
+     */
     public void logException(Exception e) {
         log("uncaught " + Utility.makeStackTrace(e));
     }
