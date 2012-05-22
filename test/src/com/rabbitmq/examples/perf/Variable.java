@@ -11,30 +11,13 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
+package com.rabbitmq.examples.perf;
 
-package com.rabbitmq.client.test.server;
+import java.util.List;
 
-import com.rabbitmq.client.test.BrokerTestCase;
-
-import java.io.IOException;
-
-import com.rabbitmq.tools.Host;
-
-public class RestartBase extends BrokerTestCase
-{
-    protected void restart()
-        throws IOException
-    {
-        tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-        }
-        setUp();
-    }
-
+public interface Variable {
+    public List<? extends VariableValue> getValues();
 }

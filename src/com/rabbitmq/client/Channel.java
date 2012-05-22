@@ -11,13 +11,14 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.AMQP.Exchange;
@@ -111,40 +112,61 @@ public interface Channel extends ShutdownNotifier {
     void abort(int closeCode, String closeMessage) throws IOException;
 
     /**
-     * Return the current {@link ReturnListener}.
-     * @return an interface to the current return listener
+     * Add a {@link ReturnListener}.
+     * @param listener the listener to add
      */
-    ReturnListener getReturnListener();
+    void addReturnListener(ReturnListener listener);
 
     /**
-     * Set the current {@link ReturnListener}.
-     * @param listener the listener to use, or null indicating "don't use one".
+     * Remove a {@link ReturnListener}.
+     * @param listener the listener to remove
+     * @return <code><b>true</b></code> if the listener was found and removed,
+     * <code><b>false</b></code> otherwise
      */
-    void setReturnListener(ReturnListener listener);
+    boolean removeReturnListener(ReturnListener listener);
 
     /**
-     * Return the current {@link FlowListener}.
-     * @return an interface to the current flow listener.
+     * Remove all {@link ReturnListener}s.
      */
-    FlowListener getFlowListener();
+    void clearReturnListeners();
 
     /**
-     * Set the current {@link FlowListener}.
-     * @param listener the listener to use, or null indicating "don't use one".
+     * Add a {@link FlowListener}.
+     * @param listener the listener to add
      */
-    void setFlowListener(FlowListener listener);
+    void addFlowListener(FlowListener listener);
 
     /**
-     * Return the current {@link ConfirmListener}.
-     * @return an interface to the current ack listener.
+     * Remove a {@link FlowListener}.
+     * @param listener the listener to remove
+     * @return <code><b>true</b></code> if the listener was found and removed,
+     * <code><b>false</b></code> otherwise
      */
-    ConfirmListener getConfirmListener();
+    boolean removeFlowListener(FlowListener listener);
 
     /**
-     * Set the current {@link ConfirmListener}.
-     * @param listener the listener to use, or null indicating "don't use one".
+     * Remove all {@link FlowListener}s.
      */
-    void setConfirmListener(ConfirmListener listener);
+    void clearFlowListeners();
+
+    /**
+     * Add a {@link ConfirmListener}.
+     * @param listener the listener to add
+     */
+    void addConfirmListener(ConfirmListener listener);
+
+    /**
+     * Remove a {@link ConfirmListener}.
+     * @param listener the listener to remove
+     * @return <code><b>true</b></code> if the listener was found and removed,
+     * <code><b>false</b></code> otherwise
+     */
+    boolean removeConfirmListener(ConfirmListener listener);
+
+    /**
+     * Remove all {@link ConfirmListener}s.
+     */
+    void clearConfirmListeners();
 
     /**
      * Get the current default consumer. @see setDefaultConsumer for rationale.
@@ -558,7 +580,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicAck
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
+     * @see #basicConsume(String, boolean, String, boolean, boolean, Map, Consumer)
      */
     String basicConsume(String queue, Consumer callback) throws IOException;
 
@@ -574,7 +596,7 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
+     * @see #basicConsume(String, boolean, String, boolean, boolean, Map, Consumer)
      */
     String basicConsume(String queue, boolean autoAck, Consumer callback) throws IOException;
 
@@ -590,19 +612,20 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
-     * @see #basicConsume(String,boolean, String,boolean,boolean, Map, Consumer)
+     * @see #basicConsume(String, boolean, String, boolean, boolean, Map, Consumer)
      */
     String basicConsume(String queue, boolean autoAck, String consumerTag, Consumer callback) throws IOException;
 
     /**
      * Start a consumer. Calls the consumer's {@link Consumer#handleConsumeOk}
-     * method before returning.
+     * method.
      * @param queue the name of the queue
      * @param autoAck true if the server should consider messages
      * acknowledged once delivered; false if the server should expect
      * explicit acknowledgements
      * @param consumerTag a client-generated consumer tag to establish context
-     * @param noLocal flag set to true unless server local buffering is required
+     * @param noLocal true if the server should not deliver to this consumer
+     * messages published on this channel's connection
      * @param exclusive true if this is an exclusive consumer
      * @param callback an interface to the consumer object
      * @param arguments a set of arguments for the consume
@@ -615,9 +638,9 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Cancel a consumer. Calls the consumer's {@link Consumer#handleCancelOk}
-     * method before returning.
+     * method.
      * @param consumerTag a client- or server-generated consumer tag to establish context
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered, or if the consumerTag is unknown
      * @see com.rabbitmq.client.AMQP.Basic.Cancel
      * @see com.rabbitmq.client.AMQP.Basic.CancelOk
      */
@@ -628,12 +651,12 @@ public interface Channel extends ShutdownNotifier {
      * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
      * the new, deprecated method basic.recover_async is asynchronous.
      * <p/>
-     * Equivalent to calling <code>basicRecover(true)</code>, messages 
-     * will be requeued and possibly delivered to a different consumer. 
+     * Equivalent to calling <code>basicRecover(true)</code>, messages
+     * will be requeued and possibly delivered to a different consumer.
      * @see #basicRecover(boolean)
      */
      Basic.RecoverOk basicRecover() throws IOException;
-  
+
     /**
      * Ask the broker to resend unacknowledged messages.  In 0-8
      * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
@@ -696,4 +719,52 @@ public interface Channel extends ShutdownNotifier {
      * @return the sequence number of the next message to be published
      */
     long getNextPublishSeqNo();
+
+    /**
+     * Wait until all messages published since the last call have been
+     * either ack'd or nack'd by the broker.  Note, when called on a
+     * non-Confirm channel, waitForConfirms returns true immediately.
+     * @return whether all the messages were ack'd (and none were nack'd)
+     */
+    boolean waitForConfirms() throws InterruptedException;
+
+    /**
+     * Wait until all messages published since the last call have been
+     * either ack'd or nack'd by the broker; or until timeout elapses.
+     * If the timeout expires a TimeoutException is thrown.  When
+     * called on a non-Confirm channel, waitForConfirms returns true
+     * immediately.
+     * @return whether all the messages were ack'd (and none were nack'd)
+     */
+    boolean waitForConfirms(long timeout) throws InterruptedException, TimeoutException;
+
+    /** Wait until all messages published since the last call have
+     * been either ack'd or nack'd by the broker.  If any of the
+     * messages were nack'd, waitForConfirmsOrDie will throw an
+     * IOException.  When called on a non-Confirm channel, it will
+     * return immediately. */
+    void waitForConfirmsOrDie() throws IOException, InterruptedException;
+
+    /** Wait until all messages published since the last call have
+     * been either ack'd or nack'd by the broker; or until timeout elapses.
+     * If the timeout expires a TimeoutException is thrown.  If any of the
+     * messages were nack'd, waitForConfirmsOrDie will throw an
+     * IOException.  When called on a non-Confirm channel, it will
+     * return immediately. */
+    void waitForConfirmsOrDie(long timeout) throws IOException, InterruptedException, TimeoutException;
+
+    /**
+     * Asynchronously send a method over this channel.
+     * @param method method to transmit over this channel.
+     * @throws IOException Problem transmitting method.
+     */
+    void asyncRpc(Method method) throws IOException;
+
+    /**
+     * Synchronously send a method over this channel.
+     * @param method method to transmit over this channel.
+     * @return command response to method. Caller should cast as appropriate.
+     * @throws IOException Problem transmitting method.
+     */
+    Command rpc(Method method) throws IOException;
 }

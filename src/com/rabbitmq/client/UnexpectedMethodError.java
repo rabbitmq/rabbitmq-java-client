@@ -11,20 +11,19 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.Method;
-
 /**
  * Indicates that a {@link Method} object was supplied that was not
  * expected. For instance, {@link Channel#basicGet} throws this if it
  * receives anything other than {@link AMQP.Basic.GetOk} or
- * {@link AMQP.Basic.GetEmpty}, and {@link com.rabbitmq.client.impl.AMQImpl.DefaultMethodVisitor}
- * throws this as the default action within each visitor case.
+ * {@link AMQP.Basic.GetEmpty}, and the
+ * {@link com.rabbitmq.client.impl.AMQImpl.DefaultMethodVisitor DefaultMethodVisitor}
+ * throws this as the action within each visitor case.
  */
 public class UnexpectedMethodError extends Error {
     private static final long serialVersionUID = 1L;

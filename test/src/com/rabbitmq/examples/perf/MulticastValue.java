@@ -11,14 +11,32 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-package com.rabbitmq.client.impl;
+package com.rabbitmq.examples.perf;
 
-import com.rabbitmq.client.TestProperties;
+class MulticastValue implements VariableValue {
+    private final String name;
+    private final Object value;
 
-public abstract class AMQTestProperties
-        extends AMQContentHeader implements TestProperties {
+    MulticastValue(String name, Object value) {
+        this.name = name;
+        this.value = value;
+    }
 
+    public void setup(MulticastParams params) {
+        PerfUtil.setValue(params, name, value);
+    }
+
+    public void teardown(MulticastParams params) {
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Object getValue() {
+        return value;
+    }
 }

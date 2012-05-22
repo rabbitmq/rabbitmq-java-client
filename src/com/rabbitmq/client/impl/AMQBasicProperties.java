@@ -11,37 +11,29 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
 
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.Date;
-import java.util.Map;
-import java.util.Hashtable;
 
 import com.rabbitmq.client.BasicProperties;
 
 public abstract class AMQBasicProperties
         extends AMQContentHeader implements BasicProperties {
 
+    protected AMQBasicProperties() {
+        
+    }
+    
+    protected AMQBasicProperties(DataInputStream in) throws IOException {
+        super(in);
+    }
+
     @Override
     public Object clone() throws CloneNotSupportedException {
-        AMQBasicProperties bpClone = (AMQBasicProperties) super.clone();
-        
-        Map<String, Object> thisHeaders = getHeaders();
-        if (thisHeaders != null) {
-            Map<String, Object> headers = new Hashtable<String, Object>();
-            headers.putAll(thisHeaders);
-            bpClone.setHeaders(headers);
-        }
-        
-        Date thisTimestamp = getTimestamp();
-        if (thisTimestamp != null) {
-            bpClone.setTimestamp((Date) thisTimestamp.clone());
-        }
-        
-        return bpClone;
+        return (AMQBasicProperties) super.clone();
     }
 }

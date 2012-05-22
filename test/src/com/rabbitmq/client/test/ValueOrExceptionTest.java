@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test;
@@ -26,7 +26,10 @@ import com.rabbitmq.utility.SensibleClone;
 public class ValueOrExceptionTest extends TestCase {
     public static class InsufficientMagicException extends Exception 
       implements SensibleClone<InsufficientMagicException> {
-      public InsufficientMagicException(String message) {
+      /** Default for no check. */
+        private static final long serialVersionUID = 1L;
+
+    public InsufficientMagicException(String message) {
         super(message);
       }
 

@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -63,7 +63,8 @@ public class FrameMax extends BrokerTestCase {
                 GetResponse response = channel.basicGet(queueName, false);
                 howMuch -= response.getBody().length;
             } catch (Exception e) {
-                fail(e.getCause().toString());
+                e.printStackTrace();
+                fail("Exception in basicGet loop: " + e);
             }
         }
     }

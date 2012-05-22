@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -50,7 +50,7 @@ public class Recover extends BrokerTestCase {
         throws IOException, InterruptedException {
         QueueingConsumer consumer = new QueueingConsumer(channel);
         channel.basicConsume(queue, false, consumer); // require acks.
-        channel.basicPublish("", queue, new AMQP.BasicProperties(), body);
+        channel.basicPublish("", queue, new AMQP.BasicProperties.Builder().build(), body);
         QueueingConsumer.Delivery delivery = consumer.nextDelivery();
         assertTrue("consumed message body not as sent",
                    Arrays.equals(body, delivery.getBody()));
@@ -66,7 +66,7 @@ public class Recover extends BrokerTestCase {
         throws IOException, InterruptedException {
         QueueingConsumer consumer = new QueueingConsumer(channel);
         channel.basicConsume(queue, true, consumer); // auto ack.
-        channel.basicPublish("", queue, new AMQP.BasicProperties(), body);
+        channel.basicPublish("", queue, new AMQP.BasicProperties.Builder().build(), body);
         QueueingConsumer.Delivery delivery = consumer.nextDelivery();
         assertTrue("consumed message body not as sent",
                    Arrays.equals(body, delivery.getBody()));
@@ -77,6 +77,7 @@ public class Recover extends BrokerTestCase {
     }
 
     RecoverCallback recoverAsync = new RecoverCallback() {
+            @SuppressWarnings("deprecation")
             public void recover(Channel channel) throws IOException {
                 channel.basicRecoverAsync(true);
             }

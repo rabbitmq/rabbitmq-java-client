@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.Map;
 
 import com.rabbitmq.client.ContentHeader;
+import com.rabbitmq.client.LongString;
 
 /**
  * Parses an AMQP wire-protocol {@link ContentHeader} from a
@@ -48,7 +49,7 @@ public class ContentHeaderPropertyReader {
         this.bitCount = 15; // forces a flagWord read
     }
 
-    public boolean isContinuationBitSet() {
+    private boolean isContinuationBitSet() {
         return (flagWord & 1) != 0;
     }
 
@@ -109,7 +110,7 @@ public class ContentHeaderPropertyReader {
     }
 
     /** Reads and returns an AMQP octet content header field. */
-    public Integer readOctet() throws IOException {
+    public int readOctet() throws IOException {
         return in.readOctet();
     }
 

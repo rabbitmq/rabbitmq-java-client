@@ -11,17 +11,20 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client;
 
-/*
+/**
  * Thrown when application tries to perform an action on connection/channel
  * which was already closed
  */
 public class AlreadyClosedException extends ShutdownSignalException {
+    /** Default for suppressing warnings without version check. */
+    private static final long serialVersionUID = 1L;
+
     public AlreadyClosedException(String s, Object ref)
     {
         super(true, true, s, ref);

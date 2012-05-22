@@ -11,22 +11,21 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.AMQP.Queue;
-
-import java.net.Socket;
 import java.io.IOException;
+import java.net.Socket;
 import java.util.Random;
+
+import com.rabbitmq.client.AMQP.Queue;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
 
 
 /**
@@ -44,7 +43,7 @@ public class BufferPerformanceMetrics {
     public static double NANOSECONDS_PER_SECOND = 1000 * 1000 * 1000;
 
     public static void main(String[] args) throws Exception {
-        final String hostName = args.length > 0 ? args[0] : "localhost";
+        final String uri = args.length > 0 ? args[0] : "amqp://localhost";
 
         Random rnd = new Random();
 
@@ -65,8 +64,8 @@ public class BufferPerformanceMetrics {
 
             for(final boolean useNagle : new boolean[] { false, true }) {
                 ConnectionFactory factory = new ConnectionFactory() {
-                    { setHost(hostName); }
-                    
+                    { setUri(uri); }
+
                         public void configureSocket(Socket socket)
                             throws IOException {
                             socket.setTcpNoDelay(!useNagle);

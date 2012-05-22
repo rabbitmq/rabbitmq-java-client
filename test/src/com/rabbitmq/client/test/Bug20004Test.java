@@ -11,12 +11,11 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.test.functional.*;
 import java.io.IOException;
 
 /**
@@ -24,11 +23,14 @@ import java.io.IOException;
  * the channel object. This is more properly a unit test, but since it
  * requires a connection to a broker, it's grouped with the functional
  * tests.
+ * <p/>
+ * Test calls channel.queueDeclare, while synchronising on channel, from
+ * an independent thread.
  */
 public class Bug20004Test extends BrokerTestCase {
-    public Exception caughtException = null;
-    public boolean completed = false;
-    public boolean created = false;
+    private volatile Exception caughtException = null;
+    private volatile boolean completed = false;
+    private volatile boolean created = false;
 
     protected void releaseResources()
         throws IOException
@@ -38,28 +40,29 @@ public class Bug20004Test extends BrokerTestCase {
         }
     }
 
-    public void testBug20004()
-        throws IOException
+    @SuppressWarnings("deprecation")
+    public void testBug20004() throws IOException
     {
         final Bug20004Test testInstance = this;
 
         Thread declaringThread = new Thread(new Runnable() {
-                public void run() {
-                    try {
-                        synchronized (channel) {
-                          channel.queueDeclare("Bug20004Test", false, false, false, null);
-                            testInstance.created = true;
-                        }
-                    } catch (Exception e) {
-                        testInstance.caughtException = e;
+            public void run() {
+                try {
+                    synchronized (channel) {
+                        channel.queueDeclare("Bug20004Test", false, false, false, null);
+                        testInstance.created = true;
                     }
-                    testInstance.completed = true;
+                } catch (Exception e) {
+                    testInstance.caughtException = e;
                 }
-            });
+                testInstance.completed = true;
+            }
+        });
         declaringThread.start();
 
-        long startTime = System.currentTimeMillis();
-        while (!completed && (System.currentTimeMillis() - startTime < 5000)) {
+        // poll (100ms) for `completed`, up to 5s
+        long endTime = System.currentTimeMillis() + 5000;
+        while (!completed && (System.currentTimeMillis() < endTime)) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ie) {}
@@ -67,11 +70,8 @@ public class Bug20004Test extends BrokerTestCase {
 
         declaringThread.stop(); // see bug 20012.
 
-        if (!completed) {
-            fail("Deadlock detected. Probably.");
-        }
-
-        assertNull(caughtException);
-        assertTrue(created);
+        assertTrue("Deadlock detected?", completed);
+        assertNull("queueDeclare threw an exception", caughtException);
+        assertTrue("unknown sequence of events", created);
     }
 }

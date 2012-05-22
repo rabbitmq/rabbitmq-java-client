@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -96,10 +96,10 @@ public class BlockingCell<T> {
     /**
      * As get(long timeout), but catches and ignores InterruptedException, retrying until
      * a value appears or until specified timeout is reached. If timeout is reached,
-     * TimeoutException it thrown.
+     * TimeoutException is thrown.
      * We also use System.nanoTime() to behave correctly when system clock jumps around.
      * 
-     * @param timeout timeout in milliseconds. -1 effectively means infinity
+     * @param timeout timeout in milliseconds. -1 means 'infinity': never time out
      * @return the waited-for value
      */
     public synchronized T uninterruptibleGet(int timeout) throws TimeoutException {

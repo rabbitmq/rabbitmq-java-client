@@ -11,12 +11,13 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.performance;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -43,13 +44,12 @@ public class QosScaling {
             helper.addOption(new Option("n", "messages", true, "number of messages to send"));
             helper.addOption(new Option("q", "queues",   true, "number of queues to route messages to"));
             helper.addOption(new Option("e", "empty",    true, "number of queues to leave empty"));
-            
             return helper.parseCommandLine(args);
         }
-        
+
         public Parameters(CommandLine cmd) {
             host         = cmd.getOptionValue("h", "localhost");
-            port         = CLIHelper.getOptionValue(cmd, "p", 5672);
+            port         = CLIHelper.getOptionValue(cmd, "p", AMQP.PROTOCOL.PORT);
             messageCount = CLIHelper.getOptionValue(cmd, "n", 2000);
             queueCount   = CLIHelper.getOptionValue(cmd, "q", 100);
             emptyCount   = CLIHelper.getOptionValue(cmd, "e", 0);
@@ -92,17 +92,17 @@ public class QosScaling {
     }
 
     protected void publish(List<String> queues) throws IOException {
-        Channel pubCh = connection.createChannel();
-        pubCh.txSelect();
         byte[] body = "".getBytes();
         int messagesPerQueue = params.messageCount / queues.size();
         for (String queue : queues) {
             for (int i = 0; i < messagesPerQueue; i++) {
-                pubCh.basicPublish("", queue, null, body);
+                channel.basicPublish("", queue, null, body);
             }
         }
-        pubCh.txCommit();
-        pubCh.close();
+        //ensure that all the messages have reached the queues
+        for (String queue : queues) {
+            channel.queueDeclarePassive(queue);
+        }
     }
 
     protected long drain(QueueingConsumer c) throws IOException {
@@ -129,7 +129,9 @@ public class QosScaling {
         channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);
         try {
+            channel.flow(false);
             publish(consume(consumer));
+            channel.flow(true);
             return drain(consumer);
         } finally {
             connection.abort();

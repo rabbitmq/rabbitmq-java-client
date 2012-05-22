@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -27,7 +27,7 @@ public class DefaultConsumer implements Consumer {
     /** Channel that this consumer is associated with. */
     private final Channel _channel;
     /** Consumer tag for this consumer. */
-    private String _consumerTag;
+    private volatile String _consumerTag;
 
     /**
      * Constructs a new instance and records its association to the passed-in channel.
@@ -71,7 +71,7 @@ public class DefaultConsumer implements Consumer {
      /**
      * No-op implementation of {@link Consumer#handleRecoverOk}.
      */
-    public void handleRecoverOk() {
+    public void handleRecoverOk(String consumerTag) {
         // no work to do
     }
 

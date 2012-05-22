@@ -11,50 +11,81 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.impl.*;
-import com.rabbitmq.client.*;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.SocketFactory;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Command;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.DefaultExceptionHandler;
+import com.rabbitmq.client.impl.SocketFrameHandler;
+
 public class CloseInMainLoop extends BrokerTestCase{
+
+  private final CountDownLatch closeLatch = new CountDownLatch(1);
+
   class SpecialConnection extends AMQConnection{
-    private AtomicBoolean validShutdown = new AtomicBoolean();
+    private AtomicBoolean validShutdown = new AtomicBoolean(false);
 
     public boolean hadValidShutdown(){
       if(isOpen()) throw new IllegalStateException("hadValidShutdown called while connection is still open");
       return validShutdown.get();
     }
 
-    public SpecialConnection() throws Exception{
-      super(
-          new ConnectionFactory(),
-          new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", 5672)),
-          new DefaultExceptionHandler(){
-            @Override public void handleConsumerException(Channel channel,
-                                                           Throwable exception,
-                                                           Consumer consumer,
-                                                           String consumerTag,
-                                                           String methodName){
-                try {
-                  ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
-                                                                  "Internal error in Consumer " +
-                                                                    consumerTag,
-                                                                  false,
-                                                                  exception);
-                } catch (IOException ioe) {
-                    // Man, this clearly isn't our day.
-                    // Ignore the exception? TODO: Log the nested failure
+    public SpecialConnection() throws Exception {
+        this(new ConnectionFactory());
+    }
+
+    private SpecialConnection(ConnectionFactory factory) throws Exception{
+      super(factory.getUsername(),
+            factory.getPassword(),
+            new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT)),
+            Executors.newFixedThreadPool(1),
+            factory.getVirtualHost(),
+            factory.getClientProperties(),
+            factory.getRequestedFrameMax(),
+            factory.getRequestedChannelMax(),
+            factory.getRequestedHeartbeat(),
+            factory.getSaslConfig(),
+            new DefaultExceptionHandler(){
+                @Override
+                public void handleConsumerException(Channel channel,
+                                                    Throwable exception,
+                                                    Consumer consumer,
+                                                    String consumerTag,
+                                                    String methodName) {
+                    try {
+                        // TODO: change this to call 4-parameter close and make 6-parm one private
+                      ((AMQConnection) channel.getConnection())
+                          .close(AMQP.INTERNAL_ERROR,
+                                 "Internal error in Consumer " + consumerTag,
+                                 false,
+                                 exception,
+                                 -1,
+                                 false);
+                    } catch (Throwable e) {
+                        // Man, this clearly isn't our day.
+                        // TODO: Log the nested failure
+                    } finally {
+                        closeLatch.countDown();
+                    }
                 }
-            }
-        });
+            });
 
         this.start();
       }
@@ -66,7 +97,6 @@ public class CloseInMainLoop extends BrokerTestCase{
     }
 
   }
-
 
   public void testCloseOKNormallyReceived() throws Exception{
     SpecialConnection connection = new SpecialConnection();
@@ -83,22 +113,19 @@ public class CloseInMainLoop extends BrokerTestCase{
     channel.queueDeclare("q", false, false, false, null);
     channel.queueBind("q", "x", "k");
 
-    final CountDownLatch latch = new CountDownLatch(1);
-
     channel.basicConsume("q", true, new DefaultConsumer(channel){
-      public void handleDelivery(String consumerTag,
-                                 Envelope envelope,
-                                 AMQP.BasicProperties properties,
-                                 byte[] body){
-        latch.countDown();
-        throw new RuntimeException("I am a bad consumer");
-      }
+        @Override
+        public void handleDelivery(String consumerTag,
+                                   Envelope envelope,
+                                   AMQP.BasicProperties properties,
+                                   byte[] body) {
+            throw new RuntimeException("I am a bad consumer");
+        }
     });
 
     channel.basicPublish("x", "k", null, new byte[10]);
 
-    latch.await();
-    Thread.sleep(200);
+    assertTrue(closeLatch.await(1000, TimeUnit.MILLISECONDS));
     assertTrue(connection.hadValidShutdown());
   }
 

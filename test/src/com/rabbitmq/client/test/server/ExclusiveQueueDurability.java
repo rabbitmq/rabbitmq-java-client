@@ -11,19 +11,16 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
-import java.util.HashMap;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
@@ -32,13 +29,9 @@ import com.rabbitmq.tools.Host;
  * (following the scenarios given in bug 20578).
  */
 public class ExclusiveQueueDurability extends BrokerTestCase {
-    private Channel secondaryChannel;
-    private Connection secondaryConnection;
 
-	HashMap<String, Object> noArgs = new HashMap<String, Object>();
-
-	void verifyQueueMissing(Channel channel, String queueName)
-	        throws IOException {
+    void verifyQueueMissing(Channel channel, String queueName)
+            throws IOException {
         try {
             channel.queueDeclare(queueName, false, false, false, null);
         } catch (IOException ioe) {
@@ -47,47 +40,19 @@ public class ExclusiveQueueDurability extends BrokerTestCase {
         }
     }
 
-    @Override
-    protected void createResources() throws IOException {
-        super.createResources();
-        openChannel();
-
-    }
-
-    // TODO extract some commonality between this and DurableBindingLifecycle
-    public void openChannel()
-        throws IOException
-    {
-        ConnectionFactory cf2 = connectionFactory.clone();
-        cf2.setHost("localhost");
-        cf2.setPort(5673);
-        secondaryConnection = cf2.newConnection();
-        secondaryChannel = secondaryConnection.createChannel();
-    }
-
-    @Override
-    protected void releaseResources() throws IOException {
-        secondaryChannel.abort();
-        secondaryChannel = null;
-        secondaryConnection.abort();
-        secondaryConnection = null;
-        super.releaseResources();
-    }
-
     // 1) connection and queue are on same node, node restarts -> queue
     // should no longer exist
     public void testConnectionQueueSameNode() throws Exception {
-        secondaryChannel.queueDeclare("scenario1", true, true, false, noArgs);
-        restartAbruptly();
-        verifyQueueMissing(secondaryChannel, "scenario1");
+        channel.queueDeclare("scenario1", true, true, false, null);
+        restartPrimaryAbruptly();
+        verifyQueueMissing(channel, "scenario1");
     }
 
-    protected void restartAbruptly() throws IOException {
-        secondaryConnection.abort();
-        secondaryConnection = null;
-        secondaryChannel = null;
-        Host.executeCommand("cd ../rabbitmq-test; make restart-secondary-node");
-        openChannel();
+    private void restartPrimaryAbruptly() throws IOException {
+        connection = null;
+        channel = null;
+        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
+        setUp();
     }
 
     /*

@@ -11,13 +11,13 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.SaslMechanism;
-import com.rabbitmq.client.ConnectionFactory;
 
 /**
  * The PLAIN auth mechanism
@@ -28,8 +28,9 @@ public class PlainMechanism implements SaslMechanism {
     }
 
     public LongString handleChallenge(LongString challenge,
-                                      ConnectionFactory factory) {
-        return LongStringHelper.asLongString("\0" + factory.getUsername() +
-                                             "\0" + factory.getPassword());
+                                      String username,
+                                      String password) {
+        return LongStringHelper.asLongString("\0" + username +
+                                             "\0" + password);
     }
 }

@@ -11,13 +11,11 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
-
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
@@ -37,24 +35,21 @@ public class ManyConnections {
         try {
             if (args.length < 4) {
                 System.err
-                        .println("Usage: ManyConnections hostName connCount chanPerConnCount heartbeatInterval [rate [port]]");
+                        .println("Usage: ManyConnections uri connCount chanPerConnCount heartbeatInterval [rate]");
                 System.exit(2);
             }
 
-            String hostName = args[0];
+            String uri = args[0];
             connectionCount = Integer.parseInt(args[1]);
             channelPerConnectionCount = Integer.parseInt(args[2]);
             heartbeatInterval = Integer.parseInt(args[3]);
             rate = (args.length > 4) ? Double.parseDouble(args[4]) : 1.0;
-            int portNumber = (args.length > 5) ? Integer.parseInt(args[5])
-                    : AMQP.PROTOCOL.PORT;
 
             ConnectionFactory factory = new ConnectionFactory();
             factory.setRequestedHeartbeat(heartbeatInterval);
             for (int i = 0; i < connectionCount; i++) {
                 System.out.println("Starting connection " + i);
-                factory.setHost(hostName);
-                factory.setPort(portNumber);
+                factory.setUri(uri);
                 final Connection conn = factory.newConnection();
 
                 for (int j = 0; j < channelPerConnectionCount; j++) {

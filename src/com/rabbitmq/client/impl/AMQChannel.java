@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -22,14 +22,17 @@ import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Command;
+import com.rabbitmq.client.Method;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingValueOrException;
 
 /**
- * Base class modelling an AMQ channel. Subclasses implement close()
- * and processAsync(), and may choose to override
- * processShutdownSignal().
+ * Base class modelling an AMQ channel. Subclasses implement
+ * {@link com.rabbitmq.client.Channel#close} and
+ * {@link #processAsync processAsync()}, and may choose to override
+ * {@link #processShutdownSignal processShutdownSignal()} and
+ * {@link #rpc rpc()}.
  *
  * @see ChannelN
  * @see Connection
@@ -40,19 +43,19 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * so that clients can themselves use the channel to synchronize
      * on.
      */
-    public final Object _channelMutex = new Object();
+    protected final Object _channelMutex = new Object();
 
     /** The connection this channel is associated with. */
-    public final AMQConnection _connection;
+    private final AMQConnection _connection;
 
     /** This channel's channel number. */
-    public final int _channelNumber;
+    private final int _channelNumber;
 
-    /** State machine assembling commands on their way in. */
-    public AMQCommand.Assembler _commandAssembler = AMQCommand.newAssembler();
+    /** Command being assembled */
+    private AMQCommand _command = new AMQCommand();
 
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
-    public RpcContinuation _activeRpc = null;
+    private RpcContinuation _activeRpc = null;
 
     /** Whether transmission of content-bearing methods should be blocked */
     public boolean _blockContent = false;
@@ -76,23 +79,15 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     /**
-     * Public API - Retrieves this channel's underlying connection.
-     * @return the connection
-     */
-    public Connection getConnection() {
-        return _connection;
-    }
-
-    /**
      * Private API - When the Connection receives a Frame for this
      * channel, it passes it to this method.
      * @param frame the incoming frame
      * @throws IOException if an error is encountered
      */
     public void handleFrame(Frame frame) throws IOException {
-        AMQCommand command = _commandAssembler.handleFrame(frame);
-        if (command != null) { // a complete command has rolled off the assembly line
-            _commandAssembler = AMQCommand.newAssembler(); // prepare for the next one
+        AMQCommand command = _command;
+        if (command.handleFrame(frame)) { // a complete command has rolled off the assembly line
+            _command = new AMQCommand(); // prepare for the next one
             handleCompleteInboundCommand(command);
         }
     }
@@ -104,9 +99,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * @return the wrapped exception
      */
     public static IOException wrap(ShutdownSignalException ex) {
-        IOException ioe = new IOException();
-        ioe.initCause(ex);
-        return ioe;
+        return wrap(ex, null);
     }
 
     public static IOException wrap(ShutdownSignalException ex, String message) {
@@ -122,7 +115,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         throws IOException
     {
         try {
-            return rpc(m);
+            return privateRpc(m);
         } catch (AlreadyClosedException ace) {
             // Do not wrap it since it means that connection/channel
             // was closed in some action in the past
@@ -158,10 +151,25 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public void enqueueRpc(RpcContinuation k)
     {
         synchronized (_channelMutex) {
-            if (_activeRpc != null) {
-                throw new IllegalStateException("cannot execute more than one synchronous AMQP command at a time");
+            boolean waitClearedInterruptStatus = false;
+            while (_activeRpc != null) {
+                try {
+                    _channelMutex.wait();
+                } catch (InterruptedException e) {
+                    waitClearedInterruptStatus = true;
+                }
+            }
+            if (waitClearedInterruptStatus) {
+                Thread.currentThread().interrupt();
             }
             _activeRpc = k;
+        }
+    }
+
+    public boolean isOutstandingRpc()
+    {
+        synchronized (_channelMutex) {
+            return (_activeRpc != null);
         }
     }
 
@@ -170,6 +178,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         synchronized (_channelMutex) {
             RpcContinuation result = _activeRpc;
             _activeRpc = null;
+            _channelMutex.notifyAll();
             return result;
         }
     }
@@ -183,11 +192,17 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     /**
-     * Protected API - sends a Command to the broker and waits for the
-     * next inbound Command from the broker: only for use from
+     * Protected API - sends a {@link Method} to the broker and waits for the
+     * next in-bound Command from the broker: only for use from
      * non-connection-MainLoop threads!
      */
     public AMQCommand rpc(Method m)
+        throws IOException, ShutdownSignalException
+    {
+        return privateRpc(m);
+    }
+
+    private AMQCommand privateRpc(Method m)
         throws IOException, ShutdownSignalException
     {
         SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
@@ -246,7 +261,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         try {
             synchronized (_channelMutex) {
                 if (!setShutdownCauseIfOpen(signal)) {
-                    if (!ignoreClosed) 
+                    if (!ignoreClosed)
                         throw new AlreadyClosedException("Attempt to use closed channel", this);
                 }
 
@@ -302,7 +317,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public AMQConnection getAMQConnection() {
+    public AMQConnection getConnection() {
         return _connection;
     }
 

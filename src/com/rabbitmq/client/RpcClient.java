@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -27,9 +27,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.impl.MethodArgumentReader;
 import com.rabbitmq.client.impl.MethodArgumentWriter;
+import com.rabbitmq.client.impl.ValueReader;
+import com.rabbitmq.client.impl.ValueWriter;
 import com.rabbitmq.utility.BlockingCell;
 
 /**
@@ -45,6 +48,10 @@ public class RpcClient {
     private final String _exchange;
     /** Routing key to use for requests */
     private final String _routingKey;
+    /** timeout to use on call responses */
+    private final int _timeout;
+    /** NO_TIMEOUT value must match convention on {@link BlockingCell#uninterruptibleGet(int)} */
+    protected final static int NO_TIMEOUT = -1;
 
     /** Map from request correlation ID to continuation BlockingCell */
     private final Map<String, BlockingCell<Object>> _continuationMap = new HashMap<String, BlockingCell<Object>>();
@@ -59,8 +66,34 @@ public class RpcClient {
     /**
      * Construct a new RpcClient that will communicate on the given channel, sending
      * requests to the given exchange with the given routing key.
-     * <p>
+     * <p/>
      * Causes the creation of a temporary private autodelete queue.
+     * @param channel the channel to use for communication
+     * @param exchange the exchange to connect to
+     * @param routingKey the routing key
+     * @param timeout milliseconds before timing out on wait for response
+     * @throws IOException if an error is encountered
+     * @see #setupReplyQueue
+     */
+    public RpcClient(Channel channel, String exchange, String routingKey, int timeout) throws IOException {
+        _channel = channel;
+        _exchange = exchange;
+        _routingKey = routingKey;
+        if (timeout < NO_TIMEOUT) throw new IllegalArgumentException("Timeout arguument must be NO_TIMEOUT(-1) or non-negative.");
+        _timeout = timeout;
+        _correlationId = 0;
+
+        _replyQueue = setupReplyQueue();
+        _consumer = setupConsumer();
+    }
+
+    /**
+     * Construct a new RpcClient that will communicate on the given channel, sending
+     * requests to the given exchange with the given routing key.
+     * <p/>
+     * Causes the creation of a temporary private autodelete queue.
+     * <p/>
+     * Waits forever for responses (that is, no timeout).
      * @param channel the channel to use for communication
      * @param exchange the exchange to connect to
      * @param routingKey the routing key
@@ -68,13 +101,7 @@ public class RpcClient {
      * @see #setupReplyQueue
      */
     public RpcClient(Channel channel, String exchange, String routingKey) throws IOException {
-        _channel = channel;
-        _exchange = exchange;
-        _routingKey = routingKey;
-        _correlationId = 0;
-
-        _replyQueue = setupReplyQueue();
-        _consumer = setupConsumer();
+        this(channel, exchange, routingKey, NO_TIMEOUT);
     }
 
     /**
@@ -151,27 +178,19 @@ public class RpcClient {
     }
 
     public byte[] primitiveCall(AMQP.BasicProperties props, byte[] message)
-        throws IOException, ShutdownSignalException
+        throws IOException, ShutdownSignalException, TimeoutException
     {
         checkConsumer();
         BlockingCell<Object> k = new BlockingCell<Object>();
         synchronized (_continuationMap) {
             _correlationId++;
             String replyId = "" + _correlationId;
-            if (props != null) {
-                props.setCorrelationId(replyId);
-                props.setReplyTo(_replyQueue);
-            }
-            else {
-                props = new AMQP.BasicProperties(null, null, null, null,
-                                             null, replyId,
-                                             _replyQueue, null, null, null,
-                                             null, null, null, null);
-            }
+            props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
+                    .correlationId(replyId).replyTo(_replyQueue).build();
             _continuationMap.put(replyId, k);
         }
         publish(props, message);
-        Object reply = k.uninterruptibleGet();
+        Object reply = k.uninterruptibleGet(_timeout);
         if (reply instanceof ShutdownSignalException) {
             ShutdownSignalException sig = (ShutdownSignalException) reply;
             ShutdownSignalException wrapper =
@@ -192,9 +211,10 @@ public class RpcClient {
      * @return the byte array response received
      * @throws ShutdownSignalException if the connection dies during our wait
      * @throws IOException if an error is encountered
+     * @throws TimeoutException if a response is not received within the configured timeout
      */
     public byte[] primitiveCall(byte[] message)
-        throws IOException, ShutdownSignalException {
+        throws IOException, ShutdownSignalException, TimeoutException {
         return primitiveCall(null, message);
     }
 
@@ -204,35 +224,48 @@ public class RpcClient {
      * @return the string response received
      * @throws ShutdownSignalException if the connection dies during our wait
      * @throws IOException if an error is encountered
+     * @throws TimeoutException if a timeout occurs before the response is received
      */
     public String stringCall(String message)
-        throws IOException, ShutdownSignalException
+        throws IOException, ShutdownSignalException, TimeoutException
     {
-        return new String(primitiveCall(message.getBytes()));
+        byte[] request;
+        try {
+            request = message.getBytes(StringRpcServer.STRING_ENCODING);
+        } catch (IOException _) {
+            request = message.getBytes();
+        }
+        byte[] reply = primitiveCall(request);
+        try {
+            return new String(reply, StringRpcServer.STRING_ENCODING);
+        } catch (IOException _) {
+           return new String(reply);
+        }
     }
 
     /**
      * Perform an AMQP wire-protocol-table based RPC roundtrip <br><br>
      *
      * There are some restrictions on the values appearing in the table: <br>
-     * they must be of type {@link String}, {@link com.rabbitmq.client.impl.LongString}, {@link Integer}, {@link java.math.BigDecimal}, {@link Date},
+     * they must be of type {@link String}, {@link LongString}, {@link Integer}, {@link java.math.BigDecimal}, {@link Date},
      * or (recursively) a {@link Map} of the enclosing type.
      *
      * @param message the table to send
      * @return the table received
      * @throws ShutdownSignalException if the connection dies during our wait
      * @throws IOException if an error is encountered
+     * @throws TimeoutException if a timeout occurs before a response is received
      */
     public Map<String, Object> mapCall(Map<String, Object> message)
-        throws IOException, ShutdownSignalException
+        throws IOException, ShutdownSignalException, TimeoutException
     {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        MethodArgumentWriter writer = new MethodArgumentWriter(new DataOutputStream(buffer));
+        MethodArgumentWriter writer = new MethodArgumentWriter(new ValueWriter(new DataOutputStream(buffer)));
         writer.writeTable(message);
         writer.flush();
         byte[] reply = primitiveCall(buffer.toByteArray());
         MethodArgumentReader reader =
-            new MethodArgumentReader(new DataInputStream(new ByteArrayInputStream(reply)));
+            new MethodArgumentReader(new ValueReader(new DataInputStream(new ByteArrayInputStream(reply))));
         return reader.readTable();
     }
 
@@ -247,9 +280,10 @@ public class RpcClient {
      * @return the table received
      * @throws ShutdownSignalException if the connection dies during our wait
      * @throws IOException if an error is encountered
+     * @throws TimeoutException if a timeout occurs before a response is received
      */
     public Map<String, Object> mapCall(Object[] keyValuePairs)
-        throws IOException, ShutdownSignalException
+        throws IOException, ShutdownSignalException, TimeoutException
     {
         Map<String, Object> message = new HashMap<String, Object>();
         for (int i = 0; i < keyValuePairs.length; i += 2) {

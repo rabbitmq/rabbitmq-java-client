@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.examples;
@@ -24,7 +24,6 @@ import com.rabbitmq.client.ConnectionFactory;
 import java.util.Collections;
 
 /**
- * @author robharrop
  */
 public class PerQueueTTLPublisher {
 
@@ -44,8 +43,7 @@ public class PerQueueTTLPublisher {
         channel.queueBind(queue, exchange, queue, null);
 
         // send a message
-        AMQP.BasicProperties props = new AMQP.BasicProperties();
-        props.setDeliveryMode(2);
+        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().deliveryMode(2).build();
         for(int x = 0; x < 10; x++) {
             channel.basicPublish(exchange, queue, props, ("Msg [" + x + "]").getBytes());
         }

@@ -11,30 +11,32 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
 
 public class StressPersister {
     public static void main(String[] args) {
@@ -72,9 +74,8 @@ public class StressPersister {
         }
         return multiplier * Integer.parseInt(arg);
     }
-    
-    public String hostName;
-    public int portNumber;
+
+    public String uri;
 
     public String commentText;
     public int backlogSize;
@@ -86,10 +87,11 @@ public class StressPersister {
     public long topStartTime;
     public PrintWriter logOut;
 
-    public void configure(String[] args) throws ParseException {
+    public void configure(String[] args)
+        throws ParseException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+    {
         Options options = new Options();
-        options.addOption(new Option("h", "host", true, "broker host"));
-        options.addOption(new Option("p", "port", true, "broker port"));
+        options.addOption(new Option("h", "uri", true, "AMQP URI"));
         options.addOption(new Option("C", "comment", true, "comment text"));
         options.addOption(new Option("b", "backlog", true, "backlog size"));
         options.addOption(new Option("B", "bodysize", true, "body size"));
@@ -98,8 +100,7 @@ public class StressPersister {
         CommandLineParser parser = new GnuParser();
         CommandLine cmd = parser.parse(options, args);
 
-        hostName = strArg(cmd, 'h', "localhost");
-        portNumber = intArg(cmd, 'p', AMQP.PROTOCOL.PORT);
+        uri = strArg(cmd, 'h', "amqp://localhost");
 
         commentText = strArg(cmd, 'C', "");
         if ("".equals(commentText)) {
@@ -112,8 +113,7 @@ public class StressPersister {
         sampleGranularity = intArg(cmd, 's', Math.max(5, repeatCount / 250));
 
         connectionFactory = new ConnectionFactory();
-        connectionFactory.setHost(hostName);
-        connectionFactory.setPort(portNumber);
+        connectionFactory.setUri(uri);
     }
 
     public Connection newConnection() throws IOException {

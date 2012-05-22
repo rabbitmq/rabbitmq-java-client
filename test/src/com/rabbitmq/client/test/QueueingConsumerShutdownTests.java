@@ -11,15 +11,18 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
 
 public class QueueingConsumerShutdownTests extends BrokerTestCase{
   static final String QUEUE = "some-queue";
@@ -38,10 +41,10 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
         @Override public void run(){
           try {
             while(true){
-              c.nextDelivery();
+                c.nextDelivery();
             }
           } catch (ShutdownSignalException sig) {
-            count.decrementAndGet();
+              count.decrementAndGet();
           } catch (Exception e) {
             throw new RuntimeException(e);
           } finally {
@@ -57,6 +60,5 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
     assertTrue(latch.await(5, TimeUnit.SECONDS));
     assertEquals(0, count.get());
   }
-
 
 }

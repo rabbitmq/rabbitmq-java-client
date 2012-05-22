@@ -11,24 +11,24 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
+package com.rabbitmq.examples.perf;
 
-package com.rabbitmq.client.test.functional;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.AMQP.BasicProperties;
+public class MulticastVariable implements Variable {
+    private final List<MulticastValue> values = new ArrayList<MulticastValue>();
 
-public class PersistentTransactions extends TransactionsBase {
-
-    protected BasicProperties getMessageProperties() {
-        return MessageProperties.PERSISTENT_TEXT_PLAIN;
+    public MulticastVariable(String name, Object... values) {
+        for (Object v : values) {
+            this.values.add(new MulticastValue(name, v));
+        }
     }
 
-    @Override
-    protected boolean declareQueuesDurable() {
-        return true;
+    public List<MulticastValue> getValues() {
+        return values;
     }
-
 }

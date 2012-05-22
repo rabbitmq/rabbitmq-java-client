@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -31,13 +31,14 @@ import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.impl.ShutdownNotifierComponent;
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.tools.Host;
 
 public class BrokerTestCase extends TestCase
 {
-    public ConnectionFactory connectionFactory = new ConnectionFactory();
+    protected ConnectionFactory connectionFactory = new ConnectionFactory();
 
-    public Connection connection;
-    public Channel channel;
+    protected Connection connection;
+    protected Channel channel;
 
     protected void setUp()
         throws IOException
@@ -80,6 +81,14 @@ public class BrokerTestCase extends TestCase
     protected void releaseResources()
         throws IOException
     {}
+
+    protected void restart()
+        throws IOException
+    {
+        tearDown();
+        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
+        setUp();
+    }
 
     public void openConnection()
         throws IOException
@@ -160,7 +169,7 @@ public class BrokerTestCase extends TestCase
     for (int i = 0; i < count; i++) {
       r = basicGet(q);
       assertNotNull(r);
-      assertEquals(r.getEnvelope().isRedeliver(), redelivered);
+      assertEquals(redelivered, r.getEnvelope().isRedeliver());
     }
     assertNull(basicGet(q));
   }
@@ -226,5 +235,4 @@ public class BrokerTestCase extends TestCase
   protected void deleteQueue(String q) throws IOException {
     channel.queueDelete(q);
   }
-
 }

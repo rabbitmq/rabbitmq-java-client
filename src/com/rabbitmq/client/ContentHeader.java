@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -38,5 +38,5 @@ public interface ContentHeader extends Cloneable {
      * A debugging utility - enable properties to be appended to a string buffer for use as trace messages.
      * @param buffer a place to append the properties as a string
      */
-    public void appendPropertyDebugStringTo(StringBuffer buffer);
+    public void appendPropertyDebugStringTo(StringBuilder buffer);
 }

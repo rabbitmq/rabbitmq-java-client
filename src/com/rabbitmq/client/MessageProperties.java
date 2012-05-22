@@ -11,9 +11,8 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
-
 
 package com.rabbitmq.client;
 
@@ -25,9 +24,6 @@ import com.rabbitmq.client.impl.AMQContentHeader;
  * These are intended for use with {@link Channel#basicPublish} and other Channel methods.
  */
 public class MessageProperties {
-    private static final Integer ZERO = 0;
-    private static final Integer ONE = 1;
-    private static final Integer TWO = 2;
 
     /** Empty basic properties, with no fields set */
     public static final BasicProperties MINIMAL_BASIC =
@@ -37,7 +33,7 @@ public class MessageProperties {
                             null, null);
     /** Empty basic properties, with only deliveryMode set to 2 (persistent) */
     public static final BasicProperties MINIMAL_PERSISTENT_BASIC =
-        new BasicProperties(null, null, null, TWO,
+        new BasicProperties(null, null, null, 2,
                             null, null, null, null,
                             null, null, null, null,
                             null, null);
@@ -47,8 +43,8 @@ public class MessageProperties {
         new BasicProperties("application/octet-stream",
                             null,
                             null,
-                            ONE,
-                            ZERO, null, null, null,
+                            1,
+                            0, null, null, null,
                             null, null, null, null,
                             null, null);
 
@@ -57,8 +53,8 @@ public class MessageProperties {
         new BasicProperties("application/octet-stream",
                             null,
                             null,
-                            TWO,
-                            ZERO, null, null, null,
+                            2,
+                            0, null, null, null,
                             null, null, null, null,
                             null, null);
 
@@ -67,8 +63,8 @@ public class MessageProperties {
         new BasicProperties("text/plain",
                             null,
                             null,
-                            ONE,
-                            ZERO, null, null, null,
+                            1,
+                            0, null, null, null,
                             null, null, null, null,
                             null, null);
 
@@ -77,8 +73,8 @@ public class MessageProperties {
         new BasicProperties("text/plain",
                             null,
                             null,
-                            TWO,
-                            ZERO, null, null, null,
+                            2,
+                            0, null, null, null,
                             null, null, null, null,
                             null, null);
 }

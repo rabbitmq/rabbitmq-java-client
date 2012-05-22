@@ -1,6 +1,6 @@
 /*
-Copyright 2006, 2007 Frank Carver
-Copyright 2007 Tony Garnock-Jones
+   Copyright (c) 2006-2007 Frank Carver
+   Copyright (c) 2007-2012 VMware, Inc. All Rights Reserved
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class JSONReader {
     private CharacterIterator it;
     private char c;
     private Object token;
-    private StringBuffer buf = new StringBuffer();
+    private StringBuilder buf = new StringBuilder();
 
     private char next() {
         c = it.next();
@@ -59,9 +59,22 @@ public class JSONReader {
     }
 
     private void skipWhiteSpace() {
-        while (Character.isWhitespace(c)) {
-            next();
-        }
+        boolean cont;
+
+        do {
+            cont = true;
+            if (Character.isWhitespace(c)) {
+                next();
+            }
+            else if (c == '/' && next() == '/') {
+                while (c != '\n') {
+                    next();
+                }
+            }
+            else {
+                cont = false;
+            }
+        } while (cont);
     }
 
     public Object read(String string) {
@@ -74,7 +87,7 @@ public class JSONReader {
         Object ret = null;
         skipWhiteSpace();
 
-        if (c == '"') {
+        if (c == '"' || c == '\'') {
             next();
             ret = string();
         } else if (c == '[') {
@@ -168,7 +181,7 @@ public class JSONReader {
 
     private Object string() {
         buf.setLength(0);
-        while (c != '"') {
+        while (c != '"' && c != '\'') {
             if (c == '\\') {
                 next();
                 if (c == 'u') {
@@ -207,7 +220,7 @@ public class JSONReader {
         int value = 0;
         for (int i = 0; i < 4; ++i) {
             switch (next()) {
-            case '0': case '1': case '2': case '3': case '4': 
+            case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
                 value = (value << 4) + c - '0';
                 break;

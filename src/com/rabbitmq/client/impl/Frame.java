@@ -11,9 +11,8 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
-
 
 package com.rabbitmq.client.impl;
 
@@ -27,37 +26,29 @@ import java.math.BigDecimal;
 import java.net.SocketTimeoutException;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.MalformedFrameException;
 
 /**
  * Represents an AMQP wire-protocol frame, with frame type, channel number, and payload bytes.
+ * TODO: make state private
  */
 public class Frame {
-    /**
-     * Frame type code
-     */
-    public int type;
+    /** Frame type code */
+    public final int type;
 
     /** Frame channel number, 0-65535 */
-    public int channel;
+    public final int channel;
 
     /** Frame payload bytes (for inbound frames) */
-    public byte[] payload;
+    private final byte[] payload;
 
     /** Frame payload (for outbound frames) */
-    public ByteArrayOutputStream accumulator;
-
-    /**
-     * Constructs an uninitialized frame.
-     */
-    public Frame() {
-        // No work to do
-    }
+    private final ByteArrayOutputStream accumulator;
 
     /**
      * Constructs a frame for output with a type and a channel number and a
@@ -211,18 +202,12 @@ public class Frame {
      * Public API - retrieves the frame payload
      */
     public byte[] getPayload() {
-        byte[] bytes;
+        if (payload != null) return payload;
 
-        if (payload == null) {
-            // This is a Frame we've constructed ourselves. For some reason (e.g.
-            // testing), we're acting as if we received it even though it
-            // didn't come in off the wire.
-            bytes = accumulator.toByteArray();
-        } else {
-            bytes = payload;
-        }
-
-        return bytes;
+        // This is a Frame we've constructed ourselves. For some reason (e.g.
+        // testing), we're acting as if we received it even though it
+        // didn't come in off the wire.
+        return accumulator.toByteArray();
     }
 
     /**
@@ -240,7 +225,7 @@ public class Frame {
     }
 
     @Override public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("Frame(type=").append(type).append(", channel=").append(channel).append(", ");
         if (accumulator == null) {
             sb.append(payload.length).append(" bytes of payload)");
@@ -248,22 +233,6 @@ public class Frame {
             sb.append(accumulator.size()).append(" bytes of accumulator)");
         }
         return sb.toString();
-    }
-
-    /**
-     * Utility for constructing a java.util.Map instance from an
-     * even-length array containing alternating String keys (on the
-     * even elements, starting at zero) and values (on the odd
-     * elements, starting at one).
-     */
-    public static Map<String, Object> buildTable(Object[] keysValues) {
-        Map<String, Object> result = new HashMap<String, Object>();
-        for (int index = 0; index < keysValues.length; index += 2) {
-            String key = (String) keysValues[index];
-            Object value = keysValues[index + 1];
-            result.put(key, value);
-        }
-        return result;
     }
 
     /** Computes the AMQP wire-protocol length of protocol-encoded table entries.
@@ -280,7 +249,7 @@ public class Frame {
     }
 
     /** Computes the AMQP wire-protocol length of a protocol-encoded field-value. */
-    public static long fieldValueSize(Object value)
+    private static long fieldValueSize(Object value)
         throws UnsupportedEncodingException
     {
         long acc = 1; // for the type tag
@@ -300,7 +269,9 @@ public class Frame {
             acc += 8;
         }
         else if(value instanceof Map) {
-            acc += 4 + tableSize((Map<String, Object>) value);
+            @SuppressWarnings("unchecked")
+            Map<String,Object> map = (Map<String,Object>) value;
+            acc += 4 + tableSize(map);
         }
         else if (value instanceof Byte) {
             acc += 1;
@@ -326,6 +297,9 @@ public class Frame {
         else if(value instanceof List) {
             acc += 4 + arraySize((List<?>)value);
         }
+        else if(value instanceof Object[]) {
+            acc += 4 + arraySize((Object[])value);
+        }
         else if(value == null) {
         }
         else {
@@ -334,7 +308,7 @@ public class Frame {
         return acc;
     }
 
-    /** Computes the AMQP wire-protocol length of an encoded field-array */
+    /** Computes the AMQP wire-protocol length of an encoded field-array of type List<?> */
     public static long arraySize(List<?> values)
         throws UnsupportedEncodingException
     {
@@ -344,16 +318,25 @@ public class Frame {
         }
         return acc;
     }
-  
+
+    /** Computes the AMQP wire-protocol length of an encoded field-array of type Object[] */
+    public static long arraySize(Object[] values) throws UnsupportedEncodingException {
+        long acc = 0;
+        for (Object value : values) {
+            acc += fieldValueSize(value);
+        }
+        return acc;
+    }
+
     /** Computes the AMQP wire-protocol length of a protocol-encoded long string. */
-    public static int longStrSize(String str)
+    private static int longStrSize(String str)
         throws UnsupportedEncodingException
     {
         return str.getBytes("utf-8").length + 4;
     }
 
     /** Computes the AMQP wire-protocol length of a protocol-encoded short string. */
-    public static int shortStrSize(String str)
+    private static int shortStrSize(String str)
         throws UnsupportedEncodingException
     {
         return str.getBytes("utf-8").length + 1;

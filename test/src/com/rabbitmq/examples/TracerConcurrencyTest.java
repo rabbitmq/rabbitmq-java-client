@@ -11,14 +11,14 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
-import java.util.concurrent.*;
-import java.util.Random;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 
 /** 
  * Test that the tracer correctly handles multiple concurrently processing
@@ -27,8 +27,7 @@ import java.util.Random;
  */
 public class TracerConcurrencyTest{
 
-  public int port = 5673;
-  public String host = "localhost";
+  public String uri = "amqp://localhost:5673";
   public int threadCount = 3;
 
   private final Object lock = new Object();
@@ -45,7 +44,7 @@ public class TracerConcurrencyTest{
     final Connection conn;
     try {
       conn = new ConnectionFactory()
-          {{setHost(host); setPort(port);}}.newConnection();
+          {{setUri(uri);}}.newConnection();
       Channel setup = conn.createChannel();
 
       setup.exchangeDeclare(EXCHANGE, "direct");
@@ -60,14 +59,11 @@ public class TracerConcurrencyTest{
     }
 
     for(int i = 0; i < threadCount; i++){
-      final int j = i;
       new Thread(){
         @Override public void run(){
           try {
-            Random rnd = new Random();
             Channel ch = conn.createChannel();
             while(true){
-                Channel old = ch;
                 ch.close();
                 ch = conn.createChannel(); 
                 ch.basicPublish(

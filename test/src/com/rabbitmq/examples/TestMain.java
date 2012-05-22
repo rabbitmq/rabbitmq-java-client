@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -19,6 +19,9 @@ package com.rabbitmq.examples;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.net.URISyntaxException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
@@ -29,39 +32,36 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.Method;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.Method;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.utility.BlockingCell;
-import com.rabbitmq.utility.Utility;
 
 public class TestMain {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, URISyntaxException {
         // Show what version this class was compiled with, to check conformance testing
-        Class clazz = TestMain.class;
+        Class<?> clazz = TestMain.class;
         String javaVersion = System.getProperty("java.version");
         System.out.println(clazz.getName() + " : javac v" + getCompilerVersion(clazz) + " on " + javaVersion);
         try {
             boolean silent = Boolean.getBoolean("silent");
-            final String hostName = (args.length > 0) ? args[0] : "localhost";
-            final int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
-            runConnectionNegotiationTest(hostName, portNumber);
-            final Connection conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+            final String uri = (args.length > 0) ? args[0] : "amqp://localhost";
+            runConnectionNegotiationTest(uri);
+            final Connection conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
             if (!silent) {
                 System.out.println("Channel 0 fully open.");
             }
 
             new TestMain(conn, silent).run();
 
-            runProducerConsumerTest(hostName, portNumber, 500);
-            runProducerConsumerTest(hostName, portNumber, 0);
-            runProducerConsumerTest(hostName, portNumber, -1);
+            runProducerConsumerTest(uri, 500);
+            runProducerConsumerTest(uri, 0);
+            runProducerConsumerTest(uri, -1);
 
-            runConnectionShutdownTests(hostName, portNumber);
+            runConnectionShutdownTests(uri);
 
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
@@ -75,11 +75,12 @@ public class TestMain {
         private final int protocolMajor;
         private final int protocolMinor;
 
-        public TestConnectionFactory(int major, int minor, String hostName, int port) {
+        public TestConnectionFactory(int major, int minor, String uri)
+            throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+        {
             this.protocolMajor = major;
             this.protocolMinor = minor;
-            setHost(hostName);
-            setPort(port);
+            setUri(uri);
         }
 
         protected FrameHandler createFrameHandler(Address addr)
@@ -96,12 +97,14 @@ public class TestMain {
         }
     }
 
-    public static void runConnectionNegotiationTest(final String hostName, final int portNumber) throws IOException {
+    public static void runConnectionNegotiationTest(final String uri)
+        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+    {
 
         Connection conn;
 
         try {
-            conn = new TestConnectionFactory(0, 1, hostName, portNumber).newConnection();
+            conn = new TestConnectionFactory(0, 1, uri).newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
@@ -111,8 +114,7 @@ public class TestMain {
         factory.setUsername("invalid");
         factory.setPassword("invalid");
         try {
-            factory.setHost(hostName);
-            factory.setPort(portNumber);
+            factory.setUri(uri);
             conn = factory.newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
@@ -122,8 +124,7 @@ public class TestMain {
         factory.setRequestedChannelMax(10);
         factory.setRequestedFrameMax(8192);
         factory.setRequestedHeartbeat(1);
-        factory.setHost(hostName);
-        factory.setPort(portNumber);
+        factory.setUri(uri);
         conn = factory.newConnection();
         checkNegotiatedMaxValue("channel-max", 10, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 8192, conn.getFrameMax());
@@ -134,15 +135,14 @@ public class TestMain {
         factory.setRequestedChannelMax(0);
         factory.setRequestedFrameMax(0);
         factory.setRequestedHeartbeat(0);
-        factory.setHost(hostName);
-        factory.setPort(portNumber);
+        factory.setUri(uri);
         conn = factory.newConnection();
         checkNegotiatedMaxValue("channel-max", 0, conn.getChannelMax());
         checkNegotiatedMaxValue("frame-max", 0, conn.getFrameMax());
         checkNegotiatedMaxValue("heartbeat", 0, conn.getHeartbeat());
         conn.close();
 
-        conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+        conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
         conn.close();
     }
 
@@ -156,16 +156,18 @@ public class TestMain {
         }
     }
 
-    public static void runConnectionShutdownTests(final String hostName, final int portNumber) throws IOException {
+    public static void runConnectionShutdownTests(final String uri)
+        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+    {
         Connection conn;
         Channel ch;
         // Test what happens when a connection is shut down w/o first
         // closing the channels.
-        conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+        conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
         ch = conn.createChannel();
         conn.close();
         // Test what happens when we provoke an error
-        conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+        conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
         ch = conn.createChannel();
         try {
             ch.exchangeDeclare("mumble", "invalid");
@@ -173,21 +175,21 @@ public class TestMain {
         } catch (IOException e) {
         }
         // Test what happens when we just kill the connection
-        conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+        conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
         ch = conn.createChannel();
         ((SocketFrameHandler)((AMQConnection)conn).getFrameHandler()).close();
     }
 
-    public static void runProducerConsumerTest(String hostName, int portNumber, int commitEvery) throws IOException {
+    public static void runProducerConsumerTest(String uri, int commitEvery)
+        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+    {
         ConnectionFactory cfconnp = new ConnectionFactory();
-        cfconnp.setHost(hostName);
-        cfconnp.setPort(portNumber);
+        cfconnp.setUri(uri);
         Connection connp = cfconnp.newConnection();
         ProducerMain p = new ProducerMain(connp, 2000, 10000, false, commitEvery, true);
         new Thread(p).start();
         ConnectionFactory cfconnc = new ConnectionFactory();
-        cfconnc.setHost(hostName);
-        cfconnc.setPort(portNumber);
+        cfconnc.setUri(uri);
         Connection connc = cfconnc.newConnection();
         ConsumerMain c = new ConsumerMain(connc, false, true);
         c.run();
@@ -196,20 +198,18 @@ public class TestMain {
     public static void sleep(int ms) {
         try {
             Thread.sleep(ms);
-        } catch (InterruptedException ie) {
-            Utility.emptyStatement();
-        }
+        } catch (InterruptedException _) { } // ignore
     }
 
-    public Connection _connection;
+    private Connection _connection;
 
-    public Channel _ch1;
+    private Channel _ch1;
 
-    public int _messageId = 0;
+    private int _messageId = 0;
 
-    private boolean _silent;
+    private final boolean _silent;
 
-    private BlockingCell<Object> returnCell;
+    private volatile BlockingCell<Object> returnCell;
 
     public TestMain(Connection connection, boolean silent) {
         _connection = connection;
@@ -229,15 +229,6 @@ public class TestMain {
         final int batchSize = 5;
 
         _ch1 = createChannel();
-
-        _ch1.setReturnListener(new ReturnListener() {
-            public void handleReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body)
-                    throws IOException {
-                Method method = new AMQImpl.Basic.Return(replyCode, replyText, exchange, routingKey);
-                log("Handling return with body " + new String(body));
-                returnCell.set(new Object[] { method, properties, body });
-            }
-        });
 
         String queueName =_ch1.queueDeclare().getQueue();
 
@@ -274,6 +265,23 @@ public class TestMain {
             // work around bug 15794
         }
         log("Leaving TestMain.run().");
+    }
+
+    private void setChannelReturnListener() {
+        log("Setting return listener..");
+        _ch1.addReturnListener(new ReturnListener() {
+            public void handleReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body)
+                    throws IOException {
+                Method method = new AMQP.Basic.Return.Builder()
+                                        .replyCode(replyCode)
+                                        .replyText(replyText)
+                                        .exchange(exchange)
+                                        .routingKey(routingKey)
+                                .build();
+                log("Handling return with body " + new String(body));
+                TestMain.this.returnCell.set(new Object[] { method, properties, body });
+            }
+        });
     }
 
     public class UnexpectedSuccessException extends IOException {
@@ -428,14 +436,15 @@ public class TestMain {
         expect(2, drain(10, q3, true));
     }
 
-    public void doBasicReturn(BlockingCell cell, int expectedCode) {
+    public void doBasicReturn(BlockingCell<Object> cell, int expectedCode) {
         Object[] a = (Object[]) cell.uninterruptibleGet();
-        AMQImpl.Basic.Return method = (AMQImpl.Basic.Return) a[0];
+        AMQP.Basic.Return method = (AMQP.Basic.Return) a[0];
         log("Returned: " + method);
         log(" - props: " + a[1]);
         log(" - body: " + new String((byte[]) a[2]));
-        if (method.replyCode != expectedCode) {
-            System.err.println("Eek! Got basic return with code " + method.replyCode + ", but expected code " + expectedCode);
+        int replyCode = method.getReplyCode();
+        if (replyCode != expectedCode) {
+            System.err.println("Eek! Got basic return with code " + replyCode + ", but expected code " + expectedCode);
             System.exit(1);
         }
     }
@@ -445,6 +454,8 @@ public class TestMain {
 
         String mx = "mandatoryTestExchange";
         _ch1.exchangeDeclare(mx, "fanout", false, true, null);
+
+        setChannelReturnListener();
 
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());
@@ -471,7 +482,15 @@ public class TestMain {
         drain(1, mq, true);
         _ch1.queueDelete(mq, true, true);
 
+        unsetChannelReturnListener();
+
         log("Completed basic.return testing.");
+
+    }
+
+    private void unsetChannelReturnListener() {
+        _ch1.clearReturnListeners();
+        log("ReturnListeners unset");
     }
 
     public void waitForKey(String prompt) throws IOException {
@@ -486,73 +505,35 @@ public class TestMain {
 
     public void tryTransaction(String queueName) throws IOException {
 
-        GetResponse c;
+        log("About to tryTranscation");
 
         _ch1.txSelect();
+
+        setChannelReturnListener();
 
         //test basicReturn handling in tx context
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish("", queueName, false, false, null, "normal".getBytes());
         _ch1.basicPublish("", queueName, true, false, null, "mandatory".getBytes());
         _ch1.basicPublish("", "bogus", true, false, null, "mandatory".getBytes());
+        _ch1.txCommit();
         doBasicReturn(returnCell, AMQP.NO_ROUTE);
         returnCell = new BlockingCell<Object>();
         _ch1.basicPublish("", "bogus", false, true, null, "immediate".getBytes());
+        _ch1.txCommit();
         doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
         returnCell = new BlockingCell<Object>();
         _ch1.txCommit();
         expect(2, drain(10, queueName, false));
 
-        /*
-          TODO: figure out what these tests are meant to do; they
-          currently break due to rollback no longer requeueing
-          delivered messages
-
-        String x = "txtest";
-        _ch1.exchangeDeclare(x, "direct", true);
-        String requestQueue = _ch1.queueDeclare("", true).getQueue();
-        String replyQueue = _ch1.queueDeclare("", true).getQueue();
-        _ch1.queueBind(requestQueue, x, requestQueue);
-        _ch1.queueBind(replyQueue, x, replyQueue);
-        publish2(x, requestQueue, "Request");
-        _ch1.txCommit();
-
-        expect(1, drain(10, requestQueue, false));
-        expect(0, drain(10, replyQueue, false));
-        _ch1.txRollback();
-
-        expect(1, drain(10, requestQueue, false));
-        expect(0, drain(10, replyQueue, false));
-        publish2(x, replyQueue, "Reply");
-        _ch1.txRollback();
-
-        waitForKey("Temp queues should have ONE REQUEST, no reply");
-
-        expect(1, drain(10, requestQueue, false));
-        expect(0, drain(10, replyQueue, false));
-        publish2(x, replyQueue, "Reply");
-        _ch1.txCommit();
-
-        waitForKey("Temp queues should have no request, ONE REPLY");
-
-        expect(0, drain(10, requestQueue, false));
-        expect(1, drain(10, replyQueue, false));
-        _ch1.txRollback();
-
-        expect(0, drain(10, requestQueue, false));
-        expect(1, drain(10, replyQueue, false));
-        _ch1.txCommit();
-
-        _ch1.queueDelete(requestQueue);
-        _ch1.queueDelete(replyQueue);
-
-        */
+        unsetChannelReturnListener();
+        log("Finished tryTransaction");
     }
 
 
 
     // utility: tell what Java compiler version a class was compiled with
-    public static String getCompilerVersion(Class clazz) throws IOException {
+    public static String getCompilerVersion(Class<?> clazz) throws IOException {
         String resourceName = "/" + clazz.getName().replace('.', '/') + ".class";
         System.out.println(resourceName);
 

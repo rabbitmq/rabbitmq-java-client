@@ -1,6 +1,6 @@
 /*
-Copyright 2006, 2007 Frank Carver
-Copyright 2007 Tony Garnock-Jones
+   Copyright (c) 2006-2007 Frank Carver
+   Copyright (c) 2007-2012 VMware, Inc. All Rights Reserved
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import java.util.Set;
 public class JSONWriter {
     private boolean indentMode = false;
     private int indentLevel = 0;
-    private StringBuffer buf = new StringBuffer();
+    private StringBuilder buf = new StringBuilder();
 
     public JSONWriter() {}
 
@@ -86,6 +86,7 @@ public class JSONWriter {
         return write(Boolean.valueOf(b));
     }
 
+    @SuppressWarnings("unchecked")
     private void value(Object object) {
         if (object == null) add("null");
         else if (object instanceof JSONSerializable) {
@@ -97,7 +98,7 @@ public class JSONWriter {
         else if (object instanceof Character) string(object);
         else if (object instanceof Map) map((Map<String, Object>) object);
         else if (object.getClass().isArray()) array(object);
-        else if (object instanceof Collection) array(((Collection) object).iterator());
+        else if (object instanceof Collection) array(((Collection<?>) object).iterator());
         else bean(object);
     }
 
@@ -111,7 +112,7 @@ public class JSONWriter {
      * @param object the object
      * @param properties explicit list of property/field names to include - may be null for "all"
      */
-    public void writeLimited(Class klass, Object object, String[] properties) {
+    public void writeLimited(Class<?> klass, Object object, String[] properties) {
         Set<String> propertiesSet = null;
         if (properties != null) {
             propertiesSet = new HashSet<String>();
@@ -120,7 +121,7 @@ public class JSONWriter {
             }
         }
 
-        add("{"); indentLevel += 2; newline();
+        add('{'); indentLevel += 2; newline();
         boolean needComma = false;
 
         BeanInfo info;
@@ -174,7 +175,7 @@ public class JSONWriter {
             }
         }
 
-        indentLevel -= 2; newline(); add("}");
+        indentLevel -= 2; newline(); add('}');
     }
 
     private void add(String name, Object value) {
@@ -185,35 +186,45 @@ public class JSONWriter {
     }
 
     private void map(Map<String, Object> map) {
-        add("{"); indentLevel += 2; newline();
+        add('{'); indentLevel += 2; newline();
         Iterator<String> it = map.keySet().iterator();
+        if (it.hasNext()) {
+            mapEntry(it.next(), map);
+        }
         while (it.hasNext()) {
+            add(','); newline();
             Object key = it.next();
             value(key);
-            add(":");
+            add(':');
             value(map.get(key));
-            if (it.hasNext()) { add(","); newline(); }
         }
-        indentLevel -= 2; newline(); add("}");
+        indentLevel -= 2; newline(); add('}');
+    }
+    private void mapEntry(Object key, Map<String, Object> map) {
+        value(key);
+        add(':');
+        value(map.get(key));
     }
 
-    private void array(Iterator it) {
-        add("[");
+    private void array(Iterator<?> it) {
+        add('[');
+        if (it.hasNext()) value(it.next());
         while (it.hasNext()) {
+            add(',');
             value(it.next());
-            if (it.hasNext()) add(",");
         }
-        add("]");
+        add(']');
     }
 
     private void array(Object object) {
-        add("[");
+        add('[');
         int length = Array.getLength(object);
-        for (int i = 0; i < length; ++i) {
+        if (length > 0) value(Array.get(object, 0));
+        for (int i = 1; i < length; ++i) {
+            add(',');
             value(Array.get(object, i));
-            if (i < length - 1) add(',');
         }
-        add("]");
+        add(']');
     }
 
     private void bool(boolean b) {

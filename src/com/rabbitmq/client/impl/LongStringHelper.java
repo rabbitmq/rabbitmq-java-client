@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+import com.rabbitmq.client.LongString;
+
 /**
  * Utility for working with {@link LongString}s.
  */
@@ -32,10 +34,10 @@ public class LongStringHelper
      * Private API - Implementation of {@link LongString}. When
      * interpreting bytes as a string, uses UTF-8 encoding.
      */
-    public static class ByteArrayLongString
+    private static class ByteArrayLongString
         implements LongString
     {
-        byte [] bytes;
+        private byte [] bytes;
 
         public ByteArrayLongString(byte[] bytes)
         {
@@ -94,6 +96,7 @@ public class LongStringHelper
      */
     public static LongString asLongString(String string)
     {
+        if (string==null) return null;
         try {
             return new ByteArrayLongString(string.getBytes("utf-8"));
         }
@@ -109,6 +112,7 @@ public class LongStringHelper
      */
     public static LongString asLongString(byte [] bytes)
     {
+        if (bytes==null) return null;
         return new ByteArrayLongString(bytes);
     }
 }

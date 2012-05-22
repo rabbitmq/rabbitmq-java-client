@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -51,11 +51,10 @@ public class ConsumerMain implements Runnable {
 
     public static void main(String[] args) {
         try {
-            final String hostName = optArg(args, 0, "localhost");
-            final int portNumber = optArg(args, 1, AMQP.PROTOCOL.PORT);
-            boolean writeStats = optArg(args, 2, true);
-            boolean autoAck = optArg(args, 3, true);
-            final Connection conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+            final String uri = optArg(args, 0, "amqp://localhost");
+            boolean writeStats = optArg(args, 1, true);
+            boolean autoAck = optArg(args, 2, true);
+            final Connection conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
             System.out.println("Channel 0 fully open.");
             new ConsumerMain(conn, writeStats, autoAck).run();
         } catch (Exception e) {
@@ -189,13 +188,13 @@ public class ConsumerMain implements Runnable {
                 sumL += v;
             }
 
-            double avgL = sumL / messageCount;
-            System.out.println("CONSUMER -  Message count: " + messageCount);
-            System.out.println("Total time, milliseconds: " + totalDelta);
-            System.out.println("Overall messages-per-second: " + (messageCount / (totalDelta / 1000.0)));
-            System.out.println("Min latency, milliseconds: " + minL);
-            System.out.println("Avg latency, milliseconds: " + avgL);
-            System.out.println("Max latency, milliseconds: " + maxL);
+            System.out.println("CONSUMER -       Overall: "
+                            + String.format("%d messages in %dms, a rate of %.2f msgs/sec", messageCount,
+                                    totalDelta,
+                                    (messageCount / (totalDelta / 1000.0))));
+            System.out.println("Latency  - Min (Avg) Max: "
+                    + String.format("%dms (%.2fms) %dms", minL, sumL
+                            / messageCount, maxL));
 
             if (writeStats) {
                 PrintStream o = new PrintStream(new FileOutputStream("simple-latency-experiment.csv"));

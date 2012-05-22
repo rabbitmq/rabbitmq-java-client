@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -25,14 +25,18 @@ import java.io.IOException;
  */
 public class UnknownClassOrMethodId extends IOException {
     private static final long serialVersionUID = 1L;
+    private static final int NO_METHOD_ID = -1;
     public final int classId;
     public final int methodId;
+    public UnknownClassOrMethodId(int classId) {
+        this(classId, NO_METHOD_ID);
+    }
     public UnknownClassOrMethodId(int classId, int methodId) {
         this.classId = classId;
         this.methodId = methodId;
     }
     public String toString() {
-        if (this.methodId == -1) {
+        if (this.methodId == NO_METHOD_ID) {
             return super.toString() + "<" + classId + ">";
         } else {
             return super.toString() + "<" + classId + "." + methodId + ">";

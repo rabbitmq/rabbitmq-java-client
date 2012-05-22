@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -42,12 +42,12 @@ public class ParameterDescription {
         JSONUtil.tryFill(this, pm);
     }
 
-    public ParameterDescription(int index, Class c) {
+    public ParameterDescription(int index, Class<?> c) {
         name = "param" + index;
         type = lookup(c);
     }
 
-    public static String lookup(Class c) {
+    public static String lookup(Class<?> c) {
         if (c == Void.class) return "nil";
         if (c == Boolean.class) return "bit";
         if (c == Integer.class) return "num";

@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
@@ -23,6 +23,9 @@ import java.io.IOException;
  */
 public class PossibleAuthenticationFailureException extends IOException
 {
+    /** Default for non-checking. */
+    private static final long serialVersionUID = 1L;
+
     public PossibleAuthenticationFailureException(Throwable cause)
     {
         super("Possibly caused by authentication failure");

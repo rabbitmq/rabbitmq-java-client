@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -20,7 +20,6 @@ package com.rabbitmq.client.test.functional;
 import java.io.IOException;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 /* Declare an exchange, bind a queue to it, then try to delete it,

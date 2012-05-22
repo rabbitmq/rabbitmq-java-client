@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -19,13 +19,14 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.AMQP;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
 import java.io.IOException;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Manages heartbeat sending for a {@link AMQConnection}.
@@ -95,7 +96,7 @@ final class HeartbeatSender {
      * Shutdown the heartbeat process, if any.
      */
     public void shutdown() {
-        ScheduledExecutorService executorToShutdown = null;
+        ExecutorService executorToShutdown = null;
         synchronized (this.monitor) {
             if (this.future != null) {
                 this.future.cancel(true);

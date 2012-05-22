@@ -11,18 +11,17 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.impl;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Date;
 import java.util.Map;
+
+import com.rabbitmq.client.LongString;
 
 /**
  * Generates AMQP wire-protocol encoded arguments. Methods on this
@@ -30,7 +29,7 @@ import java.util.Map;
  */
 public class MethodArgumentWriter
 {
-    /** Accumulates our output */
+    /** Writes our output */
     private final ValueWriter out;
     /** When encoding one or more bits, records whether a group of bits is waiting to be written */
     private boolean needBitFlush;
@@ -42,9 +41,9 @@ public class MethodArgumentWriter
     /**
      * Constructs a MethodArgumentWriter targetting the given DataOutputStream.
      */
-    public MethodArgumentWriter(DataOutputStream out)
+    public MethodArgumentWriter(ValueWriter out)
     {
-        this.out = new ValueWriter(out);
+        this.out = out;
         resetBitAccumulator();
     }
 
@@ -117,7 +116,7 @@ public class MethodArgumentWriter
     }
 
     /** Public API - encodes a boolean/bit argument. */
-    public void writeBit(boolean b)
+    public final void writeBit(boolean b)
         throws IOException
     {
         if (bitMask > 0x80) {

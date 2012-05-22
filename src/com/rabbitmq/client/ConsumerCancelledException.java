@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
@@ -21,7 +21,9 @@ import com.rabbitmq.utility.SensibleClone;
 public class ConsumerCancelledException extends RuntimeException implements
         SensibleClone<ConsumerCancelledException> {
 
-    @Override
+    /** Default for non-checking. */
+    private static final long serialVersionUID = 1L;
+
     public ConsumerCancelledException sensibleClone() {
         try {
             return (ConsumerCancelledException) super.clone();

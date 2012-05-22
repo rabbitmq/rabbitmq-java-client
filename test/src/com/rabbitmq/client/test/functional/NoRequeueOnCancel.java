@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -40,11 +40,10 @@ public class NoRequeueOnCancel extends BrokerTestCase
         channel.basicPublish("", Q, null, "1".getBytes());
 
         QueueingConsumer c;
-        QueueingConsumer.Delivery d;
 
         c = new QueueingConsumer(channel);
         String consumerTag = channel.basicConsume(Q, false, c);
-        d = c.nextDelivery();
+        c.nextDelivery();
         channel.basicCancel(consumerTag);
 
         assertNull(channel.basicGet(Q, true));

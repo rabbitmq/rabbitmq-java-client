@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -25,14 +25,14 @@ import java.io.IOException;
 */
 public class RpcServer {
     /** Channel we are communicating on */
-    protected final Channel _channel;
+    private final Channel _channel;
     /** Queue to receive requests from */
-    protected final String _queueName;
+    private final String _queueName;
     /** Boolean controlling the exit from the mainloop. */
-    protected boolean _mainloopRunning = true;
+    private boolean _mainloopRunning = true;
 
     /** Consumer attached to our request queue */
-    protected QueueingConsumer _consumer;
+    private QueueingConsumer _consumer;
 
     /**
      * Creates an RpcServer listening on a temporary exclusive
@@ -141,13 +141,14 @@ public class RpcServer {
         throws IOException
     {
         AMQP.BasicProperties requestProperties = request.getProperties();
-        if (requestProperties.getCorrelationId() != null && requestProperties.getReplyTo() != null)
+        String correlationId = requestProperties.getCorrelationId();
+        String replyTo = requestProperties.getReplyTo();
+        if (correlationId != null && replyTo != null)
         {
-            AMQP.BasicProperties replyProperties = new AMQP.BasicProperties();
+            AMQP.BasicProperties replyProperties
+                = new AMQP.BasicProperties.Builder().correlationId(correlationId).build();
             byte[] replyBody = handleCall(request, replyProperties);
-            replyProperties.setCorrelationId(requestProperties.getCorrelationId());
-            _channel.basicPublish("", requestProperties.getReplyTo(),
-                                  replyProperties, replyBody);
+            _channel.basicPublish("", replyTo, replyProperties, replyBody);
         } else {
             handleCast(request);
         }

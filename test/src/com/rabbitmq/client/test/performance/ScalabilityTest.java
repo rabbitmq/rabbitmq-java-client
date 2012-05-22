@@ -11,23 +11,32 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.performance;
 
-import com.rabbitmq.client.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Random;
+import java.util.Stack;
+import java.util.UUID;
+import java.util.Vector;
+import java.util.concurrent.CountDownLatch;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.FileOutputStream;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.ReturnListener;
 
 /**
  * This tests the scalability of the routing tables in two aspects:
@@ -284,7 +293,7 @@ public class ScalabilityTest {
         boolean mandatory = true;
         boolean immdediate = true;
         final CountDownLatch latch = new CountDownLatch(params.messageCount);
-        channel.setReturnListener(new ReturnListener() {
+        channel.addReturnListener(new ReturnListener() {
                 public void handleReturn(int replyCode, String replyText,
                                          String exchange, String routingKey,
                                          AMQP.BasicProperties properties, byte[] body) throws IOException {
@@ -327,7 +336,7 @@ public class ScalabilityTest {
 
         Parameters params = new Parameters();
         params.host          = cmd.getOptionValue("h", "0.0.0.0");
-        params.port          = CLIHelper.getOptionValue(cmd, "p", 5672);
+        params.port          = CLIHelper.getOptionValue(cmd, "p", AMQP.PROTOCOL.PORT);
         params.messageCount  = CLIHelper.getOptionValue(cmd, "n", 100);
         params.base          = CLIHelper.getOptionValue(cmd, "b", 10);
         params.maxQueueExp   = CLIHelper.getOptionValue(cmd, "x", 4);

@@ -11,17 +11,17 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
-import com.rabbitmq.client.impl.LongString;
 import com.rabbitmq.client.impl.LongStringHelper;
 import com.rabbitmq.client.test.BrokerTestCase;
 
@@ -45,7 +45,7 @@ public class SaslMechanisms extends BrokerTestCase {
             return name;
         }
 
-        public LongString handleChallenge(LongString challenge, ConnectionFactory factory) {
+        public LongString handleChallenge(LongString challenge, String username, String password) {
             counter++;
             return LongStringHelper.asLongString(responses[counter-1]);
         }

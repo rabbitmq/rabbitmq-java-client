@@ -11,9 +11,8 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
-
 
 package com.rabbitmq.examples;
 
@@ -21,7 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -68,14 +66,13 @@ public class ProducerMain implements Runnable {
 
     public static void main(String[] args) {
         try {
-            final String hostName = optArg("hostName", args, 0, "localhost");
-            final int portNumber = optArg("portNumber", args, 1, AMQP.PROTOCOL.PORT);
-            int rateLimit = optArg("rateLimit", args, 2, SEND_RATE);
-            int messageCount = optArg("messageCount", args, 3, LATENCY_MESSAGE_COUNT);
-            boolean sendCompletion = optArg("sendCompletion", args, 4, false);
-            int commitEvery = optArg("commitEvery", args, 5, -1);
-            boolean sendLatencyInfo = optArg("sendLatencyInfo", args, 6, true);
-            final Connection conn = new ConnectionFactory(){{setHost(hostName); setPort(portNumber);}}.newConnection();
+            final String uri = optArg("uri", args, 0, "amqp://localhost");
+            int rateLimit = optArg("rateLimit", args, 1, SEND_RATE);
+            int messageCount = optArg("messageCount", args, 2, LATENCY_MESSAGE_COUNT);
+            boolean sendCompletion = optArg("sendCompletion", args, 3, false);
+            int commitEvery = optArg("commitEvery", args, 4, -1);
+            boolean sendLatencyInfo = optArg("sendLatencyInfo", args, 5, true);
+            final Connection conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
             //if (commitEvery > 0) { conn.getSocket().setTcpNoDelay(true); }
             System.out.println("Channel 0 fully open.");
             new ProducerMain(conn, rateLimit, messageCount, sendCompletion, commitEvery, sendLatencyInfo).run();
@@ -220,14 +217,18 @@ public class ProducerMain implements Runnable {
     }
 
     public void report(long totalDelta) {
-        System.out.println("PRODUCER - Message count: " + _messageCount);
-        System.out.println("Total time, milliseconds: " + totalDelta);
-        System.out.println("Overall messages-per-second: " + (_messageCount / (totalDelta / 1000.0)));
+        System.out
+                .println("PRODUCER -       Overall: "
+                        + String.format("%d messages in %dms, a rate of %.2f msgs/sec", _messageCount,
+                                totalDelta,
+                                (_messageCount / (totalDelta / 1000.0))));
     }
 
     public void summariseProgress(long startTime, long now, int sent, long previousReportTime, int previousSent) {
         int countOverInterval = sent - previousSent;
         double intervalRate = countOverInterval / ((now - previousReportTime) / 1000.0);
-        System.out.println((now - startTime) + " ms: Sent " + sent + " - " + countOverInterval + " since last report (" + (int) intervalRate + " Hz)");
+        System.out.println((now - startTime) + " ms: Sent " + sent + " - "
+                + countOverInterval + " since last report ("
+                + (int) intervalRate + " Hz)");
     }
 }

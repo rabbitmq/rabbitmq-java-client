@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
@@ -20,9 +20,13 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
-import java.net.Socket;
 import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
@@ -38,45 +42,39 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 
 public class ConnectionFactory implements Cloneable {
+
+    /** Default Executor threads */
+    @Deprecated
+    public static final int    DEFAULT_NUM_CONSUMER_THREADS = 5;
     /** Default user name */
     public static final String DEFAULT_USER = "guest";
-
     /** Default password */
     public static final String DEFAULT_PASS = "guest";
-
     /** Default virtual host */
     public static final String DEFAULT_VHOST = "/";
-
-    /** Default value for the desired maximum channel number; zero for
-     * unlimited */
-    public static final int DEFAULT_CHANNEL_MAX = 0;
-
-    /** Default value for the desired maximum frame size; zero for
-     * unlimited */
-    public static final int DEFAULT_FRAME_MAX = 0;
-
-    /** Default value for desired heartbeat interval; zero for none */
-    public static final int DEFAULT_HEARTBEAT = 0;
-
-    /** The default host to connect to */
+    /** Default maximum channel number;
+     *  zero for unlimited */
+    public static final int    DEFAULT_CHANNEL_MAX = 0;
+    /** Default maximum frame size;
+     *  zero means no limit */
+    public static final int    DEFAULT_FRAME_MAX = 0;
+    /** Default heart-beat interval;
+     *  zero means no heart-beats */
+    public static final int    DEFAULT_HEARTBEAT = 0;
+    /** The default host */
     public static final String DEFAULT_HOST = "localhost";
+    /** 'Use the default port' port */
+    public static final int    USE_DEFAULT_PORT = -1;
+    /** The default non-ssl port */
+    public static final int    DEFAULT_AMQP_PORT = AMQP.PROTOCOL.PORT;
+    /** The default ssl port */
+    public static final int    DEFAULT_AMQP_OVER_SSL_PORT = 5671;
+    /** The default connection timeout;
+     *  zero means wait indefinitely */
+    public static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
 
-    /** A constant that when passed as a port number causes the connection to use the default port */
-    public static final int USE_DEFAULT_PORT = -1;
-
-    /** The default port to use for AMQP connections when not using SSL */
-    public static final int DEFAULT_AMQP_PORT = 5672;
-
-    /** The default port to use for AMQP connections when using SSL */
-    public static final int DEFAULT_AMQP_OVER_SSL_PORT = 5671;
-
-    /** The default connection timeout (wait indefinitely until connection established or error occurs) */
-    public static final int DEFAULT_CONNECTION_TIMEOUT = 0;
-
-    /**
-     * The default SSL protocol (currently "SSLv3").
-     */
-    public static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
+    /** The default SSL protocol */
+    private static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
 
     private String username                       = DEFAULT_USER;
     private String password                       = DEFAULT_PASS;
@@ -91,22 +89,24 @@ public class ConnectionFactory implements Cloneable {
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
 
-    /**
-     * Instantiate a ConnectionFactory with a default set of parameters.
-     */
-    public ConnectionFactory() {
+    /** @return number of consumer threads in default {@link ExecutorService} */
+    @Deprecated
+    public int getNumConsumerThreads() {
+        return DEFAULT_NUM_CONSUMER_THREADS;
     }
 
-    /**
-     *  @return the default host to use for connections
-     */
+    /** @param numConsumerThreads threads in created private executor service */
+    @Deprecated
+    public void setNumConsumerThreads(int numConsumerThreads) {
+        throw new IllegalArgumentException("setNumConsumerThreads not supported -- create explicit ExecutorService instead.");
+    }
+
+    /** @return the default host to use for connections */
     public String getHost() {
         return host;
     }
 
-    /**
-     *  @param host the default host to use for connections
-     */
+    /** @param host the default host to use for connections */
     public void setHost(String host) {
         this.host = host;
     }
@@ -117,9 +117,7 @@ public class ConnectionFactory implements Cloneable {
         else return DEFAULT_AMQP_PORT;
     }
 
-    /**
-     *  @return the default port to use for connections
-     */
+    /** @return the default port to use for connections */
     public int getPort() {
         return portOrDefault(port);
     }
@@ -178,6 +176,89 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setVirtualHost(String virtualHost) {
         this.virtualHost = virtualHost;
+    }
+
+    /**
+     * Convenience method for setting the fields in an AMQP URI: host,
+     * port, username, password and virtual host.  If any part of the
+     * URI is ommited, the ConnectionFactory's corresponding variable
+     * is left unchanged.
+     * @param uri is the AMQP URI containing the data
+     */
+    public void setUri(URI uri)
+        throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+    {
+        if ("amqp".equals(uri.getScheme().toLowerCase())) {
+            // nothing special to do
+        } else if ("amqps".equals(uri.getScheme().toLowerCase())) {
+            setPort(DEFAULT_AMQP_OVER_SSL_PORT);
+            useSslProtocol();
+        } else {
+            throw new IllegalArgumentException("Wrong scheme in AMQP URI: " +
+                                               uri.getScheme());
+        }
+
+        String host = uri.getHost();
+        if (host != null) {
+            setHost(host);
+        }
+
+        int port = uri.getPort();
+        if (port != -1) {
+            setPort(port);
+        }
+
+        String userInfo = uri.getRawUserInfo();
+        if (userInfo != null) {
+            String userPass[] = userInfo.split(":");
+            if (userPass.length > 2) {
+                throw new IllegalArgumentException("Bad user info in AMQP " +
+                                                   "URI: " + userInfo);
+            }
+
+            setUsername(uriDecode(userPass[0]));
+            if (userPass.length == 2) {
+                setPassword(uriDecode(userPass[1]));
+            }
+        }
+
+        String path = uri.getRawPath();
+        if (path != null && path.length() > 0) {
+            if (path.indexOf('/', 1) != -1) {
+                throw new IllegalArgumentException("Multiple segments in " +
+                                                   "path of AMQP URI: " +
+                                                   path);
+            }
+
+            setVirtualHost(uriDecode(uri.getPath().substring(1)));
+        }
+    }
+
+    /**
+     * Convenience method for setting the fields in an AMQP URI: host,
+     * port, username, password and virtual host.  If any part of the
+     * URI is ommited, the ConnectionFactory's corresponding variable
+     * is left unchanged.  Note that not all valid AMQP URIs are
+     * accepted; in particular, the hostname must be given if the
+     * port, username or password are given, and escapes in the
+     * hostname are not permitted.
+     * @param uriString is the AMQP URI containing the data
+     */
+    public void setUri(String uriString)
+        throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
+    {
+        setUri(new URI(uriString));
+    }
+
+    private String uriDecode(String s) {
+        try {
+            // URLDecode decodes '+' to a space, as for
+            // form encoding.  So protect plus signs.
+            return URLDecoder.decode(s.replace("+", "%2B"), "US-ASCII");
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -319,7 +400,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Convenience method for setting up a SSL socket factory, using
-     * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
+     * the supplied protocol and a very trusting TrustManager.
      */
     public void useSslProtocol(String protocol)
         throws NoSuchAlgorithmException, KeyManagementException
@@ -357,10 +438,22 @@ public class ConnectionFactory implements Cloneable {
 
         String hostName = addr.getHost();
         int portNumber = portOrDefault(addr.getPort());
-        Socket socket = factory.createSocket();
-        configureSocket(socket);
-        socket.connect(new InetSocketAddress(hostName, portNumber), connectionTimeout);
-        return createFrameHandler(socket);
+        Socket socket = null;
+        try {
+            socket = factory.createSocket();
+            configureSocket(socket);
+            socket.connect(new InetSocketAddress(hostName, portNumber),
+                    connectionTimeout);
+            return createFrameHandler(socket);
+        } catch (IOException ioe) {
+            quietTrySocketClose(socket);
+            throw ioe;
+        }
+    }
+
+    private static void quietTrySocketClose(Socket socket) {
+        if (socket != null)
+            try { socket.close(); } catch (Exception _) {/*ignore exceptions*/}
     }
 
     protected FrameHandler createFrameHandler(Socket sock)
@@ -391,15 +484,35 @@ public class ConnectionFactory implements Cloneable {
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(Address[] addrs)
+    public Connection newConnection(Address[] addrs) throws IOException {
+        return newConnection(null, addrs);
+    }
+
+    /**
+     * Create a new broker connection
+     * @param executor thread execution service for consumers on the connection
+     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newConnection(ExecutorService executor, Address[] addrs)
         throws IOException
     {
         IOException lastException = null;
         for (Address addr : addrs) {
             try {
                 FrameHandler frameHandler = createFrameHandler(addr);
-                AMQConnection conn = new AMQConnection(this,
-                                                       frameHandler);
+                AMQConnection conn =
+                    new AMQConnection(username,
+                                      password,
+                                      frameHandler,
+                                      executor,
+                                      virtualHost,
+                                      getClientProperties(),
+                                      requestedFrameMax,
+                                      requestedChannelMax,
+                                      requestedHeartbeat,
+                                      saslConfig);
                 conn.start();
                 return conn;
             } catch (IOException e) {
@@ -407,11 +520,8 @@ public class ConnectionFactory implements Cloneable {
             }
         }
 
-        if (lastException == null) {
-            throw new IOException("failed to connect");
-        } else {
-            throw lastException;
-        }
+        throw (lastException != null) ? lastException
+                                      : new IOException("failed to connect");
     }
 
     /**
@@ -420,10 +530,22 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection() throws IOException {
-        return newConnection(new Address[] {
-                                 new Address(getHost(), getPort())});
+        return newConnection(null,
+                             new Address[] {new Address(getHost(), getPort())}
+                            );
     }
 
+    /**
+     * Create a new broker connection
+     * @param executor thread execution service for consumers on the connection
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newConnection(ExecutorService executor) throws IOException {
+        return newConnection(executor,
+                             new Address[] {new Address(getHost(), getPort())}
+                            );
+    }
 
     @Override public ConnectionFactory clone(){
         try {

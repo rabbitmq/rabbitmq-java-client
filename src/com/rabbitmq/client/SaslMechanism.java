@@ -11,12 +11,10 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
-
-import com.rabbitmq.client.impl.LongString;
 
 import java.io.IOException;
 
@@ -34,9 +32,10 @@ public interface SaslMechanism {
     /**
      * Handle one round of challenge-response
      * @param challenge the challenge this round, or null on first round.
-     * @param factory for reference to e.g. username and password.
+     * @param username name of user
+     * @param password for username
      * @return response
      * @throws IOException
      */
-    LongString handleChallenge(LongString challenge, ConnectionFactory factory);
+    LongString handleChallenge(LongString challenge, String username, String password);
 }

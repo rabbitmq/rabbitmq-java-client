@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
@@ -37,6 +37,14 @@ import java.util.Map;
  * // Then open a channel:
  *
  * Channel channel = conn.createChannel();
+ * </pre>
+ * Or, more compactly:
+ *
+ * <pre>
+ * ConnectionFactory factory = new ConnectionFactory();
+ * factory.setUri("amqp://username:password@hostName:portNumber/virtualHost");
+ * Connection conn = factory.newConnection();
+ * Channel channel = conn.createChannel()
  * </pre>
  *
  * Current implementations are thread-safe for code at the client API level,
@@ -116,7 +124,7 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * @throws IOException if an I/O problem is encountered
      */
     void close() throws IOException;
-    
+
     /**
      * Close this connection and all its channels.
      *

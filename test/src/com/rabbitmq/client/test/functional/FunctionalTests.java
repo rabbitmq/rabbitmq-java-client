@@ -11,13 +11,15 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.impl.WorkPoolTests;
 import com.rabbitmq.client.test.Bug20004Test;
+
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
@@ -33,7 +35,6 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(Recover.class);
         suite.addTestSuite(Reject.class);
         suite.addTestSuite(Transactions.class);
-        suite.addTestSuite(PersistentTransactions.class);
         suite.addTestSuite(RequeueOnConnectionClose.class);
         suite.addTestSuite(RequeueOnChannelClose.class);
         suite.addTestSuite(DurableOnTransient.class);
@@ -57,10 +58,13 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(ConsumerCancelNotificiation.class);
         suite.addTestSuite(UnexpectedFrames.class);
         suite.addTestSuite(PerQueueTTL.class);
+        suite.addTestSuite(DeadLetterExchange.class);
         suite.addTestSuite(SaslMechanisms.class);
         suite.addTestSuite(UserIDHeader.class);
         suite.addTestSuite(InternalExchange.class);
         suite.addTestSuite(CcRoutes.class);
+        suite.addTestSuite(WorkPoolTests.class);
+        suite.addTestSuite(HAQueues.class);
         return suite;
     }
 }

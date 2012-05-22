@@ -11,14 +11,11 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client;
-
-import com.rabbitmq.client.impl.Method;
-
 
 /**
  * Interface to a container for an AMQP method-and-arguments, with optional content header and body.

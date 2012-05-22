@@ -11,13 +11,15 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.impl;
 
 class UnknownChannelException extends RuntimeException {
+    /** Default for non-checking. */
+    private static final long serialVersionUID = 1L;
     private final int channelNumber;
 
     public UnknownChannelException(int channelNumber) {

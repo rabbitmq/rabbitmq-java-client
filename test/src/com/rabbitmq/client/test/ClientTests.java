@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -34,7 +34,10 @@ public class ClientTests extends TestCase {
         suite.addTestSuite(CloseInMainLoop.class);
         suite.addTestSuite(ChannelNumberAllocationTests.class);
         suite.addTestSuite(QueueingConsumerShutdownTests.class);
+        suite.addTestSuite(MultiThreadedChannel.class);
         suite.addTestSuite(com.rabbitmq.utility.IntAllocatorTests.class);
+        suite.addTestSuite(AMQBuilderApiTest.class);
+        suite.addTestSuite(AmqpUriTest.class);
         return suite;
     }
 }

@@ -7,6 +7,7 @@ GNUPG_PATH=~
 
 WEB_URL=http://www.rabbitmq.com/
 NEXUS_STAGE_URL=http://oss.sonatype.org/service/local/staging/deploy/maven2
+MAVEN_NEXUS_VERSION=1.7
 
 AMQP_CODEGEN_DIR=$(shell fgrep sibling.codegen.dir build.properties | sed -e 's:sibling\.codegen\.dir=::')
 
@@ -36,7 +37,7 @@ javadoc-archive:
 	ant javadoc
 	cp -Rp build/doc/api build/$(JAVADOC_ARCHIVE)
 	(cd build; tar -zcf $(JAVADOC_ARCHIVE).tar.gz $(JAVADOC_ARCHIVE))
-	(cd build; zip -r $(JAVADOC_ARCHIVE).zip $(JAVADOC_ARCHIVE))
+	(cd build; zip -q -r $(JAVADOC_ARCHIVE).zip $(JAVADOC_ARCHIVE))
 	(cd build; rm -rf $(JAVADOC_ARCHIVE))
 
 post-dist:
@@ -44,7 +45,7 @@ post-dist:
 	chmod a+x build/$(TARBALL_NAME)/*.sh
 	cp LICENSE* build/$(TARBALL_NAME)
 	(cd build; tar -zcf $(TARBALL_NAME).tar.gz $(TARBALL_NAME))
-	(cd build; zip -r $(TARBALL_NAME).zip $(TARBALL_NAME))
+	(cd build; zip -q -r $(TARBALL_NAME).zip $(TARBALL_NAME))
 	(cd build; rm -rf $(TARBALL_NAME))
 
 srcdist: distclean
@@ -60,10 +61,10 @@ srcdist: distclean
 			>> build/$(SRC_ARCHIVE)/README; \
 	fi
 	(cd build; tar -zcf $(SRC_ARCHIVE).tar.gz $(SRC_ARCHIVE))
-	(cd build; zip -r $(SRC_ARCHIVE).zip $(SRC_ARCHIVE))
+	(cd build; zip -q -r $(SRC_ARCHIVE).zip $(SRC_ARCHIVE))
 	(cd build; rm -rf $(SRC_ARCHIVE))
 
-stage-maven-bundle: maven-bundle
+stage-and-promote-maven-bundle: maven-bundle
 	( \
 	  cd build/bundle; \
 	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
@@ -77,23 +78,14 @@ stage-maven-bundle: maven-bundle
 	    amqp-client-$(VERSION).jar \
 	    amqp-client-$(VERSION)-javadoc.jar \
 	    amqp-client-$(VERSION)-sources.jar && \
-	  mvn org.sonatype.plugins:nexus-maven-plugin:staging-close \
-	    -Dnexus.url=http://oss.sonatype.org \
-	    -Dnexus.username=$$NEXUS_USERNAME \
-	    -Dnexus.password=$$NEXUS_PASSWORD \
-	    -B \
-	    -Dnexus.description="Public release of $$VERSION" \
-	)
-
-promote-maven-bundle:
-	( \
-	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
-	  NEXUS_PASSWORD=`cat $(GNUPG_PATH)/../nexus/password`; \
-	  mvn org.sonatype.plugins:nexus-maven-plugin:staging-promote \
+	  mvn org.sonatype.plugins:nexus-maven-plugin:$(MAVEN_NEXUS_VERSION):staging-close \
+	      org.sonatype.plugins:nexus-maven-plugin:$(MAVEN_NEXUS_VERSION):staging-promote \
 	    -Dnexus.url=http://oss.sonatype.org \
 	    -Dnexus.username=$$NEXUS_USERNAME \
 	    -Dnexus.password=$$NEXUS_PASSWORD \
 	    -Dnexus.promote.autoSelectOverride=true \
 	    -DtargetRepositoryId=releases \
 	    -B \
+	    -Dnexus.description="Public release of $$VERSION" \
 	)
+

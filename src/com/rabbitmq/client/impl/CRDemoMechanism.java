@@ -11,12 +11,12 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 
@@ -38,12 +38,12 @@ public class CRDemoMechanism implements SaslMechanism {
         return NAME;
     }
 
-    public LongString handleChallenge(LongString challenge, ConnectionFactory factory) {
+    public LongString handleChallenge(LongString challenge, String username, String password) {
         round++;
         if (round == 1) {
-            return LongStringHelper.asLongString(factory.getUsername());
+            return LongStringHelper.asLongString(username);
         } else {
-            return LongStringHelper.asLongString("My password is " + factory.getPassword());
+            return LongStringHelper.asLongString("My password is " + password);
         }
     }
 

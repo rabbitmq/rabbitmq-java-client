@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
@@ -27,6 +27,9 @@ import com.rabbitmq.utility.SensibleClone;
  */
 
 public class ShutdownSignalException extends RuntimeException implements SensibleClone<ShutdownSignalException> {
+    /** Default for non-checking. */
+    private static final long serialVersionUID = 1L;
+
     /** True if the connection is shut down, or false if this signal refers to a channel */
     private final boolean _hardError;
 

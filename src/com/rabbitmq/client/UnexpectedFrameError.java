@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -28,7 +28,7 @@ public class UnexpectedFrameError extends Error {
     private final int _expectedFrameType;
 
     public UnexpectedFrameError(Frame frame, int expectedFrameType) {
-        super("Received frame: " + frame + " (type " + frame.type + "), expected type " + expectedFrameType);
+        super("Received frame: " + frame + ", expected type " + expectedFrameType);
         _frame = frame;
         _expectedFrameType = expectedFrameType;
     }

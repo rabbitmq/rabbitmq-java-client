@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -101,9 +101,6 @@ public class Version {
      */
     public static boolean checkVersion(Version clientVersion,
                                        Version serverVersion) {
-
-        Version adjustedClientVersion = clientVersion.adjust();
-        Version adjustedServerVersion = serverVersion.adjust();
 
         return clientVersion.adjust().equals(serverVersion.adjust());
     }

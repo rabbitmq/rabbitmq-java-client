@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -48,7 +48,7 @@ public class ServiceDescription {
         JSONUtil.tryFill(this, rawServiceDescription);
     }
 
-    public ServiceDescription(Class klass) {
+    public ServiceDescription(Class<?> klass) {
         this.procedures = new HashMap<String, ProcedureDescription>();
         for (Method m: klass.getMethods()) {
             ProcedureDescription proc = new ProcedureDescription(m);

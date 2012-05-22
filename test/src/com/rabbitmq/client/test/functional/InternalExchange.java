@@ -11,19 +11,18 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.BrokerTestCase;
-
 import java.io.IOException;
 import java.util.Arrays;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 
 //

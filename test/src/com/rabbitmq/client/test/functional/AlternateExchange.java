@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -57,7 +57,7 @@ public class AlternateExchange extends BrokerTestCase
 
     @Override protected void setUp() throws IOException {
         super.setUp();
-        channel.setReturnListener(new ReturnListener() {
+        channel.addReturnListener(new ReturnListener() {
                 public void handleReturn(int replyCode,
                                          String replyText,
                                          String exchange,
@@ -111,16 +111,6 @@ public class AlternateExchange extends BrokerTestCase
         }
     }
 
-    protected void publish(String key, boolean mandatory, boolean immediate)
-        throws IOException {
-        channel.basicPublish("x", key, mandatory, immediate, null,
-                             "ae-test".getBytes());
-    }
-
-    protected void publish(String key) throws IOException {
-        publish(key, false, false);
-    }
-
     /**
      * Perform an auto-acking 'basic.get' on each of the queues named
      * in {@link #resources} and check whether a message can be
@@ -161,7 +151,8 @@ public class AlternateExchange extends BrokerTestCase
         throws IOException {
 
         gotReturn.set(false);
-        publish(key, mandatory, immediate);
+        channel.basicPublish("x", key, mandatory, immediate, null,
+                             "ae-test".getBytes());
         checkGet(expected);
         assertEquals(ret, gotReturn.get());
     }
@@ -210,19 +201,6 @@ public class AlternateExchange extends BrokerTestCase
             check(k, true, false, k.equals("z"));
             //immediate
             check(k, false, true, unrouted, true);
-        }
-
-        //tx
-        channel.txSelect();
-        for (String k : keys) {
-            publish(k);
-            checkGet(unrouted);
-            channel.txRollback();
-            checkGet(unrouted);
-            publish(k);
-            checkGet(unrouted);
-            channel.txCommit();
-            checkGet(expected(k));
         }
 
         cleanup();

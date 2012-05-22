@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -21,16 +21,18 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 
+import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.MalformedFrameException;
 
 /**
- * Helper class to reade AMQP wire-protocol encoded values.
+ * Helper class to read AMQP wire-protocol encoded values.
  */
 public class ValueReader
 {
@@ -40,7 +42,7 @@ public class ValueReader
      * Protected API - Cast an int to a long without extending the
      * sign bit of the int out into the high half of the long.
      */
-    protected static long unsignedExtend(int value)
+    private static final long unsignedExtend(int value)
     {
         long extended = value;
         return extended & INT_MASK;
@@ -57,9 +59,10 @@ public class ValueReader
         this.in = in;
     }
 
-    /** Public API - convenience method - reads a short string from a DataInput
-Stream. */
-    public static final String readShortstr(DataInputStream in)
+    /** Convenience method - reads a short string from a DataInput
+     * Stream.
+     */
+    private static final String readShortstr(DataInputStream in)
         throws IOException
     {
         byte [] b = new byte[in.readUnsignedByte()];
@@ -74,10 +77,10 @@ Stream. */
         return readShortstr(this.in);
     }
 
-    /** Public API - convenience method - reads a 32-bit-length-prefix
+    /** Convenience method - reads a 32-bit-length-prefix
      * byte vector from a DataInputStream.
      */
-    public static final byte[] readBytes(final DataInputStream in)
+    private static final byte[] readBytes(final DataInputStream in)
         throws IOException
     {
         final long contentLength = unsignedExtend(in.readInt());
@@ -91,19 +94,10 @@ Stream. */
         }
     }
 
-    /** Public API - convenience method - reads a 32-bit-length-prefix
-     * byte vector
-     */
-    public byte[] readBytes()
-        throws IOException
-    {
-        return readBytes(this.in);
-    }
-
-    /** Public API - convenience method - reads a long string argument
+    /** Convenience method - reads a long string argument
      * from a DataInputStream.
      */
-    public static final LongString readLongstr(final DataInputStream in)
+    private static final LongString readLongstr(final DataInputStream in)
         throws IOException
     {
         return LongStringHelper.asLongString(readBytes(in));
@@ -139,15 +133,16 @@ Stream. */
     }
 
     /**
-     * Public API - reads a table argument from a given stream. Also
+     * Reads a table argument from a given stream. Also
      * called by {@link ContentHeaderPropertyReader}.
      */
-    public static final Map<String, Object> readTable(DataInputStream in)
+    private static final Map<String, Object> readTable(DataInputStream in)
         throws IOException
     {
-        Map<String, Object> table = new HashMap<String, Object>();
         long tableLength = unsignedExtend(in.readInt());
-
+        if (tableLength == 0) return Collections.emptyMap();
+        
+        Map<String, Object> table = new HashMap<String, Object>();
         DataInputStream tableIn = new DataInputStream
             (new TruncatedInputStream(in, tableLength));
         while(tableIn.available() > 0) {
@@ -159,7 +154,7 @@ Stream. */
         return table;
     }
 
-    public static final Object readFieldValue(DataInputStream in)
+    private static final Object readFieldValue(DataInputStream in)
         throws IOException {
         Object value = null;
         switch(in.readUnsignedByte()) {
@@ -216,13 +211,13 @@ Stream. */
     }
 
     /** Read a field-array */
-    public static List readArray(DataInputStream in)
+    private static final List<Object> readArray(DataInputStream in)
         throws IOException
     {
         long length = unsignedExtend(in.readInt());
         DataInputStream arrayIn = new DataInputStream
             (new TruncatedInputStream(in, length));
-        List array = new ArrayList();
+        List<Object> array = new ArrayList<Object>();
         while(arrayIn.available() > 0) {
             Object value = readFieldValue(arrayIn);
             array.add(value);
@@ -244,8 +239,8 @@ Stream. */
         return in.readUnsignedByte();
     }
 
-    /** Public API - convenience method - reads a timestamp argument from the DataInputStream. */
-    public static final Date readTimestamp(DataInputStream in)
+    /** Convenience method - reads a timestamp argument from the DataInputStream. */
+    private static final Date readTimestamp(DataInputStream in)
         throws IOException
     {
         return new Date(in.readLong()*1000);

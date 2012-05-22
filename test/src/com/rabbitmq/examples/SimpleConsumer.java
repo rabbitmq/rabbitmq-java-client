@@ -11,13 +11,11 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
-
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -26,13 +24,11 @@ import com.rabbitmq.client.QueueingConsumer;
 public class SimpleConsumer {
     public static void main(String[] args) {
         try {
-            String hostName = (args.length > 0) ? args[0] : "localhost";
-            int portNumber = (args.length > 1) ? Integer.parseInt(args[1]) : AMQP.PROTOCOL.PORT;
-            String queueName = (args.length > 2) ? args[2] : "SimpleQueue";
+            String uri = (args.length > 0) ? args[0] : "amqp://localhost";
+            String queueName = (args.length > 1) ? args[1] : "SimpleQueue";
 
             ConnectionFactory connFactory = new ConnectionFactory();
-            connFactory.setHost(hostName);
-            connFactory.setPort(portNumber);
+            connFactory.setUri(uri);
             Connection conn = connFactory.newConnection();
 
             final Channel ch = conn.createChannel();

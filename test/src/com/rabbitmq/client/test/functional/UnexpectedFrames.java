@@ -11,19 +11,21 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.*;
-import com.rabbitmq.client.test.BrokerTestCase;
-
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Socket;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.Frame;
+import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.SocketFrameHandler;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 /**
  * Test that the server correctly handles us when we send it bad frames
@@ -96,8 +98,7 @@ public class UnexpectedFrames extends BrokerTestCase {
                     // send 0 bytes and hang waiting for a response.
                     Frame confusedFrame = new Frame(AMQP.FRAME_HEADER,
                                                     frame.channel,
-                                                    frame.payload);
-                    confusedFrame.accumulator = frame.accumulator;
+                                                    frame.getPayload());
                     return confusedFrame;
                 }
                 return frame;
@@ -120,13 +121,15 @@ public class UnexpectedFrames extends BrokerTestCase {
         expectUnexpectedFrameError(new Confuser() {
             public Frame confuse(Frame frame) throws IOException {
                 if (frame.type == AMQP.FRAME_HEADER) {
-                    byte[] payload = frame.accumulator.toByteArray();
+                    byte[] payload = frame.getPayload();
+                    Frame confusedFrame = new Frame(AMQP.FRAME_HEADER,
+                            frame.channel,
+                            payload);
                     // First two bytes = class ID, must match class ID from
                     // method.
                     payload[0] = 12;
                     payload[1] = 34;
-                    frame.accumulator = new ByteArrayOutputStream();
-                    frame.accumulator.write(payload, 0, payload.length);
+                    return confusedFrame;
                 }
                 return frame;
             }

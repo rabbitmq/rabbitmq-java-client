@@ -11,14 +11,13 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
 
 import com.rabbitmq.client.impl.Version;
 
-import java.io.IOException;
 import java.net.ProtocolException;
 
 /**
@@ -27,6 +26,8 @@ import java.net.ProtocolException;
  */
 public class ProtocolVersionMismatchException extends ProtocolException
 {
+    /** Default serialVersionUID for serializability without version checking. */
+    private static final long serialVersionUID = 1L;
     private Version clientVersion;
     private Version serverVersion;
 

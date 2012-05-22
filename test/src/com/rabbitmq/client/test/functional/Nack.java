@@ -11,18 +11,17 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.QueueingConsumer;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.QueueingConsumer;
 
 public class Nack extends AbstractRejectTest {
 

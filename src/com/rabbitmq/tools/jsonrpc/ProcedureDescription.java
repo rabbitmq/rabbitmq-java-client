@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
@@ -47,7 +47,8 @@ public class ProcedureDescription {
     public ProcedureDescription(Map<String, Object> pm) {
         JSONUtil.tryFill(this, pm);
 
-        List<Map<String, Object>> p = (List) pm.get("params");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> p = (List<Map<String, Object>>) pm.get("params");
         params = new ParameterDescription[p.size()];
         int count = 0;
         for (Map<String, Object> param_map: p) {
@@ -62,7 +63,7 @@ public class ProcedureDescription {
         this.summary = "";
         this.help = "";
         this.idempotent = false;
-        Class[] parameterTypes = m.getParameterTypes();
+        Class<?>[] parameterTypes = m.getParameterTypes();
         this.params = new ParameterDescription[parameterTypes.length];
         for (int i = 0; i < parameterTypes.length; i++) {
             params[i] = new ParameterDescription(i, parameterTypes[i]);

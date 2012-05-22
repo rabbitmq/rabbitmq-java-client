@@ -11,19 +11,16 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.functional;
 
+import java.io.IOException;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.Method;
-import com.rabbitmq.client.Command;
-
-import java.io.IOException;
 
 /**
  * This tests whether bindings are created and nuked properly.
@@ -59,6 +56,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * longer purged, even if the channel they were sent down is not
      * (Tx-)transacted."
      */
+    @SuppressWarnings("deprecation")
     public void testUnackedPurge() throws IOException {
         Binding binding = setupExchangeBindings(false);
         channel.basicPublish(binding.x, binding.k, null, payload);
