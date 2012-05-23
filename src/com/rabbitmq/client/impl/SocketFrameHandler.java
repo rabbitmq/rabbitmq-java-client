@@ -144,6 +144,7 @@ public class SocketFrameHandler implements FrameHandler {
 
     public void close() {
         try { _socket.setSoLinger(true, SOCKET_CLOSING_TIMEOUT); } catch (Exception _) {}
-        try { flush(); _socket.close();                          } catch (Exception _) {}
+        try { flush();                                           } catch (Exception _) {}
+        try { _socket.close();                                   } catch (Exception _) {}
     }
 }
