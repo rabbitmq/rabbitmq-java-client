@@ -23,6 +23,7 @@ package com.rabbitmq.tools.json;
 public interface JSONSerializable {
     /**
      * Called during serialization to JSON.
+     * @param w writer
      */
     void jsonSerialize(JSONWriter w);
 }

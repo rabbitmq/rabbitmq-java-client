@@ -34,6 +34,12 @@ public class JSONUtil {
     /**
      * Uses reflection to fill public fields and Bean properties of
      * the target object from the source Map.
+     * @param target object to modify
+     * @param source map of fields and values
+     * @return modified target object
+     * @throws IntrospectionException getting bean info
+     * @throws IllegalAccessException using setters or accessing fields
+     * @throws InvocationTargetException using setters
      */
     public static Object fill(Object target, Map<String, Object> source)
 	throws IntrospectionException, IllegalAccessException, InvocationTargetException
@@ -44,6 +50,13 @@ public class JSONUtil {
     /**
      * Uses reflection to fill public fields and optionally Bean
      * properties of the target object from the source Map.
+     * @param target object to modify
+     * @param source map of fields and values
+     * @param useProperties true if properties are to be used; false otherwise
+     * @return modified target object
+     * @throws IntrospectionException getting bean info when using properties
+     * @throws IllegalAccessException using setters or accessing fields
+     * @throws InvocationTargetException using setters when using properties
      */
     public static Object fill(Object target, Map<String, Object> source, boolean useProperties)
 	throws IntrospectionException, IllegalAccessException, InvocationTargetException
@@ -86,6 +99,8 @@ public class JSONUtil {
      * Ignores reflection exceptions while using reflection to fill
      * public fields and Bean properties of the target object from the
      * source Map.
+     * @param target object to modify
+     * @param source map of fields and values
      */
     public static void tryFill(Object target, Map<String, Object> source) {
 	try {

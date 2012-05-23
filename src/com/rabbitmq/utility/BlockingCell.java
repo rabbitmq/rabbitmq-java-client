@@ -21,6 +21,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Simple one-shot IPC mechanism. Essentially a one-place buffer that cannot be emptied once filled.
+ * @param <T> type of value in buffer
  */
 public class BlockingCell<T> {
     /** Indicator of not-yet-filledness */
@@ -56,10 +57,11 @@ public class BlockingCell<T> {
      * Wait for a value, and when one arrives, return it (without clearing it). If there's
      * already a value present, there's no need to wait - the existing value is returned.
      * If timeout is reached and value hasn't arrived, TimeoutException is thrown.
-     * 
+     *
      * @param timeout timeout in milliseconds. -1 effectively means infinity
      * @return the waited-for value
      * @throws InterruptedException if this thread is interrupted
+     * @throws TimeoutException if no value before timeout
      */
     public synchronized T get(long timeout) throws InterruptedException, TimeoutException {
         if (timeout == INFINITY) return get();
@@ -98,9 +100,10 @@ public class BlockingCell<T> {
      * a value appears or until specified timeout is reached. If timeout is reached,
      * TimeoutException is thrown.
      * We also use System.nanoTime() to behave correctly when system clock jumps around.
-     * 
+     *
      * @param timeout timeout in milliseconds. -1 means 'infinity': never time out
      * @return the waited-for value
+     * @throws TimeoutException if no value before timeout
      */
     public synchronized T uninterruptibleGet(int timeout) throws TimeoutException {
         long now = System.nanoTime() / NANOS_IN_MILLI;

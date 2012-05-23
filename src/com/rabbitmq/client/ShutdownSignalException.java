@@ -50,7 +50,7 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
      * Construct a ShutdownSignalException from the arguments.
      * @param hardError the relevant hard error
      * @param initiatedByApplication if the shutdown was client-initiated
-     * @param reason Object describing the origin of the exception
+     * @param reason Object describing the origin of the exception (Command, Method, Exception or String)
      * @param ref Reference to Connection or Channel that fired the signal
      */
     public ShutdownSignalException(boolean hardError,

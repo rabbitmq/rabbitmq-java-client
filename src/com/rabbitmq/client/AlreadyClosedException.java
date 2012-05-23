@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client;
 
 /**
@@ -25,6 +24,10 @@ public class AlreadyClosedException extends ShutdownSignalException {
     /** Default for suppressing warnings without version check. */
     private static final long serialVersionUID = 1L;
 
+    /**
+     * @param s reason object
+     * @param ref referenced object
+     */
     public AlreadyClosedException(String s, Object ref)
     {
         super(true, true, s, ref);

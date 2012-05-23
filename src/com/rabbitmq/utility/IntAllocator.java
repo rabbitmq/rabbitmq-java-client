@@ -28,15 +28,15 @@ import java.util.BitSet;
  * <p/><b>Implementation notes:</b>
  * <br/>This was originally an ordered chain of non-overlapping Intervals,
  * together with a fixed size array cache for freed integers.
- * <br/>{@link #reserve()} was expensive in this scheme, whereas in the
- * present implementation it is O(1), as is {@link #free()}.
+ * <br/>{@link #reserve(int)} was expensive in this scheme, whereas in the
+ * present implementation it is O(1), as is {@link #free(int)}.
  * <br/>Although {@link #allocate()} is slightly slower than O(1) and in the
- * worst case could be O(N), the use of the {@link #lastIndex} field
+ * worst case could be O(N), the use of the <code>private lastIndex</code> field
  * for starting the next scan for free integers means this is negligible.
  * <br/>The data representation overhead is O(N) where N is the size of the
  * allocation range. One <code>long</code> is used for every 64 integers in the
  * range.
- * <br/>Very little Object creation and destruction occurs in use.
+ * <br/>Very little object creation and destruction occurs in use.
  */
 public class IntAllocator {
 

@@ -21,15 +21,27 @@ import java.io.IOException;
 
 /**
  * Implement this interface in order to be notified of Confirm events.
- * Acks represent messages handled succesfully; Nacks represent
+ * Acks represent messages handled successfully; Nacks represent
  * messages lost by the broker.  Note, the lost messages could still
  * have been delivered to consumers, but the broker cannot guarantee
  * this.
  */
 public interface ConfirmListener {
+    /**
+     * An Ack happened
+     * @param deliveryTag of message acked
+     * @param multiple true means all previous unacknowledged messages are acked
+     * @throws IOException if an error occurs in the callback
+     */
     void handleAck(long deliveryTag, boolean multiple)
         throws IOException;
 
+    /**
+     * A Nack happened
+     * @param deliveryTag of message nacked
+     * @param multiple true means all previous unacknowledged messages are nacked
+     * @throws IOException if an error occurs in the callback
+     */
     void handleNack(long deliveryTag, boolean multiple)
         throws IOException;
 }

@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.tools.jsonrpc;
 
 import java.util.Collection;
@@ -34,20 +33,31 @@ public class ParameterDescription {
      */
     public String type;
 
+    /**
+     * Default constructor: null name, null type.
+     */
     public ParameterDescription() {
-        // Nothing to do here.
     }
 
+    /**
+     * Parameter name and type from JSON property map
+     * @param pm property map to use
+     */
     public ParameterDescription(Map<String, Object> pm) {
         JSONUtil.tryFill(this, pm);
     }
 
+    /**
+     * Parameter named "param<i>index</i>", type derived from supplied class.
+     * @param index parameter number
+     * @param c class of parameter
+     */
     public ParameterDescription(int index, Class<?> c) {
         name = "param" + index;
         type = lookup(c);
     }
 
-    public static String lookup(Class<?> c) {
+    static String lookup(Class<?> c) {
         if (c == Void.class) return "nil";
         if (c == Boolean.class) return "bit";
         if (c == Integer.class) return "num";

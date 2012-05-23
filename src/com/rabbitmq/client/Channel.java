@@ -29,31 +29,21 @@ import com.rabbitmq.client.AMQP.Confirm;
 import com.rabbitmq.client.AMQP.Channel.FlowOk;
 
 /**
- * Public API: Interface to an AMQ channel. See the <a href="http://www.amqp.org/">spec</a> for details.
- *
- * <p>
+ * Interface to an AMQ channel. See the <a href="http://www.amqp.org/">spec</a> for details.
+ * <p/>
  * To open a channel,
  * <pre>
  * {@link Connection} conn = ...;
  * {@link Channel} channel = conn.{@link Connection#createChannel createChannel}();
  * </pre>
- * <p>
- * Public API:
- * <ul>
- *  <li> getChannelNumber
- *  <li> close
- * </ul>
- * <p>
- *
+ * <p/>
  * While a Channel can be used by multiple threads, it's important to ensure
  * that only one thread executes a command at once. Concurrent execution of
  * commands will likely cause an UnexpectedFrameError to be thrown.
- *
  */
-
 public interface Channel extends ShutdownNotifier {
     /**
-     * Retrieve this channel's channel number.
+     * Retrieve the number of this channel.
      * @return the channel number
      */
     int getChannelNumber();
@@ -68,7 +58,7 @@ public interface Channel extends ShutdownNotifier {
      * Close this channel with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
      * and message 'OK'.
      *
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     void close() throws IOException;
 
@@ -77,37 +67,41 @@ public interface Channel extends ShutdownNotifier {
      *
      * @param closeCode the close code (See under "Reply Codes" in the AMQP specification)
      * @param closeMessage a message indicating the reason for closing the connection
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     void close(int closeCode, String closeMessage) throws IOException;
 
     /**
      * Set flow on the channel
-     *
      * @param active if true, the server is asked to start sending. If false, the server is asked to stop sending.
-     * @throws IOException
+     * @return the successful response to Channel.Flow
+     * @throws IOException if the channel.flow fails
      */
     FlowOk flow(boolean active) throws IOException;
 
     /**
-     * Return the current Channel.Flow settings.
+     * @return the current Channel.Flow settings.
      */
     FlowOk getFlow();
 
     /**
      * Abort this channel with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
-     * and message 'OK'.
-     *
+     * and message "OK".
+     * <p/>
      * Forces the channel to close and waits for the close operation to complete.
      * Any encountered exceptions in the close operation are silently discarded.
+     * @throws IOException (should never happen)
      */
     void abort() throws IOException;
 
     /**
      * Abort this channel.
-     *
+     * <p/>
      * Forces the channel to close and waits for the close operation to complete.
      * Any encountered exceptions in the close operation are silently discarded.
+     * @param closeCode for the abort
+     * @param closeMessage for the abort
+     * @throws IOException (should never happen)
      */
     void abort(int closeCode, String closeMessage) throws IOException;
 
@@ -215,7 +209,7 @@ public interface Channel extends ShutdownNotifier {
      * will deliver, 0 if unlimited
      * @param global true if the settings should be applied to the
      * entire connection rather than just the current channel
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     void basicQos(int prefetchSize, int prefetchCount, boolean global) throws IOException;
 
@@ -226,7 +220,7 @@ public interface Channel extends ShutdownNotifier {
      * @see #basicQos(int, int, boolean)
      * @param prefetchCount maximum number of messages that the server
      * will deliver, 0 if unlimited
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     void basicQos(int prefetchCount) throws IOException;
 
@@ -237,7 +231,7 @@ public interface Channel extends ShutdownNotifier {
      * @param routingKey the routing key
      * @param props other properties for the message - routing headers etc
      * @param body the message body
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     void basicPublish(String exchange, String routingKey, BasicProperties props, byte[] body) throws IOException;
 
@@ -250,7 +244,7 @@ public interface Channel extends ShutdownNotifier {
      * @param immediate true if we are requesting an immediate publish
      * @param props other properties for the message - routing headers etc
      * @param body the message body
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     void basicPublish(String exchange, String routingKey, boolean mandatory, boolean immediate, BasicProperties props, byte[] body)
             throws IOException;
@@ -262,7 +256,7 @@ public interface Channel extends ShutdownNotifier {
      * @param exchange the name of the exchange
      * @param type the exchange type
      * @return a declaration-confirm method to indicate the exchange was successfully declared
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Exchange.DeclareOk exchangeDeclare(String exchange, String type) throws IOException;
 
@@ -273,7 +267,7 @@ public interface Channel extends ShutdownNotifier {
      * @param exchange the name of the exchange
      * @param type the exchange type
      * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      * @return a declaration-confirm method to indicate the exchange was successfully declared
      */
     Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable) throws IOException;
@@ -288,7 +282,7 @@ public interface Channel extends ShutdownNotifier {
      * @param autoDelete true if the server should delete the exchange when it is no longer in use
      * @param arguments other properties (construction arguments) for the exchange
      * @return a declaration-confirm method to indicate the exchange was successfully declared
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable, boolean autoDelete,
                                        Map<String, Object> arguments) throws IOException;
@@ -306,7 +300,7 @@ public interface Channel extends ShutdownNotifier {
      * published to by a client.
      * @param arguments other properties (construction arguments) for the exchange
      * @return a declaration-confirm method to indicate the exchange was successfully declared
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Exchange.DeclareOk exchangeDeclare(String exchange,
                                               String type,
@@ -318,6 +312,7 @@ public interface Channel extends ShutdownNotifier {
     /**
      * Declare an exchange passively; that is, check if the named exchange exists.
      * @param name check the existence of an exchange named this
+     * @return successful response to exchange.declare
      * @throws IOException the server will raise a 404 channel exception if the named exchange does not exist.
      */
     Exchange.DeclareOk exchangeDeclarePassive(String name) throws IOException;
@@ -329,7 +324,7 @@ public interface Channel extends ShutdownNotifier {
      * @param exchange the name of the exchange
      * @param ifUnused true to indicate that the exchange is only to be deleted if it is unused
      * @return a deletion-confirm method to indicate the exchange was successfully deleted
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException;
 
@@ -339,7 +334,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
      * @param exchange the name of the exchange
      * @return a deletion-confirm method to indicate the exchange was successfully deleted
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Exchange.DeleteOk exchangeDelete(String exchange) throws IOException;
 
@@ -347,11 +342,11 @@ public interface Channel extends ShutdownNotifier {
      * Bind an exchange to an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
-     * @param destination: the name of the exchange to which messages flow across the binding
-     * @param source: the name of the exchange from which messages flow across the binding
-     * @param routingKey: the routine key to use for the binding
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
      * @return a binding-confirm method if the binding was successfully created
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Exchange.BindOk exchangeBind(String destination, String source, String routingKey) throws IOException;
 
@@ -359,12 +354,12 @@ public interface Channel extends ShutdownNotifier {
      * Bind an exchange to an exchange.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
-     * @param destination: the name of the exchange to which messages flow across the binding
-     * @param source: the name of the exchange from which messages flow across the binding
-     * @param routingKey: the routine key to use for the binding
-     * @param arguments: other properties (binding parameters)
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
      * @return a binding-confirm method if the binding was successfully created
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Exchange.BindOk exchangeBind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
 
@@ -372,11 +367,11 @@ public interface Channel extends ShutdownNotifier {
      * Unbind an exchange from an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
-     * @param destination: the name of the exchange to which messages flow across the binding
-     * @param source: the name of the exchange from which messages flow across the binding
-     * @param routingKey: the routine key to use for the binding
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
      * @return a binding-confirm method if the binding was successfully created
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey) throws IOException;
 
@@ -384,12 +379,12 @@ public interface Channel extends ShutdownNotifier {
      * Unbind an exchange from an exchange.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
-     * @param destination: the name of the exchange to which messages flow across the binding
-     * @param source: the name of the exchange from which messages flow across the binding
-     * @param routingKey: the routine key to use for the binding
-     * @param arguments: other properties (binding parameters)
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
      * @return a binding-confirm method if the binding was successfully created
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
 
@@ -399,7 +394,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Queue.Declare
      * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
      * @return a declaration-confirm method to indicate the queue was successfully declared
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Queue.DeclareOk queueDeclare() throws IOException;
 
@@ -413,7 +408,7 @@ public interface Channel extends ShutdownNotifier {
      * @param autoDelete true if we are declaring an autodelete queue (server will delete it when no longer in use)
      * @param arguments other properties (construction arguments) for the queue
      * @return a declaration-confirm method to indicate the queue was successfully declared
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive, boolean autoDelete,
                                  Map<String, Object> arguments) throws IOException;
@@ -426,7 +421,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
      * @param queue the name of the queue
      * @return a declaration-confirm method to indicate the queue exists
-     * @throws java.io.IOException if an error is encountered,
+     * @throws IOException if an error is encountered,
      * including if the queue does not exist and if the queue is
      * exclusively owned by another connection.
      */
@@ -438,7 +433,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Queue.DeleteOk
      * @param queue the name of the queue
      * @return a deletion-confirm method to indicate the queue was successfully deleted
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Queue.DeleteOk queueDelete(String queue) throws IOException;
 
@@ -450,7 +445,7 @@ public interface Channel extends ShutdownNotifier {
      * @param ifUnused true if the queue should be deleted only if not in use
      * @param ifEmpty true if the queue should be deleted only if empty
      * @return a deletion-confirm method to indicate the queue was successfully deleted
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty) throws IOException;
 
@@ -462,7 +457,7 @@ public interface Channel extends ShutdownNotifier {
      * @param exchange the name of the exchange
      * @param routingKey the routine key to use for the binding
      * @return a binding-confirm method if the binding was successfully created
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Queue.BindOk queueBind(String queue, String exchange, String routingKey) throws IOException;
 
@@ -475,7 +470,7 @@ public interface Channel extends ShutdownNotifier {
      * @param routingKey the routine key to use for the binding
      * @param arguments other properties (binding parameters)
      * @return a binding-confirm method if the binding was successfully created
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Queue.BindOk queueBind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
 
@@ -487,7 +482,7 @@ public interface Channel extends ShutdownNotifier {
      * @param exchange the name of the exchange
      * @param routingKey the routine key to use for the binding
      * @return an unbinding-confirm method if the binding was successfully deleted
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey) throws IOException;
 
@@ -500,7 +495,7 @@ public interface Channel extends ShutdownNotifier {
      * @param routingKey the routine key to use for the binding
      * @param arguments other properties (binding parameters)
      * @return an unbinding-confirm method if the binding was successfully deleted
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
 
@@ -510,7 +505,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Queue.PurgeOk
      * @param queue the name of the queue
      * @return a purge-confirm method if the purge was executed succesfully
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Queue.PurgeOk queuePurge(String queue) throws IOException;
 
@@ -524,7 +519,7 @@ public interface Channel extends ShutdownNotifier {
      * acknowledged once delivered; false if the server should expect
      * explicit acknowledgements
      * @return a {@link GetResponse} containing the retrieved message data
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     GetResponse basicGet(String queue, boolean autoAck) throws IOException;
 
@@ -538,7 +533,7 @@ public interface Channel extends ShutdownNotifier {
      * @param multiple true to acknowledge all messages up to and
      * including the supplied delivery tag; false to acknowledge just
      * the supplied delivery tag.
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     void basicAck(long deliveryTag, boolean multiple) throws IOException;
 
@@ -554,7 +549,7 @@ public interface Channel extends ShutdownNotifier {
      * delivery tag.
      * @param requeue true if the rejected message(s) should be requeued rather
      * than discarded/dead-lettered
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     void basicNack(long deliveryTag, boolean multiple, boolean requeue)
             throws IOException;
@@ -566,7 +561,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.Reject
      * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk} or {@link com.rabbitmq.client.AMQP.Basic.Deliver}
      * @param requeue true if the rejected message should be requeued rather than discarded/dead-lettered
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     void basicReject(long deliveryTag, boolean requeue) throws IOException;
 
@@ -576,7 +571,7 @@ public interface Channel extends ShutdownNotifier {
      * @param queue the name of the queue
      * @param callback an interface to the consumer object
      * @return the consumerTag generated by the server
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicAck
@@ -593,7 +588,7 @@ public interface Channel extends ShutdownNotifier {
      * explicit acknowledgements
      * @param callback an interface to the consumer object
      * @return the consumerTag generated by the server
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicConsume(String, boolean, String, boolean, boolean, Map, Consumer)
@@ -609,7 +604,7 @@ public interface Channel extends ShutdownNotifier {
      * @param consumerTag a client-generated consumer tag to establish context
      * @param callback an interface to the consumer object
      * @return the consumerTag associated with the new consumer
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicConsume(String, boolean, String, boolean, boolean, Map, Consumer)
@@ -630,7 +625,7 @@ public interface Channel extends ShutdownNotifier {
      * @param callback an interface to the consumer object
      * @param arguments a set of arguments for the consume
      * @return the consumerTag associated with the new consumer
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      */
@@ -653,6 +648,8 @@ public interface Channel extends ShutdownNotifier {
      * <p/>
      * Equivalent to calling <code>basicRecover(true)</code>, messages
      * will be requeued and possibly delivered to a different consumer.
+     * @return successful response to basic.recover
+     * @throws IOException if recover command failed
      * @see #basicRecover(boolean)
      */
      Basic.RecoverOk basicRecover() throws IOException;
@@ -661,9 +658,11 @@ public interface Channel extends ShutdownNotifier {
      * Ask the broker to resend unacknowledged messages.  In 0-8
      * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
      * the new, deprecated method basic.recover_async is asynchronous.
-     * @param requeue If true, messages will be requeued and possibly
+     * @param requeue If true, messages will be requeued and (possibly)
      * delivered to a different consumer. If false, messages will be
      * redelivered to the same consumer.
+     * @return successful response to basic.recover
+     * @throws IOException if recover command failed
      */
     Basic.RecoverOk basicRecover(boolean requeue) throws IOException;
 
@@ -672,9 +671,10 @@ public interface Channel extends ShutdownNotifier {
      * basic.recover is asynchronous; in 0-9-1 it is synchronous, and
      * the new, deprecated method basic.recover_async is asynchronous
      * and deprecated.
-     * @param requeue If true, messages will be requeued and possibly
+     * @param requeue If true, messages will be requeued and (possibly)
      * delivered to a different consumer. If false, messages will be
      * redelivered to the same consumer.
+     * @throws IOException if basic.recover command fails
      */
     @Deprecated
     void basicRecoverAsync(boolean requeue) throws IOException;
@@ -684,7 +684,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Tx.Select
      * @see com.rabbitmq.client.AMQP.Tx.SelectOk
      * @return a transaction-selection method to indicate the transaction was successfully initiated
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Tx.SelectOk txSelect() throws IOException;
 
@@ -693,7 +693,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Tx.Commit
      * @see com.rabbitmq.client.AMQP.Tx.CommitOk
      * @return a transaction-commit method to indicate the transaction was successfully committed
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Tx.CommitOk txCommit() throws IOException;
 
@@ -702,14 +702,15 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Tx.Rollback
      * @see com.rabbitmq.client.AMQP.Tx.RollbackOk
      * @return a transaction-rollback method to indicate the transaction was successfully rolled back
-     * @throws java.io.IOException if an error is encountered
+     * @throws IOException if an error is encountered
      */
     Tx.RollbackOk txRollback() throws IOException;
 
     /**
      * Enables publisher acknowledgements on this channel.
-     * @see com.rabbitmq.client.AMQP.Confirm.Select
-     * @throws java.io.IOException if an error is encountered
+     * @return successful response to confirm.select
+     * @see AMQP.Confirm.Select
+     * @throws IOException if an error is encountered
      */
     Confirm.SelectOk confirmSelect() throws IOException;
 
@@ -722,35 +723,51 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Wait until all messages published since the last call have been
-     * either ack'd or nack'd by the broker.  Note, when called on a
+     * either ack'd or nack'd <i>by the broker</i>.
+     * <p/>
+     * When called on a
      * non-Confirm channel, waitForConfirms returns true immediately.
      * @return whether all the messages were ack'd (and none were nack'd)
+     * @throws InterruptedException if thread is interrupted while waiting
      */
     boolean waitForConfirms() throws InterruptedException;
 
     /**
      * Wait until all messages published since the last call have been
-     * either ack'd or nack'd by the broker; or until timeout elapses.
+     * either ack'd or nack'd <i>by the broker</i>; or until timeout elapses.
+     * <p/>
      * If the timeout expires a TimeoutException is thrown.  When
      * called on a non-Confirm channel, waitForConfirms returns true
      * immediately.
+     * @param timeout milliseconds max time to wait for confirms
      * @return whether all the messages were ack'd (and none were nack'd)
+     * @throws InterruptedException if thread interrupted while waiting
+     * @throws TimeoutException if timeout expires before confirmation is received
      */
     boolean waitForConfirms(long timeout) throws InterruptedException, TimeoutException;
 
     /** Wait until all messages published since the last call have
-     * been either ack'd or nack'd by the broker.  If any of the
+     * been either ack'd or nack'd <i>by the broker</i>.
+     * <p/>
+     * If any of the
      * messages were nack'd, waitForConfirmsOrDie will throw an
-     * IOException.  When called on a non-Confirm channel, it will
-     * return immediately. */
+     * IOException.  When called on a non-Confirm channel, returns immediately.
+     * @throws IOException if close fails
+     * @throws InterruptedException if thread interrupted while waiting
+     */
     void waitForConfirmsOrDie() throws IOException, InterruptedException;
 
     /** Wait until all messages published since the last call have
      * been either ack'd or nack'd by the broker; or until timeout elapses.
+     * <p/>
      * If the timeout expires a TimeoutException is thrown.  If any of the
      * messages were nack'd, waitForConfirmsOrDie will throw an
-     * IOException.  When called on a non-Confirm channel, it will
-     * return immediately. */
+     * IOException.  When called on a non-Confirm channel, returna immediately.
+     * @param timeout milliseconds max time to wait for confirms
+     * @throws IOException if close fails
+     * @throws InterruptedException if thread interrupted while waiting
+     * @throws TimeoutException if timeout expires before confirmations are received
+     */
     void waitForConfirmsOrDie(long timeout) throws IOException, InterruptedException, TimeoutException;
 
     /**

@@ -19,176 +19,179 @@ package com.rabbitmq.client;
 import java.util.Date;
 import java.util.Map;
 
+/**
+ * Basic.properties interface
+ */
 public interface BasicProperties {
-    
+
     /**
      * Retrieve the value in the contentType field.
      * @return contentType field, or null if the field has not been set.
      */
-    public abstract String getContentType();
-    
+    String getContentType();
+
     /**
      * Retrieve the value in the contentEncoding field.
      * @return contentEncoding field, or null if the field has not been set.
      */
-    public abstract String getContentEncoding();
-    
+    String getContentEncoding();
+
     /**
      * Retrieve the table in the headers field as a map of fields names and
-     * values. 
+     * values.
      * @return headers table, or null if the headers field has not been set.
      */
-    public abstract Map<String, Object> getHeaders();
-    
+    Map<String, Object> getHeaders();
+
     /**
      * Retrieve the value in the deliveryMode field.
      * @return deliveryMode field, or null if the field has not been set.
      */
-    public abstract Integer getDeliveryMode();
-    
+    Integer getDeliveryMode();
+
     /**
      * Retrieve the value in the priority field.
      * @return priority field, or null if the field has not been set.
      */
     public abstract Integer getPriority();
-    
+
     /**
      * Retrieve the value in the correlationId field.
      * @return correlationId field, or null if the field has not been set.
      */
-    public abstract String getCorrelationId();
-    
+    String getCorrelationId();
+
     /**
      * Retrieve the value in the replyTo field.
      * @return replyTo field, or null if the field has not been set.
      */
-    public abstract String getReplyTo();
-    
+    String getReplyTo();
+
     /**
      * Retrieve the value in the expiration field.
      * @return expiration field, or null if the field has not been set.
      */
-    public abstract String getExpiration();
-    
+    String getExpiration();
+
     /**
      * Retrieve the value in the messageId field.
      * @return messageId field, or null if the field has not been set.
      */
-    public abstract String getMessageId();
-    
+    String getMessageId();
+
     /**
      * Retrieve the value in the timestamp field.
      * @return timestamp field, or null if the field has not been set.
      */
-    public abstract Date getTimestamp();
-    
+    Date getTimestamp();
+
     /**
      * Retrieve the value in the type field.
      * @return type field, or null if the field has not been set.
      */
-    public abstract String getType();
-    
+    String getType();
+
     /**
      * Retrieve the value in the userId field.
      * @return userId field, or null if the field has not been set.
      */
-    public abstract String getUserId();
-    
+    String getUserId();
+
     /**
      * Retrieve the value in the appId field.
      * @return appId field, or null if the field has not been set.
      */
-    public abstract String getAppId();
-    
+    String getAppId();
+
     /**
      * Set the contentType field, or null indicating the field is not set
      * @param contentType the value to set the field to
      */
     @Deprecated
-    public abstract void setContentType(String contentType);
-    
+    void setContentType(String contentType);
+
     /**
      * Set the contentEncoding field, or null indicating the field is not set
      * @param contentEncoding - the value to set the field to
      */
     @Deprecated
-    public abstract void setContentEncoding(String contentEncoding);
-    
+    void setContentEncoding(String contentEncoding);
+
     /**
      * Set the headers table, or null indicating the field is not set
      * @param headers a map of table field names and values
      */
     @Deprecated
-    public abstract void setHeaders(Map<String, Object> headers);
-    
+    void setHeaders(Map<String, Object> headers);
+
     /**
      * Set the deliveryMode field, or null indicating the field is not set
      * @param deliveryMode the value to set the field to
      */
     @Deprecated
-    public abstract void setDeliveryMode(Integer deliveryMode);
-    
+    void setDeliveryMode(Integer deliveryMode);
+
     /**
      * Set the priority field, or null indicating the field is not set
      * @param priority the value to set the field to
      */
     @Deprecated
-    public abstract void setPriority(Integer priority);
-    
+    void setPriority(Integer priority);
+
     /**
      * Set the correlationId field, or null indicating the field is not set
      * @param correlationId the value to set the field to
      */
     @Deprecated
-    public abstract void setCorrelationId(String correlationId);
-    
+    void setCorrelationId(String correlationId);
+
     /**
      * Set the replyTo field, or null indicating the field is not set
      * @param replyTo the value to set the field to
      */
     @Deprecated
-    public abstract void setReplyTo(String replyTo);
-    
+    void setReplyTo(String replyTo);
+
     /**
      * Set the expiration field, or null indicating the field is not set
      * @param expiration the value to set the field to
      */
     @Deprecated
-    public abstract void setExpiration(String expiration);
-    
+    void setExpiration(String expiration);
+
     /**
      * Set the messageId field, or null indicating the field is not set
      * @param messageId the value to set the field to
      */
     @Deprecated
-    public abstract void setMessageId(String messageId);
-    
+    void setMessageId(String messageId);
+
     /**
      * Set the timestamp field, or null indicating the field is not set
      * @param timestamp the value to set the field to
      */
     @Deprecated
-    public abstract void setTimestamp(Date timestamp);
-    
+    void setTimestamp(Date timestamp);
+
     /**
      * Set the type field, or null indicating the field is not set
      * @param type the value to set the field to
      */
     @Deprecated
-    public abstract void setType(String type);
-    
+    void setType(String type);
+
     /**
      * Set the userId field, or null indicating the field is not set
      * @param userId the value to set the field to
      */
     @Deprecated
-    public abstract void setUserId(String userId);
-    
+    void setUserId(String userId);
+
     /**
      * Set the appId field, or null indicating the field is not set
      * @param appId the value to set the field to
      */
     @Deprecated
-    public abstract void setAppId(String appId);
+    void setAppId(String appId);
 
 }

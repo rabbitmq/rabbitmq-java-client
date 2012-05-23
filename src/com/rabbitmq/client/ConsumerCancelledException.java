@@ -18,6 +18,9 @@ package com.rabbitmq.client;
 
 import com.rabbitmq.utility.SensibleClone;
 
+/**
+ * Exception used by {@link QueueingConsumer} to indicate that the underlying consumer has been cancelled.
+ */
 public class ConsumerCancelledException extends RuntimeException implements
         SensibleClone<ConsumerCancelledException> {
 

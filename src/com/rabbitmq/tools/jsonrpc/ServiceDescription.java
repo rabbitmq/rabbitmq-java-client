@@ -28,6 +28,7 @@ import com.rabbitmq.tools.json.JSONUtil;
  * Description of a JSON-RPC service.
  */
 public class ServiceDescription {
+    /** JSON-RPC version */
     public static final String JSON_RPC_VERSION = "1.1";
 
     /** The service name */
@@ -44,10 +45,18 @@ public class ServiceDescription {
     /** Map from procedure name to {@link ProcedureDescription} */
     private Map<String, ProcedureDescription> procedures;
 
+    /**
+     * Service description from map of fields and values
+     * @param rawServiceDescription map object
+     */
     public ServiceDescription(Map<String, Object> rawServiceDescription) {
         JSONUtil.tryFill(this, rawServiceDescription);
     }
 
+    /**
+     * Service description based upon interface class
+     * @param klass interface class to derive service description from
+     */
     public ServiceDescription(Class<?> klass) {
         this.procedures = new HashMap<String, ProcedureDescription>();
         for (Method m: klass.getMethods()) {
@@ -56,16 +65,19 @@ public class ServiceDescription {
         }
     }
 
+    /**
+     * Default constructor: null help, null id, null name, null summary and null version
+     */
     public ServiceDescription() {
-        // No work to do here
     }
 
-    /** Gets a collection of all {@link ProcedureDescription} for this service */
+    /** @return a collection of all {@link ProcedureDescription}s for this service */
     public Collection<ProcedureDescription> getProcs() {
         return procedures.values();
     }
 
-    /** Private API - used via reflection during parsing/loading */
+    /** Private API - used via reflection during parsing/loading
+     * @param p a collection of maps, one for each procedure */
     public void setProcs(Collection<Map<String, Object>> p) {
         procedures = new HashMap<String, ProcedureDescription>();
         for (Map<String, Object> pm: p) {
@@ -81,7 +93,9 @@ public class ServiceDescription {
 
     /**
      * Looks up a single ProcedureDescription by name and arity.
-     * @return non-null ProcedureDescription if a match is found
+     * @param newname of procedure
+     * @param arity of procedure
+     * @return ProcedureDescription if a match is found
      * @throws IllegalArgumentException if no match is found
      */
     public ProcedureDescription getProcedure(String newname, int arity) {
