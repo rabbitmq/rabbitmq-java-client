@@ -84,23 +84,23 @@ public class BrokenFramesTest extends TestCase {
             assertEquals(AMQP.FRAME_METHOD, unexpectedFrameError.getExpectedFrameType());
             return;
         }
-        
+
         fail("No UnexpectedFrameError thrown");
     }
-    
+
     public void testMethodThenBody() throws Exception {
         List<Frame> frames = new ArrayList<Frame>();
-        
+
         byte[] contentBody = new byte[10];
         int channelNumber = 0;
-        
+
         Publish method = new Publish(1, "test", "test", false, false);
 
         frames.add(method.toFrame(0));
         frames.add(Frame.fromBodyFragment(channelNumber, contentBody, 0, contentBody.length));
-        
+
         myFrameHandler.setFrames(frames.iterator());
- 
+
         try {
             new AMQConnection(factory.getUsername(),
                               factory.getPassword(),
@@ -120,7 +120,7 @@ public class BrokenFramesTest extends TestCase {
             assertEquals(AMQP.FRAME_HEADER, unexpectedFrameError.getExpectedFrameType());
             return;
         }
-        
+
         fail("No UnexpectedFrameError thrown");
     }
 
@@ -132,7 +132,7 @@ public class BrokenFramesTest extends TestCase {
                 return (UnexpectedFrameError) t;
             }
         }
-        
+
         return null;
     }
 
@@ -174,7 +174,6 @@ public class BrokenFramesTest extends TestCase {
             return -1;
         }
 
-        @Override
         public void flush() throws IOException {
             // no need to implement this: don't bother writing the frame
         }

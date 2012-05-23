@@ -73,7 +73,6 @@ public interface FrameHandler {
 
     /**
      * Flush the underlying data connection.
-     *
      * @throws IOException if there is a problem accessing the connection
      */
     void flush() throws IOException;
