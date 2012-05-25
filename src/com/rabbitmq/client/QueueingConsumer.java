@@ -42,7 +42,7 @@ import com.rabbitmq.utility.Utility;
  * ch1.{@link Channel#queueBind queueBind}(queueName, exchangeName, queueName);
  *
  * // Create the QueueingConsumer and have it consume from the queue
- * QueueingConsumer consumer = new {@link QueueingConsumer#QueueingConsumer QueueingConsumer}(ch1);
+ * QueueingConsumer consumer = new {@link QueueingConsumer#QueueingConsumer(Channel) QueueingConsumer}(ch1);
  * ch1.{@link Channel#basicConsume basicConsume}(queueName, false, consumer);
  *
  * // Process deliveries
@@ -54,7 +54,7 @@ import com.rabbitmq.utility.Utility;
  * </pre>
  *
  *
- * <p>For a more complete example, see LogTail in the test/src/com/rabbitmq/examples
+ * <p>For a more complete example, see LogTail in the <code>test/src/com/rabbitmq/examples</code>
  * directory of the source distribution.</p>
  * <p/>
  * <b>deprecated</b> <i><code>QueueingConsumer</code> was introduced to allow
@@ -64,7 +64,7 @@ import com.rabbitmq.utility.Utility;
  * <code>Connection's</code> thread. This had two main drawbacks. Firstly, the
  * <code>Consumer</code> could stall the processing of all
  * <code>Channels</code> on the <code>Connection</code>. Secondly, if a
- * <code>Consumer</code> made a recursive synchronous call into its 
+ * <code>Consumer</code> made a recursive synchronous call into its
  * <code>Channel</code> the client would deadlock.
  * <p/>
  * <code>QueueingConsumer</code> provided client code with an easy way to
@@ -95,10 +95,17 @@ public class QueueingConsumer extends DefaultConsumer {
     // Invariant: This is never on _queue unless _shutdown != null.
     private static final Delivery POISON = new Delivery(null, null, null);
 
+    /**
+     * @param ch channel to attach this {@link Consumer} to
+     */
     public QueueingConsumer(Channel ch) {
         this(ch, new LinkedBlockingQueue<Delivery>());
     }
 
+    /**
+     * @param ch channel to attach this {@link Consumer} to
+     * @param q internal Java blocking queue to use
+     */
     public QueueingConsumer(Channel ch, BlockingQueue<Delivery> q) {
         super(ch);
         this._queue = q;
@@ -133,6 +140,11 @@ public class QueueingConsumer extends DefaultConsumer {
         private final AMQP.BasicProperties _properties;
         private final byte[] _body;
 
+        /**
+         * @param envelope containing parameters of message received
+         * @param properties of received message
+         * @param body of received message
+         */
         public Delivery(Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
             _envelope = envelope;
             _properties = properties;
@@ -207,6 +219,7 @@ public class QueueingConsumer extends DefaultConsumer {
      * @return the next message
      * @throws InterruptedException if an interrupt is received while waiting
      * @throws ShutdownSignalException if the connection is shut down while waiting
+     * @throws ConsumerCancelledException if this consumer is cancelled while waiting
      */
     public Delivery nextDelivery()
         throws InterruptedException, ShutdownSignalException, ConsumerCancelledException
@@ -220,6 +233,7 @@ public class QueueingConsumer extends DefaultConsumer {
      * @return the next message or null if timed out
      * @throws InterruptedException if an interrupt is received while waiting
      * @throws ShutdownSignalException if the connection is shut down while waiting
+     * @throws ConsumerCancelledException if this consumer is cancelled while waiting
      */
     public Delivery nextDelivery(long timeout)
         throws InterruptedException, ShutdownSignalException, ConsumerCancelledException

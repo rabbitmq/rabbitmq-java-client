@@ -26,6 +26,18 @@ import java.io.IOException;
  * @see Channel#basicPublish
  */
 public interface ReturnListener {
+    /**
+     * Called when messages are returned.
+     * @param replyCode of return
+     * @param replyText of return
+     * @param exchange of message being returned
+     * @param routingKey of message being returned
+     * @param properties of message being returned
+     * @param body of message being returned
+     * @throws IOException to indicate serious error
+     * {@link com.rabbitmq.client.impl.ExceptionHandler#handleReturnListenerException(Channel, Throwable)}
+     * is called
+     */
     void handleReturn(int replyCode,
             String replyText,
             String exchange,

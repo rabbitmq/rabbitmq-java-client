@@ -131,6 +131,7 @@ final class HeartbeatSender {
 
                 if (now > (lastActivityTime + this.heartbeatNanos)) {
                     frameHandler.writeFrame(new Frame(AMQP.FRAME_HEARTBEAT, 0));
+                    frameHandler.flush();
                 }
             } catch (IOException e) {
                 // ignore

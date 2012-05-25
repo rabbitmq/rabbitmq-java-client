@@ -27,7 +27,7 @@ public class PossibleAuthenticationFailureException extends IOException
     private static final long serialVersionUID = 1L;
 
     /**
-     * @param cause of exception
+     * @param cause that precipitated this exception
      */
     public PossibleAuthenticationFailureException(Throwable cause)
     {

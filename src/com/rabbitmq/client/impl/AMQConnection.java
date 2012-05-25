@@ -474,6 +474,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _heartbeatSender.signalActivity();
     }
 
+    /**
+     * Public API - flush the output buffers
+     */
+    public void flush() throws IOException {
+        _frameHandler.flush();
+    }
+
     private static final int negotiatedMaxValue(int clientValue, int serverValue) {
         return (clientValue == 0 || serverValue == 0) ?
             Math.max(clientValue, serverValue) :

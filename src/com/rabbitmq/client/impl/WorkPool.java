@@ -63,12 +63,14 @@ import java.util.Set;
  * </pre>
  * <i>dormant</i> is not represented in the implementation state, and adding items
  * when the client is <i>in progress</i> or <i>ready</i> does not change its state.
+ * @param <K> Key -- type of client
+ * @param <W> Work -- type of work item
  */
 public class WorkPool<K, W> {
 
     /** protecting <code>ready</code>, <code>inProgress</code> and <code>pool</code> */
     private final Object monitor = new Object();
-        /** An ordered queue of <i>ready</i> clients. */
+        /** An injective queue of <i>ready</i> clients. */
         private final SetQueue<K> ready = new SetQueue<K>();
         /** The set of clients which have work <i>in progress</i>. */
         private final Set<K> inProgress = new HashSet<K>();
@@ -79,7 +81,7 @@ public class WorkPool<K, W> {
      * Add client <code><b>key</b></code> to pool of item queues, with an empty queue.
      * A client is initially <i>dormant</i>.
      * <p/>
-     * No-op if <code><b>key</b></code> already present. 
+     * No-op if <code><b>key</b></code> already present.
      * @param key client to add to pool
      */
     public void registerKey(K key) {
@@ -208,7 +210,7 @@ public class WorkPool<K, W> {
         LinkedList<W> leList = this.pool.get(key);
         return (leList==null ? false : !leList.isEmpty());
     }
-    
+
     /* State identification functions */
     private boolean isInProgress(K key){ return this.inProgress.contains(key); }
     private boolean isReady(K key){ return this.ready.contains(key); }

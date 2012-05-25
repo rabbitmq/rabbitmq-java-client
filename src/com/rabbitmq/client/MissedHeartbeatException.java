@@ -28,7 +28,7 @@ public class MissedHeartbeatException extends SocketTimeoutException {
     private static final long serialVersionUID = 1L;
 
     /**
-     * @param reason exception detail message
+     * @param reason for exception
      */
     public MissedHeartbeatException(String reason) {
         super(reason);

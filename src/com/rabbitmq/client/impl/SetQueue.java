@@ -8,7 +8,7 @@ import java.util.Set;
 /** A generic queue-like implementation (supporting operations <code>addIfNotPresent</code>,
  * <code>poll</code>, <code>contains</code>, and <code>isEmpty</code>)
  * which restricts a queue element to appear at most once.
- * If the element is already present {@link #addIfNotPresent(T)} returns <code><b>false</b></code>.
+ * If the element is already present {@link #addIfNotPresent} returns <code><b>false</b></code>.
  * <p/>
  * Elements must not be <code><b>null</b></code>.
  * <p/><b>Concurrent Semantics</b><br/>
@@ -43,7 +43,8 @@ public class SetQueue<T> {
         return item;
     }
 
-    /** @return <code><b>true</b></code> if and only if <b>item</b> is in the queue.*/
+    /** @param item to look for in queue
+     * @return <code><b>true</b></code> if and only if <b>item</b> is in the queue.*/
     public boolean contains(T item) {
         return this.members.contains(item);
     }
@@ -54,6 +55,7 @@ public class SetQueue<T> {
     }
 
     /** Remove item from queue, if present.
+     * @param item to remove
      *  @return <code><b>true</b></code> if and only if item was initially present and was removed.
      */
     public boolean remove(T item) {

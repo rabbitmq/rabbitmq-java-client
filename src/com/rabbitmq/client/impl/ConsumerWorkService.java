@@ -30,13 +30,9 @@ final class ConsumerWorkService {
     private final WorkPool<Channel, Runnable> workPool;
 
     public ConsumerWorkService(ExecutorService executor) {
-        if (executor == null) {
-            privateExecutor = true;
-            this.executor = Executors.newFixedThreadPool(DEFAULT_NUM_THREADS);
-        } else {
-            privateExecutor = false;
-            this.executor = executor;
-        }
+        this.privateExecutor = (executor == null);
+        this.executor = (executor == null) ? Executors.newFixedThreadPool(DEFAULT_NUM_THREADS)
+                                           : executor;
         this.workPool = new WorkPool<Channel, Runnable>();
     }
 

@@ -45,7 +45,7 @@ final class ConsumerDispatcher {
     private volatile boolean shutdownConsumersDriven = false;
     private volatile CountDownLatch shutdownConsumersComplete;
 
-    private volatile ShutdownSignalException shutdownSignal;
+    private volatile ShutdownSignalException shutdownSignal = null;
 
     public ConsumerDispatcher(AMQConnection connection,
                               Channel channel,
@@ -144,7 +144,7 @@ final class ConsumerDispatcher {
             // Execute shutdown processing even if there are no consumers.
             execute(new Runnable() {
                 public void run() {
-                    notifyConsumersOfShutdown(consumers, signal);
+                    ConsumerDispatcher.this.notifyConsumersOfShutdown(consumers, signal);
                     ConsumerDispatcher.this.shutdown(signal);
                     ConsumerDispatcher.this.workService.stopWork(ConsumerDispatcher.this.channel);
                     latch.countDown();
