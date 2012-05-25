@@ -22,5 +22,9 @@ package com.rabbitmq.client;
  * @see com.rabbitmq.client.ConnectionFactory
  */
 public interface SaslConfig {
+    /**
+     * @param mechanisms array of Sasl mechanism names to select from
+     * @return selected SaslMechanism
+     */
     SaslMechanism getSaslMechanism(String[] mechanisms);
 }
