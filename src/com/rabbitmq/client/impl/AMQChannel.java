@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
@@ -102,7 +101,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         return wrap(ex, null);
     }
 
-    public static IOException wrap(ShutdownSignalException ex, String message) {
+    private static IOException wrap(ShutdownSignalException ex, String message) {
         IOException ioe = new IOException(message);
         ioe.initCause(ex);
         return ioe;
@@ -110,6 +109,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
 
     /**
      * Placeholder until we address bug 15786 (implementing a proper exception hierarchy).
+     * @param m method request
+     * @return command response
+     * @throws IOException on error or shutdown
      */
     public AMQCommand exnWrappingRpc(Method m)
         throws IOException
@@ -125,14 +127,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    /**
-     * Private API - handle a command which has been assembled
-     * @throws IOException if there's any problem
-     *
-     * @param command the incoming command
-     * @throws IOException
-     */
-    public void handleCompleteInboundCommand(AMQCommand command) throws IOException {
+    private void handleCompleteInboundCommand(AMQCommand command) throws IOException {
         // First, offer the command to the asynchronous-command
         // handling mechanism, which gets to act as a filter on the
         // incoming command stream.  If processAsync() returns true,
@@ -148,6 +143,11 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
+    /**
+     * Queue for reply (only one place in queue).
+     * Blocks until the place is free.
+     * @param k reply continuation
+     */
     public void enqueueRpc(RpcContinuation k)
     {
         synchronized (_channelMutex) {
@@ -166,6 +166,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
+    /**
+     * @return true if there is a reply expected, o/w false
+     */
     public boolean isOutstandingRpc()
     {
         synchronized (_channelMutex) {
@@ -173,7 +176,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public RpcContinuation nextOutstandingRpc()
+    /**
+     * @return next reply expected in queue (queue is only one deep), or null
+     */
+    private RpcContinuation nextOutstandingRpc()
     {
         synchronized (_channelMutex) {
             RpcContinuation result = _activeRpc;
@@ -195,6 +201,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * Protected API - sends a {@link Method} to the broker and waits for the
      * next in-bound Command from the broker: only for use from
      * non-connection-MainLoop threads!
+     * @param m method to send
+     * @return command reply
+     * @throws IOException if error on sending method or receiving reply
+     * @throws ShutdownSignalException if shutdown occurs before reply received
      */
     public AMQCommand rpc(Method m)
         throws IOException, ShutdownSignalException
@@ -216,8 +226,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         return k.getReply();
     }
 
-    public void rpc(Method m, RpcContinuation k)
-        throws IOException
+    protected void rpc(Method m, RpcContinuation k)
+        throws IOException, ShutdownSignalException
     {
         synchronized (_channelMutex) {
             ensureIsOpen();
@@ -225,6 +235,12 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
+    /**
+     * Request with reply, even if closing.
+     * @param m request method
+     * @param k reply continuation
+     * @throws IOException if transmit error
+     */
     public void quiescingRpc(Method m, RpcContinuation k)
         throws IOException
     {
@@ -240,6 +256,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * usual. This is used in subclasses to implement handling of Basic.Return and Basic.Deliver messages, as well as Channel.Close and Connection.Close.
      * @param command the command to handle asynchronously
      * @return true if we handled the command; otherwise the caller should consider it "unhandled"
+     * @throws IOException on error
      */
     public abstract boolean processAsync(Command command) throws IOException;
 
@@ -273,6 +290,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
+    /**
+     * Respond to an outstanding reply continuation on this channel with a shutdown signal.
+     * @param signal shutdown exception
+     */
     public void notifyOutstandingRpc(ShutdownSignalException signal) {
         RpcContinuation k = nextOutstandingRpc();
         if (k != null) {
@@ -280,12 +301,22 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
+    /**
+     * Send method on this channel
+     * @param m method to send
+     * @throws IOException on error
+     */
     public void transmit(Method m) throws IOException {
         synchronized (_channelMutex) {
             transmit(new AMQCommand(m));
         }
     }
 
+    /**
+     * Send command on this channel
+     * @param c command to send
+     * @throws IOException on error
+     */
     public void transmit(AMQCommand c) throws IOException {
         synchronized (_channelMutex) {
             ensureIsOpen();
@@ -293,13 +324,23 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
+    /**
+     * Send method on this channel, even if closing
+     * @param m method to send
+     * @throws IOException on error
+     */
     public void quiescingTransmit(Method m) throws IOException {
         synchronized (_channelMutex) {
             quiescingTransmit(new AMQCommand(m));
         }
     }
 
-    public void quiescingTransmit(AMQCommand c) throws IOException {
+    /**
+     * Send command on this channel, even if closing
+     * @param c command to send
+     * @throws IOException on error
+     */
+    private void quiescingTransmit(AMQCommand c) throws IOException {
         synchronized (_channelMutex) {
             if (c.getMethod().hasContent()) {
                 while (_blockContent) {
@@ -317,17 +358,38 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
+    /**
+     * @return the connection this channel belongs to
+     */
     public AMQConnection getConnection() {
         return _connection;
     }
 
+    /**
+     * Reply continuation
+     * <p />
+     * Expects either a {@link Command} or a {@link ShutdownSignalException}.
+     */
     public interface RpcContinuation {
+        /**
+         * Called when reply Command arrives
+         * @param command satisfying reply
+         */
         void handleCommand(AMQCommand command);
+        /**
+         * Called when {@link ShutdownSignalException} occurs
+         * @param signal satisfying reply
+         */
         void handleShutdownSignal(ShutdownSignalException signal);
     }
 
+    /**
+     * {@link BlockingValueOrException BlockingValueOrException&lt;T, ShutdownSignalException&gt;}
+     * implementation of {@link RpcContinuation}
+     * @param <T> Type of value
+     */
     public static abstract class BlockingRpcContinuation<T> implements RpcContinuation {
-        public final BlockingValueOrException<T, ShutdownSignalException> _blocker =
+        private final BlockingValueOrException<T, ShutdownSignalException> _blocker =
             new BlockingValueOrException<T, ShutdownSignalException>();
 
         public void handleCommand(AMQCommand command) {
@@ -338,20 +400,43 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             _blocker.setException(signal);
         }
 
+        /**
+         * Get reply value from continuation -- blocks until value arrives
+         * @return reply value
+         * @throws ShutdownSignalException if shutdown instead
+         */
         public T getReply() throws ShutdownSignalException
         {
             return _blocker.uninterruptibleGetValue();
         }
 
+        /**
+         * Get reply value from continuation -- blocks until value arrives
+         * or timeout expires
+         * @param timeout milliseconds time to wait
+         * @return reply value
+         * @throws ShutdownSignalException if shutdown instead
+         * @throws TimeoutException if timeout expires before continuation is satisfied
+         */
         public T getReply(int timeout)
             throws ShutdownSignalException, TimeoutException
         {
             return _blocker.uninterruptibleGetValue(timeout);
         }
 
+        /**
+         * Called after reply satisfies continuation to modify reply
+         * returned. Does not get called on {@link ShutdownSignalException}.
+         * Side effects happen at the point where {@link #handleCommand} is issued.
+         * @param command reply value
+         * @return transformed reply value
+         */
         public abstract T transformReply(AMQCommand command);
     }
 
+    /**
+     * A {@link BlockingRpcContinuation} which performs no transformations
+     */
     public static class SimpleBlockingRpcContinuation
         extends BlockingRpcContinuation<AMQCommand>
     {
