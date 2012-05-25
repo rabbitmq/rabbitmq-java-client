@@ -494,6 +494,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
          */
         MainLoop(String name) {
             super(name);
+            super.setDaemon(true);
         }
 
         /**
