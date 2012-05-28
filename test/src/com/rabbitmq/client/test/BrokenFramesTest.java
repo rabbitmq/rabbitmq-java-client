@@ -173,6 +173,11 @@ public class BrokenFramesTest extends TestCase {
         public int getPort() {
             return -1;
         }
+
+        @Override
+        public void flush() throws IOException {
+            // no need to implement this: don't bother writing the frame
+        }
     }
 
 }

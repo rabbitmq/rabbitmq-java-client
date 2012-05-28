@@ -121,6 +121,8 @@ public class AMQCommand implements Command {
                 }
             }
         }
+
+        connection.flush();
     }
 
     @Override public String toString() {
