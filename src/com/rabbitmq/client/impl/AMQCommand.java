@@ -83,8 +83,14 @@ public class AMQCommand implements Command {
         return this.assembler.getContentBody();
     }
 
-    public boolean handleFrame(Frame f) throws IOException {
-        return this.assembler.handleFrame(f);
+    /**
+     * Incorporate frame into (partial) command.
+     * @param frame frame to be incorporated
+     * @return true if this completes the command
+     * @throws IOException if error reading frame
+     */
+    public boolean handleFrame(Frame frame) throws IOException {
+        return this.assembler.handleFrame(frame);
     }
 
     /**
@@ -129,6 +135,11 @@ public class AMQCommand implements Command {
         return toString(false);
     }
 
+    /**
+     * Intelligent {@link #toString} with boolean to suppress command body
+     * @param suppressBody suppressed if true
+     * @return string representation of command
+     */
     public String toString(boolean suppressBody){
         synchronized (assembler) {
             return new StringBuilder()
