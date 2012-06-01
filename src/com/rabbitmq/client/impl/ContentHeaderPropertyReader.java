@@ -42,6 +42,8 @@ public class ContentHeaderPropertyReader {
 
     /**
      * Protected API - Constructs a reader from the given input stream
+     * @param in input stream to read from
+     * @throws IOException for input stream errors
      */
     public ContentHeaderPropertyReader(DataInputStream in) throws IOException {
         this.in = new ValueReader(in);
@@ -53,6 +55,10 @@ public class ContentHeaderPropertyReader {
         return (flagWord & 1) != 0;
     }
 
+    /**
+     * Get (next) flag word
+     * @throws IOException if no flag word to read!
+     */
     public void readFlagWord() throws IOException {
         if (!isContinuationBitSet()) {
             // FIXME: Proper exception class!
@@ -62,6 +68,10 @@ public class ContentHeaderPropertyReader {
         bitCount = 0;
     }
 
+    /**
+     * @return true if next flag is set
+     * @throws IOException from input stream
+     */
     public boolean readPresence() throws IOException {
         if (bitCount == 15) {
             readFlagWord();
@@ -72,6 +82,10 @@ public class ContentHeaderPropertyReader {
         return (flagWord & (1 << bit)) != 0;
     }
 
+    /**
+     * Signal end of boolean flags for optional fields
+     * @throws IOException if not end
+     */
     public void finishPresence() throws IOException {
         if (isContinuationBitSet()) {
             // FIXME: Proper exception class!
@@ -79,17 +93,29 @@ public class ContentHeaderPropertyReader {
         }
     }
 
-    /** Reads and returns an AMQP short string content header field. */
+    /**
+     * Reads and returns an AMQP short string content header field.
+     * @return <code>String</code> version of short string
+     * @throws IOException from input stream
+     */
     public String readShortstr() throws IOException {
         return in.readShortstr();
     }
 
-    /** Reads and returns an AMQP "long string" (binary) content header field. */
+    /**
+     * Reads and returns an AMQP "long string" (binary) content header field.
+     * @return <code>LongString</code> read
+     * @throws IOException from input stream
+     */
     public LongString readLongstr() throws IOException {
         return in.readLongstr();
     }
 
-    /** Reads and returns an AMQP short integer content header field. */
+    /**
+     * Reads and returns an AMQP short integer content header field.
+     * @return <code>Integer</code> of short read
+     * @throws IOException from input stream
+     */
     public Integer readShort() throws IOException {
         return in.readShort();
     }
