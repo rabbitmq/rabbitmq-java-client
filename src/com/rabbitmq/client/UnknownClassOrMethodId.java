@@ -26,15 +26,24 @@ import java.io.IOException;
 public class UnknownClassOrMethodId extends IOException {
     private static final long serialVersionUID = 1L;
     private static final int NO_METHOD_ID = -1;
-    public final int classId;
-    public final int methodId;
+    private final int classId;
+    private final int methodId;
+    /**
+     * @param classId id of unrecognised class
+     */
     public UnknownClassOrMethodId(int classId) {
         this(classId, NO_METHOD_ID);
     }
+
+    /**
+     * @param classId class id of unrecognised class and method
+     * @param methodId id of unrecognised method
+     */
     public UnknownClassOrMethodId(int classId, int methodId) {
         this.classId = classId;
         this.methodId = methodId;
     }
+
     public String toString() {
         if (this.methodId == NO_METHOD_ID) {
             return super.toString() + "<" + classId + ">";

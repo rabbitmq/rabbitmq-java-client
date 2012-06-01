@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.tools.jsonrpc;
 
 import java.lang.reflect.Method;
@@ -44,6 +43,9 @@ public class ProcedureDescription {
     /** Reflected method object, used for service invocation */
     private Method method;
 
+    /**
+     * @param pm object map from which to get procedure description
+     */
     public ProcedureDescription(Map<String, Object> pm) {
         JSONUtil.tryFill(this, pm);
 
@@ -57,6 +59,10 @@ public class ProcedureDescription {
         }
     }
 
+    /**
+     * Description derived from a Java Method; empty summary and help, idempotent assumed false.
+     * @param m relfected Java Method
+     */
     public ProcedureDescription(Method m) {
         this.method = m;
         this.name = m.getName();
@@ -71,28 +77,33 @@ public class ProcedureDescription {
         this.returnType = ParameterDescription.lookup(m.getReturnType());
     }
 
+    /**
+     * Default constructor: null name, null summary, not idempotent, null help
+     */
     public ProcedureDescription() {
-        // no work to do here
     }
 
-    /** Getter for return type */
+    /**  @return return type*/
     public String getReturn() { return returnType; }
-    /** Private API - used via reflection during parsing/loading */
+    /** Private API - used via reflection during parsing/loading
+     * @param value to set return type to*/
     public void setReturn(String value) { returnType = value; }
 
-    /** Private API - used to get the reflected method object, for servers */
+    /** Private API - used to get the reflected method object, for servers
+     * @return reflected Java method*/
     public Method internal_getMethod() { return method; }
 
-    /** Gets an array of parameter descriptions for all this procedure's parameters */
+    /** @return an array of parameter descriptions for all this procedure's parameters */
     public ParameterDescription[] internal_getParams() {
         return params;
     }
 
-    /** Retrieves the parameter count for this procedure */
+    /** @return the parameter count for this procedure */
     public int arity() {
         return (params == null) ? 0 : params.length;
     }
 
+    /** @return an array of parameter descriptions for all this procedure's parameters */
     public ParameterDescription[] getParams() {
         return params;
     }

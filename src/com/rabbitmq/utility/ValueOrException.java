@@ -16,6 +16,11 @@
 
 package com.rabbitmq.utility;
 
+/**
+ * A 'pair' of value and exception to use in BlockingCell.
+ * @param <V> value type
+ * @param <E> exception type
+ */
 public class ValueOrException<V, E extends Throwable & SensibleClone<E>> {
     private final boolean _useValue;
     private final V _value;

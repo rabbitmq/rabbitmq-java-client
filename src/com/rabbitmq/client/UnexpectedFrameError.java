@@ -23,24 +23,31 @@ import com.rabbitmq.client.impl.Frame;
  * Thrown when the command parser hits an unexpected frame type.
  */
 public class UnexpectedFrameError extends Error {
+    /** Default for non-checking */
     private static final long serialVersionUID = 1L;
     private final Frame _frame;
     private final int _expectedFrameType;
 
+    /**
+     * @param frame unexpected frame
+     * @param expectedFrameType type of frame we were expecting
+     */
     public UnexpectedFrameError(Frame frame, int expectedFrameType) {
         super("Received frame: " + frame + ", expected type " + expectedFrameType);
         _frame = frame;
         _expectedFrameType = expectedFrameType;
     }
 
-    public static long getSerialVersionUID() {
-        return serialVersionUID;
-    }
-
+    /**
+     * @return frame causing error
+     */
     public Frame getReceivedFrame() {
         return _frame;
     }
 
+    /**
+     * @return type of frame expected
+     */
     public int getExpectedFrameType() {
         return _expectedFrameType;
     }

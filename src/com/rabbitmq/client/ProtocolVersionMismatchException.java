@@ -31,6 +31,10 @@ public class ProtocolVersionMismatchException extends ProtocolException
     private Version clientVersion;
     private Version serverVersion;
 
+    /**
+     * @param clientVersion version requested by client
+     * @param serverVersion version offered by server
+     */
     public ProtocolVersionMismatchException(Version clientVersion,
                                             Version serverVersion) {
         super("Protocol version mismatch: expected "
@@ -40,37 +44,37 @@ public class ProtocolVersionMismatchException extends ProtocolException
         this.serverVersion = serverVersion;
     }
 
-    /** The client's AMQP specification version. */
+    /** @return the client's AMQP specification version. */
     public Version getClientVersion()
     {
         return clientVersion;
     }
 
-    /** The server's AMQP specification version. */
+    /** @return the server's AMQP specification version. */
     public Version getServerVersion()
     {
         return serverVersion;
     }
 
-    /** The client's AMQP specification major version. */
+    /** @return the client's AMQP specification major version. */
     public int getClientMajor()
     {
         return clientVersion.getMajor();
     }
 
-    /** The client's AMQP specification minor version. */
+    /** @return the client's AMQP specification minor version. */
     public int getClientMinor()
     {
         return clientVersion.getMinor();
     }
 
-    /** The server's AMQP specification major version. */
+    /** @return the server's AMQP specification major version. */
     public int getServerMajor()
     {
         return serverVersion.getMajor();
     }
 
-    /** The server's AMQP specification minor version. */
+    /** @return the server's AMQP specification minor version. */
     public int getServerMinor()
     {
         return serverVersion.getMinor();

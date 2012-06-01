@@ -46,7 +46,7 @@ import com.rabbitmq.utility.Utility;
  * port (out-port). Relays frames from the in-port to the out-port.
  * Commands are decoded and printed to a supplied {@link Logger}.
  * <p/>
- * The stand-alone program ({@link #main()}) prints to <code>System.out</code>,
+ * The stand-alone program ({@link #main(String[])}) prints to <code>System.out</code>,
  * using a private {@link AsyncLogger} instance.  When the connection closes
  * the program listens for a subsequent connection and traces that to the same {@link Logger}.
  * This continues until the program is interrupted.
@@ -97,6 +97,15 @@ public class Tracer implements Runnable {
                 .append(" = ").append(getBoolProperty(propName, props)).toString());
     }
 
+    /**
+     * <b>Usage:</b>
+     * <br/>
+     * <code>Tracer [&lt;listenport&gt; [&lt;connecthost&gt; [&lt;connectport&gt;]]]</code>
+     * <p/>
+     * Serially traces connections on the <code>&lt;listenport&gt;</code>, logging
+     * frames received and passing them to the connect host and port.
+     * @param args see Usage
+     */
     public static void main(String[] args) {
         int listenPort = args.length > 0 ? Integer.parseInt(args[0]) : DEFAULT_LISTEN_PORT;
         String connectHost = args.length > 1 ? args[1] : DEFAULT_CONNECT_HOST;
@@ -173,18 +182,42 @@ public class Tracer implements Runnable {
         this(new ServerSocket(listenPort).accept(), id, host, port, logger, reportEnd, props);
     }
 
+    /**
+     * Tracer
+     * @param listenPort to listen on
+     * @param id identification in tracing
+     * @param host to listen to
+     * @param port to connect on to
+     * @param logger to write trace output to
+     * @param props properties used to modify behaviour
+     * @throws IOException on socket errors
+     */
     public Tracer(int listenPort, String id, String host, int port, Logger logger, Properties props) throws IOException {
         this(listenPort, id, host, port, logger, new BlockingCell<Exception>(), props);
     }
 
+    /**
+     * Tracer, default port, connection, {@link AsyncLogger} and system properties
+     * @param id identification in tracing
+     * @throws IOException on socket errors
+     */
     public Tracer(String id) throws IOException {
-        this(DEFAULT_LISTEN_PORT, id, DEFAULT_CONNECT_HOST, DEFAULT_CONNECT_PORT, new AsyncLogger(System.out), new BlockingCell<Exception>(), System.getProperties());
+        this(id, System.getProperties());
     }
 
+    /**
+     * Tracer, default port, connection, {@link AsyncLogger}
+     * @param id identification in tracing
+     * @param props properties used to modify behaviour
+     * @throws IOException on socket errors
+     */
     public Tracer(String id, Properties props) throws IOException {
         this(DEFAULT_LISTEN_PORT, id, DEFAULT_CONNECT_HOST, DEFAULT_CONNECT_PORT, new AsyncLogger(System.out), new BlockingCell<Exception>(), props);
     }
 
+    /**
+     * Start Tracer tracing
+     */
     public void start() {
         if (this.started.compareAndSet(false, true)) {
             this.logger.start();
@@ -227,6 +260,10 @@ public class Tracer implements Runnable {
         }
     }
 
+    /**
+     * Log message with timestamp and tracer identification
+     * @param message to log
+     */
     public void log(String message) {
         StringBuilder sb = new StringBuilder();
         this.logger.log(sb.append(System.currentTimeMillis())
@@ -235,6 +272,10 @@ public class Tracer implements Runnable {
                         .toString());
     }
 
+    /**
+     * Log (uncaught) exception with timestamp and tracer identification
+     * @param e exception to log
+     */
     public void logException(Exception e) {
         log("uncaught " + Utility.makeStackTrace(e));
     }
@@ -358,7 +399,7 @@ public class Tracer implements Runnable {
          * Start logging, that is, printing log entries written using
          * {@link #log(String)}. Multiple successive starts are equivalent to a
          * single start.
-         * 
+         *
          * @return <code>true</code> if start actually started the logger;
          *         <code>false</code> otherwise.
          */
@@ -369,7 +410,7 @@ public class Tracer implements Runnable {
          * {@link #log(String)}. Flush preceding writes. The logger can only be
          * stopped if started. Multiple successive stops are equivalent to a
          * single stop.
-         * 
+         *
          * @return <code>true</code> if stop actually stopped the logger;
          *         <code>false</code> otherwise.
          */
@@ -378,7 +419,7 @@ public class Tracer implements Runnable {
         /**
          * Write msg to the log. This may block, and may block indefinitely if
          * the logger is stopped.
-         * 
+         *
          * @param msg
          */
         void log(String msg);
@@ -388,7 +429,7 @@ public class Tracer implements Runnable {
      * A {@link Tracer.Logger} designed to print {@link String}s to a designated {@link OutputStream}
      * on a private thread.
      * <p/>{@link String}s are read from a private queue and <i>printed</i> to a buffered {@link PrintStream}
-     * which is periodically flushed, determined by a {@link #flushInterval}.
+     * which is periodically flushed, determined by a <i>flush interval</i>.
      * <p/>
      * When instantiated the private queue is created (an in-memory {@link ArrayBlockingQueue} in this
      * implementation) and when {@link #start()}ed the private thread is created and started unless it is
@@ -400,7 +441,7 @@ public class Tracer implements Runnable {
      * If the private thread is interrupted, the thread will also end, and the count set to zero,
      * This will cause subsequent {@link #stop()}s to be ignored, and the next {@link #start()} will create a new thread.
      * <p/>
-     * {@link #log()} never blocks unless the private queue is full; this may never un-block if the {@link Logger} is stopped.
+     * {@link #log(String)} never blocks unless the private queue is full; this may never un-block if the {@link Logger} is stopped.
      */
     public static class AsyncLogger implements Logger {
         private static final int MIN_FLUSH_INTERVAL = 100;
@@ -435,7 +476,7 @@ public class Tracer implements Runnable {
                 LOG_QUEUE_SIZE, true);
 
         /**
-         * Same as {@link #AsyncLogger(os, flushInterval)} with a one-second flush interval.
+         * Same as {@link #AsyncLogger(OutputStream, int)} with a one-second flush interval.
          * @param os OutputStream to print to.
          */
         public AsyncLogger(OutputStream os) {
@@ -554,7 +595,7 @@ public class Tracer implements Runnable {
             }
         }
     }
-    
+
     private static class SafeCounter {
         private final Object countMonitor = new Object();
         private int count;

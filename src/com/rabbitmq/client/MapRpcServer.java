@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client;
 
 import java.io.ByteArrayInputStream;
@@ -35,9 +34,18 @@ import com.rabbitmq.client.impl.ValueWriter;
  * requests and replies.
  */
 public class MapRpcServer extends RpcServer {
+    /**
+     * @param channel to serve on
+     * @throws IOException on communication error
+     */
     public MapRpcServer(Channel channel) throws IOException
     { super(channel); }
 
+    /**
+     * @param channel to server on
+     * @param queueName to listen on
+     * @throws IOException on communication error
+     */
     public MapRpcServer(Channel channel, String queueName) throws IOException
     { super(channel, queueName); }
 
@@ -53,7 +61,7 @@ public class MapRpcServer extends RpcServer {
         }
     }
 
-    public static Map<String, Object> decode(byte[] requestBody)
+    private static Map<String, Object> decode(byte[] requestBody)
         throws IOException
     {
         MethodArgumentReader reader =
@@ -64,7 +72,7 @@ public class MapRpcServer extends RpcServer {
         return request;
     }
 
-    public static byte[] encode(Map<String, Object> reply)
+    private static byte[] encode(Map<String, Object> reply)
         throws IOException
     {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -76,6 +84,9 @@ public class MapRpcServer extends RpcServer {
 
     /**
      * Delegates to handleMapCall(Map<String, Object>).
+     * @param request called for
+     * @param replyProperties pre-canned for reply
+     * @return reply map
      */
     public Map<String, Object> handleMapCall(Map<String, Object> request,
                                              AMQP.BasicProperties replyProperties)
@@ -85,6 +96,8 @@ public class MapRpcServer extends RpcServer {
 
     /**
      * Default implementation - override in subclasses. Returns the empty string.
+     * @param request called for
+     * @return response map
      */
     public Map<String, Object> handleMapCall(Map<String, Object> request)
     {
@@ -105,8 +118,8 @@ public class MapRpcServer extends RpcServer {
 
     /**
      * Default implementation - override in subclasses. Does nothing.
+     * @param requestBody cast for
      */
     public void handleMapCast(Map<String, Object> requestBody) {
-        // Do nothing.
     }
 }

@@ -38,23 +38,42 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Writer (to String) for JSON structures, with optional indention
+ */
 public class JSONWriter {
     private boolean indentMode = false;
     private int indentLevel = 0;
     private StringBuilder buf = new StringBuilder();
 
-    public JSONWriter() {}
-
-    public JSONWriter(boolean indenting) {
-        indentMode = indenting;
+    /**
+     * Basic constructor, no indents.
+     */
+    public JSONWriter() {
+        this(false);
     }
 
+    /**
+     * Constructor
+     * @param indentMode true for initial indention, false otherwise
+     */
+    public JSONWriter(boolean indentMode) {
+        this.indentMode = indentMode;
+    }
+
+    /**
+     * @return true if indenting; false otherwise
+     */
     public boolean getIndentMode() {
-        return indentMode;
+        return this.indentMode;
     }
 
-    public void setIndentMode(boolean value) {
-        indentMode = value;
+    /**
+     * Set indention mode
+     * @param indentMode true for indention; false otherwise
+     */
+    public void setIndentMode(boolean indentMode) {
+        this.indentMode = indentMode;
     }
 
     private void newline() {
@@ -64,24 +83,44 @@ public class JSONWriter {
         }
     }
 
+    /**
+     * @param object to write
+     * @return JSON string of object
+     */
     public String write(Object object) {
         buf.setLength(0);
         value(object);
         return buf.toString();
     }
 
+    /**
+     * @param n long integer to write
+     * @return JSON string of n
+     */
     public String write(long n) {
         return write(new Long(n));
     }
 
+    /**
+     * @param d double to write
+     * @return JSON string of d
+     */
     public Object write(double d) {
         return write(new Double(d));
     }
 
-    public String write(char c) {
+     /**
+     * @param c character to write
+     * @return JSON string of c
+     */
+   public String write(char c) {
         return write(new Character(c));
     }
 
+    /**
+     * @param b boolean to write
+     * @return JSON string of b
+     */
     public String write(boolean b) {
         return write(Boolean.valueOf(b));
     }
@@ -200,6 +239,7 @@ public class JSONWriter {
         }
         indentLevel -= 2; newline(); add('}');
     }
+
     private void mapEntry(Object key, Map<String, Object> map) {
         value(key);
         add(':');

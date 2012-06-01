@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client;
 
 import java.io.IOException;
@@ -37,6 +36,8 @@ public class RpcServer {
     /**
      * Creates an RpcServer listening on a temporary exclusive
      * autodelete queue.
+     * @param channel to listen on
+     * @throws IOException on channel errors
      */
     public RpcServer(Channel channel)
         throws IOException
@@ -48,6 +49,9 @@ public class RpcServer {
      * If the passed-in queue name is null, creates a server-named
      * temporary exclusive autodelete queue to use; otherwise expects
      * the queue to have already been declared.
+     * @param channel to listen on
+     * @param queueName of queue to use
+     * @throws IOException on channel errors
      */
     public RpcServer(Channel channel, String queueName)
         throws IOException
@@ -101,6 +105,7 @@ public class RpcServer {
      * handler.
      *
      * @return the exception that signalled the Channel shutdown, or null for orderly shutdown
+     * @throws IOException on channel errors
      */
     public ShutdownSignalException mainloop()
         throws IOException
@@ -135,9 +140,11 @@ public class RpcServer {
     }
 
     /**
-     * Private API - Process a single request. Called from mainloop().
+     * Process a single request. Called from mainloop().
+     * @param request to process
+     * @throws IOException on channel publish errors
      */
-    public void processRequest(QueueingConsumer.Delivery request)
+    private void processRequest(QueueingConsumer.Delivery request)
         throws IOException
     {
         AMQP.BasicProperties requestProperties = request.getProperties();
@@ -156,7 +163,10 @@ public class RpcServer {
 
     /**
      * Lowest-level response method. Calls
-     * handleCall(AMQP.BasicProperties,byte[],AMQP.BasicProperties).
+     * {@link #handleCall(AMQP.BasicProperties,byte[],AMQP.BasicProperties)}.
+     * @param request to handle
+     * @param replyProperties correlated reply properties
+     * @return message body of reply
      */
     public byte[] handleCall(QueueingConsumer.Delivery request,
                              AMQP.BasicProperties replyProperties)
@@ -168,7 +178,11 @@ public class RpcServer {
 
     /**
      * Mid-level response method. Calls
-     * handleCall(byte[],AMQP.BasicProperties).
+     * {@link #handleCall(byte[],AMQP.BasicProperties)}.
+     * @param requestProperties properties of request
+     * @param requestBody body of request
+     * @param replyProperties correlated reply properties
+     * @return message body of reply
      */
     public byte[] handleCall(AMQP.BasicProperties requestProperties,
                              byte[] requestBody,
@@ -181,6 +195,9 @@ public class RpcServer {
      * High-level response method. Returns an empty response by
      * default - override this (or other handleCall and handleCast
      * methods) in subclasses.
+     * @param requestBody body of request
+     * @param replyProperties correlated reply properties
+     * @return message body of reply
      */
     public byte[] handleCall(byte[] requestBody,
                              AMQP.BasicProperties replyProperties)
@@ -190,7 +207,8 @@ public class RpcServer {
 
     /**
      * Lowest-level handler method. Calls
-     * handleCast(AMQP.BasicProperties,byte[]).
+     * {@link #handleCast(AMQP.BasicProperties,byte[])}.
+     * @param request to handle
      */
     public void handleCast(QueueingConsumer.Delivery request)
     {
@@ -199,7 +217,9 @@ public class RpcServer {
 
     /**
      * Mid-level handler method. Calls
-     * handleCast(byte[]).
+     * {@link #handleCast(byte[])}.
+     * @param requestProperties properties of request
+     * @param requestBody body of request
      */
     public void handleCast(AMQP.BasicProperties requestProperties, byte[] requestBody)
     {
@@ -210,6 +230,7 @@ public class RpcServer {
      * High-level handler method. Does nothing by default - override
      * this (or other handleCast and handleCast methods) in
      * subclasses.
+     * @param requestBody body of request
      */
     public void handleCast(byte[] requestBody)
     {

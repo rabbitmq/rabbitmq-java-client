@@ -38,6 +38,10 @@ public class Utility {
         }
     }
 
+    /**
+     * @param throwable with stack trace to fix
+     * @return throwable (or clone) with fixed stack-trace
+     */
     public static <T extends Throwable & SensibleClone<T>> T fixStackTrace(T throwable) {
       throwable = throwable.sensibleClone();
 
@@ -71,6 +75,10 @@ public class Utility {
     }
 
 
+    /**
+     * @param throwable from which to get stack-trace
+     * @return printable string stack-trace
+     */
     public static String makeStackTrace(Throwable throwable) {
         ByteArrayOutputStream baOutStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(baOutStream, false);

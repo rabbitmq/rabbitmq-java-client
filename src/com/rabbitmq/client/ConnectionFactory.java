@@ -184,6 +184,9 @@ public class ConnectionFactory implements Cloneable {
      * URI is ommited, the ConnectionFactory's corresponding variable
      * is left unchanged.
      * @param uri is the AMQP URI containing the data
+     * @throws URISyntaxException URI format problem
+     * @throws NoSuchAlgorithmException no such protocol found
+     * @throws KeyManagementException SSL context cannot be initialised
      */
     public void setUri(URI uri)
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
@@ -237,12 +240,17 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting the fields in an AMQP URI: host,
      * port, username, password and virtual host.  If any part of the
-     * URI is ommited, the ConnectionFactory's corresponding variable
-     * is left unchanged.  Note that not all valid AMQP URIs are
+     * URI is omitted, the ConnectionFactory's corresponding variable
+     * is left unchanged.
+     * <p/>
+     * Note that not all valid AMQP URIs are
      * accepted; in particular, the hostname must be given if the
      * port, username or password are given, and escapes in the
      * hostname are not permitted.
      * @param uriString is the AMQP URI containing the data
+     * @throws URISyntaxException format problem with URI
+     * @throws NoSuchAlgorithmException protocol not known
+     * @throws KeyManagementException SSL context cannot be initialised
      */
     public void setUri(String uriString)
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
@@ -350,8 +358,8 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Gets the sasl config to use when authenticating
-     * @return
-     * @see com.rabbitmq.client.SaslConfig
+     * @return an implementation of the {@link SaslConfig} interface
+     * @see SaslConfig
      */
     public SaslConfig getSaslConfig() {
         return saslConfig;
@@ -359,15 +367,15 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Sets the sasl config to use when authenticating
-     * @param saslConfig
-     * @see com.rabbitmq.client.SaslConfig
+     * @param saslConfig an implementation of the {@link SaslConfig} interface
+     * @see SaslConfig
      */
     public void setSaslConfig(SaslConfig saslConfig) {
         this.saslConfig = saslConfig;
     }
 
     /**
-     * Retrieve the socket factory used to make connections with.
+     * @return the socket factory used to make connections with.
      */
     public SocketFactory getSocketFactory() {
         return this.factory;
@@ -377,6 +385,7 @@ public class ConnectionFactory implements Cloneable {
      * Set the socket factory used to make connections with. Can be
      * used to enable SSL connections by passing in a
      * javax.net.ssl.SSLSocketFactory instance.
+     * @param factory to generate socket
      *
      * @see #useSslProtocol
      */
@@ -384,6 +393,9 @@ public class ConnectionFactory implements Cloneable {
         this.factory = factory;
     }
 
+    /**
+     * @return true if uses an SSL Socket, false otherwise
+     */
     public boolean isSSL(){
         return getSocketFactory() instanceof SSLSocketFactory;
     }
@@ -391,6 +403,8 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting up a SSL socket factory, using
      * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
+     * @throws NoSuchAlgorithmException no such protocol
+     * @throws KeyManagementException cannot initialise context
      */
     public void useSslProtocol()
         throws NoSuchAlgorithmException, KeyManagementException
@@ -401,6 +415,9 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting up a SSL socket factory, using
      * the supplied protocol and a very trusting TrustManager.
+     * @param protocol to use
+     * @throws NoSuchAlgorithmException no such protocol
+     * @throws KeyManagementException cannot initialise context
      */
     public void useSslProtocol(String protocol)
         throws NoSuchAlgorithmException, KeyManagementException
@@ -413,6 +430,9 @@ public class ConnectionFactory implements Cloneable {
      * Pass in the SSL protocol to use, e.g. "TLS" or "SSLv3".
      *
      * @param protocol SSL protocol to use.
+     * @param trustManager SSL trust manager
+     * @throws NoSuchAlgorithmException no such protocol found
+     * @throws KeyManagementException SSL context cannot be initialised
      */
     public void useSslProtocol(String protocol, TrustManager trustManager)
         throws NoSuchAlgorithmException, KeyManagementException

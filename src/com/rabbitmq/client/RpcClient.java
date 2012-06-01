@@ -171,12 +171,27 @@ public class RpcClient {
         return consumer;
     }
 
+    /**
+     * Low-level publish as a result of a primitive call.
+     * @param props message properties
+     * @param message body of message
+     * @throws IOException if a {@link Channel#basicPublish} exception is thrown
+     */
     public void publish(AMQP.BasicProperties props, byte[] message)
         throws IOException
     {
         _channel.basicPublish(_exchange, _routingKey, props, message);
     }
 
+    /**
+     * Primitive call of Remote Procedure.
+     * @param props message properties
+     * @param message body of message
+     * @return body of returned value from RPC.
+     * @throws IOException if an error occurs
+     * @throws ShutdownSignalException if channel/connection shuts down during call
+     * @throws TimeoutException if no reply within (configured) timeout
+     */
     public byte[] primitiveCall(AMQP.BasicProperties props, byte[] message)
         throws IOException, ShutdownSignalException, TimeoutException
     {
