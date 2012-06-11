@@ -51,8 +51,10 @@ public class Frame {
     private final ByteArrayOutputStream accumulator;
 
     /**
-     * Constructs a frame for output with a type and a channel number and a
+     * Constructs a frame for <i>output</i> with a type and a channel number and a
      * fresh accumulator waiting for payload.
+     * @param type of new frame
+     * @param channel of new frame
      */
     public Frame(int type, int channel) {
         this.type = type;
@@ -62,8 +64,11 @@ public class Frame {
     }
 
     /**
-     * Constructs a frame for input with a type, a channel number and a
+     * Constructs a frame for <i>input</i> with a type, a channel number and a
      * payload byte array.
+     * @param type of new frame
+     * @param channel of new frame
+     * @param payload of new frame
      */
     public Frame(int type, int channel, byte[] payload) {
         this.type = type;
@@ -72,6 +77,15 @@ public class Frame {
         this.accumulator = null;
     }
 
+    /**
+     * Generate output frame from body fragment
+     * @param channelNumber channel of frame
+     * @param body bytes of body
+     * @param offset in body to write
+     * @param length of sub-array of body to write
+     * @return output frame with body
+     * @throws IOException write stream exception
+     */
     public static Frame fromBodyFragment(int channelNumber, byte[] body, int offset, int length)
         throws IOException
     {
@@ -84,8 +98,9 @@ public class Frame {
     /**
      * Protected API - Factory method to instantiate a Frame by reading an
      * AMQP-wire-protocol frame from the given input stream.
-     *
+     * @param is input stream
      * @return a new Frame if we read a frame successfully, otherwise null
+     * @throws IOException input stream exception or malformed frame
      */
     public static Frame readFrom(DataInputStream is) throws IOException {
         int type;
@@ -136,7 +151,7 @@ public class Frame {
      * @throws MalformedFrameException
      *                 if a corrupt AMQP protocol identifier is read
      */
-    public static void protocolVersionMismatch(DataInputStream is) throws IOException {
+    private static void protocolVersionMismatch(DataInputStream is) throws IOException {
         MalformedFrameException x;
 
         // We expect the letters M, Q, P in that order: generate an informative error if they're not found
@@ -183,7 +198,9 @@ public class Frame {
     }
 
     /**
-     * Public API - writes this Frame to the given DataOutputStream
+     * Public API - writes this Frame to the given {@link DataOutputStream}
+     * @param os output stream
+     * @throws IOException write exception
      */
     public void writeTo(DataOutputStream os) throws IOException {
         os.writeByte(type);
@@ -199,7 +216,8 @@ public class Frame {
     }
 
     /**
-     * Public API - retrieves the frame payload
+     * Public API - retrieves the (input or output) frame payload
+     * @return byte array payload of frame
      */
     public byte[] getPayload() {
         if (payload != null) return payload;
@@ -212,6 +230,7 @@ public class Frame {
 
     /**
      * Public API - retrieves a new DataInputStream streaming over the payload
+     * @return input stream reading payload bytes
      */
     public DataInputStream getInputStream() {
         return new DataInputStream(new ByteArrayInputStream(getPayload()));
@@ -219,6 +238,7 @@ public class Frame {
 
     /**
      * Public API - retrieves a fresh DataOutputStream streaming into the accumulator
+     * @return output stream writing to payload
      */
     public DataOutputStream getOutputStream() {
         return new DataOutputStream(accumulator);
@@ -236,6 +256,9 @@ public class Frame {
     }
 
     /** Computes the AMQP wire-protocol length of protocol-encoded table entries.
+     * @param table (map) to get protocol-format-size of
+     * @return size of protocol-encoded table in bytes
+     * @throws UnsupportedEncodingException should not occur
      */
     public static long tableSize(Map<String, Object> table)
         throws UnsupportedEncodingException
@@ -308,7 +331,11 @@ public class Frame {
         return acc;
     }
 
-    /** Computes the AMQP wire-protocol length of an encoded field-array of type List<?> */
+    /** Computes the AMQP wire-protocol length of an encoded field-array of type List<?>
+     * @param values list of fields to be encoded
+     * @return size of protocol-encoded list, in bytes
+     * @throws UnsupportedEncodingException should not occur
+     */
     public static long arraySize(List<?> values)
         throws UnsupportedEncodingException
     {
@@ -319,7 +346,11 @@ public class Frame {
         return acc;
     }
 
-    /** Computes the AMQP wire-protocol length of an encoded field-array of type Object[] */
+    /** Computes the AMQP wire-protocol length of an encoded field-array of type Object[]
+     * @param values array of fields to be encoded
+     * @return length of protocol-encoded list, in bytes
+     * @throws UnsupportedEncodingException should not occur
+     */
     public static long arraySize(Object[] values) throws UnsupportedEncodingException {
         long acc = 0;
         for (Object value : values) {

@@ -74,6 +74,12 @@ public abstract class Method implements com.rabbitmq.client.Method {
         return sb.toString();
     }
 
+    /**
+     * Create output frame from this method
+     * @param channelNumber of frame
+     * @return Frame encoding this method
+     * @throws IOException output stream exception
+     */
     public Frame toFrame(int channelNumber) throws IOException {
         Frame frame = new Frame(AMQP.FRAME_METHOD, channelNumber);
         DataOutputStream bodyOut = frame.getOutputStream();
