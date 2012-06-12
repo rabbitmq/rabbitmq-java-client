@@ -95,10 +95,17 @@ public class QueueingConsumer extends DefaultConsumer {
     // Invariant: This is never on _queue unless _shutdown != null.
     private static final Delivery POISON = new Delivery(null, null, null);
 
+    /**
+     * @param ch channel to attach this {@link Consumer} to
+     */
     public QueueingConsumer(Channel ch) {
         this(ch, new LinkedBlockingQueue<Delivery>());
     }
 
+    /**
+     * @param ch channel to attach this {@link Consumer} to
+     * @param q internal Java blocking queue to use
+     */
     public QueueingConsumer(Channel ch, BlockingQueue<Delivery> q) {
         super(ch);
         this._queue = q;
@@ -133,6 +140,11 @@ public class QueueingConsumer extends DefaultConsumer {
         private final AMQP.BasicProperties _properties;
         private final byte[] _body;
 
+        /**
+         * @param envelope containing parameters of message received
+         * @param properties of received message
+         * @param body of received message
+         */
         public Delivery(Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
             _envelope = envelope;
             _properties = properties;

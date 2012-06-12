@@ -23,12 +23,22 @@ import java.io.IOException;
  * Subclass of RpcServer which accepts UTF-8 string requests.
  */
 public class StringRpcServer extends RpcServer {
+    /**
+     * @param channel to use
+     * @throws IOException on channel errors
+     */
     public StringRpcServer(Channel channel) throws IOException
     { super(channel); }
 
+    /**
+     * @param channel to use
+     * @param queueName of queue to use
+     * @throws IOException on channel errors
+     */
     public StringRpcServer(Channel channel, String queueName) throws IOException
     { super(channel, queueName); }
 
+    /** Standard string encoding assumed by the server */
     public static String STRING_ENCODING = "UTF-8";
 
     /**
@@ -53,7 +63,10 @@ public class StringRpcServer extends RpcServer {
     }
 
     /**
-     * Delegates to handleStringCall(String).
+     * Delegates to {@link #handleStringCall(String)}.
+     * @param request string request to process
+     * @param replyProperties correlated reply properties
+     * @return string reply
      */
     public String handleStringCall(String request, AMQP.BasicProperties replyProperties)
     {
@@ -62,6 +75,8 @@ public class StringRpcServer extends RpcServer {
 
     /**
      * Default implementation - override in subclasses. Returns the empty string.
+     * @param request string request to process
+     * @return string reply
      */
     public String handleStringCall(String request)
     {
@@ -84,6 +99,7 @@ public class StringRpcServer extends RpcServer {
 
     /**
      * Default implementation - override in subclasses. Does nothing.
+     * @param requestBody string body of request
      */
     public void handleStringCast(String requestBody) {
         // Do nothing.

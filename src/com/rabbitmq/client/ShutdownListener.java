@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client;
 
 import java.util.EventListener;
@@ -28,5 +27,9 @@ import java.util.EventListener;
  * @see ShutdownSignalException
  */
 public interface ShutdownListener extends EventListener {
+    /**
+     * Called when shutdown is initiated, either for channels or the connection
+     * @param cause exception describing shutdown
+     */
     public void shutdownCompleted(ShutdownSignalException cause);
 }

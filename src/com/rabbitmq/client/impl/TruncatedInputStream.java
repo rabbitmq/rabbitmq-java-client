@@ -32,6 +32,10 @@ public class TruncatedInputStream extends FilterInputStream {
 
     private long mark = 0L;
 
+    /**
+     * @param in input stream to truncate
+     * @param limit number of bytes to allow before truncation
+     */
     public TruncatedInputStream(InputStream in, long limit) {
         super(in);
         this.limit = limit;

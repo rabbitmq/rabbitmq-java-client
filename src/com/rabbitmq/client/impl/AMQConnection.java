@@ -28,13 +28,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Method;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.LongString;
+import com.rabbitmq.client.Method;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.ProtocolVersionMismatchException;
@@ -42,7 +42,6 @@ import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingCell;
-import com.rabbitmq.utility.Utility;
 
 /**
  * Concrete class representing and managing an AMQP connection to a broker.
@@ -165,6 +164,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _frameHandler.getPort();
     }
 
+    /**
+     * @return frame handler for this connection
+     */
     public FrameHandler getFrameHandler(){
         return _frameHandler;
     }
@@ -422,8 +424,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Protected API - set the heartbeat timeout. Should only be called
+     * Protected API - set the heartbeat timeout running. Should only be called
      * during tuning.
+     * @param heartbeat in seconds between heartbeats (or traffic)
      */
     public void setHeartbeat(int heartbeat) {
         try {
@@ -444,9 +447,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Protected API - retrieve the current ExceptionHandler
+     * Retrieve the current ExceptionHandler (for the use of {@link ChannelN} and the {@link ConsumerDispatcher}.
      */
-    public ExceptionHandler getExceptionHandler() {
+    ExceptionHandler getExceptionHandler() {
         return _exceptionHandler;
     }
 
@@ -467,15 +470,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Public API - sends a frame directly to the broker.
+     * Sends a frame directly to the broker.
      */
-    public void writeFrame(Frame f) throws IOException {
-        _frameHandler.writeFrame(f);
+    void writeFrame(Frame frame) throws IOException {
+        _frameHandler.writeFrame(frame);
         _heartbeatSender.signalActivity();
     }
 
     /**
-     * Public API - flush the output buffers
+     * Public API - flush the frame output buffers
+     * @throws IOException if there is a connection problem
      */
     public void flush() throws IOException {
         _frameHandler.flush();
@@ -575,20 +579,23 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /**
      * Handles incoming control commands on channel zero.
+     * @param command command to handle
+     * @return true if command completely handled, false if not
+     * @throws IOException on transmit errors
      * @see ChannelN#processAsync
      */
-    public boolean processControlCommand(Command c) throws IOException
+    public boolean processControlCommand(Command command) throws IOException
     {
         // Similar trick to ChannelN.processAsync used here, except
         // we're interested in whole-connection quiescing.
 
         // See the detailed comments in ChannelN.processAsync.
 
-        Method method = c.getMethod();
+        Method method = command.getMethod();
 
         if (isOpen()) {
             if (method instanceof AMQP.Connection.Close) {
-                handleConnectionClose(c);
+                handleConnectionClose(command);
                 return true;
             } else {
                 return false;
@@ -613,7 +620,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
-    public void handleConnectionClose(Command closeCommand) {
+    private void handleConnectionClose(Command closeCommand) {
         ShutdownSignalException sse = shutdown(closeCommand, false, null, false);
         try {
             _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
@@ -647,7 +654,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * built from the argument, and stops this connection from accepting further work from the
      * application. {@link com.rabbitmq.client.ShutdownListener ShutdownListener}s for the
      * connection are notified when the main loop terminates.
-     * @param reason object being shutdown
+     * @param reason Object being shutdown, or Exception trigger, or String description
      * @param initiatedByApplication true if caused by a client command
      * @param cause trigger exception which caused shutdown
      * @param notifyRpc true if outstanding rpc should be informed of shutdown
@@ -732,27 +739,27 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /**
-     * Protected API - Delegates to {@link
-     * #close(int,String,boolean,Throwable,int,boolean) the
-     * six-argument close method}, passing -1 for the timeout, and
-     * false for the abort flag.
+     * Protected API - Delegates to {@link #close(int,String,boolean,Throwable,int,boolean) the six-argument close
+     * method}, passing <code>-1</code> for the timeout, and <code>false</code> for the abort flag.
+     *
+     * @param closeCode AMQP error code
+     * @param closeMessage AMQP message with code
+     * @param initiatedByApplication true if this was called from application code, false if this was caused by an
+     *        asynchronous event
+     * @param cause exception that caused closure, if any
+     * @throws IOException if already closed, or an error occurs
      */
-    public void close(int closeCode,
-                      String closeMessage,
-                      boolean initiatedByApplication,
-                      Throwable cause)
-        throws IOException
-    {
+    @SuppressWarnings("javadoc")
+    public void close(int closeCode, String closeMessage, boolean initiatedByApplication, Throwable cause) throws IOException {
         close(closeCode, closeMessage, initiatedByApplication, cause, -1, false);
     }
 
-    // TODO: Make this private
     /**
-     * Protected API - Close this connection with the given code, message, source
+     * Close this connection with the given code, message, source
      * and timeout value for all the close operations to complete.
      * Specifies if any encountered exceptions should be ignored.
      */
-    public void close(int closeCode,
+    private void close(int closeCode,
                       String closeMessage,
                       boolean initiatedByApplication,
                       Throwable cause,

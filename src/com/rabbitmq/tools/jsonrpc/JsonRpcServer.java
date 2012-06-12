@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.tools.jsonrpc;
 
 import java.io.IOException;
@@ -149,11 +148,15 @@ public class JsonRpcServer extends StringRpcServer {
     }
 
     /**
-     * Retrieves the best matching method for the given method name and parameters.
-     *
+     * Retrieves a matching method for the given method name and number of parameters.
+     * <p/>
      * Subclasses may override this if they have specialised
      * dispatching requirements, so long as they continue to honour
      * their ServiceDescription.
+     * @param methodName name of method
+     * @param params array of parameters
+     * @return matching Java Method for method and parameters
+     * @throws IllegalArgumentException if method not found
      */
     public Method matchingMethod(String methodName, Object[] params)
     {
@@ -165,6 +168,11 @@ public class JsonRpcServer extends StringRpcServer {
      * Construct and encode a JSON-RPC error response for the request
      * ID given, using the code, message, and possible
      * (JSON-encodable) argument passed in.
+     * @param id of request
+     * @param code of error
+     * @param message of error
+     * @param errorArg error object
+     * @return encoded JSON-RPC error response
      */
     public static String errorResponse(Object id, int code, String message, Object errorArg) {
         Map<String, Object> err = new HashMap<String, Object>();
@@ -178,6 +186,9 @@ public class JsonRpcServer extends StringRpcServer {
     /**
      * Construct and encode a JSON-RPC success response for the
      * request ID given, using the result value passed in.
+     * @param id of request
+     * @param result to return
+     * @return encoded JSON-RPC successful result
      */
     public static String resultResponse(Object id, Object result) {
         return response(id, "result", result);
@@ -186,7 +197,7 @@ public class JsonRpcServer extends StringRpcServer {
     /**
      * Private API - used by errorResponse and resultResponse.
      */
-    public static String response(Object id, String label, Object value) {
+    private static String response(Object id, String label, Object value) {
         Map<String, Object> resp = new HashMap<String, Object>();
         resp.put("version", ServiceDescription.JSON_RPC_VERSION);
         if (id != null) {
@@ -201,6 +212,7 @@ public class JsonRpcServer extends StringRpcServer {
     /**
      * Public API - gets the service description record that this
      * service built from interfaceClass at construction time.
+     * @return service description of this service
      */
     public ServiceDescription getServiceDescription() {
         return serviceDescription;

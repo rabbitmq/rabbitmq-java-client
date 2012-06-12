@@ -58,6 +58,7 @@ final class HeartbeatSender {
 
     /**
      * Sets the heartbeat in seconds.
+     * @param heartbeatSeconds interval between heartbeats in seconds
      */
     public void setHeartbeat(int heartbeatSeconds) {
         synchronized(this.monitor) {

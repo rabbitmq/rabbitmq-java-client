@@ -41,6 +41,7 @@ public class ContentHeaderPropertyWriter {
 
     /**
      * Constructs a fresh ContentHeaderPropertyWriter.
+     * @param out output stream to write to
      */
     public ContentHeaderPropertyWriter(DataOutputStream out) {
         this.out = new ValueWriter(out);
@@ -54,6 +55,11 @@ public class ContentHeaderPropertyWriter {
         bitCount = 0;
     }
 
+    /**
+     * Write one flag bit
+     * @param present true iff present
+     * @throws IOException on output exception
+     */
     public void writePresence(boolean present) throws IOException {
         if (bitCount == 15) {
             emitFlagWord(true);
@@ -66,46 +72,100 @@ public class ContentHeaderPropertyWriter {
         bitCount++;
     }
 
+    /**
+     * Stop writing flag bits
+     * @throws IOException on output exception
+     */
     public void finishPresence() throws IOException {
         emitFlagWord(false);
     }
 
+    /**
+     * Write string
+     * @param str to write
+     * @throws IOException on output exception
+     */
     public void writeShortstr(String str) throws IOException {
         out.writeShortstr(str);
     }
 
+    /**
+     * Write long string
+     * @param str to write
+     * @throws IOException on output exception
+     */
     public void writeLongstr(String str) throws IOException {
         out.writeLongstr(str);
     }
 
+    /**
+     * Write long string
+     * @param str to write
+     * @throws IOException on output exception
+     */
     public void writeLongstr(LongString str) throws IOException {
         out.writeLongstr(str);
     }
 
+    /**
+     * Write short integer
+     * @param s value to write
+     * @throws IOException on output exception
+     */
     public void writeShort(Integer s) throws IOException {
         out.writeShort(s);
     }
 
+    /**
+     * Write long integer
+     * @param l value to write
+     * @throws IOException in output exception
+     */
     public void writeLong(Integer l) throws IOException {
         out.writeLong(l);
     }
 
+    /**
+     * Write long long integer
+     * @param ll value to write
+     * @throws IOException on output exception
+     */
     public void writeLonglong(Long ll) throws IOException {
         out.writeLonglong(ll);
     }
 
+    /**
+     * Write table
+     * @param table (map) table to write
+     * @throws IOException on output exception
+     */
     public void writeTable(Map<String, Object> table) throws IOException {
         out.writeTable(table);
     }
 
+    /**
+     * Write octet (byte)
+     * @param octet byte value to write
+     * @throws IOException on output exception
+     */
     public void writeOctet(Integer octet) throws IOException {
         out.writeOctet(octet);
     }
 
+    /**
+     * Write octet (byte)
+     * @param octet byte value to write
+     * @throws IOException on output exception
+     */
     public void writeOctet(int octet) throws IOException {
         out.writeOctet(octet);
     }
 
+    /**
+     * Write timestamp
+     * @param timestamp ({@link Date}) value to write
+     * @throws IOException on output exception
+     */
     public void writeTimestamp(Date timestamp) throws IOException {
         out.writeTimestamp(timestamp);
     }

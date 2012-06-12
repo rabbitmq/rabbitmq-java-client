@@ -21,13 +21,16 @@ import java.io.IOException;
 
 import com.rabbitmq.client.BasicProperties;
 
+/**
+ * Implementation of {@link BasicProperties}
+ */
 public abstract class AMQBasicProperties
         extends AMQContentHeader implements BasicProperties {
 
     protected AMQBasicProperties() {
-        
+
     }
-    
+
     protected AMQBasicProperties(DataInputStream in) throws IOException {
         super(in);
     }

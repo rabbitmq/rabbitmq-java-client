@@ -162,7 +162,7 @@ public class MulticastMain {
     }
 
     private static List<?> lstArg(CommandLine cmd, char opt) {
-        String[] vals = cmd.getOptionValues('f');
+        String[] vals = cmd.getOptionValues(opt);
         if (vals == null) {
             vals = new String[] {};
         }

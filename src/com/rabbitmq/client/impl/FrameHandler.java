@@ -29,26 +29,32 @@ import java.net.SocketTimeoutException;
  */
 
 public interface FrameHandler {
-    /** Retrieve address of peer. */
+    /** Retrieve address of peer.
+     * @return IP address
+     */
     InetAddress getAddress();
 
-    /** Retrieve port number of peer. */
+    /** Retrieve port number of peer.
+     * @return port number
+     */
     int getPort();
 
     /**
      * Set the underlying socket's read timeout in milliseconds, if applicable.
      * @param timeoutMs The timeout in milliseconds
+     * @throws SocketException
      */
     void setTimeout(int timeoutMs) throws SocketException;
 
     /**
      * Get the underlying socket's read timeout in milliseconds.
      * @return The timeout in milliseconds
+     * @throws SocketException
      */
     int getTimeout() throws SocketException;
 
     /**
-     * Send the initial connection header, thus kickstarting the AMQP
+     * Send the initial connection header, thus kick-starting the AMQP
      * protocol version negotiation process and putting the underlying
      * connection in a state such that the next layer of startup can
      * proceed.

@@ -47,6 +47,9 @@ public class CRDemoMechanism implements SaslMechanism {
         }
     }
 
+    /**
+     * {@link SaslConfig} supplying {@link CRDemoMechanism}.
+     */
     public static class CRDemoSaslConfig implements SaslConfig {
         public SaslMechanism getSaslMechanism(String[] mechanisms)  {
             if (Arrays.asList(mechanisms).contains(NAME)) {

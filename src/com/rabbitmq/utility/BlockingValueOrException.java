@@ -18,21 +18,44 @@ package com.rabbitmq.utility;
 
 import java.util.concurrent.TimeoutException;
 
+/**
+ * A single value blocking placeholder that also is satisfied by an exception.
+ * @param <V> type of value accepted
+ * @param <E> type of exception accepted
+ */
 public class BlockingValueOrException<V, E extends Throwable & SensibleClone<E>>
     extends BlockingCell<ValueOrException<V, E>>
 {
+    /**
+     * @param v value to place in cell
+     */
     public void setValue(V v) {
         super.set(ValueOrException.<V, E>makeValue(v));
     }
 
+    /**
+     * @param e exception to place in cell
+     */
     public void setException(E e) {
         super.set(ValueOrException.<V, E>makeException(e));
     }
 
+    /**
+     * Wait until cell satisfied
+     * @return value if satisfied with value
+     * @throws E if satisfied with exception
+     */
     public V uninterruptibleGetValue() throws E {
         return uninterruptibleGet().getValue();
     }
 
+    /**
+     * Wait until cell satisfied, or until timeout
+     * @param timeout max time to wait
+     * @return value if satisfied with value
+     * @throws E if satisfied with exception
+     * @throws TimeoutException if no satisfaction within timeout
+     */
     public V uninterruptibleGetValue(int timeout) throws E, TimeoutException {
     	return uninterruptibleGet(timeout).getValue();
     }

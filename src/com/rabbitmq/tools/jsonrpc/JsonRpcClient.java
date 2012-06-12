@@ -40,7 +40,7 @@ import com.rabbitmq.tools.json.JSONWriter;
 	  requests over HTTP. RabbitMQ provides an AMQP transport
 	  binding for JSON-RPC in the form of
 	  the <code>JsonRpcClient</code> class.
-
+    <p/>
 	  JSON-RPC services are self-describing - each service is able
 	  to list its supported procedures, and each procedure
 	  describes its parameters and types. An instance of
@@ -64,7 +64,13 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * Construct a new JsonRpcClient, passing the parameters through
      * to RpcClient's constructor. The service description record is
      * retrieved from the server during construction.
-     * @throws TimeoutException if a response is not received within the timeout specified, if any
+     * @param channel to use to access broker
+     * @param exchange the exchange to connect to
+     * @param routingKey the routing key
+     * @param timeout milliseconds before timing out on waited response
+     * @throws IOException communication error
+     * @throws JsonRpcException JSON service description error
+     * @throws TimeoutException if a response is not received within the timeout specified
      */
     public JsonRpcClient(Channel channel, String exchange, String routingKey, int timeout)
         throws IOException, JsonRpcException, TimeoutException
@@ -73,6 +79,17 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
 	retrieveServiceDescription();
     }
 
+    /**
+     * Construct a new JsonRpcClient, passing the parameters through
+     * to RpcClient's constructor. The service description record is
+     * retrieved from the server during construction; waits indefinitely for response.
+     * @param channel to use to access broker
+     * @param exchange the exchange to connect to
+     * @param routingKey the routing key
+     * @throws IOException communication error
+     * @throws JsonRpcException JSON service description error
+     * @throws TimeoutException (should not be thrown)
+     */
     public JsonRpcClient(Channel channel, String exchange, String routingKey)
     throws IOException, JsonRpcException, TimeoutException
     {
@@ -81,8 +98,9 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
 
     /**
      * Private API - parses a JSON-RPC reply object, checking it for exceptions.
+     * @param reply object to parse
      * @return the result contained within the reply, if no exception is found
-     * Throws JsonRpcException if the reply object contained an exception
+     * @throws JsonRpcException if the reply object contained an exception
      */
     public static Object checkReply(Map<String, Object> reply)
         throws JsonRpcException
@@ -102,9 +120,12 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     /**
      * Public API - builds, encodes and sends a JSON-RPC request, and
      * waits for the response.
+     * @param method name of procedure to call
+     * @param params array of object parameters for call
      * @return the result contained within the reply, if no exception is found
+     * @throws IOException if communication fails
      * @throws JsonRpcException if the reply object contained an exception
-     * @throws TimeoutException if a response is not received within the timeout specified, if any
+     * @throws TimeoutException if a response is not received within the timeout specified
      */
     public Object call(String method, Object[] params) throws IOException, JsonRpcException, TimeoutException
     {
@@ -138,6 +159,9 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
 
     /**
      * Public API - gets a dynamic proxy for a particular interface class.
+     * @param klass interface class
+     * @return proxy instance
+     * @throws IllegalArgumentException if a proxy cannot be created
      */
     public Object createProxy(Class<?> klass)
         throws IllegalArgumentException
@@ -148,8 +172,14 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     }
 
     /**
-     * Private API - used by {@link #call(String[])} to ad-hoc convert
+     * Private API - used by {@link #call(String[])} to convert
      * strings into the required data types for a call.
+     * @param val string representation of value
+     * @param type type of value represented
+     * @return object of correct type and value
+     * @throws NumberFormatException if integers or floating point numbers aren't in the correct format
+     * @throws IllegalArgumentException if type is not one of <code>bit</code>, <code>num</code>,
+     * <code>str</code>, <code>arr</code>, <code>obj</code>, <code>any</code>, or <code>nil</code>.
      */
     public static Object coerce(String val, String type)
 	throws NumberFormatException
@@ -179,9 +209,11 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * parameters from subsequent entries. All parameter values are
      * passed through coerce() to attempt to make them the types the
      * server is expecting.
+     * @param args method name and arguments to call as array of strings
      * @return the result contained within the reply, if no exception is found
      * @throws JsonRpcException if the reply object contained an exception
      * @throws NumberFormatException if a coercion failed
+     * @throws IOException if communication error
      * @throws TimeoutException if a response is not received within the timeout specified, if any
      * @see #coerce
      */
@@ -208,6 +240,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     /**
      * Public API - gets the service description record that this
      * service loaded from the server itself at construction time.
+     * @return service description of this service
      */
     public ServiceDescription getServiceDescription() {
 	return serviceDescription;

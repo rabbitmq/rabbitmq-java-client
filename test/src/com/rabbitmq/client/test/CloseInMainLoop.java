@@ -75,9 +75,7 @@ public class CloseInMainLoop extends BrokerTestCase{
                           .close(AMQP.INTERNAL_ERROR,
                                  "Internal error in Consumer " + consumerTag,
                                  false,
-                                 exception,
-                                 -1,
-                                 false);
+                                 exception);
                     } catch (Throwable e) {
                         // Man, this clearly isn't our day.
                         // TODO: Log the nested failure

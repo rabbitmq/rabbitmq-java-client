@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client;
 
 import java.io.IOException;
@@ -24,6 +23,10 @@ import java.io.IOException;
  * events.
  */
 public interface FlowListener {
+    /**
+     * @param active current flow setting
+     * @throws IOException on error
+     */
     void handleFlow(boolean active)
         throws IOException;
 }

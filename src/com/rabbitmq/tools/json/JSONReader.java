@@ -29,6 +29,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * String Reader producing JSON structure Object
+ */
 public class JSONReader {
 
     private static final Object OBJECT_END = new Object();
@@ -77,6 +80,11 @@ public class JSONReader {
         } while (cont);
     }
 
+    /**
+     * Read a String interpreting it as a JSON structure
+     * @param string to read
+     * @return JSON structure
+     */
     public Object read(String string) {
         it = new StringCharacterIterator(string);
         c = it.first();

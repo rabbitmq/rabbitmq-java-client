@@ -46,6 +46,7 @@ public class SocketFrameHandler implements FrameHandler {
 
     /**
      * @param socket the socket to use
+     * @throws IOException stream creation exception
      */
     public SocketFrameHandler(Socket socket) throws IOException {
         _socket = socket;
@@ -58,7 +59,10 @@ public class SocketFrameHandler implements FrameHandler {
         return _socket.getInetAddress();
     }
 
-    // For testing only
+    /**
+     * For testing only
+     * @return input stream of {@link FrameHandler}
+     */
     public DataInputStream getInputStream() {
         return _inputStream;
     }

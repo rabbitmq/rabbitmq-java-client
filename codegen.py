@@ -165,22 +165,25 @@ def genJavaApi(spec):
 
     def printProtocolClass():
         print
+        print "    /** Protocol constants */"
         print "    public static class PROTOCOL {"
-        print "        public static final int MAJOR = %i;" % spec.major
-        print "        public static final int MINOR = %i;" % spec.minor
-        print "        public static final int REVISION = %i;" % spec.revision
-        print "        public static final int PORT = %i;" % spec.port
+        print "        /** Major version */ public static final int MAJOR = %i;" % spec.major
+        print "        /** Minor version */ public static final int MINOR = %i;" % spec.minor
+        print "        /** Revision      */ public static final int REVISION = %i;" % spec.revision
+        print "        /** Default port  */ public static final int PORT = %i;" % spec.port
         print "    }"
 
     def printConstants():
         print
-        for (c,v,cls) in spec.constants: print "    public static final int %s = %i;" % (java_constant_name(c), v)
+        for (c,v,cls) in spec.constants:
+            print "    /** %s */" % (c)
+            print "    public static final int %s = %i;" % (java_constant_name(c), v)
 
     def builder(c,m):
         def ctorCall(c,m):
-            ctor_call = "com.rabbitmq.client.impl.AMQImpl.%s.%s" % (java_class_name(c.name),java_class_name(m.name))
+            ctor = "com.rabbitmq.client.impl.AMQImpl.%s.%s" % (java_class_name(c.name),java_class_name(m.name))
             ctor_arg_list = [ java_field_name(a.name) for a in m.arguments ]
-            print "                    return new %s(%s);" % (ctor_call, ", ".join(ctor_arg_list))
+            print "                    return new %s(%s);" % (ctor, ", ".join(ctor_arg_list))
 
         def genFields(spec, m):
             for a in m.arguments:
@@ -194,27 +197,34 @@ def genJavaApi(spec):
             for a in m.arguments:
                 (jfType, jfName, jfDefault) = typeNameDefault(spec, a)
 
+                print "                /** @param %s set field %s" % (jfName, a.name)
+                print "                 *  @return updated builder */"
                 print "                public Builder %s(%s %s)" % (jfName, jfType, jfName)
                 print "                {   this.%s = %s; return this; }" % (jfName, jfName)
 
                 if jfType == "boolean":
+                    print "                /** set flag %s" % (a.name)
+                    print "                 *  @return updated builder */"
                     print "                public Builder %s()" % (jfName)
                     print "                {   return this.%s(true); }" % (jfName)
                 elif jfType == "LongString":
+                    print "                /** @param %s set field %s as String" % (jfName, a.name)
+                    print "                 *  @return updated builder */"
                     print "                public Builder %s(String %s)" % (jfName, jfName)
                     print "                {   return this.%s(LongStringHelper.asLongString(%s)); }" % (jfName, jfName)
 
         def genBuildMethod(c,m):
+            print "                /** @return %s */" % (m.name)
             print "                public %s build() {" % (java_class_name(m.name))
             ctorCall(c,m)
             print "                }"
 
         print
-        print "            // Builder for instances of %s.%s" % (java_class_name(c.name), java_class_name(m.name))
+        print "            /** Builder for instances of %s.%s */" % (java_class_name(c.name), java_class_name(m.name))
         print "            public static final class Builder"
         print "            {"
         genFields(spec, m)
-        print
+        print "                /** constructor */"
         print "                public Builder() { }"
         print
         genArgMethods(spec, m)
@@ -223,11 +233,13 @@ def genJavaApi(spec):
 
     def printClassInterfaces():
         for c in spec.classes:
-            print
+            print "    /** %s */" % (c.name)
             print "    public static class %s {" % (java_class_name(c.name))
             for m in c.allMethods():
+                print "        /** %s */" % (m.name)
                 print "        public interface %s extends Method {" % ((java_class_name(m.name)))
                 for a in m.arguments:
+                    print "            /** @return %s */" % (a.name)
                     print "            %s %s();" % (java_field_type(spec, a.domain), java_getter_name(a.name))
                 builder(c,m)
                 print "        }"
@@ -274,34 +286,41 @@ def genJavaApi(spec):
         print "        }"
 
     def printPropertiesBuilderClass(c):
-        def printBuilderSetter(fieldType, fieldName):
+        def printBuilderSetter(fieldType, fName):
+            fieldName = java_field_name(fName)
+            print "            /** @param %s set field %s" % (fieldName, fName)
+            print "             *  @return updated builder */"
             print "            public Builder %s(%s %s)" % (fieldName, java_boxed_type(fieldType), fieldName)
             print "            {   this.%s = %s; return this; }" % (fieldName, fieldName)
             if fieldType == "boolean":
+                print "            /** set flag %s" % (fName)
+                print "             *  @return updated builder */"
                 print "            public Builder %s()" % (fieldName)
                 print "            {   return this.%s(true); }" % (fieldName)
             elif fieldType == "LongString":
+                print "            /** @param %s set field %s as String" % (fieldName, fName)
+                print "             *  @return updated builder */"
                 print "            public Builder %s(String %s)" % (fieldName, fieldName)
                 print "            {   return this.%s(LongStringHelper.asLongString(%s)); }" % (fieldName, fieldName)
 
-        print
+        objName = "%sProperties" % (java_class_name(c.name))
+        print "        /** Builder for instances of %s */" % (objName)
         print "        public static final class Builder {"
         # fields
         for f in c.fields:
             (fType, fName) = (java_field_type(spec, f.domain), java_field_name(f.name))
             print "            private %s %s;" % (java_boxed_type(fType), fName)
         # ctor
-        print
+        print "            /** constructor */"
         print "            public Builder() {};"
         # setters
         print
         for f in c.fields:
-            printBuilderSetter(java_field_type(spec, f.domain), java_field_name(f.name))
+            printBuilderSetter(java_field_type(spec, f.domain), f.name)
         print
-        jClassName = java_class_name(c.name)
         # build()
-        objName = "%sProperties" % (jClassName)
         ctor_parm_list = [ java_field_name(f.name) for f in c.fields ]
+        print "            /** @return %s properties */" % (c.name)
         print "            public %s build() {" % (objName)
         print "                return new %s" % (objName)
         print "                    ( %s" % ("\n                    , ".join(ctor_parm_list))
@@ -311,7 +330,7 @@ def genJavaApi(spec):
         print "        }"
 
     def printPropertiesBuilder(c):
-        print
+        print "        /** @return pre-initialised Builder */"
         print "        public Builder builder() {"
         print "            Builder builder = new Builder()"
         setFieldList = [ "%s(%s)" % (fn, fn)
@@ -324,9 +343,11 @@ def genJavaApi(spec):
     def printPropertiesClass(c):
         def printGetter(fieldType, fieldName):
             capFieldName = fieldName[0].upper() + fieldName[1:]
+            print "        /** @return %s */" % (fieldName)
             print "        public %s get%s() { return this.%s; }" % (java_boxed_type(fieldType), capFieldName, fieldName)
         def printSetter(fieldType, fieldName):
             capFieldName = fieldName[0].upper() + fieldName[1:]
+            print "        /** @param %s to set */" % (fieldName)
             print "        @Deprecated"
             if fieldType == "Map<String,Object>":
                 print "        public void set%s(%s %s)" % (capFieldName, fieldType, fieldName)
@@ -337,6 +358,7 @@ def genJavaApi(spec):
         jClassName = java_class_name(c.name)
 
         print
+        print "    /** %s properties class */" % (c.name)
         print "    public static class %sProperties extends com.rabbitmq.client.impl.AMQ%sProperties {" % (jClassName, jClassName)
         #property fields
         for f in c.fields:
@@ -348,6 +370,8 @@ def genJavaApi(spec):
             print
             consParmList = [ "%s %s" % (java_boxed_type(java_field_type(spec,f.domain)), java_field_name(f.name))
                              for f in c.fields ]
+            print "        /** explicit constructor with all fields */"
+            print "        @SuppressWarnings(\"javadoc\")"
             print "        public %sProperties(" % (jClassName)
             print "            %s)" % (",\n            ".join(consParmList))
             print "        {"
@@ -361,6 +385,8 @@ def genJavaApi(spec):
 
         #datainputstream constructor
         print
+        print "        /** @param in stream"
+        print "         * @throws IOException on stream error */"
         print "        public %sProperties(DataInputStream in) throws IOException {" % (jClassName)
         print "            super(in);"
         print "            ContentHeaderPropertyReader reader = new ContentHeaderPropertyReader(in);"
@@ -369,7 +395,7 @@ def genJavaApi(spec):
         
         print "        }"
 
-        # default constructor
+        print "        /** default constructor */"
         print "        public %sProperties() {}" % (jClassName)
 
         #class properties
@@ -398,6 +424,7 @@ def genJavaApi(spec):
 
     printHeader()
     print
+    print "/** AMQP interface (generated) */"
     print "public interface AMQP {"
 
     printProtocolClass()
@@ -426,8 +453,9 @@ def genJavaImpl(spec):
         print "import com.rabbitmq.client.UnexpectedMethodError;"
 
     def printClassMethods(spec, c):
-        print
+        print "    /** %s */" % (c.name)
         print "    public static class %s {" % (java_class_name(c.name))
+        print "        /** index of %s */" % (c.name)
         print "        public static final int INDEX = %s;" % (c.index)
         for m in c.allMethods():
 
@@ -435,11 +463,15 @@ def genJavaImpl(spec):
                 if m.arguments:
                     print
                     for a in m.arguments:
+                        print "            /** @return field %s */" % (a.name)
                         print "            public %s %s() { return %s; }" % (java_field_type(spec,a.domain), java_getter_name(a.name), java_field_name(a.name))
 
             def constructors():
                 print
                 argList = [ "%s %s" % (java_field_type(spec,a.domain),java_field_name(a.name)) for a in m.arguments ]
+                print "            /** explicit constructor */"
+                if argList:
+                    print "            @SuppressWarnings(\"javadoc\")"
                 print "            public %s(%s) {" % (java_class_name(m.name), ", ".join(argList))
 
                 fieldsToNullCheckInCons = nullCheckedFields(spec, m)
@@ -458,6 +490,8 @@ def genJavaImpl(spec):
                 print "            }"
 
                 consArgs = [ "rdr.read%s()" % (java_class_name(spec.resolveDomain(a.domain))) for a in m.arguments ]
+                print "            /** @param rdr reader for constructor"
+                print "             * @throws IOException on reader error */"
                 print "            public %s(MethodArgumentReader rdr) throws IOException {" % (java_class_name(m.name))
                 print "                this(%s);" % (", ".join(consArgs))
                 print "            }"
@@ -499,10 +533,12 @@ def genJavaImpl(spec):
 
             #start
             print
+            print "        /** Method %s */" % (m.name)
             print "        public static class %s" % (java_class_name(m.name),)
             print "            extends Method"
             print "            implements com.rabbitmq.client.AMQP.%s.%s" % (java_class_name(c.name), java_class_name(m.name))
             print "        {"
+            print "            /** method index */"
             print "            public static final int INDEX = %s;" % (m.index)
             print
             for a in m.arguments:
@@ -520,14 +556,19 @@ def genJavaImpl(spec):
 
     def printMethodVisitor():
         print
+        print "    /** visitor for methods */"
         print "    public interface MethodVisitor {"
         for c in spec.allClasses():
             for m in c.allMethods():
+                print "        /** @param x (%s.%s visited)" % (c.name, m.name)
+                print "         * @return anything"
+                print "         * @throws IOException on error */"
                 print "        Object visit(%s.%s x) throws IOException;" % (java_class_name(c.name), java_class_name(m.name))
         print "    }"
 
         #default method visitor
         print
+        print "    /** default method visitor that expects no methods */"
         print "    public static class DefaultMethodVisitor implements MethodVisitor {"
         for c in spec.allClasses():
             for m in c.allMethods():
@@ -536,6 +577,9 @@ def genJavaImpl(spec):
 
     def printMethodArgumentReader():
         print
+        print "    /** @param in stream"
+        print "     * @return method read"
+        print "     * @throws IOException on read error */"
         print "    public static Method readMethodFrom(DataInputStream in) throws IOException {"
         print "        int classId = in.readShort();"
         print "        int methodId = in.readShort();"
@@ -557,6 +601,9 @@ def genJavaImpl(spec):
 
     def printContentHeaderReader():
         print
+        print "    /** @param in stream"
+        print "     * @return content header"
+        print "     * @throws IOException on read error */"
         print "    public static AMQContentHeader readContentHeaderFrom(DataInputStream in) throws IOException {"
         print "        int classId = in.readShort();"
         print "        switch (classId) {"
@@ -571,6 +618,7 @@ def genJavaImpl(spec):
 
     printHeader()
     print
+    print "/** Implementation of AMQP */"
     print "public class AMQImpl implements AMQP {"
 
     for c in spec.allClasses(): printClassMethods(spec,c)

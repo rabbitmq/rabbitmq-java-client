@@ -419,7 +419,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    private void callFlowListeners(@SuppressWarnings("unused") Command command, Channel.Flow channelFlow) {
+    private void callFlowListeners(Command command, Channel.Flow channelFlow) {
         try {
             for (FlowListener l : this.flowListeners) {
                 l.handleFlow(channelFlow.getActive());
@@ -429,7 +429,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    private void callConfirmListeners(@SuppressWarnings("unused") Command command, Basic.Ack ack) {
+    private void callConfirmListeners(Command command, Basic.Ack ack) {
         try {
             for (ConfirmListener l : this.confirmListeners) {
                 l.handleAck(ack.getDeliveryTag(), ack.getMultiple());
@@ -439,7 +439,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    private void callConfirmListeners(@SuppressWarnings("unused") Command command, Basic.Nack nack) {
+    private void callConfirmListeners(Command command, Basic.Nack nack) {
         try {
             for (ConfirmListener l : this.confirmListeners) {
                 l.handleNack(nack.getDeliveryTag(), nack.getMultiple());
@@ -967,8 +967,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-
-    /** Public API - {@inheritDoc} */
+     /** Public API - {@inheritDoc} */
     public Basic.RecoverOk basicRecover()
         throws IOException
     {

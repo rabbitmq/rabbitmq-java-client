@@ -46,10 +46,20 @@ public final class ChannelManager {
     /** Maximum channel number available on this connection. */
     private final int _channelMax;
 
+    /**
+     * @return maximum number of channels this manager can hold
+     */
     public int getChannelMax(){
       return _channelMax;
     }
 
+    /**
+     * Construct a <code>ChannelManager</code> using the provided work service for {@link com.rabbitmq.client.Consumer
+     * Consumer} callbacks managing up to <code>channelMax</code> channels.
+     *
+     * @param workService for {@link com.rabbitmq.client.Consumer Consumer} callbacks
+     * @param channelMax max number of channels managed.
+     */
     public ChannelManager(ConsumerWorkService workService, int channelMax) {
         if (channelMax == 0) {
             // The framing encoding only allows for unsigned 16-bit integers
@@ -108,6 +118,12 @@ public final class ChannelManager {
         shutdownThread.start();
     }
 
+    /**
+     * Create, add and open a new channel, allocating an unused channel number.
+     * @param connection which channel uses
+     * @return newly created channel, or null if there are no numbers left
+     * @throws IOException creating or opening channel
+     */
     public ChannelN createChannel(AMQConnection connection) throws IOException {
         ChannelN ch;
         synchronized (this.monitor) {
@@ -122,6 +138,13 @@ public final class ChannelManager {
         return ch;
     }
 
+    /**
+     * Create, add and open a new channel, using supplied channel number.
+     * @param connection which channel uses
+     * @param channelNumber number to use for channel
+     * @return newly created channel, or null if number already in use
+     * @throws IOException creating or opening channel
+     */
     public ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
         ChannelN ch;
         synchronized (this.monitor) {
@@ -151,9 +174,10 @@ public final class ChannelManager {
     }
 
     /**
-     * Remove the channel from the channel map and free the number for re-use.
-     * This method must be safe to call multiple times on the same channel. If
-     * it is not then things go badly wrong.
+     * Remove the channel from the channel map and free the number for re-use. This method must be safe to call multiple
+     * times on the same channel. If it is not then things go badly wrong.
+     *
+     * @param channel whose number is to be released
      */
     public void releaseChannelNumber(ChannelN channel) {
         // Warning, here be dragons. Not great big ones, but little baby ones

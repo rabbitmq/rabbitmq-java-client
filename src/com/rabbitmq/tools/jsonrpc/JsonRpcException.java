@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.tools.jsonrpc;
 
 import java.util.Map;
@@ -25,9 +24,7 @@ import com.rabbitmq.tools.json.JSONWriter;
  * Thrown when a JSON-RPC service indicates an error occurred during a call.
  */
 public class JsonRpcException extends Exception {
-    /**
-     * Default serialized version ID
-     */
+    /** Default serialized version ID */
     private static final long serialVersionUID = 1L;
     /** Usually the constant string, "JSONRPCError" */
     public String name;
@@ -38,10 +35,16 @@ public class JsonRpcException extends Exception {
     /** Error detail object - may not always be present or meaningful */
     public Object error;
 
+    /**
+     * Default constructor, null name, zero code, null message, null error object
+     */
     public JsonRpcException() {
-        // no work needed in default no-arg constructor
     }
 
+    /**
+     * Construct exception decribed by error map
+     * @param errorMap from which to construct exception
+     */
     public JsonRpcException(Map<String, Object> errorMap) {
 	super(new JSONWriter().write(errorMap));
 	name = (String) errorMap.get("name");
