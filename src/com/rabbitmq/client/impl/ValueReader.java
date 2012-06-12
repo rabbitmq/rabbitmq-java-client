@@ -36,7 +36,7 @@ import com.rabbitmq.client.MalformedFrameException;
  */
 public class ValueReader
 {
-    private static final long INT_MASK = 0xffffffff;
+    private static final long INT_MASK = 0xffffffffL;
 
     /**
      * Protected API - Cast an int to a long without extending the
