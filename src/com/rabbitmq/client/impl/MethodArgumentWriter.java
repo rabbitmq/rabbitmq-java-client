@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
@@ -39,7 +38,8 @@ public class MethodArgumentWriter
     private int bitMask;
 
     /**
-     * Constructs a MethodArgumentWriter targetting the given DataOutputStream.
+     * Constructs a MethodArgumentWriter targeting the given DataOutputStream.
+     * @param out writer
      */
     public MethodArgumentWriter(ValueWriter out)
     {
@@ -67,7 +67,10 @@ public class MethodArgumentWriter
         }
     }
 
-    /** Public API - encodes a short string argument. */
+    /** Public API - encodes a short string argument.
+     * @param str string to encode (as short string)
+     * @throws IOException writer exception
+     */
     public final void writeShortstr(String str)
         throws IOException
     {
@@ -75,7 +78,10 @@ public class MethodArgumentWriter
         out.writeShortstr(str);
     }
 
-    /** Public API - encodes a long string argument from a LongString. */
+    /** Public API - encodes a long string argument from a LongString.
+     * @param str LongString to encode (as long string)
+     * @throws IOException writer exception
+     */
     public final void writeLongstr(LongString str)
         throws IOException
     {
@@ -83,7 +89,10 @@ public class MethodArgumentWriter
         out.writeLongstr(str);
     }
 
-    /** Public API - encodes a long string argument from a String. */
+    /** Public API - encodes a long string argument from a String.
+     * @param str string to encode (as long string)
+     * @throws IOException writer exception
+     */
     public final void writeLongstr(String str)
         throws IOException
     {
@@ -91,7 +100,10 @@ public class MethodArgumentWriter
         out.writeLongstr(str);
     }
 
-    /** Public API - encodes a short integer argument. */
+    /** Public API - encodes a short integer argument.
+     * @param s int to encode (as short int)
+     * @throws IOException writer exception
+     */
     public final void writeShort(int s)
         throws IOException
     {
@@ -99,7 +111,10 @@ public class MethodArgumentWriter
         out.writeShort(s);
     }
 
-    /** Public API - encodes an integer argument. */
+    /** Public API - encodes an integer argument.
+     * @param l int to encode (as long)
+     * @throws IOException writer exception
+     */
     public final void writeLong(int l)
         throws IOException
     {
@@ -107,7 +122,10 @@ public class MethodArgumentWriter
         out.writeLong(l);
     }
 
-    /** Public API - encodes a long integer argument. */
+    /** Public API - encodes a long integer argument.
+     * @param ll long to encode (as long long)
+     * @throws IOException writer exception
+     */
     public final void writeLonglong(long ll)
         throws IOException
     {
@@ -115,7 +133,10 @@ public class MethodArgumentWriter
         out.writeLonglong(ll);
     }
 
-    /** Public API - encodes a boolean/bit argument. */
+    /** Public API - encodes a boolean/bit argument.
+     * @param b boolean to encode (as bit)
+     * @throws IOException writer exception
+     */
     public final void writeBit(boolean b)
         throws IOException
     {
@@ -131,7 +152,10 @@ public class MethodArgumentWriter
         needBitFlush = true;
     }
 
-    /** Public API - encodes a table argument. */
+    /** Public API - encodes a table argument.
+     * @param table map to encode (as table)
+     * @throws IOException writer exception
+     */
     public final void writeTable(Map<String, Object> table)
         throws IOException
     {
@@ -139,7 +163,10 @@ public class MethodArgumentWriter
         out.writeTable(table);
     }
 
-    /** Public API - encodes an octet argument from an int. */
+    /** Public API - encodes an octet argument from an int.
+     * @param octet int to encode (as octet)
+     * @throws IOException writer exception
+     */
     public final void writeOctet(int octet)
         throws IOException
     {
@@ -147,15 +174,10 @@ public class MethodArgumentWriter
         out.writeOctet(octet);
     }
 
-    /** Public API - encodes an octet argument from a byte. */
-    public final void writeOctet(byte octet)
-        throws IOException
-    {
-        bitflush();
-        out.writeOctet(octet);
-    }
-
-    /** Public API - encodes a timestamp argument. */
+    /** Public API - encodes a timestamp argument.
+     * @param timestamp Date to encode (as timestamp)
+     * @throws IOException writer exception
+     */
     public final void writeTimestamp(Date timestamp)
         throws IOException
     {
@@ -166,6 +188,7 @@ public class MethodArgumentWriter
     /**
      * Public API - call this to ensure all accumulated argument
      * values are correctly written to the output stream.
+     * @throws IOException writer exception
      */
     public void flush()
         throws IOException

@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
@@ -50,6 +49,7 @@ public class MethodArgumentReader
 
     /**
      * Construct a MethodArgumentReader from the given {@link ValueReader}.
+     * @param in reader
      */
     public MethodArgumentReader(ValueReader in)
     {
@@ -57,7 +57,10 @@ public class MethodArgumentReader
         clearBits();
     }
 
-    /** Public API - reads a short string argument. */
+    /** Public API - reads a short string argument.
+     * @return string read
+     * @throws IOException reader exception
+     */
     public final String readShortstr()
         throws IOException
     {
@@ -65,7 +68,10 @@ public class MethodArgumentReader
         return in.readShortstr();
     }
 
-    /** Public API - reads a long string argument. */
+    /** Public API - reads a long string argument.
+     * @return string read
+     * @throws IOException reader exception
+     */
     public final LongString readLongstr()
         throws IOException
     {
@@ -73,7 +79,10 @@ public class MethodArgumentReader
         return in.readLongstr();
     }
 
-    /** Public API - reads a short integer argument. */
+    /** Public API - reads a short integer argument.
+     * @return int read
+     * @throws IOException reader exception
+     */
     public final int readShort()
         throws IOException
     {
@@ -81,7 +90,10 @@ public class MethodArgumentReader
         return in.readShort();
     }
 
-    /** Public API - reads an integer argument. */
+    /** Public API - reads an integer argument.
+     * @return int read
+     * @throws IOException reader exception
+     */
     public final int readLong()
         throws IOException
     {
@@ -89,7 +101,10 @@ public class MethodArgumentReader
         return in.readLong();
     }
 
-    /** Public API - reads a long integer argument. */
+    /** Public API - reads a long integer argument.
+     * @return long read
+     * @throws IOException reader exception
+     */
     public final long readLonglong()
         throws IOException
     {
@@ -97,7 +112,10 @@ public class MethodArgumentReader
         return in.readLonglong();
     }
 
-    /** Public API - reads a bit/boolean argument. */
+    /** Public API - reads a bit/boolean argument.
+     * @return boolean (bit) read
+     * @throws IOException reader exception
+     */
     public final boolean readBit()
         throws IOException
     {
@@ -111,7 +129,10 @@ public class MethodArgumentReader
         return result;
     }
 
-    /** Public API - reads a table argument. */
+    /** Public API - reads a table argument.
+     * @return map (table) read
+     * @throws IOException reader exception
+     */
     public final Map<String, Object> readTable()
         throws IOException
     {
@@ -119,7 +140,10 @@ public class MethodArgumentReader
         return in.readTable();
     }
 
-    /** Public API - reads an octet argument. */
+    /** Public API - reads an octet argument.
+     * @return int (byte) read
+     * @throws IOException reader exception
+     */
     public final int readOctet()
         throws IOException
     {
@@ -127,7 +151,10 @@ public class MethodArgumentReader
         return in.readOctet();
     }
 
-    /** Public API - reads an timestamp argument. */
+    /** Public API - reads an timestamp argument.
+     * @return Date (timestamp) read
+     * @throws IOException reader exception
+     */
     public final Date readTimestamp()
         throws IOException
     {

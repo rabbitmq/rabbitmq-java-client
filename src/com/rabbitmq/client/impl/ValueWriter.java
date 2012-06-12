@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.impl;
 
 import java.io.DataOutputStream;
@@ -36,12 +35,19 @@ public class ValueWriter
 {
     private final DataOutputStream out;
 
+    /**
+     * @param out output stream
+     */
     public ValueWriter(DataOutputStream out)
     {
         this.out = out;
     }
 
-    /** Public API - encodes a short string. */
+    /** Public API - encodes a short string.
+     * @param str string to encode (as short string)
+     * @throws IOException output stream exception
+     * @throws IllegalArgumentException if string is too long
+     */
     public final void writeShortstr(String str)
         throws IOException
     {
@@ -56,10 +62,16 @@ public class ValueWriter
         out.write(bytes);
     }
 
-    /** Public API - encodes a long string from a LongString. */
+    /** Public API - encodes a long string from a LongString.
+     * @param str LongString to encode (as long string)
+     * @throws IOException output stream exception
+     */
     public final void writeLongstr(LongString str)
         throws IOException
     {
+        // when 2**31 <= str.length() <= 2**32 - 1 (== max length of LongString)
+        // the (int) conversion will produce a negative int, but the right bits
+        // will be written as for an unsigned 32 bit integer.
         writeLong((int)str.length());
         copy(str.getStream(), out);
     }
@@ -75,7 +87,10 @@ public class ValueWriter
         }
     }
 
-    /** Public API - encodes a long string from a String. */
+    /** Public API - encodes a long string from a String.
+     * @param str string to encode (as long string)
+     * @throws IOException output stream exception
+     */
     public final void writeLongstr(String str)
         throws IOException
     {
@@ -84,32 +99,44 @@ public class ValueWriter
         out.write(bytes);
     }
 
-    /** Public API - encodes a short integer. */
+    /** Public API - encodes a short integer.
+     * @param s int to encode (as a short integer)
+     * @throws IOException output stream exception
+     */
     public final void writeShort(int s)
         throws IOException
     {
         out.writeShort(s);
     }
 
-    /** Public API - encodes an integer. */
+    /** Public API - encodes an integer.
+     * @param l int to encode (as four-byte long)
+     * @throws IOException output stream exception
+     */
     public final void writeLong(int l)
         throws IOException
     {
-        // java's arithmetic on this type is signed, however it's
+        // Java arithmetic on this type is signed, however it's
         // reasonable to use ints to represent the unsigned long
-        // type - for values < Integer.MAX_VALUE everything works
-        // as expected
+        // type - for values <= Integer.MAX_VALUE everything works
+        // as expected and for up to 2**32 - 1 the bits are OK, too.
         out.writeInt(l);
     }
 
-    /** Public API - encodes a long integer. */
+    /** Public API - encodes a long integer.
+     * @param ll long to encode (as eight-byte long long)
+     * @throws IOException output stream exception
+     */
     public final void writeLonglong(long ll)
         throws IOException
     {
         out.writeLong(ll);
     }
 
-    /** Public API - encodes a table. */
+    /** Public API - encodes a table.
+     * @param table map to encode (as table)
+     * @throws IOException output stream exception
+     */
     public final void writeTable(Map<String, Object> table)
         throws IOException
     {
@@ -126,6 +153,11 @@ public class ValueWriter
         }
     }
 
+    /**
+     * Write an appropriate encoded value, based upon the (non scalar) type of value.
+     * @param value to write
+     * @throws IOException output stream exception
+     */
     public final void writeFieldValue(Object value)
         throws IOException
     {
@@ -210,6 +242,10 @@ public class ValueWriter
         }
     }
 
+    /**
+     * @param value list to encode (as array)
+     * @throws IOException output stream exception
+     */
     public final void writeArray(List<?> value)
         throws IOException
     {
@@ -224,6 +260,10 @@ public class ValueWriter
         }
     }
 
+    /**
+     * @param value array of objects to encode (as array)
+     * @throws IOException output stream exception
+     */
     public final void writeArray(Object[] value)
         throws IOException
     {
@@ -238,21 +278,20 @@ public class ValueWriter
         }
     }
 
-    /** Public API - encodes an octet from an int. */
+    /** Public API - encodes an octet from an int.
+     * @param octet int to encode (as octet)
+     * @throws IOException output stream exception
+     */
     public final void writeOctet(int octet)
         throws IOException
     {
         out.writeByte(octet);
     }
 
-    /** Public API - encodes an octet from a byte. */
-    public final void writeOctet(byte octet)
-        throws IOException
-    {
-        out.writeByte(octet);
-    }
-
-    /** Public API - encodes a timestamp. */
+    /** Public API - encodes a timestamp.
+     * @param timestamp Date to encode (as timestamp)
+     * @throws IOException output stream exception
+     */
     public final void writeTimestamp(Date timestamp)
         throws IOException
     {
@@ -263,6 +302,7 @@ public class ValueWriter
     /**
      * Public API - call this to ensure all accumulated
      * values are correctly written to the output stream.
+     * @throws IOException output stream exception
      */
     public void flush()
         throws IOException
