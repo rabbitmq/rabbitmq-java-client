@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.impl;
 
 import java.io.DataInputStream;
@@ -53,6 +52,7 @@ public class ValueReader
 
     /**
      * Construct a MethodArgumentReader streaming over the given DataInputStream.
+     * @param in input stream
      */
     public ValueReader(DataInputStream in)
     {
@@ -70,7 +70,10 @@ public class ValueReader
         return new String(b, "utf-8");
     }
 
-    /** Public API - reads a short string. */
+    /** Public API - reads a short string.
+     * @return string read
+     * @throws IOException stream read exception
+     */
     public final String readShortstr()
         throws IOException
     {
@@ -104,28 +107,40 @@ public class ValueReader
     }
 
 
-    /** Public API - reads a long string. */
+    /** Public API - reads a long string.
+     * @return string read
+     * @throws IOException stream read exception
+     */
     public final LongString readLongstr()
         throws IOException
     {
         return readLongstr(this.in);
     }
 
-    /** Public API - reads a short integer. */
+    /** Public API - reads a short integer.
+     * @return int read
+     * @throws IOException stream read exception
+     */
     public final int readShort()
         throws IOException
     {
         return in.readUnsignedShort();
     }
 
-    /** Public API - reads an integer. */
+    /** Public API - reads an integer.
+     * @return int read
+     * @throws IOException stream read exception
+     */
     public final int readLong()
         throws IOException
     {
         return in.readInt();
     }
 
-    /** Public API - reads a long integer. */
+    /** Public API - reads a long integer.
+     * @return long read
+     * @throws IOException stream read exception
+     */
     public final long readLonglong()
         throws IOException
     {
@@ -141,7 +156,7 @@ public class ValueReader
     {
         long tableLength = unsignedExtend(in.readInt());
         if (tableLength == 0) return Collections.emptyMap();
-        
+
         Map<String, Object> table = new HashMap<String, Object>();
         DataInputStream tableIn = new DataInputStream
             (new TruncatedInputStream(in, tableLength));
@@ -225,14 +240,20 @@ public class ValueReader
         return array;
     }
 
-    /** Public API - reads a table. */
+    /** Public API - reads a table.
+     * @return map (table) read
+     * @throws IOException stream read exception
+     */
     public final Map<String, Object> readTable()
         throws IOException
     {
         return readTable(this.in);
     }
 
-    /** Public API - reads an octet. */
+    /** Public API - reads an octet.
+     * @return int (byte) read
+     * @throws IOException stream read exception
+     */
     public final int readOctet()
         throws IOException
     {
@@ -247,7 +268,10 @@ public class ValueReader
     }
 
 
-    /** Public API - reads an timestamp. */
+    /** Public API - reads an timestamp.
+     * @return Date read
+     * @throws IOException stream read exception
+     */
     public final Date readTimestamp()
         throws IOException
     {
