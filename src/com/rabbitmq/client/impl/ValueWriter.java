@@ -154,7 +154,7 @@ public class ValueWriter
     }
 
     /**
-     * Write an appropriate encoded value, based upon the (non scalar) type of value.
+     * Write an appropriate encoded value, based upon the (non primitive) type of value.
      * @param value to write
      * @throws IOException output stream exception
      */

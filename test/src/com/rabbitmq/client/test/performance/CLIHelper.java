@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test.performance;
 
 import java.util.Iterator;
@@ -28,12 +27,15 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 /**
- * Super class for handling repetative CLI stuff
+ * Super class for handling repetitive CLI stuff
  */
 public class CLIHelper {
 
     private Options options = new Options();
 
+    /**
+     * @return the default helper
+     */
     public static CLIHelper defaultHelper() {
         Options opts = new Options();
         opts.addOption(new Option( "help", "print this message"));
@@ -42,6 +44,9 @@ public class CLIHelper {
         return new CLIHelper(opts);
     }
 
+    /**
+     * @param opts options
+     */
     public CLIHelper(Options opts) {
         Iterator<?> it = opts.getOptions().iterator();
         while (it.hasNext()) {
@@ -49,10 +54,17 @@ public class CLIHelper {
         }
     }
 
+    /**
+     * @param option to add
+     */
     public void addOption(Option option) {
         options.addOption(option);
     }
 
+    /**
+     * @param args array of argument strings
+     * @return a parsed CommandLine
+     */
     public CommandLine parseCommandLine(String [] args) {
         CommandLineParser parser = new GnuParser();
         CommandLine commandLine = null;
@@ -71,11 +83,17 @@ public class CLIHelper {
         return commandLine;
     }
 
-    public void printHelp(Options options) {
+    private void printHelp(Options options) {
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp(getClass().getSimpleName(), options);
     }
 
+    /**
+     * @param cmd parsed command line
+     * @param s option key string
+     * @param i default (int) value
+     * @return int option value
+     */
     public static int getOptionValue(CommandLine cmd, String s, int i) {
         return Integer.parseInt(cmd.getOptionValue(s, i + ""));
     }

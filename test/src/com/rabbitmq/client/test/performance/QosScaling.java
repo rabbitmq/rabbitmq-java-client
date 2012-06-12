@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test.performance;
 
 import com.rabbitmq.client.AMQP;
@@ -30,6 +29,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 
+/**
+ * Qos scaling performance
+ */
 public class QosScaling {
 
     protected static class Parameters {
@@ -73,6 +75,9 @@ public class QosScaling {
     protected Connection connection;
     protected Channel channel;
 
+    /**
+     * @param p parameters
+     */
     public QosScaling(Parameters p) {
         params = p;
     }
@@ -121,6 +126,10 @@ public class QosScaling {
         return finish - start;
     }
 
+    /**
+     * @return elapsed time in nanoseconds
+     * @throws IOException any connection/channel exception
+     */
     public long run() throws IOException {
         connectionFactory.setHost(params.host);
         connectionFactory.setPort(params.port);
@@ -138,6 +147,10 @@ public class QosScaling {
         }
     }
 
+    /**
+     * @param args command line parameters
+     * @throws Exception from running test
+     */
     public static void main(String[] args) throws Exception {
         CommandLine cmd = Parameters.parseCommandLine(args);
         if (cmd == null) return;

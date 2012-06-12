@@ -24,13 +24,16 @@ import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 /**
- * Test for bug 19356 - SSL Support in rabbitmq
+ * Test for bug 19356 - SSL Support in RabbitMQ
  *
  */
 public class UnverifiedConnection extends BrokerTestCase {
 
+    /** exception caught - unused */
     public Exception caughtException = null;
+    /** whether completed - unused */
     public boolean completed = false;
+    /** whether created - read by this test only */
     public boolean created = false;
 
     public void openConnection()
@@ -58,7 +61,10 @@ public class UnverifiedConnection extends BrokerTestCase {
         }
     }
 
-    public void testSSL() throws IOException
+    /**
+     * @throws Exception test
+     */
+    public void testSSL() throws Exception
     {
         channel.queueDeclare("Bug19356Test", false, true, true, null);
         channel.basicPublish("", "Bug19356Test", null, "SSL".getBytes());
@@ -69,5 +75,5 @@ public class UnverifiedConnection extends BrokerTestCase {
         byte[] body = chResponse.getBody();
         assertEquals("SSL", new String(body));
     }
-    
+
 }

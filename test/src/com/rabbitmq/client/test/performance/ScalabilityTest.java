@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test.performance;
 
 import java.io.FileOutputStream;
@@ -193,10 +192,17 @@ public class ScalabilityTest {
 
     private final Parameters params;
 
+    /**
+     * @param p parameters
+     */
     public ScalabilityTest(Parameters p) {
         params = p;
     }
 
+    /**
+     * @param args command line arguments array
+     * @throws Exception from run or print
+     */
     public static void main(String[] args) throws Exception {
         Parameters params = parseArgs(args);
         if (params == null) return;
@@ -208,6 +214,10 @@ public class ScalabilityTest {
     }
 
 
+    /**
+     * @return results
+     * @throws Exception connection/channel exceptions
+     */
     public Results run() throws Exception{
         Connection con = new ConnectionFactory(){{setHost(params.host); setPort(params.port);}}.newConnection();
         Channel channel = con.createChannel();

@@ -48,6 +48,9 @@ public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
 
     private static final byte[] msg = "".getBytes();
 
+    /**
+     * @throws Exception test
+     */
     public void testEffectVisibility() throws Exception {
 
         for (int i = 0; i < BATCHES; i++) {

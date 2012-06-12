@@ -20,7 +20,13 @@ package com.rabbitmq.client.test.ssl;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+/**
+ * SSL tests
+ */
 public class SSLTests extends TestCase {
+    /**
+     * @return test suite for SSL tests
+     */
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("ssl");
         suite.addTestSuite(UnverifiedConnection.class);

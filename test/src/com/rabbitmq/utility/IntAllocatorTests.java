@@ -23,6 +23,9 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
+/**
+ * IntAllocatorTests
+ */
 public class IntAllocatorTests extends TestCase {
 
     private static final int TEST_ITERATIONS = 50000;
@@ -32,6 +35,9 @@ public class IntAllocatorTests extends TestCase {
 
     private final Random rand = new Random(70608L);
 
+    /**
+     * @throws Exception test
+     */
     public void testReserveAndFree() throws Exception {
         Set<Integer> set = new HashSet<Integer>();
         for (int i = 0; i < TEST_ITERATIONS; ++i) {
@@ -50,6 +56,9 @@ public class IntAllocatorTests extends TestCase {
         }
     }
 
+    /**
+     * @throws Exception test
+     */
     public void testAllocateAndFree() throws Exception {
         Set<Integer> set = new HashSet<Integer>();
         for (int i=0; i < TEST_ITERATIONS; ++i) {
@@ -71,6 +80,9 @@ public class IntAllocatorTests extends TestCase {
         }
     }
 
+    /**
+     * @throws Exception test
+     */
     public void testToString() throws Exception {
         IntAllocator ibs = new IntAllocator(LO_RANGE, HI_RANGE);
         assertEquals("IntAllocator{allocated = []}", ibs.toString());

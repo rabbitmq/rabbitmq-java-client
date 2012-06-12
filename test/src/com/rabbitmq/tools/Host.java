@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.tools;
 
 import java.io.BufferedReader;
@@ -22,6 +21,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+/**
+ * Host
+ */
 public class Host {
 
     private static String capture(InputStream is)
@@ -36,6 +38,10 @@ public class Host {
         return buff.toString();
     }
 
+    /**
+     * @param command to execute
+     * @throws IOException from process exception or if non-zero exit value
+     */
     public static void executeCommand(String command) throws IOException
     {
         Process pr = executeCommandProcess(command);
@@ -60,7 +66,11 @@ public class Host {
         return pr.exitValue();
     }
 
-    public static void executeCommandIgnoringErrors(String command) throws IOException
+    /**
+     * @param command to execute
+     * @throws IOException from process exception
+     */
+    private static void executeCommandIgnoringErrors(String command) throws IOException
     {
         Process pr = executeCommandProcess(command);
         waitForExitValue(pr);
@@ -84,11 +94,19 @@ public class Host {
         return Runtime.getRuntime().exec(finalCommand);
     }
 
-    public static void rabbitmqctl(String command) throws IOException {
-        executeCommand("../rabbitmq-server/scripts/rabbitmqctl " + command);
+    /**
+     * @param args ctl command arguments to execute
+     * @throws IOException from process exception or if non-zero exit value
+     */
+    public static void rabbitmqctl(String args) throws IOException {
+        executeCommand("../rabbitmq-server/scripts/rabbitmqctl " + args);
     }
 
-    public static void rabbitmqctlIgnoreErrors(String command) throws IOException {
-        executeCommandIgnoringErrors("../rabbitmq-server/scripts/rabbitmqctl " + command);
+    /**
+     * @param args ctl command arguments to execute
+     * @throws IOException from process exception
+     */
+    public static void rabbitmqctlIgnoreErrors(String args) throws IOException {
+        executeCommandIgnoringErrors("../rabbitmq-server/scripts/rabbitmqctl " + args);
     }
 }
