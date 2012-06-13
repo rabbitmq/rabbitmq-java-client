@@ -5,6 +5,9 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 
+/**
+ * Persistence tests
+ */
 public class PersistenceGuarantees extends BrokerTestCase {
     private static final int COUNT = 10000;
     private String queue;
@@ -13,6 +16,10 @@ public class PersistenceGuarantees extends BrokerTestCase {
         queue = channel.queueDeclare("", true, false, false, null).getQueue();
     }
 
+    /**
+     * Persistence after commit
+     * @throws Exception test
+     */
     public void testTxPersistence() throws Exception {
         declareQueue();
         channel.txSelect();
@@ -22,6 +29,10 @@ public class PersistenceGuarantees extends BrokerTestCase {
         assertPersisted();
     }
 
+    /**
+     * Persistence after confirmation
+     * @throws Exception test
+     */
     public void testConfirmPersistence() throws Exception {
         declareQueue();
         channel.confirmSelect();

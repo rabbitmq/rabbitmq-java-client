@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Firehose testcase
+ */
 public class Firehose extends BrokerTestCase {
     private String q;
     private String firehose;
@@ -22,7 +25,10 @@ public class Firehose extends BrokerTestCase {
         channel.queueBind(firehose, "amq.rabbitmq.trace", "#");
     }
 
-    public void testFirehose() throws IOException {
+    /**
+     * @throws Exception test
+     */
+    public void testFirehose() throws Exception {
         publishGet("not traced");
         enable();
         GetResponse msg = publishGet("traced");
@@ -47,7 +53,7 @@ public class Firehose extends BrokerTestCase {
         assertEquals(msg.getBody().length, deliver.getBody().length);
     }
 
-    private GetResponse publishGet(String key) throws IOException {
+    private GetResponse publishGet(String key) throws Exception {
         basicPublishVolatile("test", key);
         return basicGet(q);
     }
@@ -59,11 +65,11 @@ public class Firehose extends BrokerTestCase {
         assertEquals("traced", routing_keys.get(0).toString());
     }
 
-    private void enable() throws IOException {
+    private void enable() throws Exception {
         Host.rabbitmqctl("trace_on");
     }
 
-    private void disable() throws IOException {
+    private void disable() throws Exception {
         Host.rabbitmqctl("trace_off");
     }
 }

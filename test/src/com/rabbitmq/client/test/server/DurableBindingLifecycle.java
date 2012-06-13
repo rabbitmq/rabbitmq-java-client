@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.GetResponse;
@@ -56,9 +55,10 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
     }
 
     /**
-     *   Tests whether durable bindings are correctly recovered.
+     * Tests whether durable bindings are correctly recovered.
+     * @throws Exception test
      */
-    public void testDurableBindingRecovery() throws IOException {
+    public void testDurableBindingRecovery() throws Exception {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q, X, K);
 
@@ -76,22 +76,23 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
 
     /**
      * This tests whether the bindings attached to a durable exchange
-     * are correctly blown away when the exhange is nuked.
-     *
-     * This complements a unit test for testing non-durable exhanges.
+     * are correctly blown away when the exchange is nuked.
+     * <p/>
+     * This complements a unit test for testing non-durable exchanges.
      * In that case, an exchange is deleted and you expect any
      * bindings hanging to it to be deleted as well. To verify this,
      * the exchange is deleted and then recreated.
-     *
+     * <p/>
      * After the recreation, the old bindings should no longer exist
      * and hence any messages published to that exchange get routed to
-     * /dev/null
-     *
+     * <code>/dev/null</code>.
+     * <p/>
      * This test exercises the durable variable of that test, so the
      * main difference is that the broker has to be restarted to
      * verify that the durable routes have been turfed.
+     * @throws Exception test
      */
-    public void testDurableBindingsDeletion() throws IOException {
+    public void testDurableBindingsDeletion() throws Exception {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q, X, K);
 
@@ -116,11 +117,12 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
     /**
      * This tests whether the default bindings for durable queues
      * are recovered properly.
-     *
+     * <p/>
      * The idea is to create a durable queue, nuke the server and then
      * publish a message to it using the queue name as a routing key
+     * @throws Exception test
      */
-    public void testDefaultBindingRecovery() throws IOException {
+    public void testDefaultBindingRecovery() throws Exception {
         declareDurableQueue(Q);
 
         restart();
@@ -136,9 +138,12 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
     /**
      * Test that when we have a transient exchange bound to a durable
      * queue and the durable queue is on a cluster node that restarts,
-     * we do not lose the binding.  See bug 24009.
+     * we do not lose the binding.
+     * <p/>
+     * See <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=24009">bug 24009</a>.
+     * @throws Exception test
      */
-    public void testTransientExchangeDurableQueue() throws IOException {
+    public void testTransientExchangeDurableQueue() throws Exception {
         // This test depends on the second node in the cluster to keep
         // the transient X alive
         if (clusteredConnection != null) {

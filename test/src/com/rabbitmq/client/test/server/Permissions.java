@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.AlreadyClosedException;
@@ -32,11 +31,17 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.impl.AMQChannel;
 import com.rabbitmq.tools.Host;
 
+/**
+ * Permissions tests
+ */
 public class Permissions extends BrokerTestCase
 {
 
     private Channel adminCh;
 
+    /**
+     * Basic constructor resets ConnectionFactory
+     */
     public Permissions()
     {
         ConnectionFactory factory = new ConnectionFactory();
@@ -81,8 +86,7 @@ public class Permissions extends BrokerTestCase
         Host.rabbitmqctlIgnoreErrors("delete_user test");
     }
 
-    protected void createResources()
-        throws IOException
+    protected void createResources() throws IOException
     {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setUsername("testadmin");
@@ -97,8 +101,7 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    protected void releaseResources()
-        throws IOException
+    protected void releaseResources() throws IOException
     {
         withNames(new WithName() {
                 public void with(String name) throws IOException {
@@ -108,8 +111,7 @@ public class Permissions extends BrokerTestCase
         adminCh.getConnection().abort();
     }
 
-    protected void withNames(WithName action)
-        throws IOException
+    protected void withNames(WithName action) throws IOException
     {
         action.with("configure");
         action.with("write");
@@ -117,6 +119,9 @@ public class Permissions extends BrokerTestCase
         action.with("none");
     }
 
+    /**
+     * Test (correct) authentication failure
+     */
     public void testAuth()
     {
         ConnectionFactory unAuthFactory = new ConnectionFactory();
@@ -134,8 +139,11 @@ public class Permissions extends BrokerTestCase
         }
     }
 
-    public void testExchangeConfiguration()
-        throws IOException
+    /**
+     * Exchange permissions
+     * @throws Exception test
+     */
+    public void testExchangeConfiguration() throws Exception
     {
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
@@ -147,8 +155,11 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testQueueConfiguration()
-        throws IOException
+    /**
+     * Queue permissions
+     * @throws Exception test
+     */
+    public void testQueueConfiguration() throws Exception
     {
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
@@ -160,7 +171,12 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testPassiveDeclaration() throws IOException {
+    /**
+     * Passive declaration permissions
+     * @throws Exception test
+     */
+    public void testPassiveDeclaration() throws Exception
+    {
         runTest(true, true, true, true, new WithName() {
                 public void with(String name) throws IOException {
                     channel.exchangeDeclarePassive(name);
@@ -171,8 +187,11 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testBinding()
-        throws IOException
+    /**
+     * Binding permissions
+     * @throws Exception test
+     */
+    public void testBinding() throws Exception
     {
         runTest(false, true, false, false, new WithName() {
                 public void with(String name) throws IOException {
@@ -184,8 +203,11 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testPublish()
-        throws IOException
+    /**
+     * Publish permissions
+     * @throws Exception test
+     */
+    public void testPublish() throws Exception
     {
         runTest(false, true, false, false, new WithName() {
                 public void with(String name) throws IOException {
@@ -196,8 +218,11 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testGet()
-        throws IOException
+    /**
+     * Get permissions
+     * @throws Exception test
+     */
+    public void testGet() throws Exception
     {
         runTest(false, false, true, false, new WithName() {
                 public void with(String name) throws IOException {
@@ -205,8 +230,11 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testConsume()
-        throws IOException
+    /**
+     * Consume permissions
+     * @throws Exception test
+     */
+    public void testConsume() throws Exception
     {
         runTest(false, false, true, false, new WithName() {
                 public void with(String name) throws IOException {
@@ -214,8 +242,11 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testPurge()
-        throws IOException
+    /**
+     * Purge permissions
+     * @throws Exception test
+     */
+    public void testPurge() throws Exception
     {
         runTest(false, false, true, false, new WithName() {
                 public void with(String name) throws IOException {
@@ -226,8 +257,11 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testAltExchConfiguration()
-        throws IOException
+    /**
+     * Alternate Exchange permissions
+     * @throws Exception test
+     */
+    public void testAltExchConfiguration() throws Exception
     {
         runTest(false, false, false, false,
                 createAltExchConfigTest("configure-me"));
@@ -237,8 +271,11 @@ public class Permissions extends BrokerTestCase
                 createAltExchConfigTest("configure-and-read-me"));
     }
 
-    public void testNoAccess()
-        throws IOException, InterruptedException
+    /**
+     * Test access denied
+     * @throws Exception test
+     */
+    public void testNoAccess() throws Exception
     {
         Host.rabbitmqctl("set_permissions -p /test test \"\" \"\" \"\"");
         Thread.sleep(2000);

@@ -24,6 +24,9 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
+/**
+ * MemoryAlarms tests
+ */
 public class MemoryAlarms extends BrokerTestCase {
 
     private static final String Q = "Restart";
@@ -73,7 +76,11 @@ public class MemoryAlarms extends BrokerTestCase {
         Host.executeCommand("cd ../rabbitmq-test; make clear-resource-alarm SOURCE=" + source);
     }
 
-    public void testFlowControl() throws IOException, InterruptedException {
+    /**
+     * Test flow control on and off
+     * @throws Exception test
+     */
+    public void testFlowControl() throws Exception {
         basicPublishVolatile(Q);
         setResourceAlarm("memory");
         // non-publish actions only after an alarm should be fine
@@ -95,7 +102,11 @@ public class MemoryAlarms extends BrokerTestCase {
     }
 
 
-    public void testOverlappingAlarmsFlowControl() throws IOException, InterruptedException {
+    /**
+     * Test flow control with multiple alarm triggering
+     * @throws Exception test
+     */
+    public void testOverlappingAlarmsFlowControl() throws Exception {
         QueueingConsumer c = new QueueingConsumer(channel);
         String consumerTag = channel.basicConsume(Q, true, c);
 

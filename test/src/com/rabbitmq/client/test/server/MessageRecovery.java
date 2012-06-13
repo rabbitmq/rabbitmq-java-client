@@ -18,11 +18,17 @@ package com.rabbitmq.client.test.server;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.ConfirmBase;
 
+/**
+ * Very simple MessageRecovery test
+ */
 public class MessageRecovery extends ConfirmBase
 {
 
     private final static String Q = "recovery-test";
 
+    /**
+     * @throws Exception test
+     */
     public void testMessageRecovery()
         throws Exception
     {

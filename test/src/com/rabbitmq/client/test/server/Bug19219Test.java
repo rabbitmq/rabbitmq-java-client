@@ -31,8 +31,9 @@ import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 /**
- * Test for bug 19219 - timeouts due to task parallelism in channel
- * closure code.
+ * Test for
+ * <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=19219">bug 19219</a>
+ * <br/>timeouts due to task parallelism in channel closure code.
  */
 public class Bug19219Test extends BrokerTestCase {
 
@@ -55,6 +56,9 @@ public class Bug19219Test extends BrokerTestCase {
     private static final Semaphore init = new Semaphore(0);
     private static final CountDownLatch resume = new CountDownLatch(1);
 
+    /**
+     * @return test suite Bug19219
+     */
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("Bug19219");
         suite.addTestSuite(Bug19219Test.class);
@@ -68,7 +72,11 @@ public class Bug19219Test extends BrokerTestCase {
                         new byte[0]);
     }
 
-    public void testIt() throws IOException, InterruptedException {
+    /**
+     * The single test in this suite
+     * @throws Exception test
+     */
+    public void testIt() throws Exception {
 
         final Consumer c = new DefaultConsumer(channel);
 

@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
@@ -40,8 +39,11 @@ public class ExclusiveQueueDurability extends BrokerTestCase {
         }
     }
 
-    // 1) connection and queue are on same node, node restarts -> queue
-    // should no longer exist
+    /**
+     * 1) connection and queue are on same node, node restarts -> queue
+     * should no longer exist
+     * @throws Exception test
+     */
     public void testConnectionQueueSameNode() throws Exception {
         channel.queueDeclare("scenario1", true, true, false, null);
         restartPrimaryAbruptly();

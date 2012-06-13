@@ -14,27 +14,36 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test.server;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.io.IOException;
 
 import com.rabbitmq.client.test.functional.ExchangeEquivalenceBase;
 
+/**
+ * Simple AlternateExchangeEquivalence tests
+ */
 public class AlternateExchangeEquivalence extends ExchangeEquivalenceBase {
     static Map<String, Object> args = new HashMap<String, Object>();
     {
         args.put("alternate-exchange", "UME");
     }
 
-    public void testAlternateExchangeEquivalence() throws IOException {
+    /**
+     * test equivalence success
+     * @throws Exception test
+     */
+    public void testAlternateExchangeEquivalence() throws Exception {
         channel.exchangeDeclare("alternate", "direct", false, false, args);
         verifyEquivalent("alternate", "direct", false, false, args);
     }
 
-    public void testAlternateExchangeNonEquivalence() throws IOException {
+    /**
+     * test equivalence failure
+     * @throws Exception test
+     */
+    public void testAlternateExchangeNonEquivalence() throws Exception {
         channel.exchangeDeclare("alternate", "direct", false, false, args);
         Map<String, Object> altargs = new HashMap<String, Object>();
         altargs.put("alternate-exchange", "somewhere");

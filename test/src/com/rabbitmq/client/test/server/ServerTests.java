@@ -14,13 +14,18 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test.server;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+/**
+ * ServerTests suite collection
+ */
 public class ServerTests extends TestCase {
+    /**
+     * @return all server tests in a single suite
+     */
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("server-tests");
         suite.addTestSuite(Permissions.class);
