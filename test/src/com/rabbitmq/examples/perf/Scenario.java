@@ -16,8 +16,21 @@
 
 package com.rabbitmq.examples.perf;
 
+/**
+ * Named "runnable" that generates {@link ScenarioStats}
+ */
 public interface Scenario {
+    /**
+     * @return name of scenario
+     */
     public String getName();
+    /**
+     * Execute scenario
+     * @throws Exception possible failure outcome
+     */
     public void run() throws Exception;
+    /**
+     * @return statistics from the scenario run
+     */
     public ScenarioStats getStats();
 }

@@ -26,19 +26,33 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+/**
+ * <code>Consumer</code> for tests based upon {@link QueueingConsumer}
+ */
 public class Consumer implements Runnable {
 
-    private QueueingConsumer q;
-    private Channel channel;
-    private String           id;
-    private String           queueName;
-    private int              txSize;
-    private boolean          autoAck;
-    private int              multiAckEvery;
-    private Stats stats;
-    private int              msgLimit;
-    private long             timeLimit;
+    private final Channel    channel;
+    private final String     id;
+    private final String     queueName;
+    private final int        txSize;
+    private final boolean    autoAck;
+    private final int        multiAckEvery;
+    private final Stats      stats;
+    private final int        msgLimit;
+    private final long       timeLimit;
 
+    /**
+     * Sole constructor
+     * @param channel to consume from
+     * @param id of producer/consumer routing key
+     * @param queueName to consume from
+     * @param txSize batching size (in messages consumed) for transactions, or zero for no transactions
+     * @param autoAck consume <code>autoAck</code> option
+     * @param multiAckEvery batching size for acks, or zero if acked individually, ignored if <code>autoAck</code> is <code>true</code>
+     * @param stats collector for timing statistics
+     * @param msgLimit limit of number of messages consumed, or zero if no limit
+     * @param timeLimit limit of elapsed time to consume in seconds, or zero if no limit
+     */
     public Consumer(Channel channel, String id,
                     String queueName, int txSize, boolean autoAck,
                     int multiAckEvery, Stats stats, int msgLimit, int timeLimit) {
@@ -55,16 +69,18 @@ public class Consumer implements Runnable {
     }
 
     public void run() {
+        QueueingConsumer q;
         long now;
         long startTime;
         startTime = now = System.currentTimeMillis();
+        final long limitTime = startTime + timeLimit;
         int totalMsgCount = 0;
 
         try {
             q = new QueueingConsumer(channel);
             channel.basicConsume(queueName, autoAck, q);
 
-            while ((timeLimit == 0 || now < startTime + timeLimit) &&
+            while ((timeLimit == 0 || now < limitTime) &&
                    (msgLimit == 0 || totalMsgCount < msgLimit)) {
                 QueueingConsumer.Delivery delivery;
                 try {

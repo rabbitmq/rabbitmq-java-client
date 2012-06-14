@@ -18,6 +18,12 @@ package com.rabbitmq.examples.perf;
 
 import java.util.List;
 
+/**
+ * A <code>Variable</code> is a list of {@link VariableValue}s
+ */
 public interface Variable {
+    /**
+     * @return the list of values over which this variable varies
+     */
     public List<? extends VariableValue> getValues();
 }

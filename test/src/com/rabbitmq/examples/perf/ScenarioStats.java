@@ -18,6 +18,12 @@ package com.rabbitmq.examples.perf;
 
 import java.util.Map;
 
+/**
+ * Statistics for scenarios look like a simple collection of named values (objects)
+ */
 public interface ScenarioStats {
+    /**
+     * @return scenario stats
+     */
     public Map<String, Object> results();
 }

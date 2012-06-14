@@ -16,31 +16,37 @@
 
 package com.rabbitmq.examples.perf;
 
+/**
+ * Timing statistics collection framework
+ */
 public abstract class Stats {
-    protected long    interval;
+    private final long interval;              // collection interval in ms
 
-    protected long    startTime;
-    protected long    lastStatsTime;
+    protected long startTime;                 // timestamp in ms
+    protected long lastStatsTime;             // timestamp in ms
 
-    protected int     sendCountInterval;
-    protected int     returnCountInterval;
-    protected int     confirmCountInterval;
-    protected int     nackCountInterval;
-    protected int     recvCountInterval;
+    protected int  sendCountInterval;         // occurrences in interval
+    protected int  returnCountInterval;       // occurrences in interval
+    protected int  confirmCountInterval;      // occurrences in interval
+    protected int  nackCountInterval;         // occurrences in interval
+    protected int  recvCountInterval;         // occurrences in interval
 
-    protected int     sendCountTotal;
-    protected int     recvCountTotal;
+    protected int  sendCountTotal;            // total occurrences
+    protected int  recvCountTotal;            // total occurrences
 
-    protected int     latencyCountInterval;
-    protected int     latencyCountTotal;
-    protected long    minLatency;
-    protected long    maxLatency;
-    protected long    cumulativeLatencyInterval;
-    protected long    cumulativeLatencyTotal;
+    protected int  latencyCountInterval;      // occurrences in interval
+    protected int  latencyCountTotal;         // total occurrences
+    protected long minLatency;                // minimum latency observed in nanos
+    protected long maxLatency;                // maximum latency observed in nanos
+    protected long cumulativeLatencyInterval; // latency so far in interval in nanos
+    protected long cumulativeLatencyTotal;    // total latency for all messages in nanos
 
-    protected long    elapsedInterval;
-    protected long    elapsedTotal;
+    protected long elapsedInterval;           // ms elapsed in this interval at last event
+    protected long elapsedTotal;              // ms elapsed total (completed intervals)
 
+    /**
+     * @param interval milliseconds between reports
+     */
     public Stats(long interval) {
         this.interval = interval;
         startTime = System.currentTimeMillis();
@@ -62,7 +68,10 @@ public abstract class Stats {
         cumulativeLatencyInterval = 0L;
     }
 
-    private void report() {
+    /**
+     * Report (and reset) stats if <code>interval</code> elapsed since <code>lastStatsTime</code>
+     */
+    private void maybeReport() {
         long now = System.currentTimeMillis();
         elapsedInterval = now - lastStatsTime;
 
@@ -75,27 +84,45 @@ public abstract class Stats {
 
     protected abstract void report(long now);
 
+    /**
+     * Accumulate stats for a Send
+     */
     public synchronized void handleSend() {
         sendCountInterval++;
         sendCountTotal++;
-        report();
+        maybeReport();
     }
 
+    /**
+     * Accumulate stats for a Return
+     */
     public synchronized void handleReturn() {
         returnCountInterval++;
-        report();
+        maybeReport();
     }
 
+    /**
+     * Accumulate stats for a Confirm
+     * @param numConfirms number of confirms
+     */
     public synchronized void handleConfirm(int numConfirms) {
         confirmCountInterval +=numConfirms;
-        report();
+        maybeReport();
     }
 
-    public synchronized void handleNack(int numAcks) {
-        nackCountInterval +=numAcks;
-        report();
+    /**
+     * Accumulate stats for a Nack
+     * @param numNacks number of Nacks
+     */
+    public synchronized void handleNack(int numNacks) {
+        nackCountInterval +=numNacks;
+        maybeReport();
     }
 
+    /**
+     * Accumulate stats for a Recv
+     * @param latency this message latency in nanos
+     */
     public synchronized void handleRecv(long latency) {
         recvCountInterval++;
         recvCountTotal++;
@@ -107,7 +134,7 @@ public abstract class Stats {
             latencyCountInterval++;
             latencyCountTotal++;
         }
-        report();
+        maybeReport();
     }
 
 }

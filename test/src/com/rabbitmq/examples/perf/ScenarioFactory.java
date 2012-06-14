@@ -6,15 +6,15 @@ import java.util.List;
 import java.util.Map;
 
 public class ScenarioFactory {
-    public static Scenario fromJSON(Map json, ConnectionFactory factory) {
+    public static Scenario fromJSON(Map<?,?> json, ConnectionFactory factory) {
         String type = read("type", json, String.class);
         String name = read("name", json, String.class);
         Integer interval = read("interval", json, Integer.class, 1000);
-        List paramsJSON = read("params", json, List.class);
+        List<?> paramsJSON = read("params", json, List.class);
 
         MulticastParams[] params = new MulticastParams[paramsJSON.size()];
         for (int i = 0; i < paramsJSON.size(); i++) {
-            params[i] = paramsFromJSON((Map) paramsJSON.get(i));
+            params[i] = paramsFromJSON((Map<?,?>) paramsJSON.get(i));
         }
 
         if (type.equals("simple")) {
@@ -24,7 +24,7 @@ public class ScenarioFactory {
             return new RateVsLatencyScenario(name, factory, params[0]); // TODO
         }
         else if (type.equals("varying")) {
-            List variablesJSON = read("variables", json, List.class);
+            List<?> variablesJSON = read("variables", json, List.class);
             Variable[] variables = new Variable[variablesJSON.size()];
             for (int i = 0; i < variablesJSON.size(); i++) {
                 variables[i] = variableFromJSON((Map) variablesJSON.get(i));

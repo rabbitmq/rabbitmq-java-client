@@ -26,6 +26,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 
+/**
+ * Configurable broker
+ */
 public class Broker {
     private static final String BASE = "/tmp/rabbitmq-performance/";
     private static final String SCRIPTS = "../rabbitmq-server/scripts/";
@@ -33,23 +36,40 @@ public class Broker {
     private static final String HIPE_C = "{rabbit, [{hipe_compile, true}]}";
     private static final String COARSE_C = "{rabbitmq_management_agent, [{force_fine_statistics, false}]}";
 
+    /** Default broker */
     public static final Broker DEFAULT = new Broker("default");
+    /** Broker with hipe_compile set true */
     public static final Broker HIPE = new Broker("hipe", "[" + HIPE_C + "].");
+    /** Broker with fine stats off */
     public static final Broker COARSE = new Broker("coarse", "[" + COARSE_C + "].");
+    /** Broker with hipe on and fine stats off */
     public static final Broker HIPE_COARSE = new Broker("hipe_coarse", "[" + HIPE_C + "," + COARSE_C + "].");
 
     private final String name;
     private final String config;
 
+    /**
+     * Construct broker with no (extra) configuration.
+     * @param name of broker
+     */
     public Broker(String name) {
         this(name, "[].");
     }
 
+    /**
+     * Construct broker with configuration as provided
+     * @param name of broker
+     * @param config to apply to broker
+     */
     public Broker(String name, String config) {
         this.name = name;
         this.config = config;
     }
 
+    /**
+     * Start this broker running
+     * @throws IOException on command or I/O errors
+     */
     public void start() throws IOException {
         Process pr = null;
         try {
@@ -89,6 +109,10 @@ public class Broker {
         outFile.close();
     }
 
+    /**
+     * Stop this broker running
+     * @throws RuntimeException wrapping IOException from command execution failures
+     */
     public void stop() {
         System.out.println("Stopping broker '" + name + "' ...");
         try {
@@ -98,6 +122,9 @@ public class Broker {
         }
     }
 
+    /**
+     * @return the name of this broker
+     */
     public String getName() {
         return name;
     }

@@ -18,9 +18,15 @@ package com.rabbitmq.examples.perf;
 
 import java.io.IOException;
 
+/**
+ * {@link VariableValue} of {@link Broker} type
+ */
 public class BrokerValue implements VariableValue {
     private final Broker broker;
 
+    /**
+     * @param broker the actual value
+     */
     public BrokerValue(Broker broker) {
         this.broker = broker;
     }

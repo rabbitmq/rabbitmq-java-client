@@ -5,7 +5,16 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * PerfUtil
+ */
 public class PerfUtil {
+    /**
+     * Update property of object using a setter method on the object
+     * @param obj object to update
+     * @param name of property to update
+     * @param value value to update property to
+     */
     public static void setValue(Object obj, Object name, Object value) {
         try {
             PropertyDescriptor[] props = Introspector.getBeanInfo(obj.getClass()).getPropertyDescriptors();

@@ -16,6 +16,9 @@
 
 package com.rabbitmq.examples.perf;
 
+/**
+ * MulticastValue
+ */
 class MulticastValue implements VariableValue {
     private final String name;
     private final Object value;

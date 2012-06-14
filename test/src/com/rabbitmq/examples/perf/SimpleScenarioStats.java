@@ -21,6 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * {@link ScenarioStats} simple implementation extending {@link Stats}
+ */
 class SimpleScenarioStats extends Stats implements ScenarioStats {
     private static final int IGNORE_FIRST = 3;
 

@@ -19,9 +19,16 @@ package com.rabbitmq.examples.perf;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * {@link Variable} containing <code>MulticastValue</code>s
+ */
 public class MulticastVariable implements Variable {
     private final List<MulticastValue> values = new ArrayList<MulticastValue>();
 
+    /**
+     * @param name common name of every MulticastValue
+     * @param values array of Objects setting <code>MulticastValue</code>s
+     */
     public MulticastVariable(String name, Object... values) {
         for (Object v : values) {
             this.values.add(new MulticastValue(name, v));

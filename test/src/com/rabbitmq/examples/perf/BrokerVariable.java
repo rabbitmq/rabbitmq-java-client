@@ -19,9 +19,15 @@ package com.rabbitmq.examples.perf;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * {@link Variable} containing {@link BrokerValue}s
+ */
 public class BrokerVariable implements Variable {
     private final Broker[] brokers;
 
+    /**
+     * @param brokers array of values
+     */
     public BrokerVariable(Broker... brokers) {
         this.brokers = brokers;
     }

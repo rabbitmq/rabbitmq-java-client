@@ -31,37 +31,54 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Semaphore;
 
+/**
+ * <code>Producer</code> for tests
+ */
 public class Producer implements Runnable, ReturnListener,
         ConfirmListener
 {
-    private Channel channel;
-    private String  exchangeName;
-    private String  id;
-    private boolean mandatory;
-    private boolean immediate;
-    private boolean persistent;
-    private int     txSize;
-    private int     rateLimit;
-    private int     msgLimit;
-    private long    timeLimit;
+    private final Channel channel;
+    private final String  exchangeName;
+    private final String  id;
+    private final boolean mandatory;
+    private final boolean immediate;
+    private final boolean persistent;
+    private final int     txSize;
+    private final int     rateLimit;
+    private final int     msgLimit;
+    private final long    timeLimit;
 
-    private Stats   stats;
+    private final Stats   stats;
 
-    private byte[]  message;
+    private final byte[]  message;
 
     private long    startTime;
     private long    lastStatsTime;
     private int     msgCount;
 
-    private Semaphore confirmPool;
+    private final Semaphore confirmPool;
     private volatile SortedSet<Long> unconfirmedSet =
         Collections.synchronizedSortedSet(new TreeSet<Long>());
 
+    /**
+     * Ctor
+     * @param channel producer publishes on
+     * @param exchangeName to publish to
+     * @param id of producer/consumer routing key
+     * @param flags "mandatory", "immediate", "persistent" keyword list
+     * @param txSize batching size (in messages published) for transactions, or zero for no transactions
+     * @param rateLimit publishing rate limit (in msgs/sec), or zero for no limit
+     * @param msgLimit max number of messages to publish, or zero for no limit
+     * @param minMsgSize smallest size a message body can be
+     * @param timeLimit limit of elapsed time to publish in seconds, or zero if no limit
+     * @param confirm max number of confirms outstanding, or zero if no limit
+     * @param stats collector for timing statistics
+     */
     public Producer(Channel channel, String exchangeName, String id,
                     List<?> flags, int txSize,
                     int rateLimit, int msgLimit, int minMsgSize, int timeLimit,
                     long confirm, Stats stats)
-        throws IOException {
+    {
 
         this.channel      = channel;
         this.exchangeName = exchangeName;
@@ -74,9 +91,7 @@ public class Producer implements Runnable, ReturnListener,
         this.msgLimit     = msgLimit;
         this.timeLimit    = 1000L * timeLimit;
         this.message      = new byte[minMsgSize];
-        if (confirm > 0) {
-            this.confirmPool  = new Semaphore((int)confirm);
-        }
+        this.confirmPool  = (confirm == 0) ? null : new Semaphore((int)confirm);
         this.stats        = stats;
     }
 
@@ -125,17 +140,18 @@ public class Producer implements Runnable, ReturnListener,
 
     public void run() {
         long now = startTime = lastStatsTime = System.currentTimeMillis();
+        final long limitTime = startTime + timeLimit;
         msgCount = 0;
         int totalMsgCount = 0;
 
         try {
 
-            while ((timeLimit == 0 || now < startTime + timeLimit) &&
+            while ((timeLimit == 0 || now < limitTime) &&
                    (msgLimit == 0 || msgCount < msgLimit)) {
+                delay(now);
                 if (confirmPool != null) {
                     confirmPool.acquire();
                 }
-                delay(now);
                 publish(createMessage(totalMsgCount));
                 totalMsgCount++;
                 msgCount++;
@@ -143,8 +159,8 @@ public class Producer implements Runnable, ReturnListener,
                 if (txSize != 0 && totalMsgCount % txSize == 0) {
                     channel.txCommit();
                 }
-                now = System.currentTimeMillis();
                 stats.handleSend();
+                now = System.currentTimeMillis();
             }
 
         } catch (IOException e) {

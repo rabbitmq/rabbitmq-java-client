@@ -22,7 +22,6 @@ import com.rabbitmq.tools.json.JSONWriter;
 
 import java.io.FileInputStream;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -30,15 +29,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Main performance test executable
+ */
 public class PerformanceMain {
     private static final ConnectionFactory factory = new ConnectionFactory();
 
     private static Map<String, Object> results = new HashMap<String, Object>();
 
+    /**
+     * @param args parameters for static broker tests
+     * @throws Exception tests or output failures
+     */
     public static void main(String[] args) throws Exception {
         String inJSON = args[0];
         String outJSON = args[1];
-        List<Map> scenariosJSON = (List<Map>) new JSONReader().read(readFile(inJSON));
+        @SuppressWarnings("unchecked")
+        List<Map<?,?>> scenariosJSON = (List<Map<?,?>>) new JSONReader().read(readFile(inJSON));
         Scenario[] scenarios = new Scenario[scenariosJSON.size()];
         for (int i = 0; i < scenariosJSON.size(); i++) {
             scenarios[i] = ScenarioFactory.fromJSON(scenariosJSON.get(i), factory);
@@ -47,7 +54,7 @@ public class PerformanceMain {
         writeJSON(outJSON);
     }
 
-    private static String readFile(String path) throws IOException {
+    private static String readFile(String path) throws Exception {
         final char[] buf = new char[4096];
         StringBuilder out = new StringBuilder();
         Reader in = new InputStreamReader(new FileInputStream(path), "UTF-8");
@@ -62,7 +69,7 @@ public class PerformanceMain {
         return out.toString();
     }
 
-    private static void writeJSON(String outJSON) throws IOException {
+    private static void writeJSON(String outJSON) throws Exception {
         FileWriter outFile = new FileWriter(outJSON);
         PrintWriter out = new PrintWriter(outFile);
         out.println(new JSONWriter(true).write(results));

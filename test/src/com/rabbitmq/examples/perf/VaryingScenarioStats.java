@@ -64,8 +64,11 @@ public class VaryingScenarioStats implements ScenarioStats {
                 if (i == key.size() - 1) {
                     node.put(elem.getValue().toString(), results);
                 }
-                else {
-                    node = (Map<String, Object>) get(elem.getValue().toString(), node, new HashMap<String, Object>());
+                else
+                {
+                    @SuppressWarnings("unchecked")
+                    Map<String,Object> uncheckedNode = (Map<String, Object>) get(elem.getValue().toString(), node, new HashMap<String, Object>());
+                    node = uncheckedNode;
                 }
             }
         }
