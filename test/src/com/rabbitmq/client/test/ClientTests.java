@@ -20,7 +20,13 @@ package com.rabbitmq.client.test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+/**
+ * All client unit tests
+ */
 public class ClientTests extends TestCase {
+    /**
+     * @return suite of client unit tests
+     */
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("client");
         suite.addTest(TableTest.suite());

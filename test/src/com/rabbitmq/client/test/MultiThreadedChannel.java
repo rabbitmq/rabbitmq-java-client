@@ -29,6 +29,9 @@ public class MultiThreadedChannel extends BrokerTestCase {
 
     private static final String DUMMY_EXCHANGE_NAME = "dummy.exchange";
 
+    /**
+     * @throws Throwable test
+     */
     public void testInterleavedRpcs() throws Throwable {
 
         final AtomicReference<Throwable> throwableRef = new AtomicReference<Throwable>(null);

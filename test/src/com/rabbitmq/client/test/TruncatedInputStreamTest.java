@@ -26,7 +26,7 @@ import junit.framework.TestSuite;
 import com.rabbitmq.client.impl.TruncatedInputStream;
 
 /**
- * Some basic (retroactive) tests for TruncatedInputStream.
+ * Some basic tests for TruncatedInputStream.
  */
 public class TruncatedInputStreamTest extends TestCase {
 
@@ -50,12 +50,15 @@ public class TruncatedInputStreamTest extends TestCase {
         super.tearDown();
     }
 
+    /**
+     * @return suite of tests
+     */
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("truncStreams");
         suite.addTestSuite(TruncatedInputStreamTest.class);
         return suite;
     }
-    
+
     /**
      * Check the amount of data initially available is as it should be
      * @throws IOException if there is an I/O problem
@@ -78,11 +81,11 @@ public class TruncatedInputStreamTest extends TestCase {
     }
 
     /**
-     * Check single-byte reads behave as they should 
-     * @throws IOException 
+     * Check single-byte reads behave as they should
+     * @throws Exception test failure
      *
      */
-    public void testSingleByteReads() throws IOException {
+    public void testSingleByteReads() throws Exception {
         for (int i = 0; i < TRUNCATED_LENGTH; i++) {
             assertEquals(TEST_BYTES[i], _truncStream.read());
         }
@@ -95,8 +98,9 @@ public class TruncatedInputStreamTest extends TestCase {
 
     /**
      * Check reading a specified number of bytes at an offset  gives the right result
+     * @throws Exception test failure
      */
-    public void testOffsetMultipleByteReads() throws IOException {
+    public void testOffsetMultipleByteReads() throws Exception {
         byte[] readBytes = new byte[TEST_OFFSET + TEST_LENGTH];
         _truncStream.read(readBytes, TEST_OFFSET, TEST_LENGTH);
         for (int i = 0; i < TEST_OFFSET; i++) { // check the array's initially blank...

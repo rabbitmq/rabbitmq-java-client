@@ -27,6 +27,9 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
+/**
+ * Tests for channel number allocation
+ */
 public class ChannelNumberAllocationTests extends TestCase{
   static int CHANNEL_COUNT = 100;
   static Comparator<Channel> COMPARATOR = new Comparator<Channel>(){
@@ -48,11 +51,19 @@ public class ChannelNumberAllocationTests extends TestCase{
     connection = null;
   }
 
+  /**
+   * Allocate sequentially, by default
+   * @throws Exception test failure
+   */
   public void testAllocateInOrder() throws Exception{
     for(int i = 1; i <= CHANNEL_COUNT; i++)
       assertEquals(i, connection.createChannel().getChannelNumber());
   }
 
+  /**
+   * Allocate last closed first
+   * @throws Exception test failure
+   */
   public void testAllocateAfterFreeingLast() throws Exception{
     Channel ch = connection.createChannel();
     assertEquals(1, ch.getChannelNumber());
@@ -61,6 +72,10 @@ public class ChannelNumberAllocationTests extends TestCase{
     assertEquals(1, ch.getChannelNumber());
   }
 
+  /**
+   * Allocate and free lots, check we still have distinct channel numbers
+   * @throws Exception test failure
+   */
   public void testAllocateAfterFreeingMany() throws Exception{
     List<Channel> channels = new ArrayList<Channel>();
 
@@ -87,6 +102,10 @@ public class ChannelNumberAllocationTests extends TestCase{
     }
   }
 
+  /**
+   * Allocate an explicit channel number and check that it is not allocated again
+   * @throws Exception test failure
+   */
   public void testAllocateAfterManualAssign() throws Exception{
     connection.createChannel(10);
 
@@ -94,22 +113,38 @@ public class ChannelNumberAllocationTests extends TestCase{
         assertTrue(10 != connection.createChannel().getChannelNumber());
   }
 
+  /**
+   * Allocate a max numbered channel explicitly, and check we are still ok
+   * @throws Exception test failure
+   */
   public void testManualAllocationDoesntBreakThings() throws Exception{
     connection.createChannel((1 << 16) - 1);
     Channel ch = connection.createChannel();
     assertNotNull(ch);
   }
 
+  /**
+   * Repeat allocation of explicit channel number 1
+   * @throws Exception test failure
+   */
   public void testReuseManuallyAllocatedChannelNumber1() throws Exception{
     connection.createChannel(1).close();
     assertNotNull(connection.createChannel(1));
   }
 
+  /**
+   * Repeat allocation of explicit channel number 2
+   * @throws Exception test failure
+   */
   public void testReuseManuallyAllocatedChannelNumber2() throws Exception{
     connection.createChannel(2).close();
-    assertNotNull(connection.createChannel(3));
+    assertNotNull(connection.createChannel(2));
   }
 
+  /**
+   * A sequence of explicit allocations, unordered, packed
+   * @throws Exception test failure
+   */
   public void testReserveOnBoundaries() throws Exception{
     assertNotNull(connection.createChannel(3));
     assertNotNull(connection.createChannel(4));

@@ -22,23 +22,32 @@ import junit.framework.TestSuite;
 import com.rabbitmq.utility.ValueOrException;
 import com.rabbitmq.utility.SensibleClone;
 
-
+/**
+ * {@link ValueOrException} Tests
+ */
 public class ValueOrExceptionTest extends TestCase {
-    public static class InsufficientMagicException extends Exception 
-      implements SensibleClone<InsufficientMagicException> {
-      /** Default for no check. */
+    /**
+     * Private Exception class for testing
+     */
+    private static class InsufficientMagicException extends Exception implements SensibleClone<InsufficientMagicException>
+    {
+        /** Default for no check. */
         private static final long serialVersionUID = 1L;
 
-    public InsufficientMagicException(String message) {
-        super(message);
-      }
+        public InsufficientMagicException(String message)
+        {
+            super(message);
+        }
 
-      public InsufficientMagicException sensibleClone() {
-        return new InsufficientMagicException(getMessage());
-      }
+        public InsufficientMagicException sensibleClone()
+        {
+            return new InsufficientMagicException(getMessage());
+        }
     }
 
-
+    /**
+     * @return this suite of tests
+     */
     public static TestSuite suite()
     {
         TestSuite suite = new TestSuite("valueOrEx");
@@ -46,27 +55,34 @@ public class ValueOrExceptionTest extends TestCase {
         return suite;
     }
 
-    public void testStoresValue() throws InsufficientMagicException {
+    /**
+     * Check that value is returned correctly (<i>not</i> cloned)
+     * @throws Exception test failure
+     */
+    public void testStoresValue() throws Exception {
         Integer value = new Integer(3);
 
-        ValueOrException<Integer, InsufficientMagicException> valueOrEx = 
+        ValueOrException<Integer, InsufficientMagicException> valueOrEx =
             ValueOrException.<Integer, InsufficientMagicException>makeValue(value);
-        
+
         Integer returnedValue = valueOrEx.getValue();
-        assertTrue(returnedValue == value);
+        assertTrue(returnedValue == value); // the same object
     }
 
+    /**
+     * Check that exceptions are cloned correctly
+     */
     public void testClonesException() {
-        InsufficientMagicException exception = 
+        InsufficientMagicException exception =
             new InsufficientMagicException("dummy message");
-        ValueOrException<Integer, InsufficientMagicException> valueOrEx 
+        ValueOrException<Integer, InsufficientMagicException> valueOrEx
             = ValueOrException.makeException(exception);
 
         try {
             valueOrEx.getValue();
             fail("Expected exception");
         } catch(InsufficientMagicException returnedException) {
-            assertTrue(returnedException != exception);
+            assertTrue(returnedException != exception); // not the same object
             assertEquals(returnedException.getMessage(), exception.getMessage());
             boolean inGetValue = false;
             for(StackTraceElement elt : returnedException.getStackTrace())

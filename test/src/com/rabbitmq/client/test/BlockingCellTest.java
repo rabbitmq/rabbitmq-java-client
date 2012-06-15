@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,9 +24,15 @@ import junit.framework.TestSuite;
 
 import com.rabbitmq.utility.BlockingCell;
 
+/**
+ * Tests of {@link BlockingCell}s
+ */
 public class BlockingCellTest
     extends TestCase
 {
+    /**
+     * @return suite of tests
+     */
     public static TestSuite suite()
     {
         TestSuite suite = new TestSuite("blockingCells");
@@ -35,7 +40,11 @@ public class BlockingCellTest
         return suite;
     }
 
-    public void testDoubleSet() throws InterruptedException
+    /**
+     * Check for expected assertion error on a double set
+     * @throws Exception test failure
+     */
+    public void testDoubleSet() throws Exception
     {
         BlockingCell<String> cell = new BlockingCell<String>();
         cell.set("one");
@@ -48,8 +57,11 @@ public class BlockingCellTest
         fail("Expected AssertionError");
     }
 
-    public void testMultiGet()
-        throws InterruptedException
+    /**
+     * Check that {@link BlockingCell#get()} is repeatable.
+     * @throws Exception test failure
+     */
+    public void testMultiGet() throws Exception
     {
         final BlockingCell<String> cell = new BlockingCell<String>();
         cell.set("one");
@@ -57,16 +69,22 @@ public class BlockingCellTest
         assertEquals("one", cell.get());
     }
 
-    public void testNullSet()
-        throws InterruptedException
+    /**
+     * Check that <code><b>null</b></code> is a valid value to set
+     * @throws Exception test failure
+     */
+    public void testNullSet() throws Exception
     {
         BlockingCell<Integer> c = new BlockingCell<Integer>();
         c.set(null);
         assertNull(c.get());
     }
 
-    public void testEarlySet()
-        throws InterruptedException
+    /**
+     * Check that setting early is fine
+     * @throws Exception test failure
+     */
+    public void testEarlySet() throws Exception
     {
         final BlockingCell<String> cell = new BlockingCell<String>();
         final AtomicReference<String> holder = new AtomicReference<String>();
@@ -96,8 +114,11 @@ public class BlockingCellTest
         assertEquals("hello", holder.get());
     }
 
-    public void testLateSet()
-        throws InterruptedException
+    /**
+     * Check that setting late is fine
+     * @throws Exception test failure
+     */
+    public void testLateSet() throws Exception
     {
         final BlockingCell<String> cell = new BlockingCell<String>();
         final AtomicReference<String> holder = new AtomicReference<String>();
@@ -130,18 +151,23 @@ public class BlockingCellTest
 
         assertEquals("hello", holder.get());
     }
-    
-    public void testGetWaitsUntilSet() throws InterruptedException {
+
+    /**
+     * Check that get waits for set
+     * @throws Exception test failure
+     */
+    public void testGetWaitsUntilSet() throws Exception {
         final BlockingCell<String> cell = new BlockingCell<String>();
         final String value = "foo";
         final AtomicReference<Object> valueHolder = new AtomicReference<Object>();
         final AtomicBoolean doneHolder = new AtomicBoolean(false);
+        final AtomicBoolean interruptedFlag = new AtomicBoolean(false);
         Thread getterThread = new Thread() {
             @Override public void run() {
                 try {
                     valueHolder.set(cell.get());
                 } catch (InterruptedException ex) {
-                    fail("hit InterruptedException");
+                    interruptedFlag.set(true);
                     ex.printStackTrace();
                 }
                 doneHolder.set(true);
@@ -154,9 +180,14 @@ public class BlockingCellTest
         getterThread.join();
         assertTrue(doneHolder.get());
         assertTrue(value == valueHolder.get());
+        assertFalse("hit InterruptedException", interruptedFlag.get());
     }
 
-    public void testSetIfUnset() throws InterruptedException {
+    /**
+     * Test conditional set works
+     * @throws Exception test failure
+     */
+    public void testSetIfUnset() throws Exception {
         final BlockingCell<String> cell = new BlockingCell<String>();
         assertTrue(cell.setIfUnset("foo"));
         assertEquals("foo", cell.get());

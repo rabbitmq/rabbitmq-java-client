@@ -24,11 +24,20 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 
+/**
+ * Test {@link QueueingConsumer} behaviour on shutdown
+ */
 public class QueueingConsumerShutdownTests extends BrokerTestCase{
   static final String QUEUE = "some-queue";
   static final int THREADS = 5;
 
-  public void testNThreadShutdown() throws Exception{
+/**
+ * Set n threads a-reading from a single {@link QueueingConsumer} and then close
+ * the connection.
+ * @throws Exception test failure
+ */
+public void testNThreadShutdown() throws Exception
+{
     Channel channel = connection.createChannel();
     final QueueingConsumer c = new QueueingConsumer(channel);
     channel.queueDeclare(QUEUE, false, true, true, null);

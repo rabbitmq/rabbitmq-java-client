@@ -27,6 +27,9 @@ import java.util.concurrent.TimeUnit;
 
 import junit.framework.AssertionFailedError;
 
+/**
+ * Extension of {@link BrokerTestCase} for publisher confirm tests
+ */
 public class ConfirmBase extends BrokerTestCase {
     protected void waitForConfirms() throws Exception
     {

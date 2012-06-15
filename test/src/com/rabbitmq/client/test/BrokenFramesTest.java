@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test;
 
 import java.io.IOException;
@@ -36,7 +35,13 @@ import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.AMQImpl.Basic.Publish;
 
+/**
+ * Tests surrounding bad frames
+ */
 public class BrokenFramesTest extends TestCase {
+    /**
+     * @return suite of tests
+     */
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("connection");
         suite.addTestSuite(BrokenFramesTest.class);
@@ -60,6 +65,10 @@ public class BrokenFramesTest extends TestCase {
         super.tearDown();
     }
 
+    /**
+     * Frame without a method
+     * @throws Exception test failure
+     */
     public void testNoMethod() throws Exception {
         List<Frame> frames = new ArrayList<Frame>();
         frames.add(new Frame(AMQP.FRAME_HEADER, 0));
@@ -77,7 +86,7 @@ public class BrokenFramesTest extends TestCase {
                               factory.getRequestedHeartbeat(),
                               factory.getSaslConfig())
             .start();
-        } catch (IOException e) {
+        } catch (Exception e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
             assertEquals(AMQP.FRAME_HEADER, unexpectedFrameError.getReceivedFrame().type);
@@ -88,6 +97,9 @@ public class BrokenFramesTest extends TestCase {
         fail("No UnexpectedFrameError thrown");
     }
 
+    /**
+     * @throws Exception test failure
+     */
     public void testMethodThenBody() throws Exception {
         List<Frame> frames = new ArrayList<Frame>();
 
@@ -113,7 +125,7 @@ public class BrokenFramesTest extends TestCase {
                               factory.getRequestedHeartbeat(),
                               factory.getSaslConfig())
                     .start();
-        } catch (IOException e) {
+        } catch (Exception e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
             assertEquals(AMQP.FRAME_BODY, unexpectedFrameError.getReceivedFrame().type);

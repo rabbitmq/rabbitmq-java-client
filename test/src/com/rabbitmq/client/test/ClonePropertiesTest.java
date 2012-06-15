@@ -22,8 +22,18 @@ import junit.framework.TestSuite;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.MessageProperties;
 
+/**
+ * Tests for cloning of {@link MessageProperties}
+ * <p/>
+ * (Development note: Is this really necessary? With builders, properties can be 'copied' by creating a (mutable)
+ * builder from a Properties object, updating it, and then building another Properties object. This leaves the way open
+ * for us to make Properties objects immutable in the future.)
+ */
 public class ClonePropertiesTest extends TestCase {
 
+    /**
+     * @return test suite for {@link MessageProperties}s cloning.
+     */
     public static TestSuite suite()
     {
         TestSuite suite = new TestSuite("cloneProperties");
@@ -31,15 +41,21 @@ public class ClonePropertiesTest extends TestCase {
         return suite;
     }
 
-    public void testPropertyCloneIsDistinct()
-        throws CloneNotSupportedException
+    /**
+     * Clones are <i>not</i> identical objects (only a trivial test)
+     * @throws Exception test failure
+     */
+    public void testPropertyCloneIsDistinct() throws Exception
     {
         assertTrue(MessageProperties.MINIMAL_PERSISTENT_BASIC !=
                    MessageProperties.MINIMAL_PERSISTENT_BASIC.clone());
     }
 
-    public void testPropertyClonePreservesValues()
-        throws CloneNotSupportedException
+    /**
+     * Clones have the same values
+     * @throws Exception test failure
+     */
+    public void testPropertyClonePreservesValues() throws Exception
     {
         assertEquals(MessageProperties.MINIMAL_PERSISTENT_BASIC.getDeliveryMode(),
                      ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())

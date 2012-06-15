@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test;
 
 import java.io.IOException;
@@ -33,6 +32,9 @@ import com.rabbitmq.client.impl.ShutdownNotifierComponent;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.tools.Host;
 
+/**
+ * Extend {@link TestCase} class to access a running broker for each test
+ */
 public class BrokerTestCase extends TestCase
 {
     protected ConnectionFactory connectionFactory = new ConnectionFactory();
@@ -90,16 +92,22 @@ public class BrokerTestCase extends TestCase
         setUp();
     }
 
-    public void openConnection()
-        throws IOException
+    /**
+     * Open a new connection unless we have one already
+     * @throws IOException factory exception
+     */
+    public void openConnection() throws IOException
     {
         if (connection == null) {
             connection = connectionFactory.newConnection();
         }
     }
 
-    public void closeConnection()
-        throws IOException
+    /**
+     * If we have one, abort the connection (and null our reference)
+     * @throws IOException connection exception
+     */
+    public void closeConnection() throws IOException
     {
         if (connection != null) {
             connection.abort();
@@ -107,14 +115,20 @@ public class BrokerTestCase extends TestCase
         }
     }
 
-    public void openChannel()
-        throws IOException
+    /**
+     * Set a new channel on our connection
+     * @throws IOException connection exception
+     */
+    public void openChannel() throws IOException
     {
         channel = connection.createChannel();
     }
 
-    public void closeChannel()
-        throws IOException
+    /**
+     * If we have one abort our existing channel
+     * @throws IOException channel exception
+     */
+    public void closeChannel() throws IOException
     {
         if (channel != null) {
             channel.abort();
@@ -122,17 +136,32 @@ public class BrokerTestCase extends TestCase
         }
     }
 
+    /**
+     * Assertion extension to check the shutdown signal exception
+     * @param expectedCode expected code of shutdown
+     * @param ioe obtained generic shutdown signal exception
+     */
     public void checkShutdownSignal(int expectedCode, IOException ioe) {
         ShutdownSignalException sse = (ShutdownSignalException) ioe.getCause();
         checkShutdownSignal(expectedCode, sse);
     }
 
+    /**
+     * Assertion extension to check the shutdown signal exception
+     * @param expectedCode expected code of shutdown
+     * @param ace obtained AlreadyClosedException (with shutdown signal exception)
+     */
     public void checkShutdownSignal(int expectedCode, AlreadyClosedException ace) {
         ShutdownNotifierComponent snc = (ShutdownNotifierComponent) ace.getReference();
         ShutdownSignalException sse = snc.getCloseReason();
         checkShutdownSignal(expectedCode, sse);
     }
 
+    /**
+     * Assertion extension to check the shutdown signal exception
+     * @param expectedCode expected code of shutdown
+     * @param sse obtained explicit shutdown signal exception
+     */
     public void checkShutdownSignal(int expectedCode, ShutdownSignalException sse) {
         Command closeCommand = (Command) sse.getReason();
         channel = null;
@@ -146,6 +175,10 @@ public class BrokerTestCase extends TestCase
         }
     }
 
+    /**
+     * Assertion extension to flush out error code and check it
+     * @param error AMQP error code expected
+     */
     public void expectError(int error) {
         try {
             channel.basicQos(0);

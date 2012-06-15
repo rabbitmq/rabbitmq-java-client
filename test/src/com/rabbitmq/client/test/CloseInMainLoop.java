@@ -35,6 +35,9 @@ import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.DefaultExceptionHandler;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 
+/**
+ * Test connection closes in main loop
+ */
 public class CloseInMainLoop extends BrokerTestCase{
 
   private final CountDownLatch closeLatch = new CountDownLatch(1);
@@ -70,7 +73,6 @@ public class CloseInMainLoop extends BrokerTestCase{
                                                     String consumerTag,
                                                     String methodName) {
                     try {
-                        // TODO: change this to call 4-parameter close and make 6-parm one private
                       ((AMQConnection) channel.getConnection())
                           .close(AMQP.INTERNAL_ERROR,
                                  "Internal error in Consumer " + consumerTag,
@@ -93,17 +95,22 @@ public class CloseInMainLoop extends BrokerTestCase{
       if(c.getMethod() instanceof AMQP.Connection.CloseOk) validShutdown.set(true);
       return super.processControlCommand(c);
     }
-
   }
 
-  public void testCloseOKNormallyReceived() throws Exception{
+/**
+ * @throws Exception test failure
+ */
+public void testCloseOKNormallyReceived() throws Exception{
     SpecialConnection connection = new SpecialConnection();
     connection.close();
     assertTrue(connection.hadValidShutdown());
-  }
+}
 
-  // The thrown runtime exception should get intercepted by the
-  // consumer exception handler, and result in a clean shut down.
+  /**
+   * The thrown runtime exception should get intercepted by the
+   * consumer exception handler, and result in a clean shut down.
+   * @throws Exception test failure
+   */
   public void testCloseWithFaultyConsumer() throws Exception{
     SpecialConnection connection = new SpecialConnection();
     Channel channel = connection.createChannel();

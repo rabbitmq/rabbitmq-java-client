@@ -14,11 +14,9 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,11 +29,11 @@ import com.rabbitmq.client.test.BrokerTestCase;
  */
 public class QueueLifecycle extends BrokerTestCase {
 
-    void verifyQueueExists(String name) throws IOException {
+    void verifyQueueExists(String name) throws Exception {
         channel.queueDeclarePassive(name);
     }
 
-    void verifyQueueMissing(String name) throws IOException {
+    void verifyQueueMissing(String name) throws Exception {
         // we can't in general check with a passive declare, since that
         // may return an IOException because of exclusivity. But we can
         // check that we can happily declare another with the same name:
@@ -43,7 +41,7 @@ public class QueueLifecycle extends BrokerTestCase {
         // if it doesn't exist.
         try {
             channel.queueDeclare(name, false, false, false, null);
-        } catch (IOException ioe) {
+        } catch (Exception _) {
             fail("Queue.Declare threw an exception, probably meaning that the queue already exists");
         }
         // clean up
@@ -53,11 +51,11 @@ public class QueueLifecycle extends BrokerTestCase {
     /**
      * Verify that a queue both exists and has the properties as given
      *
-     * @throws IOException
+     * @throws Exception
      *             if one of these conditions is not true
      */
     void verifyQueue(String name, boolean durable, boolean exclusive,
-            boolean autoDelete, Map<String, Object> args) throws IOException {
+            boolean autoDelete, Map<String, Object> args) throws Exception {
         verifyQueueExists(name);
         // use passive/equivalent rule to check that it has the same properties
         channel.queueDeclare(name, durable, exclusive, autoDelete, args);
@@ -65,7 +63,7 @@ public class QueueLifecycle extends BrokerTestCase {
 
     // NB the exception will close the connection
     void verifyNotEquivalent(boolean durable, boolean exclusive,
-            boolean autoDelete) throws IOException {
+            boolean autoDelete) throws Exception {
         String q = "queue";
         channel.queueDeclare(q, false, false, false, null);
         try {
@@ -86,8 +84,9 @@ public class QueueLifecycle extends BrokerTestCase {
      * auto-delete, and arguments fields. The server MUST respond with
      * Declare-Ok if the requested queue matches these fields, and MUST
      * raise a channel exception if not."
+     * @throws Exception test
      */
-    public void testQueueEquivalence() throws IOException {
+    public void testQueueEquivalence() throws Exception {
         String q = "queue";
         channel.queueDeclare(q, false, false, false, null);
         // equivalent
@@ -101,23 +100,37 @@ public class QueueLifecycle extends BrokerTestCase {
 
     }
 
-    // not equivalent in various ways
-    public void testQueueNonEquivalenceDurable() throws IOException {
+    /**
+     * Check non-equivalence
+     * @throws Exception test
+     */
+    public void testQueueNonEquivalenceDurable() throws Exception {
         verifyNotEquivalent(true, false, false);
     }
 
-    public void testQueueNonEquivalenceExclusive() throws IOException {
+    /**
+     * Check non-equivalence
+     * @throws Exception test
+     */
+    public void testQueueNonEquivalenceExclusive() throws Exception {
         verifyNotEquivalent(false, true, false);
     }
 
-    public void testQueueNonEquivalenceAutoDelete() throws IOException {
+    /**
+     * Check non-equivalence
+     * @throws Exception test
+     */
+    public void testQueueNonEquivalenceAutoDelete() throws Exception {
         verifyNotEquivalent(false, false, true);
     }
 
-    // Note that this assumes that auto-deletion is synchronous with
-    // basic.cancel,
-    // which is not actually in the spec. (If it isn't, there's a race here).
-    public void testQueueAutoDelete() throws IOException {
+    /**
+     * Note that this assumes that auto-deletion is synchronous with
+     * basic.cancel,
+     * which is not actually in the spec. (If it isn't, there's a race here).
+     * @throws Exception test
+     */
+    public void testQueueAutoDelete() throws Exception {
         String name = "tempqueue";
         channel.queueDeclare(name, false, false, true, null);
         // now it's there
@@ -135,7 +148,10 @@ public class QueueLifecycle extends BrokerTestCase {
         fail("Queue should have been auto-deleted after we removed its only consumer");
     }
 
-    public void testExclusiveNotAutoDelete() throws IOException {
+    /**
+     * @throws Exception test
+     */
+    public void testExclusiveNotAutoDelete() throws Exception {
         String name = "exclusivequeue";
         channel.queueDeclare(name, false, true, false, null);
         // now it's there
@@ -147,7 +163,10 @@ public class QueueLifecycle extends BrokerTestCase {
         verifyQueueExists(name);
     }
 
-    public void testExclusiveGoesWithConnection() throws IOException {
+    /**
+     * @throws Exception test
+     */
+    public void testExclusiveGoesWithConnection() throws Exception {
         String name = "exclusivequeue2";
         channel.queueDeclare(name, false, true, false, null);
         // now it's there
@@ -158,7 +177,10 @@ public class QueueLifecycle extends BrokerTestCase {
         verifyQueueMissing(name);
     }
 
-    public void testArgumentArrays() throws IOException {
+    /**
+     * @throws Exception test
+     */
+    public void testArgumentArrays() throws Exception {
         Map<String, Object> args = new HashMap<String, Object>();
         String[] arr = new String[]{"foo", "bar", "baz"};
         args.put("my-key", arr);
