@@ -25,7 +25,7 @@ import com.rabbitmq.tools.Host;
 
 /**
  * This tests whether exclusive, durable queues are deleted when appropriate
- * (following the scenarios given in bug 20578).
+ * (following the scenarios given in <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=20578">bug 20578</a>).
  */
 public class ExclusiveQueueDurability extends BrokerTestCase {
 

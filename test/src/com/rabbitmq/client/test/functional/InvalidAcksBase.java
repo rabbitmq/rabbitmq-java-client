@@ -22,10 +22,10 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 
 /**
- * See bug 21846:
+ * See <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=21846">bug 21846</a>:
  * Basic.Ack is now required to signal a channel error immediately upon
  * detecting an invalid deliveryTag, even if the channel is (Tx-)transacted.
- *
+ * <p/>
  * Specifically, a client MUST not acknowledge the same message more than once.
  */
 public abstract class InvalidAcksBase extends BrokerTestCase {

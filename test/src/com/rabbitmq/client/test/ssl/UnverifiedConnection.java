@@ -24,7 +24,8 @@ import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 /**
- * Test for bug 19356 - SSL Support in RabbitMQ
+ * Test for <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=19356">bug 19356</a>
+ * - SSL Support in RabbitMQ
  *
  */
 public class UnverifiedConnection extends BrokerTestCase {

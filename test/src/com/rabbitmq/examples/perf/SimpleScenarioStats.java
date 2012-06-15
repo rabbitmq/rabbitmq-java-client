@@ -31,6 +31,9 @@ class SimpleScenarioStats extends Stats implements ScenarioStats {
     private long elapsedTotalToIgnore;
     private long minMsgSize;
 
+    /**
+     * @param interval milliseconds between reports
+     */
     public SimpleScenarioStats(long interval) {
         super(interval);
     }

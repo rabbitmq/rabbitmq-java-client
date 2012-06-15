@@ -51,7 +51,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
     }
 
     /**
-     * See bug 21854:
+     * See <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=21854">bug 21854</a>:
      * "When Queue.Purge is called, sent-but-unacknowledged messages are no
      * longer purged, even if the channel they were sent down is not
      * (Tx-)transacted."

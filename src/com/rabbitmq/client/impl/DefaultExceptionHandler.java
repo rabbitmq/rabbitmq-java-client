@@ -28,11 +28,14 @@ import com.rabbitmq.client.Consumer;
  * Default implementation of {@link ExceptionHandler} used by {@link AMQConnection}.
  */
 public class DefaultExceptionHandler implements ExceptionHandler {
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * TODO: Log this somewhere, just in case we have a bug like
+     * <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=16272">bug 16272</a>
+     * where exceptions aren't being propagated properly again.
+     */
     public void handleUnexpectedConnectionDriverException(Connection conn, Throwable exception) {
-        // TODO: Log this somewhere, just in case we have a bug like
-        // 16272 where exceptions aren't being propagated properly
-        // again.
-
         //System.err.println("DefaultExceptionHandler:");
         //exception.printStackTrace();
     }

@@ -71,7 +71,7 @@ public class Producer implements Runnable, ReturnListener,
      * @param msgLimit max number of messages to publish, or zero for no limit
      * @param minMsgSize smallest size a message body can be
      * @param timeLimit limit of elapsed time to publish in seconds, or zero if no limit
-     * @param confirm max number of confirms outstanding, or zero if no limit
+     * @param confirm max number of confirms outstanding, or <=zero if no limit
      * @param stats collector for timing statistics
      */
     public Producer(Channel channel, String exchangeName, String id,
@@ -91,7 +91,7 @@ public class Producer implements Runnable, ReturnListener,
         this.msgLimit     = msgLimit;
         this.timeLimit    = 1000L * timeLimit;
         this.message      = new byte[minMsgSize];
-        this.confirmPool  = (confirm == 0) ? null : new Semaphore((int)confirm);
+        this.confirmPool  = (confirm > 0) ? new Semaphore((int)confirm) : null;
         this.stats        = stats;
     }
 

@@ -21,6 +21,13 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 
+/**
+ * DefaultExchange
+ * <p/>
+ * See <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=22101">bug 22101</a>:
+ * publish and declare are the only operations
+ * permitted on the default exchange
+ */
 public class DefaultExchange extends BrokerTestCase {
     String queueName;
 
@@ -28,9 +35,6 @@ public class DefaultExchange extends BrokerTestCase {
     protected void createResources() throws IOException {
         queueName = channel.queueDeclare().getQueue();
     }
-
-    // See bug 22101: publish and declare are the only operations
-    // permitted on the default exchange
 
     public void testDefaultExchangePublish() throws IOException {
         basicPublishVolatile("", queueName); // Implicit binding

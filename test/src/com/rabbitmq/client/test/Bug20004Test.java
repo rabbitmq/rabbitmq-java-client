@@ -19,7 +19,8 @@ package com.rabbitmq.client.test;
 import java.io.IOException;
 
 /**
- * Test for bug 20004 - deadlock through internal synchronization on
+ * Test for <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=20004">bug 20004</a>
+ * - deadlock through internal synchronisation on
  * the channel object. This is more properly a unit test, but since it
  * requires a connection to a broker, it's grouped with the functional
  * tests.
@@ -40,8 +41,11 @@ public class Bug20004Test extends BrokerTestCase {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    public void testBug20004() throws IOException
+    /**
+     * Test for synchronisation bug
+     * @throws Exception test
+     */
+    public void testBug20004() throws Exception
     {
         final Bug20004Test testInstance = this;
 
@@ -68,10 +72,21 @@ public class Bug20004Test extends BrokerTestCase {
             } catch (InterruptedException ie) {}
         }
 
-        declaringThread.stop(); // see bug 20012.
+        stopThread(declaringThread);
 
         assertTrue("Deadlock detected?", completed);
         assertNull("queueDeclare threw an exception", caughtException);
         assertTrue("unknown sequence of events", created);
+    }
+
+    /**
+     * Only way to stop thread if this bug detected
+     * @see <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=20012">bug 20012</a>
+     * @param thread to stop
+     */
+    @SuppressWarnings("deprecation")
+    private static final void stopThread(Thread thread)
+    {
+        thread.stop();
     }
 }

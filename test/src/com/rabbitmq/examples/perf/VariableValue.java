@@ -16,10 +16,28 @@
 
 package com.rabbitmq.examples.perf;
 
+/**
+ * Named variable value
+ */
 public interface VariableValue {
+    /**
+     * Set this variable value in run
+     * @param params of full run
+     * @throws Exception on failure to setup
+     */
     public void setup(MulticastParams params) throws Exception;
+    /**
+     * Teardown this variable value
+     * @param params of full run
+     */
     public void teardown(MulticastParams params);
 
+    /**
+     * @return name of variable
+     */
     public String getName();
+    /**
+     * @return value of variable
+     */
     public Object getValue();
 }

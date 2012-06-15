@@ -23,12 +23,20 @@ import com.rabbitmq.client.ConnectionFactory;
 import java.io.IOException;
 import java.util.UUID;
 
+/**
+ * MulticastSet knows how to set up and run a particular MulticastParams test
+ */
 public class MulticastSet {
     private final String id;
     private final Stats stats;
     private final ConnectionFactory factory;
     private final MulticastParams params;
 
+    /**
+     * @param stats accumulate statistics here
+     * @param factory get connections from here
+     * @param params the full parametrisation of the run
+     */
     public MulticastSet(Stats stats, ConnectionFactory factory,
                         MulticastParams params) {
         this.id = UUID.randomUUID().toString();
@@ -37,10 +45,21 @@ public class MulticastSet {
         this.params = params;
     }
 
+    /**
+     * Configure and execute the test run quietly
+     * @throws IOException failures in the client or protocol or I/O
+     * @throws InterruptedException if the run is interrupted
+     */
     public void run() throws IOException, InterruptedException {
         run(false);
     }
 
+    /**
+     * Configure and execute the test run
+     * @param announceStartup true if run is announced
+     * @throws IOException failures in the client or protocol or I/O
+     * @throws InterruptedException if the run is interrupted
+     */
     public void run(boolean announceStartup) throws IOException, InterruptedException {
         Thread[] consumerThreads = new Thread[params.getConsumerCount()];
         Connection[] consumerConnections = new Connection[consumerThreads.length];

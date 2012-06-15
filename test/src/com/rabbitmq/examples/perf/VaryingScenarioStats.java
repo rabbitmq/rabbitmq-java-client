@@ -21,14 +21,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * {@link Stats} for a {@link Scenario} with {@link Variable}s
+ */
 public class VaryingScenarioStats implements ScenarioStats {
-    private Map<List<VariableValue>, SimpleScenarioStats> stats = new HashMap<List<VariableValue>, SimpleScenarioStats>();
-    private List<List<VariableValue>> keys = new ArrayList<List<VariableValue>>();
+    private final Map<List<VariableValue>, SimpleScenarioStats> stats = new HashMap<List<VariableValue>, SimpleScenarioStats>();
+    private final List<List<VariableValue>> keys = new ArrayList<List<VariableValue>>();
 
+    /**
+     * Empty Stats
+     */
     public VaryingScenarioStats() {}
 
+    /**
+     * Generate next {@link ScenarioStats} placeholder for variable settings
+     * @param value list of values of variable
+     * @return one-second interval SimpleScenarioStats
+     */
     public SimpleScenarioStats next(List<VariableValue> value) {
-        SimpleScenarioStats stats = new SimpleScenarioStats(1000L);
+        SimpleScenarioStats stats = new SimpleScenarioStats(1000L); // one-second intervals
         keys.add(value);
         this.stats.put(value, stats);
         return stats;

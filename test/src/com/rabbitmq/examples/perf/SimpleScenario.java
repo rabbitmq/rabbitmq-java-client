@@ -30,10 +30,22 @@ public class SimpleScenario implements Scenario {
     private final long interval;
     private SimpleScenarioStats stats;
 
+    /**
+     * A Scenario with one second report intervals
+     * @param name of scenario
+     * @param factory for connections
+     * @param params array of run parameters
+     */
     public SimpleScenario(String name, ConnectionFactory factory, MulticastParams... params) {
         this(name, factory, 1000L, params);
     }
 
+    /**
+     * @param name of scenario
+     * @param factory for connections
+     * @param interval milliseconds between reports
+     * @param params array of run parameters
+     */
     public SimpleScenario(String name, ConnectionFactory factory, long interval, MulticastParams... params) {
         this.name = name;
         this.factory = factory;

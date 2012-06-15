@@ -21,18 +21,35 @@ import com.rabbitmq.client.ConnectionFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Scenario with varying parameters
+ */
 public class VaryingScenario implements Scenario {
-    private String name;
-    private ConnectionFactory factory;
-    private MulticastParams[] params;
-    private VaryingScenarioStats stats = new VaryingScenarioStats();
-    private Variable[] variables;
+    private final String name;
+    private final ConnectionFactory factory;
+    private final MulticastParams[] params;
+    private final VaryingScenarioStats stats = new VaryingScenarioStats();
+    private final Variable[] variables;
 
+    /**
+     * One test parametrisation (<code>params</code>) with variables
+     * @param name of scenario
+     * @param factory for connections
+     * @param params simple parametrisation of run
+     * @param variables varying parameters
+     */
     public VaryingScenario(String name, ConnectionFactory factory,
                            MulticastParams params, Variable... variables) {
         this(name, factory, new MulticastParams[]{params}, variables);
     }
 
+    /**
+     * Array of parametrisations (<code>params</code>) with variables
+     * @param name of scenario
+     * @param factory for connections
+     * @param params array of parametrisations of run
+     * @param variables varying parameters
+     */
     public VaryingScenario(String name, ConnectionFactory factory,
                            MulticastParams[] params, Variable... variables) {
         this.name = name;

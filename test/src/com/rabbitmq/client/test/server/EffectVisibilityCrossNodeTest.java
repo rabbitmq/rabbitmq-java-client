@@ -21,7 +21,8 @@ import com.rabbitmq.client.test.functional.ClusteredTestBase;
 import java.io.IOException;
 
 /**
- * From bug 19844 - we want to be sure that publish vs everything else can't
+ * From <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=19844">bug 19844</a>
+ * - we want to be sure that publish vs everything else can't
  * happen out of order
  */
 public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {

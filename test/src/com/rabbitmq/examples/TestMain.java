@@ -225,6 +225,10 @@ public class TestMain {
             System.out.println(s);
     }
 
+    /**
+     * @throws IOException
+     * @see <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=15794">bug 15794</a>
+     */
     public void run() throws IOException {
         final int batchSize = 5;
 
@@ -262,7 +266,7 @@ public class TestMain {
         try {
             _connection.close();
         } catch (IllegalStateException e) {
-            // work around bug 15794
+            // work around bug 15794?
         }
         log("Leaving TestMain.run().");
     }

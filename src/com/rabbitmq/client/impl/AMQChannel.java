@@ -92,7 +92,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     /**
-     * Placeholder until we address bug 15786 (implementing a proper exception hierarchy).
+     * Placeholder until we address
+     * <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=15786">bug 15786</a>
+     * (implementing a proper exception hierarchy).
      * In the meantime, this at least won't throw away any information from the wrapped exception.
      * @param ex the exception to wrap
      * @return the wrapped exception
@@ -108,7 +110,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     /**
-     * Placeholder until we address bug 15786 (implementing a proper exception hierarchy).
+     * Placeholder until we address
+     * <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=15786">bug 15786</a>
+     * (implementing a proper exception hierarchy).
      * @param m method request
      * @return command response
      * @throws IOException on error or shutdown

@@ -5,7 +5,16 @@ import com.rabbitmq.client.ConnectionFactory;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Generate {@link Scenario}s of different types
+ */
 public class ScenarioFactory {
+    /**
+     * Generate {@link Scenario}s from a JSON map
+     * @param json description of {@link Scenario}
+     * @param factory for connections
+     * @return {@link Scenario} corresponding to description
+     */
     public static Scenario fromJSON(Map<?,?> json, ConnectionFactory factory) {
         String type = read("type", json, String.class);
         String name = read("name", json, String.class);
@@ -27,7 +36,7 @@ public class ScenarioFactory {
             List<?> variablesJSON = read("variables", json, List.class);
             Variable[] variables = new Variable[variablesJSON.size()];
             for (int i = 0; i < variablesJSON.size(); i++) {
-                variables[i] = variableFromJSON((Map) variablesJSON.get(i));
+                variables[i] = variableFromJSON((Map<?,?>) variablesJSON.get(i));
             }
 
             return new VaryingScenario(name, factory, params, variables);
@@ -36,7 +45,7 @@ public class ScenarioFactory {
         throw new RuntimeException("Type " + type + " was not simple or varying.");
     }
 
-    private static<T> T read(String key, Map map, Class<T> clazz) {
+    private static<T> T read(String key, Map<?,?> map, Class<T> clazz) {
         if (map.containsKey(key)) {
             return read0(key, map, clazz);
         }
@@ -45,7 +54,7 @@ public class ScenarioFactory {
         }
     }
 
-    private static<T> T read(String key, Map map, Class<T> clazz, T def) {
+    private static<T> T read(String key, Map<?,?> map, Class<T> clazz, T def) {
         if (map.containsKey(key)) {
             return read0(key, map, clazz);
         }
@@ -54,17 +63,19 @@ public class ScenarioFactory {
         }
     }
 
-    private static <T> T read0(String key, Map map, Class<T> clazz) {
+    private static <T> T read0(String key, Map<?,?> map, Class<T> clazz) {
         Object o = map.get(key);
         if (clazz.isAssignableFrom(o.getClass())) {
-            return (T) o;
+            @SuppressWarnings("unchecked")
+            T ro = (T) o;
+            return ro;
         }
         else {
             throw new RuntimeException("Object under key " + key + " was a " + o.getClass() + ", not a " + clazz + ".");
         }
     }
 
-    private static MulticastParams paramsFromJSON(Map json) {
+    private static MulticastParams paramsFromJSON(Map<?,?> json) {
         MulticastParams params = new MulticastParams();
         for (Object key : json.keySet()) {
             PerfUtil.setValue(params, hyphensToCamel((String)key), json.get(key));
@@ -72,7 +83,7 @@ public class ScenarioFactory {
         return params;
     }
 
-    private static Variable variableFromJSON(Map json) {
+    private static Variable variableFromJSON(Map<?,?> json) {
         String type = read("type", json, String.class, "multicast");
         String name = read("name", json, String.class);
         Object[] values = read("values", json, List.class).toArray();

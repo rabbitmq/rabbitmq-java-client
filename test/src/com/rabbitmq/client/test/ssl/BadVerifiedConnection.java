@@ -33,7 +33,8 @@ import javax.net.ssl.TrustManagerFactory;
 import com.rabbitmq.client.ConnectionFactory;
 
 /**
- * Test for bug 19356 - SSL Support in rabbitmq
+ * Test for <a href="https://bugzilla.rabbitmq.com/show_bug.cgi?id=19356">bug 19356</a>
+ * - SSL Support in rabbitmq
  *
  */
 public class BadVerifiedConnection extends UnverifiedConnection {
@@ -63,7 +64,7 @@ public class BadVerifiedConnection extends UnverifiedConnection {
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ks, p12Password);
-            
+
             SSLContext c = SSLContext.getInstance("SSLv3");
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
