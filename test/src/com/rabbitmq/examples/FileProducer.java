@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.examples;
 
 import java.io.File;
@@ -33,7 +32,48 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.AMQP.BasicProperties;
 
+/**
+ * Java Application which uses an AMQP server to transmit entire files as single
+ * messages. No refinements such as restarting interrupted transfers or
+ * file segmentation are implemented. Each file is transmitted to a given
+ * exchange/routing-key combination using Basic.Publish, with
+ * <ul>
+ * <li>metadata about the file in the Basic headers table:
+ * <ul>
+ * <li>"<code>filename</code>" is the name of the file on the producer's side</li>
+ * <li>"<code>length</code>" is the length of the file, in bytes</li>
+ * </ul>
+ * </li>
+ * <li>the content of the file in the Basic message body.</li>
+ * </ul>
+ * <p>After the files are sent <code>FileProducer</code> will terminate.</p>
+ * @see FileConsumer
+ */
 public class FileProducer {
+
+    /**
+     * @param args command-line arguments:
+     * <p>
+     * Optional arguments are:
+     * </p>
+     * <ul>
+     * <li><code>-h</code> <i>AMQP-uri</i> - the AMQP uri to connect to the broker to use. Default
+     * <code>amqp://localhost</code>.</li>
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * <li><code>-p</code> <i>broker-port</i> - the port number to contact the broker on. Default
+     * <code>5672</code>.</li>
+     * <li><code>-e</code> <i>exchange-name</i> - the name of the exchange to use. The program declares and
+     * publishes to this exchange name.</li>
+     * <li><code>-t</code> <i>exchange-type</i> - the type of exchange to declare. One of <code>direct</code>,
+     * <code>fanout</code> or <code>topic</code>. Default <code>direct</code>.</li>
+     * <li><code>-k</code> <i>routing-key</i> - the routing-key to use when sending each file. Used in
+     * conjunction with the exchange name for each file delivery.</li>
+     * </ul>
+     * <p>
+     * Zero or more filenames can be specified after the options. Each file will be sent to the same configured
+     * exchange/routing-key in the order of appearance on the command-line.
+     * </p>
+     */
     public static void main(String[] args) {
 	Options options = new Options();
 	options.addOption(new Option("h", "uri", true, "AMQP URI"));

@@ -23,7 +23,30 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.StringRpcServer;
 
+/**
+ * Java Application which runs a {@link StringRpcServer} serving a non-durable,
+ * shared, non-autoDelete queue named "<code>Hello</code>" with a simple hello
+ * response service.
+ * <p/>
+ * The server will run until the application is cancelled.
+ * @see HelloClient
+ */
 public class HelloServer {
+    /**
+     * @param args command-line parameters:
+     * <p>
+     * Optional arguments:
+     * </p>
+     * <ul>
+     * <li><i>hostName</i> -
+     * the name of broker host. Default <code>localhost</code>.
+     * </li>
+     * <li><i>portNumber</i> -
+     * the port to connect on. Default <code>5672</code>.
+     * </li>
+     * </ul>
+     *
+     */
     public static void main(String[] args) {
         try {
             String hostName = (args.length > 0) ? args[0] : "localhost";

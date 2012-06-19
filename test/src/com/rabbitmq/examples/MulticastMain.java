@@ -32,8 +32,16 @@ import org.apache.commons.cli.ParseException;
 
 import com.rabbitmq.client.ConnectionFactory;
 
-
+/**
+ * Java Application to run comprehensive producer/consumer scenarios for message rate and loading tests.
+ */
 public class MulticastMain {
+    /**
+     * @param args command-line parameters.
+     * <p>
+     * Run application with parameter "<code>-?</code>" for option details.
+     * </p>
+     */
     public static void main(String[] args) {
         Options options = getOptions();
         CommandLineParser parser = new GnuParser();
@@ -109,9 +117,10 @@ public class MulticastMain {
 
             stats.printFinal();
         }
-        catch( ParseException exp ) {
+        catch(ParseException exp) {
             System.err.println("Parsing failed. Reason: " + exp.getMessage());
             usage(options);
+            System.exit(2);
         } catch (Exception e) {
             System.err.println("Main thread caught exception: " + e);
             e.printStackTrace();

@@ -23,14 +23,35 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
 /**
- * This producer creates messages with constantly changing topic keys, sending as
- * fast as it can. This can be used to test the topic key cache in the broker.
+ * Java Application to send messages with randomly changing topic keys, as
+ * fast as possible. This can be used to test the topic key cache in the broker.
+ * <p/>
+ * Periodically (every second) a summary of the current message rate and the
+ * overall message rate is printed.
  */
-
 public class SpammyTopicProducer {
-    public static final String DEFAULT_TOPIC_PREFIX = "top.";
+    private static final String DEFAULT_EXCHANGE = "amq.topic";
+    private static final String DEFAULT_TOPIC_PREFIX = "top.";
     private static final int SUMMARISE_EVERY = 1000;
 
+    /**
+     * @param args command-line parameters:
+     * <p>
+     * One to four positional parameters:
+     * </p>
+     * <ul>
+     * <li><i>AMQP-uri</i> -
+     * the AMQP uri to connect to the broker to use. No default.
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
+     * <li><i>topic-prefix</i> - the prefix of the topic published to. Default "<code>top.</code>".
+     * </li>
+     * <li><i>exchange</i> - name of the topic exchange to publish to. Default "<code>amq.topic</code>".
+     * </li>
+     * <li><i>message</i> - Default is a start time-of-day message.
+     * </li>
+     * </ul>
+     */
     public static void main(String[] args) {
         try {
             if (args.length < 1 || args.length > 4) {
@@ -45,7 +66,7 @@ public class SpammyTopicProducer {
             }
             String uri = (args.length > 0) ? args[0] : "amqp://localhost";
             String topicPrefix = (args.length > 1) ? args[1] : DEFAULT_TOPIC_PREFIX;
-            String exchange = (args.length > 2) ? args[2] : null;
+            String exchange = (args.length > 2) ? args[2] : DEFAULT_EXCHANGE;
             String message = (args.length > 3) ? args[3] :
                 "the time is " + new java.util.Date().toString();
 
@@ -55,11 +76,7 @@ public class SpammyTopicProducer {
 
             Channel ch = conn.createChannel();
 
-            if (exchange == null) {
-                exchange = "amq.topic";
-            } else {
-                ch.exchangeDeclare(exchange, "topic");
-            }
+            ch.exchangeDeclare(exchange, "topic");
 
             System.out.println("Sending to exchange " + exchange + ", prefix: " + topicPrefix);
 

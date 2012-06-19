@@ -22,9 +22,17 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
 
 /**
+ * Program to:
+ * <br/>
+ * Get and acknowledge message (without waiting) from "ttl.queue"
  */
 public class PerQueueTTLGetter {
 
+    /**
+     * Main
+     * @param args arguments ignored
+     * @throws Exception on channel or connection errors
+     */
     public static void main(String[] args) throws Exception {
         ConnectionFactory factory = new ConnectionFactory();
         Connection connection = factory.newConnection();

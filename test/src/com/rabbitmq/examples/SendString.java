@@ -20,7 +20,33 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
+/**
+ * Java Application to publish (the bytes of) a string to a given exchange, on a given broker, with a given routing key.
+ */
 public class SendString {
+    /**
+     * @param args command-line parameters:
+     * <p>
+     * Precisely five parameters:
+     * </p>
+     * <ul>
+     * <li><i>AMQP-uri</i> - the AMQP uri broker connection string.
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
+     * <li><i>exchange-name</i> - the exchange to publish to.
+     * </li>
+     * <li><i>exchange-type</i> - the type of exchange.
+     * </li>
+     * <li><i>routing-key</i> - the routing key to use.
+     * </li>
+     * <li><i>message</i> - the message string to publish.
+     * </li>
+     * </ul>
+     * <p>
+     * There are no defaults. Parameters after the fifth are ignored.
+     * If fewer than five parameters are supplied a usage description is printed.
+     * </p>
+     */
     public static void main(String[] args) {
         try {
             if (args.length < 5) {

@@ -17,21 +17,37 @@
 
 package com.rabbitmq.examples;
 
-import java.io.IOException;
-
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 
+/**
+ * Program to: <br/>
+ * On two threads, with separate connections:
+ * <ul>
+ * <li>
+ * Publish <code>msgCount</code> persistent messages to queue "confirm-test"
+ * (via default direct exchange), declared as durable, shared, non-autoDelete.
+ * Wait for confirms before deleting queue and closing connection.</li>
+ * <li>
+ * Consume code>msgCount</code> messages and terminate.</li>
+ * </ul>
+ * <p/>
+ * Exceptions in either thread cause that thread to terminate.
+ */
 public class ConfirmDontLoseMessages {
     static int msgCount = 10000;
     final static String QUEUE_NAME = "confirm-test";
     static ConnectionFactory connectionFactory;
 
-    public static void main(String[] args)
-        throws IOException, InterruptedException
+    /**
+     * Main
+     * @param args one argument (msgCount)
+     * @throws Exception on invalid argument
+     */
+    public static void main(String[] args) throws Exception
     {
         if (args.length > 0) {
                 msgCount = Integer.parseInt(args[0]);

@@ -21,7 +21,27 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.RpcClient;
 
+/**
+ * Java Application to issue a request as an {@link RpcClient} string call, to
+ * a queue called "<code>Hello</code>"
+ * (That is, the default exchange with routing key "<code>Hello</code>".)
+ * @see HelloServer
+ */
 public class HelloClient {
+    /**
+     * @param args command line parameters:
+     * <p>
+     * Zero, one or two positional parameters, in the order:
+     * </p>
+     * <ul>
+     * <li><i>request</i> - the string call request
+     * </li>
+     * <li><i>AMQP-uri</i> -
+     * the AMQP uri to connect to the broker to use. Default <code>amqp://localhost</code>.
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
+     * </ul>
+     */
     public static void main(String[] args) {
         try {
             String request = (args.length > 0) ? args[0] : "Rabbit";

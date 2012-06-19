@@ -21,7 +21,24 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.tools.jsonrpc.JsonRpcServer;
 
+/**
+ * Java Application that runs a {@link JsonRpcServer} offering a particular {@link HelloJsonService}.
+ */
 public class HelloJsonServer {
+    /**
+     * @param args command line arguments:
+     * <p>
+     * Optional argument:
+     * </p>
+     * <ul>
+     * <li><i>AMQP-uri</i> -
+     * the AMQP uri to connect to the broker. Default <code>amqp://localhost</code>.
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
+     * </ul>
+     * @see HelloJsonService
+     * @see HelloJsonClient
+     */
     public static void main(String[] args) {
         try {
             String uri = (args.length > 0) ? args[0] : "amqp://localhost";

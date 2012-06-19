@@ -14,7 +14,6 @@
 //  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
 //
 
-
 package com.rabbitmq.examples;
 
 import java.io.File;
@@ -33,15 +32,67 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
+/**
+ * Java Application to consume 'file' messages produced by {@link FileProducer}.
+ * <p>
+ * Received files are written into the output directory with a filename from the Basic headers "<code>filename</code>"
+ * table entry. If no such header exists, a fresh UUID is created and used as the filename
+ * instead. Any path component in the filename is ignored, so it is not possible to place files into
+ * any directory other than the configured output directory.
+ * </p>
+ * @see FileProducer
+ */
 public class FileConsumer {
+    /**
+     * @param args command-line arguments:
+     * <p>
+     * Mandatory argument is:
+     * </p>
+     * <ul>
+     * <li><code>-d</code> <i>output-directory</i> -
+     * Specifies the directory into which received files will be written. Must exist at the time the program is started.
+     * </li>
+     * </ul>
+     * <p>
+     * Optional arguments are:
+     * </p>
+     * <ul>
+     * <li><code>-h</code> <i>AMQP-uri</i> -
+     * the AMQP uri to connect to the broker to use. Default <code>amqp://localhost</code>.
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
+     * <li><code>-p</code> <i>broker-port</i> -
+     * the port number to contact the broker on. Default <code>5672</code>.
+     * </li>
+     * <li><code>-q</code> <i>queue-name</i> -
+     * the queue name to retrieve file messages from.
+     * </li>
+     * <li><code>-e</code> <i>exchange-name</i> -
+     * the name of the exchange to use. If this parameter is supplied, a routing-key pattern must also be supplied.
+     * </li>
+     * <li><code>-t</code> <i>exchange-type</i> -
+     * the type of exchange to declare. Only needed if exchange-name is supplied. One of <code>direct</code>,
+     * <code>fanout</code> or <code>topic</code>. Default <code>direct</code>.
+     * </li>
+     * <li><code>-k</code> <i>routing-key</i> -
+     * the routing-key to use as a pattern if binding to an exchange. If this parameter is supplied, an exchange-name must
+     * also be supplied.
+     * </li>
+     * </ul>
+     * <p>
+     * If the queue name is omitted, an anonymous queue is created for the duration of the session. The queue will be
+     * destroyed once the program terminates. Anonymous queues are only useful when the exchange name and type are
+     * specified, causing the anonymous queue to be bound to an exchange.
+     * </p>
+     */
     public static void main(String[] args) {
-	Options options = new Options();
-	options.addOption(new Option("h", "uri", true, "AMQP URI"));
-	options.addOption(new Option("q", "queue", true, "queue name"));
-	options.addOption(new Option("t", "type", true, "exchange type"));
-	options.addOption(new Option("e", "exchange", true, "exchange name"));
-	options.addOption(new Option("k", "routing-key", true, "routing key"));
-	options.addOption(new Option("d", "directory", true, "output directory"));
+        Options options = new Options();
+        options.addOption(new Option("h", "uri", true, "AMQP URI"));
+        options.addOption(new Option("q", "queue", true, "queue name"));
+        options.addOption(new Option("t", "type", true, "exchange type"));
+        options.addOption(new Option("e", "exchange", true, "exchange name"));
+        options.addOption(new Option("k", "routing-key", true, "routing key"));
+        options.addOption(new Option("d", "directory", true, "output directory"));
 
         CommandLineParser parser = new GnuParser();
 
@@ -49,17 +100,17 @@ public class FileConsumer {
             CommandLine cmd = parser.parse(options, args);
 
             String uri = strArg(cmd, 'h', "amqp://localhost");
-	    String requestedQueueName = strArg(cmd, 'q', "");
-	    String exchangeType = strArg(cmd, 't', "direct");
-	    String exchange = strArg(cmd, 'e', null);
-	    String routingKey = strArg(cmd, 'k', null);
-	    String outputDirName = strArg(cmd, 'd', ".");
+            String requestedQueueName = strArg(cmd, 'q', "");
+            String exchangeType = strArg(cmd, 't', "direct");
+            String exchange = strArg(cmd, 'e', null);
+            String routingKey = strArg(cmd, 'k', null);
+            String outputDirName = strArg(cmd, 'd', ".");
 
-	    File outputDir = new File(outputDirName);
-	    if (!outputDir.exists() || !outputDir.isDirectory()) {
-		System.err.println("Output directory must exist, and must be a directory.");
-		System.exit(2);
-	    }
+            File outputDir = new File(outputDirName);
+            if (!outputDir.exists() || !outputDir.isDirectory()) {
+                System.err.println("Output directory must exist, and must be a directory.");
+                System.exit(2);
+            }
 
             ConnectionFactory connFactory = new ConnectionFactory();
             connFactory.setUri(uri);
@@ -68,47 +119,47 @@ public class FileConsumer {
             final Channel ch = conn.createChannel();
 
             String queueName =
-		(requestedQueueName.equals("")
-		 ? ch.queueDeclare()
-		 : ch.queueDeclare(requestedQueueName,
-                                   false, false, false, null)).getQueue();
+                (requestedQueueName.equals("")
+                ? ch.queueDeclare()
+                : ch.queueDeclare(requestedQueueName,
+                                  false, false, false, null)).getQueue();
 
-	    if (exchange != null || routingKey != null) {
-		if (exchange == null) {
-		    System.err.println("Please supply exchange name to bind to (-e)");
-		    System.exit(2);
-		}
-		if (routingKey == null) {
-		    System.err.println("Please supply routing key pattern to bind to (-k)");
-		    System.exit(2);
-		}
-		ch.exchangeDeclare(exchange, exchangeType);
-		ch.queueBind(queueName, exchange, routingKey);
-	    }
+            if (exchange != null || routingKey != null) {
+                if (exchange == null) {
+                    System.err.println("Please supply exchange name to bind to (-e)");
+                    System.exit(2);
+                }
+                if (routingKey == null) {
+                    System.err.println("Please supply routing key pattern to bind to (-k)");
+                    System.exit(2);
+                }
+                ch.exchangeDeclare(exchange, exchangeType);
+                ch.queueBind(queueName, exchange, routingKey);
+            }
 
             QueueingConsumer consumer = new QueueingConsumer(ch);
             ch.basicConsume(queueName, consumer);
             while (true) {
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
-		Map<String, Object> headers = delivery.getProperties().getHeaders();
-		byte[] body = delivery.getBody();
-		Object headerFilenameO = headers.get("filename");
-		String headerFilename =
-		    (headerFilenameO == null)
-		    ? UUID.randomUUID().toString()
-		    : headerFilenameO.toString();
-		File givenName = new File(headerFilename);
-		if (givenName.getName().equals("")) {
-		    System.out.println("Skipping file with empty name: " + givenName);
-		} else {
-		    File f = new File(outputDir, givenName.getName());
-		    System.out.print("Writing " + f + " ...");
-		    FileOutputStream o = new FileOutputStream(f);
-		    o.write(body);
-		    o.close();
-		    System.out.println(" done.");
-		}
-		ch.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                Map<String, Object> headers = delivery.getProperties().getHeaders();
+                byte[] body = delivery.getBody();
+                Object headerFilenameO = headers.get("filename");
+                String headerFilename =
+                    (headerFilenameO == null)
+                    ? UUID.randomUUID().toString()
+                    : headerFilenameO.toString();
+                File givenName = new File(headerFilename);
+                if (givenName.getName().equals("")) {
+                    System.out.println("Skipping file with empty name: " + givenName);
+                } else {
+                    File f = new File(outputDir, givenName.getName());
+                    System.out.print("Writing " + f + " ...");
+                    FileOutputStream o = new FileOutputStream(f);
+                    o.write(body);
+                    o.close();
+                    System.out.println(" done.");
+                }
+                ch.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
             }
         } catch (Exception ex) {
             System.err.println("Main thread caught exception: " + ex);

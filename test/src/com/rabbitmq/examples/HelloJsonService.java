@@ -17,8 +17,21 @@
 
 package com.rabbitmq.examples;
 
+/**
+ * Interface for service offered by {@link HelloJsonServer} and used by {@link HelloJsonClient}.
+ * @see HelloJsonServer
+ * @see HelloJsonClient
+ */
 public interface HelloJsonService {
+    /**
+     * @param name of greeter
+     * @return greeting to greeter
+     */
     String greeting(String name);
 
+    /**
+     * @param values list of {@link Integer}s to sum
+     * @return sum of integers in list
+     */
     int sum(java.util.List<Integer> values);
 }

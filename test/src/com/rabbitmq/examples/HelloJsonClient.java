@@ -21,9 +21,32 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.tools.jsonrpc.JsonRpcClient;
 
+/**
+ * Java Application to issue a request as a {@link JsonRpcClient} service greeting, to
+ * a queue called "<code>Hello</code>"
+ * (That is, the default exchange with routing key "<code>Hello</code>".)
+ * <p/>
+ * The client has a one-second timeout for responses.
+ * @see HelloJsonService
+ * @see HelloJsonServer
+ */
 public class HelloJsonClient {
     private static final int RPC_TIMEOUT_ONE_SECOND = 1000;
 
+    /**
+     * @param args command line parameters:
+     * <p>
+     * Zero, one or two positional parameters, in the order:
+     * </p>
+     * <ul>
+     * <li><i>request</i> - the service request
+     * </li>
+     * <li><i>AMQP-uri</i> -
+     * the AMQP uri to connect to the broker to use. Default <code>amqp://localhost</code>.
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
+     * </ul>
+     */
     public static void main(String[] args) {
         try {
             String request = (args.length > 0) ? args[0] : "Rabbit";

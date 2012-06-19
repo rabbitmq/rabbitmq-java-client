@@ -24,9 +24,17 @@ import com.rabbitmq.client.ConnectionFactory;
 import java.util.Collections;
 
 /**
+ * Program to:
+ * <br/>
+ * Publish ten persistent messages onto direct exchange "ttl.exchange" (queue "ttl.queue"), where
+ * "ttl.queue" is declared durable, shared, not auto-delete and with a message TTL of 30000.
  */
 public class PerQueueTTLPublisher {
 
+    /**
+     * @param args (ignored)
+     * @throws Exception on channel or connection errors
+     */
     public static void main(String[] args) throws Exception {
         ConnectionFactory factory = new ConnectionFactory();
         Connection connection = factory.newConnection();

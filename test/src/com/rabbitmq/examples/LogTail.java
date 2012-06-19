@@ -21,7 +21,25 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
+/**
+ * Java Application which receives and prints all messages sent to a topic exchange.
+ */
 public class LogTail {
+    /**
+     * @param args command line parameters:
+     * <p>
+     * Zero, one or two positional parameters:
+     * </p>
+     * <ul>
+     * <li><i>AMQP-uri</i> -
+     * the AMQP uri to connect to the broker to use. Default <code>amqp://localhost</code>.
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
+     * <li><i>exchange</i> - the (topic) exchange to subscribe to.
+     * Default <code>amq.rabbitmq.log</code>.
+     * </li>
+     * </ul>
+     */
     public static void main(String[] args) {
         try {
             String uri = (args.length > 0) ? args[0] : "amqp://localhost";

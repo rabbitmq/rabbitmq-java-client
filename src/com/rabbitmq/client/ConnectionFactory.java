@@ -181,7 +181,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting the fields in an AMQP URI: host,
      * port, username, password and virtual host.  If any part of the
-     * URI is ommited, the ConnectionFactory's corresponding variable
+     * URI is omitted, the ConnectionFactory's corresponding variable
      * is left unchanged.
      * @param uri is the AMQP URI containing the data
      * @throws URISyntaxException URI format problem
@@ -251,6 +251,7 @@ public class ConnectionFactory implements Cloneable {
      * @throws URISyntaxException format problem with URI
      * @throws NoSuchAlgorithmException protocol not known
      * @throws KeyManagementException SSL context cannot be initialised
+     * @see <a href="http://www.rabbitmq.com/uri-spec.html">AMQP URI spec</a>
      */
     public void setUri(String uriString)
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
