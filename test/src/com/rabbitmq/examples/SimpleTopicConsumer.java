@@ -22,7 +22,39 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 
+/**
+ * Java Application to consume messages, matching a topic-pattern, published to a topic exchange.
+ * <p>
+ * Messages are consumed and printed until the application is cancelled.
+ * </p>
+ */
 public class SimpleTopicConsumer {
+
+    private static final String DEFAULT_TOPIC_EXCHANGE = "amq.topic";
+    private static final String DEFAULT_TOPIC_PATTERN = "#";
+
+    /**
+     * @param args command-line parameters
+     * <p>
+     * One to four positional parameters:
+     * </p>
+     * <ul>
+     * <li><i>AMQP-uri</i> -
+     * the AMQP uri to connect to the broker to use.
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
+     * <li><i>topic-pattern</i> - the topic pattern to listen for.
+     * Default "<code>#</code>", meaning all topics.
+     * </li>
+     * <li><i>exchange</i> - the name of a topic exchange to consume from.
+     * Default "<code>amq.topic</code>".
+     * </li>
+     * <li><i>queue-name</i> - the name of a queue to consume from.
+     * Default is to create an anonymous, private, autoDelete queue. If <i>queue-name</i> is given
+     * a named, shared, non-autoDelete queue is declared.
+     * </li>
+     * </ul>
+     */
     public static void main(String[] args) {
         try {
             if (args.length < 1 || args.length > 4) {
@@ -30,15 +62,15 @@ public class SimpleTopicConsumer {
                                  "                                      [exchange\n" +
                                  "                                       [queue]]]\n" +
                                  "where\n" +
-                                 " - topicpattern defaults to \"#\",\n" +
-                                 " - exchange to \"amq.topic\", and\n" +
-                                 " - queue to a private, autodelete queue\n");
+                                 " - topicpattern defaults to \"" + DEFAULT_TOPIC_PATTERN + "\",\n" +
+                                 " - exchange to \"" + DEFAULT_TOPIC_EXCHANGE + "\", and\n" +
+                                 " - queue to a private, autoDelete queue\n");
                 System.exit(1);
             }
 
-            String uri = (args.length > 0) ? args[0] : "amqp://localhost";
-            String topicPattern = (args.length > 1) ? args[1] : "#";
-            String exchange = (args.length > 2) ? args[2] : null;
+            String uri = args[0];
+            String topicPattern = (args.length > 1) ? args[1] : DEFAULT_TOPIC_PATTERN;
+            String exchange = (args.length > 2) ? args[2] : DEFAULT_TOPIC_EXCHANGE;
             String queue = (args.length > 3) ? args[3] : null;
 
             ConnectionFactory cfconn = new ConnectionFactory();
@@ -47,16 +79,14 @@ public class SimpleTopicConsumer {
 
             final Channel channel = conn.createChannel();
 
-            if (exchange == null) {
-                exchange = "amq.topic";
-            } else {
+            if (!DEFAULT_TOPIC_EXCHANGE.equals(exchange)) {
                 channel.exchangeDeclare(exchange, "topic");
             }
 
             if (queue == null) {
                 queue = channel.queueDeclare().getQueue();
             } else {
-              channel.queueDeclare(queue, false, false, false, null);
+                channel.queueDeclare(queue, false, false, false, null);
             }
 
             channel.queueBind(queue, exchange, topicPattern);

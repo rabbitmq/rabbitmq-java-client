@@ -30,7 +30,7 @@ import com.rabbitmq.client.ConnectionFactory;
  * overall message rate is printed.
  */
 public class SpammyTopicProducer {
-    private static final String DEFAULT_EXCHANGE = "amq.topic";
+    private static final String DEFAULT_EXCHANGE = "amq.topic"; // do not declare this
     private static final String DEFAULT_TOPIC_PREFIX = "top.";
     private static final int SUMMARISE_EVERY = 1000;
 
@@ -48,7 +48,7 @@ public class SpammyTopicProducer {
      * </li>
      * <li><i>exchange</i> - name of the topic exchange to publish to. Default "<code>amq.topic</code>".
      * </li>
-     * <li><i>message</i> - Default is a start time-of-day message.
+     * <li><i>message</i> - message to publish. Default is a (fixed) time-of-day message.
      * </li>
      * </ul>
      */
@@ -59,12 +59,12 @@ public class SpammyTopicProducer {
                                  "                                      [exchange\n" +
                                  "                                       [message]]]\n" +
                                  "where\n" +
-                                 " - topic defaults to \""+DEFAULT_TOPIC_PREFIX+"\",\n" +
-                                 " - exchange defaults to \"amq.topic\", and\n" +
+                                 " - topic defaults to \"" + DEFAULT_TOPIC_PREFIX + "\",\n" +
+                                 " - exchange defaults to \"" + DEFAULT_EXCHANGE + "\", and\n" +
                                  " - message defaults to a time-of-day message\n");
                 System.exit(1);
             }
-            String uri = (args.length > 0) ? args[0] : "amqp://localhost";
+            String uri = args[0];
             String topicPrefix = (args.length > 1) ? args[1] : DEFAULT_TOPIC_PREFIX;
             String exchange = (args.length > 2) ? args[2] : DEFAULT_EXCHANGE;
             String message = (args.length > 3) ? args[3] :
@@ -76,7 +76,9 @@ public class SpammyTopicProducer {
 
             Channel ch = conn.createChannel();
 
-            ch.exchangeDeclare(exchange, "topic");
+            if (!DEFAULT_EXCHANGE.equals(exchange)) {
+                ch.exchangeDeclare(exchange, "topic");
+            }
 
             System.out.println("Sending to exchange " + exchange + ", prefix: " + topicPrefix);
 

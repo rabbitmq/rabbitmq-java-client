@@ -20,7 +20,34 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
+/**
+ * Java Application to publish a simple string message to an exchange/routing-key.
+ */
 public class SimpleProducer {
+    /**
+     * @param args command-line parameters
+     * <p>
+     * Zero to four positional parameters:
+     * </p>
+     * <ul>
+     * <li><i>AMQP-uri</i> -
+     * the AMQP uri to connect to the broker to use. Default <code>amqp://localhost</code>.
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
+     * <li><i>message</i> - the message to publish. Default is a time-of-day message.
+     * </li>
+     * <li><i>exchange</i> - the name of the exchange to publish to. Default is the default exchange ("").
+     * </li>
+     * <li><i>routing-key</i> - the routing-key of the publication. Default is "<code>SimpleQueue</code>".
+     * </li>
+     * </ul>
+     * <p>
+     * If <i>exchange</i> is the default exchange a non-durable, shared, non-autoDelete queue is declared with name <i>routing-key</i>.
+     * </p>
+     * <p>
+     * The message is published with no (minimal) properties.
+     * </p>
+     */
     public static void main(String[] args) {
         try {
             String uri = (args.length > 0) ? args[0] : "amqp://localhost";

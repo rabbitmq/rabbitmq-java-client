@@ -455,7 +455,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Queue.BindOk
      * @param queue the name of the queue
      * @param exchange the name of the exchange
-     * @param routingKey the routine key to use for the binding
+     * @param routingKey the routing key to use for the binding
      * @return a binding-confirm method if the binding was successfully created
      * @throws IOException if an error is encountered
      */

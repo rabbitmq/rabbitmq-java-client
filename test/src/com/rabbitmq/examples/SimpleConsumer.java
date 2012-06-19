@@ -21,7 +21,24 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
+/**
+ * Java Application to consume messages from a given queue, and print them.
+ */
 public class SimpleConsumer {
+    /**
+     * @param args command-line parameters
+     * <p>
+     * Zero to two positional parameters:
+     * </p>
+     * <ul>
+     * <li><i>AMQP-uri</i> -
+     * the AMQP uri to connect to the broker to use. Default <code>amqp://localhost</code>.
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
+     * <li><i>queue-name</i> - the name of a non-durable, shared, non-autoDelete queue to consume from. Default "<code>SimpleQueue</code>".
+     * </li>
+     * </ul>
+     */
     public static void main(String[] args) {
         try {
             String uri = (args.length > 0) ? args[0] : "amqp://localhost";

@@ -45,7 +45,6 @@ public class HelloServer {
      * the port to connect on. Default <code>5672</code>.
      * </li>
      * </ul>
-     *
      */
     public static void main(String[] args) {
         try {
