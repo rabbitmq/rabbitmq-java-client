@@ -58,8 +58,8 @@ public class FileProducer {
      * </p>
      * <ul>
      * <li><code>-h</code> <i>AMQP-uri</i> - the AMQP uri to connect to the broker to use. Default
-     * <code>amqp://localhost</code>.</li>
-     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * <code>amqp://localhost</code>. (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
      * <li><code>-p</code> <i>broker-port</i> - the port number to contact the broker on. Default
      * <code>5672</code>.</li>
      * <li><code>-e</code> <i>exchange-name</i> - the name of the exchange to use. The program declares and

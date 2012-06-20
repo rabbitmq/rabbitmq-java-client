@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Random;
 
-import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -29,32 +28,44 @@ import com.rabbitmq.client.QueueingConsumer;
 
 
 /**
- * Class to explore how performance of sending and receiving messages
- * varies with the buffer size and enabling/disabling Nagle's
- * algorithm.
+ * Java Application to explore how performance of sending and receiving messages
+ * varies with the buffer size and enabling/disabling Nagle's algorithm.
+ * <p/>
+ * Repeatedly publishes and consumes 100,000 trivial messages with a randomly chosen
+ * buffer size, running twice, once with and once without Nagle's Algorithm enabled.
  */
 public class BufferPerformanceMetrics {
 
-    public static final int MESSAGE_COUNT  = 100000;
-    public static final byte[] MESSAGE     = "".getBytes();
-    public static final int REPEATS        = 1000000;
-    public static final int PEAK_SIZE      = 20 * 1024;
+    private static final int MESSAGE_COUNT  = 100000;
+    private static final byte[] MESSAGE     = "".getBytes();
+    private static final int REPEATS        = 1000000;
+    private static final int PEAK_SIZE      = 20 * 1024;
 
-    public static double NANOSECONDS_PER_SECOND = 1000 * 1000 * 1000;
+    private static final double NANOSECONDS_PER_SECOND = 1.0E9;
 
+    /**
+     * @param args command-line parameters
+     * <p>
+     * One optional parameter:
+     * </p>
+     * <ul>
+     * <li><i>AMQP-uri</i> - the AMQP uri to connect to the broker. Default
+     * <code>amqp://localhost</code>.
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
+     * </ul>
+     * @throws Exception test
+     */
     public static void main(String[] args) throws Exception {
         final String uri = args.length > 0 ? args[0] : "amqp://localhost";
 
         Random rnd = new Random();
 
-        System.out.println("buffer size, " +
-                           "publish rate with nagle, " +
-                           "consume rate with nagle, " +
-                           "publish rate without nagle, " +
-                           "consume rate without nagle");
+        System.out.println(
+            "buffer_size  publish_rate+nagle  consume_rate+nagle  publish_rate-nagle  consume_rate-nagle");
 
         for(int repeat = 0; repeat < REPEATS; repeat++) {
-            final int bufferSize = 1 + rnd.nextInt(PEAK_SIZE);
+            int bufferSize = 1 + rnd.nextInt(PEAK_SIZE);
 
             double
                 publishRateNagle   = 0,
@@ -62,44 +73,29 @@ public class BufferPerformanceMetrics {
                 consumeRateNagle   = 0,
                 consumeRateNoNagle = 0;
 
-            for(final boolean useNagle : new boolean[] { false, true }) {
-                ConnectionFactory factory = new ConnectionFactory() {
-                    { setUri(uri); }
-
-                        public void configureSocket(Socket socket)
-                            throws IOException {
-                            socket.setTcpNoDelay(!useNagle);
-                            socket.setReceiveBufferSize(bufferSize);
-                            socket.setSendBufferSize(bufferSize);
-                        }
-                    };
+            for(boolean useNagle : new boolean[] { false, true }) {
+                ConnectionFactory factory = new PerfConnectionFactory(uri, useNagle, bufferSize);
 
                 Connection connection = factory.newConnection();
                 Channel channel = connection.createChannel();
-                Queue.DeclareOk res = channel.queueDeclare();
-                String queueName = res.getQueue();
+                String queueName = channel.queueDeclare().getQueue();
 
-                long start;
-
-                start = System.nanoTime();
-
+                long startPublish = System.nanoTime();
                 for(int i = 0; i < MESSAGE_COUNT; i++) {
                     channel.basicPublish("", queueName,
                                          MessageProperties.BASIC, MESSAGE);
                 }
+                long publishTime = System.nanoTime() - startPublish;
 
                 QueueingConsumer consumer = new QueueingConsumer(channel);
-                channel.basicConsume(queueName, true, consumer);
 
-                long publishTime = System.nanoTime() - start;
-
-                start = System.nanoTime();
+                long startConsume = System.nanoTime();
+                channel.basicConsume(queueName, true, consumer); // consumption starts here
 
                 for(int i = 0; i < MESSAGE_COUNT; i++){
                     consumer.nextDelivery();
                 }
-
-                long consumeTime = System.nanoTime() - start;
+                long consumeTime = System.nanoTime() - startConsume;
 
                 double publishRate =
                     MESSAGE_COUNT / (publishTime / NANOSECONDS_PER_SECOND);
@@ -119,11 +115,29 @@ public class BufferPerformanceMetrics {
                 Thread.sleep(100);
             }
 
-            System.out.println(bufferSize + ", " +
-                               publishRateNagle + ", " +
-                               consumeRateNagle + ", " +
-                               publishRateNoNagle + ", " +
-                               consumeRateNoNagle);
+            System.out.println(String.format(
+                "%11d  %18.2f  %18.2f  %18.2f  %18.2f",
+                bufferSize, publishRateNagle, consumeRateNagle, publishRateNoNagle, consumeRateNoNagle
+                ));
         }
     }
+
+    private static class PerfConnectionFactory extends ConnectionFactory {
+        private final boolean useNagle;
+        private final int bufferSize;
+
+        PerfConnectionFactory(String uriString, boolean useNagle, int bufferSize) throws Exception {
+            this.useNagle = useNagle;
+            this.bufferSize = bufferSize;
+            this.setUri(uriString);
+        }
+
+        @Override
+        public void configureSocket(Socket socket) throws IOException {
+            socket.setTcpNoDelay(!useNagle);
+            socket.setReceiveBufferSize(bufferSize);
+            socket.setSendBufferSize(bufferSize);
+        }
+    };
+
 }
