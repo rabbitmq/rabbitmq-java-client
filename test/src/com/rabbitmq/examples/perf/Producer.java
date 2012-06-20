@@ -148,10 +148,10 @@ public class Producer implements Runnable, ReturnListener,
 
             while ((timeLimit == 0 || now < limitTime) &&
                    (msgLimit == 0 || msgCount < msgLimit)) {
+                delay(now);
                 if (confirmPool != null) {
                     confirmPool.acquire();
                 }
-                delay(now);
                 publish(createMessage(totalMsgCount));
                 totalMsgCount++;
                 msgCount++;
@@ -159,8 +159,8 @@ public class Producer implements Runnable, ReturnListener,
                 if (txSize != 0 && totalMsgCount % txSize == 0) {
                     channel.txCommit();
                 }
-                now = System.currentTimeMillis();
                 stats.handleSend();
+                now = System.currentTimeMillis();
             }
 
         } catch (IOException e) {
