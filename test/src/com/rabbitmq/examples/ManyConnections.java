@@ -21,16 +21,39 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
 
+/**
+ * Java Application to generate many connections, each with many channels, and publish and consume on a thread on each channel at a given rate.
+ */
 public class ManyConnections {
-    public static double rate;
-    public static int connectionCount;
-    public static int channelPerConnectionCount;
-    public static int heartbeatInterval;
+    private static double rate;
+    private static int connectionCount;
+    private static int channelPerConnectionCount;
+    private static int heartbeatInterval;
 
-    public static int totalCount() {
+    private final static int totalCount() {
         return connectionCount * channelPerConnectionCount;
     }
 
+    /**
+     * @param args command-line parameters
+     * <p>
+     * Four mandatory and one optional positional parameter:
+     * </p>
+     * <ul>
+     * <li><i>AMQP-uri</i> -
+     * the AMQP uri to connect to the broker to use.
+     * (See {@link ConnectionFactory#setUri(String) setUri()}.)
+     * </li>
+     * <li><i>connection-count</i> - the number of connections to create.
+     * </li>
+     * <li><i>channel-count</i> - the number of channels to create per connection.
+     * </li>
+     * <li><i>heartbeat</i> - the heartbeat interval, in seconds, for each connection. Zero for no heartbeats.
+     * </li>
+     * <li><i>message-rate</i> - the message publishing rate, in messages per second, expressed as a decimal fraction. Default 1.0.
+     * </li>
+     * </ul>
+     */
     public static void main(String[] args) {
         try {
             if (args.length < 4) {
@@ -74,7 +97,7 @@ public class ManyConnections {
         }
     }
 
-    public static void runChannel(int threadNumber, Channel ch) {
+    private static void runChannel(int threadNumber, Channel ch) {
         try {
             int delayLen = (int) (1000 / rate);
             long startTime = System.currentTimeMillis();
