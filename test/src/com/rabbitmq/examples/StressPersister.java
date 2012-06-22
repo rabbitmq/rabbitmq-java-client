@@ -38,7 +38,30 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 
+/**
+ * Java Application to repeatedly publish a single message to and consume a single message
+ * from a non-empty queue, triggering server persistence of messages.
+ */
 public class StressPersister {
+
+    /**
+     * @param args command-line parameters:
+     * <p>
+     * Options, in any order, are:
+     * </p>
+     * <ul>
+     * <li><code>-C</code> <i>Comment</i> - the comment text, suffix of the output file name. No default.</li>
+     * <li><code>-h</code> <i>AMQP-uri</i> - the AMQP uri to connect to the broker to use. Default
+     * <code>amqp://localhost</code>. (See {@link ConnectionFactory#setUri(String) setUri()}.)</li>
+     * <li><code>-b</code> <i>backlog-size</i> - the number of messages to pre-load the queue with. Default 5000.
+     * </li>
+     * <li><code>-B</code> <i>body-size</i> - the size of the body of all messages, in bytes. Default 16384.</li>
+     * <li><code>-c</code> <i>count</i> - number of messages to send and receive, after loading. Default
+     * 5*<i>backlog-size</i>.</li>
+     * <li><code>-s</code> <i>sample-size</i> - the number of messages between sampling. Default the maximum of 5
+     * and <i>count</i>/250.</li>
+     * </ul>
+     */
     public static void main(String[] args) {
         try {
             StressPersister sp = new StressPersister();
@@ -75,19 +98,19 @@ public class StressPersister {
         return multiplier * Integer.parseInt(arg);
     }
 
-    public String uri;
+    private String uri;
 
-    public String commentText;
-    public int backlogSize;
-    public int bodySize;
-    public int repeatCount;
-    public int sampleGranularity;
+    private String commentText;
+    private int backlogSize;
+    private int bodySize;
+    private int repeatCount;
+    private int sampleGranularity;
 
-    public ConnectionFactory connectionFactory;
-    public long topStartTime;
-    public PrintWriter logOut;
+    private ConnectionFactory connectionFactory;
+    private long topStartTime;
+    private PrintWriter logOut;
 
-    public void configure(String[] args)
+    private void configure(String[] args)
         throws ParseException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
         Options options = new Options();
@@ -116,11 +139,11 @@ public class StressPersister {
         connectionFactory.setUri(uri);
     }
 
-    public Connection newConnection() throws IOException {
+    private Connection newConnection() throws IOException {
         return connectionFactory.newConnection();
     }
 
-    public void run() throws IOException, InterruptedException {
+    private void run() throws IOException, InterruptedException {
         topStartTime = System.currentTimeMillis();
         String logFileName = String.format("stress-persister-b%08d-B%010d-c%08d-s%06d-%s.out",
                 backlogSize, bodySize, repeatCount, sampleGranularity, commentText);
@@ -131,23 +154,23 @@ public class StressPersister {
         logOut.close();
     }
 
-    public void trace(String message) {
+    private void trace(String message) {
         long now = System.currentTimeMillis();
         long delta = now - topStartTime;
-        String s = String.format("# %010d ms: %s", delta, message);
+        String s = String.format("# %10d ms: %s", delta, message);
         System.out.println(s);
         logOut.println(s);
         logOut.flush();
     }
 
-    public void redeclare(String q, Channel chan) throws IOException {
+    private void redeclare(String q, Channel chan) throws IOException {
         trace("Redeclaring queue " + q);
         chan.queueDeclare(q, true, false, false, null);
         // ^^ synchronous operation to get some kind
         // of indication back from the server that it's caught up with us
     }
 
-    public void publishOneInOneOutReceive(int backlogSize, int bodySize, int repeatCount, int sampleGranularity) throws IOException, InterruptedException {
+    private void publishOneInOneOutReceive(int backlogSize, int bodySize, int repeatCount, int sampleGranularity) throws IOException, InterruptedException {
         String q = "test";
         BasicProperties props = MessageProperties.MINIMAL_PERSISTENT_BASIC;
         Connection conn = newConnection();
@@ -177,10 +200,10 @@ public class StressPersister {
         for (int i = 0; i < repeatCount; i++) {
             if (((i % sampleGranularity) == 0) && (i > 0)) {
                 long now = System.currentTimeMillis();
-                double delta = 1000 * (now - startTime) / (double) sampleGranularity;
+                double delta = 1000.0 * (now - startTime) / (double) sampleGranularity;
                 plateauSampleTimes.add(now);
                 plateauSampleDeltas.add(delta);
-                System.out.print(String.format("# %3d%%; %012d --> %g microseconds/roundtrip            \r",
+                System.out.print(String.format("# %3d%%; %12d --> %8.2f microseconds/roundtrip            \r",
                                     (100 * i / repeatCount),
                                     now,
                                     delta));

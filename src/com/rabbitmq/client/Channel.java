@@ -529,10 +529,11 @@ public interface Channel extends ShutdownNotifier {
      * or {@link com.rabbitmq.client.AMQP.Basic.Deliver} method
      * containing the received message being acknowledged.
      * @see com.rabbitmq.client.AMQP.Basic.Ack
-     * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk} or {@link com.rabbitmq.client.AMQP.Basic.Deliver}
+     * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk}
+     * or {@link com.rabbitmq.client.AMQP.Basic.Deliver}; can be zero, meaning all unacknowledged messages so far received
      * @param multiple true to acknowledge all messages up to and
      * including the supplied delivery tag; false to acknowledge just
-     * the supplied delivery tag.
+     * the supplied delivery tag. Must be <code>true</code> if <code>deliveryTag</code> is zero.
      * @throws IOException if an error is encountered
      */
     void basicAck(long deliveryTag, boolean multiple) throws IOException;
@@ -543,10 +544,11 @@ public interface Channel extends ShutdownNotifier {
      * Supply the <code>deliveryTag</code> from the {@link com.rabbitmq.client.AMQP.Basic.GetOk}
      * or {@link com.rabbitmq.client.AMQP.Basic.GetOk} method containing the message to be rejected.
      * @see com.rabbitmq.client.AMQP.Basic.Nack
-     * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk} or {@link com.rabbitmq.client.AMQP.Basic.Deliver}
+     * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk}
+     * or {@link com.rabbitmq.client.AMQP.Basic.Deliver}; can be zero, meaning all unacknowledged messages so far received
      * @param multiple true to reject all messages up to and including
      * the supplied delivery tag; false to reject just the supplied
-     * delivery tag.
+     * delivery tag. Must be <code>true</code> if <code>deliveryTag</code> is zero.
      * @param requeue true if the rejected message(s) should be requeued rather
      * than discarded/dead-lettered
      * @throws IOException if an error is encountered
@@ -559,7 +561,8 @@ public interface Channel extends ShutdownNotifier {
      * or {@link com.rabbitmq.client.AMQP.Basic.Deliver} method
      * containing the received message being rejected.
      * @see com.rabbitmq.client.AMQP.Basic.Reject
-     * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk} or {@link com.rabbitmq.client.AMQP.Basic.Deliver}
+     * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk}
+     * or {@link com.rabbitmq.client.AMQP.Basic.Deliver}; can be zero, meaning all unacknowledged messages so far received
      * @param requeue true if the rejected message should be requeued rather than discarded/dead-lettered
      * @throws IOException if an error is encountered
      */
