@@ -44,6 +44,11 @@ import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
+final class Copyright {
+    final static String COPYRIGHT="Copyright (C) 2007-2012 VMware, Inc.";
+    final static String LICENSE="Licensed under the MPL. See http://www.rabbitmq.com/";
+}
+
 /**
  * Concrete class representing and managing an AMQP connection to a broker.
  * <p>
@@ -63,21 +68,22 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @see Connection#getClientProperties
      */
     public static final Map<String, Object> defaultClientProperties() {
+        Map<String,Object> props = new HashMap<String, Object>();
+        props.put("product", LongStringHelper.asLongString("RabbitMQ"));
+        props.put("version", LongStringHelper.asLongString(ClientVersion.VERSION));
+        props.put("platform", LongStringHelper.asLongString("Java"));
+        props.put("copyright", LongStringHelper.asLongString(Copyright.COPYRIGHT));
+        props.put("information", LongStringHelper.asLongString(Copyright.LICENSE));
+
         Map<String, Object> capabilities = new HashMap<String, Object>();
         capabilities.put("publisher_confirms", true);
         capabilities.put("exchange_exchange_bindings", true);
         capabilities.put("basic.nack", true);
         capabilities.put("consumer_cancel_notify", true);
-        return buildTable(new Object[] {
-                "product", LongStringHelper.asLongString("RabbitMQ"),
-                "version", LongStringHelper.asLongString(ClientVersion.VERSION),
-                "platform", LongStringHelper.asLongString("Java"),
-                "copyright", LongStringHelper.asLongString(
-                    "Copyright (C) 2007-2012 VMware, Inc."),
-                "information", LongStringHelper.asLongString(
-                    "Licensed under the MPL. See http://www.rabbitmq.com/"),
-                "capabilities", capabilities
-            });
+
+        props.put("capabilities", capabilities);
+
+        return props;
     }
 
     private static final Version clientVersion =
