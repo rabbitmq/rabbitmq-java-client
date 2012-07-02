@@ -805,20 +805,4 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private String getHostAddress() {
         return getAddress() == null ? null : getAddress().getHostAddress();
     }
-
-    /**
-     * Utility for constructing a java.util.Map instance from an
-     * even-length array containing alternating String keys (on the
-     * even elements, starting at zero) and values (on the odd
-     * elements, starting at one).
-     */
-    private static final Map<String, Object> buildTable(Object[] keysValues) {
-        Map<String, Object> result = new HashMap<String, Object>();
-        for (int index = 0; index < keysValues.length; index += 2) {
-            String key = (String) keysValues[index];
-            Object value = keysValues[index + 1];
-            result.put(key, value);
-        }
-        return result;
-    }
 }
