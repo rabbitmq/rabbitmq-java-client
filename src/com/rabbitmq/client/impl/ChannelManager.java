@@ -104,7 +104,6 @@ public final class ChannelManager {
                 }
                 ssWorkService.shutdown();
             }}, "ConsumerWorkServiceShutdown");
-        shutdownThread.setDaemon(true);
         shutdownThread.start();
     }
 

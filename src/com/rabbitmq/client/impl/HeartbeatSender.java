@@ -22,6 +22,7 @@ import com.rabbitmq.client.AMQP;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
 import java.io.IOException;
@@ -35,6 +36,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * from the main loop thread used for the connection.
  */
 final class HeartbeatSender {
+
+    private final static ThreadFactory heartbeatThreadFactory = new HeartbeatThreadFactory();
 
     private final Object monitor = new Object();
 
@@ -86,9 +89,18 @@ final class HeartbeatSender {
     private ScheduledExecutorService createExecutorIfNecessary() {
         synchronized (this.monitor) {
             if (this.executor == null) {
-                this.executor = Executors.newSingleThreadScheduledExecutor();
+                this.executor = Executors.newSingleThreadScheduledExecutor(heartbeatThreadFactory);
             }
             return this.executor;
+        }
+    }
+
+    /** The heartbeat thread(s) can be aborted at any time, and must not prevent orderly JVM shutdown */
+    private static class HeartbeatThreadFactory implements ThreadFactory {
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(r, "Heartbeat thread");
+            t.setDaemon(true);
+            return t;
         }
     }
 
