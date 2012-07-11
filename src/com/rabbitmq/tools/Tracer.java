@@ -476,7 +476,7 @@ public class Tracer implements Runnable {
                 LOG_QUEUE_SIZE, true);
 
         /**
-         * Same as {@link #AsyncLogger(OutputStream, int)} with a one-second flush interval.
+         * Same as <code>AsyncLogger(outputStream, ONE_SECOND_INTERVAL)</code>.
          * @param os OutputStream to print to.
          */
         public AsyncLogger(OutputStream os) {
