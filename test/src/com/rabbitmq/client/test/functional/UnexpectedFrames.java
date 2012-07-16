@@ -133,16 +133,42 @@ public class UnexpectedFrames extends BrokerTestCase {
         });
     }
 
-    private void expectUnexpectedFrameError(Confuser confuser)
-        throws IOException {
+    public void testHeartbeatOnChannel() throws IOException {
+        expectUnexpectedFrameError(new Confuser() {
+            public Frame confuse(Frame frame) {
+                if (frame.type == AMQP.FRAME_METHOD) {
+                    return new Frame(AMQP.FRAME_HEARTBEAT, frame.channel);
+                }
+                return frame;
+            }
+        });
+    }
 
+    public void testUnknownFrameType() throws IOException {
+        expectError(AMQP.FRAME_ERROR, new Confuser() {
+            public Frame confuse(Frame frame) {
+                if (frame.type == AMQP.FRAME_METHOD) {
+                    return new Frame(0, frame.channel,
+                                     "1234567890\0001234567890".getBytes());
+                }
+                return frame;
+            }
+        });
+    }
+
+    private void expectError(int error, Confuser confuser) throws IOException {
         ((ConfusedFrameHandler)((AMQConnection)connection).getFrameHandler()).
             confuser = confuser;
 
         //NB: the frame confuser relies on the encoding of the
         //method field to be at least 8 bytes long
         channel.basicPublish("", "routing key", null, "Hello".getBytes());
-        expectError(AMQP.UNEXPECTED_FRAME);
+        expectError(error);
+    }
+
+    private void expectUnexpectedFrameError(Confuser confuser)
+        throws IOException {
+        expectError(AMQP.UNEXPECTED_FRAME, confuser);
     }
 
 }
