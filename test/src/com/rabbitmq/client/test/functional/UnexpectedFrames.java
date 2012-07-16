@@ -96,10 +96,8 @@ public class UnexpectedFrames extends BrokerTestCase {
                 if (frame.type == AMQP.FRAME_METHOD) {
                     // We can't just skip the method as that will lead us to
                     // send 0 bytes and hang waiting for a response.
-                    Frame confusedFrame = new Frame(AMQP.FRAME_HEADER,
-                                                    frame.channel,
-                                                    frame.getPayload());
-                    return confusedFrame;
+                    return new Frame(AMQP.FRAME_HEADER,
+                                     frame.channel, frame.getPayload());
                 }
                 return frame;
             }
@@ -119,12 +117,11 @@ public class UnexpectedFrames extends BrokerTestCase {
 
     public void testWrongClassInHeader() throws IOException {
         expectUnexpectedFrameError(new Confuser() {
-            public Frame confuse(Frame frame) throws IOException {
+            public Frame confuse(Frame frame) {
                 if (frame.type == AMQP.FRAME_HEADER) {
                     byte[] payload = frame.getPayload();
                     Frame confusedFrame = new Frame(AMQP.FRAME_HEADER,
-                            frame.channel,
-                            payload);
+                                                    frame.channel, payload);
                     // First two bytes = class ID, must match class ID from
                     // method.
                     payload[0] = 12;
