@@ -42,7 +42,6 @@ import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingCell;
-import com.rabbitmq.utility.Utility;
 
 final class Copyright {
     final static String COPYRIGHT="Copyright (C) 2007-2012 VMware, Inc.";
@@ -88,6 +87,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     private static final Version clientVersion =
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
+
+    /** A checker is created and registered at class load time. */
+    private static final ShutdownChecker shutdownChecker = new ShutdownChecker().set();
 
     /** The special channel 0 (<i>not</i> managed by the <code><b>_channelManager</b></code>) */
     private final AMQChannel _channel0 = new AMQChannel(this, 0) {
@@ -511,6 +513,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
          */
         @Override public void run() {
             try {
+                shutdownChecker.addShutdownCheck(AMQConnection.this);
                 while (_running) {
                     Frame frame = _frameHandler.readFrame();
 
@@ -553,6 +556,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 _frameHandler.close();
                 _appContinuation.set(null);
                 notifyListeners();
+                shutdownChecker.removeShutdownCheck(AMQConnection.this);
             }
         }
     }
