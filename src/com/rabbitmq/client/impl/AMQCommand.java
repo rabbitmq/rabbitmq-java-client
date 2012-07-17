@@ -40,7 +40,7 @@ public class AMQCommand implements Command {
      * See {@link #checkEmptyContentBodyFrameSize}, an assertion
      * checked at startup.
      */
-    private static final int EMPTY_CONTENT_BODY_FRAME_SIZE = 8;
+    public static final int EMPTY_CONTENT_BODY_FRAME_SIZE = 8;
 
     /** The assembler for this command - synchronised on - contains all the state */
     private final CommandAssembler assembler;

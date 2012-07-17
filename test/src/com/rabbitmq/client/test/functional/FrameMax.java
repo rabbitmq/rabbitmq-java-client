@@ -29,6 +29,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.AMQCommand;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.LongStringHelper;
@@ -150,7 +151,9 @@ public class FrameMax extends BrokerTestCase {
         }
 
         @Override public int getFrameMax() {
-            return super.getFrameMax() + 1;
+            // the RabbitMQ broker permits frames that are oversize by
+            // up to EMPTY_CONTENT_BODY_FRAME_SIZE octets
+            return super.getFrameMax() + AMQCommand.EMPTY_CONTENT_BODY_FRAME_SIZE + 1;
         }
 
     }
