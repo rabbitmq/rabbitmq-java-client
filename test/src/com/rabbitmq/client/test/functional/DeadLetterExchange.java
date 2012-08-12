@@ -2,6 +2,8 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
@@ -22,6 +24,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     private static final String DLQ2 = "queue.dlq2";
     private static final int MSG_COUNT = 10;
     private static final int MSG_COUNT_MANY = 1000;
+    private static final int TTL = 1000;
 
     @Override
     protected void createResources() throws IOException {
@@ -84,11 +87,60 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     public void testDeadLetterQueueTTLExpiredMessages() throws Exception {
-        ttlTest(1000);
+        ttlTest(TTL);
     }
 
     public void testDeadLetterQueueZeroTTLExpiredMessages() throws Exception {
         ttlTest(0);
+    }
+
+    public void testDeadLetterQueueTTLPromptExpiry() throws Exception {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-message-ttl", TTL);
+        declareQueue(TEST_QUEUE_NAME, DLX, null, args);
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+        channel.queueBind(DLQ, DLX, "test");
+
+        //measure round-trip latency
+        QueueingConsumer c = new QueueingConsumer(channel);
+        String cTag = channel.basicConsume(TEST_QUEUE_NAME, true, c);
+        long start = System.currentTimeMillis();
+        channel.basicPublish("amq.direct", "test", null, "test".getBytes());
+        Delivery d = c.nextDelivery(TTL);
+        long stop = System.currentTimeMillis();
+        assertNotNull(d);
+        channel.basicCancel(cTag);
+        long latency = stop-start;
+
+        // publish messages at regular intervals until currentTime +
+        // 3/4th of TTL
+        int count = 0;
+        start = System.currentTimeMillis();
+        stop = start + TTL * 3 / 4;
+        long now = start;
+        while (now < stop) {
+            channel.basicPublish("amq.direct", "test", null,
+                                 Long.toString(now).getBytes());
+            count++;
+            Thread.sleep(TTL / 100);
+            now = System.currentTimeMillis();
+        }
+
+        // check that each message arrives within epsilon of the
+        // publication time + TTL + latency
+        long epsilon = TTL / 100;
+        channel.basicConsume(DLQ, true, c);
+        while (count-- > 0) {
+            d = c.nextDelivery(TTL + latency + epsilon);
+            assertNotNull(d);
+            now = System.currentTimeMillis();
+            long publishTime = Long.valueOf(new String(d.getBody()));
+            long targetTime = publishTime + TTL + latency;
+            assertTrue("expiry outside bounds (+/- " + epsilon + "): " +
+                       (now - targetTime),
+                       (now > targetTime - epsilon) &&
+                       (now < targetTime + epsilon));
+        }
     }
 
     public void testDeadLetterDeletedDLX() throws Exception {
