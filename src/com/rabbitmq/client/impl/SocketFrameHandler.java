@@ -135,12 +135,16 @@ public class SocketFrameHandler implements FrameHandler {
     public void writeFrame(Frame frame) throws IOException {
         synchronized (_outputStream) {
             frame.writeTo(_outputStream);
-            _outputStream.flush();
         }
+    }
+
+    public void flush() throws IOException {
+        _outputStream.flush();
     }
 
     public void close() {
         try { _socket.setSoLinger(true, SOCKET_CLOSING_TIMEOUT); } catch (Exception _) {}
+        try { flush();                                           } catch (Exception _) {}
         try { _socket.close();                                   } catch (Exception _) {}
     }
 }

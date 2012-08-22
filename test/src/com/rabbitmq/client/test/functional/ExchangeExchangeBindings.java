@@ -27,7 +27,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 public class ExchangeExchangeBindings extends BrokerTestCase {
 
-    private static final int TIMEOUT = 1000;
+    private static final int TIMEOUT = 5000;
     private static final byte[] MARKER = "MARK".getBytes();
 
     private final String[] queues = new String[] { "q0", "q1", "q2" };

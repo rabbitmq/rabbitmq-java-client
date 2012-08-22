@@ -45,6 +45,11 @@ import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
+final class Copyright {
+    final static String COPYRIGHT="Copyright (C) 2007-2012 VMware, Inc.";
+    final static String LICENSE="Licensed under the MPL. See http://www.rabbitmq.com/";
+}
+
 /**
  * Concrete class representing and managing an AMQP connection to a broker.
  * <p>
@@ -64,21 +69,22 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @see Connection#getClientProperties
      */
     public static final Map<String, Object> defaultClientProperties() {
+        Map<String,Object> props = new HashMap<String, Object>();
+        props.put("product", LongStringHelper.asLongString("RabbitMQ"));
+        props.put("version", LongStringHelper.asLongString(ClientVersion.VERSION));
+        props.put("platform", LongStringHelper.asLongString("Java"));
+        props.put("copyright", LongStringHelper.asLongString(Copyright.COPYRIGHT));
+        props.put("information", LongStringHelper.asLongString(Copyright.LICENSE));
+
         Map<String, Object> capabilities = new HashMap<String, Object>();
         capabilities.put("publisher_confirms", true);
         capabilities.put("exchange_exchange_bindings", true);
         capabilities.put("basic.nack", true);
         capabilities.put("consumer_cancel_notify", true);
-        return buildTable(new Object[] {
-                "product", LongStringHelper.asLongString("RabbitMQ"),
-                "version", LongStringHelper.asLongString(ClientVersion.VERSION),
-                "platform", LongStringHelper.asLongString("Java"),
-                "copyright", LongStringHelper.asLongString(
-                    "Copyright (C) 2007-2012 VMware, Inc."),
-                "information", LongStringHelper.asLongString(
-                    "Licensed under the MPL. See http://www.rabbitmq.com/"),
-                "capabilities", capabilities
-            });
+
+        props.put("capabilities", capabilities);
+
+        return props;
     }
 
     private static final Version clientVersion =
@@ -475,6 +481,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _heartbeatSender.signalActivity();
     }
 
+    /**
+     * Public API - flush the output buffers
+     */
+    public void flush() throws IOException {
+        _frameHandler.flush();
+    }
+
     private static final int negotiatedMaxValue(int clientValue, int serverValue) {
         return (clientValue == 0 || serverValue == 0) ?
             Math.max(clientValue, serverValue) :
@@ -809,21 +822,5 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     private String getHostAddress() {
         return getAddress() == null ? null : getAddress().getHostAddress();
-    }
-
-    /**
-     * Utility for constructing a java.util.Map instance from an
-     * even-length array containing alternating String keys (on the
-     * even elements, starting at zero) and values (on the odd
-     * elements, starting at one).
-     */
-    private static final Map<String, Object> buildTable(Object[] keysValues) {
-        Map<String, Object> result = new HashMap<String, Object>();
-        for (int index = 0; index < keysValues.length; index += 2) {
-            String key = (String) keysValues[index];
-            Object value = keysValues[index + 1];
-            result.put(key, value);
-        }
-        return result;
     }
 }
