@@ -74,7 +74,7 @@ class ShutdownChecker {
             System.err.println("WARNING: Connection ("
                              + connection.toString()
                              + ") was open during JVM shutdown. "
-                             + "Messages may be lost."
+                             + "Messages may have been lost."
                              );
     }
 }
