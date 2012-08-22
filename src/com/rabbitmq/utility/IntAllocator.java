@@ -28,20 +28,22 @@ import java.util.BitSet;
  * <p/><b>Implementation notes:</b>
  * <br/>This was originally an ordered chain of non-overlapping Intervals,
  * together with a fixed size array cache for freed integers.
- * <br/>{@link #reserve()} was expensive in this scheme, whereas in the
- * present implementation it is O(1), as is {@link #free()}.
- * <br/>Although {@link #allocate()} is slightly slower than O(1) and in the
- * worst case could be O(N), the use of the {@link #lastIndex} field
+ * <br/>{@link #reserve(int)} was expensive in this scheme, whereas in the
+ * present implementation it is O(1), as is {@link #free(int)}.
+ * <p>Although {@link #allocate()} is slightly slower than O(1) and in the
+ * worst case could be O(N), the use of a "<code>lastIndex</code>" field
  * for starting the next scan for free integers means this is negligible.
- * <br/>The data representation overhead is O(N) where N is the size of the
+ * </p>
+ * <p>The data representation overhead is O(N) where N is the size of the
  * allocation range. One <code>long</code> is used for every 64 integers in the
  * range.
- * <br/>Very little Object creation and destruction occurs in use.
+ * </p>
+ * <p>Very little Object creation and destruction occurs in use.</p>
  */
 public class IntAllocator {
 
     private final int loRange; // the integer bit 0 represents
-    private final int hiRange; // the integer(+1) the highest bit represents
+    private final int hiRange; // one more than the integer the highest bit represents
     private final int numberOfBits; // relevant in freeSet
     private int lastIndex = 0; // for searching for FREE integers
     /** A bit is SET in freeSet if the corresponding integer is FREE
