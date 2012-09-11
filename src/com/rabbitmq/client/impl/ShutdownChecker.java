@@ -20,14 +20,16 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.rabbitmq.client.AMQP;
+
 /**
- * Class to check connections at JVM shutdown.
+ * Class to close connections at JVM termination.
  * <p>
  * <code>ShutdownChecker</code> holds a set of {@link AMQConnection}s and registers a shutdown hook to
- * check when the JVM performs an orderly shutdown.
+ * be executed when the JVM performs an orderly termination.
  * </p>
  * <p>
- * This class offers two public methods to add a connection and to remove a connection, and one public method to set the
+ * This class offers two public methods to add and to remove a connection, and one public method to set the
  * checker -- which registers the hook (and returns itself, so the call can be chained).
  * </p>
  * <p>
@@ -37,6 +39,7 @@ import java.util.Set;
  */
 class ShutdownChecker {
 
+    private static final int TERMINATION_TIMEOUT = 1000; // ms
     private final Set<AMQConnection>
         checkedConnections = Collections.synchronizedSet(new HashSet<AMQConnection>());
 
@@ -61,20 +64,29 @@ class ShutdownChecker {
     private final void checkConnections() {
         synchronized (this.checkedConnections) {
             for (AMQConnection c: this.checkedConnections) {
-                checkIsNotOpen(c);
+                checkAndCloseIfNotOpen(c);
             }
         }
     }
 
     /**
-     * Issues warning if the connection object is open.
+     * If the connection is open, it is closed. An error message is issued if this fails.
      */
-    private final void checkIsNotOpen(AMQConnection connection) {
-        if (connection.isOpen())
-            System.err.println("WARNING: Connection ("
-                             + connection.toString()
-                             + ") was open during JVM shutdown. "
-                             + "Messages may have been lost."
-                             );
+    private final void checkAndCloseIfNotOpen(AMQConnection connection) {
+        if (connection.isOpen()) {
+            String connStr = connection.toString();
+            try {
+                connection.close(AMQP.CONNECTION_FORCED,
+                    "Connection closed during JVM termination.",
+                    TERMINATION_TIMEOUT);
+                System.err.println("WARNING: Connection (" + connStr
+                    + ") was closed during JVM termination.");
+            } catch (Exception e) {
+                System.err.println("ERROR: Connection (" + connStr
+                    + ") threw exception " + e
+                    + " while being closed during JVM termination. "
+                    + "Messages may have been lost.");
+            }
+        }
     }
 }
