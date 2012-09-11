@@ -2,6 +2,8 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
@@ -22,6 +24,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     private static final String DLQ2 = "queue.dlq2";
     private static final int MSG_COUNT = 10;
     private static final int MSG_COUNT_MANY = 1000;
+    private static final int TTL = 1000;
 
     @Override
     protected void createResources() throws IOException {
@@ -84,11 +87,64 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     public void testDeadLetterQueueTTLExpiredMessages() throws Exception {
-        ttlTest(1000);
+        ttlTest(TTL);
     }
 
     public void testDeadLetterQueueZeroTTLExpiredMessages() throws Exception {
         ttlTest(0);
+    }
+
+    public void testDeadLetterQueueTTLPromptExpiry() throws Exception {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-message-ttl", TTL);
+        declareQueue(TEST_QUEUE_NAME, DLX, null, args);
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+        channel.queueBind(DLQ, DLX, "test");
+
+        //measure round-trip latency
+        QueueingConsumer c = new QueueingConsumer(channel);
+        String cTag = channel.basicConsume(TEST_QUEUE_NAME, true, c);
+        long start = System.currentTimeMillis();
+        publish(null, "test");
+        Delivery d = c.nextDelivery(TTL);
+        long stop = System.currentTimeMillis();
+        assertNotNull(d);
+        channel.basicCancel(cTag);
+        long latency = stop-start;
+
+        channel.basicConsume(DLQ, true, c);
+
+        // publish messages at regular intervals until currentTime +
+        // 3/4th of TTL
+        int count = 0;
+        start = System.currentTimeMillis();
+        stop = start + TTL * 3 / 4;
+        long now = start;
+        while (now < stop) {
+            publish(null, Long.toString(now));
+            count++;
+            Thread.sleep(TTL / 100);
+            now = System.currentTimeMillis();
+        }
+
+        checkPromptArrival(c, count, latency);
+
+        start = System.currentTimeMillis();
+        // publish message - which kicks off the queue's ttl timer -
+        // and immediately fetch it in noack mode
+        publishAt(start);
+        basicGet(TEST_QUEUE_NAME);
+        // publish a 2nd message and immediately fetch it in ack mode
+        publishAt(start + TTL * 1 / 2);
+        GetResponse r = channel.basicGet(TEST_QUEUE_NAME, false);
+        // publish a 3rd message
+        publishAt(start + TTL * 3 / 4);
+        // reject 2nd message after the initial timer has fired but
+        // before the message is due to expire
+        waitUntil(start + TTL * 5 / 4);
+        channel.basicReject(r.getEnvelope().getDeliveryTag(), true);
+
+        checkPromptArrival(c, 2, latency);
     }
 
     public void testDeadLetterDeletedDLX() throws Exception {
@@ -322,6 +378,24 @@ public class DeadLetterExchange extends BrokerTestCase {
         }
     }
 
+    /* check that each message arrives within epsilon of the
+       publication time + TTL + latency */
+    private void checkPromptArrival(QueueingConsumer c,
+                                    int count, long latency) throws Exception {
+        long epsilon = TTL / 50;
+        for (int i = 0; i < count; i++) {
+            Delivery d = c.nextDelivery(TTL + TTL + latency + epsilon);
+            assertNotNull("message #" + i + " did not expire", d);
+            long now = System.currentTimeMillis();
+            long publishTime = Long.valueOf(new String(d.getBody()));
+            long targetTime = publishTime + TTL + latency;
+            assertTrue("expiry outside bounds (+/- " + epsilon + "): " +
+                       (now - targetTime),
+                       (now >= targetTime - epsilon) &&
+                       (now <= targetTime + epsilon));
+        }
+    }
+
     private void declareQueue(Object deadLetterExchange) throws IOException {
         declareQueue(TEST_QUEUE_NAME, deadLetterExchange, null, null);
     }
@@ -359,10 +433,23 @@ public class DeadLetterExchange extends BrokerTestCase {
     private void publishN(int n, AMQP.BasicProperties props)
         throws IOException
     {
-        for(int x = 0; x < n; x++) {
-            channel.basicPublish("amq.direct", "test", props,
-                                 "test message".getBytes());
-        }
+        for(int x = 0; x < n; x++) { publish(props, "test message"); }
+    }
+
+    private void publish(AMQP.BasicProperties props, String body)
+        throws IOException
+    {
+        channel.basicPublish("amq.direct", "test", props, body.getBytes());
+    }
+
+    private void publishAt(long when) throws Exception {
+        waitUntil(when);
+        publish(null, Long.toString(System.currentTimeMillis()));
+    }
+
+    private void waitUntil(long when) throws Exception {
+        long delay = when - System.currentTimeMillis();
+        Thread.sleep(delay > 0 ? delay : 0);
     }
 
     private void consumeN(String queue, int n, WithResponse withResponse)

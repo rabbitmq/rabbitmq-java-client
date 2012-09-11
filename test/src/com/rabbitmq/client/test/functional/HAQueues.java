@@ -57,4 +57,12 @@ public class HAQueues extends BrokerTestCase {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ie);
         }
     }
+
+    public void testRapidRedeclare() throws IOException {
+        String name = "ha-redeclare";
+        for (int i = 0; i < 20; i++) {
+            channel.queueDeclare(name, true, true, false, all);
+            channel.queueDelete(name);
+        }
+    }
 }
