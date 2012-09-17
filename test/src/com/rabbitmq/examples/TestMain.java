@@ -450,7 +450,7 @@ public class TestMain {
     }
 
     public void tryBasicReturn() throws IOException {
-        log("About to try mandatory/immediate publications");
+        log("About to try mandatory publications");
 
         String mx = "mandatoryTestExchange";
         _ch1.exchangeDeclare(mx, "fanout", false, true, null);
@@ -461,24 +461,12 @@ public class TestMain {
         _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());
         doBasicReturn(returnCell, AMQP.NO_ROUTE);
 
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, true, null, "two".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_ROUTE);
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", false, true, null, "three".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
-
         String mq = "mandatoryTestQueue";
         _ch1.queueDeclare(mq, false, false, true, null);
         _ch1.queueBind(mq, mx, "");
 
         returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, true, null, "four".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, false, null, "five".getBytes());
+        _ch1.basicPublish(mx, "", true, false, null, "two".getBytes());
         drain(1, mq, true);
         _ch1.queueDelete(mq, true, true);
 
@@ -519,11 +507,6 @@ public class TestMain {
         _ch1.txCommit();
         doBasicReturn(returnCell, AMQP.NO_ROUTE);
         returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish("", "bogus", false, true, null, "immediate".getBytes());
-        _ch1.txCommit();
-        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
-        returnCell = new BlockingCell<Object>();
-        _ch1.txCommit();
         expect(2, drain(10, queueName, false));
 
         unsetChannelReturnListener();

@@ -60,16 +60,13 @@ public class Confirm extends BrokerTestCase
                           "confirm-multiple-queues");
     }
 
-    public void testPersistentMandatoryImmediateCombinations()
+    public void testPersistentMandatoryCombinations()
         throws IOException, InterruptedException
     {
         boolean b[] = { false, true };
         for (boolean persistent : b) {
             for (boolean mandatory : b) {
-                for (boolean immediate : b) {
-                    confirmTest("", "confirm-test",
-                                persistent, mandatory, immediate);
-                        }
+                confirmTest("", "confirm-test", persistent, mandatory);
             }
         }
     }
@@ -77,28 +74,20 @@ public class Confirm extends BrokerTestCase
     public void testNonDurable()
         throws IOException, InterruptedException
     {
-        confirmTest("", "confirm-test-nondurable", true, false, false);
-    }
-
-    public void testImmediateNoConsumer()
-        throws IOException, InterruptedException
-    {
-        confirmTest("", "confirm-test-noconsumer", false, false, true);
-        confirmTest("", "confirm-test-noconsumer",  true, false, true);
+        confirmTest("", "confirm-test-nondurable", true, false);
     }
 
     public void testMandatoryNoRoute()
         throws IOException, InterruptedException
     {
-        confirmTest("", "confirm-test-doesnotexist", false, true, false);
-        confirmTest("", "confirm-test-doesnotexist",  true, true, false);
+        confirmTest("", "confirm-test-doesnotexist", false, true);
+        confirmTest("", "confirm-test-doesnotexist",  true, true);
     }
 
     public void testMultipleQueues()
         throws IOException, InterruptedException
     {
-        confirmTest("amq.direct", "confirm-multiple-queues",
-                    true, false, false);
+        confirmTest("amq.direct", "confirm-multiple-queues", true, false);
     }
 
     /* For testQueueDelete and testQueuePurge to be
@@ -109,7 +98,7 @@ public class Confirm extends BrokerTestCase
     public void testQueueDelete()
         throws IOException, InterruptedException
     {
-        publishN("","confirm-test-noconsumer", true, false, false);
+        publishN("","confirm-test-noconsumer", true, false);
 
         channel.queueDelete("confirm-test-noconsumer");
 
@@ -119,7 +108,7 @@ public class Confirm extends BrokerTestCase
     public void testQueuePurge()
         throws IOException, InterruptedException
     {
-        publishN("", "confirm-test-noconsumer", true, false, false);
+        publishN("", "confirm-test-noconsumer", true, false);
 
         channel.queuePurge("confirm-test-noconsumer");
 
@@ -142,7 +131,7 @@ public class Confirm extends BrokerTestCase
                 Collections.singletonMap(TTL_ARG, (Object)ttl);
             channel.queueDeclare("confirm-ttl", true, true, false, argMap);
 
-            publishN("", "confirm-ttl", true, false, false);
+            publishN("", "confirm-ttl", true, false);
             channel.waitForConfirmsOrDie();
 
             channel.queueDelete("confirm-ttl");
@@ -166,7 +155,7 @@ public class Confirm extends BrokerTestCase
     public void testBasicRecover()
         throws IOException, InterruptedException
     {
-        publishN("", "confirm-test-noconsumer", true, false, false);
+        publishN("", "confirm-test-noconsumer", true, false);
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
             GetResponse resp =
@@ -231,7 +220,7 @@ public class Confirm extends BrokerTestCase
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
             unconfirmedSet.add(channel.getNextPublishSeqNo());
-            publish("", "confirm-test", true, false, false);
+            publish("", "confirm-test", true, false);
         }
 
         channel.waitForConfirmsOrDie();
@@ -245,14 +234,14 @@ public class Confirm extends BrokerTestCase
     {
         channel = connection.createChannel();
         // Don't enable Confirm mode
-        publish("", "confirm-test", true, false, false);
+        publish("", "confirm-test", true, false);
         channel.waitForConfirmsOrDie(); // Nop
     }
 
     public void testWaitForConfirmsException()
         throws IOException, InterruptedException
     {
-        publishN("", "confirm-test", true, false, false);
+        publishN("", "confirm-test", true, false);
         channel.close();
         try {
             channel.waitForConfirmsOrDie();
@@ -268,29 +257,27 @@ public class Confirm extends BrokerTestCase
 
     /* Publish NUM_MESSAGES messages and wait for confirmations. */
     public void confirmTest(String exchange, String queueName,
-                            boolean persistent, boolean mandatory,
-                            boolean immediate)
+                            boolean persistent, boolean mandatory)
         throws IOException, InterruptedException
     {
-        publishN(exchange, queueName, persistent, mandatory, immediate);
+        publishN(exchange, queueName, persistent, mandatory);
 
         channel.waitForConfirmsOrDie();
     }
 
     private void publishN(String exchangeName, String queueName,
-                          boolean persistent, boolean mandatory,
-                          boolean immediate)
+                          boolean persistent, boolean mandatory)
         throws IOException
     {
         for (long i = 0; i < NUM_MESSAGES; i++) {
-            publish(exchangeName, queueName, persistent, mandatory, immediate);
+            publish(exchangeName, queueName, persistent, mandatory);
         }
     }
 
     private void basicRejectCommon(boolean requeue)
         throws IOException
     {
-        publishN("", "confirm-test-noconsumer", true, false, false);
+        publishN("", "confirm-test-noconsumer", true, false);
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
             GetResponse resp =
@@ -301,10 +288,9 @@ public class Confirm extends BrokerTestCase
     }
 
     protected void publish(String exchangeName, String queueName,
-                           boolean persistent, boolean mandatory,
-                           boolean immediate)
+                           boolean persistent, boolean mandatory)
         throws IOException {
-        channel.basicPublish(exchangeName, queueName, mandatory, immediate,
+        channel.basicPublish(exchangeName, queueName, mandatory, false,
                              persistent ? MessageProperties.PERSISTENT_BASIC
                                         : MessageProperties.BASIC,
                              "nop".getBytes());
