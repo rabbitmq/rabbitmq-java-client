@@ -248,7 +248,6 @@ public class TestMain {
         _ch1.basicCancel(cTag2);
 
         tryTopics();
-        tryBasicReturn();
 
         queueName =_ch1.queueDeclare().getQueue();
         sendLotsOfTrivialMessages(batchSize, queueName);
@@ -447,33 +446,6 @@ public class TestMain {
             System.err.println("Eek! Got basic return with code " + replyCode + ", but expected code " + expectedCode);
             System.exit(1);
         }
-    }
-
-    public void tryBasicReturn() throws IOException {
-        log("About to try mandatory publications");
-
-        String mx = "mandatoryTestExchange";
-        _ch1.exchangeDeclare(mx, "fanout", false, true, null);
-
-        setChannelReturnListener();
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_ROUTE);
-
-        String mq = "mandatoryTestQueue";
-        _ch1.queueDeclare(mq, false, false, true, null);
-        _ch1.queueBind(mq, mx, "");
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, false, null, "two".getBytes());
-        drain(1, mq, true);
-        _ch1.queueDelete(mq, true, true);
-
-        unsetChannelReturnListener();
-
-        log("Completed basic.return testing.");
-
     }
 
     private void unsetChannelReturnListener() {

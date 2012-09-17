@@ -20,6 +20,8 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.ReturnListener;
+import com.rabbitmq.utility.BlockingCell;
 
 import java.io.IOException;
 import java.util.List;
@@ -33,6 +35,8 @@ public class Routing extends BrokerTestCase
     protected final String E = "MRDQ";
     protected final String Q1 = "foo";
     protected final String Q2 = "bar";
+
+    private volatile BlockingCell<Integer> returnCell;
 
     protected void createResources() throws IOException {
         channel.exchangeDeclare(E, "direct");
@@ -228,5 +232,36 @@ public class Routing extends BrokerTestCase
         checkGet(Q2, false);
     }
 
-}
+    public void testBasicReturn() throws Exception {
+        channel.addReturnListener(new ReturnListener() {
+                public void handleReturn(int replyCode,
+                                         String replyText,
+                                         String exchange,
+                                         String routingKey,
+                                         AMQP.BasicProperties properties,
+                                         byte[] body)
+                    throws IOException {
+                    Routing.this.returnCell.set(replyCode);
+                }
+            });
+        returnCell = new BlockingCell<Integer>();
+        channel.basicPublish("", "unknown", true, false, null, "mandatory1".getBytes());
+        int replyCode = returnCell.uninterruptibleGet();
+        assertEquals(replyCode, AMQP.NO_ROUTE);
 
+        returnCell = new BlockingCell<Integer>();
+        channel.basicPublish("", Q1, true, false, null, "mandatory2".getBytes());
+        GetResponse r = channel.basicGet(Q1, true);
+        assertNotNull(r);
+        assertEquals(new String(r.getBody()), "mandatory2");
+
+        channel.basicPublish("", Q1, false, true, null, "immediate".getBytes());
+        try {
+            channel.basicQos(0); //flush
+            fail("basic.publish{immediate=true} should not be supported");
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
+        }
+    }
+
+}
