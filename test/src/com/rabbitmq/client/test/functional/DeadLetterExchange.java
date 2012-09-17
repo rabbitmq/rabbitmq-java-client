@@ -177,6 +177,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueDelete(TEST_QUEUE_NAME);
         try {
             channel.queueDelete(TEST_QUEUE_NAME);
+            fail();
         } catch (IOException ex) {
             checkShutdownSignal(AMQP.NOT_FOUND, ex);
         }
