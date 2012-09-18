@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 public class Routing extends BrokerTestCase
 {
@@ -232,29 +233,19 @@ public class Routing extends BrokerTestCase
         checkGet(Q2, false);
     }
 
-    public void testBasicReturn() throws Exception {
-        channel.addReturnListener(new ReturnListener() {
-                public void handleReturn(int replyCode,
-                                         String replyText,
-                                         String exchange,
-                                         String routingKey,
-                                         AMQP.BasicProperties properties,
-                                         byte[] body)
-                    throws IOException {
-                    Routing.this.returnCell.set(replyCode);
-                }
-            });
+    public void testBasicReturn() throws IOException {
+        channel.addReturnListener(makeReturnListener());
         returnCell = new BlockingCell<Integer>();
+
+        //returned 'mandatory' publish
         channel.basicPublish("", "unknown", true, false, null, "mandatory1".getBytes());
-        int replyCode = returnCell.uninterruptibleGet();
-        assertEquals(replyCode, AMQP.NO_ROUTE);
+        checkReturn(AMQP.NO_ROUTE);
 
-        returnCell = new BlockingCell<Integer>();
+        //routed 'mandatory' publish
         channel.basicPublish("", Q1, true, false, null, "mandatory2".getBytes());
-        GetResponse r = channel.basicGet(Q1, true);
-        assertNotNull(r);
-        assertEquals(new String(r.getBody()), "mandatory2");
+        assertNotNull(channel.basicGet(Q1, true));
 
+        //'immediate' publish
         channel.basicPublish("", Q1, false, true, null, "immediate".getBytes());
         try {
             channel.basicQos(0); //flush
@@ -262,6 +253,53 @@ public class Routing extends BrokerTestCase
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
         }
+    }
+
+    public void testBasicReturnTransactional() throws IOException {
+        channel.txSelect();
+        channel.addReturnListener(makeReturnListener());
+        returnCell = new BlockingCell<Integer>();
+
+        //returned 'mandatory' publish
+        channel.basicPublish("", "unknown", true, false, null, "mandatory1".getBytes());
+        try {
+            returnCell.uninterruptibleGet(200);
+            fail("basic.return issued prior to tx.commit");
+        } catch (TimeoutException toe) {}
+        channel.txCommit();
+        checkReturn(AMQP.NO_ROUTE);
+
+        //routed 'mandatory' publish
+        channel.basicPublish("", Q1, true, false, null, "mandatory2".getBytes());
+        channel.txCommit();
+        assertNotNull(channel.basicGet(Q1, true));
+
+        //returned 'mandatory' publish when message is routable on
+        //publish but not on commit
+        channel.basicPublish("", Q1, true, false, null, "mandatory2".getBytes());
+        channel.queueDelete(Q1);
+        channel.txCommit();
+        checkReturn(AMQP.NO_ROUTE);
+        channel.queueDeclare(Q1, false, false, false, null);
+    }
+
+    protected ReturnListener makeReturnListener() {
+        return new ReturnListener() {
+            public void handleReturn(int replyCode,
+                                     String replyText,
+                                     String exchange,
+                                     String routingKey,
+                                     AMQP.BasicProperties properties,
+                                     byte[] body)
+                throws IOException {
+                Routing.this.returnCell.set(replyCode);
+            }
+        };
+    }
+
+    protected void checkReturn(int replyCode) {
+        assertEquals((int)returnCell.uninterruptibleGet(), AMQP.NO_ROUTE);
+        returnCell = new BlockingCell<Integer>();
     }
 
 }

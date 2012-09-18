@@ -253,8 +253,6 @@ public class TestMain {
         sendLotsOfTrivialMessages(batchSize, queueName);
         expect(batchSize, drain(batchSize, queueName, true));
 
-        tryTransaction(queueName);
-
         _ch1.close();
 
         log("Closing.");
@@ -462,30 +460,6 @@ public class TestMain {
             }
         }
     }
-
-    public void tryTransaction(String queueName) throws IOException {
-
-        log("About to tryTranscation");
-
-        _ch1.txSelect();
-
-        setChannelReturnListener();
-
-        //test basicReturn handling in tx context
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish("", queueName, false, false, null, "normal".getBytes());
-        _ch1.basicPublish("", queueName, true, false, null, "mandatory".getBytes());
-        _ch1.basicPublish("", "bogus", true, false, null, "mandatory".getBytes());
-        _ch1.txCommit();
-        doBasicReturn(returnCell, AMQP.NO_ROUTE);
-        returnCell = new BlockingCell<Object>();
-        expect(2, drain(10, queueName, false));
-
-        unsetChannelReturnListener();
-        log("Finished tryTransaction");
-    }
-
-
 
     // utility: tell what Java compiler version a class was compiled with
     public static String getCompilerVersion(Class<?> clazz) throws IOException {
