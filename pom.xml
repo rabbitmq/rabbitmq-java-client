@@ -29,36 +29,8 @@
 
     <developers>
       <developer>
-        <id>matthias.radestock</id>
-        <name>Matthias Radestock</name>
-        <roles>
-          <role>Developer</role>
-        </roles>
-      </developer>
-     <developer>
-        <id>tonyg</id>
-        <name>Tony Garnock-Jones</name>
-        <roles>
-          <role>Developer</role>
-        </roles>
-      </developer>
-      <developer>
-        <id>matthew.sackman</id>
-        <name>Matthias Sackman</name>
-        <roles>
-          <role>Developer</role>
-        </roles>
-      </developer>
-      <developer>
-        <id>david.maciver</id>
-        <name>David MacIver</name>
-        <roles>
-          <role>Developer</role>
-        </roles>
-      </developer>
-      <developer>
-        <id>paul.jones</id>
-        <name>Paul Jones</name>
+        <id>rabbitmq.team</id>
+        <name>The RabbitMQ Team</name>
         <roles>
           <role>Developer</role>
         </roles>
