@@ -248,13 +248,10 @@ public class TestMain {
         _ch1.basicCancel(cTag2);
 
         tryTopics();
-        tryBasicReturn();
 
         queueName =_ch1.queueDeclare().getQueue();
         sendLotsOfTrivialMessages(batchSize, queueName);
         expect(batchSize, drain(batchSize, queueName, true));
-
-        tryTransaction(queueName);
 
         _ch1.close();
 
@@ -449,45 +446,6 @@ public class TestMain {
         }
     }
 
-    public void tryBasicReturn() throws IOException {
-        log("About to try mandatory/immediate publications");
-
-        String mx = "mandatoryTestExchange";
-        _ch1.exchangeDeclare(mx, "fanout", false, true, null);
-
-        setChannelReturnListener();
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_ROUTE);
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, true, null, "two".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_ROUTE);
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", false, true, null, "three".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
-
-        String mq = "mandatoryTestQueue";
-        _ch1.queueDeclare(mq, false, false, true, null);
-        _ch1.queueBind(mq, mx, "");
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, true, null, "four".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, false, null, "five".getBytes());
-        drain(1, mq, true);
-        _ch1.queueDelete(mq, true, true);
-
-        unsetChannelReturnListener();
-
-        log("Completed basic.return testing.");
-
-    }
-
     private void unsetChannelReturnListener() {
         _ch1.clearReturnListeners();
         log("ReturnListeners unset");
@@ -502,35 +460,6 @@ public class TestMain {
             }
         }
     }
-
-    public void tryTransaction(String queueName) throws IOException {
-
-        log("About to tryTranscation");
-
-        _ch1.txSelect();
-
-        setChannelReturnListener();
-
-        //test basicReturn handling in tx context
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish("", queueName, false, false, null, "normal".getBytes());
-        _ch1.basicPublish("", queueName, true, false, null, "mandatory".getBytes());
-        _ch1.basicPublish("", "bogus", true, false, null, "mandatory".getBytes());
-        _ch1.txCommit();
-        doBasicReturn(returnCell, AMQP.NO_ROUTE);
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish("", "bogus", false, true, null, "immediate".getBytes());
-        _ch1.txCommit();
-        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
-        returnCell = new BlockingCell<Object>();
-        _ch1.txCommit();
-        expect(2, drain(10, queueName, false));
-
-        unsetChannelReturnListener();
-        log("Finished tryTransaction");
-    }
-
-
 
     // utility: tell what Java compiler version a class was compiled with
     public static String getCompilerVersion(Class<?> clazz) throws IOException {
