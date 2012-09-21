@@ -605,7 +605,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
-        basicPublish(exchange, routingKey, false, false, props, body);
+        basicPublish(exchange, routingKey, false, props, body);
+    }
+
+    /** Public API - {@inheritDoc} */
+    public void basicPublish(String exchange, String routingKey,
+                             boolean mandatory,
+                             BasicProperties props, byte[] body)
+        throws IOException
+    {
+        basicPublish(exchange, routingKey, mandatory, false, props, body);
     }
 
     /** Public API - {@inheritDoc} */

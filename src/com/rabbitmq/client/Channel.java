@@ -231,7 +231,7 @@ public interface Channel extends ShutdownNotifier {
     void basicQos(int prefetchCount) throws IOException;
 
     /**
-     * Publish a message with both "mandatory" and "immediate" flags set to false
+     * Publish a message
      * @see com.rabbitmq.client.AMQP.Basic.Publish
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
@@ -246,8 +246,22 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.Publish
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
-     * @param mandatory true if we are requesting a mandatory publish
-     * @param immediate true if we are requesting an immediate publish
+     * @param mandatory true if the 'mandatory' flag is to be set
+     * @param props other properties for the message - routing headers etc
+     * @param body the message body
+     * @throws java.io.IOException if an error is encountered
+     */
+    void basicPublish(String exchange, String routingKey, boolean mandatory, BasicProperties props, byte[] body)
+            throws IOException;
+
+    /**
+     * Publish a message
+     * @see com.rabbitmq.client.AMQP.Basic.Publish
+     * @param exchange the exchange to publish the message to
+     * @param routingKey the routing key
+     * @param mandatory true if the 'mandatory' flag is to be set
+     * @param immediate true if the 'immediate' flag is to be
+     * set. Note that the RabbitMQ server does not support this flag.
      * @param props other properties for the message - routing headers etc
      * @param body the message body
      * @throws java.io.IOException if an error is encountered
