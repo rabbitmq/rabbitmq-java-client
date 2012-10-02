@@ -13,19 +13,15 @@ public class WorkPoolTests extends TestCase {
     private WorkPool<String, Object> pool = new WorkPool<String, Object>();
 
     /**
-     * Test that an unknown key is rejected.
+     * Test unknown key tolerated silently
+     * @throws Exception untested
      */
-    public void testUnkownKey() {
-        try {
-            this.pool.addWorkItem("test", new Object());
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
+    public void testUnknownKey() throws Exception{
+        assertFalse(this.pool.addWorkItem("test", new Object()));
     }
 
     /**
-     * Test basic add work and remove work.
+     * Test add work and remove work
      * @throws Exception untested
      */
     public void testBasicInOut() throws Exception {

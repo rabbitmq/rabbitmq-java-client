@@ -239,14 +239,37 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /**
      * Sends a ShutdownSignal to all active consumers.
+     * Idempotent.
      * @param signal an exception signalling channel shutdown
      */
-    private CountDownLatch broadcastShutdownSignal(ShutdownSignalException signal) {
+    private void broadcastShutdownSignal(ShutdownSignalException signal) {
         Map<String, Consumer> snapshotConsumers;
         synchronized (_consumers) {
             snapshotConsumers = new HashMap<String, Consumer>(_consumers);
         }
-        return this.dispatcher.handleShutdownSignal(snapshotConsumers, signal);
+        this.finishedShutdownFlag = this.dispatcher.handleShutdownSignal(snapshotConsumers, signal);
+    }
+
+    /**
+     * Start to shutdown -- defer rest of processing until ready
+     */
+    private void startProcessShutdownSignal(ShutdownSignalException signal,
+                                                boolean ignoreClosed,
+                                                boolean notifyRpc)
+    {   super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
+    }
+
+    /**
+     * Finish shutdown processing -- idempotent
+     */
+    private void finishProcessShutdownSignal()
+    {
+        this.dispatcher.quiesce();
+        broadcastShutdownSignal(getCloseReason());
+
+        synchronized (unconfirmedSet) {
+            unconfirmedSet.notifyAll();
+        }
     }
 
     /**
@@ -257,12 +280,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                 boolean ignoreClosed,
                                                 boolean notifyRpc)
     {
-        this.dispatcher.quiesce();
-        super.processShutdownSignal(signal, ignoreClosed, notifyRpc);
-        this.finishedShutdownFlag = broadcastShutdownSignal(signal);
-        synchronized (unconfirmedSet) {
-            unconfirmedSet.notifyAll();
-        }
+        startProcessShutdownSignal(signal, ignoreClosed, notifyRpc);
+        finishProcessShutdownSignal();
     }
 
     CountDownLatch getShutdownLatch() {
@@ -526,13 +545,18 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             signal.initCause(cause);
         }
 
-        BlockingRpcContinuation<AMQCommand> k = new SimpleBlockingRpcContinuation();
+        BlockingRpcContinuation<AMQCommand> k = new BlockingRpcContinuation<AMQCommand>(){
+            @Override
+            public AMQCommand transformReply(AMQCommand command) {
+                ChannelN.this.finishProcessShutdownSignal();
+                return command;
+            }};
         boolean notify = false;
         try {
             // Synchronize the block below to avoid race conditions in case
             // connnection wants to send Connection-CloseOK
             synchronized (_channelMutex) {
-                processShutdownSignal(signal, !initiatedByApplication, true);
+                startProcessShutdownSignal(signal, !initiatedByApplication, true);
                 quiescingRpc(reason, k);
             }
 
@@ -581,7 +605,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
-        basicPublish(exchange, routingKey, false, false, props, body);
+        basicPublish(exchange, routingKey, false, props, body);
+    }
+
+    /** Public API - {@inheritDoc} */
+    public void basicPublish(String exchange, String routingKey,
+                             boolean mandatory,
+                             BasicProperties props, byte[] body)
+        throws IOException
+    {
+        basicPublish(exchange, routingKey, mandatory, false, props, body);
     }
 
     /** Public API - {@inheritDoc} */

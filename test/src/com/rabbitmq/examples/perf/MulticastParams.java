@@ -156,14 +156,8 @@ public class MulticastParams {
 
     public Consumer createConsumer(Channel channel, Stats stats, String id) throws IOException {
         if (consumerTxSize > 0) channel.txSelect();
-        channel.exchangeDeclare(exchangeName, exchangeType);
-        String qName =
-                channel.queueDeclare(queueName,
-                                     flags.contains("persistent"),
-                                     exclusive, autoDelete,
-                                     null).getQueue();
+        String qName = configureQueue(channel, id);
         if (prefetchCount > 0) channel.basicQos(prefetchCount);
-        channel.queueBind(qName, exchangeName, id);
         return new Consumer(channel, id, qName,
                                          consumerTxSize, autoAck, multiAckEvery,
                                          stats, consumerMsgCount, timeLimit);
@@ -173,12 +167,13 @@ public class MulticastParams {
         return consumerCount == 0 && !queueName.equals("");
     }
 
-    public void configureQueue(Channel channel, String id) throws IOException {
+    public String configureQueue(Channel channel, String id) throws IOException {
         channel.exchangeDeclare(exchangeName, exchangeType);
-        channel.queueDeclare(queueName,
-                             flags.contains("persistent"),
-                             exclusive, autoDelete,
-                             null).getQueue();
-        channel.queueBind(queueName, exchangeName, id);
+        String qName = channel.queueDeclare(queueName,
+                                            flags.contains("persistent"),
+                                            exclusive, autoDelete,
+                                            null).getQueue();
+        channel.queueBind(qName, exchangeName, id);
+        return qName;
     }
 }
