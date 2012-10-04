@@ -177,6 +177,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueDelete(TEST_QUEUE_NAME);
         try {
             channel.queueDelete(TEST_QUEUE_NAME);
+            fail();
         } catch (IOException ex) {
             checkShutdownSignal(AMQP.NOT_FOUND, ex);
         }
@@ -391,8 +392,8 @@ public class DeadLetterExchange extends BrokerTestCase {
             long targetTime = publishTime + TTL + latency;
             assertTrue("expiry outside bounds (+/- " + epsilon + "): " +
                        (now - targetTime),
-                       (now > targetTime - epsilon) &&
-                       (now < targetTime + epsilon));
+                       (now >= targetTime - epsilon) &&
+                       (now <= targetTime + epsilon));
         }
     }
 
