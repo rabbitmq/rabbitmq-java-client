@@ -26,6 +26,11 @@ import junit.framework.TestSuite;
 public class FunctionalTests extends TestCase {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("functional");
+        add(suite);
+        return suite;
+    }
+
+    public static void add(TestSuite suite) {
         suite.addTestSuite(ConnectionOpen.class);
         suite.addTestSuite(Heartbeat.class);
         suite.addTestSuite(Tables.class);
@@ -64,6 +69,5 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(InternalExchange.class);
         suite.addTestSuite(CcRoutes.class);
         suite.addTestSuite(WorkPoolTests.class);
-        return suite;
     }
 }

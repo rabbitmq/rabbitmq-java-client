@@ -23,6 +23,11 @@ import junit.framework.TestSuite;
 public class ServerTests extends TestCase {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("server-tests");
+        add(suite);
+        return suite;
+    }
+
+    public static void add(TestSuite suite) {
         suite.addTestSuite(Permissions.class);
         suite.addTestSuite(DurableBindingLifecycle.class);
         suite.addTestSuite(EffectVisibilityCrossNodeTest.class);
@@ -32,6 +37,5 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(MessageRecovery.class);
         suite.addTestSuite(Firehose.class);
         suite.addTestSuite(PersistenceGuarantees.class);
-        return suite;
     }
 }
