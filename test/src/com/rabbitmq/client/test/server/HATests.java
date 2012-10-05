@@ -22,6 +22,8 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 public class HATests extends TestSuite {
+    public static boolean HA_TESTS_RUNNING = false;
+
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("server-tests");
         suite.addTestSuite(SetUp.class);
@@ -38,6 +40,7 @@ public class HATests extends TestSuite {
         @Override
         protected void setUp() throws Exception {
             Host.executeCommand("cd ../rabbitmq-test; make enable-ha");
+            HA_TESTS_RUNNING = true;
         }
 
         public void testNothing() {}
@@ -47,6 +50,7 @@ public class HATests extends TestSuite {
         @Override
         protected void tearDown() throws Exception {
             Host.executeCommand("cd ../rabbitmq-test; make disable-ha");
+            HA_TESTS_RUNNING = false;
         }
 
         public void testNothing() {}
