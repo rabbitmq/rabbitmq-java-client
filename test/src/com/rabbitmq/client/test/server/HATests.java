@@ -22,6 +22,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 public class HATests extends TestSuite {
+    // this is horrific
     public static boolean HA_TESTS_RUNNING = false;
 
     public static TestSuite suite() {
