@@ -45,9 +45,12 @@ import com.rabbitmq.client.AMQP.Channel.FlowOk;
  * </ul>
  * <p>
  *
- * While a Channel can be used by multiple threads, it's important to ensure
- * that only one thread executes a command at once. Concurrent execution of
- * commands will likely cause an UnexpectedFrameError to be thrown.
+ * <p>
+ * {@link Channel} instances are safe for use by multiple
+ * threads. Requests into a {@link Channel} are serialized, with only one
+ * thread running commands at a time.
+ * As such, applications may prefer using a {@link Channel} per thread
+ * instead of sharing the same <code>Channel</code> across multiple threads.
  *
  */
 
