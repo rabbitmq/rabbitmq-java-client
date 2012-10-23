@@ -52,6 +52,11 @@ import com.rabbitmq.client.AMQP.Channel.FlowOk;
  * As such, applications may prefer using a {@link Channel} per thread
  * instead of sharing the same <code>Channel</code> across multiple threads.
  *
+ * An <b>important caveat</b> to this is that confirms are <b>not</b> handled
+ * properly when a {@link Channel} is shared between multiple threads. In that
+ * scenario, it is therefore important to ensure that the {@link Channel}
+ * instance is <b>not</b> accessed concurrently by multiple threads.
+ *
  */
 
 public interface Channel extends ShutdownNotifier {
