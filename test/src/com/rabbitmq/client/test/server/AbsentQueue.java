@@ -83,8 +83,9 @@ public class AbsentQueue extends ClusteredTestBase {
         if (clusteredChannel == null) return;
         try {
             t.run();
-            fail("expected not_found");
+            if (!HATests.HA_TESTS_RUNNING) fail("expected not_found");
         } catch (IOException ioe) {
+            assertFalse(HATests.HA_TESTS_RUNNING);
             checkShutdownSignal(AMQP.NOT_FOUND, ioe);
             channel = connection.createChannel();
         }
