@@ -152,8 +152,8 @@ public class FrameMax extends BrokerTestCase {
 
         @Override public int getFrameMax() {
             // the RabbitMQ broker permits frames that are oversize by
-            // up to EMPTY_CONTENT_BODY_FRAME_SIZE octets
-            return super.getFrameMax() + AMQCommand.EMPTY_CONTENT_BODY_FRAME_SIZE + 1;
+            // up to EMPTY_FRAME_SIZE octets
+            return super.getFrameMax() + AMQCommand.EMPTY_FRAME_SIZE + 1;
         }
 
     }
