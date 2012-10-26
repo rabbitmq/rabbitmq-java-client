@@ -32,15 +32,15 @@ import com.rabbitmq.client.Command;
  */
 public class AMQCommand implements Command {
 
-    /** EMPTY_CONTENT_BODY_FRAME_SIZE = 8 = 1 + 2 + 4 + 1
+    /** EMPTY_FRAME_SIZE = 8 = 1 + 2 + 4 + 1
      * <ul><li>1 byte of frame type</li>
      * <li>2 bytes of channel number</li>
      * <li>4 bytes of frame payload length</li>
      * <li>1 byte of payload trailer FRAME_END byte</li></ul>
-     * See {@link #checkEmptyContentBodyFrameSize}, an assertion
-     * checked at startup.
+     * See {@link #checkEmptyFrameSize}, an assertion checked at
+     * startup.
      */
-    private static final int EMPTY_CONTENT_BODY_FRAME_SIZE = 8;
+    public static final int EMPTY_FRAME_SIZE = 8;
 
     /** The assembler for this command - synchronised on - contains all the state */
     private final CommandAssembler assembler;
@@ -108,7 +108,7 @@ public class AMQCommand implements Command {
 
                 int frameMax = connection.getFrameMax();
                 int bodyPayloadMax = (frameMax == 0) ? body.length : frameMax
-                        - EMPTY_CONTENT_BODY_FRAME_SIZE;
+                        - EMPTY_FRAME_SIZE;
 
                 for (int offset = 0; offset < body.length; offset += bodyPayloadMax) {
                     int remaining = body.length - offset;
@@ -157,26 +157,26 @@ public class AMQCommand implements Command {
 
     /** Called to check internal code assumptions. */
     public static void checkPreconditions() {
-        checkEmptyContentBodyFrameSize();
+        checkEmptyFrameSize();
     }
 
     /**
-     * Since we're using a pre-computed value for
-     * EMPTY_CONTENT_BODY_FRAME_SIZE we check this is
-     * actually correct when run against the framing code in Frame.
+     * Since we're using a pre-computed value for EMPTY_FRAME_SIZE we
+     * check this is actually correct when run against the framing
+     * code in Frame.
      */
-    private static void checkEmptyContentBodyFrameSize() {
+    private static void checkEmptyFrameSize() {
         Frame f = new Frame(AMQP.FRAME_BODY, 0, new byte[0]);
         ByteArrayOutputStream s = new ByteArrayOutputStream();
         try {
             f.writeTo(new DataOutputStream(s));
         } catch (IOException ioe) {
-            throw new AssertionError("IOException while checking EMPTY_CONTENT_BODY_FRAME_SIZE");
+            throw new AssertionError("IOException while checking EMPTY_FRAME_SIZE");
         }
         int actualLength = s.toByteArray().length;
-        if (EMPTY_CONTENT_BODY_FRAME_SIZE != actualLength) {
-            throw new AssertionError("Internal error: expected EMPTY_CONTENT_BODY_FRAME_SIZE("
-                    + EMPTY_CONTENT_BODY_FRAME_SIZE
+        if (EMPTY_FRAME_SIZE != actualLength) {
+            throw new AssertionError("Internal error: expected EMPTY_FRAME_SIZE("
+                    + EMPTY_FRAME_SIZE
                     + ") is not equal to computed value: " + actualLength);
         }
     }
