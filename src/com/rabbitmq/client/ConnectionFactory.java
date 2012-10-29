@@ -350,7 +350,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Gets the sasl config to use when authenticating
-     * @return
+     * @return the sasl config
      * @see com.rabbitmq.client.SaslConfig
      */
     public SaslConfig getSaslConfig() {

@@ -25,7 +25,7 @@ import java.io.IOException;
 public interface SaslMechanism {
     /**
      * The name of this mechanism (e.g. PLAIN)
-     * @return
+     * @return the name
      */
     String getName();
 

@@ -369,9 +369,9 @@ public interface Channel extends ShutdownNotifier {
      * Bind an exchange to an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
-     * @param destination: the name of the exchange to which messages flow across the binding
-     * @param source: the name of the exchange from which messages flow across the binding
-     * @param routingKey: the routine key to use for the binding
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
      */
@@ -381,10 +381,10 @@ public interface Channel extends ShutdownNotifier {
      * Bind an exchange to an exchange.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
-     * @param destination: the name of the exchange to which messages flow across the binding
-     * @param source: the name of the exchange from which messages flow across the binding
-     * @param routingKey: the routine key to use for the binding
-     * @param arguments: other properties (binding parameters)
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
      */
@@ -394,9 +394,9 @@ public interface Channel extends ShutdownNotifier {
      * Unbind an exchange from an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
-     * @param destination: the name of the exchange to which messages flow across the binding
-     * @param source: the name of the exchange from which messages flow across the binding
-     * @param routingKey: the routine key to use for the binding
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
      */
@@ -406,10 +406,10 @@ public interface Channel extends ShutdownNotifier {
      * Unbind an exchange from an exchange.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
-     * @param destination: the name of the exchange to which messages flow across the binding
-     * @param source: the name of the exchange from which messages flow across the binding
-     * @param routingKey: the routine key to use for the binding
-     * @param arguments: other properties (binding parameters)
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
      */
