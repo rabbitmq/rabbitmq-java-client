@@ -56,7 +56,7 @@ public class PerMessageTTL extends TTLHandling {
         try {
             publishAndSynchronise(MSG[0], -15);
             fail("Should not be able to set a negative value for basic.expiration");
-        } catch (ShutdownSignalException e) {
+        } catch (IOException e) {
             checkShutdownSignal(AMQP.INTERNAL_ERROR, e);
         }
     }
