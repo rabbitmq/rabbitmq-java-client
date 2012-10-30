@@ -43,33 +43,41 @@ public class PerMessageTTL extends TTLHandling {
         }
     }
 
-    public void testPublishWithInvalidTTL() throws InterruptedException, IOException {
+    public void testPublishWithInvalidTTL() throws InterruptedException {
         try {
-            publishAndAwaitConfirms(MSG[0], "foobar");
+            publishAndSynchronise(MSG[0], "foobar");
             fail("Should not be able to set a non-long value for basic.expiration");
-        } catch (ShutdownSignalException e) {
+        } catch (IOException e) {
             checkShutdownSignal(AMQP.INTERNAL_ERROR, e);
         }
     }
 
     public void testTTLMustBePositive() throws Exception {
         try {
-            publishAndAwaitConfirms(MSG[0], -15);
+            publishAndSynchronise(MSG[0], -15);
             fail("Should not be able to set a negative value for basic.expiration");
         } catch (ShutdownSignalException e) {
             checkShutdownSignal(AMQP.INTERNAL_ERROR, e);
         }
     }
 
-    /*
-     * Test messages expire when using basic get.
-     */
-    public void testPublishAndGetWithExpiry() throws Exception {
+    public void testMessagesExpireWhenUsingBasicGet() throws Exception {
         // this seems quite timing dependent - would it not be better
         // to test this by setting up a DLX and verifying that the
         // expired messages have been sent there instead?
         publish(MSG[0], 200);
-        Thread.sleep(150);
+        Thread.sleep(1000);
+
+        String what = get();
+        assertNull("expected message " + what + " to have been removed", what);
+    }
+
+    public void testMultiplePublishAndGetWithExpiry() throws Exception {
+        // this seems quite timing dependent - would it not be better
+        // to test this by setting up a DLX and verifying that the
+        // expired messages have been sent there instead?
+        publish(MSG[0], 200);
+        Thread.sleep(500);
 
         publish(MSG[1], 200);
         Thread.sleep(100);
@@ -157,10 +165,10 @@ public class PerMessageTTL extends TTLHandling {
         assertNull(c.nextDelivery(100));
     }
 
-    private void publishAndAwaitConfirms(String msg, Object expiration)
+    private void publishAndSynchronise(String msg, Object expiration)
             throws IOException, InterruptedException {
         publish(msg, expiration);
-        this.channel.waitForConfirmsOrDie();
+        this.channel.basicQos(0);
     }
 
     private void publish(String msg, Object exp) throws IOException {
