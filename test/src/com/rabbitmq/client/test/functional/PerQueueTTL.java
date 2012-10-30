@@ -30,24 +30,7 @@ import java.util.Map;
 /**
  *
  */
-public class PerQueueTTL extends BrokerTestCase {
-
-    private static final String TTL_EXCHANGE           = "ttl.exchange";
-    private static final String TTL_ARG                = "x-message-ttl";
-    private static final String TTL_QUEUE_NAME         = "queue.ttl";
-    private static final String TTL_INVALID_QUEUE_NAME = "invalid.queue.ttl";
-
-    private static final String[] MSG = {"one", "two", "three"};
-
-    @Override
-    protected void createResources() throws IOException {
-        this.channel.exchangeDeclare(TTL_EXCHANGE, "direct");
-    }
-
-    @Override
-    protected void releaseResources() throws IOException {
-        this.channel.exchangeDelete(TTL_EXCHANGE);
-    }
+public class PerQueueTTL extends TTLHandling {
 
     public void testCreateQueueTTLTypes() throws IOException {
         Object[] args = { (byte)200, (short)200, 200, 200L };
@@ -97,14 +80,14 @@ public class PerQueueTTL extends BrokerTestCase {
         }
     }
 
-    public void testQueueRedeclareSemanticEquivalence() throws Exception {
+    public void testQueueReDeclareSemanticEquivalence() throws Exception {
         declareQueue((byte)10);
         declareQueue(10);
         declareQueue((short)10);
         declareQueue(10L);
     }
 
-    public void testQueueRedeclareSemanticNonEquivalence() throws Exception {
+    public void testQueueReDeclareSemanticNonEquivalence() throws Exception {
         declareQueue(10);
         try {
             declareQueue(10.0);
@@ -178,7 +161,7 @@ public class PerQueueTTL extends BrokerTestCase {
     /*
      * Test expiry of requeued messages after being consumed instantly
      */
-    public void testExpiryWithRequeueAfterConsume() throws Exception {
+    public void testExpiryWithReQueueAfterConsume() throws Exception {
         declareAndBindQueue(100);
         QueueingConsumer c = new QueueingConsumer(channel);
         channel.basicConsume(TTL_QUEUE_NAME, c);
@@ -210,35 +193,6 @@ public class PerQueueTTL extends BrokerTestCase {
         // requeued messages should expire
         channel.basicReject(d.getEnvelope().getDeliveryTag(), true);
         assertNull(c.nextDelivery(100));
-    }
-
-    private String get() throws IOException {
-        GetResponse response = basicGet(TTL_QUEUE_NAME);
-        return response == null ? null : new String(response.getBody());
-    }
-
-    private void publish(String msg) throws IOException {
-        basicPublishVolatile(msg.getBytes(), TTL_EXCHANGE, TTL_QUEUE_NAME);
-    }
-
-    private void declareAndBindQueue(Object ttlValue) throws IOException {
-        declareQueue(ttlValue);
-        this.channel.queueBind(TTL_QUEUE_NAME, TTL_EXCHANGE, TTL_QUEUE_NAME);
-    }
-
-    private AMQP.Queue.DeclareOk declareQueue(Object ttlValue) throws IOException {
-        return declareQueue(TTL_QUEUE_NAME, ttlValue);
-    }
-
-    private AMQP.Queue.DeclareOk declareQueue(String name, Object ttlValue) throws IOException {
-        Map<String, Object> argMap = Collections.singletonMap(TTL_ARG, ttlValue);
-        return this.channel.queueDeclare(name, false, true, false, argMap);
-    }
-
-    private void expectBodyAndRemainingMessages(String body, int messagesLeft) throws IOException {
-        GetResponse response = channel.basicGet(TTL_QUEUE_NAME, false);
-        assertEquals(body, new String(response.getBody()));
-        assertEquals(messagesLeft,  response.getMessageCount());
     }
 
 }
