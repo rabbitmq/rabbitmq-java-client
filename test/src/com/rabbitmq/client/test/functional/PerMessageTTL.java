@@ -21,11 +21,10 @@ public class PerMessageTTL extends TTLHandling {
     }
 
     public void testSupportedTTLTypes() throws IOException {
-        Object[] args = { (byte)200, (short)200, 200, 200L };
+        Object[] args = { (((byte)200) & (0xff)), (short)200, 200, 200L };
         for (Object ttl : args) {
             try {
-                publish(MSG[0], ttl);
-                this.channel.waitForConfirmsOrDie();
+                publishAndSynchronise(MSG[0], ttl);
             } catch(Exception ex) {
                 fail("Should be able to use " + ttl.getClass().getName() +
                         " for basic.expiration: " + ex.getMessage());
