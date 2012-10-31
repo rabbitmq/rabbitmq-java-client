@@ -15,8 +15,6 @@ public class PerMessageTTL extends TTLHandling {
 
     @Override
     protected void releaseResources() throws IOException {
-        // this.channel.queueUnbind(TTL_QUEUE_NAME, TTL_EXCHANGE, TTL_QUEUE_NAME);
-        // this.channel.queueDelete(TTL_QUEUE_NAME);
         super.releaseResources();
     }
 
@@ -61,9 +59,6 @@ public class PerMessageTTL extends TTLHandling {
     }
 
     public void testMessagesExpireWhenUsingBasicGet() throws Exception {
-        // this seems quite timing dependent - would it not be better
-        // to test this by setting up a DLX and verifying that the
-        // expired messages have been sent there instead?
         publish(MSG[0], 200);
         Thread.sleep(1000);
 
