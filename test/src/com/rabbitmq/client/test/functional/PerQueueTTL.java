@@ -18,6 +18,7 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.MessageProperties;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -25,21 +26,21 @@ import java.util.Map;
 
 public class PerQueueTTL extends TTLHandling {
 
-    private static final String TTL_ARG = "x-message-ttl";
+    protected static final String TTL_ARG = "x-message-ttl";
 
-    @Override
     public void testInvalidTypeUsedInTTL() throws Exception {
         try {
-            super.testInvalidTypeUsedInTTL();
+            declareQueue(TTL_INVALID_QUEUE_NAME, "foobar");
+            fail("Should not be able to use a non-long value for x-message-ttl");
         } catch (IOException e) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
     }
 
-    @Override
     public void testTTLMustBePositive() throws Exception {
         try {
-            super.testTTLMustBePositive();
+            declareQueue(TTL_INVALID_QUEUE_NAME, -10);
+            fail("Should not be able to use negative values for x-message-ttl");
         } catch (IOException e) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         }
@@ -78,4 +79,11 @@ public class PerQueueTTL extends TTLHandling {
         }
     }
 
+    protected void publishWithExpiration(String msg, Object sessionTTL) throws IOException {
+        basicPublishVolatile(msg.getBytes(), TTL_EXCHANGE, TTL_QUEUE_NAME,
+                MessageProperties.TEXT_PLAIN
+                        .builder()
+                        .expiration(String.valueOf(sessionTTL))
+                        .build());
+    }
 }

@@ -203,7 +203,7 @@ public class BrokerTestCase extends TestCase {
         basicPublishVolatile(msg, x, routingKey, MessageProperties.TEXT_PLAIN);
     }
 
-    protected void basicPublishVolatile(byte[] msg, String x, String routingKey,
+    public void basicPublishVolatile(byte[] msg, String x, String routingKey,
                                         AMQP.BasicProperties properties) throws IOException {
         channel.basicPublish(x, routingKey, properties, msg);
     }

@@ -21,27 +21,9 @@ import com.rabbitmq.client.*;
 
 import java.io.IOException;
 
-public class PerMessageTTL extends TTLHandling {
+public abstract class PerMessageTTLHandling extends TTLHandling {
 
-    private Object sessionTTL;
-
-    @Override
-    public void testInvalidTypeUsedInTTL() throws Exception {
-        try {
-            super.testInvalidTypeUsedInTTL();
-        } catch (IOException e) {
-            checkShutdownSignal(AMQP.INTERNAL_ERROR, e);
-        }
-    }
-
-    @Override
-    public void testTTLMustBePositive() throws Exception {
-        try {
-            super.testTTLMustBePositive();
-        } catch (IOException e) {
-            checkShutdownSignal(AMQP.INTERNAL_ERROR, e);
-        }
-    }
+    protected Object sessionTTL;
 
     @Override
     protected void publish(String msg) throws IOException {
@@ -57,4 +39,5 @@ public class PerMessageTTL extends TTLHandling {
         this.sessionTTL = ttlValue;
         return this.channel.queueDeclare(name, false, true, false, null);
     }
+
 }

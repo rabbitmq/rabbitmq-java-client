@@ -6,8 +6,6 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
 
 public abstract class TTLHandling extends BrokerTestCase {
 
@@ -47,18 +45,6 @@ public abstract class TTLHandling extends BrokerTestCase {
         } catch (IOException e) {
             fail("Should be able to set ttl to zero");
         }
-    }
-
-    public void testInvalidTypeUsedInTTL() throws Exception {
-        declareQueue(TTL_INVALID_QUEUE_NAME, "foobar");
-        publishAndSync(MSG[0]);
-        fail("Should not be able to use a non-long value for ttl");
-    }
-
-    public void testTTLMustBePositive() throws Exception {
-        declareQueue(TTL_INVALID_QUEUE_NAME, -10);
-        publishAndSync(MSG[0]);
-        fail("Should not be able to use negative values for ttl");
     }
 
     public void testMessagesExpireWhenUsingBasicGet() throws Exception {
