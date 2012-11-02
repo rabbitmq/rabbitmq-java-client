@@ -33,16 +33,14 @@ import com.rabbitmq.client.impl.ShutdownNotifierComponent;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.tools.Host;
 
-public class BrokerTestCase extends TestCase
-{
+public class BrokerTestCase extends TestCase {
     protected ConnectionFactory connectionFactory = new ConnectionFactory();
 
     protected Connection connection;
     protected Channel channel;
 
     protected void setUp()
-        throws IOException
-    {
+            throws IOException {
         openConnection();
         openChannel();
 
@@ -50,8 +48,7 @@ public class BrokerTestCase extends TestCase
     }
 
     protected void tearDown()
-        throws IOException
-    {
+            throws IOException {
         closeChannel();
         closeConnection();
 
@@ -68,8 +65,8 @@ public class BrokerTestCase extends TestCase
      * connection and channel have been opened.
      */
     protected void createResources()
-        throws IOException
-    {}
+            throws IOException {
+    }
 
     /**
      * Should destroy any AMQP resources that were created by the
@@ -79,28 +76,25 @@ public class BrokerTestCase extends TestCase
      * completes, the connection and channel will be closed again.
      */
     protected void releaseResources()
-        throws IOException
-    {}
+            throws IOException {
+    }
 
     protected void restart()
-        throws IOException
-    {
+            throws IOException {
         tearDown();
         Host.executeCommand("cd ../rabbitmq-test; make restart-app");
         setUp();
     }
 
     public void openConnection()
-        throws IOException
-    {
+            throws IOException {
         if (connection == null) {
             connection = connectionFactory.newConnection();
         }
     }
 
     public void closeConnection()
-        throws IOException
-    {
+            throws IOException {
         if (connection != null) {
             connection.abort();
             connection = null;
@@ -108,14 +102,12 @@ public class BrokerTestCase extends TestCase
     }
 
     public void openChannel()
-        throws IOException
-    {
+            throws IOException {
         channel = connection.createChannel();
     }
 
     public void closeChannel()
-        throws IOException
-    {
+            throws IOException {
         if (channel != null) {
             channel.abort();
             channel = null;
@@ -160,79 +152,79 @@ public class BrokerTestCase extends TestCase
         }
     }
 
-  protected void assertDelivered(String q, int count) throws IOException {
-    assertDelivered(q, count, false);
-  }
-
-  protected void assertDelivered(String q, int count, boolean redelivered) throws IOException {
-    GetResponse r;
-    for (int i = 0; i < count; i++) {
-      r = basicGet(q);
-      assertNotNull(r);
-      assertEquals(redelivered, r.getEnvelope().isRedeliver());
-    }
-    assertNull(basicGet(q));
-  }
-
-  protected GetResponse basicGet(String q) throws IOException {
-    return channel.basicGet(q, true);
-  }
-
-  protected void basicPublishPersistent(String q) throws IOException {
-      basicPublishPersistent("persistent message".getBytes(), q);
-  }
-
-  protected void basicPublishPersistent(byte[] msg, String q) throws IOException {
-      basicPublishPersistent(msg, "", q);
-  }
-
-  protected void basicPublishPersistent(String x, String routingKey) throws IOException {
-      basicPublishPersistent("persistent message".getBytes(), x, routingKey);
+    protected void assertDelivered(String q, int count) throws IOException {
+        assertDelivered(q, count, false);
     }
 
-
-  protected void basicPublishPersistent(byte[] msg, String x, String routingKey) throws IOException {
-      channel.basicPublish(x, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, msg);
+    protected void assertDelivered(String q, int count, boolean redelivered) throws IOException {
+        GetResponse r;
+        for (int i = 0; i < count; i++) {
+            r = basicGet(q);
+            assertNotNull(r);
+            assertEquals(redelivered, r.getEnvelope().isRedeliver());
+        }
+        assertNull(basicGet(q));
     }
 
-  protected void basicPublishVolatile(String q) throws IOException {
-      basicPublishVolatile("not persistent message".getBytes(), q);
-  }
+    protected GetResponse basicGet(String q) throws IOException {
+        return channel.basicGet(q, true);
+    }
 
-  protected void basicPublishVolatile(byte[] msg, String q) throws IOException {
-      basicPublishVolatile(msg, "", q);
-  }
+    protected void basicPublishPersistent(String q) throws IOException {
+        basicPublishPersistent("persistent message".getBytes(), q);
+    }
 
-  protected void basicPublishVolatile(String x, String routingKey) throws IOException {
-      basicPublishVolatile("not persistent message".getBytes(), x, routingKey);
-  }
+    protected void basicPublishPersistent(byte[] msg, String q) throws IOException {
+        basicPublishPersistent(msg, "", q);
+    }
 
-  protected void basicPublishVolatile(byte[] msg, String x, String routingKey) throws IOException {
-      channel.basicPublish(x, routingKey, MessageProperties.TEXT_PLAIN, msg);
-  }
+    protected void basicPublishPersistent(String x, String routingKey) throws IOException {
+        basicPublishPersistent("persistent message".getBytes(), x, routingKey);
+    }
 
-  protected void declareAndBindDurableQueue(String q, String x, String r) throws IOException {
-    declareDurableQueue(q);
-    channel.queueBind(q, x, r);
-  }
 
-  protected void declareDurableDirectExchange(String x) throws IOException {
-    channel.exchangeDeclare(x, "direct", true);
-  }
+    protected void basicPublishPersistent(byte[] msg, String x, String routingKey) throws IOException {
+        channel.basicPublish(x, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, msg);
+    }
 
-  protected void declareDurableQueue(String q) throws IOException {
-    channel.queueDeclare(q, true, false, false, null);
-  }
+    protected void basicPublishVolatile(String q) throws IOException {
+        basicPublishVolatile("not persistent message".getBytes(), q);
+    }
 
-  protected void declareDurableTopicExchange(String x) throws IOException {
-    channel.exchangeDeclare(x, "topic", true);
-  }
+    protected void basicPublishVolatile(byte[] msg, String q) throws IOException {
+        basicPublishVolatile(msg, "", q);
+    }
 
-  protected void deleteExchange(String x) throws IOException {
-    channel.exchangeDelete(x);
-  }
+    protected void basicPublishVolatile(String x, String routingKey) throws IOException {
+        basicPublishVolatile("not persistent message".getBytes(), x, routingKey);
+    }
 
-  protected void deleteQueue(String q) throws IOException {
-    channel.queueDelete(q);
-  }
+    protected void basicPublishVolatile(byte[] msg, String x, String routingKey) throws IOException {
+        channel.basicPublish(x, routingKey, MessageProperties.TEXT_PLAIN, msg);
+    }
+
+    protected void declareAndBindDurableQueue(String q, String x, String r) throws IOException {
+        declareDurableQueue(q);
+        channel.queueBind(q, x, r);
+    }
+
+    protected void declareDurableDirectExchange(String x) throws IOException {
+        channel.exchangeDeclare(x, "direct", true);
+    }
+
+    protected void declareDurableQueue(String q) throws IOException {
+        channel.queueDeclare(q, true, false, false, null);
+    }
+
+    protected void declareDurableTopicExchange(String x) throws IOException {
+        channel.exchangeDeclare(x, "topic", true);
+    }
+
+    protected void deleteExchange(String x) throws IOException {
+        channel.exchangeDelete(x);
+    }
+
+    protected void deleteQueue(String q) throws IOException {
+        channel.queueDelete(q);
+    }
 }
