@@ -87,17 +87,17 @@ public class PerQueueTTL extends BrokerTestCase {
         }
     }
 
-    public void testQueueReDeclareEquivalence() throws Exception {
+    public void testQueueRedeclareEquivalence() throws Exception {
         declareQueue(10);
         try {
             declareQueue(20);
-            fail("Should not be able to re-declare with different x-message-ttl");
+            fail("Should not be able to redeclare with different x-message-ttl");
         } catch (IOException ex) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
         }
     }
 
-    public void testQueueReDeclareSemanticEquivalence() throws Exception {
+    public void testQueueRedeclareSemanticEquivalence() throws Exception {
         declareQueue((byte) 10);
         declareQueue(10);
         declareQueue((short) 10);
@@ -108,7 +108,7 @@ public class PerQueueTTL extends BrokerTestCase {
         declareQueue(10);
         try {
             declareQueue(10.0);
-            fail("Should not be able to re-declare with x-message-ttl argument of different type");
+            fail("Should not be able to redeclare with x-message-ttl argument of different type");
         } catch (IOException ex) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
         }
@@ -156,7 +156,7 @@ public class PerQueueTTL extends BrokerTestCase {
     /*
      * Test expiry of re-queued messages
      */
-    public void testExpiryWithReQueue() throws Exception {
+    public void testExpiryWithRequeue() throws Exception {
         declareAndBindQueue(100);
 
         publish(MSG[0]);
@@ -178,7 +178,7 @@ public class PerQueueTTL extends BrokerTestCase {
     /*
      * Test expiry of re-queued messages after being consumed instantly
      */
-    public void testExpiryWithReQueueAfterConsume() throws Exception {
+    public void testExpiryWithRequeueAfterConsume() throws Exception {
         declareAndBindQueue(100);
         QueueingConsumer c = new QueueingConsumer(channel);
         channel.basicConsume(TTL_QUEUE_NAME, c);
@@ -190,7 +190,7 @@ public class PerQueueTTL extends BrokerTestCase {
         Thread.sleep(150);
         openChannel();
 
-        assertNull("ReQueued message not expired", get());
+        assertNull("Requeued message not expired", get());
     }
 
     public void testZeroTTLDelivery() throws Exception {
