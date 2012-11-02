@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-public class PerQueueVsPerMessageTTL extends PerMessageTTLHandling {
+public class PerQueueVsPerMessageTTL extends PerMessageTTL {
 
     public void testSmallerPerQueueExpiryWins() throws IOException, InterruptedException {
         declareAndBindQueue(10);

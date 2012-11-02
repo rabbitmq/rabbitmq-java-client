@@ -21,7 +21,7 @@ import com.rabbitmq.client.*;
 
 import java.io.IOException;
 
-public abstract class PerMessageTTLHandling extends TTLHandling {
+public abstract class PerMessageTTL extends TTLHandling {
 
     protected Object sessionTTL;
 
