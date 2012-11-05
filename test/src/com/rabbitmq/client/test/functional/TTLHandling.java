@@ -154,6 +154,10 @@ public abstract class TTLHandling extends BrokerTestCase {
 
     protected void declareAndBindQueue(Object ttlValue) throws IOException {
         declareQueue(ttlValue);
+        bindQueue();
+    }
+
+    protected void bindQueue() throws IOException {
         this.channel.queueBind(TTL_QUEUE_NAME, TTL_EXCHANGE, TTL_QUEUE_NAME);
     }
 

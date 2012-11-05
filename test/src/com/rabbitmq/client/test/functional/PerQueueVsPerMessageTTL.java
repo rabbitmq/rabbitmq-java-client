@@ -10,30 +10,33 @@ public class PerQueueVsPerMessageTTL extends PerMessageTTL {
 
     public void testSmallerPerQueueExpiryWins() throws IOException, InterruptedException {
         declareAndBindQueue(10);
+        this.sessionTTL = 1000;
 
-        sessionTTL = 1000;
         publish("message1");
 
-        Thread.sleep(10);
+        Thread.sleep(20);
 
         assertNull("per-queue ttl should have removed message after 10ms!", get());
-    }
-
-    public void testSmallerPerMessageExpiryWins() throws IOException, InterruptedException {
-        declareAndBindQueue(5000);
-
-        sessionTTL = 10;
-        publish("message2");
-
-        Thread.sleep(1000);
-
-        assertNull("per-message ttl should have removed message after 10ms!", get());
     }
 
     @Override
     protected AMQP.Queue.DeclareOk declareQueue(String name, Object ttlValue) throws IOException {
         this.sessionTTL = ttlValue;
-        Map<String, Object> argMap = Collections.singletonMap(PerQueueTTL.TTL_ARG, ttlValue);
+        Map<String, Object> argMap = Collections.singletonMap(PerQueueTTL.TTL_ARG,
+                                                             ((Object)(longValue(ttlValue) * 2)));
         return this.channel.queueDeclare(name, false, true, false, argMap);
     }
+
+    private Long longValue(final Object ttl) {
+        if (ttl instanceof Short) {
+            return ((Short)ttl).longValue();
+        } else if (ttl instanceof Integer) {
+            return ((Integer)ttl).longValue();
+        } else if (ttl instanceof Long) {
+            return (Long) ttl;
+        } else {
+            throw new IllegalArgumentException("ttl not of expected type");
+        }
+    }
+
 }
