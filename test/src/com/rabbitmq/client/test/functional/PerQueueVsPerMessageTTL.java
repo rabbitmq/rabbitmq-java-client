@@ -14,7 +14,7 @@ public class PerQueueVsPerMessageTTL extends PerMessageTTL {
 
         publish("message1");
 
-        Thread.sleep(20);
+        Thread.sleep(100);
 
         assertNull("per-queue ttl should have removed message after 10ms!", get());
     }
