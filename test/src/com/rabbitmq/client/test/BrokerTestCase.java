@@ -200,7 +200,12 @@ public class BrokerTestCase extends TestCase {
     }
 
     protected void basicPublishVolatile(byte[] msg, String x, String routingKey) throws IOException {
-        channel.basicPublish(x, routingKey, MessageProperties.TEXT_PLAIN, msg);
+        basicPublishVolatile(msg, x, routingKey, MessageProperties.TEXT_PLAIN);
+    }
+
+    public void basicPublishVolatile(byte[] msg, String x, String routingKey,
+                                        AMQP.BasicProperties properties) throws IOException {
+        channel.basicPublish(x, routingKey, properties, msg);
     }
 
     protected void declareAndBindDurableQueue(String q, String x, String r) throws IOException {
