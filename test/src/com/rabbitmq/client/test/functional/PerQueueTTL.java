@@ -28,24 +28,6 @@ public class PerQueueTTL extends TTLHandling {
 
     protected static final String TTL_ARG = "x-message-ttl";
 
-    public void testInvalidTypeUsedInTTL() throws Exception {
-        try {
-            declareQueue(TTL_INVALID_QUEUE_NAME, "foobar");
-            fail("Should not be able to use a non-long value for x-message-ttl");
-        } catch (IOException e) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
-        }
-    }
-
-    public void testTTLMustBePositive() throws Exception {
-        try {
-            declareQueue(TTL_INVALID_QUEUE_NAME, -10);
-            fail("Should not be able to use negative values for x-message-ttl");
-        } catch (IOException e) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
-        }
-    }
-
     @Override
     protected AMQP.Queue.DeclareOk declareQueue(String name, Object ttlValue) throws IOException {
         Map<String, Object> argMap = Collections.singletonMap(TTL_ARG, ttlValue);

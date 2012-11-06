@@ -38,6 +38,36 @@ public abstract class TTLHandling extends BrokerTestCase {
         }
     }
 
+    public void testInvalidTypeUsedInTTL() throws Exception {
+        try {
+            declareAndBindQueue("foobar");
+            publishAndSync(MSG[0]);
+            fail("Should not be able to set TTL using non-numeric values");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
+    }
+
+    public void testTrailingCharsUsedInTTL() throws Exception {
+        try {
+            declareAndBindQueue("10000foobar");
+            publishAndSync(MSG[0]);
+            fail("Should not be able to set TTL using non-numeric values");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
+    }
+
+    public void testTTLMustBePositive() throws Exception {
+        try {
+            declareAndBindQueue(-10);
+            publishAndSync(MSG[0]);
+            fail("Should not be able to set TTL using negative values");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
+    }
+
     public void testTTLAllowZero() throws Exception {
         try {
             declareQueue(0);

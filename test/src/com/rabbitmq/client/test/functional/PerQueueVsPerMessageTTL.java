@@ -21,9 +21,11 @@ public class PerQueueVsPerMessageTTL extends PerMessageTTL {
 
     @Override
     protected AMQP.Queue.DeclareOk declareQueue(String name, Object ttlValue) throws IOException {
+        final Object mappedTTL = (ttlValue instanceof String &&
+                                    ((String) ttlValue).contains("foobar")) ?
+                                    ttlValue : longValue(ttlValue) * 2;
         this.sessionTTL = ttlValue;
-        Map<String, Object> argMap = Collections.singletonMap(PerQueueTTL.TTL_ARG,
-                                                             ((Object)(longValue(ttlValue) * 2)));
+        Map<String, Object> argMap = Collections.singletonMap(PerQueueTTL.TTL_ARG, mappedTTL);
         return this.channel.queueDeclare(name, false, true, false, argMap);
     }
 
