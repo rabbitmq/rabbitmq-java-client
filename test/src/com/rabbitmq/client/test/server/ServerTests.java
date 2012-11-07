@@ -30,6 +30,7 @@ public class ServerTests extends TestCase {
     public static void add(TestSuite suite) {
         suite.addTestSuite(Permissions.class);
         suite.addTestSuite(DurableBindingLifecycle.class);
+        suite.addTestSuite(DeadLetterExchangeDurable.class);
         suite.addTestSuite(EffectVisibilityCrossNodeTest.class);
         suite.addTestSuite(ExclusiveQueueDurability.class);
         suite.addTestSuite(AbsentQueue.class);

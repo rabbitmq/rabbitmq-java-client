@@ -1,7 +1,8 @@
-package com.rabbitmq.client.test.functional;
+package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.functional.DeadLetterExchange;
 import com.rabbitmq.tools.Host;
 
 import java.util.HashMap;
