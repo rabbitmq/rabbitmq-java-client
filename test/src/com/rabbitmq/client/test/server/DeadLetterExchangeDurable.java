@@ -5,11 +5,13 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.functional.DeadLetterExchange;
 import com.rabbitmq.tools.Host;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class DeadLetterExchangeDurable extends BrokerTestCase {
-    public void testDeadLetterQueueTTLExpiredWhileDown() throws Exception {
+    @Override
+    protected void createResources() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-message-ttl", 5000);
         args.put("x-dead-letter-exchange", DeadLetterExchange.DLX);
@@ -19,7 +21,16 @@ public class DeadLetterExchangeDurable extends BrokerTestCase {
         channel.queueDeclare(DeadLetterExchange.TEST_QUEUE_NAME, true, false, false, args);
         channel.queueBind(DeadLetterExchange.TEST_QUEUE_NAME, "amq.direct", "test");
         channel.queueBind(DeadLetterExchange.DLQ, DeadLetterExchange.DLX, "test");
+    }
 
+    @Override
+    protected void releaseResources() throws IOException {
+        channel.exchangeDelete(DeadLetterExchange.DLX);
+        channel.queueDelete(DeadLetterExchange.DLQ);
+        channel.queueDelete(DeadLetterExchange.TEST_QUEUE_NAME);
+    }
+
+    public void testDeadLetterQueueTTLExpiredWhileDown() throws Exception {
         for(int x = 0; x < DeadLetterExchange.MSG_COUNT; x++) {
             channel.basicPublish("amq.direct", "test", MessageProperties.MINIMAL_PERSISTENT_BASIC, "test message".getBytes());
         }
@@ -32,8 +43,5 @@ public class DeadLetterExchangeDurable extends BrokerTestCase {
         openChannel();
 
         DeadLetterExchange.consume(channel, "expired");
-        channel.exchangeDelete(DeadLetterExchange.DLX);
-        channel.queueDelete(DeadLetterExchange.DLQ);
-        channel.queueDelete(DeadLetterExchange.TEST_QUEUE_NAME);
     }
 }
