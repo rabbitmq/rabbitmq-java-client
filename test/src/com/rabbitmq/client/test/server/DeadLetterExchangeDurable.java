@@ -42,6 +42,13 @@ public class DeadLetterExchangeDurable extends BrokerTestCase {
         openConnection();
         openChannel();
 
+        //This has the effect of waiting for the queue to complete the
+        //dead lettering. Some raciness remains though since the
+        //dead-letter publication is async so the 'consume' below may
+        //reach the dlq before all dead-lettered messages have arrived
+        //there.
+        assertNull(basicGet(DeadLetterExchange.TEST_QUEUE_NAME));
+
         DeadLetterExchange.consume(channel, "expired");
     }
 }
