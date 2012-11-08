@@ -85,10 +85,10 @@ public class PerformanceMain {
     }
 
     private static void runStaticBrokerTests(Scenario[] scenarios) throws Exception {
-        Broker broker = Broker.HIPE_COARSE;
-        broker.start();
+//        Broker broker = Broker.HIPE_COARSE;
+//        broker.start();
         runTests(scenarios);
-        broker.stop();
+//        broker.stop();
     }
 
     private static void runTests(Scenario[] scenarios) throws Exception {
