@@ -164,18 +164,16 @@ public class WorkPool<K, W> {
      * @param item the work item to add to the client queue
      * @return <code><b>true</b></code> if and only if the client is marked <i>ready</i>
      * &mdash; <i>as a result of this work item</i>
-     * @throws IllegalArgumentException if key not registered.
      */
     public boolean addWorkItem(K key, W item) {
         synchronized (this.monitor) {
             Queue<W> queue = this.pool.get(key);
-            if (queue == null) {
-                throw new IllegalArgumentException("Client " + key + " not registered");
-            }
-            queue.offer(item);
-            if (isDormant(key)) {
-                dormantToReady(key);
-                return true;
+            if (queue != null) {
+                queue.offer(item);
+                if (isDormant(key)) {
+                    dormantToReady(key);
+                    return true;
+                }
             }
             return false;
         }

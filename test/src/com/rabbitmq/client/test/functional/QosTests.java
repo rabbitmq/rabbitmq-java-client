@@ -90,6 +90,7 @@ public class QosTests extends BrokerTestCase
     {
         try {
             channel.basicQos(0, 1, true);
+            fail("basic.qos{global=false} should not be supported");
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
         }
@@ -100,6 +101,7 @@ public class QosTests extends BrokerTestCase
     {
         try {
             channel.basicQos(1000, 0, false);
+            fail("basic.qos{pretfetch_size=NonZero} should not be supported");
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
         }

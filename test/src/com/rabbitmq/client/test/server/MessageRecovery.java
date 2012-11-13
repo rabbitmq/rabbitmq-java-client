@@ -34,7 +34,10 @@ public class MessageRecovery extends ConfirmBase
         waitForConfirms();
 
         restart();
-        assertDelivered(Q, 1);
+
+        // When testing in HA mode the message will be collected from a promoted
+        // slave and wil have its redelivered flag set.
+        assertDelivered(Q, 1, HATests.HA_TESTS_RUNNING);
         channel.queueDelete(Q);
     }
 

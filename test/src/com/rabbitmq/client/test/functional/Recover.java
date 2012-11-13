@@ -117,19 +117,13 @@ public class Recover extends BrokerTestCase {
         throws IOException, InterruptedException {
         verifyNoRedeliveryWithAutoAck(recoverSync);
     }
-    
+
     public void testRequeueFalseNotSupported() throws Exception {
         try {
             channel.basicRecover(false);
             fail("basicRecover(false) should not be supported");
         } catch(IOException ioe) {
-            ShutdownSignalException sse = 
-                (ShutdownSignalException) ioe.getCause();
-            Command reason = (Command) sse.getReason();
-            AMQP.Connection.Close close = 
-                (AMQP.Connection.Close) reason.getMethod();
-            assertEquals("NOT_IMPLEMENTED - requeue=false", 
-                close.getReplyText());
+            checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
         }
     }
 }

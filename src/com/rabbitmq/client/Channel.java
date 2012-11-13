@@ -45,9 +45,17 @@ import com.rabbitmq.client.AMQP.Channel.FlowOk;
  * </ul>
  * <p>
  *
- * While a Channel can be used by multiple threads, it's important to ensure
- * that only one thread executes a command at once. Concurrent execution of
- * commands will likely cause an UnexpectedFrameError to be thrown.
+ * <p>
+ * {@link Channel} instances are safe for use by multiple
+ * threads. Requests into a {@link Channel} are serialized, with only one
+ * thread running commands at a time.
+ * As such, applications may prefer using a {@link Channel} per thread
+ * instead of sharing the same <code>Channel</code> across multiple threads.
+ *
+ * An <b>important caveat</b> to this is that confirms are <b>not</b> handled
+ * properly when a {@link Channel} is shared between multiple threads. In that
+ * scenario, it is therefore important to ensure that the {@link Channel}
+ * instance is <b>not</b> accessed concurrently by multiple threads.
  *
  */
 
@@ -231,7 +239,7 @@ public interface Channel extends ShutdownNotifier {
     void basicQos(int prefetchCount) throws IOException;
 
     /**
-     * Publish a message with both "mandatory" and "immediate" flags set to false
+     * Publish a message
      * @see com.rabbitmq.client.AMQP.Basic.Publish
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
@@ -246,8 +254,22 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Basic.Publish
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
-     * @param mandatory true if we are requesting a mandatory publish
-     * @param immediate true if we are requesting an immediate publish
+     * @param mandatory true if the 'mandatory' flag is to be set
+     * @param props other properties for the message - routing headers etc
+     * @param body the message body
+     * @throws java.io.IOException if an error is encountered
+     */
+    void basicPublish(String exchange, String routingKey, boolean mandatory, BasicProperties props, byte[] body)
+            throws IOException;
+
+    /**
+     * Publish a message
+     * @see com.rabbitmq.client.AMQP.Basic.Publish
+     * @param exchange the exchange to publish the message to
+     * @param routingKey the routing key
+     * @param mandatory true if the 'mandatory' flag is to be set
+     * @param immediate true if the 'immediate' flag is to be
+     * set. Note that the RabbitMQ server does not support this flag.
      * @param props other properties for the message - routing headers etc
      * @param body the message body
      * @throws java.io.IOException if an error is encountered
@@ -347,9 +369,9 @@ public interface Channel extends ShutdownNotifier {
      * Bind an exchange to an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
-     * @param destination: the name of the exchange to which messages flow across the binding
-     * @param source: the name of the exchange from which messages flow across the binding
-     * @param routingKey: the routine key to use for the binding
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
      */
@@ -359,10 +381,10 @@ public interface Channel extends ShutdownNotifier {
      * Bind an exchange to an exchange.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
-     * @param destination: the name of the exchange to which messages flow across the binding
-     * @param source: the name of the exchange from which messages flow across the binding
-     * @param routingKey: the routine key to use for the binding
-     * @param arguments: other properties (binding parameters)
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
      */
@@ -372,9 +394,9 @@ public interface Channel extends ShutdownNotifier {
      * Unbind an exchange from an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
-     * @param destination: the name of the exchange to which messages flow across the binding
-     * @param source: the name of the exchange from which messages flow across the binding
-     * @param routingKey: the routine key to use for the binding
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
      */
@@ -384,10 +406,10 @@ public interface Channel extends ShutdownNotifier {
      * Unbind an exchange from an exchange.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
-     * @param destination: the name of the exchange to which messages flow across the binding
-     * @param source: the name of the exchange from which messages flow across the binding
-     * @param routingKey: the routine key to use for the binding
-     * @param arguments: other properties (binding parameters)
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
      */

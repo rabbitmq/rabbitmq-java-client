@@ -21,6 +21,7 @@ import com.rabbitmq.tools.json.JSONReader;
 import com.rabbitmq.tools.json.JSONWriter;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -36,9 +37,23 @@ public class PerformanceMain {
     private static Map<String, Object> results = new HashMap<String, Object>();
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 2) {
+            System.out.println("Usage: PerformanceMain input-json-file output-json-file");
+            System.exit(1);
+        }
         String inJSON = args[0];
         String outJSON = args[1];
-        List<Map> scenariosJSON = (List<Map>) new JSONReader().read(readFile(inJSON));
+        List<Map> scenariosJSON = null;
+        try {
+            scenariosJSON = (List<Map>) new JSONReader().read(readFile(inJSON));
+        } catch (FileNotFoundException e) {
+            System.out.println("Input json file " + inJSON + " could not be found");
+            System.exit(1);
+        }
+        if (scenariosJSON == null) {
+            System.out.println("Input json file " + inJSON + " could not be parsed");
+            System.exit(1);
+        }
         Scenario[] scenarios = new Scenario[scenariosJSON.size()];
         for (int i = 0; i < scenariosJSON.size(); i++) {
             scenarios[i] = ScenarioFactory.fromJSON(scenariosJSON.get(i), factory);
@@ -70,10 +85,10 @@ public class PerformanceMain {
     }
 
     private static void runStaticBrokerTests(Scenario[] scenarios) throws Exception {
-        Broker broker = Broker.HIPE_COARSE;
-        broker.start();
+//        Broker broker = Broker.HIPE_COARSE;
+//        broker.start();
         runTests(scenarios);
-        broker.stop();
+//        broker.stop();
     }
 
     private static void runTests(Scenario[] scenarios) throws Exception {

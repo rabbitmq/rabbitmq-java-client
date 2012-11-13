@@ -46,7 +46,7 @@ import com.rabbitmq.utility.Utility;
  * port (out-port). Relays frames from the in-port to the out-port.
  * Commands are decoded and printed to a supplied {@link Logger}.
  * <p/>
- * The stand-alone program ({@link #main()}) prints to <code>System.out</code>,
+ * The stand-alone program ({@link #main(String[])}) prints to <code>System.out</code>,
  * using a private {@link AsyncLogger} instance.  When the connection closes
  * the program listens for a subsequent connection and traces that to the same {@link Logger}.
  * This continues until the program is interrupted.
@@ -388,7 +388,7 @@ public class Tracer implements Runnable {
      * A {@link Tracer.Logger} designed to print {@link String}s to a designated {@link OutputStream}
      * on a private thread.
      * <p/>{@link String}s are read from a private queue and <i>printed</i> to a buffered {@link PrintStream}
-     * which is periodically flushed, determined by a {@link #flushInterval}.
+     * which is periodically flushed.
      * <p/>
      * When instantiated the private queue is created (an in-memory {@link ArrayBlockingQueue} in this
      * implementation) and when {@link #start()}ed the private thread is created and started unless it is
@@ -400,7 +400,7 @@ public class Tracer implements Runnable {
      * If the private thread is interrupted, the thread will also end, and the count set to zero,
      * This will cause subsequent {@link #stop()}s to be ignored, and the next {@link #start()} will create a new thread.
      * <p/>
-     * {@link #log()} never blocks unless the private queue is full; this may never un-block if the {@link Logger} is stopped.
+     * {@link #log(String)} never blocks unless the private queue is full; this may never un-block if the {@link Logger} is stopped.
      */
     public static class AsyncLogger implements Logger {
         private static final int MIN_FLUSH_INTERVAL = 100;
@@ -435,7 +435,7 @@ public class Tracer implements Runnable {
                 LOG_QUEUE_SIZE, true);
 
         /**
-         * Same as {@link #AsyncLogger(os, flushInterval)} with a one-second flush interval.
+         * Same as {@link #Tracer.AsyncLogger(OutputStream, int)} with a one-second flush interval.
          * @param os OutputStream to print to.
          */
         public AsyncLogger(OutputStream os) {
