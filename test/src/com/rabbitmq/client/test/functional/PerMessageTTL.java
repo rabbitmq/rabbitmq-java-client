@@ -46,10 +46,10 @@ public class PerMessageTTL extends TTLHandling {
         declareAndBindQueue(3000);
 
         publish(MSG[0]);
-        this.sessionTTL = 30 * 1000;
+        this.sessionTTL = 1000;
         publish(MSG[1]);
 
-        Thread.sleep(5000);
+        Thread.sleep(1000);
 
         QueueingConsumer c = new QueueingConsumer(channel);
         channel.basicConsume(TTL_QUEUE_NAME, c);
