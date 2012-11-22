@@ -43,13 +43,13 @@ public class PerMessageTTL extends TTLHandling {
     }
 
     public void testExpiryWhenConsumerIsLateToTheParty() throws Exception {
-        declareAndBindQueue(3000);
+        declareAndBindQueue(500);
 
         publish(MSG[0]);
-        this.sessionTTL = 1000;
+        this.sessionTTL = 100;
         publish(MSG[1]);
 
-        Thread.sleep(1000);
+        Thread.sleep(200);
 
         QueueingConsumer c = new QueueingConsumer(channel);
         channel.basicConsume(TTL_QUEUE_NAME, c);
