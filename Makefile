@@ -64,7 +64,7 @@ srcdist: distclean
 	(cd build; zip -q -r $(SRC_ARCHIVE).zip $(SRC_ARCHIVE))
 	(cd build; rm -rf $(SRC_ARCHIVE))
 
-stage-and-promote-maven-bundle: maven-bundle
+stage-and-promote-maven-bundle:
 	( \
 	  cd build/bundle; \
 	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
