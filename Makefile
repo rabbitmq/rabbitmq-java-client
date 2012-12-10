@@ -22,11 +22,11 @@ clean:
 distclean: clean
 	make -C $(AMQP_CODEGEN_DIR) clean
 
-dist: distclean srcdist dist_all
+dist: distclean srcdist dist_all maven-bundle
 
 dist_all: dist1.5 javadoc-archive
 
-maven-bundle: distclean
+maven-bundle:
 	ant -Dimpl.version=$(VERSION) maven-bundle
 
 dist1.5:
