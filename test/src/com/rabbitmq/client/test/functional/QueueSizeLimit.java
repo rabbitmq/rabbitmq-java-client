@@ -18,6 +18,7 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.HashMap;
@@ -37,55 +38,134 @@ public class QueueSizeLimit extends BrokerTestCase {
         channel.confirmSelect();
     }
 
+    private void setupDlx() throws IOException {
+        channel.exchangeDeclare("DLX", "fanout");
+        channel.queueDeclare("DLQ", false, true, false, null);
+        channel.queueBind("DLQ", "DLX", "test");
+    }
+
+    private void tearDownDlx() throws IOException {
+        channel.exchangeDelete("DLX");
+        channel.queueDelete("DLQ");
+    }
+
     public void testQueueSize() throws IOException, InterruptedException {
         declareQueue();
-        for (int i=1; i <= MAXDEPTH; i++){
-            channel.basicPublish("", q, null, ("msg" + i).getBytes());
-            channel.waitForConfirmsOrDie();
-            assertEquals(i, declareQueue());
-        }
-        for (int i=1; i <= MAXDEPTH; i++){
-            channel.basicPublish("", q, null, ("msg overflow").getBytes());
-            channel.waitForConfirmsOrDie();
-            assertEquals(MAXDEPTH, declareQueue());
-        }
+        fillUp();
+        syncPublish(null, "overflow");
+        assertEquals(MAXDEPTH, declareQueue());
     }
 
     public void testQueueAllUnacked() throws IOException, InterruptedException {
         declareQueue();
-        for (int i=1; i <= MAXDEPTH; i++){
-            channel.basicPublish ("", q, null, ("msg" + i).getBytes());
-            channel.waitForConfirmsOrDie();
-            channel.basicGet(q, false);
-            assertEquals(0, declareQueue());
-        }
-        channel.basicPublish("", q, null, ("msg overflow").getBytes());
-        channel.waitForConfirmsOrDie();
-        assertEquals(null, channel.basicGet(q, false));
+        fillUnacked();
+        syncPublish(null, "overflow");
+        assertEquals(null, channel.basicGet(q, true));
     }
 
     public void testQueueSomeUnacked() throws IOException, InterruptedException {
         declareQueue();
-        for (int i=1; i <= MAXDEPTH - 1; i++){
-            channel.basicPublish ("", q, null, ("msg" + i).getBytes());
-            channel.waitForConfirmsOrDie();
-            channel.basicGet(q, false);
-            assertEquals(0, declareQueue());
-        }
-        channel.basicPublish("", q, null, ("msg" + MAXDEPTH).getBytes());
-        channel.waitForConfirmsOrDie();
+        fillUnacked(false, MAXDEPTH - 1);
+        syncPublish(null, "msg" + MAXDEPTH);
         assertEquals(1, declareQueue());
 
-        channel.basicPublish("", q, null, ("msg overflow").getBytes());
-        channel.waitForConfirmsOrDie();
-        assertEquals("msg overflow", new String(channel.basicGet(q, false).getBody()));
+        syncPublish(null, "overflow");
+        assertEquals("overflow", new String(channel.basicGet(q, true).getBody()));
+        assertEquals(null, channel.basicGet(q, true));
+    }
+
+    public void testConfirmPersistent() throws IOException, InterruptedException {
+        declareQueue(true);
+        fillUnacked(true, MAXDEPTH);
+        syncPublish(MessageProperties.MINIMAL_PERSISTENT_BASIC, "overflow");
         assertEquals(null, channel.basicGet(q, false));
     }
 
+    public void testDlxHeadTransient() throws IOException, InterruptedException {
+        dlxHead(false);
+    }
+
+    public void testDlxTailTransient() throws IOException, InterruptedException {
+        dlxTail(false);
+    }
+
+    public void testDlxHeadDurable() throws IOException, InterruptedException {
+        dlxHead(true);
+    }
+
+    public void testDlxTailDurable() throws IOException, InterruptedException {
+        dlxTail(true);
+    }
+
+    public void dlxHead(boolean persistent) throws IOException, InterruptedException {
+        declareQueue(persistent, true);
+        setupDlx();
+        AMQP.BasicProperties props = null;
+        if (persistent)
+            props = MessageProperties.MINIMAL_PERSISTENT_BASIC;
+        fillUp(persistent);
+        syncPublish(props, "overflow");
+        assertEquals(MAXDEPTH, declareQueue(persistent));
+        assertEquals("msg1", new String(channel.basicGet("DLQ", true).getBody()));
+        assertNull(channel.basicGet("DLQ", true));
+        tearDownDlx();
+    }
+
+    public void dlxTail(boolean persistent) throws IOException, InterruptedException {
+        declareQueue(persistent, true);
+        setupDlx();
+        AMQP.BasicProperties props = null;
+        if (persistent)
+            props = MessageProperties.MINIMAL_PERSISTENT_BASIC;
+        fillUnacked(persistent, MAXDEPTH);
+        syncPublish(props, "overflow");
+        assertEquals(null, channel.basicGet(q, false));
+        assertEquals("overflow", new String(channel.basicGet("DLQ", true).getBody()));
+        assertNull(channel.basicGet("DLQ", true));
+        tearDownDlx();
+    }
+
     private int declareQueue() throws IOException {
+        return declareQueue(false, false);
+    }
+
+    private int declareQueue(boolean durable) throws IOException {
+        return declareQueue(durable, false);
+    }
+
+    private void fillUp() throws IOException, InterruptedException {
+        fillUp(false);
+    }
+
+    private void fillUp(boolean persistent) throws IOException, InterruptedException {
+        for (int i=1; i <= MAXDEPTH; i++){
+            syncPublish(null, "msg" + i);
+            assertEquals(i, declareQueue(persistent));
+        }
+    }
+
+    private void fillUnacked() throws IOException, InterruptedException {
+        fillUnacked(false, MAXDEPTH);
+    }
+
+    private void fillUnacked(boolean persistent, int depth) throws IOException, InterruptedException {
+        for (int i=1; i <= depth; i++){
+            syncPublish(null, "msg" + i);
+            channel.basicGet(q, false);
+            assertEquals(0, declareQueue(persistent));
+        }
+    }
+
+    private void syncPublish(AMQP.BasicProperties props, String payload) throws IOException, InterruptedException {
+        channel.basicPublish("", q, props, payload.getBytes());
+        channel.waitForConfirmsOrDie();
+    }
+
+    private int declareQueue(boolean durable, boolean dlx) throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-maxdepth", MAXDEPTH);
-        AMQP.Queue.DeclareOk ok = channel.queueDeclare(q, false, true, true, args);
+        if (dlx) args.put("x-dead-letter-exchange", "DLX");
+        AMQP.Queue.DeclareOk ok = channel.queueDeclare(q, durable, true, true, args);
         return ok.getMessageCount();
     }
 }
