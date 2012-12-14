@@ -28,7 +28,7 @@ import java.util.Map;
  */
 public class QueueSizeLimit extends BrokerTestCase {
 
-    private final int MAXDEPTH=5;
+    private final int MAXDEPTH = 5;
     private final String q = "queue";
 
     @Override
@@ -51,7 +51,7 @@ public class QueueSizeLimit extends BrokerTestCase {
         }
     }
 
-    public void testQueueUnacked() throws IOException, InterruptedException {
+    public void testQueueAllUnacked() throws IOException, InterruptedException {
         declareQueue();
         for (int i=1; i <= MAXDEPTH; i++){
             channel.basicPublish ("", q, null, ("msg" + i).getBytes());
@@ -61,6 +61,24 @@ public class QueueSizeLimit extends BrokerTestCase {
         }
         channel.basicPublish("", q, null, ("msg overflow").getBytes());
         channel.waitForConfirmsOrDie();
+        assertEquals(null, channel.basicGet(q, false));
+    }
+
+    public void testQueueSomeUnacked() throws IOException, InterruptedException {
+        declareQueue();
+        for (int i=1; i <= MAXDEPTH - 1; i++){
+            channel.basicPublish ("", q, null, ("msg" + i).getBytes());
+            channel.waitForConfirmsOrDie();
+            channel.basicGet(q, false);
+            assertEquals(0, declareQueue());
+        }
+        channel.basicPublish("", q, null, ("msg" + MAXDEPTH).getBytes());
+        channel.waitForConfirmsOrDie();
+        assertEquals(1, declareQueue());
+
+        channel.basicPublish("", q, null, ("msg overflow").getBytes());
+        channel.waitForConfirmsOrDie();
+        assertEquals("msg overflow", new String(channel.basicGet(q, false).getBody()));
         assertEquals(null, channel.basicGet(q, false));
     }
 
