@@ -30,7 +30,7 @@ import java.util.Map;
 public class QueueSizeLimit extends BrokerTestCase {
 
     private final int MAXDEPTH = 5;
-    private final String q = "queue";
+    private final String q = "queue-maxdepth";
 
     @Override
     protected void setUp() throws IOException {
