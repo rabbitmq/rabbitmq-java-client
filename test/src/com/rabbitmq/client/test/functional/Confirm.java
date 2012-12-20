@@ -229,13 +229,16 @@ public class Confirm extends BrokerTestCase
         }
     }
 
-    public void testWaitForConfirmsNoOp()
+    public void testWaitForConfirmsWithoutConfirmSelected()
         throws IOException, InterruptedException
     {
         channel = connection.createChannel();
         // Don't enable Confirm mode
         publish("", "confirm-test", true, false);
-        channel.waitForConfirmsOrDie(); // Nop
+        try {
+            channel.waitForConfirms();
+            fail("waitForConfirms without confirms selected succeeded");
+        } catch (IllegalStateException _) {}
     }
 
     public void testWaitForConfirmsException()

@@ -83,6 +83,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Sequence number of next published message requiring confirmation.*/
     private long nextPublishSeqNo = 0L;
 
+    private volatile boolean confirmSelected = false;
+
     /** The current default consumer, or null if there is none. */
     private volatile Consumer defaultConsumer = null;
 
@@ -175,6 +177,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** {@inheritDoc} */
     public boolean waitForConfirms(long timeout)
             throws InterruptedException, TimeoutException {
+        if (!confirmSelected)
+            throw new IllegalStateException("Confirms not selected");
         long startTime = System.currentTimeMillis();
         synchronized (unconfirmedSet) {
             while (true) {
@@ -1048,6 +1052,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Confirm.SelectOk confirmSelect()
         throws IOException
     {
+        confirmSelected = true;
         if (nextPublishSeqNo == 0) nextPublishSeqNo = 1;
         return (Confirm.SelectOk)
             exnWrappingRpc(new Confirm.Select(false)).getMethod();
