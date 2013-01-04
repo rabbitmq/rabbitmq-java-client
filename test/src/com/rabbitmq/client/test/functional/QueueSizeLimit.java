@@ -25,11 +25,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Test queue maxdepth limit.
+ * Test queue max length limit.
  */
 public class QueueSizeLimit extends BrokerTestCase {
 
-    private final int MAXDEPTH = 5;
+    private final int MAXLENGTH = 5;
     private final String q = "queue-maxdepth";
 
     @Override
@@ -52,33 +52,25 @@ public class QueueSizeLimit extends BrokerTestCase {
     public void testQueueSize() throws IOException, InterruptedException {
         declareQueue();
         fillUp();
-        syncPublish(null, "overflow");
-        assertEquals(MAXDEPTH, declareQueue());
+        syncPublish(null, "msg" + MAXLENGTH + 1);
+        assertEquals(MAXLENGTH, declareQueue());
+        assertHead("msg2", q);
     }
 
-    public void testQueueAllUnacked() throws IOException, InterruptedException {
+    public void testQueueUnacked() throws IOException, InterruptedException {
         declareQueue();
         fillUnacked();
-        syncPublish(null, "overflow");
-        assertEquals(null, channel.basicGet(q, true));
-    }
-
-    public void testQueueSomeUnacked() throws IOException, InterruptedException {
-        declareQueue();
-        fillUnacked(false, MAXDEPTH - 1);
-        syncPublish(null, "msg" + MAXDEPTH);
+        syncPublish(null, "msg" + MAXLENGTH + 1);
         assertEquals(1, declareQueue());
-
-        syncPublish(null, "overflow");
-        assertEquals("overflow", new String(channel.basicGet(q, true).getBody()));
-        assertEquals(null, channel.basicGet(q, true));
+        assertHead("msg" + MAXLENGTH + 1, q);
     }
 
-    public void testConfirmPersistent() throws IOException, InterruptedException {
+    public void testPersistent() throws IOException, InterruptedException {
         declareQueue(true);
-        fillUnacked(true, MAXDEPTH);
-        syncPublish(MessageProperties.MINIMAL_PERSISTENT_BASIC, "overflow");
-        assertEquals(null, channel.basicGet(q, false));
+        fillUnacked(true);
+        syncPublish(MessageProperties.MINIMAL_PERSISTENT_BASIC, "msg" + MAXLENGTH + 1);
+        assertEquals(1, declareQueue(true));
+        assertHead("msg" + MAXLENGTH + 1, q);
     }
 
     public void testDlxHeadTransient() throws IOException, InterruptedException {
@@ -104,9 +96,9 @@ public class QueueSizeLimit extends BrokerTestCase {
         if (persistent)
             props = MessageProperties.MINIMAL_PERSISTENT_BASIC;
         fillUp(persistent);
-        syncPublish(props, "overflow");
-        assertEquals(MAXDEPTH, declareQueue(persistent));
-        assertEquals("msg1", new String(channel.basicGet("DLQ", true).getBody()));
+        syncPublish(props, "msg" + MAXLENGTH + 1);
+        assertEquals(MAXLENGTH, declareQueue(persistent));
+        assertHead("msg1", "DLQ");
         assertNull(channel.basicGet("DLQ", true));
         tearDownDlx();
     }
@@ -117,11 +109,11 @@ public class QueueSizeLimit extends BrokerTestCase {
         AMQP.BasicProperties props = null;
         if (persistent)
             props = MessageProperties.MINIMAL_PERSISTENT_BASIC;
-        fillUnacked(persistent, MAXDEPTH);
-        syncPublish(props, "overflow");
-        assertEquals(null, channel.basicGet(q, false));
-        assertEquals("overflow", new String(channel.basicGet("DLQ", true).getBody()));
-        assertNull(channel.basicGet("DLQ", true));
+        fillUnacked(persistent);
+        syncPublish(props, "msg" + MAXLENGTH + 1);
+        assertNull(null, channel.basicGet("DLQ", true));
+        assertHead("msg" + MAXLENGTH + 1, q);
+        assertNull(channel.basicGet(q, true));
         tearDownDlx();
     }
 
@@ -134,25 +126,30 @@ public class QueueSizeLimit extends BrokerTestCase {
     }
 
     private void fillUp() throws IOException, InterruptedException {
-        fillUp(false);
+        fill(false, false);
     }
 
     private void fillUp(boolean persistent) throws IOException, InterruptedException {
-        for (int i=1; i <= MAXDEPTH; i++){
-            syncPublish(null, "msg" + i);
-            assertEquals(i, declareQueue(persistent));
-        }
+        fill(persistent, false);
     }
 
     private void fillUnacked() throws IOException, InterruptedException {
-        fillUnacked(false, MAXDEPTH);
+        fill(false, true);
     }
 
-    private void fillUnacked(boolean persistent, int depth) throws IOException, InterruptedException {
-        for (int i=1; i <= depth; i++){
+    private void fillUnacked(boolean persistent) throws IOException, InterruptedException {
+        fill(persistent, true);
+    }
+
+    private void fill(boolean persistent, boolean unAcked) throws IOException, InterruptedException {
+        for (int i=1; i <= MAXLENGTH; i++){
             syncPublish(null, "msg" + i);
-            channel.basicGet(q, false);
-            assertEquals(0, declareQueue(persistent));
+            if (unAcked) {
+                channel.basicGet(q, false);
+                assertEquals(0, declareQueue(persistent));
+            } else {
+                assertEquals(i, declareQueue(persistent));
+            }
         }
     }
 
@@ -163,9 +160,13 @@ public class QueueSizeLimit extends BrokerTestCase {
 
     private int declareQueue(boolean durable, boolean dlx) throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-maxdepth", MAXDEPTH);
+        args.put("x-max-length", MAXLENGTH);
         if (dlx) args.put("x-dead-letter-exchange", "DLX");
         AMQP.Queue.DeclareOk ok = channel.queueDeclare(q, durable, true, true, args);
         return ok.getMessageCount();
+    }
+
+    private void assertHead(String expected, String queueName) throws IOException {
+        assertEquals(expected, new String(channel.basicGet(queueName, true).getBody()));
     }
 }
