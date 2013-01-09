@@ -53,21 +53,21 @@ public class QueueSizeLimit extends BrokerTestCase {
 
     public void testQueueSize() throws IOException, InterruptedException {
         declareQueue(false, false);
-        fill(false, false);
+        fill(false, false, false);
         syncPublish(null, "msg" + MAXLENGTH1);
         assertHead(MAXLENGTH, "msg2", q);
     }
 
     public void testQueueUnacked() throws IOException, InterruptedException {
         declareQueue(false, false);
-        fill(false, true);
+        fill(false, true, false);
         syncPublish(null, "msg" + MAXLENGTH1);
         assertHead(1, "msg" + MAXLENGTH1, q);
     }
 
     public void testPersistent() throws IOException, InterruptedException {
         declareQueue(true, false);
-        fill(true, true);
+        fill(true, true, false);
         syncPublish(MessageProperties.MINIMAL_PERSISTENT_BASIC, "msg" + MAXLENGTH1);
         assertHead(1, "msg" + MAXLENGTH1, q);
     }
@@ -90,7 +90,7 @@ public class QueueSizeLimit extends BrokerTestCase {
 
     public void dlxHead(boolean persistent) throws IOException, InterruptedException {
         AMQP.BasicProperties props = setupDlx(persistent);
-        fill(persistent, false);
+        fill(persistent, false, true);
         syncPublish(props, "msg" + MAXLENGTH1);
         assertEquals(MAXLENGTH, declareQueue(persistent, true));
         assertHead(1, "msg1", "DLQ");
@@ -98,13 +98,13 @@ public class QueueSizeLimit extends BrokerTestCase {
 
     public void dlxTail(boolean persistent) throws IOException, InterruptedException {
         AMQP.BasicProperties props = setupDlx(persistent);
-        fill(persistent, true);
+        fill(persistent, true, true);
         syncPublish(props, "msg" + MAXLENGTH1);
         assertNull(null, channel.basicGet("DLQ", true));
         assertHead(1, "msg" + MAXLENGTH1, q);
     }
 
-    private void fill(boolean persistent, boolean unAcked) throws IOException, InterruptedException {
+    private void fill(boolean persistent, boolean unAcked, boolean dlx) throws IOException, InterruptedException {
         for (int i=1; i <= MAXLENGTH; i++){
             syncPublish(null, "msg" + i);
             if (unAcked) {
@@ -112,9 +112,9 @@ public class QueueSizeLimit extends BrokerTestCase {
             }
         }
         if (unAcked) {
-            assertEquals(0, declareQueue(persistent, false));
+            assertEquals(0, declareQueue(persistent, dlx));
         } else {
-            assertEquals(MAXLENGTH, declareQueue(persistent, false));
+            assertEquals(MAXLENGTH, declareQueue(persistent, dlx));
         }
     }
 
