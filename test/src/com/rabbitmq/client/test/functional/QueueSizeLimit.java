@@ -100,7 +100,7 @@ public class QueueSizeLimit extends BrokerTestCase {
         AMQP.BasicProperties props = setupDlx(persistent);
         fill(persistent, true, true);
         syncPublish(props, "msg" + MAXLENGTH1);
-        assertNull(null, channel.basicGet("DLQ", true));
+        assertNull(channel.basicGet("DLQ", true));
         assertHead(1, "msg" + MAXLENGTH1, q);
     }
 
