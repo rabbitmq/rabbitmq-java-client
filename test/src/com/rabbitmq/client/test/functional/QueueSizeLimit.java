@@ -22,6 +22,7 @@ import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -88,6 +89,37 @@ public class QueueSizeLimit extends BrokerTestCase {
         dlxTail(true);
     }
 
+    public void testMaxlenZero() throws IOException, InterruptedException {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-max-length", 0);
+        channel.queueDeclare(q, false, true, true, args);
+        syncPublish(null, "msg");
+        assertNull(channel.basicGet(q, true));
+    }
+
+    public void testRequeue() throws IOException, InterruptedException  {
+        declareQueue(false, false);
+        ArrayList<Long>  tags = new ArrayList<Long>(MAXLENGTH);;
+        fill(false, false, false);
+        getUnacked(MAXLENGTH, tags);
+        fill(false, false, false);
+        channel.basicNack(tags.get(0), false, true);
+        channel.basicNack(tags.get(MAXLENGTH - 1), true, true);
+        assertHead(MAXLENGTH, "msg1", q);
+    }
+
+    public void testRequeueWithDlx() throws IOException, InterruptedException  {
+        setupDlx(false);
+        ArrayList<Long>  tags = new ArrayList<Long>(MAXLENGTH);;
+        fill(false, false, true);
+        getUnacked(MAXLENGTH, tags);
+        fill(false, false, true);
+        channel.basicNack(tags.get(0), false, true);
+        channel.basicNack(tags.get(MAXLENGTH - 1), true, true);
+        assertHead(MAXLENGTH, "msg1", q);
+        assertHead(MAXLENGTH, "msg1", "DLQ");
+    }
+
     public void dlxHead(boolean persistent) throws IOException, InterruptedException {
         AMQP.BasicProperties props = setupDlx(persistent);
         fill(persistent, false, true);
@@ -138,5 +170,11 @@ public class QueueSizeLimit extends BrokerTestCase {
         assertNotNull(head);
         assertEquals(expectedPayload, new String(head.getBody()));
         assertEquals(expectedLength, head.getMessageCount() + 1);
+    }
+
+    private void getUnacked(int howMany, ArrayList<Long> acks) throws IOException {
+        for (;howMany > 0; howMany --){
+            acks.add(channel.basicGet(q, false).getEnvelope().getDeliveryTag());
+        }
     }
 }
