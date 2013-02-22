@@ -224,7 +224,7 @@ public class MulticastParams {
             Command closeCommand = (Command) sse.getReason();
             if (!sse.isHardError()) {
                 AMQP.Channel.Close closeMethod = (AMQP.Channel.Close) closeCommand.getMethod();
-                if (closeMethod.getReplyCode() == AMQP.PRECONDITION_FAILED) {
+                if (closeMethod.getReplyCode() == AMQP.NOT_FOUND) {
                     return false;
                 }
             }
