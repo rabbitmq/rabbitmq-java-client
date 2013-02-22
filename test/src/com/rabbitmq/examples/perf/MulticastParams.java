@@ -16,7 +16,9 @@
 
 package com.rabbitmq.examples.perf;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ShutdownSignalException;
 
@@ -218,11 +220,15 @@ public class MulticastParams {
             return true;
         }
         catch (IOException e) {
-            if (e.getCause() instanceof ShutdownSignalException) {
-                return false;
-            } else {
-                throw e;
+            ShutdownSignalException sse = (ShutdownSignalException) e.getCause();
+            Command closeCommand = (Command) sse.getReason();
+            if (!sse.isHardError()) {
+                AMQP.Channel.Close closeMethod = (AMQP.Channel.Close) closeCommand.getMethod();
+                if (closeMethod.getReplyCode() == AMQP.PRECONDITION_FAILED) {
+                    return false;
+                }
             }
+            throw e;
         }
     }
 }
