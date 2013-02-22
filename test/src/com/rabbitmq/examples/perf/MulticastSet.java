@@ -51,14 +51,14 @@ public class MulticastSet {
             Connection conn = factory.newConnection();
             consumerConnections[i] = conn;
             Channel channel = conn.createChannel();
-            Thread t = new Thread(params.createConsumer(channel, stats, id));
+            Thread t = new Thread(params.createConsumer(conn, channel, stats, id));
             consumerThreads[i] = t;
         }
 
         if (params.shouldConfigureQueue()) {
             Connection conn = factory.newConnection();
             Channel channel = conn.createChannel();
-            params.configureQueue(channel, id);
+            params.configureQueue(conn, channel, id);
             conn.close();
         }
 
@@ -73,7 +73,7 @@ public class MulticastSet {
             producerConnections[i] = conn;
             Channel channel = conn.createChannel();
             producerChannels[i] = channel;
-            Thread t = new Thread(params.createProducer(channel, stats, id));
+            Thread t = new Thread(params.createProducer(conn, channel, stats, id));
             producerThreads[i] = t;
         }
 

@@ -17,6 +17,8 @@
 package com.rabbitmq.examples.perf;
 
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ShutdownSignalException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -140,10 +142,12 @@ public class MulticastParams {
         return minMsgSize;
     }
 
-    public Producer createProducer(Channel channel, Stats stats, String id) throws IOException {
+    public Producer createProducer(Connection connection, Channel channel, Stats stats, String id) throws IOException {
         if (producerTxSize > 0) channel.txSelect();
         if (confirm >= 0) channel.confirmSelect();
-        channel.exchangeDeclare(exchangeName, exchangeType);
+        if (!exchangeExists(connection, exchangeName)) {
+            channel.exchangeDeclare(exchangeName, exchangeType);
+        }
         final Producer producer = new Producer(channel, exchangeName, id,
                                                flags, producerTxSize,
                                                rateLimit, producerMsgCount,
@@ -154,9 +158,9 @@ public class MulticastParams {
         return producer;
     }
 
-    public Consumer createConsumer(Channel channel, Stats stats, String id) throws IOException {
+    public Consumer createConsumer(Connection connection, Channel channel, Stats stats, String id) throws IOException {
         if (consumerTxSize > 0) channel.txSelect();
-        String qName = configureQueue(channel, id);
+        String qName = configureQueue(connection, channel, id);
         if (prefetchCount > 0) channel.basicQos(prefetchCount);
         return new Consumer(channel, id, qName,
                                          consumerTxSize, autoAck, multiAckEvery,
@@ -167,13 +171,54 @@ public class MulticastParams {
         return consumerCount == 0 && !queueName.equals("");
     }
 
-    public String configureQueue(Channel channel, String id) throws IOException {
-        channel.exchangeDeclare(exchangeName, exchangeType);
-        String qName = channel.queueDeclare(queueName,
-                                            flags.contains("persistent"),
-                                            exclusive, autoDelete,
-                                            null).getQueue();
+    public String configureQueue(Connection connection, Channel channel, String id) throws IOException {
+        if (!exchangeExists(connection, exchangeName)) {
+            channel.exchangeDeclare(exchangeName, exchangeType);
+        }
+        String qName = queueName;
+        if (!queueExists(connection, queueName)) {
+            qName = channel.queueDeclare(queueName,
+                                         flags.contains("persistent"),
+                                         exclusive, autoDelete,
+                                         null).getQueue();
+        }
         channel.queueBind(qName, exchangeName, id);
         return qName;
+    }
+
+    private static boolean exchangeExists(Connection connection, final String exchangeName) throws IOException {
+        return exists(connection, new Checker() {
+            public void check(Channel ch) throws IOException {
+                ch.exchangeDeclarePassive(exchangeName);
+            }
+        });
+    }
+
+    private static boolean queueExists(Connection connection, final String queueName) throws IOException {
+        return queueName != null && exists(connection, new Checker() {
+            public void check(Channel ch) throws IOException {
+                ch.queueDeclarePassive(queueName);
+            }
+        });
+    }
+
+    private static interface Checker {
+        public void check(Channel ch) throws IOException;
+    }
+
+    private static boolean exists(Connection connection, Checker checker) throws IOException {
+        try {
+            Channel ch = connection.createChannel();
+            checker.check(ch);
+            ch.close();
+            return true;
+        }
+        catch (IOException e) {
+            if (e.getCause() instanceof ShutdownSignalException) {
+                return false;
+            } else {
+                throw e;
+            }
+        }
     }
 }
