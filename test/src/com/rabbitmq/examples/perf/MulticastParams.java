@@ -170,7 +170,7 @@ public class MulticastParams {
     }
 
     public boolean shouldConfigureQueue() {
-        return consumerCount == 0 && !queueName.equals("");
+        return consumerCount == 0 && !queueName.equals("") && !exclusive;
     }
 
     public String configureQueue(Connection connection, String id) throws IOException {
