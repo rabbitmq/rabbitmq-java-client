@@ -142,7 +142,8 @@ public class MulticastParams {
         return minMsgSize;
     }
 
-    public Producer createProducer(Connection connection, Channel channel, Stats stats, String id) throws IOException {
+    public Producer createProducer(Connection connection, Stats stats, String id) throws IOException {
+        Channel channel = connection.createChannel();
         if (producerTxSize > 0) channel.txSelect();
         if (confirm >= 0) channel.confirmSelect();
         if (!exchangeExists(connection, exchangeName)) {
@@ -158,9 +159,10 @@ public class MulticastParams {
         return producer;
     }
 
-    public Consumer createConsumer(Connection connection, Channel channel, Stats stats, String id) throws IOException {
+    public Consumer createConsumer(Connection connection, Stats stats, String id) throws IOException {
+        Channel channel = connection.createChannel();
         if (consumerTxSize > 0) channel.txSelect();
-        String qName = configureQueue(connection, channel, id);
+        String qName = configureQueue(connection, id);
         if (prefetchCount > 0) channel.basicQos(prefetchCount);
         return new Consumer(channel, id, qName,
                                          consumerTxSize, autoAck, multiAckEvery,
@@ -171,7 +173,8 @@ public class MulticastParams {
         return consumerCount == 0 && !queueName.equals("");
     }
 
-    public String configureQueue(Connection connection, Channel channel, String id) throws IOException {
+    public String configureQueue(Connection connection, String id) throws IOException {
+        Channel channel = connection.createChannel();
         if (!exchangeExists(connection, exchangeName)) {
             channel.exchangeDeclare(exchangeName, exchangeType);
         }
@@ -183,6 +186,7 @@ public class MulticastParams {
                                          null).getQueue();
         }
         channel.queueBind(qName, exchangeName, id);
+        channel.close();
         return qName;
     }
 
