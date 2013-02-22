@@ -51,6 +51,8 @@ public class MulticastParams {
     private boolean exclusive = true;
     private boolean autoDelete = false;
 
+    private boolean predeclared;
+
     public void setExchangeType(String exchangeType) {
         this.exchangeType = exchangeType;
     }
@@ -132,6 +134,10 @@ public class MulticastParams {
         this.autoDelete = autoDelete;
     }
 
+    public void setPredeclared(boolean predeclared) {
+        this.predeclared = predeclared;
+    }
+
     public int getConsumerCount() {
         return consumerCount;
     }
@@ -148,7 +154,7 @@ public class MulticastParams {
         Channel channel = connection.createChannel();
         if (producerTxSize > 0) channel.txSelect();
         if (confirm >= 0) channel.confirmSelect();
-        if (!exchangeExists(connection, exchangeName)) {
+        if (!predeclared || !exchangeExists(connection, exchangeName)) {
             channel.exchangeDeclare(exchangeName, exchangeType);
         }
         final Producer producer = new Producer(channel, exchangeName, id,
@@ -177,11 +183,11 @@ public class MulticastParams {
 
     public String configureQueue(Connection connection, String id) throws IOException {
         Channel channel = connection.createChannel();
-        if (!exchangeExists(connection, exchangeName)) {
+        if (!predeclared || !exchangeExists(connection, exchangeName)) {
             channel.exchangeDeclare(exchangeName, exchangeType);
         }
         String qName = queueName;
-        if (!queueExists(connection, queueName)) {
+        if (!predeclared || !queueExists(connection, queueName)) {
             qName = channel.queueDeclare(queueName,
                                          flags.contains("persistent"),
                                          exclusive, autoDelete,

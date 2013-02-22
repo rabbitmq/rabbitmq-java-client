@@ -65,6 +65,8 @@ public class MulticastMain {
             List<?> flags        = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
+            boolean predeclared  = cmd.hasOption('p');
+
             String uri           = strArg(cmd, 'h', "amqp://localhost");
 
             boolean exclusive  = "".equals(queueName);
@@ -96,6 +98,7 @@ public class MulticastMain {
             p.setFlags(            flags);
             p.setMultiAckEvery(    multiAckEvery);
             p.setMinMsgSize(       minMsgSize);
+            p.setPredeclared(      predeclared);
             p.setPrefetchCount(    prefetchCount);
             p.setProducerCount(    producerCount);
             p.setProducerMsgCount( producerMsgCount);
@@ -150,6 +153,7 @@ public class MulticastMain {
         options.addOption(flag);
         options.addOption(new Option("M", "framemax",      true, "frame max"));
         options.addOption(new Option("b", "heartbeat",     true, "heartbeat interval"));
+        options.addOption(new Option("p", "predeclared",   false,"allow use of predeclared objects"));
         return options;
     }
 
