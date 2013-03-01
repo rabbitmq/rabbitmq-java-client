@@ -33,6 +33,7 @@ public class QueueSizeLimit extends BrokerTestCase {
 
     private final int MAXLENGTH = 5;
     private final int MAXLENGTH1 = MAXLENGTH + 1;
+    private final int EXPIRY_TIMEOUT = 100;
     private final String q = "queue-maxlength";
 
     @Override
@@ -95,6 +96,21 @@ public class QueueSizeLimit extends BrokerTestCase {
         channel.queueDeclare(q, false, true, true, args);
         syncPublish(null, "msg");
         assertNull(channel.basicGet(q, true));
+    }
+
+    public void testMaxlenOne() throws IOException, InterruptedException {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-max-length", 1);
+        channel.queueDeclare(q, false, true, true, args);
+
+        AMQP.BasicProperties props = new AMQP.BasicProperties();
+        props.setExpiration((new Integer(EXPIRY_TIMEOUT)).toString());
+        channel.basicPublish("", q, props, "msg1".getBytes());
+        channel.basicPublish("", q, null, "msg2".getBytes());
+
+        channel.waitForConfirms();
+        Thread.sleep(EXPIRY_TIMEOUT * 2);
+        assertHead(1, "msg2", q);
     }
 
     public void testRequeue() throws IOException, InterruptedException  {
