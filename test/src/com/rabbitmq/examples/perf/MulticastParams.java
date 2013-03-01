@@ -32,7 +32,7 @@ public class MulticastParams {
     private int minMsgSize = 0;
 
     private int timeLimit = 0;
-    private int rateLimit = 0;
+    private float rateLimit = 0;
     private int producerMsgCount = 0;
     private int consumerMsgCount = 0;
 
@@ -59,7 +59,7 @@ public class MulticastParams {
         this.queueName = queueName;
     }
 
-    public void setRateLimit(int rateLimit) {
+    public void setRateLimit(float rateLimit) {
         this.rateLimit = rateLimit;
     }
 
