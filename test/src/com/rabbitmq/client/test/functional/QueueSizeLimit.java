@@ -11,19 +11,18 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,166 +30,129 @@ import java.util.Map;
  */
 public class QueueSizeLimit extends BrokerTestCase {
 
-    private final int MAXLENGTH = 5;
-    private final int MAXLENGTH1 = MAXLENGTH + 1;
-    private final int EXPIRY_TIMEOUT = 100;
+    private final int MAXMAXLENGTH = 3;
     private final String q = "queue-maxlength";
 
-    @Override
-    protected void setUp() throws IOException {
-        super.setUp();
-        channel.confirmSelect();
-    }
-
-    AMQP.BasicProperties setupDlx(boolean persistent) throws IOException {
-        channel.queueDeclare("DLQ", false, true, false, null);
-        channel.queueBind("DLQ", "amq.fanout", "");
-        declareQueue(persistent, true);
-        AMQP.BasicProperties props = null;
-        if (persistent) {
-            props = MessageProperties.MINIMAL_PERSISTENT_BASIC;
+    public void testQueueSize()  throws IOException, InterruptedException {
+        for (int maxLen = 0; maxLen <= MAXMAXLENGTH; maxLen ++){
+            setupNonDlxTest(maxLen, false);
+            assertHead(maxLen, "msg2", q);
+            deleteQueue(q);
         }
-        return props;
     }
 
-    public void testQueueSize() throws IOException, InterruptedException {
-        declareQueue(false, false);
-        fill(false, false, false);
-        syncPublish(null, "msg" + MAXLENGTH1);
-        assertHead(MAXLENGTH, "msg2", q);
+    public void testQueueSizeUnacked()  throws IOException, InterruptedException {
+        for (int maxLen = 0; maxLen <= MAXMAXLENGTH; maxLen ++){
+            setupNonDlxTest(maxLen, true);
+            assertHead(maxLen > 0 ? 1 : 0, "msg" + (maxLen + 1), q);
+            deleteQueue(q);
+        }
     }
 
-    public void testQueueUnacked() throws IOException, InterruptedException {
-        declareQueue(false, false);
-        fill(false, true, false);
-        syncPublish(null, "msg" + MAXLENGTH1);
-        assertHead(1, "msg" + MAXLENGTH1, q);
+    public void testQueueSizeDlx()  throws IOException, InterruptedException {
+        for (int maxLen = 0; maxLen <= MAXMAXLENGTH; maxLen ++){
+            setupDlxTest(maxLen, false);
+            assertHead(1, "msg1", "DLQ");
+            deleteQueue(q);
+            deleteQueue("DLQ");
+        }
     }
 
-    public void testPersistent() throws IOException, InterruptedException {
-        declareQueue(true, false);
-        fill(true, true, false);
-        syncPublish(MessageProperties.MINIMAL_PERSISTENT_BASIC, "msg" + MAXLENGTH1);
-        assertHead(1, "msg" + MAXLENGTH1, q);
-    }
-
-    public void testDlxHeadTransient() throws IOException, InterruptedException {
-        dlxHead(false);
-    }
-
-    public void testDlxTailTransient() throws IOException, InterruptedException {
-        dlxTail(false);
-    }
-
-    public void testDlxHeadDurable() throws IOException, InterruptedException {
-        dlxHead(true);
-    }
-
-    public void testDlxTailDurable() throws IOException, InterruptedException {
-        dlxTail(true);
-    }
-
-    public void testMaxlenZero() throws IOException, InterruptedException {
-        Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-max-length", 0);
-        channel.queueDeclare(q, false, true, true, args);
-        syncPublish(null, "msg");
-        assertNull(channel.basicGet(q, true));
-    }
-
-    public void testMaxlenOne() throws IOException, InterruptedException {
-        Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-max-length", 1);
-        channel.queueDeclare(q, false, true, true, args);
-
-        AMQP.BasicProperties props = new AMQP.BasicProperties();
-        props.setExpiration((new Integer(EXPIRY_TIMEOUT)).toString());
-        channel.basicPublish("", q, props, "msg1".getBytes());
-        channel.basicPublish("", q, null, "msg2".getBytes());
-
-        channel.waitForConfirms();
-        Thread.sleep(EXPIRY_TIMEOUT * 2);
-        assertHead(1, "msg2", q);
+    public void testQueueSizeUnackedDlx()  throws IOException, InterruptedException {
+        for (int maxLen = 0; maxLen <= MAXMAXLENGTH; maxLen ++){
+            setupDlxTest(maxLen, true);
+            assertHead(maxLen > 0 ? 0 : 1, "msg1", "DLQ");
+            deleteQueue(q);
+            deleteQueue("DLQ");
+        }
     }
 
     public void testRequeue() throws IOException, InterruptedException  {
-        declareQueue(false, false);
-        ArrayList<Long>  tags = new ArrayList<Long>(MAXLENGTH);;
-        fill(false, false, false);
-        getUnacked(MAXLENGTH, tags);
-        fill(false, false, false);
-        channel.basicNack(tags.get(0), false, true);
-        channel.basicNack(tags.get(MAXLENGTH - 1), true, true);
-        assertHead(MAXLENGTH, "msg1", q);
+        for (int maxLen = 1; maxLen <= MAXMAXLENGTH; maxLen ++) {
+            declareQueue(maxLen, false);
+            setupRequeueTest(maxLen);
+            assertHead(maxLen, "msg1", q);
+            deleteQueue(q);
+        }
     }
 
     public void testRequeueWithDlx() throws IOException, InterruptedException  {
-        setupDlx(false);
-        ArrayList<Long>  tags = new ArrayList<Long>(MAXLENGTH);;
-        fill(false, false, true);
-        getUnacked(MAXLENGTH, tags);
-        fill(false, false, true);
+        for (int maxLen = 1; maxLen <= MAXMAXLENGTH; maxLen ++) {
+            declareQueue(maxLen, true);
+            setupRequeueTest(maxLen);
+            assertHead(maxLen, "msg1", q);
+            assertHead(maxLen, "msg1", "DLQ");
+            deleteQueue(q);
+            deleteQueue("DLQ");
+        }
+    }
+
+    private void setupNonDlxTest(int maxLen, boolean unAcked) throws IOException, InterruptedException {
+        declareQueue(maxLen, false);
+        fill(maxLen);
+        if (unAcked)
+            getUnacked(maxLen, null);
+        publish("msg" + (maxLen + 1));
+    }
+
+    private void setupDlxTest(int maxLen, boolean unAcked) throws IOException, InterruptedException {
+        declareQueue(maxLen, true);
+        fill(maxLen);
+        if (unAcked)
+            getUnacked(maxLen, null);
+        publish("msg" + (maxLen + 1));
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException _) { }
+    }
+
+    private void setupRequeueTest(int maxLen) throws IOException, InterruptedException {
+        List<Long> tags = new ArrayList<Long>(maxLen);
+        fill(maxLen);
+        getUnacked(maxLen, tags);
+        fill(maxLen);
         channel.basicNack(tags.get(0), false, true);
-        channel.basicNack(tags.get(MAXLENGTH - 1), true, true);
-        assertHead(MAXLENGTH, "msg1", q);
-        assertHead(MAXLENGTH, "msg1", "DLQ");
+        if (maxLen > 1)
+            channel.basicNack(tags.get(maxLen - 1), true, true);
     }
 
-    public void dlxHead(boolean persistent) throws IOException, InterruptedException {
-        AMQP.BasicProperties props = setupDlx(persistent);
-        fill(persistent, false, true);
-        syncPublish(props, "msg" + MAXLENGTH1);
-        assertEquals(MAXLENGTH, declareQueue(persistent, true));
-        assertHead(1, "msg1", "DLQ");
-    }
-
-    public void dlxTail(boolean persistent) throws IOException, InterruptedException {
-        AMQP.BasicProperties props = setupDlx(persistent);
-        fill(persistent, true, true);
-        syncPublish(props, "msg" + MAXLENGTH1);
-        assertNull(channel.basicGet("DLQ", true));
-        assertHead(1, "msg" + MAXLENGTH1, q);
-    }
-
-    private void fill(boolean persistent, boolean unAcked, boolean dlx) throws IOException, InterruptedException {
-        for (int i=1; i <= MAXLENGTH; i++){
-            syncPublish(null, "msg" + i);
-            if (unAcked) {
-                assertNotNull(channel.basicGet(q, false));
-            }
-        }
-        if (unAcked) {
-            assertEquals(0, declareQueue(persistent, dlx));
-        } else {
-            assertEquals(MAXLENGTH, declareQueue(persistent, dlx));
-        }
-    }
-
-    private void syncPublish(AMQP.BasicProperties props, String payload) throws IOException, InterruptedException {
-        channel.basicPublish("", q, props, payload.getBytes());
-        channel.waitForConfirmsOrDie();
-    }
-
-    private int declareQueue(boolean persistent, boolean dlx) throws IOException {
+    private void declareQueue(int maxLen, boolean dlx) throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-max-length", MAXLENGTH);
+        args.put("x-max-length", maxLen);
         if (dlx) {
             args.put("x-dead-letter-exchange", "amq.fanout");
+            channel.queueDeclare("DLQ", false, true, false, null);
+            channel.queueBind("DLQ", "amq.fanout", "");
         }
-        AMQP.Queue.DeclareOk ok = channel.queueDeclare(q, persistent, true, true, args);
-        return ok.getMessageCount();
+        channel.queueDeclare(q, false, true, true, args);
     }
 
-    private void assertHead(int expectedLength, String expectedPayload, String queueName) throws IOException {
+    private void fill(int count) throws IOException, InterruptedException {
+        for (int i=1; i <= count; i++){
+            publish("msg" + i);
+        }
+    }
+
+    private void publish(String payload) throws IOException, InterruptedException {
+        basicPublishVolatile(payload.getBytes(), q);
+    }
+
+    private void assertHead(int expectedLength, String expectedHeadPayload, String queueName) throws IOException {
         GetResponse head = channel.basicGet(queueName, true);
-        assertNotNull(head);
-        assertEquals(expectedPayload, new String(head.getBody()));
-        assertEquals(expectedLength, head.getMessageCount() + 1);
+        if (expectedLength > 0) {
+            assertNotNull(head);
+            assertEquals(expectedHeadPayload, new String(head.getBody()));
+            assertEquals(expectedLength, head.getMessageCount() + 1);
+        } else {
+            assertNull(head);
+        }
     }
 
-    private void getUnacked(int howMany, ArrayList<Long> acks) throws IOException {
+    private void getUnacked(int howMany, List<Long> acks) throws IOException {
         for (;howMany > 0; howMany --){
-            acks.add(channel.basicGet(q, false).getEnvelope().getDeliveryTag());
+            GetResponse response = channel.basicGet(q, false);
+            if (acks != null)
+                acks.add(response.getEnvelope().getDeliveryTag());
         }
     }
 }
