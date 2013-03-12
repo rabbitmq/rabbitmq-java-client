@@ -90,16 +90,14 @@ public class QueueSizeLimit extends BrokerTestCase {
     private void setupNonDlxTest(int maxLen, boolean unAcked) throws IOException, InterruptedException {
         declareQueue(maxLen, false);
         fill(maxLen);
-        if (unAcked)
-            getUnacked(maxLen, null);
+        if (unAcked) getUnacked(maxLen);
         publish("msg" + (maxLen + 1));
     }
 
     private void setupDlxTest(int maxLen, boolean unAcked) throws IOException, InterruptedException {
         declareQueue(maxLen, true);
         fill(maxLen);
-        if (unAcked)
-            getUnacked(maxLen, null);
+        if (unAcked) getUnacked(maxLen);
         publish("msg" + (maxLen + 1));
         try {
             Thread.sleep(100);
@@ -107,9 +105,8 @@ public class QueueSizeLimit extends BrokerTestCase {
     }
 
     private void setupRequeueTest(int maxLen) throws IOException, InterruptedException {
-        List<Long> tags = new ArrayList<Long>(maxLen);
         fill(maxLen);
-        getUnacked(maxLen, tags);
+        List<Long> tags = getUnacked(maxLen);
         fill(maxLen);
         channel.basicNack(tags.get(0), false, true);
         if (maxLen > 1)
@@ -148,11 +145,12 @@ public class QueueSizeLimit extends BrokerTestCase {
         }
     }
 
-    private void getUnacked(int howMany, List<Long> acks) throws IOException {
-        for (;howMany > 0; howMany --){
+    private List<Long> getUnacked(int howMany) throws IOException {
+        List<Long> tags = new ArrayList<Long>(howMany);
+        for (;howMany > 0; howMany --) {
             GetResponse response = channel.basicGet(q, false);
-            if (acks != null)
-                acks.add(response.getEnvelope().getDeliveryTag());
+            tags.add(response.getEnvelope().getDeliveryTag());
         }
+        return tags;
     }
 }
