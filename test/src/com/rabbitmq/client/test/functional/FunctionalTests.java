@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
 //
 
 
@@ -26,6 +26,11 @@ import junit.framework.TestSuite;
 public class FunctionalTests extends TestCase {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("functional");
+        add(suite);
+        return suite;
+    }
+
+    public static void add(TestSuite suite) {
         suite.addTestSuite(ConnectionOpen.class);
         suite.addTestSuite(Heartbeat.class);
         suite.addTestSuite(Tables.class);
@@ -50,6 +55,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(QueueLifecycle.class);
         suite.addTestSuite(QueueLease.class);
         suite.addTestSuite(QueueExclusivity.class);
+        suite.addTestSuite(QueueSizeLimit.class);
         suite.addTestSuite(InvalidAcks.class);
         suite.addTestSuite(InvalidAcksTx.class);
         suite.addTestSuite(DefaultExchange.class);
@@ -58,13 +64,14 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(ConsumerCancelNotificiation.class);
         suite.addTestSuite(UnexpectedFrames.class);
         suite.addTestSuite(PerQueueTTL.class);
+        suite.addTestSuite(PerMessageTTL.class);
+        suite.addTestSuite(PerQueueVsPerMessageTTL.class);
         suite.addTestSuite(DeadLetterExchange.class);
         suite.addTestSuite(SaslMechanisms.class);
         suite.addTestSuite(UserIDHeader.class);
         suite.addTestSuite(InternalExchange.class);
         suite.addTestSuite(CcRoutes.class);
         suite.addTestSuite(WorkPoolTests.class);
-        suite.addTestSuite(HAQueues.class);
-        return suite;
+        suite.addTestSuite(HeadersExchangeValidation.class);
     }
 }

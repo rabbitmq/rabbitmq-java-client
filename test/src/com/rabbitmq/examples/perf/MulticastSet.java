@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.examples.perf;
@@ -50,30 +50,25 @@ public class MulticastSet {
             }
             Connection conn = factory.newConnection();
             consumerConnections[i] = conn;
-            Channel channel = conn.createChannel();
-            Thread t = new Thread(params.createConsumer(channel, stats, id));
+            Thread t = new Thread(params.createConsumer(conn, stats, id));
             consumerThreads[i] = t;
         }
 
         if (params.shouldConfigureQueue()) {
             Connection conn = factory.newConnection();
-            Channel channel = conn.createChannel();
-            params.configureQueue(channel, id);
+            params.configureQueue(conn, id);
             conn.close();
         }
 
         Thread[] producerThreads = new Thread[params.getProducerCount()];
         Connection[] producerConnections = new Connection[producerThreads.length];
-        Channel[] producerChannels = new Channel[producerConnections.length];
-        for (int i = 0; i < producerChannels.length; i++) {
+        for (int i = 0; i < producerThreads.length; i++) {
             if (announceStartup) {
                 System.out.println("starting producer #" + i);
             }
             Connection conn = factory.newConnection();
             producerConnections[i] = conn;
-            Channel channel = conn.createChannel();
-            producerChannels[i] = channel;
-            Thread t = new Thread(params.createProducer(channel, stats, id));
+            Thread t = new Thread(params.createProducer(conn, stats, id));
             producerThreads[i] = t;
         }
 
@@ -87,8 +82,6 @@ public class MulticastSet {
 
         for (int i = 0; i < producerThreads.length; i++) {
             producerThreads[i].join();
-            producerChannels[i].clearReturnListeners();
-            producerChannels[i].clearConfirmListeners();
             producerConnections[i].close();
         }
 

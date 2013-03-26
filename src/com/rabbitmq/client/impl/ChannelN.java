@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -175,6 +175,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** {@inheritDoc} */
     public boolean waitForConfirms(long timeout)
             throws InterruptedException, TimeoutException {
+        if (nextPublishSeqNo == 0L)
+            throw new IllegalStateException("Confirms not selected");
         long startTime = System.currentTimeMillis();
         synchronized (unconfirmedSet) {
             while (true) {

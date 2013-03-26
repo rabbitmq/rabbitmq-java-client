@@ -1,6 +1,7 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
@@ -16,15 +17,15 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class DeadLetterExchange extends BrokerTestCase {
-    private static final String DLX = "dead.letter.exchange";
-    private static final String DLX_ARG = "x-dead-letter-exchange";
-    private static final String DLX_RK_ARG = "x-dead-letter-routing-key";
-    private static final String TEST_QUEUE_NAME = "test.queue.dead.letter";
-    private static final String DLQ = "queue.dlq";
-    private static final String DLQ2 = "queue.dlq2";
-    private static final int MSG_COUNT = 10;
-    private static final int MSG_COUNT_MANY = 1000;
-    private static final int TTL = 1000;
+    public static final String DLX = "dead.letter.exchange";
+    public static final String DLX_ARG = "x-dead-letter-exchange";
+    public static final String DLX_RK_ARG = "x-dead-letter-routing-key";
+    public static final String TEST_QUEUE_NAME = "test.queue.dead.letter";
+    public static final String DLQ = "queue.dlq";
+    public static final String DLQ2 = "queue.dlq2";
+    public static final int MSG_COUNT = 10;
+    public static final int MSG_COUNT_MANY = 1000;
+    public static final int TTL = 1000;
 
     @Override
     protected void createResources() throws IOException {
@@ -348,19 +349,23 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         deathTrigger.call();
 
-        consumeN(DLQ, MSG_COUNT, new WithResponse() {
-                @SuppressWarnings("unchecked")
-                public void process(GetResponse getResponse) {
-                    Map<String, Object> headers = getResponse.getProps().getHeaders();
-                    assertNotNull(headers);
-                    ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
-                    assertNotNull(death);
-                    assertEquals(1, death.size());
-                    assertDeathReason(death, 0, TEST_QUEUE_NAME, reason,
-                                      "amq.direct",
-                                      Arrays.asList(new String[]{"test"}));
-                }
-            });
+        consume(channel, reason);
+    }
+
+    public static void consume(final Channel channel, final String reason) throws IOException {
+        consumeN(channel, DLQ, MSG_COUNT, new WithResponse() {
+            @SuppressWarnings("unchecked")
+            public void process(GetResponse getResponse) {
+                Map<String, Object> headers = getResponse.getProps().getHeaders();
+                assertNotNull(headers);
+                ArrayList<Object> death = (ArrayList<Object>) headers.get("x-death");
+                assertNotNull(death);
+                assertEquals(1, death.size());
+                assertDeathReason(death, 0, TEST_QUEUE_NAME, reason,
+                        "amq.direct",
+                        Arrays.asList(new String[]{"test"}));
+            }
+        });
     }
 
     private void ttlTest(final long ttl) throws Exception {
@@ -456,6 +461,12 @@ public class DeadLetterExchange extends BrokerTestCase {
     private void consumeN(String queue, int n, WithResponse withResponse)
         throws IOException
     {
+        consumeN(channel, queue, n, withResponse);
+    }
+
+    private static void consumeN(Channel channel, String queue, int n, WithResponse withResponse)
+        throws IOException
+    {
         for(int x = 0; x < n; x++) {
             GetResponse getResponse =
                 channel.basicGet(queue, true);
@@ -469,7 +480,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     @SuppressWarnings("unchecked")
-    private void assertDeathReason(List<Object> death, int num,
+    private static void assertDeathReason(List<Object> death, int num,
                                    String queue, String reason,
                                    String exchange, List<String> routingKeys)
     {
@@ -489,7 +500,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     @SuppressWarnings("unchecked")
-    private void assertDeathReason(List<Object> death, int num,
+    private static void assertDeathReason(List<Object> death, int num,
                                    String queue, String reason) {
         Map<String, Object> deathHeader =
             (Map<String, Object>)death.get(num);

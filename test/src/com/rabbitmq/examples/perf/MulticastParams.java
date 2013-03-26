@@ -11,12 +11,16 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.examples.perf;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Command;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ShutdownSignalException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,7 +36,7 @@ public class MulticastParams {
     private int minMsgSize = 0;
 
     private int timeLimit = 0;
-    private int rateLimit = 0;
+    private float rateLimit = 0;
     private int producerMsgCount = 0;
     private int consumerMsgCount = 0;
 
@@ -47,6 +51,8 @@ public class MulticastParams {
     private boolean exclusive = true;
     private boolean autoDelete = false;
 
+    private boolean predeclared;
+
     public void setExchangeType(String exchangeType) {
         this.exchangeType = exchangeType;
     }
@@ -59,7 +65,7 @@ public class MulticastParams {
         this.queueName = queueName;
     }
 
-    public void setRateLimit(int rateLimit) {
+    public void setRateLimit(float rateLimit) {
         this.rateLimit = rateLimit;
     }
 
@@ -128,6 +134,10 @@ public class MulticastParams {
         this.autoDelete = autoDelete;
     }
 
+    public void setPredeclared(boolean predeclared) {
+        this.predeclared = predeclared;
+    }
+
     public int getConsumerCount() {
         return consumerCount;
     }
@@ -140,10 +150,13 @@ public class MulticastParams {
         return minMsgSize;
     }
 
-    public Producer createProducer(Channel channel, Stats stats, String id) throws IOException {
+    public Producer createProducer(Connection connection, Stats stats, String id) throws IOException {
+        Channel channel = connection.createChannel();
         if (producerTxSize > 0) channel.txSelect();
         if (confirm >= 0) channel.confirmSelect();
-        channel.exchangeDeclare(exchangeName, exchangeType);
+        if (!predeclared || !exchangeExists(connection, exchangeName)) {
+            channel.exchangeDeclare(exchangeName, exchangeType);
+        }
         final Producer producer = new Producer(channel, exchangeName, id,
                                                flags, producerTxSize,
                                                rateLimit, producerMsgCount,
@@ -154,9 +167,10 @@ public class MulticastParams {
         return producer;
     }
 
-    public Consumer createConsumer(Channel channel, Stats stats, String id) throws IOException {
+    public Consumer createConsumer(Connection connection, Stats stats, String id) throws IOException {
+        Channel channel = connection.createChannel();
         if (consumerTxSize > 0) channel.txSelect();
-        String qName = configureQueue(channel, id);
+        String qName = configureQueue(connection, id);
         if (prefetchCount > 0) channel.basicQos(prefetchCount);
         return new Consumer(channel, id, qName,
                                          consumerTxSize, autoAck, multiAckEvery,
@@ -164,16 +178,63 @@ public class MulticastParams {
     }
 
     public boolean shouldConfigureQueue() {
-        return consumerCount == 0 && !queueName.equals("");
+        return consumerCount == 0 && !queueName.equals("") && !exclusive;
     }
 
-    public String configureQueue(Channel channel, String id) throws IOException {
-        channel.exchangeDeclare(exchangeName, exchangeType);
-        String qName = channel.queueDeclare(queueName,
-                                            flags.contains("persistent"),
-                                            exclusive, autoDelete,
-                                            null).getQueue();
+    public String configureQueue(Connection connection, String id) throws IOException {
+        Channel channel = connection.createChannel();
+        if (!predeclared || !exchangeExists(connection, exchangeName)) {
+            channel.exchangeDeclare(exchangeName, exchangeType);
+        }
+        String qName = queueName;
+        if (!predeclared || !queueExists(connection, queueName)) {
+            qName = channel.queueDeclare(queueName,
+                                         flags.contains("persistent"),
+                                         exclusive, autoDelete,
+                                         null).getQueue();
+        }
         channel.queueBind(qName, exchangeName, id);
+        channel.close();
         return qName;
+    }
+
+    private static boolean exchangeExists(Connection connection, final String exchangeName) throws IOException {
+        return exists(connection, new Checker() {
+            public void check(Channel ch) throws IOException {
+                ch.exchangeDeclarePassive(exchangeName);
+            }
+        });
+    }
+
+    private static boolean queueExists(Connection connection, final String queueName) throws IOException {
+        return queueName != null && exists(connection, new Checker() {
+            public void check(Channel ch) throws IOException {
+                ch.queueDeclarePassive(queueName);
+            }
+        });
+    }
+
+    private static interface Checker {
+        public void check(Channel ch) throws IOException;
+    }
+
+    private static boolean exists(Connection connection, Checker checker) throws IOException {
+        try {
+            Channel ch = connection.createChannel();
+            checker.check(ch);
+            ch.close();
+            return true;
+        }
+        catch (IOException e) {
+            ShutdownSignalException sse = (ShutdownSignalException) e.getCause();
+            Command closeCommand = (Command) sse.getReason();
+            if (!sse.isHardError()) {
+                AMQP.Channel.Close closeMethod = (AMQP.Channel.Close) closeCommand.getMethod();
+                if (closeMethod.getReplyCode() == AMQP.NOT_FOUND) {
+                    return false;
+                }
+            }
+            throw e;
+        }
     }
 }

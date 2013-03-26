@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2012 VMware, Inc.  All rights reserved.
+//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
@@ -350,7 +350,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Gets the sasl config to use when authenticating
-     * @return
+     * @return the sasl config
      * @see com.rabbitmq.client.SaslConfig
      */
     public SaslConfig getSaslConfig() {
