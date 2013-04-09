@@ -480,10 +480,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 processShutdownSignal(signal, true, false);
                 quiescingTransmit(new Channel.CloseOk());
             } finally {
+                releaseChannel();
                 notifyOutstandingRpc(signal);
             }
         }
-        releaseChannel();
         notifyListeners();
     }
 
