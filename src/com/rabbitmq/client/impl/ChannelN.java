@@ -469,7 +469,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     private void asyncShutdown(Command command) throws IOException {
-        releaseChannel();
         ShutdownSignalException signal = new ShutdownSignalException(false,
                                                                      false,
                                                                      command,
@@ -479,6 +478,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 processShutdownSignal(signal, true, false);
                 quiescingTransmit(new Channel.CloseOk());
             } finally {
+                releaseChannel();
                 notifyOutstandingRpc(signal);
             }
         }
