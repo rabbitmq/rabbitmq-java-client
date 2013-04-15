@@ -745,8 +745,9 @@ public interface Channel extends ShutdownNotifier {
     /**
      * Wait until all messages published since the last call have been
      * either ack'd or nack'd by the broker.  Note, when called on a
-     * non-Confirm channel, waitForConfirms returns true immediately.
+     * non-Confirm channel, waitForConfirms throws an IllegalStateException.
      * @return whether all the messages were ack'd (and none were nack'd)
+     * @throws java.lang.IllegalStateException
      */
     boolean waitForConfirms() throws InterruptedException;
 
@@ -754,9 +755,10 @@ public interface Channel extends ShutdownNotifier {
      * Wait until all messages published since the last call have been
      * either ack'd or nack'd by the broker; or until timeout elapses.
      * If the timeout expires a TimeoutException is thrown.  When
-     * called on a non-Confirm channel, waitForConfirms returns true
-     * immediately.
+     * called on a non-Confirm channel, waitForConfirms throws an
+     * IllegalStateException.
      * @return whether all the messages were ack'd (and none were nack'd)
+     * @throws java.lang.IllegalStateException
      */
     boolean waitForConfirms(long timeout) throws InterruptedException, TimeoutException;
 
@@ -764,15 +766,19 @@ public interface Channel extends ShutdownNotifier {
      * been either ack'd or nack'd by the broker.  If any of the
      * messages were nack'd, waitForConfirmsOrDie will throw an
      * IOException.  When called on a non-Confirm channel, it will
-     * return immediately. */
-    void waitForConfirmsOrDie() throws IOException, InterruptedException;
+     * throw an IllegalStateException.
+     * @throws java.lang.IllegalStateException
+     */
+     void waitForConfirmsOrDie() throws IOException, InterruptedException;
 
     /** Wait until all messages published since the last call have
      * been either ack'd or nack'd by the broker; or until timeout elapses.
      * If the timeout expires a TimeoutException is thrown.  If any of the
      * messages were nack'd, waitForConfirmsOrDie will throw an
      * IOException.  When called on a non-Confirm channel, it will
-     * return immediately. */
+     * throw an IllegalStateException.
+     * @throws java.lang.IllegalStateException
+     */
     void waitForConfirmsOrDie(long timeout) throws IOException, InterruptedException, TimeoutException;
 
     /**
