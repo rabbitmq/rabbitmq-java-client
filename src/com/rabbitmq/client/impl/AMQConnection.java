@@ -609,7 +609,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                         l.handleBlocked(blocked.getReason());
                     }
                 } catch (Throwable ex) {
-                    getExceptionHandler().handleBlockedListenerException(ex);
+                    getExceptionHandler().handleBlockedListenerException(this, ex);
                 }
                 return true;
             } else if (method instanceof AMQP.Connection.Unblocked) {
@@ -618,7 +618,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                         l.handleUnblocked();
                     }
                 } catch (Throwable ex) {
-                    getExceptionHandler().handleBlockedListenerException(ex);
+                    getExceptionHandler().handleBlockedListenerException(this, ex);
                 }
                 return true;
             } else {

@@ -68,9 +68,10 @@ public interface ExceptionHandler {
      * when the driver thread for the connection has called a
      * BlockedListener's method, and that method has
      * thrown an exception.
+     * @param connection the Connection that held the BlockedListener
      * @param exception the exception thrown by the BlockedListener
      */
-    void handleBlockedListenerException(Throwable exception);
+    void handleBlockedListenerException(Connection connection, Throwable exception);
 
     /**
      * Perform any required exception processing for the situation
