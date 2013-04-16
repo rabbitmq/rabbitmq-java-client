@@ -21,13 +21,16 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.BlockedListener;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
@@ -81,6 +84,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         capabilities.put("exchange_exchange_bindings", true);
         capabilities.put("basic.nack", true);
         capabilities.put("consumer_cancel_notify", true);
+        capabilities.put("connection.blocked", true);
 
         props.put("capabilities", capabilities);
 
@@ -130,6 +134,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final int requestedFrameMax;
     private final String username;
     private final String password;
+    private final Collection<BlockedListener> blockedListeners = new CopyOnWriteArrayList<BlockedListener>();
 
     /* State modified after start - all volatile */
 
@@ -597,6 +602,25 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             if (method instanceof AMQP.Connection.Close) {
                 handleConnectionClose(c);
                 return true;
+            } else if (method instanceof AMQP.Connection.Blocked) {
+                AMQP.Connection.Blocked blocked = (AMQP.Connection.Blocked) method;
+                try {
+                    for (BlockedListener l : this.blockedListeners) {
+                        l.handleBlocked(blocked.getReason());
+                    }
+                } catch (Throwable ex) {
+                    getExceptionHandler().handleBlockedListenerException(ex);
+                }
+                return true;
+            } else if (method instanceof AMQP.Connection.Unblocked) {
+                try {
+                    for (BlockedListener l : this.blockedListeners) {
+                        l.handleUnblocked();
+                    }
+                } catch (Throwable ex) {
+                    getExceptionHandler().handleBlockedListenerException(ex);
+                }
+                return true;
             } else {
                 return false;
             }
@@ -822,5 +846,17 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     private String getHostAddress() {
         return getAddress() == null ? null : getAddress().getHostAddress();
+    }
+
+    public void addBlockedListener(BlockedListener listener) {
+        blockedListeners.add(listener);
+    }
+
+    public boolean removeBlockedListener(BlockedListener listener) {
+        return blockedListeners.remove(listener);
+    }
+
+    public void clearBlockedListeners() {
+        blockedListeners.clear();
     }
 }
