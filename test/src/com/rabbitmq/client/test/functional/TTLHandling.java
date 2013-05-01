@@ -178,6 +178,7 @@ public abstract class TTLHandling extends BrokerTestCase {
 
     protected void expectBodyAndRemainingMessages(String body, int messagesLeft) throws IOException {
         GetResponse response = channel.basicGet(TTL_QUEUE_NAME, false);
+        assertNotNull(response);
         assertEquals(body, new String(response.getBody()));
         assertEquals(messagesLeft, response.getMessageCount());
     }
