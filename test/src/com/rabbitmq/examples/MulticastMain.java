@@ -49,7 +49,7 @@ public class MulticastMain {
             String exchangeName  = strArg(cmd, 'e', exchangeType);
             String queueName     = strArg(cmd, 'u', "");
             int samplingInterval = intArg(cmd, 'i', 1);
-            int rateLimit        = intArg(cmd, 'r', 0);
+            float rateLimit      = floatArg(cmd, 'r', 0.0f);
             int producerCount    = intArg(cmd, 'x', 1);
             int consumerCount    = intArg(cmd, 'y', 1);
             int producerTxSize   = intArg(cmd, 'm', 0);
@@ -65,6 +65,8 @@ public class MulticastMain {
             List<?> flags        = lstArg(cmd, 'f');
             int frameMax         = intArg(cmd, 'M', 0);
             int heartbeat        = intArg(cmd, 'b', 0);
+            boolean predeclared  = cmd.hasOption('p');
+
             String uri           = strArg(cmd, 'h', "amqp://localhost");
 
             boolean exclusive  = "".equals(queueName);
@@ -96,6 +98,7 @@ public class MulticastMain {
             p.setFlags(            flags);
             p.setMultiAckEvery(    multiAckEvery);
             p.setMinMsgSize(       minMsgSize);
+            p.setPredeclared(      predeclared);
             p.setPrefetchCount(    prefetchCount);
             p.setProducerCount(    producerCount);
             p.setProducerMsgCount( producerMsgCount);
@@ -150,6 +153,7 @@ public class MulticastMain {
         options.addOption(flag);
         options.addOption(new Option("M", "framemax",      true, "frame max"));
         options.addOption(new Option("b", "heartbeat",     true, "heartbeat interval"));
+        options.addOption(new Option("p", "predeclared",   false,"allow use of predeclared objects"));
         return options;
     }
 
@@ -159,6 +163,10 @@ public class MulticastMain {
 
     private static int intArg(CommandLine cmd, char opt, int def) {
         return Integer.parseInt(cmd.getOptionValue(opt, Integer.toString(def)));
+    }
+
+    private static float floatArg(CommandLine cmd, char opt, float def) {
+        return Float.parseFloat(cmd.getOptionValue(opt, Float.toString(def)));
     }
 
     private static List<?> lstArg(CommandLine cmd, char opt) {

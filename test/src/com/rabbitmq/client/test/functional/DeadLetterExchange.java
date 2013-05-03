@@ -2,7 +2,10 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -15,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class DeadLetterExchange extends BrokerTestCase {
     public static final String DLX = "dead.letter.exchange";
@@ -264,6 +269,28 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         // The messages will NOT be dead-lettered to self.
         consumeN(TEST_QUEUE_NAME, 0, WithResponse.NULL);
+    }
+
+    public void testDeadLetterCycle() throws Exception {
+        // testDeadLetterTwice and testDeadLetterSelf both test that we drop
+        // messages in pure-expiry cycles. So we just need to test that
+        // non-pure-expiry cycles do not drop messages.
+
+        declareQueue("queue1", "", "queue2", null, 1);
+        declareQueue("queue2", "", "queue1", null, 0);
+
+        channel.basicPublish("", "queue1", MessageProperties.BASIC, "".getBytes());
+        final CountDownLatch latch = new CountDownLatch(10);
+        channel.basicConsume("queue2", false,
+            new DefaultConsumer(channel) {
+                @Override
+                public void handleDelivery(String consumerTag, Envelope envelope,
+                                           AMQP.BasicProperties properties, byte[] body) throws IOException {
+                    channel.basicReject(envelope.getDeliveryTag(), false);
+                    latch.countDown();
+                }
+            });
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     public void testDeadLetterNewRK() throws Exception {

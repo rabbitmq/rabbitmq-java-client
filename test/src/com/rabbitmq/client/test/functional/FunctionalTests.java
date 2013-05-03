@@ -55,6 +55,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(QueueLifecycle.class);
         suite.addTestSuite(QueueLease.class);
         suite.addTestSuite(QueueExclusivity.class);
+        suite.addTestSuite(QueueSizeLimit.class);
         suite.addTestSuite(InvalidAcks.class);
         suite.addTestSuite(InvalidAcksTx.class);
         suite.addTestSuite(DefaultExchange.class);
@@ -71,5 +72,6 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(InternalExchange.class);
         suite.addTestSuite(CcRoutes.class);
         suite.addTestSuite(WorkPoolTests.class);
+        suite.addTestSuite(HeadersExchangeValidation.class);
     }
 }

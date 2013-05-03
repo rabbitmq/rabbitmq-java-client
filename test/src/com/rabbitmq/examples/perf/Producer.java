@@ -41,7 +41,7 @@ public class Producer implements Runnable, ReturnListener,
     private boolean immediate;
     private boolean persistent;
     private int     txSize;
-    private int     rateLimit;
+    private float   rateLimit;
     private int     msgLimit;
     private long    timeLimit;
 
@@ -59,7 +59,7 @@ public class Producer implements Runnable, ReturnListener,
 
     public Producer(Channel channel, String exchangeName, String id,
                     List<?> flags, int txSize,
-                    int rateLimit, int msgLimit, int minMsgSize, int timeLimit,
+                    float rateLimit, int msgLimit, int minMsgSize, int timeLimit,
                     long confirm, Stats stats)
         throws IOException {
 
@@ -172,8 +172,8 @@ public class Producer implements Runnable, ReturnListener,
         //10 ms have elapsed, we have sent 200 messages
         //the 200 msgs we have actually sent should have taken us
         //200 * 1000 / 5000 = 40 ms. So we pause for 40ms - 10ms
-        long pause = rateLimit == 0 ?
-            0 : (msgCount * 1000L / rateLimit - elapsed);
+        long pause = (long) (rateLimit == 0.0f ?
+            0.0f : (msgCount * 1000.0 / rateLimit - elapsed));
         if (pause > 0) {
             Thread.sleep(pause);
         }
