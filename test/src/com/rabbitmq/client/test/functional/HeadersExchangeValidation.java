@@ -15,7 +15,7 @@ public class HeadersExchangeValidation extends BrokerTestCase {
         String queue = ok.getQueue();
 
         HashMap<String, Object> arguments = new HashMap<String, Object>();
-        failBind(queue, arguments);
+        succeedBind(queue, arguments);
 
         arguments.put("x-match", 23);
         failBind(queue, arguments);
