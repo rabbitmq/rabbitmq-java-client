@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class QueueLease extends BrokerTestCase {
@@ -175,6 +177,33 @@ public class QueueLease extends BrokerTestCase {
         } catch (IOException e) {
             checkShutdownSignal(AMQP.NOT_FOUND, e);
             fail("Queue expired: passive redeclaration did not extend lease.");
+        }
+    }
+
+    public void testExpiresWithConsumers()
+            throws InterruptedException, IOException {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-expires", QUEUE_EXPIRES);
+        channel.queueDeclare(TEST_EXPIRE_QUEUE, false, false, false, args);
+
+        Consumer consumer = new DefaultConsumer(channel);
+        String consumerTag = channel.basicConsume(TEST_EXPIRE_QUEUE, consumer);
+
+        Thread.sleep(SHOULD_EXPIRE_WITHIN);
+        try {
+            channel.queueDeclarePassive(TEST_EXPIRE_QUEUE);
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.NOT_FOUND, e);
+            fail("Queue expired before before passive re-declaration.");
+        }
+
+        channel.basicCancel(consumerTag);
+        Thread.sleep(SHOULD_EXPIRE_WITHIN);
+        try {
+            channel.queueDeclarePassive(TEST_EXPIRE_QUEUE);
+            fail("Queue should have been expired by now.");
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.NOT_FOUND, e);
         }
     }
 
