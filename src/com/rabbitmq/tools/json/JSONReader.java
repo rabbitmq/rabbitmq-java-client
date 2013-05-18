@@ -88,8 +88,9 @@ public class JSONReader {
         skipWhiteSpace();
 
         if (c == '"' || c == '\'') {
+            char sep = c;
             next();
-            ret = string();
+            ret = string(sep);
         } else if (c == '[') {
             next();
             ret = array();
@@ -118,6 +119,10 @@ public class JSONReader {
 	    next();
         } else if (Character.isDigit(c) || c == '-') {
             ret = number();
+        }
+        else {
+            // in this case we want to throw, not valid JSON
+            throw new IllegalStateException("Found invalid token while parsing JSON (around character "+(it.getIndex()-it.getBeginIndex())+"): " + ret);
         }
 
         // System.out.println("token: " + ret); // enable this line to see the token stream
@@ -179,9 +184,12 @@ public class JSONReader {
 	}
     }
 
-    private Object string() {
+    /**
+     * Read a string with a specific delimiter (either ' or ")
+     */
+    private Object string(char sep) {
         buf.setLength(0);
-        while (c != '"' && c != '\'') {
+        while (c != sep) {
             if (c == '\\') {
                 next();
                 if (c == 'u') {
@@ -190,6 +198,12 @@ public class JSONReader {
                     Object value = escapes.get(new Character(c));
                     if (value != null) {
                         add(((Character) value).charValue());
+                    }
+                    // if escaping is invalid, if we're going to ignore the error,
+                    // it makes more sense to put in the literal character instead
+                    // of just skipping it, so we do that
+                    else {
+                        add();
                     }
                 }
             } else {
