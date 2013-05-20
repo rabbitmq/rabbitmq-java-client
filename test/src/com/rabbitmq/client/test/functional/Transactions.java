@@ -88,6 +88,23 @@ public class Transactions extends BrokerTestCase
         basicAck(latestTag, false);
     }
 
+    private long[] publishSelectAndGet(int n)
+        throws IOException
+    {
+        for (int i = 0; i < n; i++) {
+            basicPublish();
+        }
+
+        txSelect();
+
+        long tags[] = new long[n];
+        for (int i = 0; i < n; i++) {
+            tags[i] = basicGet().getEnvelope().getDeliveryTag();
+        }
+
+        return tags;
+    }
+
     /*
       publishes are embargoed until commit
      */
@@ -174,19 +191,11 @@ public class Transactions extends BrokerTestCase
     public void testCommitAcksOutOfOrder()
         throws IOException
     {
-        basicPublish();
-        basicPublish();
-        basicPublish();
-        basicPublish();
-        txSelect();
-        GetResponse resp1 = basicGet();
-        GetResponse resp2 = basicGet();
-        GetResponse resp3 = basicGet();
-        GetResponse resp4 = basicGet();
-        channel.basicNack(resp4.getEnvelope().getDeliveryTag(), false, false);
-        channel.basicNack(resp3.getEnvelope().getDeliveryTag(), false, false);
-        channel.basicAck(resp2.getEnvelope().getDeliveryTag(), false);
-        channel.basicAck(resp1.getEnvelope().getDeliveryTag(), false);
+        long tags[] = publishSelectAndGet(4);
+        channel.basicNack(tags[3], false, false);
+        channel.basicNack(tags[2], false, false);
+        channel.basicAck(tags[1], false);
+        channel.basicAck(tags[0], false);
         txCommit();
     }
 
@@ -334,14 +343,7 @@ public class Transactions extends BrokerTestCase
     public void testShuffleAcksBeforeRollback()
         throws IOException
     {
-        for (int i = 0; i < 3; i++) {
-            basicPublish();
-        }
-        txSelect();
-        long tags[] = new long[3];
-        for (int i = 0; i < 3; i++) {
-            tags[i] = basicGet().getEnvelope().getDeliveryTag();
-        }
+        long tags[] = publishSelectAndGet(3);
         basicAck(tags[2], false);
         basicAck(tags[1], false);
         txRollback();
@@ -418,14 +420,7 @@ public class Transactions extends BrokerTestCase
     public void commitAcksAndNacks(NackMethod method)
         throws IOException
     {
-        for (int i = 0; i < 3; i++) {
-            basicPublish();
-        }
-        txSelect();
-        long tags[] = new long[3];
-        for (int i = 0; i < 3; i++) {
-            tags[i] = basicGet().getEnvelope().getDeliveryTag();
-        }
+        long tags[] = publishSelectAndGet(3);
         basicAck(tags[1], false);
         basicAck(tags[0], false);
         method.nack(tags[2], false);
