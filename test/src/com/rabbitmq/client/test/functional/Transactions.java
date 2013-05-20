@@ -170,6 +170,27 @@ public class Transactions extends BrokerTestCase
     }
 
     /*
+    */
+    public void testCommitAcksOutOfOrder()
+        throws IOException
+    {
+        basicPublish();
+        basicPublish();
+        basicPublish();
+        basicPublish();
+        txSelect();
+        GetResponse resp1 = basicGet();
+        GetResponse resp2 = basicGet();
+        GetResponse resp3 = basicGet();
+        GetResponse resp4 = basicGet();
+        channel.basicNack(resp4.getEnvelope().getDeliveryTag(), false, false);
+        channel.basicNack(resp3.getEnvelope().getDeliveryTag(), false, false);
+        channel.basicAck(resp2.getEnvelope().getDeliveryTag(), false);
+        channel.basicAck(resp1.getEnvelope().getDeliveryTag(), false);
+        txCommit();
+    }
+
+    /*
       rollback rolls back acks
       and a rolled back ack can be re-issued
     */
