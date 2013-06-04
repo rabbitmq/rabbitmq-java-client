@@ -1,6 +1,7 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
@@ -171,6 +172,35 @@ public class DeadLetterExchange extends BrokerTestCase {
         sleep(100);
 
         consumeN(DLQ, MSG_COUNT, WithResponse.NULL);
+    }
+
+    public void testDeadLetterPerMessageTTLRemoved() throws Exception {
+        declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+        channel.queueBind(DLQ, DLX, "test");
+
+        final BasicProperties props = MessageProperties.BASIC;
+        props.setExpiration("100");
+        publish(props, "test message");
+
+        // The message's expiration property should have been removed, thus
+        // after 100ms of hitting the queue, the message should get routed to
+        // the DLQ *AND* should remain there, not getting removed after a subsequent
+        // wait time > 100ms
+        sleep(500);
+        consumeN(DLQ, 1, new WithResponse() {
+                @SuppressWarnings("unchecked")
+                public void process(GetResponse getResponse) {
+                    Map<String, Object> headers = getResponse.getProps().getHeaders();
+                    assertNotNull(headers);
+                    ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
+                    assertNotNull(death);
+                    assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired");
+                    final Map<String, Object> deathHeader =
+                        (Map<String, Object>)death.get(0);
+                    assertEquals("100", deathHeader.get("expiration").toString());
+                }
+            });
     }
 
     public void testDeadLetterExchangeDeleteTwice()
