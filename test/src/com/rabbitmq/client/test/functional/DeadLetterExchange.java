@@ -198,7 +198,7 @@ public class DeadLetterExchange extends BrokerTestCase {
                     assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired");
                     final Map<String, Object> deathHeader =
                         (Map<String, Object>)death.get(0);
-                    assertEquals("100", deathHeader.get("expiration").toString());
+                    assertEquals("100", deathHeader.get("original-expiration").toString());
                 }
             });
     }
