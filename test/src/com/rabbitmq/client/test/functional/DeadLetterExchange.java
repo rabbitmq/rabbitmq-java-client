@@ -179,13 +179,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
         channel.queueBind(DLQ, DLX, "test");
 
-        final BasicProperties props =
-            new BasicProperties() {{
-                setContentType("application/octet-stream");
-                setDeliveryMode(1);
-                setPriority(0);
-                setExpiration("100");
-            }};
+        final BasicProperties props = MessageProperties.BASIC.builder().expiration("100").build();
         publish(props, "test message");
 
         // The message's expiration property should have been removed, thus
