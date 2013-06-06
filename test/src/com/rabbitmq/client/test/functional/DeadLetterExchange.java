@@ -179,8 +179,13 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
         channel.queueBind(DLQ, DLX, "test");
 
-        final BasicProperties props = MessageProperties.BASIC;
-        props.setExpiration("100");
+        final BasicProperties props =
+            new BasicProperties() {{
+                setContentType("application/octet-stream");
+                setDeliveryMode(1);
+                setPriority(0);
+                setExpiration("100");
+            }};
         publish(props, "test message");
 
         // The message's expiration property should have been removed, thus
@@ -191,6 +196,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         consumeN(DLQ, 1, new WithResponse() {
                 @SuppressWarnings("unchecked")
                 public void process(GetResponse getResponse) {
+                    assertNull(getResponse.getProps().getExpiration());
                     Map<String, Object> headers = getResponse.getProps().getHeaders();
                     assertNotNull(headers);
                     ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
