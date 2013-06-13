@@ -38,6 +38,7 @@ public class ClientTests extends TestCase {
         suite.addTestSuite(com.rabbitmq.utility.IntAllocatorTests.class);
         suite.addTestSuite(AMQBuilderApiTest.class);
         suite.addTestSuite(AmqpUriTest.class);
+        suite.addTestSuite(JSONReadWriteTest.class);
         return suite;
     }
 }
