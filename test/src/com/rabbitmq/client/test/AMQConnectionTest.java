@@ -242,6 +242,10 @@ public class AMQConnectionTest extends TestCase {
             fail("handleConfirmListenerException: " + ex);
         }
 
+        public void handleBlockedListenerException(Connection conn, Throwable ex) {
+            fail("handleBlockedListenerException: " + ex);
+        }
+
         public void handleConsumerException(Channel ch,
                                             Throwable ex,
                                             Consumer c,
