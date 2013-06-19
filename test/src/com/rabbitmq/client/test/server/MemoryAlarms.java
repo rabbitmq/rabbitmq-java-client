@@ -65,8 +65,9 @@ public class MemoryAlarms extends BrokerTestCase {
     protected void releaseResources() throws IOException {
         try {
             clearAllResourceAlarms();
-        } catch (InterruptedException ie) {
+        } catch (Exception e) {
             // no-op
+            // TODO: log the issue
         }
         channel.queueDelete(Q);
     }
