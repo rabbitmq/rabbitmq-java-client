@@ -76,7 +76,7 @@ public class BrokerTestCase extends TestCase {
      * completes, the connection and channel will be closed again.
      */
     protected void releaseResources()
-            throws IOException {
+            throws IOException, InterruptedException {
     }
 
     protected void restart()

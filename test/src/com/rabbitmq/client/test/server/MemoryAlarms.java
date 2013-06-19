@@ -62,8 +62,14 @@ public class MemoryAlarms extends BrokerTestCase {
     }
 
     @Override
-    protected void releaseResources() throws IOException {
+    protected void releaseResources() throws IOException, InterruptedException {
+        clearAllResourceAlarms();
         channel.queueDelete(Q);
+    }
+
+    protected void clearAllResourceAlarms() throws IOException, InterruptedException {
+        clearResourceAlarm("memory");
+        clearResourceAlarm("disk");
     }
 
     protected void setResourceAlarm(String source) throws IOException, InterruptedException {
@@ -88,7 +94,7 @@ public class MemoryAlarms extends BrokerTestCase {
         assertNull(c.nextDelivery(3100));
         // once the alarm has cleared the publishes should go through
         clearResourceAlarm("memory");
-        assertNotNull(c.nextDelivery());
+        assertNotNull(c.nextDelivery(3100));
         // everything should be back to normal
         channel.basicCancel(consumerTag);
         basicPublishVolatile(Q);
@@ -109,7 +115,7 @@ public class MemoryAlarms extends BrokerTestCase {
         clearResourceAlarm("memory");
         assertNull(c.nextDelivery(100));
         clearResourceAlarm("disk");
-        assertNotNull(c.nextDelivery());
+        assertNotNull(c.nextDelivery(3100));
 
         channel.basicCancel(consumerTag);
         basicPublishVolatile(Q);
