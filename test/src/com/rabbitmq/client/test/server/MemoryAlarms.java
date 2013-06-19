@@ -62,8 +62,12 @@ public class MemoryAlarms extends BrokerTestCase {
     }
 
     @Override
-    protected void releaseResources() throws IOException, InterruptedException {
-        clearAllResourceAlarms();
+    protected void releaseResources() throws IOException {
+        try {
+            clearAllResourceAlarms();
+        } catch (InterruptedException ie) {
+            // no-op
+        }
         channel.queueDelete(Q);
     }
 
