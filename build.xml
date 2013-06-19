@@ -347,7 +347,8 @@
     <junit printSummary="withOutAndErr"
         haltOnFailure="${haltOnFailureJunit}"
         failureproperty="test.failure"
-        fork="yes">
+        fork="yes"
+        logfailedtests="true">
       <classpath refid="test.classpath"/>
 
       <formatter type="plain"/>
@@ -360,7 +361,8 @@
     <junit printSummary="withOutAndErr"
         haltOnFailure="${haltOnFailureJunit}"
         failureproperty="test.failure"
-        fork="yes">
+        fork="yes"
+        logfailedtests="true">
       <classpath refid="test.classpath"/>
       <formatter type="plain"/>
       <formatter type="xml"/>
@@ -374,7 +376,8 @@
     <junit printSummary="withOutAndErr"
         haltOnFailure="${haltOnFailureJunit}"
         failureproperty="test.failure"
-        fork="yes">
+        fork="yes"
+        logfailedtests="true">
       <classpath refid="test.classpath"/>
       <formatter type="plain"/>
       <formatter type="xml"/>
