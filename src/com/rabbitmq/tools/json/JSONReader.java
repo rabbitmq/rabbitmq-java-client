@@ -111,21 +111,19 @@ public class JSONReader {
             next();
         } else if (c == 't' && next() == 'r' && next() == 'u' && next() == 'e') {
             ret = Boolean.TRUE;
-	    next();
+            next();
         } else if (c == 'f' && next() == 'a' && next() == 'l' && next() == 's' && next() == 'e') {
             ret = Boolean.FALSE;
-	    next();
+            next();
         } else if (c == 'n' && next() == 'u' && next() == 'l' && next() == 'l') {
-	    next();
+            next();
         } else if (Character.isDigit(c) || c == '-') {
             ret = number();
         }
         else {
-            // in this case we want to throw, not valid JSON
             throw new IllegalStateException("Found invalid token while parsing JSON (around character "+(it.getIndex()-it.getBeginIndex())+"): " + ret);
         }
 
-        // System.out.println("token: " + ret); // enable this line to see the token stream
         token = ret;
         return ret;
     }
@@ -176,12 +174,12 @@ public class JSONReader {
             addDigits();
         }
 
-	String result = buf.toString();
-	try {
-	    return new Integer(result);
-	} catch (NumberFormatException nfe) {
-	    return new Double(result);
-	}
+        String result = buf.toString();
+        try {
+            return new Integer(result);
+        } catch (NumberFormatException nfe) {
+            return new Double(result);
+        }
     }
 
     /**
