@@ -70,4 +70,14 @@ public class Envelope {
     public String getRoutingKey() {
         return _routingKey;
     }
+
+    @Override public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Envelope(deliveryTag=").append(_deliveryTag);
+        sb.append(", redeliver=").append(_redeliver);
+        sb.append(", exchange=").append(_exchange);
+        sb.append(", routingKey=").append(_routingKey);
+        sb.append(")");
+        return sb.toString();
+    }
 }
