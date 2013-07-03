@@ -82,8 +82,13 @@ public class BrokerTestCase extends TestCase {
     protected void restart()
             throws IOException {
         tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
+        bareRestart();
         setUp();
+    }
+
+    protected void bareRestart()
+            throws IOException {
+        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
     }
 
     public void openConnection()
