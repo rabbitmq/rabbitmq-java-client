@@ -14,7 +14,11 @@ import java.util.concurrent.TimeUnit;
 
 public class BlockedConnection extends BrokerTestCase {
     protected void releaseResources() throws IOException {
-        unblock();
+        try {
+            unblock();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
     public void testBlock() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
@@ -36,12 +40,14 @@ public class BlockedConnection extends BrokerTestCase {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-    private void block() throws IOException {
+    private void block() throws IOException, InterruptedException {
         Host.rabbitmqctl("set_vm_memory_high_watermark 0.000000001");
+        setResourceAlarm("disk");
     }
 
-    private void unblock() throws IOException {
+    private void unblock() throws IOException, InterruptedException {
         Host.rabbitmqctl("set_vm_memory_high_watermark 0.4");
+        clearResourceAlarm("disk");
     }
 
     private Connection connection(final CountDownLatch latch) throws IOException {
@@ -49,7 +55,11 @@ public class BlockedConnection extends BrokerTestCase {
         Connection connection = factory.newConnection();
         connection.addBlockedListener(new BlockedListener() {
             public void handleBlocked(String reason) throws IOException {
-                unblock();
+                try {
+                    unblock();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
             public void handleUnblocked() throws IOException {
