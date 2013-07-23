@@ -71,19 +71,6 @@ public class MemoryAlarms extends BrokerTestCase {
         }
     }
 
-    protected void clearAllResourceAlarms() throws IOException, InterruptedException {
-        clearResourceAlarm("memory");
-        clearResourceAlarm("disk");
-    }
-
-    protected void setResourceAlarm(String source) throws IOException, InterruptedException {
-        Host.executeCommand("cd ../rabbitmq-test; make set-resource-alarm SOURCE=" + source);
-    }
-
-    protected void clearResourceAlarm(String source) throws IOException, InterruptedException {
-        Host.executeCommand("cd ../rabbitmq-test; make clear-resource-alarm SOURCE=" + source);
-    }
-
     public void testFlowControl() throws IOException, InterruptedException {
         basicPublishVolatile(Q);
         setResourceAlarm("memory");

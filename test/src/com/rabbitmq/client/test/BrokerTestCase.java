@@ -232,4 +232,17 @@ public class BrokerTestCase extends TestCase {
     protected void deleteQueue(String q) throws IOException {
         channel.queueDelete(q);
     }
+
+    protected void clearAllResourceAlarms() throws IOException, InterruptedException {
+        clearResourceAlarm("memory");
+        clearResourceAlarm("disk");
+    }
+
+    protected void setResourceAlarm(String source) throws IOException, InterruptedException {
+        Host.executeCommand("cd ../rabbitmq-test; make set-resource-alarm SOURCE=" + source);
+    }
+
+    protected void clearResourceAlarm(String source) throws IOException, InterruptedException {
+        Host.executeCommand("cd ../rabbitmq-test; make clear-resource-alarm SOURCE=" + source);
+    }
 }
