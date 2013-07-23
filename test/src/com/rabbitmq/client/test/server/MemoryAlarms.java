@@ -64,11 +64,11 @@ public class MemoryAlarms extends BrokerTestCase {
     protected void releaseResources() throws IOException {
         try {
             clearAllResourceAlarms();
-        } catch (Exception e) {
-            // no-op
-            // TODO: log the issue
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            channel.queueDelete(Q);
         }
-        channel.queueDelete(Q);
     }
 
     protected void clearAllResourceAlarms() throws IOException, InterruptedException {
