@@ -27,6 +27,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.Method;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.impl.ShutdownNotifierComponent;
@@ -82,8 +83,13 @@ public class BrokerTestCase extends TestCase {
     protected void restart()
             throws IOException {
         tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
+        bareRestart();
         setUp();
+    }
+
+    protected void bareRestart()
+            throws IOException {
+        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
     }
 
     public void openConnection()
@@ -126,14 +132,20 @@ public class BrokerTestCase extends TestCase {
     }
 
     public void checkShutdownSignal(int expectedCode, ShutdownSignalException sse) {
-        Command closeCommand = (Command) sse.getReason();
+        Object reason = sse.getReason();
+        Method method;
+        if (reason instanceof Command) {
+            method = ((Command) reason).getMethod();
+        } else {
+            method = (Method) reason;
+        }
         channel = null;
         if (sse.isHardError()) {
             connection = null;
-            AMQP.Connection.Close closeMethod = (AMQP.Connection.Close) closeCommand.getMethod();
+            AMQP.Connection.Close closeMethod = (AMQP.Connection.Close) method;
             assertEquals(expectedCode, closeMethod.getReplyCode());
         } else {
-            AMQP.Channel.Close closeMethod = (AMQP.Channel.Close) closeCommand.getMethod();
+            AMQP.Channel.Close closeMethod = (AMQP.Channel.Close) method;
             assertEquals(expectedCode, closeMethod.getReplyCode());
         }
     }
