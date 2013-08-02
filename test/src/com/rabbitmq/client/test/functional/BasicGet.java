@@ -2,7 +2,6 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
@@ -38,7 +37,7 @@ public class BasicGet extends BrokerTestCase {
     try {
       channel.basicGet(q, true);
       fail("expected basic.get on a closed channel to fail");
-    } catch(AlreadyClosedException e) {
+    } catch (AlreadyClosedException e) {
       // passed
     } finally {
       Channel tch = connection.createChannel();
