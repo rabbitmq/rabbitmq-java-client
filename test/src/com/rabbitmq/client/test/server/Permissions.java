@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -237,6 +237,17 @@ public class Permissions extends BrokerTestCase
                 createAltExchConfigTest("configure-and-read-me"));
     }
 
+    public void testDLXConfiguration()
+            throws IOException
+    {
+        runTest(false, false, false, false,
+                createDLXConfigTest("configure-me"));
+        runTest(false, false, false, false,
+                createDLXConfigTest("configure-and-write-me"));
+        runTest(false, true, false, false,
+                createDLXConfigTest("configure-and-read-me"));
+    }
+
     public void testNoAccess()
         throws IOException, InterruptedException
     {
@@ -316,6 +327,18 @@ public class Permissions extends BrokerTestCase
                 args.put("alternate-exchange", ae);
                 channel.exchangeDeclare(exchange, "direct", false, false, args);
                 channel.exchangeDelete(exchange);
+            }};
+    }
+
+    protected WithName createDLXConfigTest(final String queue)
+            throws IOException
+    {
+        return new WithName() {
+            public void with(String dlx) throws IOException {
+                Map<String, Object> args = new HashMap<String, Object>();
+                args.put("x-dead-letter-exchange", dlx);
+                channel.queueDeclare(queue, false, false, false, args);
+                channel.queueDelete(queue);
             }};
     }
 
