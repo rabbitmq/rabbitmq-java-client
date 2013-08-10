@@ -154,6 +154,22 @@ final class ConsumerDispatcher {
         return this.shutdownConsumersComplete;
     }
 
+    public void handleCancel(final String consumerTag, final Consumer delegate) {
+        executeUnlessShuttingDown(new Runnable() {
+            public void run() {
+                try {
+                    delegate.handleCancel(consumerTag);
+                } catch (Throwable ex) {
+                    connection.getExceptionHandler().handleConsumerException(channel,
+                                                                             ex,
+                                                                             delegate,
+                                                                             consumerTag,
+                                                                             "handleCancel");
+                }
+            }
+        });
+    }
+
     private void notifyConsumersOfShutdown(Map<String, Consumer> consumers,
                                            ShutdownSignalException signal) {
         for (Map.Entry<String, Consumer> consumerEntry : consumers.entrySet()) {

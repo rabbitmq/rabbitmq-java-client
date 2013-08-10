@@ -16,22 +16,21 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.test.BrokerTestCase;
+
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.ConsumerCancelledException;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.test.BrokerTestCase;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 public class ConsumerCancelNotificiation extends BrokerTestCase {
 
     private final String queue = "cancel_notification_queue";
 
     public void testConsumerCancellationNotification() throws IOException,
-            InterruptedException {
+                                                                      InterruptedException {
         final BlockingQueue<Boolean> result = new ArrayBlockingQueue<Boolean>(1);
 
         channel.queueDeclare(queue, false, true, false, null);
@@ -79,5 +78,49 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
         channel.queueDelete(queue);
         assertTrue(result.take());
         t.join();
+    }
+
+
+    class NeverSayDieConsumer extends DefaultConsumer {
+        private final String altQueue;
+
+        /**
+         * Constructs a new instance and records its association to the passed-in channel.
+         *
+         * @param channel the channel to which this consumer is attached
+         */
+        public NeverSayDieConsumer(Channel channel, String altQueue) {
+            super(channel);
+            this.altQueue = altQueue;
+        }
+
+        @Override
+        public void handleShutdownSignal(String consumerTag,
+                                         ShutdownSignalException sig) {
+            // no-op
+        }
+
+        @Override
+        public void handleCancel(String consumerTag) {
+            try {
+                this.getChannel().queueDeclare(this.altQueue, false, true, false, null);
+            } catch (IOException e) {
+                // e.printStackTrace();
+            }
+        }
+    }
+
+    public void testConsumerCancellationHandlerUsesBlockingOperations()
+            throws IOException, InterruptedException {
+        final String altQueue = "basic.cancel.fallback";
+        channel.queueDeclare(queue, false, true, false, null);
+
+        final NeverSayDieConsumer consumer = new NeverSayDieConsumer(channel, altQueue);
+
+        channel.basicConsume(queue, consumer);
+        channel.queueDelete(queue);
+
+        Thread.sleep(500);
+        channel.queueDeclarePassive(altQueue);
     }
 }
