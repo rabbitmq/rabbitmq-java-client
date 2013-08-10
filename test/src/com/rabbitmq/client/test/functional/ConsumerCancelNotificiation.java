@@ -22,8 +22,6 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
 
 public class ConsumerCancelNotificiation extends BrokerTestCase {
 
@@ -81,7 +79,7 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
     }
 
 
-    class NeverSayDieConsumer extends DefaultConsumer {
+    class AlteringConsumer extends DefaultConsumer {
         private final String altQueue;
 
         /**
@@ -89,7 +87,7 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
          *
          * @param channel the channel to which this consumer is attached
          */
-        public NeverSayDieConsumer(Channel channel, String altQueue) {
+        public AlteringConsumer(Channel channel, String altQueue) {
             super(channel);
             this.altQueue = altQueue;
         }
@@ -115,7 +113,7 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
         final String altQueue = "basic.cancel.fallback";
         channel.queueDeclare(queue, false, true, false, null);
 
-        final NeverSayDieConsumer consumer = new NeverSayDieConsumer(channel, altQueue);
+        final AlteringConsumer consumer = new AlteringConsumer(channel, altQueue);
 
         channel.basicConsume(queue, consumer);
         channel.queueDelete(queue);
