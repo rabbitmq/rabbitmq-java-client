@@ -130,7 +130,5 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         channel.queueDelete(queue);
 
         latch.await(500, TimeUnit.MILLISECONDS);
-        // verify that handleCancel succeeded declaring the queue
-        channel.queueDeclarePassive(altQueue);
     }
 }
