@@ -104,13 +104,14 @@ final class ConsumerDispatcher {
         executeUnlessShuttingDown(new Runnable() {
       public void run() {
         try {
-          delegate.handleCancel(consumerTag);
+            delegate.handleCancel(consumerTag);
         } catch (Throwable ex) {
-          connection.getExceptionHandler().handleConsumerException(channel,
-              ex,
-              delegate,
-              consumerTag,
-              "handleCancel");
+            connection.getExceptionHandler().handleConsumerException(
+                    channel,
+                    ex,
+                    delegate,
+                    consumerTag,
+                    "handleCancel");
         }
       }
     });
