@@ -16,7 +16,12 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
