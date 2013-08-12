@@ -129,6 +129,6 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         channel.basicConsume(queue, consumer);
         channel.queueDelete(queue);
 
-        latch.await(500, TimeUnit.MILLISECONDS);
+        latch.await(2, TimeUnit.SECONDS);
     }
 }
