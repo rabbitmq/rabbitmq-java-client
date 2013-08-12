@@ -27,6 +27,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 
 public class ConsumerCancelNotification extends BrokerTestCase {
 
@@ -86,15 +87,17 @@ public class ConsumerCancelNotification extends BrokerTestCase {
 
     class AlteringConsumer extends DefaultConsumer {
         private final String altQueue;
+        private final CountDownLatch latch;
 
         /**
          * Constructs a new instance and records its association to the passed-in channel.
          *
          * @param channel the channel to which this consumer is attached
          */
-        public AlteringConsumer(Channel channel, String altQueue) {
+        public AlteringConsumer(Channel channel, String altQueue, CountDownLatch latch) {
             super(channel);
             this.altQueue = altQueue;
+            this.latch = latch;
         }
 
         @Override
@@ -107,6 +110,7 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         public void handleCancel(String consumerTag) {
             try {
                 this.getChannel().queueDeclare(this.altQueue, false, true, false, null);
+                latch.countDown();
             } catch (IOException e) {
                 // e.printStackTrace();
             }
@@ -118,12 +122,14 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         final String altQueue = "basic.cancel.fallback";
         channel.queueDeclare(queue, false, true, false, null);
 
-        final AlteringConsumer consumer = new AlteringConsumer(channel, altQueue);
+        CountDownLatch latch = new CountDownLatch(1);
+        final AlteringConsumer consumer = new AlteringConsumer(channel, altQueue, latch);
 
         channel.basicConsume(queue, consumer);
         channel.queueDelete(queue);
 
-        Thread.sleep(500);
+        latch.await();
+        // verify that handleCancel succeeded declaring the queue
         channel.queueDeclarePassive(altQueue);
     }
 }
