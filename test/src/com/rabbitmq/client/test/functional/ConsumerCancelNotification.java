@@ -28,12 +28,12 @@ import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-public class ConsumerCancelNotificiation extends BrokerTestCase {
+public class ConsumerCancelNotification extends BrokerTestCase {
 
     private final String queue = "cancel_notification_queue";
 
     public void testConsumerCancellationNotification() throws IOException,
-                                                                      InterruptedException {
+            InterruptedException {
         final BlockingQueue<Boolean> result = new ArrayBlockingQueue<Boolean>(1);
 
         channel.queueDeclare(queue, false, true, false, null);
