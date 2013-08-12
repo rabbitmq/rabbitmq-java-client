@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class ConsumerCancelNotification extends BrokerTestCase {
 
@@ -128,7 +129,7 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         channel.basicConsume(queue, consumer);
         channel.queueDelete(queue);
 
-        latch.await();
+        latch.await(500, TimeUnit.MILLISECONDS);
         // verify that handleCancel succeeded declaring the queue
         channel.queueDeclarePassive(altQueue);
     }
