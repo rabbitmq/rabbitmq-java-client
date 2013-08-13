@@ -90,11 +90,6 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         private final String altQueue;
         private final CountDownLatch latch;
 
-        /**
-         * Constructs a new instance and records its association to the passed-in channel.
-         *
-         * @param channel the channel to which this consumer is attached
-         */
         public AlteringConsumer(Channel channel, String altQueue, CountDownLatch latch) {
             super(channel);
             this.altQueue = altQueue;
