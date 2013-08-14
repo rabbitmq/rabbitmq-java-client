@@ -100,7 +100,7 @@ final class ConsumerDispatcher {
         });
     }
 
-    public void handleCancel(final String consumerTag, final Consumer delegate) {
+    public void handleCancel(final Consumer delegate, final String consumerTag) {
         executeUnlessShuttingDown(
         new Runnable() {
       public void run() {

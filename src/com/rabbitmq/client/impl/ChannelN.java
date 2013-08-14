@@ -394,7 +394,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 }
                 if (callback != null) {
                     try {
-                        this.dispatcher.handleCancel(consumerTag, callback);
+                        this.dispatcher.handleCancel(callback, consumerTag);
                     } catch (Throwable ex) {
                         getConnection().getExceptionHandler().handleConsumerException(this,
                                                                                       ex,
