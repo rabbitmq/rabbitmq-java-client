@@ -201,15 +201,9 @@ public class BindingLifecycle extends BindingLifecycleBase {
         };
 
         for (int i = 0; i < tests.length; i++) {
-
             Binding test = tests[i];
-            try {
-                channel.queueUnbind(test.q, test.x, test.k);
-                fail("expected not_found in test " + i);
-            } catch (IOException ee) {
-                checkShutdownSignal(AMQP.NOT_FOUND, ee);
-                openChannel();
-            }
+            // check we can unbind all sorts of things that don't exist
+            channel.queueUnbind(test.q, test.x, test.k);
         }
 
         // success case
