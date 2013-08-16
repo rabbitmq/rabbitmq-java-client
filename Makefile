@@ -4,6 +4,7 @@ JAVADOC_ARCHIVE=$(PACKAGE_NAME)-javadoc-$(VERSION)
 SRC_ARCHIVE=$(PACKAGE_NAME)-$(VERSION)
 SIGNING_KEY=056E8E56
 GNUPG_PATH=~
+M2_ENCRYPTED_HOME=$(GNUPG_PATH)/../nexus/
 
 WEB_URL=http://www.rabbitmq.com/
 NEXUS_STAGE_URL=http://oss.sonatype.org/service/local/staging/deploy/maven2
@@ -64,28 +65,18 @@ srcdist: distclean
 	(cd build; zip -q -r $(SRC_ARCHIVE).zip $(SRC_ARCHIVE))
 	(cd build; rm -rf $(SRC_ARCHIVE))
 
+# nexus username and password must come from the encrypted $M2_HOME/settings.xml
 stage-and-promote-maven-bundle:
 	( \
 	  cd build/bundle; \
-	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
-	  NEXUS_PASSWORD=`cat $(GNUPG_PATH)/../nexus/password`; \
-	  VERSION=$(VERSION) \
-	  SIGNING_KEY=$(SIGNING_KEY) \
-	  GNUPG_PATH=$(GNUPG_PATH) \
-	  CREDS="$$NEXUS_USERNAME:$$NEXUS_PASSWORD" \
-	  ../../nexus-upload.sh \
-	    amqp-client-$(VERSION).pom \
-	    amqp-client-$(VERSION).jar \
-	    amqp-client-$(VERSION)-javadoc.jar \
-	    amqp-client-$(VERSION)-sources.jar && \
-	  mvn org.sonatype.plugins:nexus-maven-plugin:$(MAVEN_NEXUS_VERSION):staging-close \
-	      org.sonatype.plugins:nexus-maven-plugin:$(MAVEN_NEXUS_VERSION):staging-promote \
-	    -Dnexus.url=http://oss.sonatype.org \
-	    -Dnexus.username=$$NEXUS_USERNAME \
-	    -Dnexus.password=$$NEXUS_PASSWORD \
-	    -Dnexus.promote.autoSelectOverride=true \
-	    -DtargetRepositoryId=releases \
-	    -B \
-	    -Dnexus.description="Public release of $$VERSION" \
+	  M2_HOME="$(M2_ENCRYPTED_HOME)/settings.xml"
+	  mvn gpg:sign-and-deploy-file \
+		-Durl=$(NEXUS_BASE_URI)/nexus/content/repositories/releases \
+		-DrepositoryId=sonatype-nexus-staging \
+	    	-DpomFile=amqp-client-$(VERSION).pom \
+		-Dfile=amqp-client-$(VERSION).jar \
+		-Dsources=amqp-client-$(VERSION)-sources.jar \
+		-Djavadoc=amqp-client-$(VERSION)-javadoc.jar \
+		-Dhomedir=$(GNUPG_PATH) \
 	)
 
