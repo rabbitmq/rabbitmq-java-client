@@ -11,8 +11,8 @@ STAGING_REPO_ID=./build/bundle/staging-id.txt
 STAGING_PROFILE_ID=./build/bundle/profile-id.txt
 STAGING_REPO_JSON=./build/bundle/profile.json
 WEB_URL=http://www.rabbitmq.com/
-NEXUS_STAGE_URL=http://oss.sonatype.org/service/local/staging/deploy/maven2
-NEXUS_PROMOTE_URL=http://oss.sonatype.org/
+NEXUS_BASE_URL=http://oss.sonatype.org/
+NEXUS_STAGE_URL=$(NEXUS_BASE_URL)/service/local/staging/deploy/maven2
 MAVEN_NEXUS_VERSION=1.7
 
 AMQP_CODEGEN_DIR=$(shell fgrep sibling.codegen.dir build.properties | sed -e 's:sibling\.codegen\.dir=::')
@@ -77,7 +77,7 @@ maven-staging-promote: maven-staging-close $(STAGING_REPO_ID)
 	M2_HOME="$(M2_ENCRYPTED_HOME)/settings.xml" \
 	mvn org.sonatype.plugins:nexus-staging-maven-plugin:rc-promote \
 	    -DserverId=sonatype-nexus-staging \
-	    -DnexusUrl=$(NEXUS_PROMOTE_URL) \
+	    -DnexusUrl=$(NEXUS_BASE_URL) \
 	    -DstagingRepositoryId=`cat $(STAGING_REPO_ID)` \
 	    -DbuildPromotionProfileId=`cat $(STAGING_PROFILE_ID)`
 
@@ -85,7 +85,7 @@ maven-staging-close: maven-environment $(STAGING_REPO_ID) $(STAGING_PROFILE_ID)
 	M2_HOME="$(M2_ENCRYPTED_HOME)/settings.xml" \
 	mvn org.sonatype.plugins:nexus-staging-maven-plugin:rc-close \
 	    -DserverId=sonatype-nexus-staging \
-	    -DnexusUrl=$(NEXUS_PROMOTE_URL) \
+	    -DnexusUrl=$(NEXUS_BASE_URL) \
 	    -DstagingRepositoryId=`cat $(STAGING_REPO_ID)`
 
 $(STAGING_REPO_ID): $(STAGING_REPO_JSON)
