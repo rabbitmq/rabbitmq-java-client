@@ -4,10 +4,15 @@ JAVADOC_ARCHIVE=$(PACKAGE_NAME)-javadoc-$(VERSION)
 SRC_ARCHIVE=$(PACKAGE_NAME)-$(VERSION)
 SIGNING_KEY=056E8E56
 GNUPG_PATH=~
+NEXUS_USERNAME=$(shell cat "$(GNUPG_PATH)/../nexus/username")
+NEXUS_PASSWORD=$(shell cat "$(GNUPG_PATH)/../nexus/password")
 M2_ENCRYPTED_HOME=$(GNUPG_PATH)/../nexus/
-
+STAGING_REPO_ID=./build/bundle/staging-id.txt
+STAGING_PROFILE_ID=./build/bundle/profile-id.txt
+STAGING_REPO_JSON=./build/bundle/profile.json
 WEB_URL=http://www.rabbitmq.com/
 NEXUS_STAGE_URL=http://oss.sonatype.org/service/local/staging/deploy/maven2
+NEXUS_PROMOTE_URL=http://oss.sonatype.org/
 MAVEN_NEXUS_VERSION=1.7
 
 AMQP_CODEGEN_DIR=$(shell fgrep sibling.codegen.dir build.properties | sed -e 's:sibling\.codegen\.dir=::')
@@ -66,17 +71,55 @@ srcdist: distclean
 	(cd build; rm -rf $(SRC_ARCHIVE))
 
 # nexus username and password must come from the encrypted $M2_HOME/settings.xml
-stage-and-promote-maven-bundle:
-	( \
-	  cd build/bundle; \
-	  M2_HOME="$(M2_ENCRYPTED_HOME)/settings.xml"
-	  mvn gpg:sign-and-deploy-file \
-		-Durl=$(NEXUS_BASE_URI)/nexus/content/repositories/releases \
-		-DrepositoryId=sonatype-nexus-staging \
-	    	-DpomFile=amqp-client-$(VERSION).pom \
-		-Dfile=amqp-client-$(VERSION).jar \
-		-Dsources=amqp-client-$(VERSION)-sources.jar \
-		-Djavadoc=amqp-client-$(VERSION)-javadoc.jar \
-		-Dhomedir=$(GNUPG_PATH) \
-	)
+stage-and-promote-maven-bundle: maven-deploy maven-promote
+
+maven-staging-promote: maven-staging-close $(STAGING_REPO_ID)
+	M2_HOME="$(M2_ENCRYPTED_HOME)/settings.xml" \
+	mvn org.sonatype.plugins:nexus-staging-maven-plugin:rc-promote \
+	    -DserverId=sonatype-nexus-staging \
+	    -DnexusUrl=$(NEXUS_PROMOTE_URL) \
+	    -DstagingRepositoryId=`cat $(STAGING_REPO_ID)` \
+	    -DbuildPromotionProfileId=`cat $(STAGING_PROFILE_ID)`
+
+maven-staging-close: maven-environment $(STAGING_REPO_ID) $(STAGING_PROFILE_ID)
+	M2_HOME="$(M2_ENCRYPTED_HOME)/settings.xml" \
+	mvn org.sonatype.plugins:nexus-staging-maven-plugin:rc-close \
+	    -DserverId=sonatype-nexus-staging \
+	    -DnexusUrl=$(NEXUS_PROMOTE_URL) \
+	    -DstagingRepositoryId=`cat $(STAGING_REPO_ID)`
+
+$(STAGING_REPO_ID): $(STAGING_REPO_JSON)
+	cat $(STAGING_REPO_JSON) | python -c 'import sys, json; print json.load(sys.stdin)["data"][0]["repositoryId"]' >> $@
+
+$(STAGING_PROFILE_ID): $(STAGING_REPO_JSON)
+	cat $(STAGING_REPO_JSON) | python -c 'import sys, json; print json.load(sys.stdin)["data"][0]["profileId"]' >> $@
+
+$(STAGING_REPO_JSON):
+	curl --silent --user "$(NEXUS_USERNAME):$(NEXUS_PASSWORD)" \
+	     -H "Accept: application/json" \
+	     https://oss.sonatype.org/service/local/staging/profile_repositories >> $@
+
+maven-deploy: maven-environment
+	( cd build/bundle;
+	  VERSION=$(VERSION) \
+	  SIGNING_KEY=$(SIGNING_KEY) \
+	  GNUPG_PATH=$(GNUPG_PATH) \
+	  CREDS="$(NEXUS_USERNAME):$(NEXUS_PASSWORD)" \
+	  ../../nexus-upload.sh \
+	    amqp-client-$(VERSION).pom \
+	    amqp-client-$(VERSION).jar \
+	    amqp-client-$(VERSION)-javadoc.jar \
+	    amqp-client-$(VERSION)-sources.jar \
+        )
+
+maven-environment: $(HOME)/.m2/settings-security.xml $(HOME)/.m2/settings.xml
+
+$(HOME)/.m2/settings-security.xml: $(HOME)/.m2
+	cp "$(GNUPG_PATH)/../nexus/settings-security.xml" "$(HOME)/.m2/"
+
+$(HOME)/.m2/settings.xml: $(HOME)/.m2
+	cp "$(GNUPG_PATH)/../nexus/settings.xml" "$(HOME)/.m2/"
+
+$(HOME)/.m2:
+	mkdir $(HOME)/.m2
 
