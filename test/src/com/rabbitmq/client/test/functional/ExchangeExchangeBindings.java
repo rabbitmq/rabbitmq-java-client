@@ -80,15 +80,11 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
     }
 
     public void testBindingCreationDeletion() throws IOException {
+        channel.exchangeUnbind("e2", "e1", "");
         channel.exchangeBind("e2", "e1", "");
         channel.exchangeBind("e2", "e1", "");
         channel.exchangeUnbind("e2", "e1", "");
-        try {
-            channel.exchangeUnbind("e2", "e1", "");
-            fail("expected not_found in testBindingCreationDeletion");
-        } catch (IOException e) {
-            checkShutdownSignal(AMQP.NOT_FOUND, e);
-        }
+        channel.exchangeUnbind("e2", "e1", "");
     }
 
     /* pre (eN --> qN) for N in [0..2]
