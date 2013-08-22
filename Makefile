@@ -71,7 +71,20 @@ srcdist: distclean
 	(cd build; rm -rf $(SRC_ARCHIVE))
 
 # nexus username and password must come from the encrypted $M2_HOME/settings.xml
-stage-and-promote-maven-bundle: maven-deploy maven-promote
+stage-and-promote-maven-bundle: maven-deploy maven-staging-promote
+
+maven-deploy: maven-environment
+	( cd build/bundle;
+	  VERSION=$(VERSION) \
+	  SIGNING_KEY=$(SIGNING_KEY) \
+	  GNUPG_PATH=$(GNUPG_PATH) \
+	  CREDS="$(NEXUS_USERNAME):$(NEXUS_PASSWORD)" \
+	  ../../nexus-upload.sh \
+	    amqp-client-$(VERSION).pom \
+	    amqp-client-$(VERSION).jar \
+	    amqp-client-$(VERSION)-javadoc.jar \
+	    amqp-client-$(VERSION)-sources.jar \
+        )
 
 maven-staging-promote: maven-staging-close $(STAGING_REPO_ID)
 	M2_HOME="$(M2_ENCRYPTED_HOME)/settings.xml" \
@@ -98,19 +111,6 @@ $(STAGING_REPO_JSON):
 	curl --silent --user "$(NEXUS_USERNAME):$(NEXUS_PASSWORD)" \
 	     -H "Accept: application/json" \
 	     https://oss.sonatype.org/service/local/staging/profile_repositories >> $@
-
-maven-deploy: maven-environment
-	( cd build/bundle;
-	  VERSION=$(VERSION) \
-	  SIGNING_KEY=$(SIGNING_KEY) \
-	  GNUPG_PATH=$(GNUPG_PATH) \
-	  CREDS="$(NEXUS_USERNAME):$(NEXUS_PASSWORD)" \
-	  ../../nexus-upload.sh \
-	    amqp-client-$(VERSION).pom \
-	    amqp-client-$(VERSION).jar \
-	    amqp-client-$(VERSION)-javadoc.jar \
-	    amqp-client-$(VERSION)-sources.jar \
-        )
 
 maven-environment: $(HOME)/.m2/settings-security.xml $(HOME)/.m2/settings.xml
 
