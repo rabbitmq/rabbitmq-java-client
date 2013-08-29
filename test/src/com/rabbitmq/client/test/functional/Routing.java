@@ -17,6 +17,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
@@ -251,6 +252,8 @@ public class Routing extends BrokerTestCase
             channel.basicQos(0); //flush
             fail("basic.publish{immediate=true} should not be supported");
         } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
+        } catch (AlreadyClosedException ioe) {
             checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
         }
     }
