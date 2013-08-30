@@ -54,7 +54,12 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
             throws IOException, InterruptedException {
         final BlockingQueue<Boolean> result = new ArrayBlockingQueue<Boolean>(1);
         channel.queueDeclare(queue, false, true, false, null);
-        final QueueingConsumer consumer = new QueueingConsumer(channel);
+        final QueueingConsumer consumer = new QueueingConsumer(channel) {
+            @Override
+            public void handleCancel(String consumerTag) throws IOException {
+                throw new ConsumerCancelledException();
+            }
+        };
         Runnable receiver = new Runnable() {
 
             public void run() {

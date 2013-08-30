@@ -87,13 +87,12 @@ public class QueueingConsumer extends DefaultConsumer {
     // When this is non-null the queue is in shutdown mode and nextDelivery should
     // throw a shutdown signal exception.
     private volatile ShutdownSignalException _shutdown;
-    private volatile ConsumerCancelledException _cancelled;
 
     // Marker object used to signal the queue is in shutdown mode.
     // It is only there to wake up consumers. The canonical representation
     // of shutting down is the presence of _shutdown.
     // Invariant: This is never on _queue unless _shutdown != null.
-    private static final Delivery POISON = new Delivery(null, null, null);
+    private static final Delivery POISON = new Delivery(null, null, null, null);
 
     public QueueingConsumer(Channel ch) {
         this(ch, new LinkedBlockingQueue<Delivery>());
@@ -110,11 +109,6 @@ public class QueueingConsumer extends DefaultConsumer {
         _queue.add(POISON);
     }
 
-    @Override public void handleCancel(String consumerTag) throws IOException {
-        _cancelled = new ConsumerCancelledException();
-        _queue.add(POISON);
-    }
-
     @Override public void handleDelivery(String consumerTag,
                                Envelope envelope,
                                AMQP.BasicProperties properties,
@@ -122,21 +116,31 @@ public class QueueingConsumer extends DefaultConsumer {
         throws IOException
     {
         checkShutdown();
-        this._queue.add(new Delivery(envelope, properties, body));
+        this._queue.add(new Delivery(consumerTag, envelope, properties, body));
     }
 
     /**
      * Encapsulates an arbitrary message - simple "bean" holder structure.
      */
     public static class Delivery {
+        private final String _consumerTag;
         private final Envelope _envelope;
         private final AMQP.BasicProperties _properties;
         private final byte[] _body;
 
-        public Delivery(Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
+        public Delivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
+            _consumerTag = consumerTag;
             _envelope = envelope;
             _properties = properties;
             _body = body;
+        }
+
+        /**
+         * Retrieve the consumer tag.
+         * @return the consumer tag
+         */
+        public String getConsumerTag() {
+            return _consumerTag;
         }
 
         /**
@@ -185,19 +189,17 @@ public class QueueingConsumer extends DefaultConsumer {
      */
     private Delivery handle(Delivery delivery) {
         if (delivery == POISON ||
-            delivery == null && (_shutdown != null || _cancelled != null)) {
+            delivery == null && _shutdown != null) {
             if (delivery == POISON) {
                 _queue.add(POISON);
-                if (_shutdown == null && _cancelled == null) {
+                if (_shutdown == null) {
                     throw new IllegalStateException(
-                        "POISON in queue, but null _shutdown and null _cancelled. " +
+                        "POISON in queue, but null _shutdown. " +
                         "This should never happen, please report as a BUG");
                 }
             }
             if (null != _shutdown)
                 throw Utility.fixStackTrace(_shutdown);
-            if (null != _cancelled)
-                throw Utility.fixStackTrace(_cancelled);
         }
         return delivery;
     }
