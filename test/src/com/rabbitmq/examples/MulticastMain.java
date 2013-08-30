@@ -48,6 +48,7 @@ public class MulticastMain {
             String exchangeType  = strArg(cmd, 't', "direct");
             String exchangeName  = strArg(cmd, 'e', exchangeType);
             String queueName     = strArg(cmd, 'u', "");
+            String routingKey    = strArg(cmd, 'k', null);
             int samplingInterval = intArg(cmd, 'i', 1);
             float rateLimit      = floatArg(cmd, 'r', 0.0f);
             int producerCount    = intArg(cmd, 'x', 1);
@@ -104,6 +105,7 @@ public class MulticastMain {
             p.setProducerMsgCount( producerMsgCount);
             p.setProducerTxSize(   producerTxSize);
             p.setQueueName(        queueName);
+            p.setRoutingKey(       routingKey);
             p.setRateLimit(        rateLimit);
             p.setTimeLimit(        timeLimit);
 
@@ -134,6 +136,7 @@ public class MulticastMain {
         options.addOption(new Option("t", "type",          true, "exchange type"));
         options.addOption(new Option("e", "exchange",      true, "exchange name"));
         options.addOption(new Option("u", "queue",         true, "queue name"));
+        options.addOption(new Option("k", "routingKey",    true, "routing key"));
         options.addOption(new Option("i", "interval",      true, "sampling interval"));
         options.addOption(new Option("r", "rate",          true, "rate limit"));
         options.addOption(new Option("x", "producers",     true, "producer count"));
