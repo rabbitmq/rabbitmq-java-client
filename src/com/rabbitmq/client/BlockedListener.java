@@ -20,17 +20,10 @@ package com.rabbitmq.client;
 import java.io.IOException;
 
 /**
- * Encapsulates a frame format error at the wire level.
+ * Implement this interface in order to be notified of connection block and
+ * unblock events.
  */
-public class MalformedFrameException extends IOException {
-    /** Standard serialization ID. */
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * Instantiate a MalformedFrameException.
-     * @param reason a string describing the exception
-     */
-    public MalformedFrameException(String reason) {
-        super(reason);
-    }
+public interface BlockedListener {
+    void handleBlocked(String reason) throws IOException;
+    void handleUnblocked() throws IOException;
 }

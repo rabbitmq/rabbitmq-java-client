@@ -203,22 +203,6 @@ public class DeadLetterExchange extends BrokerTestCase {
             });
     }
 
-    public void testDeadLetterExchangeDeleteTwice()
-        throws IOException
-    {
-        declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
-        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
-
-        publishN(MSG_COUNT_MANY);
-        channel.queueDelete(TEST_QUEUE_NAME);
-        try {
-            channel.queueDelete(TEST_QUEUE_NAME);
-            fail();
-        } catch (IOException ex) {
-            checkShutdownSignal(AMQP.NOT_FOUND, ex);
-        }
-    }
-
     public void testDeadLetterOnReject() throws Exception {
         rejectionTest(false);
     }

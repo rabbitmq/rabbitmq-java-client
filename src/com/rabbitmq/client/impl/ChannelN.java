@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -394,7 +394,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 }
                 if (callback != null) {
                     try {
-                        callback.handleCancel(consumerTag);
+                        this.dispatcher.handleCancel(callback, consumerTag);
                     } catch (Throwable ex) {
                         getConnection().getExceptionHandler().handleConsumerException(this,
                                                                                       ex,

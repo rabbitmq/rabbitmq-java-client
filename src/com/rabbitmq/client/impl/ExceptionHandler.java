@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -62,6 +62,16 @@ public interface ExceptionHandler {
      * @param exception the exception thrown by ConfirmListener.handleAck
      */
     void handleConfirmListenerException(Channel channel, Throwable exception);
+
+    /**
+     * Perform any required exception processing for the situation
+     * when the driver thread for the connection has called a
+     * BlockedListener's method, and that method has
+     * thrown an exception.
+     * @param connection the Connection that held the BlockedListener
+     * @param exception the exception thrown by the BlockedListener
+     */
+    void handleBlockedListenerException(Connection connection, Throwable exception);
 
     /**
      * Perform any required exception processing for the situation

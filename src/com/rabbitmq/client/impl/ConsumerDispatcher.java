@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2011-2013 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2011-2013 GoPivotal, Inc.  All rights reserved.
 
 package com.rabbitmq.client.impl;
 
@@ -99,6 +99,25 @@ final class ConsumerDispatcher {
             }
         });
     }
+
+    public void handleCancel(final Consumer delegate, final String consumerTag) {
+        executeUnlessShuttingDown(
+        new Runnable() {
+      public void run() {
+                try {
+                    delegate.handleCancel(consumerTag);
+                } catch (Throwable ex) {
+                    connection.getExceptionHandler().handleConsumerException(
+                            channel,
+                            ex,
+                            delegate,
+                            consumerTag,
+                            "handleCancel");
+                }
+      }
+    });
+  }
+
 
     public void handleRecoverOk(final Consumer delegate, final String consumerTag) {
         executeUnlessShuttingDown(

@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test;
@@ -240,6 +240,10 @@ public class AMQConnectionTest extends TestCase {
 
         public void handleConfirmListenerException(Channel ch, Throwable ex) {
             fail("handleConfirmListenerException: " + ex);
+        }
+
+        public void handleBlockedListenerException(Connection conn, Throwable ex) {
+            fail("handleBlockedListenerException: " + ex);
         }
 
         public void handleConsumerException(Channel ch,

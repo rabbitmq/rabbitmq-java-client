@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -61,7 +61,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(DefaultExchange.class);
         suite.addTestSuite(UnbindAutoDeleteExchange.class);
         suite.addTestSuite(Confirm.class);
-        suite.addTestSuite(ConsumerCancelNotificiation.class);
+        suite.addTestSuite(ConsumerCancelNotification.class);
         suite.addTestSuite(UnexpectedFrames.class);
         suite.addTestSuite(PerQueueTTL.class);
         suite.addTestSuite(PerMessageTTL.class);
@@ -73,5 +73,6 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(CcRoutes.class);
         suite.addTestSuite(WorkPoolTests.class);
         suite.addTestSuite(HeadersExchangeValidation.class);
+        suite.addTestSuite(ConsumerPriorities.class);
     }
 }

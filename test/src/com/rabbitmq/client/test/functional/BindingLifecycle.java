@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -201,15 +201,9 @@ public class BindingLifecycle extends BindingLifecycleBase {
         };
 
         for (int i = 0; i < tests.length; i++) {
-
             Binding test = tests[i];
-            try {
-                channel.queueUnbind(test.q, test.x, test.k);
-                fail("expected not_found in test " + i);
-            } catch (IOException ee) {
-                checkShutdownSignal(AMQP.NOT_FOUND, ee);
-                openChannel();
-            }
+            // check we can unbind all sorts of things that don't exist
+            channel.queueUnbind(test.q, test.x, test.k);
         }
 
         // success case

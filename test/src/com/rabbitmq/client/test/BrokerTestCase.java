@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -243,5 +243,18 @@ public class BrokerTestCase extends TestCase {
 
     protected void deleteQueue(String q) throws IOException {
         channel.queueDelete(q);
+    }
+
+    protected void clearAllResourceAlarms() throws IOException, InterruptedException {
+        clearResourceAlarm("memory");
+        clearResourceAlarm("disk");
+    }
+
+    protected void setResourceAlarm(String source) throws IOException, InterruptedException {
+        Host.executeCommand("cd ../rabbitmq-test; make set-resource-alarm SOURCE=" + source);
+    }
+
+    protected void clearResourceAlarm(String source) throws IOException, InterruptedException {
+        Host.executeCommand("cd ../rabbitmq-test; make clear-resource-alarm SOURCE=" + source);
     }
 }

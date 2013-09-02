@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -40,5 +40,6 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(Firehose.class);
         suite.addTestSuite(PersistenceGuarantees.class);
         suite.addTestSuite(Shutdown.class);
+        suite.addTestSuite(BlockedConnection.class);
     }
 }

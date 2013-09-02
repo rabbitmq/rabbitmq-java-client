@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2013 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -49,6 +49,10 @@ public class DefaultExceptionHandler implements ExceptionHandler {
         handleChannelKiller(channel, exception, "ConfirmListener.handle{N,A}ck");
     }
 
+    public void handleBlockedListenerException(Connection connection, Throwable exception) {
+        handleConnectionKiller(connection, exception, "BlockedListener");
+    }
+
     public void handleConsumerException(Channel channel, Throwable exception,
                                         Consumer consumer, String consumerTag,
                                         String methodName)
@@ -74,6 +78,24 @@ public class DefaultExceptionHandler implements ExceptionHandler {
                     + ":");
             ioe.printStackTrace();
             channel.getConnection().abort(AMQP.INTERNAL_ERROR, "Internal error closing channel for " + what);
+        }
+    }
+
+    protected void handleConnectionKiller(Connection connection, Throwable exception, String what) {
+        // TODO: log the exception
+        System.err.println("DefaultExceptionHandler: " + what + " threw an exception for connection "
+                + connection + ":");
+        exception.printStackTrace();
+        try {
+            connection.close(AMQP.REPLY_SUCCESS, "Closed due to exception from " + what);
+        } catch (AlreadyClosedException ace) {
+            // noop
+        } catch (IOException ioe) {
+            // TODO: log the failure
+            System.err.println("Failure during close of connection " + connection + " after " + exception
+                    + ":");
+            ioe.printStackTrace();
+            connection.abort(AMQP.INTERNAL_ERROR, "Internal error closing connection for " + what);
         }
     }
 }
