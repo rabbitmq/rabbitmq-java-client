@@ -54,42 +54,6 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         assertTrue(result.take());
     }
 
-    public void testConsumerCancellationInterruptsQueuingConsumerWait()
-            throws IOException, InterruptedException {
-        final BlockingQueue<Boolean> result = new ArrayBlockingQueue<Boolean>(1);
-        channel.queueDeclare(queue, false, true, false, null);
-        final QueueingConsumer consumer = new QueueingConsumer(channel) {
-            @Override
-            public void handleCancel(String consumerTag) throws IOException {
-                throw new ConsumerCancelledException();
-            }
-        };
-        Runnable receiver = new Runnable() {
-
-            public void run() {
-                try {
-                    try {
-                        consumer.nextDelivery();
-                    } catch (ConsumerCancelledException e) {
-                        result.put(true);
-                        return;
-                    } catch (ShutdownSignalException e) {
-                    } catch (InterruptedException e) {
-                    }
-                    result.put(false);
-                } catch (InterruptedException e) {
-                    fail();
-                }
-            }
-        };
-        Thread t = new Thread(receiver);
-        t.start();
-        channel.basicConsume(queue, consumer);
-        channel.queueDelete(queue);
-        assertTrue(result.take());
-        t.join();
-    }
-
 
     class AlteringConsumer extends DefaultConsumer {
         private final String altQueue;
