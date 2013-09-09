@@ -7,15 +7,17 @@ import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
  */
 public class Policies extends BrokerTestCase {
     @Override protected void createResources() throws IOException {
-        Host.rabbitmqctl("set_policy AE ^has-ae {\\\"alternate-exchange\\\":\\\"ae\\\"}");
-        Host.rabbitmqctl("set_policy DLX ^has-dlx {\\\"dead-letter-exchange\\\":\\\"dlx\\\"\\,\\\"dead-letter-routing-key\\\":\\\"rk\\\"}");
+        setAE();
+        setDLX();
         channel.exchangeDeclare("has-ae", "fanout");
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("alternate-exchange", "ae2");
@@ -28,6 +30,9 @@ public class Policies extends BrokerTestCase {
         channel.queueBind(q, "ae", "");
         channel.basicPublish("has-ae", "", MessageProperties.BASIC, "".getBytes());
         assertDelivered(q, 1);
+        clearPolicies();
+        channel.basicPublish("has-ae", "", MessageProperties.BASIC, "".getBytes());
+        assertDelivered(q, 0);
     }
 
     // i.e. the argument takes priority over the policy
@@ -50,6 +55,10 @@ public class Policies extends BrokerTestCase {
         Thread.sleep(10);
         GetResponse resp = channel.basicGet(dest, true);
         assertEquals("rk", resp.getEnvelope().getRoutingKey());
+        clearPolicies();
+        channel.basicPublish("", src, MessageProperties.BASIC, "".getBytes());
+        Thread.sleep(10);
+        assertDelivered(dest, 0);
     }
 
     // again the argument takes priority over the policy
@@ -69,9 +78,30 @@ public class Policies extends BrokerTestCase {
     }
 
     @Override protected void releaseResources() throws IOException {
-        Host.rabbitmqctl("clear_policy AE");
-        Host.rabbitmqctl("clear_policy DLX");
+        clearPolicies();
         channel.exchangeDelete("has-ae");
         channel.exchangeDelete("has-ae-args");
+    }
+
+    private Set<String> policies = new HashSet<String>();
+
+    private void setAE() throws IOException {
+        setPolicy("AE", "^has-ae", "{\\\"alternate-exchange\\\":\\\"ae\\\"}");
+    }
+
+    private void setDLX() throws IOException {
+        setPolicy("DLX", "^has-dlx", "{\\\"dead-letter-exchange\\\":\\\"dlx\\\"\\,\\\"dead-letter-routing-key\\\":\\\"rk\\\"}");
+    }
+
+    private void setPolicy(String name, String pattern, String definition) throws IOException {
+        Host.rabbitmqctl("set_policy " + name + " " + pattern + " " + definition);
+        policies.add(name);
+    }
+
+    private void clearPolicies() throws IOException {
+        for (String policy : policies) {
+            Host.rabbitmqctl("clear_policy " + policy);
+        }
+        policies.clear();
     }
 }
