@@ -15,7 +15,7 @@ import java.util.Map;
 public class Policies extends BrokerTestCase {
     @Override protected void createResources() throws IOException {
         Host.rabbitmqctl("set_policy AE ^has-ae {\\\"alternate-exchange\\\":\\\"ae\\\"}");
-        Host.rabbitmqctl("set_policy DLX ^has-dlx {\\\"dead-letter-exchange\\\":\\\"dlx\\\",\\\"dead-letter-routing-key\\\":\\\"rk\\\"}");
+        Host.rabbitmqctl("set_policy DLX ^has-dlx {\\\"dead-letter-exchange\\\":\\\"dlx\\\"\\,\\\"dead-letter-routing-key\\\":\\\"rk\\\"}");
         channel.exchangeDeclare("has-ae", "fanout");
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("alternate-exchange", "ae2");
