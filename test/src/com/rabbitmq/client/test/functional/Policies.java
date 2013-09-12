@@ -1,6 +1,21 @@
+//  The contents of this file are subject to the Mozilla Public License
+//  Version 1.1 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License
+//  at http://www.mozilla.org/MPL/
+//
+//  Software distributed under the License is distributed on an "AS IS"
+//  basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+//  the License for the specific language governing rights and
+//  limitations under the License.
+//
+//  The Original Code is RabbitMQ.
+//
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//
+
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -12,15 +27,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- *
- */
 public class Policies extends BrokerTestCase {
+    private static final int DELAY = 10; // MILLIS
+
     @Override protected void createResources() throws IOException {
         setPolicy("AE", "^has-ae", "{\\\"alternate-exchange\\\":\\\"ae\\\"}");
         setPolicy("DLX", "^has-dlx", "{\\\"dead-letter-exchange\\\":\\\"dlx\\\"\\,\\\"dead-letter-routing-key\\\":\\\"rk\\\"}");
-        setPolicy("TTL", "^has-ttl", "{\\\"message-ttl\\\":10}");
-        setPolicy("Expires", "^has-expires", "{\\\"expires\\\":10}");
+        setPolicy("TTL", "^has-ttl", "{\\\"message-ttl\\\":" + DELAY + "}");
+        setPolicy("Expires", "^has-expires", "{\\\"expires\\\":" + DELAY + "}");
         setPolicy("MaxLength", "^has-max-length", "{\\\"max-length\\\":1}");
         channel.exchangeDeclare("has-ae", "fanout");
         Map<String, Object> args = new HashMap<String, Object>();
@@ -56,13 +70,13 @@ public class Policies extends BrokerTestCase {
         channel.exchangeDeclare("dlx", "fanout", false, true, null);
         channel.queueBind(dest, "dlx", "");
         basicPublishVolatile(src);
-        Thread.sleep(10);
+        Thread.sleep(DELAY);
         GetResponse resp = channel.basicGet(dest, true);
         assertEquals("rk", resp.getEnvelope().getRoutingKey());
         clearPolicies();
 
         basicPublishVolatile(src);
-        Thread.sleep(10);
+        Thread.sleep(DELAY);
         assertDelivered(dest, 0);
     }
 
@@ -76,7 +90,7 @@ public class Policies extends BrokerTestCase {
         channel.exchangeDeclare("dlx2", "fanout", false, true, null);
         channel.queueBind(dest, "dlx2", "");
         basicPublishVolatile(src);
-        Thread.sleep(10);
+        Thread.sleep(DELAY);
         GetResponse resp = channel.basicGet(dest, true);
         assertEquals("rk2", resp.getEnvelope().getRoutingKey());
     }
@@ -84,51 +98,51 @@ public class Policies extends BrokerTestCase {
     public void testTTL() throws IOException, InterruptedException {
         String q = declareQueue("has-ttl", null);
         basicPublishVolatile(q);
-        Thread.sleep(20);
+        Thread.sleep(2 * DELAY);
         assertDelivered(q, 0);
         clearPolicies();
 
         basicPublishVolatile(q);
-        Thread.sleep(20);
+        Thread.sleep(2 * DELAY);
         assertDelivered(q, 1);
     }
 
     // Test that we get lower of args and policy
     public void testTTLArgs() throws IOException, InterruptedException {
-        String q = declareQueue("has-ttl", ttlArgs(30));
+        String q = declareQueue("has-ttl", ttlArgs(3 * DELAY));
         basicPublishVolatile(q);
-        Thread.sleep(20);
+        Thread.sleep(2 * DELAY);
         assertDelivered(q, 0);
         clearPolicies();
 
         basicPublishVolatile(q);
-        Thread.sleep(20);
+        Thread.sleep(2 * DELAY);
         assertDelivered(q, 1);
         basicPublishVolatile(q);
-        Thread.sleep(40);
+        Thread.sleep(4 * DELAY);
         assertDelivered(q, 0);
     }
 
     public void testExpires() throws IOException, InterruptedException {
         String q = declareQueue("has-expires", null);
-        Thread.sleep(20);
+        Thread.sleep(2 * DELAY);
         assertFalse(queueExists(q));
         clearPolicies();
 
         q = declareQueue("has-expires", null);
-        Thread.sleep(20);
+        Thread.sleep(2 * DELAY);
         assertTrue(queueExists(q));
     }
 
     // Test that we get lower of args and policy
     public void testExpiresArgs() throws IOException, InterruptedException {
-        String q = declareQueue("has-expires", args("x-expires", 30));
-        Thread.sleep(20);
+        String q = declareQueue("has-expires", args("x-expires", 3 * DELAY));
+        Thread.sleep(2 * DELAY);
         assertFalse(queueExists(q));
         clearPolicies();
 
-        q = declareQueue("has-expires", args("x-expires", 30));
-        Thread.sleep(20);
+        q = declareQueue("has-expires", args("x-expires", 3 * DELAY));
+        Thread.sleep(2 * DELAY);
         assertTrue(queueExists(q));
     }
 
