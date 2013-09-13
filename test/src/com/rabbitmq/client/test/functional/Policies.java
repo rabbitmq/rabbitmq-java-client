@@ -42,11 +42,12 @@ public class Policies extends BrokerTestCase {
         channel.exchangeDeclare("has-ae-args", "fanout", false, false, args);
     }
 
-    public void testAlternateExchange() throws IOException {
+    public void testAlternateExchange() throws IOException, InterruptedException {
         String q = declareQueue();
         channel.exchangeDeclare("ae", "fanout", false, true, null);
         channel.queueBind(q, "ae", "");
         basicPublishVolatile("has-ae", "");
+        Thread.sleep(DELAY);
         assertDelivered(q, 1);
         clearPolicies();
 
