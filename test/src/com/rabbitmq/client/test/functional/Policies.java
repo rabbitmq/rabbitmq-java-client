@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class Policies extends BrokerTestCase {
-    private static final int DELAY = 10; // MILLIS
+    private static final int DELAY = 100; // MILLIS
 
     @Override protected void createResources() throws IOException {
         setPolicy("AE", "^has-ae", "{\\\"alternate-exchange\\\":\\\"ae\\\"}");
