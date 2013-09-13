@@ -1,7 +1,0 @@
-Bundle-ManifestVersion: 2
-Bundle-SymbolicName: ${bundle.symbolicName}
-Bundle-Name: ${bundle.name}
-Bundle-Vendor: SpringSource
-Bundle-Version: ${impl.version}
-Import-Template: 
- javax.*;version=0
