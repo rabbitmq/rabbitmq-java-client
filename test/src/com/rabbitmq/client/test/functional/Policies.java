@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.server.HATests;
 import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
@@ -31,11 +32,11 @@ public class Policies extends BrokerTestCase {
     private static final int DELAY = 100; // MILLIS
 
     @Override protected void createResources() throws IOException {
-        setPolicy("AE", "^has-ae", "{\\\"alternate-exchange\\\":\\\"ae\\\"}");
-        setPolicy("DLX", "^has-dlx", "{\\\"dead-letter-exchange\\\":\\\"dlx\\\"\\,\\\"dead-letter-routing-key\\\":\\\"rk\\\"}");
-        setPolicy("TTL", "^has-ttl", "{\\\"message-ttl\\\":" + DELAY + "}");
-        setPolicy("Expires", "^has-expires", "{\\\"expires\\\":" + DELAY + "}");
-        setPolicy("MaxLength", "^has-max-length", "{\\\"max-length\\\":1}");
+        setPolicy("AE", "^has-ae", "\"alternate-exchange\":\"ae\"");
+        setPolicy("DLX", "^has-dlx", "\"dead-letter-exchange\":\"dlx\",\"dead-letter-routing-key\":\"rk\"");
+        setPolicy("TTL", "^has-ttl", "\"message-ttl\":" + DELAY);
+        setPolicy("Expires", "^has-expires", "\"expires\":" + DELAY);
+        setPolicy("MaxLength", "^has-max-length", "\"max-length\":1");
         channel.exchangeDeclare("has-ae", "fanout");
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("alternate-exchange", "ae2");
@@ -46,9 +47,7 @@ public class Policies extends BrokerTestCase {
         String q = declareQueue();
         channel.exchangeDeclare("ae", "fanout", false, true, null);
         channel.queueBind(q, "ae", "");
-        Thread.sleep(DELAY); // TODO do we need this?
         basicPublishVolatile("has-ae", "");
-        Thread.sleep(DELAY); // TODO do we need this?
         assertDelivered(q, 1);
         clearPolicies();
 
@@ -177,8 +176,19 @@ public class Policies extends BrokerTestCase {
     private Set<String> policies = new HashSet<String>();
 
     private void setPolicy(String name, String pattern, String definition) throws IOException {
-        Host.rabbitmqctl("set_policy " + name + " " + pattern + " " + definition);
+        // We need to override the HA policy that we use in HATests, so
+        // priority 1. But we still want a valid test of HA, so add the
+        // ha-mode definition.
+        if (HATests.HA_TESTS_RUNNING) {
+            definition += ",\"ha-mode\":\"all\"";
+        }
+        Host.rabbitmqctl("set_policy --priority 1 " + name + " " + pattern +
+                         " {" + escapeDefinition(definition) + "}");
         policies.add(name);
+    }
+
+    private String escapeDefinition(String definition) {
+        return definition.replaceAll(",", "\\\\,").replaceAll("\"", "\\\\\\\"");
     }
 
     private void clearPolicies() throws IOException {
