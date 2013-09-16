@@ -46,8 +46,9 @@ public class Policies extends BrokerTestCase {
         String q = declareQueue();
         channel.exchangeDeclare("ae", "fanout", false, true, null);
         channel.queueBind(q, "ae", "");
+        Thread.sleep(DELAY); // TODO do we need this?
         basicPublishVolatile("has-ae", "");
-        Thread.sleep(DELAY);
+        Thread.sleep(DELAY); // TODO do we need this?
         assertDelivered(q, 1);
         clearPolicies();
 
