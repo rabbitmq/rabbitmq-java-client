@@ -47,8 +47,7 @@ public class MulticastParams {
 
     private List<?> flags = new ArrayList<Object>();
 
-    private int multiAckEvery = 0;
-    private boolean autoAck = true;
+    private int ackEvery = 0;
     private boolean exclusive = true;
     private boolean autoDelete = false;
 
@@ -94,12 +93,8 @@ public class MulticastParams {
         this.confirm = confirm;
     }
 
-    public void setAutoAck(boolean autoAck) {
-        this.autoAck = autoAck;
-    }
-
-    public void setMultiAckEvery(int multiAckEvery) {
-        this.multiAckEvery = multiAckEvery;
+    public void setAckEvery(int ackEvery) {
+        this.ackEvery = ackEvery;
     }
 
     public void setPrefetchCount(int prefetchCount) {
@@ -182,7 +177,7 @@ public class MulticastParams {
         String qName = configureQueue(connection, id);
         if (prefetchCount > 0) channel.basicQos(prefetchCount);
         return new Consumer(channel, id, qName,
-                                         consumerTxSize, autoAck, multiAckEvery,
+                                         consumerTxSize, ackEvery,
                                          stats, consumerMsgCount, timeLimit);
     }
 

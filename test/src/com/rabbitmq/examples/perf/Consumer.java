@@ -33,22 +33,20 @@ public class Consumer implements Runnable {
     private String           id;
     private String           queueName;
     private int              txSize;
-    private boolean          autoAck;
-    private int              multiAckEvery;
+    private int              ackEvery;
     private Stats stats;
     private int              msgLimit;
     private long             timeLimit;
 
     public Consumer(Channel channel, String id,
-                    String queueName, int txSize, boolean autoAck,
-                    int multiAckEvery, Stats stats, int msgLimit, int timeLimit) {
+                    String queueName, int txSize,
+                    int ackEvery, Stats stats, int msgLimit, int timeLimit) {
 
         this.channel       = channel;
         this.id            = id;
         this.queueName     = queueName;
         this.txSize        = txSize;
-        this.autoAck       = autoAck;
-        this.multiAckEvery = multiAckEvery;
+        this.ackEvery      = ackEvery;
         this.stats         = stats;
         this.msgLimit      = msgLimit;
         this.timeLimit     = 1000L * timeLimit;
@@ -62,7 +60,7 @@ public class Consumer implements Runnable {
 
         try {
             q = new QueueingConsumer(channel);
-            channel.basicConsume(queueName, autoAck, q);
+            channel.basicConsume(queueName, ackEvery == 0, q);
 
             while ((timeLimit == 0 || now < startTime + timeLimit) &&
                    (msgLimit == 0 || totalMsgCount < msgLimit)) {
@@ -77,7 +75,7 @@ public class Consumer implements Runnable {
                 } catch (ConsumerCancelledException e) {
                     System.out.println("Consumer cancelled by broker. Re-consuming.");
                     q = new QueueingConsumer(channel);
-                    channel.basicConsume(queueName, autoAck, q);
+                    channel.basicConsume(queueName, ackEvery == 0, q);
                     continue;
                 }
                 totalMsgCount++;
@@ -89,10 +87,10 @@ public class Consumer implements Runnable {
 
                 Envelope envelope = delivery.getEnvelope();
 
-                if (!autoAck) {
-                    if (multiAckEvery == 0) {
+                if (ackEvery != 0) {
+                    if (ackEvery == 1) {
                         channel.basicAck(envelope.getDeliveryTag(), false);
-                    } else if (totalMsgCount % multiAckEvery == 0) {
+                    } else if (totalMsgCount % ackEvery == 0) {
                         channel.basicAck(envelope.getDeliveryTag(), true);
                     }
                 }

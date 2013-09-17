@@ -56,8 +56,7 @@ public class PerfTest {
             int producerTxSize   = intArg(cmd, 'm', 0);
             int consumerTxSize   = intArg(cmd, 'n', 0);
             long confirm         = intArg(cmd, 'c', -1);
-            boolean autoAck      = cmd.hasOption('a');
-            int multiAckEvery    = intArg(cmd, 'A', 0);
+            int ackEvery         = intArg(cmd, 'a', 0);
             int prefetchCount    = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
@@ -87,7 +86,6 @@ public class PerfTest {
 
 
             MulticastParams p = new MulticastParams();
-            p.setAutoAck(          autoAck);
             p.setAutoDelete(       !exclusive);
             p.setConfirm(          confirm);
             p.setConsumerCount(    consumerCount);
@@ -97,7 +95,7 @@ public class PerfTest {
             p.setExchangeType(     exchangeType);
             p.setExclusive(        exclusive);
             p.setFlags(            flags);
-            p.setMultiAckEvery(    multiAckEvery);
+            p.setAckEvery(         ackEvery);
             p.setMinMsgSize(       minMsgSize);
             p.setPredeclared(      predeclared);
             p.setPrefetchCount(    prefetchCount);
@@ -144,8 +142,7 @@ public class PerfTest {
         options.addOption(new Option("m", "ptxsize",       true, "producer tx size"));
         options.addOption(new Option("n", "ctxsize",       true, "consumer tx size"));
         options.addOption(new Option("c", "confirm",       true, "max unconfirmed publishes"));
-        options.addOption(new Option("a", "autoack",       false,"auto ack"));
-        options.addOption(new Option("A", "multiAckEvery", true, "multi ack every"));
+        options.addOption(new Option("a", "ack every",     true, "ack every (default = 0 = auto ack)"));
         options.addOption(new Option("q", "qos",           true, "qos prefetch count"));
         options.addOption(new Option("s", "size",          true, "message size"));
         options.addOption(new Option("z", "time",          true, "time limit"));
