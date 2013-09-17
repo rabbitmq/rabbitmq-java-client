@@ -14,7 +14,7 @@
 //  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
 //
 
-package com.rabbitmq.examples.perf;
+package com.rabbitmq.examples;
 
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.tools.json.JSONReader;
@@ -31,14 +31,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class PerformanceMain {
+public class PerfTestMulti {
     private static final ConnectionFactory factory = new ConnectionFactory();
 
     private static Map<String, Object> results = new HashMap<String, Object>();
 
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {
-            System.out.println("Usage: PerformanceMain input-json-file output-json-file");
+            System.out.println("Usage: PerfTestMulti input-json-file output-json-file");
             System.exit(1);
         }
         String inJSON = args[0];

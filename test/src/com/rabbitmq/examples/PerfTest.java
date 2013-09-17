@@ -33,7 +33,7 @@ import org.apache.commons.cli.ParseException;
 import com.rabbitmq.client.ConnectionFactory;
 
 
-public class MulticastMain {
+public class PerfTest {
     public static void main(String[] args) {
         Options options = getOptions();
         CommandLineParser parser = new GnuParser();
