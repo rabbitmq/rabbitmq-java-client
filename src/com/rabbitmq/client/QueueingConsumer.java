@@ -23,6 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.utility.SensibleClone;
 import com.rabbitmq.utility.Utility;
 
 /**
@@ -53,11 +54,12 @@ import com.rabbitmq.utility.Utility;
  * }
  * </pre>
  *
- *
+ * <p>Note that a <code>QueueingConsumer</code> will raise a channel error if you attempt to
+ * start multiple consumers with it.</p>
  * <p>For a more complete example, see LogTail in the <code>test/src/com/rabbitmq/examples</code>
  * directory of the source distribution.</p>
  * <p/>
- * <b>deprecated</b> <i><code>QueueingConsumer</code> was introduced to allow
+ * <i><code>QueueingConsumer</code> was introduced to allow
  * applications to overcome a limitation in the way <code>Connection</code>
  * managed threads and consumer dispatching. When <code>QueueingConsumer</code>
  * was introduced, callbacks to <code>Consumers</code> were made on the
@@ -88,12 +90,13 @@ public class QueueingConsumer extends DefaultConsumer {
     // throw a shutdown signal exception.
     private volatile ShutdownSignalException _shutdown;
     private volatile ConsumerCancelledException _cancelled;
+    private volatile DuplicateQueueingConsumerException _duplicate;
 
     // Marker object used to signal the queue is in shutdown mode.
     // It is only there to wake up consumers. The canonical representation
     // of shutting down is the presence of _shutdown.
     // Invariant: This is never on _queue unless _shutdown != null.
-    private static final Delivery POISON = new Delivery(null, null, null);
+    private static final Delivery POISON = new Delivery(null, null, null, null);
 
     public QueueingConsumer(Channel ch) {
         this(ch, new LinkedBlockingQueue<Delivery>());
@@ -103,7 +106,20 @@ public class QueueingConsumer extends DefaultConsumer {
         super(ch);
         this._queue = q;
     }
-
+    
+    /**
+     * Stores the most recently passed-in consumerTag - semantically, there should be only one.
+     * @see Consumer#handleConsumeOk
+     */
+    public void handleConsumeOk(String consumerTag) {
+        if (getConsumerTag() != null) {
+            _duplicate = new DuplicateQueueingConsumerException(getConsumerTag(), consumerTag);
+            _queue.add(POISON);
+            throw _duplicate;
+        }
+        super.handleConsumeOk(consumerTag);
+    }
+    
     @Override public void handleShutdownSignal(String consumerTag,
                                                ShutdownSignalException sig) {
         _shutdown = sig;
@@ -121,8 +137,54 @@ public class QueueingConsumer extends DefaultConsumer {
                                byte[] body)
         throws IOException
     {
+        if (!consumerTag.equals(getConsumerTag())) {
+            throw new IllegalStateException("Unexpected consumer tag: " + consumerTag);
+        }
         checkShutdown();
-        this._queue.add(new Delivery(envelope, properties, body));
+        this._queue.add(new Delivery(envelope, properties, body, consumerTag));
+    }
+
+    /**
+     * Thrown when a queueing consumer detects a consume.ok method
+     * on a channel on which it is already consuming.
+     *
+     */
+    public static class DuplicateQueueingConsumerException extends RuntimeException implements
+            SensibleClone<DuplicateQueueingConsumerException> {
+
+        /** Default for non-checking. */
+        private static final long serialVersionUID = 1L;
+        
+        private final String originalConsumerTag;
+        private final String duplicateConsumerTag;
+
+        public DuplicateQueueingConsumerException(String originalConsumerTag,
+                                                  String duplicateConsumerTag) {
+            super("duplicate queueing consumer detected" +
+                  "; original consumer tag: " + originalConsumerTag +
+                  "; duplicate consumer tag: " + duplicateConsumerTag);
+            this.originalConsumerTag = originalConsumerTag;
+            this.duplicateConsumerTag = duplicateConsumerTag;
+        }
+        
+
+        public DuplicateQueueingConsumerException sensibleClone() {
+            try {
+                return (DuplicateQueueingConsumerException) super.clone();
+            } catch (CloneNotSupportedException e) {
+                // You've got to be kidding me
+                throw new Error(e);
+            }
+        }
+        
+        public String getOriginalConsumerTag() {
+            return originalConsumerTag;
+        }
+
+        public String getDuplicateConsumerTag() {
+            return duplicateConsumerTag;
+        }
+
     }
 
     /**
@@ -132,11 +194,13 @@ public class QueueingConsumer extends DefaultConsumer {
         private final Envelope _envelope;
         private final AMQP.BasicProperties _properties;
         private final byte[] _body;
+        private final String _consumerTag;
 
-        public Delivery(Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
+        public Delivery(Envelope envelope, BasicProperties properties, byte[] body, String consumerTag) {
             _envelope = envelope;
             _properties = properties;
             _body = body;
+            _consumerTag = consumerTag;
         }
 
         /**
@@ -162,6 +226,14 @@ public class QueueingConsumer extends DefaultConsumer {
         public byte[] getBody() {
             return _body;
         }
+
+        /**
+         * Retrieve the consumer tag.
+         * @return the consumer tag
+         */
+        public String get_consumerTag() {
+            return _consumerTag;
+        }
     }
 
     /**
@@ -185,15 +257,17 @@ public class QueueingConsumer extends DefaultConsumer {
      */
     private Delivery handle(Delivery delivery) {
         if (delivery == POISON ||
-            delivery == null && (_shutdown != null || _cancelled != null)) {
+            delivery == null && (_shutdown != null || _cancelled != null || _duplicate != null)) {
             if (delivery == POISON) {
                 _queue.add(POISON);
-                if (_shutdown == null && _cancelled == null) {
+                if (_shutdown == null && _cancelled == null && _duplicate == null) {
                     throw new IllegalStateException(
-                        "POISON in queue, but null _shutdown and null _cancelled. " +
+                        "POISON in queue, but null _shutdown, null _cancelled and null _duplicate. " +
                         "This should never happen, please report as a BUG");
                 }
             }
+            if (null != _duplicate)
+                throw Utility.fixStackTrace(_duplicate);
             if (null != _shutdown)
                 throw Utility.fixStackTrace(_shutdown);
             if (null != _cancelled)
