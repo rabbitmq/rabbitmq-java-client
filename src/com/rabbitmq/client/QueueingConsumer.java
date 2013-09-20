@@ -97,7 +97,7 @@ public class QueueingConsumer extends DefaultConsumer {
     // It is only there to wake up consumers. The canonical representation
     // of shutting down is the presence of shutdown.
     // Invariant: This is never on queue unless shutdown != null.
-    private static final Delivery POISON = new Delivery(null, null, null, null);
+    private static final Delivery POISON = new Delivery(null, null, null);
 
     public QueueingConsumer(Channel ch) {
         this(ch, new LinkedBlockingQueue<Delivery>());
@@ -113,8 +113,9 @@ public class QueueingConsumer extends DefaultConsumer {
      * @see Consumer#handleConsumeOk
      */
     public void handleConsumeOk(String consumerTag) {
-        if (getConsumerTag() != null) {
-            duplicate = new DuplicateQueueingConsumerException(getConsumerTag(), consumerTag);
+        final String originalConsumerTag = getConsumerTag();
+        if (originalConsumerTag != null) {
+            duplicate = new DuplicateQueueingConsumerException(originalConsumerTag, consumerTag);
             queue.add(POISON);
             throw duplicate;
         }
@@ -133,16 +134,16 @@ public class QueueingConsumer extends DefaultConsumer {
     }
 
     @Override public void handleDelivery(String consumerTag,
-                               Envelope envelope,
-                               AMQP.BasicProperties properties,
-                               byte[] body)
+                                         Envelope envelope,
+                                         AMQP.BasicProperties properties,
+                                         byte[] body)
         throws IOException
     {
-        if (!consumerTag.equals(getConsumerTag())) {
+        if (!consumerTag.equals(this.getConsumerTag())) {
             throw new IllegalStateException("Unexpected consumer tag: " + consumerTag);
         }
         checkShutdown();
-        this.queue.add(new Delivery(envelope, properties, body, consumerTag));
+        this.queue.add(new Delivery(envelope, properties, body));
     }
 
     /**
@@ -195,13 +196,11 @@ public class QueueingConsumer extends DefaultConsumer {
         private final Envelope envelope;
         private final AMQP.BasicProperties properties;
         private final byte[] body;
-        private final String consumerTag;
 
-        public Delivery(Envelope envelope, BasicProperties properties, byte[] body, String consumerTag) {
+        public Delivery(Envelope envelope, BasicProperties properties, byte[] body) {
             this.envelope = envelope;
             this.properties = properties;
             this.body = body;
-            this.consumerTag = consumerTag;
         }
 
         /**
@@ -228,13 +227,6 @@ public class QueueingConsumer extends DefaultConsumer {
             return body;
         }
 
-        /**
-         * Retrieve the consumer tag.
-         * @return the consumer tag
-         */
-        public String getConsumerTag() {
-            return consumerTag;
-        }
     }
 
     /**
@@ -258,7 +250,7 @@ public class QueueingConsumer extends DefaultConsumer {
      */
     private Delivery handle(Delivery delivery) {
         if (delivery == POISON ||
-            delivery == null && (shutdown != null || cancelled != null || duplicate != null)) {
+            delivery == null && (duplicate != null || shutdown != null || cancelled != null)) {
             if (delivery == POISON) {
                 queue.add(POISON);
                 if (shutdown == null && cancelled == null && duplicate == null) {
