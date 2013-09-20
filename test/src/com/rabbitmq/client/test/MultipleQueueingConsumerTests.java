@@ -5,7 +5,7 @@ import com.rabbitmq.client.QueueingConsumer;
 
 import java.util.concurrent.*;
 
-public class DuplicateQueueingConsumerTests extends BrokerTestCase {
+public class MultipleQueueingConsumerTests extends BrokerTestCase {
 
     public void test3ConsumersWithInterleavingCancelNotifications() throws Exception {
         final Channel channel = connection.createChannel();

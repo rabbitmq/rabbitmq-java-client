@@ -33,7 +33,7 @@ public class ClientTests extends TestCase {
         suite.addTestSuite(Bug20004Test.class);
         suite.addTestSuite(CloseInMainLoop.class);
         suite.addTestSuite(ChannelNumberAllocationTests.class);
-        suite.addTestSuite(DuplicateQueueingConsumerTests.class);
+        suite.addTestSuite(MultipleQueueingConsumerTests.class);
         suite.addTestSuite(QueueingConsumerShutdownTests.class);
         suite.addTestSuite(MultiThreadedChannel.class);
         suite.addTestSuite(com.rabbitmq.utility.IntAllocatorTests.class);
