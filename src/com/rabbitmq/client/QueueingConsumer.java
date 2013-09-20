@@ -140,7 +140,10 @@ public class QueueingConsumer extends DefaultConsumer {
         throws IOException
     {
         if (!consumerTag.equals(this.getConsumerTag())) {
-            throw new IllegalStateException("Unexpected consumer tag: " + consumerTag);
+            throw new IllegalStateException(
+                    String.format(
+                            "Got delivery with consumer tag %s, when %s was expected: ",
+                            consumerTag, this.getConsumerTag()));
         }
         checkShutdown();
         this.queue.add(new Delivery(envelope, properties, body));
