@@ -148,7 +148,7 @@ public class QueueingConsumer extends DefaultConsumer {
 
     /**
      * Thrown when a queueing consumer detects a consume.ok method
-     * on a channel on which it is already consuming.
+     * after its consumer tag has already been set.
      *
      */
     public static class DuplicateQueueingConsumerException extends RuntimeException implements
