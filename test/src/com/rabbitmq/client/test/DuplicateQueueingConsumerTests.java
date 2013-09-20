@@ -3,7 +3,6 @@ package com.rabbitmq.client.test;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.QueueingConsumer;
 
-import java.io.IOException;
 import java.util.concurrent.*;
 
 public class DuplicateQueueingConsumerTests extends BrokerTestCase {
@@ -30,8 +29,8 @@ public class DuplicateQueueingConsumerTests extends BrokerTestCase {
         }.run();
 
         final Exception ex = result.poll(5, TimeUnit.SECONDS);
-        final QueueingConsumer.DuplicateQueueingConsumerException actualException =
-                (QueueingConsumer.DuplicateQueueingConsumerException) ex;
+        final QueueingConsumer.MultipleQueueingConsumersException actualException =
+                (QueueingConsumer.MultipleQueueingConsumersException) ex;
 
         final String originalConsumerTag = actualException.getOriginalConsumerTag();
         final String duplicateConsumerTag = actualException.getDuplicateConsumerTag();

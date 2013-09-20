@@ -91,7 +91,7 @@ public class QueueingConsumer extends DefaultConsumer {
     // throw a shutdown signal exception.
     private volatile ShutdownSignalException shutdown;
     private volatile ConsumerCancelledException cancelled;
-    private volatile DuplicateQueueingConsumerException duplicate;
+    private volatile MultipleQueueingConsumersException duplicate;
 
     // Marker object used to signal the queue is in shutdown mode.
     // It is only there to wake up consumers. The canonical representation
@@ -115,7 +115,7 @@ public class QueueingConsumer extends DefaultConsumer {
     public void handleConsumeOk(String consumerTag) {
         final String originalConsumerTag = getConsumerTag();
         if (originalConsumerTag != null) {
-            duplicate = new DuplicateQueueingConsumerException(originalConsumerTag, consumerTag);
+            duplicate = new MultipleQueueingConsumersException(originalConsumerTag, consumerTag);
             queue.add(POISON);
             throw duplicate;
         }
@@ -151,8 +151,8 @@ public class QueueingConsumer extends DefaultConsumer {
      * after its consumer tag has already been set.
      *
      */
-    public static class DuplicateQueueingConsumerException extends RuntimeException implements
-            SensibleClone<DuplicateQueueingConsumerException> {
+    public static class MultipleQueueingConsumersException extends RuntimeException implements
+            SensibleClone<MultipleQueueingConsumersException> {
 
         /** Default for non-checking. */
         private static final long serialVersionUID = 1L;
@@ -160,7 +160,7 @@ public class QueueingConsumer extends DefaultConsumer {
         private final String originalConsumerTag;
         private final String duplicateConsumerTag;
 
-        public DuplicateQueueingConsumerException(String originalConsumerTag,
+        public MultipleQueueingConsumersException(String originalConsumerTag,
                                                   String duplicateConsumerTag) {
             super("duplicate queueing consumer detected" +
                   "; original consumer tag: " + originalConsumerTag +
@@ -170,9 +170,9 @@ public class QueueingConsumer extends DefaultConsumer {
         }
         
 
-        public DuplicateQueueingConsumerException sensibleClone() {
+        public MultipleQueueingConsumersException sensibleClone() {
             try {
-                return (DuplicateQueueingConsumerException) super.clone();
+                return (MultipleQueueingConsumersException) super.clone();
             } catch (CloneNotSupportedException e) {
                 // You've got to be kidding me
                 throw new Error(e);
