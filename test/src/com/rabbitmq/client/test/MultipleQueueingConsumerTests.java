@@ -32,7 +32,7 @@ public class MultipleQueueingConsumerTests extends BrokerTestCase {
         final QueueingConsumer.MultipleQueueingConsumersException actualException =
                 (QueueingConsumer.MultipleQueueingConsumersException) ex;
 
-        final String originalConsumerTag = actualException.getInitialConsumerTag();
+        final String originalConsumerTag  = actualException.getInitialConsumerTag();
         final String duplicateConsumerTag = actualException.getReceivedConsumerTag();
 
         assertFalse(originalConsumerTag.equals(duplicateConsumerTag));
