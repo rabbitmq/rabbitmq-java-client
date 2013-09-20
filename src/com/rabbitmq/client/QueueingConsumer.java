@@ -192,16 +192,16 @@ public class QueueingConsumer extends DefaultConsumer {
      * Encapsulates an arbitrary message - simple "bean" holder structure.
      */
     public static class Delivery {
-        private final Envelope _envelope;
-        private final AMQP.BasicProperties _properties;
-        private final byte[] _body;
-        private final String _consumerTag;
+        private final Envelope envelope;
+        private final AMQP.BasicProperties properties;
+        private final byte[] body;
+        private final String consumerTag;
 
         public Delivery(Envelope envelope, BasicProperties properties, byte[] body, String consumerTag) {
-            _envelope = envelope;
-            _properties = properties;
-            _body = body;
-            _consumerTag = consumerTag;
+            this.envelope = envelope;
+            this.properties = properties;
+            this.body = body;
+            this.consumerTag = consumerTag;
         }
 
         /**
@@ -209,7 +209,7 @@ public class QueueingConsumer extends DefaultConsumer {
          * @return the message envelope
          */
         public Envelope getEnvelope() {
-            return _envelope;
+            return envelope;
         }
 
         /**
@@ -217,7 +217,7 @@ public class QueueingConsumer extends DefaultConsumer {
          * @return the message properties
          */
         public BasicProperties getProperties() {
-            return _properties;
+            return properties;
         }
 
         /**
@@ -225,15 +225,15 @@ public class QueueingConsumer extends DefaultConsumer {
          * @return the message body
          */
         public byte[] getBody() {
-            return _body;
+            return body;
         }
 
         /**
          * Retrieve the consumer tag.
          * @return the consumer tag
          */
-        public String get_consumerTag() {
-            return _consumerTag;
+        public String getConsumerTag() {
+            return consumerTag;
         }
     }
 
