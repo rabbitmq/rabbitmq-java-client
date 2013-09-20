@@ -84,18 +84,19 @@ import com.rabbitmq.utility.Utility;
  * to extend <code>DefaultConsumer</code>.</i>
  */
 public class QueueingConsumer extends DefaultConsumer {
-    private final BlockingQueue<Delivery> _queue;
+
+    private final BlockingQueue<Delivery> queue;
 
     // When this is non-null the queue is in shutdown mode and nextDelivery should
     // throw a shutdown signal exception.
-    private volatile ShutdownSignalException _shutdown;
-    private volatile ConsumerCancelledException _cancelled;
-    private volatile DuplicateQueueingConsumerException _duplicate;
+    private volatile ShutdownSignalException shutdown;
+    private volatile ConsumerCancelledException cancelled;
+    private volatile DuplicateQueueingConsumerException duplicate;
 
     // Marker object used to signal the queue is in shutdown mode.
     // It is only there to wake up consumers. The canonical representation
-    // of shutting down is the presence of _shutdown.
-    // Invariant: This is never on _queue unless _shutdown != null.
+    // of shutting down is the presence of shutdown.
+    // Invariant: This is never on queue unless shutdown != null.
     private static final Delivery POISON = new Delivery(null, null, null, null);
 
     public QueueingConsumer(Channel ch) {
@@ -104,7 +105,7 @@ public class QueueingConsumer extends DefaultConsumer {
 
     public QueueingConsumer(Channel ch, BlockingQueue<Delivery> q) {
         super(ch);
-        this._queue = q;
+        this.queue = q;
     }
     
     /**
@@ -113,22 +114,22 @@ public class QueueingConsumer extends DefaultConsumer {
      */
     public void handleConsumeOk(String consumerTag) {
         if (getConsumerTag() != null) {
-            _duplicate = new DuplicateQueueingConsumerException(getConsumerTag(), consumerTag);
-            _queue.add(POISON);
-            throw _duplicate;
+            duplicate = new DuplicateQueueingConsumerException(getConsumerTag(), consumerTag);
+            queue.add(POISON);
+            throw duplicate;
         }
         super.handleConsumeOk(consumerTag);
     }
     
     @Override public void handleShutdownSignal(String consumerTag,
                                                ShutdownSignalException sig) {
-        _shutdown = sig;
-        _queue.add(POISON);
+        shutdown = sig;
+        queue.add(POISON);
     }
 
     @Override public void handleCancel(String consumerTag) throws IOException {
-        _cancelled = new ConsumerCancelledException();
-        _queue.add(POISON);
+        cancelled = new ConsumerCancelledException();
+        queue.add(POISON);
     }
 
     @Override public void handleDelivery(String consumerTag,
@@ -141,7 +142,7 @@ public class QueueingConsumer extends DefaultConsumer {
             throw new IllegalStateException("Unexpected consumer tag: " + consumerTag);
         }
         checkShutdown();
-        this._queue.add(new Delivery(envelope, properties, body, consumerTag));
+        this.queue.add(new Delivery(envelope, properties, body, consumerTag));
     }
 
     /**
@@ -240,14 +241,14 @@ public class QueueingConsumer extends DefaultConsumer {
      * Check if we are in shutdown mode and if so throw an exception.
      */
     private void checkShutdown() {
-        if (_shutdown != null)
-            throw Utility.fixStackTrace(_shutdown);
+        if (shutdown != null)
+            throw Utility.fixStackTrace(shutdown);
     }
 
     /**
      * If delivery is not POISON nor null, return it.
      * <p/>
-     * If delivery, _shutdown and _cancelled are all null, return null.
+     * If delivery, shutdown and cancelled are all null, return null.
      * <p/>
      * If delivery is POISON re-insert POISON into the queue and
      * throw an exception if POISONed for no reason.
@@ -257,21 +258,21 @@ public class QueueingConsumer extends DefaultConsumer {
      */
     private Delivery handle(Delivery delivery) {
         if (delivery == POISON ||
-            delivery == null && (_shutdown != null || _cancelled != null || _duplicate != null)) {
+            delivery == null && (shutdown != null || cancelled != null || duplicate != null)) {
             if (delivery == POISON) {
-                _queue.add(POISON);
-                if (_shutdown == null && _cancelled == null && _duplicate == null) {
+                queue.add(POISON);
+                if (shutdown == null && cancelled == null && duplicate == null) {
                     throw new IllegalStateException(
-                        "POISON in queue, but null _shutdown, null _cancelled and null _duplicate. " +
+                        "POISON in queue, but null shutdown, null cancelled and null duplicate. " +
                         "This should never happen, please report as a BUG");
                 }
             }
-            if (null != _duplicate)
-                throw Utility.fixStackTrace(_duplicate);
-            if (null != _shutdown)
-                throw Utility.fixStackTrace(_shutdown);
-            if (null != _cancelled)
-                throw Utility.fixStackTrace(_cancelled);
+            if (null != duplicate)
+                throw Utility.fixStackTrace(duplicate);
+            if (null != shutdown)
+                throw Utility.fixStackTrace(shutdown);
+            if (null != cancelled)
+                throw Utility.fixStackTrace(cancelled);
         }
         return delivery;
     }
@@ -286,7 +287,7 @@ public class QueueingConsumer extends DefaultConsumer {
     public Delivery nextDelivery()
         throws InterruptedException, ShutdownSignalException, ConsumerCancelledException
     {
-        return handle(_queue.take());
+        return handle(queue.take());
     }
 
     /**
@@ -300,6 +301,6 @@ public class QueueingConsumer extends DefaultConsumer {
     public Delivery nextDelivery(long timeout)
         throws InterruptedException, ShutdownSignalException, ConsumerCancelledException
     {
-        return handle(_queue.poll(timeout, TimeUnit.MILLISECONDS));
+        return handle(queue.poll(timeout, TimeUnit.MILLISECONDS));
     }
 }
