@@ -157,16 +157,16 @@ public class QueueingConsumer extends DefaultConsumer {
         /** Default for non-checking. */
         private static final long serialVersionUID = 1L;
         
-        private final String originalConsumerTag;
-        private final String duplicateConsumerTag;
+        private final String initialConsumerTag;
+        private final String receivedConsumerTag;
 
-        public MultipleQueueingConsumersException(String originalConsumerTag,
-                                                  String duplicateConsumerTag) {
-            super("duplicate queueing consumer detected" +
-                  "; original consumer tag: " + originalConsumerTag +
-                  "; duplicate consumer tag: " + duplicateConsumerTag);
-            this.originalConsumerTag = originalConsumerTag;
-            this.duplicateConsumerTag = duplicateConsumerTag;
+        public MultipleQueueingConsumersException(String initialConsumerTag,
+                                                  String receivedConsumerTag) {
+            super("Unsupported multiple consumers detected by QueueingConsumer" +
+                  "; initial consumer tag: " + initialConsumerTag +
+                  "; received consumer tag: " + receivedConsumerTag);
+            this.initialConsumerTag = initialConsumerTag;
+            this.receivedConsumerTag = receivedConsumerTag;
         }
         
 
@@ -179,12 +179,12 @@ public class QueueingConsumer extends DefaultConsumer {
             }
         }
         
-        public String getOriginalConsumerTag() {
-            return originalConsumerTag;
+        public String getInitialConsumerTag() {
+            return initialConsumerTag;
         }
 
-        public String getDuplicateConsumerTag() {
-            return duplicateConsumerTag;
+        public String getReceivedConsumerTag() {
+            return receivedConsumerTag;
         }
 
     }
