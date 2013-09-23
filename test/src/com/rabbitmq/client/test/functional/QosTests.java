@@ -220,13 +220,13 @@ public class QosTests extends BrokerTestCase
         throws IOException
     {
         channel.basicQos(1);
-        QosTestConsumer c = new QosTestConsumer(channel);
         String queue = "qosTest";
         channel.queueDeclare(queue, false, false, false, null);
         channel.queueBind(queue, "amq.fanout", "");
         fill(3);
         String tag;
         for (int i = 0; i < 2; i++) {
+            QosTestConsumer c = new QosTestConsumer(channel);
             tag = channel.basicConsume(queue, false, c);
             Queue<Delivery> d = c.maxAvailableDeliveriesShouldBe(1);
             channel.basicCancel(tag);
