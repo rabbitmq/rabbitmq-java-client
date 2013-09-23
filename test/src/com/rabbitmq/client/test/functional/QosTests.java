@@ -308,7 +308,7 @@ public class QosTests extends BrokerTestCase
     // ensure that the maximum available un-acked deliveries for the channel
     // as a whole, match our expectations, without stating specifically to
     // which consumer we expect a delivery to have been routed.
-    private class ChannelWithTwoConsumers {
+    private static class ChannelWithTwoConsumers {
         private final Channel channel;
 
         private final QosTestConsumer firstConsumer;
@@ -511,7 +511,7 @@ public class QosTests extends BrokerTestCase
         return declareBindConsume(channel, c, false);
     }
 
-    protected String declareBindConsume(Channel ch,
+    protected static String declareBindConsume(Channel ch,
                                         QueueingConsumer c,
                                         boolean noAck)
         throws IOException
@@ -521,7 +521,7 @@ public class QosTests extends BrokerTestCase
         return queue;
     }
 
-    protected String declareBind(Channel ch) throws IOException {
+    protected static String declareBind(Channel ch) throws IOException {
         AMQP.Queue.DeclareOk ok = ch.queueDeclare();
         String queue = ok.getQueue();
         ch.queueBind(queue, "amq.fanout", "");
