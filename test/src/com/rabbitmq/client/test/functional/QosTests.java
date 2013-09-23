@@ -284,35 +284,67 @@ public class QosTests extends BrokerTestCase
     public void testLimitingMultipleChannels()
         throws IOException
     {
-        Channel ch1 = connection.createChannel();
-        Channel ch2 = connection.createChannel();
-        QosTestConsumer c1FirstConsumer = new QosTestConsumer(ch1);
-        QosTestConsumer c1SecondConsumer = new QosTestConsumer(ch1);
+        final ChannelWithTwoConsumers channel1 =
+                new ChannelWithTwoConsumers(connection.createChannel());
+        final ChannelWithTwoConsumers channel2 =
+                new ChannelWithTwoConsumers(connection.createChannel());
 
-        QosTestConsumer c2FirstConsumer = new QosTestConsumer(ch2);
-        QosTestConsumer c2SecondConsumer = new QosTestConsumer(ch2);
-
-
-        String q1 = declareBindConsume(ch1, c1FirstConsumer, false);
-        String q2 = declareBindConsume(ch2, c2FirstConsumer, false);
-        ch1.basicConsume(q2, false, c1SecondConsumer);
-        ch2.basicConsume(q1, false, c2SecondConsumer);
-
-        ch1.basicQos(1);
-        ch2.basicQos(1);
+        channel1.getChannel().basicQos(1);
+        channel2.getChannel().basicQos(1);
         fill(5);
 
-        Queue<Delivery> d1 = c1FirstConsumer.maxAvailableDeliveriesShouldBe(1);
-        c1SecondConsumer.maxAvailableDeliveriesShouldBe(0);
-        Queue<Delivery> d2 = c2FirstConsumer.maxAvailableDeliveriesShouldBe(1);
-        c2SecondConsumer.maxAvailableDeliveriesShouldBe(0);
+        Queue<Delivery> d1 = channel1.maxAvailableDeliveriesShouldBe(1);
+        Queue<Delivery> d2 = channel2.maxAvailableDeliveriesShouldBe(1);
 
-        ackDelivery(ch1, d1.remove(), true);
-        ackDelivery(ch2, d2.remove(), true);
-        c1FirstConsumer.maxAvailableDeliveriesShouldBe(1);
-        c2FirstConsumer.maxAvailableDeliveriesShouldBe(1);
-        ch1.close();
-        ch2.close();
+        ackDelivery(channel1.getChannel(), d1.remove(), true);
+        ackDelivery(channel2.getChannel(), d2.remove(), true);
+        channel1.maxAvailableDeliveriesShouldBe(1);
+        channel2.maxAvailableDeliveriesShouldBe(1);
+        channel1.getChannel().close();
+        channel2.getChannel().close();
+    }
+
+    // wraps a channel and two consumers (for the same queue) - thus we
+    // ensure that the maximum available un-acked deliveries for the channel
+    // as a whole, match our expectations, without stating specifically to
+    // which consumer we expect a delivery to have been routed.
+    private class ChannelWithTwoConsumers {
+        private final Channel channel;
+
+        private final QosTestConsumer firstConsumer;
+        private final QosTestConsumer secondConsumer;
+
+        private ChannelWithTwoConsumers(Channel channel) throws IOException {
+            this.channel = channel;
+            firstConsumer = new QosTestConsumer(channel);
+            secondConsumer = new QosTestConsumer(channel);
+            channel.basicConsume(declareBindConsume(channel, firstConsumer, false),
+                                 false, secondConsumer);
+        }
+
+        public Channel getChannel() {
+            return channel;
+        }
+
+        public Queue<Delivery> maxAvailableDeliveriesShouldBe(int n) {
+            Queue<Delivery> res = new LinkedList<Delivery>();
+            try {
+                long start = System.currentTimeMillis();
+                for (int i = 0; i < n; i++) {
+                    Delivery d = firstConsumer.nextDelivery(1000);
+                    if (d == null) {
+                        d = secondConsumer.nextDelivery(1000);
+                    }
+                    assertNotNull(d);
+                    res.offer(d);
+                }
+                long finish = System.currentTimeMillis();
+                Thread.sleep( (n == 0 ? 0 : (finish - start) / n) + 10 );
+            } catch (InterruptedException e) {
+                fail(e.getMessage());
+            }
+            return res;
+        }
     }
 
     public void testLimitInheritsUnackedCount()
