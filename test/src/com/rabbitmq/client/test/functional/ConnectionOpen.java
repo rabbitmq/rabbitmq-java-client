@@ -22,6 +22,7 @@ import java.io.DataInputStream;
 import java.net.Socket;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.impl.SocketFrameHandler;
@@ -85,7 +86,7 @@ public class ConnectionOpen extends TestCase {
         }
     }
 
-    public void testFrameMaxLessThanFrameMinSize() throws IOException {
+    public void testFrameMaxLessThanFrameMinSize() throws IOException, AuthenticationFailureException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setRequestedFrameMax(100);
         try {

@@ -30,6 +30,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
 
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.ConnectionFactory;
 
 /**
@@ -87,6 +88,8 @@ public class BadVerifiedConnection extends UnverifiedConnection {
                 fail();
             } catch (SSLHandshakeException e) {
             } catch (IOException e) {
+                fail();
+            } catch (AuthenticationFailureException afe) {
                 fail();
             }
         }

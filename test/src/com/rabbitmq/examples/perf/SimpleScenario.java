@@ -16,6 +16,7 @@
 
 package com.rabbitmq.examples.perf;
 
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.ConnectionFactory;
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class SimpleScenario implements Scenario {
         this.interval = interval;
     }
 
-    public void run() throws IOException, InterruptedException {
+    public void run() throws IOException, InterruptedException, AuthenticationFailureException {
         this.stats = new SimpleScenarioStats(interval);
         for (MulticastParams p : params) {
             MulticastSet set = new MulticastSet(stats, factory, p);

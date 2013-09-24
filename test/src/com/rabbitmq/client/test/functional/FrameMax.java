@@ -24,6 +24,7 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -71,7 +72,7 @@ public class FrameMax extends BrokerTestCase {
     /* server should reject frames larger than AMQP.FRAME_MIN_SIZE
      * during connection negotiation */
     public void testRejectLargeFramesDuringConnectionNegotiation()
-        throws IOException
+        throws IOException, AuthenticationFailureException
     {
         ConnectionFactory cf = new ConnectionFactory();
         cf.getClientProperties().put("too_long", LongStringHelper.asLongString(new byte[AMQP.FRAME_MIN_SIZE]));
@@ -85,7 +86,7 @@ public class FrameMax extends BrokerTestCase {
     /* server should reject frames larger than the negotiated frame
      * size */
     public void testRejectExceedingFrameMax()
-        throws IOException
+        throws IOException, AuthenticationFailureException
     {
         closeChannel();
         closeConnection();
@@ -161,7 +162,7 @@ public class FrameMax extends BrokerTestCase {
     private static class GenerousConnectionFactory extends ConnectionFactory {
 
         @Override public Connection newConnection(ExecutorService executor, Address[] addrs)
-            throws IOException
+            throws IOException, AuthenticationFailureException
         {
             IOException lastException = null;
             for (Address addr : addrs) {

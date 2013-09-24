@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -88,7 +89,12 @@ public class Permissions extends BrokerTestCase
         factory.setUsername("testadmin");
         factory.setPassword("test");
         factory.setVirtualHost("/test");
-        Connection connection = factory.newConnection();
+        Connection connection = null;
+        try {
+            connection = factory.newConnection();
+        } catch (AuthenticationFailureException e) {
+            fail("Unexpected authentication failure");
+        }
         adminCh = connection.createChannel();
         withNames(new WithName() {
                 public void with(String name) throws IOException {
@@ -117,7 +123,7 @@ public class Permissions extends BrokerTestCase
         action.with("none");
     }
 
-    public void testAuth()
+    public void testAuth() throws IOException
     {
         ConnectionFactory unAuthFactory = new ConnectionFactory();
         unAuthFactory.setUsername("test");
@@ -126,11 +132,10 @@ public class Permissions extends BrokerTestCase
         try {
             unAuthFactory.newConnection();
             fail("Exception expected if password is wrong");
-        } catch (IOException e) {
-            assertTrue(e instanceof PossibleAuthenticationFailureException);
-            String msg = e.getMessage();
-            assertTrue("Exception message should contain 'auth'",
-                       msg.toLowerCase().contains("auth"));
+        } catch (AuthenticationFailureException afe) {
+            String msg = afe.getMessage();
+            assertTrue("Exception message should contain 'access_refused'",
+                       msg.toLowerCase().contains("access_refused"));
         }
     }
 

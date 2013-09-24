@@ -24,6 +24,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.rabbitmq.client.AuthenticationFailureException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -116,11 +117,11 @@ public class StressPersister {
         connectionFactory.setUri(uri);
     }
 
-    public Connection newConnection() throws IOException {
+    public Connection newConnection() throws IOException, AuthenticationFailureException {
         return connectionFactory.newConnection();
     }
 
-    public void run() throws IOException, InterruptedException {
+    public void run() throws IOException, InterruptedException, AuthenticationFailureException {
         topStartTime = System.currentTimeMillis();
         String logFileName = String.format("stress-persister-b%08d-B%010d-c%08d-s%06d-%s.out",
                 backlogSize, bodySize, repeatCount, sampleGranularity, commentText);
@@ -147,7 +148,7 @@ public class StressPersister {
         // of indication back from the server that it's caught up with us
     }
 
-    public void publishOneInOneOutReceive(int backlogSize, int bodySize, int repeatCount, int sampleGranularity) throws IOException, InterruptedException {
+    public void publishOneInOneOutReceive(int backlogSize, int bodySize, int repeatCount, int sampleGranularity) throws IOException, InterruptedException, AuthenticationFailureException {
         String q = "test";
         BasicProperties props = MessageProperties.MINIMAL_PERSISTENT_BASIC;
         Connection conn = newConnection();

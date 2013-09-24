@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.BlockedListener;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.AlreadyClosedException;
@@ -85,6 +86,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         capabilities.put("basic.nack", true);
         capabilities.put("consumer_cancel_notify", true);
         capabilities.put("connection.blocked", true);
+        capabilities.put("authentication_failure_close", true);
 
         props.put("capabilities", capabilities);
 
@@ -277,6 +279,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * and frame max values after tuning has taken place.
      * @throws IOException if an error is encountered
      * either before, or during, protocol negotiation;
+     * @throws AuthenticationFailureException if the broker closes the
+     * connection with ACCESS_REFUSED.
      * sub-classes {@link ProtocolVersionMismatchException} and
      * {@link PossibleAuthenticationFailureException} will be thrown in the
      * corresponding circumstances. If an exception is thrown, connection
@@ -284,8 +288,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * object is no longer referenced.
      */
     public void start()
-        throws IOException
-    {
+            throws IOException, AuthenticationFailureException {
         this._running = true;
         // Make sure that the first thing we do is to send the header,
         // which should cause any socket errors to show up for us, rather
@@ -357,6 +360,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                         response = sm.handleChallenge(challenge, this.username, this.password);
                     }
                 } catch (ShutdownSignalException e) {
+                    Object shutdownReason = e.getReason();
+                    if (shutdownReason instanceof AMQCommand) {
+                        Method shutdownMethod = ((AMQCommand) shutdownReason).getMethod();
+                        if (shutdownMethod instanceof AMQP.Connection.Close) {
+                            AMQP.Connection.Close shutdownClose =  (AMQP.Connection.Close) shutdownMethod;
+                            if (shutdownClose.getReplyCode() == AMQP.ACCESS_REFUSED) {
+                                throw new AuthenticationFailureException(shutdownClose.getReplyText());
+                            }
+                        }
+                    }
                     throw new PossibleAuthenticationFailureException(e);
                 }
             } while (connTune == null);
@@ -645,7 +658,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     public void handleConnectionClose(Command closeCommand) {
-        ShutdownSignalException sse = shutdown(closeCommand, false, null, false);
+        ShutdownSignalException sse = shutdown(closeCommand, false, null, _inConnectionNegotiation);
         try {
             _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
         } catch (IOException _) { } // ignore

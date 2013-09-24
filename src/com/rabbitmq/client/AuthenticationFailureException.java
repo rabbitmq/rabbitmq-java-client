@@ -11,25 +11,18 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2013-2013 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
 
-import java.io.IOException;
-
 /**
- * Thrown when the likely cause is an authentication failure and the broker
- * communicates this by closing the connection.
+ * Thrown when the broker refuses access due to an authentication failure.
  */
-public class PossibleAuthenticationFailureException extends IOException
-{
-    /** Default for non-checking. */
-    private static final long serialVersionUID = 1L;
 
-    public PossibleAuthenticationFailureException(Throwable cause)
-    {
-        super("Possibly caused by authentication failure");
-        super.initCause(cause);
+public class AuthenticationFailureException extends Exception
+{
+    public AuthenticationFailureException(String reason) {
+        super(reason);
     }
 }

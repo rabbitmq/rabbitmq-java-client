@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 
+import com.rabbitmq.client.AuthenticationFailureException;
 import junit.framework.TestSuite;
 
 import com.rabbitmq.client.Channel;
@@ -89,6 +90,7 @@ public class Bug19219Test extends BrokerTestCase {
                         startPublisher();
                     } catch (IOException e) {
                     } catch (InterruptedException e) {
+                    } catch (AuthenticationFailureException afe) {
                     }
                 }
             };
@@ -126,7 +128,7 @@ public class Bug19219Test extends BrokerTestCase {
         }
     }
 
-    private void startPublisher() throws IOException, InterruptedException {
+    private void startPublisher() throws IOException, InterruptedException, AuthenticationFailureException {
 
         final Connection conn = connectionFactory.newConnection();
         final Channel pubCh = conn.createChannel();

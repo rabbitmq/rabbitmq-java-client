@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
@@ -36,7 +37,11 @@ public class QueueExclusivity extends BrokerTestCase {
     String q = "exclusiveQ";
 
     protected void createResources() throws IOException {
-        altConnection = connectionFactory.newConnection();
+        try {
+            altConnection = connectionFactory.newConnection();
+        } catch (AuthenticationFailureException afe) {
+            fail("Unexpected authentication failure");
+        }
         altChannel = altConnection.createChannel();
         altChannel.queueDeclare(q,
         // not durable, exclusive, not auto-delete

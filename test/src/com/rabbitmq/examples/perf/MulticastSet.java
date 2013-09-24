@@ -16,6 +16,7 @@
 
 package com.rabbitmq.examples.perf;
 
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -41,11 +42,11 @@ public class MulticastSet {
         this.params = params;
     }
 
-    public void run() throws IOException, InterruptedException {
+    public void run() throws IOException, InterruptedException, AuthenticationFailureException {
         run(false);
     }
 
-    public void run(boolean announceStartup) throws IOException, InterruptedException {
+    public void run(boolean announceStartup) throws IOException, InterruptedException, AuthenticationFailureException {
         Thread[] consumerThreads = new Thread[params.getConsumerCount()];
         Connection[] consumerConnections = new Connection[consumerThreads.length];
         for (int i = 0; i < consumerConnections.length; i++) {

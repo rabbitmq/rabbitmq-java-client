@@ -17,6 +17,7 @@
 
 package com.rabbitmq.client.test.server;
 
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.BlockedListener;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -67,7 +68,7 @@ public class BlockedConnection extends BrokerTestCase {
         clearResourceAlarm("disk");
     }
 
-    private Connection connection(final CountDownLatch latch) throws IOException {
+    private Connection connection(final CountDownLatch latch) throws IOException, AuthenticationFailureException {
         ConnectionFactory factory = new ConnectionFactory();
         Connection connection = factory.newConnection();
         connection.addBlockedListener(new BlockedListener() {

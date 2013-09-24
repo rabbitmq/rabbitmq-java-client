@@ -18,6 +18,7 @@ package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
@@ -36,7 +37,11 @@ public class MemoryAlarms extends BrokerTestCase {
         connectionFactory.setRequestedHeartbeat(1);
         super.setUp();
         if (connection2 == null) {
-            connection2 = connectionFactory.newConnection();
+            try {
+                connection2 = connectionFactory.newConnection();
+            } catch (AuthenticationFailureException afe) {
+                fail("Unexpected authentication failure");
+            }
         }
         channel2 = connection2.createChannel();
     }

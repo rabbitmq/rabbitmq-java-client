@@ -30,6 +30,7 @@ import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.impl.ShutdownNotifierComponent;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.tools.Host;
@@ -81,7 +82,7 @@ public class BrokerTestCase extends TestCase {
     }
 
     protected void restart()
-            throws IOException {
+            throws IOException, AuthenticationFailureException {
         tearDown();
         bareRestart();
         setUp();
@@ -95,7 +96,11 @@ public class BrokerTestCase extends TestCase {
     public void openConnection()
             throws IOException {
         if (connection == null) {
-            connection = connectionFactory.newConnection();
+            try {
+                connection = connectionFactory.newConnection();
+            } catch (AuthenticationFailureException afe) {
+                fail("Unexpected authentication failure");
+            }
         }
     }
 

@@ -29,6 +29,7 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.ConnectionFactory;
 
 /**
@@ -82,7 +83,11 @@ public class VerifiedConnection extends UnverifiedConnection {
         }
 
         if (connection == null) {
-            connection = connectionFactory.newConnection();
+            try {
+                connection = connectionFactory.newConnection();
+            } catch (AuthenticationFailureException afe) {
+                fail("Unexpected authentication failure");
+            }
         }
     }
 }

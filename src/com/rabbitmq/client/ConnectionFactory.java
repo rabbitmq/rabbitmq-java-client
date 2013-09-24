@@ -484,7 +484,7 @@ public class ConnectionFactory implements Cloneable {
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(Address[] addrs) throws IOException {
+    public Connection newConnection(Address[] addrs) throws IOException, AuthenticationFailureException {
         return newConnection(null, addrs);
     }
 
@@ -494,10 +494,10 @@ public class ConnectionFactory implements Cloneable {
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
+     * @throws AuthenticationFailureException if the login fails
      */
     public Connection newConnection(ExecutorService executor, Address[] addrs)
-        throws IOException
-    {
+            throws IOException, AuthenticationFailureException {
         IOException lastException = null;
         for (Address addr : addrs) {
             try {
@@ -528,8 +528,9 @@ public class ConnectionFactory implements Cloneable {
      * Create a new broker connection
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
+     * @throws AuthenticationFailureException if the login fails
      */
-    public Connection newConnection() throws IOException {
+    public Connection newConnection() throws IOException, AuthenticationFailureException {
         return newConnection(null,
                              new Address[] {new Address(getHost(), getPort())}
                             );
@@ -540,8 +541,9 @@ public class ConnectionFactory implements Cloneable {
      * @param executor thread execution service for consumers on the connection
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
+     * @throws AuthenticationFailureException if the login fails
      */
-    public Connection newConnection(ExecutorService executor) throws IOException {
+    public Connection newConnection(ExecutorService executor) throws IOException, AuthenticationFailureException {
         return newConnection(executor,
                              new Address[] {new Address(getHost(), getPort())}
                             );

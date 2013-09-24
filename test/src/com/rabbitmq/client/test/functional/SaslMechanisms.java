@@ -19,7 +19,7 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.LongString;
-import com.rabbitmq.client.PossibleAuthenticationFailureException;
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.impl.LongStringHelper;
@@ -68,19 +68,19 @@ public class SaslMechanisms extends BrokerTestCase {
 
     // TODO test gibberish examples. ATM the server is not very robust.
 
-    public void testPlainLogin() throws IOException {
+    public void testPlainLogin() throws IOException, AuthenticationFailureException {
         loginOk("PLAIN", new byte[][] {"\0guest\0guest".getBytes()} );
         loginBad("PLAIN", new byte[][] {"\0guest\0wrong".getBytes()} );
     }
 
-    public void testAMQPlainLogin() throws IOException {
+    public void testAMQPlainLogin() throws IOException, AuthenticationFailureException {
         // guest / guest
         loginOk("AMQPLAIN", new byte[][] {{5,76,79,71,73,78,83,0,0,0,5,103,117,101,115,116,8,80,65,83,83,87,79,82,68,83,0,0,0,5,103,117,101,115,116}} );
         // guest / wrong
         loginBad("AMQPLAIN", new byte[][] {{5,76,79,71,73,78,83,0,0,0,5,103,117,101,115,116,8,80,65,83,83,87,79,82,68,83,0,0,0,5,119,114,111,110,103}} );
     }
 
-    public void testCRLogin() throws IOException {
+    public void testCRLogin() throws IOException, AuthenticationFailureException {
         // Make sure mechanisms is populated
         loginOk("PLAIN", new byte[][] {"\0guest\0guest".getBytes()} );
 
@@ -91,18 +91,18 @@ public class SaslMechanisms extends BrokerTestCase {
         }
     }
 
-    private void loginOk(String name, byte[][] responses) throws IOException {
+    private void loginOk(String name, byte[][] responses) throws IOException, AuthenticationFailureException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setSaslConfig(new Config(name, responses));
         Connection connection = factory.newConnection();
         connection.close();
     }
 
-    private void loginBad(String name, byte[][] responses) throws IOException {
+    private void loginBad(String name, byte[][] responses) throws IOException, AuthenticationFailureException {
         try {
             loginOk(name, responses);
             fail("Login succeeded!");
-        } catch (PossibleAuthenticationFailureException e) {
+        } catch (AuthenticationFailureException e) {
             // Ok
         }
     }
