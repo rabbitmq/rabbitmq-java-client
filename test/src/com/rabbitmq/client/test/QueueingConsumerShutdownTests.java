@@ -16,10 +16,14 @@
 
 package com.rabbitmq.client.test;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -27,6 +31,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 public class QueueingConsumerShutdownTests extends BrokerTestCase {
     static final String QUEUE = "some-queue";
     static final int THREADS = 5;
+    private static final int CONSUMERS = 10;
 
     public void testNThreadShutdown() throws Exception {
         Channel channel = connection.createChannel();
@@ -62,4 +67,61 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase {
         assertEquals(0, count.get());
     }
 
+    public void testNConsumerShutdown() throws Exception {
+        final Channel publisherChannel = connection.createChannel();
+        channel = connection.createChannel();
+        final QueueingConsumer qc = new QueueingConsumer(channel);
+
+        final List<String> queues = new ArrayList<String>(CONSUMERS);
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        for (int i = 0; i < CONSUMERS; i++) {
+            final String queueName = Integer.toString(i);
+            final AMQP.Queue.DeclareOk declare =
+                    channel.queueDeclare(queueName, false,
+                                         false, false, null);
+            final String queue = declare.getQueue();
+            queues.add(queue);
+            new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        latch.await();
+                        final AMQP.BasicProperties props = new AMQP.BasicProperties()
+                                .builder()
+                                .correlationId(queue)
+                                .build();
+                        publisherChannel.basicPublish("", queue, props, "".getBytes());
+                    } catch (Exception e) {
+                        fail(e.getMessage());
+                    }
+                }
+            }.start();
+        }
+
+        for (final String queue : queues) {
+            channel.basicConsume(queue, true, qc);
+        }
+
+        latch.countDown();
+
+        final String queueToDeclareIncorrectly = queues.get(0);
+        while (!queues.isEmpty()) {
+            final QueueingConsumer.Delivery delivery = qc.nextDelivery();
+            assertNotNull(delivery);
+
+            final String q = delivery.getProperties().getCorrelationId();
+            assertTrue("expected queues to contain " + q + ", but it didn't!",
+                       queues.remove(q));
+        }
+
+        try {
+            channel.queueDeclare(queueToDeclareIncorrectly, true, true, true, null);
+        } catch (IOException e) {
+            try { qc.nextDelivery(); }
+            catch (ShutdownSignalException ex) { return; }
+            fail("Expected ShutdownSignalException, but nothing was thrown.");
+        }
+        fail();
+    }
 }

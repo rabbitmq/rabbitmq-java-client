@@ -199,7 +199,7 @@ public class QueueingConsumer extends DefaultConsumer {
 
         boolean isPoison() { return false; }
 
-        void throwIfNecessary() {}
+        void throwIfNecessary() { }
 
         static class ConsumerCancelledPoison extends Delivery {
             public ConsumerCancelledPoison() {
@@ -227,7 +227,9 @@ public class QueueingConsumer extends DefaultConsumer {
             boolean isPoison() { return true; }
 
             @Override
-            void throwIfNecessary() { throw Utility.fixStackTrace(exception); }
+            void throwIfNecessary() {
+                throw Utility.fixStackTrace(exception);
+            }
         }
     }
 
