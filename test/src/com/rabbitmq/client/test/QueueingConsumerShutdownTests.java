@@ -151,4 +151,46 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase {
 
         assertTrue("Expected ConsumerCancelException to be thrown", result.get());
     }
+
+    public void testFailureModeIsPermanent() throws Exception {
+        final QueueingConsumer qc = new QueueingConsumer(channel);
+        createTestQueue("q1", qc);
+        channel.queueDelete("q1");
+
+        createTestQueue("q2", qc);
+        basicPublishVolatile("q2");
+        basicPublishVolatile("q2");
+        basicPublishVolatile("q2");
+        channel.queueDelete("q2");
+
+        for (int i = 1; i <= 5; i++) {
+            // subsequent calls to #nextDelivery() should fail, despite the
+            // additional publishes on the second queue, since we're in "cancelled mode"
+            assertTrue("Expected ConsumerCancelException to be thrown", attemptNextDelivery(qc));
+        }
+    }
+
+    private void createTestQueue(final String queue, final Consumer qc) throws IOException {
+        channel.queueDeclare(queue, false, true, true, null);
+        channel.basicConsume(queue, qc);
+    }
+
+    private static boolean attemptNextDelivery(final QueueingConsumer qc) throws Exception {
+        final BlockingCell<Boolean> result = new BlockingCell<Boolean>();
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    qc.nextDelivery();
+                    result.set(false);
+                } catch (ConsumerCancelledException e) {
+                    result.set(true);
+                } catch (Exception e) {
+                    result.set(false);
+                }
+            }
+        }.start();
+        return result.get();
+    }
+
 }

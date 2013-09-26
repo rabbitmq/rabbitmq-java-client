@@ -82,14 +82,14 @@ import com.rabbitmq.utility.Utility;
  */
 public class QueueingConsumer extends DefaultConsumer {
 
-    private final BlockingQueue<Delivery> queue;
+    private final BlockingDeque<Delivery> queue;
     private final Set<String> consumerTags;
 
     public QueueingConsumer(Channel ch) {
-        this(ch, new LinkedBlockingQueue<Delivery>());
+        this(ch, new LinkedBlockingDeque<Delivery>());
     }
 
-    public QueueingConsumer(Channel ch, BlockingQueue<Delivery> q) {
+    public QueueingConsumer(Channel ch, BlockingDeque<Delivery> q) {
         super(ch);
         this.queue = q;
         this.consumerTags = new ConcurrentSkipListSet<String>();
@@ -125,16 +125,11 @@ public class QueueingConsumer extends DefaultConsumer {
         // If delivery is null, it is a timeout and we have no poison pill
         // in the queue, so returning null is the appropriate thing to do.
         if (delivery != null && delivery.isPoison()) {
-            // Poison needs to be re-added to the queue
-            // TODO: this is currently a bug (of sorts) IMO - we add the poison
-            // pill to the back of the queue, so other messages could interleave
-            // and some (arbitrary) caller of #nextDelivery() will get the exception
-            // in the future. I think instead, that we should either (a) not
-            // re-queue the poison, so that the consumer can be re-used or
-            // (b) put the poison into the head of the queue, but switching to
-            // BlockingDequeue<T> and calling #addFirst() - my money is on
-            // (b) offer better semantics, but I could be wrong.
-            queue.add(delivery);
+            // Poison needs to be re-added to the queue. We put the poison
+            // pill at the head of the queue, so other messages cannot interleave
+            // with some (arbitrary) caller of #nextDelivery() getting an exception
+            // at some arbitrary point in the future.
+            queue.addFirst(delivery);
             delivery.throwIfNecessary();
         }
         return delivery;
