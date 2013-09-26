@@ -23,18 +23,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.*;
+import com.rabbitmq.utility.BlockingCell;
 
 public class QueueingConsumerShutdownTests extends BrokerTestCase {
     static final String QUEUE = "some-queue";
     static final int THREADS = 5;
-    private static final int CONSUMERS = 10;
+    private static final int CONSUMER_COUNT = 10;
 
     public void testNThreadShutdown() throws Exception {
-        Channel channel = connection.createChannel();
         final QueueingConsumer c = new QueueingConsumer(channel);
         channel.queueDeclare(QUEUE, false, true, true, null);
         channel.basicConsume(QUEUE, c);
@@ -69,17 +66,16 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase {
 
     public void testNConsumerShutdown() throws Exception {
         final Channel publisherChannel = connection.createChannel();
-        channel = connection.createChannel();
         final QueueingConsumer qc = new QueueingConsumer(channel);
 
-        final List<String> queues = new ArrayList<String>(CONSUMERS);
+        final List<String> queues = new ArrayList<String>(CONSUMER_COUNT);
         final CountDownLatch latch = new CountDownLatch(1);
 
-        for (int i = 0; i < CONSUMERS; i++) {
+        for (int i = 0; i < CONSUMER_COUNT; i++) {
             final String queueName = Integer.toString(i);
             final AMQP.Queue.DeclareOk declare =
                     channel.queueDeclare(queueName, false,
-                                         false, false, null);
+                                         true, false, null);
             final String queue = declare.getQueue();
             queues.add(queue);
             new Thread() {
@@ -123,5 +119,36 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase {
             fail("Expected ShutdownSignalException, but nothing was thrown.");
         }
         fail();
+    }
+
+    public void testNConsumerCancellation() throws Exception {
+        final QueueingConsumer qc = new QueueingConsumer(channel);
+        final List<String> queues = new ArrayList<String>(CONSUMER_COUNT);
+        final BlockingCell<Boolean> result = new BlockingCell<Boolean>();
+
+        for (int i = 0; i < CONSUMER_COUNT; i++) {
+            final String queue = Integer.toString(i);
+            channel.queueDeclare(queue, false, true, false, null);
+            channel.basicConsume(queue, qc);
+            queues.add(queue);
+        }
+
+        new Thread() {
+            @Override public void run() {
+                try {
+                    qc.nextDelivery();
+                } catch (ConsumerCancelledException e) {
+                    result.set(true);
+                } catch (Exception e) {
+                    result.set(false);
+                }
+            }
+        }.start();
+
+        for (final String queue : queues) {
+            channel.queueDelete(queue);
+        }
+
+        assertTrue("Expected ConsumerCancelException to be thrown", result.get());
     }
 }
