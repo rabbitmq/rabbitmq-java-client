@@ -18,9 +18,8 @@
 package com.rabbitmq.client;
 
 import java.io.IOException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
+import java.util.concurrent.*;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.utility.Utility;
@@ -82,18 +81,9 @@ import com.rabbitmq.utility.Utility;
  * to extend <code>DefaultConsumer</code>.</i>
  */
 public class QueueingConsumer extends DefaultConsumer {
-    private final BlockingQueue<Delivery> _queue;
 
-    // When this is non-null the queue is in shutdown mode and nextDelivery should
-    // throw a shutdown signal exception.
-    private volatile ShutdownSignalException _shutdown;
-    private volatile ConsumerCancelledException _cancelled;
-
-    // Marker object used to signal the queue is in shutdown mode.
-    // It is only there to wake up consumers. The canonical representation
-    // of shutting down is the presence of _shutdown.
-    // Invariant: This is never on _queue unless _shutdown != null.
-    private static final Delivery POISON = new Delivery(null, null, null);
+    private final BlockingQueue<Delivery> queue;
+    private final Set<String> consumerTags;
 
     public QueueingConsumer(Channel ch) {
         this(ch, new LinkedBlockingQueue<Delivery>());
@@ -101,18 +91,53 @@ public class QueueingConsumer extends DefaultConsumer {
 
     public QueueingConsumer(Channel ch, BlockingQueue<Delivery> q) {
         super(ch);
-        this._queue = q;
+        this.queue = q;
+        this.consumerTags = new ConcurrentSkipListSet<String>();
+    }
+
+    @Override public void handleConsumeOk(String consumerTag) {
+        consumerTags.add(consumerTag);
+        super.handleConsumeOk(consumerTag);
+    }
+
+    @Override public void handleCancelOk(String consumerTag) {
+        consumerTags.remove(consumerTag);
+        super.handleCancelOk(consumerTag);
     }
 
     @Override public void handleShutdownSignal(String consumerTag,
                                                ShutdownSignalException sig) {
-        _shutdown = sig;
-        _queue.add(POISON);
+        consumerTags.remove(consumerTag);
+        if (consumerTags.isEmpty()) {
+            queue.add(new Delivery.ShutdownSignalPoison(sig));
+        }
     }
 
     @Override public void handleCancel(String consumerTag) throws IOException {
-        _cancelled = new ConsumerCancelledException();
-        _queue.add(POISON);
+        consumerTags.remove(consumerTag);
+        if (consumerTags.isEmpty()) {
+            queue.add(new Delivery.ConsumerCancelledPoison());
+        }
+    }
+
+    private Delivery handle(Delivery delivery) throws ConsumerCancelledException,
+                                                      ShutdownSignalException {
+        // If delivery is null, it is a timeout and we have no poison pill
+        // in the queue, so returning null is the appropriate thing to do.
+        if (delivery != null && delivery.isPoison()) {
+            // Poison needs to be re-added to the queue
+            // TODO: this is currently a bug (of sorts) IMO - we add the poison
+            // pill to the back of the queue, so other messages could interleave
+            // and some (arbitrary) caller of #nextDelivery() will get the exception
+            // in the future. I think instead, that we should either (a) not
+            // re-queue the poison, so that the consumer can be re-used or
+            // (b) put the poison into the head of the queue, but switching to
+            // BlockingDequeue<T> and calling #addFirst() - my money is on
+            // (b) offer better semantics, but I could be wrong.
+            queue.add(delivery);
+            delivery.throwIfNecessary();
+        }
+        return delivery;
     }
 
     @Override public void handleDelivery(String consumerTag,
@@ -121,22 +146,23 @@ public class QueueingConsumer extends DefaultConsumer {
                                byte[] body)
         throws IOException
     {
-        checkShutdown();
-        this._queue.add(new Delivery(envelope, properties, body));
+        queue.add(new Delivery(consumerTag, envelope, properties, body));
     }
 
     /**
      * Encapsulates an arbitrary message - simple "bean" holder structure.
      */
     public static class Delivery {
-        private final Envelope _envelope;
-        private final AMQP.BasicProperties _properties;
-        private final byte[] _body;
+        private final String consumerTag;
+        private final Envelope envelope;
+        private final AMQP.BasicProperties properties;
+        private final byte[] body;
 
-        public Delivery(Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
-            _envelope = envelope;
-            _properties = properties;
-            _body = body;
+        public Delivery(String consumerTag, Envelope envelope, BasicProperties properties, byte[] body) {
+            this.consumerTag = consumerTag;
+            this.envelope = envelope;
+            this.properties = properties;
+            this.body = body;
         }
 
         /**
@@ -144,7 +170,7 @@ public class QueueingConsumer extends DefaultConsumer {
          * @return the message envelope
          */
         public Envelope getEnvelope() {
-            return _envelope;
+            return envelope;
         }
 
         /**
@@ -152,7 +178,7 @@ public class QueueingConsumer extends DefaultConsumer {
          * @return the message properties
          */
         public BasicProperties getProperties() {
-            return _properties;
+            return properties;
         }
 
         /**
@@ -160,59 +186,62 @@ public class QueueingConsumer extends DefaultConsumer {
          * @return the message body
          */
         public byte[] getBody() {
-            return _body;
+            return body;
         }
-    }
 
-    /**
-     * Check if we are in shutdown mode and if so throw an exception.
-     */
-    private void checkShutdown() {
-        if (_shutdown != null)
-            throw Utility.fixStackTrace(_shutdown);
-    }
+        /**
+         * Retrieve the consumer tag for this delivery.
+         * @return the consumer tag
+         */
+        public String getConsumerTag() {
+            return consumerTag;
+        }
 
-    /**
-     * If delivery is not POISON nor null, return it.
-     * <p/>
-     * If delivery, _shutdown and _cancelled are all null, return null.
-     * <p/>
-     * If delivery is POISON re-insert POISON into the queue and
-     * throw an exception if POISONed for no reason.
-     * <p/>
-     * Otherwise, if we are in shutdown mode or cancelled,
-     * throw a corresponding exception.
-     */
-    private Delivery handle(Delivery delivery) {
-        if (delivery == POISON ||
-            delivery == null && (_shutdown != null || _cancelled != null)) {
-            if (delivery == POISON) {
-                _queue.add(POISON);
-                if (_shutdown == null && _cancelled == null) {
-                    throw new IllegalStateException(
-                        "POISON in queue, but null _shutdown and null _cancelled. " +
-                        "This should never happen, please report as a BUG");
-                }
+        boolean isPoison() { return false; }
+
+        void throwIfNecessary() {}
+
+        static class ConsumerCancelledPoison extends Delivery {
+            public ConsumerCancelledPoison() {
+                super(null, null, null, null);
             }
-            if (null != _shutdown)
-                throw Utility.fixStackTrace(_shutdown);
-            if (null != _cancelled)
-                throw Utility.fixStackTrace(_cancelled);
+
+            @Override
+            boolean isPoison() { return true; }
+
+            @Override
+            void throwIfNecessary() {
+                throw Utility.fixStackTrace(new ConsumerCancelledException());
+            }
         }
-        return delivery;
+
+        static class ShutdownSignalPoison extends Delivery {
+            private final ShutdownSignalException exception;
+
+            public ShutdownSignalPoison(ShutdownSignalException ex) {
+                super(null, null, null, null);
+                this.exception = ex;
+            }
+
+            @Override
+            boolean isPoison() { return true; }
+
+            @Override
+            void throwIfNecessary() { throw Utility.fixStackTrace(exception); }
+        }
     }
 
     /**
      * Main application-side API: wait for the next message delivery and return it.
      * @return the next message
-     * @throws InterruptedException if an interrupt is received while waiting
-     * @throws ShutdownSignalException if the connection is shut down while waiting
-     * @throws ConsumerCancelledException if this consumer is cancelled while waiting
+    * @throws InterruptedException if an interrupt is received while waiting
+    * @throws ShutdownSignalException if the connection is shut down while waiting
+    * @throws ConsumerCancelledException if this consumer is cancelled while waiting
      */
     public Delivery nextDelivery()
-        throws InterruptedException, ShutdownSignalException, ConsumerCancelledException
+            throws InterruptedException, ShutdownSignalException, ConsumerCancelledException
     {
-        return handle(_queue.take());
+        return handle(queue.take());
     }
 
     /**
@@ -224,8 +253,9 @@ public class QueueingConsumer extends DefaultConsumer {
      * @throws ConsumerCancelledException if this consumer is cancelled while waiting
      */
     public Delivery nextDelivery(long timeout)
-        throws InterruptedException, ShutdownSignalException, ConsumerCancelledException
+            throws InterruptedException, ConsumerCancelledException, ShutdownSignalException
     {
-        return handle(_queue.poll(timeout, TimeUnit.MILLISECONDS));
+        return handle(queue.poll(timeout, TimeUnit.MILLISECONDS));
     }
+
 }
