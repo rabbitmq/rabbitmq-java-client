@@ -24,41 +24,42 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 
-public class QueueingConsumerShutdownTests extends BrokerTestCase{
-  static final String QUEUE = "some-queue";
-  static final int THREADS = 5;
+public class QueueingConsumerShutdownTests extends BrokerTestCase {
+    static final String QUEUE = "some-queue";
+    static final int THREADS = 5;
 
-  public void testNThreadShutdown() throws Exception{
-    Channel channel = connection.createChannel();
-    final QueueingConsumer c = new QueueingConsumer(channel);
-    channel.queueDeclare(QUEUE, false, true, true, null);
-    channel.basicConsume(QUEUE, c);
-    final AtomicInteger count = new AtomicInteger(THREADS);
-    final CountDownLatch latch = new CountDownLatch(THREADS);
+    public void testNThreadShutdown() throws Exception {
+        Channel channel = connection.createChannel();
+        final QueueingConsumer c = new QueueingConsumer(channel);
+        channel.queueDeclare(QUEUE, false, true, true, null);
+        channel.basicConsume(QUEUE, c);
+        final AtomicInteger count = new AtomicInteger(THREADS);
+        final CountDownLatch latch = new CountDownLatch(THREADS);
 
-    for(int i = 0; i < THREADS; i++){
-      new Thread(){
-        @Override public void run(){
-          try {
-            while(true){
-                c.nextDelivery();
-            }
-          } catch (ShutdownSignalException sig) {
-              count.decrementAndGet();
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          } finally {
-            latch.countDown();
-          }
+        for (int i = 0; i < THREADS; i++) {
+            new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        while (true) {
+                            c.nextDelivery();
+                        }
+                    } catch (ShutdownSignalException sig) {
+                        count.decrementAndGet();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        latch.countDown();
+                    }
+                }
+            }.start();
         }
-      }.start();
+
+        connection.close();
+
+        // Far longer than this could reasonably take
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertEquals(0, count.get());
     }
-
-    connection.close();
-
-    // Far longer than this could reasonably take
-    assertTrue(latch.await(5, TimeUnit.SECONDS));
-    assertEquals(0, count.get());
-  }
 
 }
