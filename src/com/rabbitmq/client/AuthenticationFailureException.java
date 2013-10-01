@@ -20,7 +20,7 @@ package com.rabbitmq.client;
  * Thrown when the broker refuses access due to an authentication failure.
  */
 
-public class AuthenticationFailureException extends Exception
+public class AuthenticationFailureException extends PossibleAuthenticationFailureException
 {
     public AuthenticationFailureException(String reason) {
         super(reason);

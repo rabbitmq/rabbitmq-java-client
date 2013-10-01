@@ -28,7 +28,6 @@ import java.util.concurrent.Executors;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -82,7 +81,7 @@ public class AMQConnectionTest extends TestCase {
     /** Check the AMQConnection does send exactly 1 initial header, and deal correctly with
      * the frame handler throwing an exception when we try to read data
      */
-    public void testConnectionSendsSingleHeaderAndTimesOut() throws AuthenticationFailureException {
+    public void testConnectionSendsSingleHeaderAndTimesOut() {
         IOException exception = new SocketTimeoutException();
         _mockFrameHandler.setExceptionOnReadingFrames(exception);
         MyExceptionHandler handler = new MyExceptionHandler();
@@ -125,7 +124,7 @@ public class AMQConnectionTest extends TestCase {
     /**
      * Test that we catch timeout between connect and negotiation of the connection being finished.
      */
-    public void testConnectionHangInNegotiation() throws AuthenticationFailureException {
+    public void testConnectionHangInNegotiation() {
         this._mockFrameHandler.setTimeoutCount(10); // to limit hang
         MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, this._mockFrameHandler.countHeadersSent());

@@ -25,7 +25,6 @@ import java.net.URISyntaxException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
-import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -99,7 +98,7 @@ public class TestMain {
     }
 
     public static void runConnectionNegotiationTest(final String uri)
-        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException, AuthenticationFailureException
+        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
 
         Connection conn;
@@ -119,12 +118,7 @@ public class TestMain {
             conn = factory.newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
-        } catch (IOException e) {
-        } catch (AuthenticationFailureException _) {
-        }
-
-
-
+        } catch (IOException e) {}
 
         factory = new ConnectionFactory();
         factory.setRequestedChannelMax(10);
@@ -163,7 +157,7 @@ public class TestMain {
     }
 
     public static void runConnectionShutdownTests(final String uri)
-        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException, AuthenticationFailureException
+        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
         Connection conn;
         Channel ch;
@@ -187,7 +181,7 @@ public class TestMain {
     }
 
     public static void runProducerConsumerTest(String uri, int commitEvery)
-        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException, AuthenticationFailureException
+        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
         ConnectionFactory cfconnp = new ConnectionFactory();
         cfconnp.setUri(uri);

@@ -19,8 +19,7 @@ package com.rabbitmq.client;
 import java.io.IOException;
 
 /**
- * Thrown when the likely cause is an authentication failure and the broker
- * communicates this by closing the connection.
+ * Thrown when the likely cause is an authentication failure.
  */
 public class PossibleAuthenticationFailureException extends IOException
 {
@@ -31,5 +30,10 @@ public class PossibleAuthenticationFailureException extends IOException
     {
         super("Possibly caused by authentication failure");
         super.initCause(cause);
+    }
+
+    public PossibleAuthenticationFailureException(String reason)
+    {
+        super(reason);
     }
 }

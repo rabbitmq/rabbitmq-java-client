@@ -279,16 +279,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * and frame max values after tuning has taken place.
      * @throws IOException if an error is encountered
      * either before, or during, protocol negotiation;
-     * @throws AuthenticationFailureException if the broker closes the
-     * connection with ACCESS_REFUSED.
      * sub-classes {@link ProtocolVersionMismatchException} and
      * {@link PossibleAuthenticationFailureException} will be thrown in the
-     * corresponding circumstances. If an exception is thrown, connection
-     * resources allocated can all be garbage collected when the connection
-     * object is no longer referenced.
+     * corresponding circumstances. {@link AuthenticationFailureException}
+     * will be thrown if the broker closes the connection with ACCESS_REFUSED.
+     * If an exception is thrown, connection resources allocated can all be
+     * garbage collected when the connection object is no longer referenced.
      */
     public void start()
-            throws IOException, AuthenticationFailureException {
+        throws IOException
+    {
         this._running = true;
         // Make sure that the first thing we do is to send the header,
         // which should cause any socket errors to show up for us, rather

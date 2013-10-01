@@ -17,7 +17,6 @@
 package com.rabbitmq.client.test.performance;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -70,7 +69,7 @@ public class StressManagement {
         params = p;
     }
 
-    public long run() throws IOException, AuthenticationFailureException {
+    public long run() throws IOException {
         connectionFactory.setHost(params.host);
         connectionFactory.setPort(params.port);
         connection = connectionFactory.newConnection();

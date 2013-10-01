@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
 
@@ -47,11 +46,7 @@ public class UnverifiedConnection extends BrokerTestCase {
 
 
         if (connection == null) {
-            try {
-                connection = connectionFactory.newConnection();
-            } catch (AuthenticationFailureException afe) {
-                fail("Unexpected authentication failure");
-            }
+            connection = connectionFactory.newConnection();
         }
     }
 
