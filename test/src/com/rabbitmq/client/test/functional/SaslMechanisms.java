@@ -16,7 +16,6 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -26,15 +25,11 @@ import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.LongStringHelper;
-import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.test.BrokerTestCase;
 
-import javax.net.SocketFactory;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
 
 public class SaslMechanisms extends BrokerTestCase {
     private String[] mechanisms;
@@ -123,21 +118,13 @@ public class SaslMechanisms extends BrokerTestCase {
     // start a connection without capabilities, causing authentication failures
     // to be reported by the broker by closing the connection
     private Connection connectionWithoutCapabilities(String username, String password) throws IOException {
-        Map<String, Object> customProperties = connection.getClientProperties();
+        ConnectionFactory customFactory = connectionFactory.clone();
+        customFactory.setUsername(username);
+        customFactory.setPassword(password);
+        Map<String, Object> customProperties = AMQConnection.defaultClientProperties();
         customProperties.remove("capabilities");
-        AMQConnection conn =
-                new AMQConnection(username,
-                                  password,
-                                  new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT)),
-                                  Executors.newFixedThreadPool(1),
-                                  connectionFactory.getVirtualHost(),
-                                  customProperties,
-                                  connectionFactory.getRequestedFrameMax(),
-                                  connectionFactory.getRequestedChannelMax(),
-                                  connectionFactory.getRequestedHeartbeat(),
-                                  connectionFactory.getSaslConfig());
-        conn.start();
-        return conn;
+        customFactory.setClientProperties(customProperties);
+        return customFactory.newConnection();
     }
 
     private void loginOk(String name, byte[][] responses) throws IOException {
