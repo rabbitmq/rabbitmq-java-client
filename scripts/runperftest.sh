@@ -2,7 +2,7 @@
 
 run() {
     echo "=== running with '$2'"
-    sh `dirname $0`/runjava.sh com.rabbitmq.examples.MulticastMain -h $1 -z 10 -i 20 $2
+    sh `dirname $0`/runjava.sh com.rabbitmq.examples.PerfTest -h $1 -z 10 -i 20 $2
     sleep 2
 }
 
