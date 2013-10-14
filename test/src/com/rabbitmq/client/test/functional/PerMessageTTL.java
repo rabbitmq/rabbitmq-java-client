@@ -26,6 +26,7 @@ import java.io.IOException;
 public class PerMessageTTL extends TTLHandling {
 
     protected Object sessionTTL;
+    private volatile String retrievedMsg = null;
 
     @Override
     protected void publish(String msg) throws IOException {
@@ -56,6 +57,35 @@ public class PerMessageTTL extends TTLHandling {
 
         assertNotNull("Message unexpectedly expired", c.nextDelivery(100));
         assertNull("Message should have been expired!!", c.nextDelivery(100));
+    }
+
+    public void testRestartingExpiry() throws Exception {
+        final String restartDelay = "3000";
+        declareDurableQueue(TTL_QUEUE_NAME);
+        bindQueue();
+        channel.basicPublish(TTL_EXCHANGE, TTL_QUEUE_NAME,
+                MessageProperties.MINIMAL_PERSISTENT_BASIC
+                        .builder()
+                        .expiration(restartDelay)
+                        .build(), new byte[]{});
+
+        Thread delayedConsume =
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(Integer.parseInt(restartDelay));
+                        retrievedMsg = get();
+                    } catch (IOException e) {
+                    } catch (InterruptedException e) {
+                    }
+
+                }
+            });
+        delayedConsume.start();
+        restart();
+        delayedConsume.join();
+        assertNull("Message should have expired after broker restart", retrievedMsg);
     }
 
 }
