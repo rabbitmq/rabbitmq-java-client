@@ -60,34 +60,21 @@ public class PerMessageTTL extends TTLHandling {
     }
 
     public void testRestartingExpiry() throws Exception {
-        final String restartDelay = "2000";
+        final String expiryDelay = "2000";
         declareDurableQueue(TTL_QUEUE_NAME);
-        channel.basicPublish("", TTL_QUEUE_NAME,
+        bindQueue();
+        channel.basicPublish(TTL_EXCHANGE, TTL_QUEUE_NAME,
                 MessageProperties.MINIMAL_PERSISTENT_BASIC
                         .builder()
-                        .expiration(restartDelay)
+                        .expiration(expiryDelay)
                         .build(), new byte[]{});
-
-        Thread delayedConsume =
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Thread.sleep(Integer.parseInt(restartDelay));
-                        while (channel == null || !channel.isOpen()) {
-                            Thread.sleep(250);
-                        }
-                        retrievedMsg = get();
-                    } catch (IOException e) {
-                    } catch (InterruptedException e) {
-                    }
-
-                }
-            });
-        delayedConsume.start();
+        long expiryStartTime = System.currentTimeMillis();
         restart();
-        delayedConsume.join();
-        assertNull("Message should have expired after broker restart", retrievedMsg);
+        long timeToExpiry = Integer.parseInt(expiryDelay) - (System.currentTimeMillis() - expiryStartTime);
+        if (timeToExpiry > 0L) {
+            Thread.sleep(timeToExpiry);
+        }
+        assertNull("Message should have expired after broker restart", get());
     }
 
 }
