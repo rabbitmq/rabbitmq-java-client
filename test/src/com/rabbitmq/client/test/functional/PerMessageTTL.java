@@ -26,7 +26,6 @@ import java.io.IOException;
 public class PerMessageTTL extends TTLHandling {
 
     protected Object sessionTTL;
-    private volatile String retrievedMsg = null;
 
     @Override
     protected void publish(String msg) throws IOException {
