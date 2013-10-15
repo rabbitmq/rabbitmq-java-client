@@ -74,6 +74,7 @@ public class PerMessageTTL extends TTLHandling {
             Thread.sleep(timeToExpiry);
         }
         assertNull("Message should have expired after broker restart", get());
+        deleteQueue(TTL_QUEUE_NAME);
     }
 
 }
