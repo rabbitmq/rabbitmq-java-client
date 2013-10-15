@@ -60,7 +60,7 @@ public class PerMessageTTL extends TTLHandling {
     }
 
     public void testRestartingExpiry() throws Exception {
-        final String restartDelay = "3000";
+        final String restartDelay = "5000";
         declareDurableQueue(TTL_QUEUE_NAME);
         bindQueue();
         channel.basicPublish(TTL_EXCHANGE, TTL_QUEUE_NAME,
