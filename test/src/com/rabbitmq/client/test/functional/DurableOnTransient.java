@@ -17,13 +17,13 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.tools.Host;
 
-public class DurableOnTransient extends BrokerTestCase
+public class DurableOnTransient extends ClusteredTestBase
 {
     protected static final String Q = "DurableQueue";
     protected static final String X = "TransientExchange";
@@ -60,5 +60,35 @@ public class DurableOnTransient extends BrokerTestCase
         channel.queueBind(Q, X, "");
         basicPublish();
         assertNotNull(basicGet());
+    }
+
+    private void stopSecondary() throws IOException {
+        Host.executeCommand("cd ../rabbitmq-test; make stop-secondary-app");
+    }
+
+    private void startSecondary() throws IOException {
+        Host.executeCommand("cd ../rabbitmq-test; make start-secondary-app");
+    }
+
+    public void testSemiDurableBindingRemoval() throws IOException {
+        if (clusteredConnection != null) {
+            declareTransientTopicExchange("x");
+            clusteredChannel.queueDeclare("q", true, false, false, null);
+            channel.queueBind("q", "x", "k");
+
+            stopSecondary();
+
+            deleteExchange("x");
+
+            startSecondary();
+
+            declareTransientTopicExchange("x");
+
+            basicPublishVolatile("x", "k");
+            assertDelivered("q", 0);
+
+            deleteQueue("q");
+            deleteExchange("x");
+        }
     }
 }
