@@ -237,6 +237,10 @@ public class BrokerTestCase extends TestCase {
         channel.exchangeDeclare(x, "topic", true);
     }
 
+    protected void declareTransientTopicExchange(String x) throws IOException {
+        channel.exchangeDeclare(x, "topic", false);
+    }
+
     protected void deleteExchange(String x) throws IOException {
         channel.exchangeDelete(x);
     }
