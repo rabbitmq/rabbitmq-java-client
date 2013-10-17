@@ -34,12 +34,12 @@ public class AbsentQueue extends ClusteredTestBase {
     @Override protected void setUp() throws IOException {
         super.setUp();
         if (clusteredConnection != null)
-            Host.executeCommand("cd ../rabbitmq-test; make stop-secondary-app");
+            stopSecondary();
     }
 
     @Override protected void tearDown() throws IOException {
         if (clusteredConnection != null)
-            Host.executeCommand("cd ../rabbitmq-test; make start-secondary-app");
+            startSecondary();
         super.tearDown();
     }
 

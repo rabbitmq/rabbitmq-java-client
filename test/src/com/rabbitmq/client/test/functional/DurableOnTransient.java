@@ -21,7 +21,6 @@ import java.io.IOException;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.tools.Host;
 
 public class DurableOnTransient extends ClusteredTestBase
 {
@@ -60,14 +59,6 @@ public class DurableOnTransient extends ClusteredTestBase
         channel.queueBind(Q, X, "");
         basicPublish();
         assertNotNull(basicGet());
-    }
-
-    private void stopSecondary() throws IOException {
-        Host.executeCommand("cd ../rabbitmq-test; make stop-secondary-app");
-    }
-
-    private void startSecondary() throws IOException {
-        Host.executeCommand("cd ../rabbitmq-test; make start-secondary-app");
     }
 
     public void testSemiDurableBindingRemoval() throws IOException {

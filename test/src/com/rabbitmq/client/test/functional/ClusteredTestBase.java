@@ -21,6 +21,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
 
@@ -120,5 +121,13 @@ public class ClusteredTestBase extends BrokerTestCase {
             alternateConnection = null;
         }
         super.closeConnection();
+    }
+
+    protected void stopSecondary() throws IOException {
+        Host.executeCommand("cd ../rabbitmq-test; make stop-secondary-app");
+    }
+
+    protected void startSecondary() throws IOException {
+        Host.executeCommand("cd ../rabbitmq-test; make start-secondary-app");
     }
 }
