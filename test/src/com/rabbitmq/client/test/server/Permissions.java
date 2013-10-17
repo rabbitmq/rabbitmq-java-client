@@ -18,7 +18,7 @@
 package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.PossibleAuthenticationFailureException;
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.Map;
@@ -127,7 +127,7 @@ public class Permissions extends BrokerTestCase
             unAuthFactory.newConnection();
             fail("Exception expected if password is wrong");
         } catch (IOException e) {
-            assertTrue(e instanceof PossibleAuthenticationFailureException);
+            assertTrue(e instanceof AuthenticationFailureException);
             String msg = e.getMessage();
             assertTrue("Exception message should contain 'auth'",
                        msg.toLowerCase().contains("auth"));

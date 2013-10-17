@@ -214,4 +214,24 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * operations, use -1 for infinity
      */
     void abort(int closeCode, String closeMessage, int timeout);
+
+    /**
+     * Add a {@link BlockedListener}.
+     * @param listener the listener to add
+     */
+    void addBlockedListener(BlockedListener listener);
+
+    /**
+     * Remove a {@link BlockedListener}.
+     * @param listener the listener to remove
+     * @return <code><b>true</b></code> if the listener was found and removed,
+     * <code><b>false</b></code> otherwise
+     */
+    boolean removeBlockedListener(BlockedListener listener);
+
+    /**
+     * Remove all {@link BlockedListener}s.
+     */
+    void clearBlockedListeners();
+
 }

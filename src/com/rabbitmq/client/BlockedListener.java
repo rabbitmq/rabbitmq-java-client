@@ -14,26 +14,16 @@
 //  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
 //
 
+
 package com.rabbitmq.client;
 
 import java.io.IOException;
 
 /**
- * Thrown when the likely cause is an authentication failure.
+ * Implement this interface in order to be notified of connection block and
+ * unblock events.
  */
-public class PossibleAuthenticationFailureException extends IOException
-{
-    /** Default for non-checking. */
-    private static final long serialVersionUID = 1L;
-
-    public PossibleAuthenticationFailureException(Throwable cause)
-    {
-        super("Possibly caused by authentication failure");
-        super.initCause(cause);
-    }
-
-    public PossibleAuthenticationFailureException(String reason)
-    {
-        super(reason);
-    }
+public interface BlockedListener {
+    void handleBlocked(String reason) throws IOException;
+    void handleUnblocked() throws IOException;
 }

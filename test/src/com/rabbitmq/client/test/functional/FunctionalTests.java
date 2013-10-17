@@ -61,7 +61,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(DefaultExchange.class);
         suite.addTestSuite(UnbindAutoDeleteExchange.class);
         suite.addTestSuite(Confirm.class);
-        suite.addTestSuite(ConsumerCancelNotificiation.class);
+        suite.addTestSuite(ConsumerCancelNotification.class);
         suite.addTestSuite(UnexpectedFrames.class);
         suite.addTestSuite(PerQueueTTL.class);
         suite.addTestSuite(PerMessageTTL.class);
@@ -73,5 +73,7 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(CcRoutes.class);
         suite.addTestSuite(WorkPoolTests.class);
         suite.addTestSuite(HeadersExchangeValidation.class);
+        suite.addTestSuite(ConsumerPriorities.class);
+        suite.addTestSuite(Policies.class);
     }
 }

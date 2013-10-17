@@ -19,7 +19,6 @@ package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class DoubleDeletion extends BrokerTestCase
@@ -30,28 +29,18 @@ public class DoubleDeletion extends BrokerTestCase
     public void testDoubleDeletionQueue()
         throws IOException
     {
-      channel.queueDeclare(Q, false, false, false, null);
-	channel.queueDelete(Q);
-        try {
-            channel.queueDelete(Q);
-            fail("Expected exception from double deletion of queue");
-        } catch (IOException ee) {
-	    checkShutdownSignal(AMQP.NOT_FOUND, ee);
-            // Pass!
-        }
+        channel.queueDelete(Q);
+        channel.queueDeclare(Q, false, false, false, null);
+        channel.queueDelete(Q);
+        channel.queueDelete(Q);
     }
 
     public void testDoubleDeletionExchange()
         throws IOException
     {
+        channel.exchangeDelete(X);
         channel.exchangeDeclare(X, "direct");
-	channel.exchangeDelete(X);
-        try {
-            channel.exchangeDelete(X);
-            fail("Expected exception from double deletion of exchange");
-        } catch (IOException ee) {
-	    checkShutdownSignal(AMQP.NOT_FOUND, ee);
-            // Pass!
-        }
+	    channel.exchangeDelete(X);
+        channel.exchangeDelete(X);
     }
 }
