@@ -21,13 +21,17 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AuthenticationFailureException;
+import com.rabbitmq.client.BlockedListener;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
@@ -81,6 +85,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         capabilities.put("exchange_exchange_bindings", true);
         capabilities.put("basic.nack", true);
         capabilities.put("consumer_cancel_notify", true);
+        capabilities.put("connection.blocked", true);
+        capabilities.put("authentication_failure_close", true);
 
         props.put("capabilities", capabilities);
 
@@ -130,6 +136,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final int requestedFrameMax;
     private final String username;
     private final String password;
+    private final Collection<BlockedListener> blockedListeners = new CopyOnWriteArrayList<BlockedListener>();
 
     /* State modified after start - all volatile */
 
@@ -274,9 +281,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * either before, or during, protocol negotiation;
      * sub-classes {@link ProtocolVersionMismatchException} and
      * {@link PossibleAuthenticationFailureException} will be thrown in the
-     * corresponding circumstances. If an exception is thrown, connection
-     * resources allocated can all be garbage collected when the connection
-     * object is no longer referenced.
+     * corresponding circumstances. {@link AuthenticationFailureException}
+     * will be thrown if the broker closes the connection with ACCESS_REFUSED.
+     * If an exception is thrown, connection resources allocated can all be
+     * garbage collected when the connection object is no longer referenced.
      */
     public void start()
         throws IOException
@@ -352,6 +360,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                         response = sm.handleChallenge(challenge, this.username, this.password);
                     }
                 } catch (ShutdownSignalException e) {
+                    Object shutdownReason = e.getReason();
+                    if (shutdownReason instanceof AMQCommand) {
+                        Method shutdownMethod = ((AMQCommand) shutdownReason).getMethod();
+                        if (shutdownMethod instanceof AMQP.Connection.Close) {
+                            AMQP.Connection.Close shutdownClose =  (AMQP.Connection.Close) shutdownMethod;
+                            if (shutdownClose.getReplyCode() == AMQP.ACCESS_REFUSED) {
+                                throw new AuthenticationFailureException(shutdownClose.getReplyText());
+                            }
+                        }
+                    }
                     throw new PossibleAuthenticationFailureException(e);
                 }
             } while (connTune == null);
@@ -597,6 +615,25 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             if (method instanceof AMQP.Connection.Close) {
                 handleConnectionClose(c);
                 return true;
+            } else if (method instanceof AMQP.Connection.Blocked) {
+                AMQP.Connection.Blocked blocked = (AMQP.Connection.Blocked) method;
+                try {
+                    for (BlockedListener l : this.blockedListeners) {
+                        l.handleBlocked(blocked.getReason());
+                    }
+                } catch (Throwable ex) {
+                    getExceptionHandler().handleBlockedListenerException(this, ex);
+                }
+                return true;
+            } else if (method instanceof AMQP.Connection.Unblocked) {
+                try {
+                    for (BlockedListener l : this.blockedListeners) {
+                        l.handleUnblocked();
+                    }
+                } catch (Throwable ex) {
+                    getExceptionHandler().handleBlockedListenerException(this, ex);
+                }
+                return true;
             } else {
                 return false;
             }
@@ -621,7 +658,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     public void handleConnectionClose(Command closeCommand) {
-        ShutdownSignalException sse = shutdown(closeCommand, false, null, false);
+        ShutdownSignalException sse = shutdown(closeCommand, false, null, _inConnectionNegotiation);
         try {
             _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
         } catch (IOException _) { } // ignore
@@ -822,5 +859,17 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     private String getHostAddress() {
         return getAddress() == null ? null : getAddress().getHostAddress();
+    }
+
+    public void addBlockedListener(BlockedListener listener) {
+        blockedListeners.add(listener);
+    }
+
+    public boolean removeBlockedListener(BlockedListener listener) {
+        return blockedListeners.remove(listener);
+    }
+
+    public void clearBlockedListeners() {
+        blockedListeners.clear();
     }
 }

@@ -16,17 +16,20 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
+import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.LongStringHelper;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 
 public class SaslMechanisms extends BrokerTestCase {
     private String[] mechanisms;
@@ -91,6 +94,39 @@ public class SaslMechanisms extends BrokerTestCase {
         }
     }
 
+    public void testConnectionCloseAuthFailureUsername() throws IOException {
+        connectionCloseAuthFailure("incorrect-username", "incorrect-password");
+    }
+
+    public void testConnectionCloseAuthFailurePassword() throws IOException {
+        connectionCloseAuthFailure(connectionFactory.getUsername(), "incorrect-password");
+    }
+
+    public void connectionCloseAuthFailure(String username, String password) throws IOException {
+        String failDetail =  "for username " + username + " and password " + password;
+        try {
+            Connection conn = connectionWithoutCapabilities(username, password);
+            fail("Expected PossibleAuthenticationFailureException " + failDetail);
+            conn.abort();
+        } catch (PossibleAuthenticationFailureException paf) {
+            if (paf instanceof AuthenticationFailureException) {
+                fail("Not expecting AuthenticationFailureException " + failDetail);
+            }
+        }
+    }
+
+    // start a connection without capabilities, causing authentication failures
+    // to be reported by the broker by closing the connection
+    private Connection connectionWithoutCapabilities(String username, String password) throws IOException {
+        ConnectionFactory customFactory = connectionFactory.clone();
+        customFactory.setUsername(username);
+        customFactory.setPassword(password);
+        Map<String, Object> customProperties = AMQConnection.defaultClientProperties();
+        customProperties.remove("capabilities");
+        customFactory.setClientProperties(customProperties);
+        return customFactory.newConnection();
+    }
+
     private void loginOk(String name, byte[][] responses) throws IOException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setSaslConfig(new Config(name, responses));
@@ -102,7 +138,7 @@ public class SaslMechanisms extends BrokerTestCase {
         try {
             loginOk(name, responses);
             fail("Login succeeded!");
-        } catch (PossibleAuthenticationFailureException e) {
+        } catch (AuthenticationFailureException e) {
             // Ok
         }
     }

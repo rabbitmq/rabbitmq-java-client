@@ -43,6 +43,7 @@ public class MulticastParams {
     private String exchangeName = "direct";
     private String exchangeType = "direct";
     private String queueName = "";
+    private String routingKey = null;
 
     private List<?> flags = new ArrayList<Object>();
 
@@ -63,6 +64,10 @@ public class MulticastParams {
 
     public void setQueueName(String queueName) {
         this.queueName = queueName;
+    }
+
+    public void setRoutingKey(String routingKey) {
+        this.routingKey = routingKey;
     }
 
     public void setRateLimit(float rateLimit) {
@@ -148,6 +153,10 @@ public class MulticastParams {
 
     public int getMinMsgSize() {
         return minMsgSize;
+    }
+
+    public String getRoutingKey() {
+        return routingKey;
     }
 
     public Producer createProducer(Connection connection, Stats stats, String id) throws IOException {

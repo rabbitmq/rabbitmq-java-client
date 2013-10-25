@@ -62,15 +62,13 @@ public class MemoryAlarms extends BrokerTestCase {
 
     @Override
     protected void releaseResources() throws IOException {
-        channel.queueDelete(Q);
-    }
-
-    protected void setResourceAlarm(String source) throws IOException, InterruptedException {
-        Host.executeCommand("cd ../rabbitmq-test; make set-resource-alarm SOURCE=" + source);
-    }
-
-    protected void clearResourceAlarm(String source) throws IOException, InterruptedException {
-        Host.executeCommand("cd ../rabbitmq-test; make clear-resource-alarm SOURCE=" + source);
+        try {
+            clearAllResourceAlarms();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            channel.queueDelete(Q);
+        }
     }
 
     public void testFlowControl() throws IOException, InterruptedException {
@@ -87,7 +85,7 @@ public class MemoryAlarms extends BrokerTestCase {
         assertNull(c.nextDelivery(3100));
         // once the alarm has cleared the publishes should go through
         clearResourceAlarm("memory");
-        assertNotNull(c.nextDelivery());
+        assertNotNull(c.nextDelivery(3100));
         // everything should be back to normal
         channel.basicCancel(consumerTag);
         basicPublishVolatile(Q);
@@ -108,7 +106,7 @@ public class MemoryAlarms extends BrokerTestCase {
         clearResourceAlarm("memory");
         assertNull(c.nextDelivery(100));
         clearResourceAlarm("disk");
-        assertNotNull(c.nextDelivery());
+        assertNotNull(c.nextDelivery(3100));
 
         channel.basicCancel(consumerTag);
         basicPublishVolatile(Q);

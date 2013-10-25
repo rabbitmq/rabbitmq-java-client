@@ -31,7 +31,11 @@ public class MulticastSet {
 
     public MulticastSet(Stats stats, ConnectionFactory factory,
                         MulticastParams params) {
-        this.id = UUID.randomUUID().toString();
+        if (params.getRoutingKey() == null) {
+            this.id = UUID.randomUUID().toString();
+        } else {
+            this.id = params.getRoutingKey();
+        }
         this.stats = stats;
         this.factory = factory;
         this.params = params;
