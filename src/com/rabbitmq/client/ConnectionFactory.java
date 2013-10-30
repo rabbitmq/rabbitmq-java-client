@@ -88,6 +88,7 @@ public class ConnectionFactory implements Cloneable {
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
+    protected ExecutorService sharedExecutor;
 
     /** @return number of consumer threads in default {@link ExecutorService} */
     @Deprecated
@@ -384,6 +385,15 @@ public class ConnectionFactory implements Cloneable {
         this.factory = factory;
     }
 
+    /**
+     * Set the executor to use by default for newly created connections.
+     * All connections that use this executor share it.
+     * @param executor
+     */
+    public void setSharedExecutor(ExecutorService executor) {
+        this.sharedExecutor = executor;
+    }
+
     public boolean isSSL(){
         return getSocketFactory() instanceof SSLSocketFactory;
     }
@@ -485,7 +495,7 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection(Address[] addrs) throws IOException {
-        return newConnection(null, addrs);
+        return newConnection(this.sharedExecutor, addrs);
     }
 
     /**
@@ -530,7 +540,7 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection() throws IOException {
-        return newConnection(null,
+        return newConnection(this.sharedExecutor,
                              new Address[] {new Address(getHost(), getPort())}
                             );
     }

@@ -47,7 +47,6 @@ import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
-import com.rabbitmq.utility.Utility;
 
 final class Copyright {
     final static String COPYRIGHT="Copyright (C) 2007-2013 GoPivotal, Inc.";
@@ -63,6 +62,8 @@ final class Copyright {
 public class AMQConnection extends ShutdownNotifierComponent implements Connection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
+    /** Executor used by consumer work service */
+    private final ExecutorService _consumerWorkExecutor;
 
     /**
      * Retrieve a copy of the default table of client properties that
@@ -262,6 +263,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.saslConfig = saslConfig;
 
         this._workService  = new ConsumerWorkService(executor);
+        this._consumerWorkExecutor = executor;
         this._channelManager = null;
 
         this._heartbeatSender = new HeartbeatSender(frameHandler);
@@ -474,6 +476,23 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public ExceptionHandler getExceptionHandler() {
         return _exceptionHandler;
     }
+
+    /** Private API
+     *
+     * @return Consumer work service used by this connection.
+     */
+    public ExecutorService getConsumerExecutor() {
+        return _consumerWorkExecutor;
+    }
+
+    /** Public API
+     *
+     * @return true if this work service instance uses its own executor (as opposed to a shared one)
+     */
+    public boolean willShutDownConsumerExecutor() {
+        return (this._consumerWorkExecutor == null);
+    }
+
 
     /** Public API - {@inheritDoc} */
     public Channel createChannel(int channelNumber) throws IOException {

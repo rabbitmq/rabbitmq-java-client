@@ -30,9 +30,13 @@ final class ConsumerWorkService {
     private final WorkPool<Channel, Runnable> workPool;
 
     public ConsumerWorkService(ExecutorService executor) {
-        this.privateExecutor = (executor == null);
-        this.executor = (executor == null) ? Executors.newFixedThreadPool(DEFAULT_NUM_THREADS)
-                                           : executor;
+        this(executor, false);
+    }
+
+    public ConsumerWorkService(ExecutorService executor, boolean safeToShutDownExecutor) {
+        this.privateExecutor = safeToShutDownExecutor;
+        this.executor = safeToShutDownExecutor ? Executors.newFixedThreadPool(DEFAULT_NUM_THREADS)
+                                               : executor;
         this.workPool = new WorkPool<Channel, Runnable>();
     }
 
@@ -61,6 +65,14 @@ final class ConsumerWorkService {
         if (this.workPool.addWorkItem(channel, runnable)) {
             this.executor.execute(new WorkPoolRunnable());
         }
+    }
+
+    /**
+     *
+     * @return true if this work service instance uses its own executor (as opposed to a shared one)
+     */
+    public boolean doesUsePrivateExecutor() {
+        return this.privateExecutor;
     }
 
     private final class WorkPoolRunnable implements Runnable {
