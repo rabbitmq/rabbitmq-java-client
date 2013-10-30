@@ -35,8 +35,8 @@ final class ConsumerWorkService {
 
     public ConsumerWorkService(ExecutorService executor, boolean safeToShutDownExecutor) {
         this.privateExecutor = safeToShutDownExecutor;
-        this.executor = (executor == null) ? Executors.newFixedThreadPool(DEFAULT_NUM_THREADS)
-                                           : executor;
+        this.executor = this.executorFrom(executor);
+        this.ensureExecutionServiceAvailable();
         this.workPool = new WorkPool<Channel, Runnable>();
     }
 
@@ -95,6 +95,24 @@ final class ConsumerWorkService {
             } catch (RuntimeException e) {
                 Thread.currentThread().interrupt();
             }
+        }
+    }
+
+    private void ensureExecutionServiceAvailable() {
+        if(!this.hasExecutionService()) {
+            throw new IllegalStateException("Consumer work service cannot function without an execution service");
+        }
+    }
+
+    private boolean hasExecutionService() {
+        return (this.executor != null);
+    }
+
+    private ExecutorService executorFrom(ExecutorService executor) {
+        if (executor == null) {
+            return Executors.newFixedThreadPool(DEFAULT_NUM_THREADS);
+        } else {
+            return executor;
         }
     }
 }
