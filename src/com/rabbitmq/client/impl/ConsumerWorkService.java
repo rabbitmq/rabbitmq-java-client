@@ -35,8 +35,8 @@ final class ConsumerWorkService {
 
     public ConsumerWorkService(ExecutorService executor, boolean safeToShutDownExecutor) {
         this.privateExecutor = safeToShutDownExecutor;
-        this.executor = safeToShutDownExecutor ? Executors.newFixedThreadPool(DEFAULT_NUM_THREADS)
-                                               : executor;
+        this.executor = (executor == null) ? Executors.newFixedThreadPool(DEFAULT_NUM_THREADS)
+                                           : executor;
         this.workPool = new WorkPool<Channel, Runnable>();
     }
 
