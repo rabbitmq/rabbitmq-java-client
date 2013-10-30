@@ -388,6 +388,10 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Set the executor to use by default for newly created connections.
      * All connections that use this executor share it.
+     *
+     * It's developer's responsibility to shut down the executor
+     * when it is no longer needed.
+     *
      * @param executor
      */
     public void setSharedExecutor(ExecutorService executor) {
