@@ -36,7 +36,7 @@ final class ConsumerWorkService {
     public ConsumerWorkService(ExecutorService executor, boolean safeToShutDownExecutor) {
         this.privateExecutor = safeToShutDownExecutor;
         this.executor = this.executorFrom(executor);
-        this.ensureExecutionServiceAvailable();
+        this.ensureExecutorServiceAvailable();
         this.workPool = new WorkPool<Channel, Runnable>();
     }
 
@@ -98,13 +98,13 @@ final class ConsumerWorkService {
         }
     }
 
-    private void ensureExecutionServiceAvailable() {
-        if(!this.hasExecutionService()) {
+    private void ensureExecutorServiceAvailable() {
+        if(!this.hasExecutorService()) {
             throw new IllegalStateException("Consumer work service cannot function without an execution service");
         }
     }
 
-    private boolean hasExecutionService() {
+    private boolean hasExecutorService() {
         return (this.executor != null);
     }
 
