@@ -21,5 +21,10 @@ public class SharedThreadPoolTest extends BrokerTestCase {
 
         AMQConnection conn3 = (AMQConnection)cf.newConnection((ExecutorService)null);
         assertTrue(conn3.willShutDownConsumerExecutor());
+
+        cf.setSharedExecutor(null);
+
+        AMQConnection conn4 = (AMQConnection)cf.newConnection();
+        assertTrue(conn4.willShutDownConsumerExecutor());
     }
 }
