@@ -100,7 +100,7 @@ final class ConsumerWorkService {
 
     private void ensureExecutorServiceAvailable() {
         if(!this.hasExecutorService()) {
-            throw new IllegalStateException("Consumer work service cannot function without an execution service");
+            throw new IllegalStateException("Consumer work service cannot function without an executor service");
         }
     }
 
