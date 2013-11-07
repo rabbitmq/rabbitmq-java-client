@@ -19,9 +19,13 @@ package com.rabbitmq.client;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.utility.SensibleClone;
 import com.rabbitmq.utility.Utility;
 
 /**
@@ -194,26 +198,11 @@ public class QueueingConsumer extends DefaultConsumer {
 
         void throwIfNecessary() { }
 
-        static class ConsumerCancelledPoison extends Delivery {
-            public ConsumerCancelledPoison() {
+        static class Poison<T extends RuntimeException & SensibleClone<T>> extends Delivery {
+            private final T exception;
+            public Poison(final T exception) {
                 super(null, null, null, null);
-            }
-
-            @Override
-            boolean isPoison() { return true; }
-
-            @Override
-            void throwIfNecessary() {
-                throw Utility.fixStackTrace(new ConsumerCancelledException());
-            }
-        }
-
-        static class ShutdownSignalPoison extends Delivery {
-            private final ShutdownSignalException exception;
-
-            public ShutdownSignalPoison(ShutdownSignalException ex) {
-                super(null, null, null, null);
-                this.exception = ex;
+                this.exception = exception;
             }
 
             @Override
@@ -222,6 +211,18 @@ public class QueueingConsumer extends DefaultConsumer {
             @Override
             void throwIfNecessary() {
                 throw Utility.fixStackTrace(exception);
+            }
+        }
+
+        static class ConsumerCancelledPoison extends Poison<ConsumerCancelledException> {
+            public ConsumerCancelledPoison() {
+                super(new ConsumerCancelledException());
+            }
+        }
+
+        static class ShutdownSignalPoison extends Poison<ShutdownSignalException> {
+            public ShutdownSignalPoison(ShutdownSignalException ex) {
+                super(ex);
             }
         }
     }
