@@ -138,7 +138,9 @@ public class QueueingConsumer extends DefaultConsumer {
     @Override public void handleDelivery(String consumerTag,
                                Envelope envelope,
                                AMQP.BasicProperties properties,
-                               byte[] body) throws IOException {
+                               byte[] body)
+        throws IOException
+    {
         queue.add(new Delivery(consumerTag, envelope, properties, body));
     }
 
@@ -233,9 +235,9 @@ public class QueueingConsumer extends DefaultConsumer {
     * @throws ShutdownSignalException if the connection is shut down while waiting
     * @throws ConsumerCancelledException if this consumer is cancelled while waiting
      */
-    public Delivery nextDelivery() throws InterruptedException,
-                                          ShutdownSignalException,
-                                          ConsumerCancelledException {
+    public Delivery nextDelivery()
+            throws InterruptedException, ShutdownSignalException, ConsumerCancelledException
+    {
         return handle(queue.take());
     }
 
@@ -247,9 +249,9 @@ public class QueueingConsumer extends DefaultConsumer {
      * @throws ShutdownSignalException if the connection is shut down while waiting
      * @throws ConsumerCancelledException if this consumer is cancelled while waiting
      */
-    public Delivery nextDelivery(long timeout) throws InterruptedException,
-                                                      ConsumerCancelledException,
-                                                      ShutdownSignalException {
+    public Delivery nextDelivery(long timeout)
+            throws InterruptedException, ConsumerCancelledException, ShutdownSignalException
+    {
         return handle(queue.poll(timeout, TimeUnit.MILLISECONDS));
     }
 
