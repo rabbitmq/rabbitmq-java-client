@@ -60,7 +60,7 @@ import com.rabbitmq.utility.Utility;
  * <p>For a more complete example, see LogTail in the <code>test/src/com/rabbitmq/examples</code>
  * directory of the source distribution.</p>
  * <p/>
- * <b>deprecated</b> <i><code>QueueingConsumer</code> was introduced to allow
+ * <i><code>QueueingConsumer</code> was introduced to allow
  * applications to overcome a limitation in the way <code>Connection</code>
  * managed threads and consumer dispatching. When <code>QueueingConsumer</code>
  * was introduced, callbacks to <code>Consumers</code> were made on the
@@ -83,6 +83,14 @@ import com.rabbitmq.utility.Utility;
  * <p/>
  * As such, it is now safe to implement <code>Consumer</code> directly or
  * to extend <code>DefaultConsumer</code>.</i>
+ * <p>
+ * <code>QueueingConsumer</code> still offers a simple API for consuming from
+ * one or more queues. Note that when consuming from more than one queue and
+ * calling <code>nextDelivery()</code>, cancellation and shutdown signals will
+ * not be thrown in the caller's thread unless/until <em>all</em> consumers
+ * have been cancelled or, in the case of a shutdown signal, have all observed
+ * the signal. See <code>nextDelivery()</code> for more details.
+ * </p>
  */
 public class QueueingConsumer extends DefaultConsumer {
 
@@ -240,7 +248,8 @@ public class QueueingConsumer extends DefaultConsumer {
      * @return the next message
     * @throws InterruptedException if an interrupt is received while waiting
     * @throws ShutdownSignalException if the connection is shut down while waiting
-    * @throws ConsumerCancelledException if this consumer is cancelled while waiting
+    * @throws ConsumerCancelledException if all active consumers associated with this object
+     * are cancelled while waiting
      */
     public Delivery nextDelivery()
             throws InterruptedException, ShutdownSignalException, ConsumerCancelledException
@@ -254,7 +263,8 @@ public class QueueingConsumer extends DefaultConsumer {
      * @return the next message or null if timed out
      * @throws InterruptedException if an interrupt is received while waiting
      * @throws ShutdownSignalException if the connection is shut down while waiting
-     * @throws ConsumerCancelledException if this consumer is cancelled while waiting
+     * @throws ConsumerCancelledException if all active consumers associated with this object
+     * are cancelled while waiting
      */
     public Delivery nextDelivery(long timeout)
             throws InterruptedException, ConsumerCancelledException, ShutdownSignalException
