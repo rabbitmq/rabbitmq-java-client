@@ -72,85 +72,22 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase {
     }
 
     public void testNConsumerShutdown() throws Exception {
-        final Channel publisherChannel = connection.createChannel();
         final QueueingConsumer qc = new QueueingConsumer(channel);
+        final BlockingCell<Boolean> result = new BlockingCell<Boolean>();
+        setupConsumers(qc);
 
-        final List<String> queues = new ArrayList<String>(CONSUMER_COUNT);
-        final CountDownLatch latch = new CountDownLatch(1);
+        listenForException(ShutdownSignalException.class, qc, result);
 
-        for (int i = 0; i < CONSUMER_COUNT; i++) {
-            final String queueName = Integer.toString(i);
-            final AMQP.Queue.DeclareOk declare =
-                    channel.queueDeclare(queueName, false,
-                                         true, false, null);
-            final String queue = declare.getQueue();
-            queues.add(queue);
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        latch.await();
-                        final AMQP.BasicProperties props = new AMQP.BasicProperties()
-                                .builder()
-                                .correlationId(queue)
-                                .build();
-                        publisherChannel.basicPublish("", queue, props, "".getBytes());
-                    } catch (Exception e) {
-                        fail(e.getMessage());
-                    }
-                }
-            }.start();
-        }
-
-        for (final String queue : queues) {
-            channel.basicConsume(queue, true, qc);
-        }
-
-        latch.countDown();
-
-        final String queueToDeclareIncorrectly = queues.get(0);
-        while (!queues.isEmpty()) {
-            final QueueingConsumer.Delivery delivery = qc.nextDelivery();
-            assertNotNull(delivery);
-
-            final String q = delivery.getProperties().getCorrelationId();
-            assertTrue("expected queues to contain " + q + ", but it didn't!",
-                       queues.remove(q));
-        }
-
-        try {
-            channel.queueDeclare(queueToDeclareIncorrectly, true, true, true, null);
-        } catch (IOException e) {
-            try { qc.nextDelivery(); }
-            catch (ShutdownSignalException ex) { return; }
-            fail("Expected ShutdownSignalException, but nothing was thrown.");
-        }
-        fail();
+        channel.close();
+        assertTrue("Expected ShutdownSignalException to be thrown", result.get());
     }
 
     public void testNConsumerCancellation() throws Exception {
         final QueueingConsumer qc = new QueueingConsumer(channel);
-        final Stack<String> queues = new Stack<String>();
         final BlockingCell<Boolean> result = new BlockingCell<Boolean>();
+        final Stack<String> queues = setupConsumers(qc);
 
-        for (int i = 0; i < CONSUMER_COUNT; i++) {
-            final String queue = Integer.toString(i);
-            channel.queueDeclare(queue, false, true, false, null);
-            channel.basicConsume(queue, qc);
-            queues.push(queue);
-        }
-
-        new Thread() {
-            @Override public void run() {
-                try {
-                    qc.nextDelivery();
-                } catch (ConsumerCancelledException e) {
-                    result.set(true);
-                } catch (Exception e) {
-                    result.set(false);
-                }
-            }
-        }.start();
+        listenForException(ConsumerCancelledException.class, qc, result);
 
         while (queues.size() > 1) {
             channel.queueDelete(queues.pop());
@@ -192,6 +129,31 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase {
 
         // whereas shutdown signals do cause us to enter a permanent (shutdown) state
         shutdownStateShouldBePermanent(qc);
+    }
+
+    private Stack<String> setupConsumers(QueueingConsumer qc) throws IOException {
+        final Stack<String> queues = new Stack<String>();
+        for (int i = 0; i < CONSUMER_COUNT; i++) {
+            final String queue = Integer.toString(i);
+            channel.queueDeclare(queue, false, true, false, null);
+            channel.basicConsume(queue, qc);
+            queues.add(queue);
+        }
+        return queues;
+    }
+
+    private void listenForException(final Class clazz,
+                                    final QueueingConsumer qc,
+                                    final BlockingCell<Boolean> result) {
+        new Thread() {
+            @Override public void run() {
+                try {
+                    qc.nextDelivery();
+                } catch (Exception e) {
+                    result.set(clazz.isAssignableFrom(e.getClass()));
+                }
+            }
+        }.start();
     }
 
     private void cancellationShouldThrowButNotTerminateAllConsumers(QueueingConsumer qc) throws InterruptedException {
