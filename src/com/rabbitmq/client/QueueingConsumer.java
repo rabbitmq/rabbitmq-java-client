@@ -124,18 +124,17 @@ public class QueueingConsumer extends DefaultConsumer {
         }
     }
 
-    private Delivery handle(Delivery delivery) throws ConsumerCancelledException,
+    private Delivery handle(final Delivery delivery) throws ConsumerCancelledException,
                                                       ShutdownSignalException {
         // If delivery is null, it is a timeout and we have no poison pill
         // in the queue, so returning null is the appropriate thing to do.
-        if (delivery != null && delivery.isPoison()) {
-            // Poison needs to be re-added to the queue. We put the poison
-            // pill at the head of the queue, so other messages cannot interleave
-            // with some (arbitrary) caller of #nextDelivery() getting an exception
-            // at some arbitrary point in the future.
-            queue.addFirst(delivery);
-            delivery.throwIfNecessary();
+        if (delivery == null) return null;
+
+        if (delivery.needsReQueue()) {
+            queue.addLast(delivery);
         }
+
+        delivery.throwIfNecessary();
         return delivery;
     }
 
@@ -196,9 +195,9 @@ public class QueueingConsumer extends DefaultConsumer {
             return consumerTag;
         }
 
-        boolean isPoison() { return false; }
-
         void throwIfNecessary() { }
+
+        boolean needsReQueue() { return false; }
 
         static class Poison<T extends RuntimeException & SensibleClone<T>> extends Delivery {
             private final T exception;
@@ -206,9 +205,6 @@ public class QueueingConsumer extends DefaultConsumer {
                 super(null, null, null, null);
                 this.exception = exception;
             }
-
-            @Override
-            boolean isPoison() { return true; }
 
             @Override
             void throwIfNecessary() {
@@ -220,11 +216,21 @@ public class QueueingConsumer extends DefaultConsumer {
             public ConsumerCancelledPoison() {
                 super(new ConsumerCancelledException());
             }
+
+            @Override
+            boolean needsReQueue() {
+                return false;
+            }
         }
 
         static class ShutdownSignalPoison extends Poison<ShutdownSignalException> {
             public ShutdownSignalPoison(ShutdownSignalException ex) {
                 super(ex);
+            }
+
+            @Override
+            boolean needsReQueue() {
+                return true;
             }
         }
     }

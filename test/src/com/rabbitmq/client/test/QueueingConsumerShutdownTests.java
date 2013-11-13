@@ -19,8 +19,10 @@ package com.rabbitmq.client.test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.rabbitmq.client.AMQP;
@@ -128,14 +130,14 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase {
 
     public void testNConsumerCancellation() throws Exception {
         final QueueingConsumer qc = new QueueingConsumer(channel);
-        final List<String> queues = new ArrayList<String>(CONSUMER_COUNT);
+        final Stack<String> queues = new Stack<String>();
         final BlockingCell<Boolean> result = new BlockingCell<Boolean>();
 
         for (int i = 0; i < CONSUMER_COUNT; i++) {
             final String queue = Integer.toString(i);
             channel.queueDeclare(queue, false, true, false, null);
             channel.basicConsume(queue, qc);
-            queues.add(queue);
+            queues.push(queue);
         }
 
         new Thread() {
@@ -150,17 +152,31 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase {
             }
         }.start();
 
-        for (final String queue : queues) {
-            channel.queueDelete(queue);
+        while (queues.size() > 1) {
+            channel.queueDelete(queues.pop());
         }
+
+        TimeoutException timeoutException = null;
+        try {
+            result.get(500);
+        } catch (TimeoutException tEx) {
+            timeoutException = tEx;
+        }
+
+        assertNotNull("Consumer should not have thrown an exception yet!", timeoutException);
+
+        channel.queueDelete(queues.pop());
 
         assertTrue("Expected ConsumerCancelException to be thrown", result.get());
     }
 
-    public void testFailureModeIsPermanent() throws Exception {
+    public void testFailureModes() throws Exception {
         final QueueingConsumer qc = new QueueingConsumer(channel);
         createTestQueue("q1", qc);
         channel.queueDelete("q1");
+
+        // the first basic.cancel arrived when we had only one consumer!
+        checkForCancellationSignal(qc);
 
         createTestQueue("q2", qc);
         basicPublishVolatile("q2");
@@ -168,34 +184,51 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase {
         basicPublishVolatile("q2");
         channel.queueDelete("q2");
 
-        for (int i = 1; i <= 5; i++) {
-            // subsequent calls to #nextDelivery() should fail, despite the
-            // additional publishes on the second queue, since we're in "cancelled mode"
-            assertTrue("Expected ConsumerCancelException to be thrown", attemptNextDelivery(qc));
+        // cancellation can happen at any time, but doesn't invalidate our object
+        cancellationShouldThrowButNotTerminateAllConsumers(qc);
+
+        // given an active consumer however...
+        createTestQueue("q3", qc);
+
+        // whereas shutdown signals do cause us to enter a permanent (shutdown) state
+        shutdownStateShouldBePermanent(qc);
+    }
+
+    private void cancellationShouldThrowButNotTerminateAllConsumers(QueueingConsumer qc) throws InterruptedException {
+        assertNotNull(qc.nextDelivery());
+        assertNotNull(qc.nextDelivery());
+        assertNotNull(qc.nextDelivery());
+
+        checkForCancellationSignal(qc);
+    }
+
+    private void checkForCancellationSignal(QueueingConsumer qc) throws InterruptedException {
+        try {
+            qc.nextDelivery();
+        } catch (ConsumerCancelledException cEx) {
+            return;
         }
+        fail("Expected Consumer Cancelled Exception, but wasn't thrown!");
+    }
+
+    private void shutdownStateShouldBePermanent(QueueingConsumer qc) throws IOException, InterruptedException {
+        connection.close();
+        checkForShutdownSignal(qc);
+        checkForShutdownSignal(qc);
+    }
+
+    private static void checkForShutdownSignal(QueueingConsumer qc) throws InterruptedException {
+        try {
+            qc.nextDelivery();
+        } catch (ShutdownSignalException sEx) {
+            return;
+        }
+        fail("Expect Shutdown Signal Exception, but was not thrown!");
     }
 
     private void createTestQueue(final String queue, final Consumer qc) throws IOException {
         channel.queueDeclare(queue, false, true, true, null);
         channel.basicConsume(queue, qc);
-    }
-
-    private static boolean attemptNextDelivery(final QueueingConsumer qc) throws Exception {
-        final BlockingCell<Boolean> result = new BlockingCell<Boolean>();
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    qc.nextDelivery();
-                    result.set(false);
-                } catch (ConsumerCancelledException e) {
-                    result.set(true);
-                } catch (Exception e) {
-                    result.set(false);
-                }
-            }
-        }.start();
-        return result.get();
     }
 
 }
