@@ -63,14 +63,6 @@ final class ConsumerWorkService {
         }
     }
 
-    /**
-     *
-     * @return true if this work service instance uses its own executor (as opposed to a shared one)
-     */
-    public boolean doesUsePrivateExecutor() {
-        return this.privateExecutor;
-    }
-
     private final class WorkPoolRunnable implements Runnable {
 
         public void run() {
