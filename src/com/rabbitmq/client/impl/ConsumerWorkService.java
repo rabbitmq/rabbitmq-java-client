@@ -95,13 +95,9 @@ final class ConsumerWorkService {
     }
 
     private void ensureExecutorServiceAvailable() {
-        if(!this.hasExecutorService()) {
+        if(!(this.executor != null)) {
             throw new IllegalStateException("Consumer work service cannot function without an executor service");
         }
-    }
-
-    private boolean hasExecutorService() {
-        return (this.executor != null);
     }
 
     private ExecutorService executorFrom(ExecutorService executor) {
