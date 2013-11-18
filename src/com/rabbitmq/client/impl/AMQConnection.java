@@ -477,13 +477,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _exceptionHandler;
     }
 
-    /** Private API
-     *
-     * @return Consumer work service used by this connection.
-     */
-    public ExecutorService getConsumerExecutor() {
-        return _consumerWorkExecutor;
-    }
 
     /** Public API
      *
