@@ -30,11 +30,7 @@ final class ConsumerWorkService {
     private final WorkPool<Channel, Runnable> workPool;
 
     public ConsumerWorkService(ExecutorService executor) {
-        this(executor, false);
-    }
-
-    public ConsumerWorkService(ExecutorService executor, boolean safeToShutDownExecutor) {
-        this.privateExecutor = safeToShutDownExecutor;
+        this.privateExecutor = (executor == null);
         this.executor = this.executorFrom(executor);
         this.ensureExecutorServiceAvailable();
         this.workPool = new WorkPool<Channel, Runnable>();
