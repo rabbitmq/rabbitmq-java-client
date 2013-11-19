@@ -62,6 +62,14 @@ final class ConsumerWorkService {
         }
     }
 
+    /**
+     * @return true if executor used by this work service is managed
+     *              by it and wasn't provided by the user
+     */
+    public boolean usesPrivateExecutor() {
+        return privateExecutor;
+    }
+
     private final class WorkPoolRunnable implements Runnable {
 
         public void run() {

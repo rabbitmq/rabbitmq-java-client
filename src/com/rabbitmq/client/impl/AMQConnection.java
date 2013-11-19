@@ -62,8 +62,6 @@ final class Copyright {
 public class AMQConnection extends ShutdownNotifierComponent implements Connection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
-    /** Executor used by consumer work service */
-    private final ExecutorService _consumerWorkExecutor;
 
     /**
      * Retrieve a copy of the default table of client properties that
@@ -263,7 +261,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.saslConfig = saslConfig;
 
         this._workService  = new ConsumerWorkService(executor);
-        this._consumerWorkExecutor = executor;
         this._channelManager = null;
 
         this._heartbeatSender = new HeartbeatSender(frameHandler);
@@ -483,7 +480,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @return true if this work service instance uses its own executor (as opposed to a shared one)
      */
     public boolean willShutDownConsumerExecutor() {
-        return (this._consumerWorkExecutor == null);
+        return this._workService.usesPrivateExecutor();
     }
 
 
