@@ -88,7 +88,7 @@ public class ConnectionFactory implements Cloneable {
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
-    protected ExecutorService sharedExecutor;
+    private ExecutorService sharedExecutor;
 
     /** @return number of consumer threads in default {@link ExecutorService} */
     @Deprecated
