@@ -31,7 +31,8 @@ final class ConsumerWorkService {
 
     public ConsumerWorkService(ExecutorService executor) {
         this.privateExecutor = (executor == null);
-        this.executor = this.executorFrom(executor);
+        this.executor = (executor == null) ? Executors.newFixedThreadPool(DEFAULT_NUM_THREADS)
+                                           : executor;
         this.workPool = new WorkPool<Channel, Runnable>();
     }
 
@@ -90,14 +91,6 @@ final class ConsumerWorkService {
             } catch (RuntimeException e) {
                 Thread.currentThread().interrupt();
             }
-        }
-    }
-
-    private ExecutorService executorFrom(ExecutorService executor) {
-        if (executor == null) {
-            return Executors.newFixedThreadPool(DEFAULT_NUM_THREADS);
-        } else {
-            return executor;
         }
     }
 }
