@@ -93,7 +93,7 @@ import com.rabbitmq.utility.Utility;
  * </p>
  */
 public class QueueingConsumer extends DefaultConsumer {
-    private final BlockingQueue<Delivery> _queue;
+    private final BlockingDeque<Delivery> _queue;
     private final Set<String> consumerTags;
 
     public QueueingConsumer(Channel ch) {
@@ -228,14 +228,6 @@ public class QueueingConsumer extends DefaultConsumer {
         }
     }
 
-    /**
-     * Check if we are in shutdown mode and if so throw an exception.
-     */
-    private void checkShutdown() {
-        if (_shutdown != null)
-            throw Utility.fixStackTrace(_shutdown);
-    }
-
     private Delivery handle(final Delivery delivery) throws ConsumerCancelledException,
                                                       ShutdownSignalException {
         // If delivery is null, it is a timeout and we have no poison pill
@@ -243,7 +235,7 @@ public class QueueingConsumer extends DefaultConsumer {
         if (delivery == null) return null;
 
         if (delivery.needsReQueue()) {
-            queue.addLast(delivery);
+            _queue.addLast(delivery);
         }
 
         delivery.throwIfNecessary();
