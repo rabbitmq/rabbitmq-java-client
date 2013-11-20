@@ -126,9 +126,7 @@ public class QueueingConsumer extends DefaultConsumer {
 
     @Override public void handleCancel(String consumerTag) throws IOException {
         consumerTags.remove(consumerTag);
-        if (consumerTags.isEmpty()) {
-            _queue.add(new Delivery.ConsumerCancelledPoison());
-        }
+        _queue.add(new Delivery.ConsumerCancelledPoison());
     }
 
     @Override public void handleDelivery(String consumerTag,

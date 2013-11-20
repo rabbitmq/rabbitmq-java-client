@@ -84,27 +84,21 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
 
   public void testNConsumerCancellation() throws Exception {
     final QueueingConsumer qc = new QueueingConsumer(channel);
-    final BlockingCell<Boolean> result = new BlockingCell<Boolean>();
     final Stack<String> queues = setupConsumers(qc);
 
-    listenForException(ConsumerCancelledException.class, qc, result);
-
-    while (queues.size() > 1) {
+    while (!queues.isEmpty()) {
+      final BlockingCell<Boolean> result = new BlockingCell<Boolean>();
       channel.queueDelete(queues.pop());
+      listenForException(ConsumerCancelledException.class, qc, result);
+      try {
+        result.get(500);
+      } catch (TimeoutException tEx) {
+        fail("Consumer should have thrown an exception!");
+      }
     }
 
-    TimeoutException timeoutException = null;
-    try {
-      result.get(500);
-    } catch (TimeoutException tEx) {
-      timeoutException = tEx;
-    }
-
-    assertNotNull("Consumer should not have thrown an exception yet!", timeoutException);
-
-    channel.queueDelete(queues.pop());
-
-    assertTrue("Expected ConsumerCancelException to be thrown", result.get());
+    assertNull("Consumer should be ready for next delivery",
+               qc.nextDelivery(500));
   }
 
   public void testFailureModes() throws Exception {
