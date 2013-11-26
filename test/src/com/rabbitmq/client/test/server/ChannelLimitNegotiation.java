@@ -2,6 +2,7 @@ package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.DefaultExceptionHandler;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.test.BrokerTestCase;
 
@@ -28,7 +29,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
           channelMax,
           factory.getRequestedHeartbeat(),
           factory.getSaslConfig(),
-          null);
+          new DefaultExceptionHandler());
 
       this.channelMax = channelMax;
     }
@@ -57,7 +58,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
         startAppWithConfig("./../rabbitmq-java-client/test/etc/rabbitmq/with_channel_limit");
 
         boolean failed = false;
-        SpecialConnection connection = new SpecialConnection(4096);
+        SpecialConnection connection = new SpecialConnection(128000);
         try {
           connection.start();
         } catch (IOException e) {
