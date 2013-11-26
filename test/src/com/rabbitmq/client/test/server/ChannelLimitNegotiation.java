@@ -64,6 +64,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
         } catch (IOException e) {
           failed = true;
         }
+        assertTrue(failed);
       } finally {
         stopApp();
         startApp();
