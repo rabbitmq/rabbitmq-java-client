@@ -261,16 +261,4 @@ public class BrokerTestCase extends TestCase {
     protected void clearResourceAlarm(String source) throws IOException, InterruptedException {
         Host.executeCommand("cd ../rabbitmq-test; make clear-resource-alarm SOURCE=" + source);
     }
-
-    protected void stopApp() throws IOException, InterruptedException {
-        Host.executeCommand("cd ../rabbitmq-test; make stop-app");
-    }
-
-    protected void startApp() throws IOException, InterruptedException {
-        Host.executeCommand("cd ../rabbitmq-test; make start-app");
-    }
-
-  protected void startAppWithConfig(String path) throws IOException, InterruptedException {
-    Host.executeCommand("cd ../rabbitmq-test; make start-app-with-config RABBIT_CONFIG_FILE=" + path);
-  }
 }

@@ -5,6 +5,7 @@ import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.DefaultExceptionHandler;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.tools.Host;
 
 import javax.net.SocketFactory;
 import java.io.IOException;
@@ -54,11 +55,10 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
 
   public void testChannelMaxGreaterThanServerValue() throws Exception {
       try {
-        stopApp();
-        startAppWithConfig("./../rabbitmq-java-client/test/etc/rabbitmq/with_channel_limit");
+        Host.rabbitmqctl("eval 'application:set_env(rabbit, channel_max, 2048).'");
 
         boolean failed = false;
-        SpecialConnection connection = new SpecialConnection(128000);
+        SpecialConnection connection = new SpecialConnection(4096);
         try {
           connection.start();
         } catch (IOException e) {
@@ -66,8 +66,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
         }
         assertTrue(failed);
       } finally {
-        stopApp();
-        startApp();
+        Host.rabbitmqctl("eval 'application:set_env(rabbit, channel_max, 0).'");
       }
   }
 }
