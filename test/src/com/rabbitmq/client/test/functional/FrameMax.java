@@ -93,17 +93,15 @@ public class FrameMax extends BrokerTestCase {
     {
         closeChannel();
         closeConnection();
-        Host.rabbitmqctl("eval 'application:set_env(rabbit, frame_max, 4096).'");
-        ConnectionFactory cf = new ConnectionFactory();
+
+        ConnectionFactory cf = new GenerousConnectionFactory();
         connection = cf.newConnection();
         openChannel();
         try {
-            basicPublishVolatile(new byte[8196], "void");
+            basicPublishVolatile(new byte[connection.getFrameMax()], "void");
             channel.basicQos(0);
             fail("Expected exception when publishing");
         } catch (IOException e) {
-        } finally {
-          Host.rabbitmqctl("eval 'application:set_env(rabbit, frame_max, 131072).'");
         }
     }
 
@@ -135,4 +133,55 @@ public class FrameMax extends BrokerTestCase {
             return f;
         }
     }
+
+    /*
+      AMQConnection with a frame_max that is one higher than what it
+      tells the server.
+    */
+    private static class GenerousAMQConnection extends AMQConnection {
+
+        public GenerousAMQConnection(ConnectionFactory factory,
+                                     FrameHandler      handler,
+                                     ExecutorService   executor) {
+            super(factory.getUsername(),
+                  factory.getPassword(),
+                  handler,
+                  executor,
+                  factory.getVirtualHost(),
+                  factory.getClientProperties(),
+                  factory.getRequestedFrameMax(),
+                  factory.getRequestedChannelMax(),
+                  factory.getRequestedHeartbeat(),
+                  factory.getSaslConfig());
+        }
+
+        @Override public int getFrameMax() {
+            // the RabbitMQ broker permits frames that are oversize by
+            // up to EMPTY_FRAME_SIZE octets
+            return super.getFrameMax() + AMQCommand.EMPTY_FRAME_SIZE + 1;
+        }
+
+    }
+
+    private static class GenerousConnectionFactory extends ConnectionFactory {
+
+        @Override public Connection newConnection(ExecutorService executor, Address[] addrs)
+            throws IOException
+        {
+            IOException lastException = null;
+            for (Address addr : addrs) {
+                try {
+                    FrameHandler frameHandler = createFrameHandler(addr);
+                    AMQConnection conn = new GenerousAMQConnection(this, frameHandler, executor);
+                    conn.start();
+                    return conn;
+                } catch (IOException e) {
+                    lastException = e;
+                }
+            }
+            throw (lastException != null) ? lastException
+                : new IOException("failed to connect");
+        }
+    }
+
 }
