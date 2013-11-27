@@ -1,8 +1,6 @@
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.*;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
@@ -72,14 +70,32 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
   public void testOpeningChannelWithIdGreaterThanChannelMaxFails() throws Exception {
     int n = 48;
 
-    ConnectionFactory cf = new ConnectionFactory();
-    Connection conn = cf.newConnection();
-    assertEquals(n, conn.getChannelMax());
+    try {
+      Host.rabbitmqctl("eval 'application:set_env(rabbit, channel_max, " + n + ").'");
+      ConnectionFactory cf = new ConnectionFactory();
+      Connection conn = cf.newConnection();
+      assertEquals(n, conn.getChannelMax());
 
-    for(int i = 1; i <= n; i++) {
-      assertNotNull(conn.createChannel(i));
+      for(int i = 1; i <= n; i++) {
+        assertNotNull(conn.createChannel(i));
+      }
+      // ChannelManager guards against channel.open being sent
+      assertNull(conn.createChannel(n + 1));
+
+      // Construct a channel directly
+      final ChannelN ch = new ChannelN((AMQConnection)conn, n + 1,
+          new ConsumerWorkService(Executors.newSingleThreadExecutor()));
+      conn.addShutdownListener(new ShutdownListener() {
+        public void shutdownCompleted(ShutdownSignalException cause) {
+          // make sure channel.open continuation is released
+          ch.processShutdownSignal(cause, true, true);
+        }
+      });
+      ch.open();
+      fail("expected channel.open to cause a connection exception");
+    } catch (IOException e) {
+    } finally {
+      Host.rabbitmqctl("eval 'application:set_env(rabbit, channel_max, 0).'");
     }
-    // ChannelManager guards against channel.open being sent
-    assertNull(conn.createChannel(n + 1));
   }
 }
