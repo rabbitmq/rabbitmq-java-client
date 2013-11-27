@@ -34,6 +34,7 @@ import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.LongStringHelper;
 import com.rabbitmq.client.impl.SocketFrameHandler;
+import com.rabbitmq.tools.Host;
 
 public class FrameMax extends BrokerTestCase {
     /* This value for FrameMax is larger than the minimum and less
@@ -73,12 +74,15 @@ public class FrameMax extends BrokerTestCase {
     public void testRejectLargeFramesDuringConnectionNegotiation()
         throws IOException
     {
+        Host.rabbitmqctl("eval 'application:set_env(rabbit, frame_max, 4096).'");
         ConnectionFactory cf = new ConnectionFactory();
         cf.getClientProperties().put("too_long", LongStringHelper.asLongString(new byte[AMQP.FRAME_MIN_SIZE]));
         try {
             cf.newConnection();
             fail("Expected exception during connection negotiation");
         } catch (IOException e) {
+        } finally {
+            Host.rabbitmqctl("eval 'application:set_env(rabbit, frame_max, 131768).'");
         }
     }
 
