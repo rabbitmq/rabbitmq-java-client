@@ -57,14 +57,13 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
       try {
         Host.rabbitmqctl("eval 'application:set_env(rabbit, channel_max, 2048).'");
 
-        boolean failed = false;
         SpecialConnection connection = new SpecialConnection(4096);
         try {
           connection.start();
+          fail("expected failure during connection negotiation");
         } catch (IOException e) {
-          failed = true;
+          // expected
         }
-        assertTrue(failed);
       } finally {
         Host.rabbitmqctl("eval 'application:set_env(rabbit, channel_max, 0).'");
       }
