@@ -74,7 +74,7 @@ public class FrameMax extends BrokerTestCase {
     public void testRejectLargeFramesDuringConnectionNegotiation()
         throws IOException
     {
-        Host.rabbitmqctl("eval 'application:set_env(rabbit, frame_max, 4096).'");
+        Host.rabbitmqctl("eval 'application:set_env(rabbit, frame_max, " + Integer.toString(AMQP.FRAME_MIN_SIZE) + ").'");
         ConnectionFactory cf = new ConnectionFactory();
         cf.getClientProperties().put("too_long", LongStringHelper.asLongString(new byte[AMQP.FRAME_MIN_SIZE]));
         try {
