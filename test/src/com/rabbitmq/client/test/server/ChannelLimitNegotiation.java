@@ -94,6 +94,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
       ch.open();
       fail("expected channel.open to cause a connection exception");
     } catch (IOException e) {
+      checkShutdownSignal(530, e);
     } finally {
       Host.rabbitmqctl("eval 'application:set_env(rabbit, channel_max, 0).'");
     }
