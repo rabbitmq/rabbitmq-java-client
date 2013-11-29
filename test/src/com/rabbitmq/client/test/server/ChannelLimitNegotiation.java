@@ -67,7 +67,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
       }
   }
 
-  public void testOpeningChannelWithIdGreaterThanChannelMaxFails() throws Exception {
+  public void testOpeningTooManyChannels() throws Exception {
     int n = 48;
 
     try {
