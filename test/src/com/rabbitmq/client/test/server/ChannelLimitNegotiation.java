@@ -27,16 +27,16 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
 
         private SpecialConnection(ConnectionFactory factory, int channelMax) throws Exception {
             super(factory.getUsername(),
-                         factory.getPassword(),
-                         new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT)),
-                         Executors.newFixedThreadPool(1),
-                         factory.getVirtualHost(),
-                         factory.getClientProperties(),
-                         factory.getRequestedFrameMax(),
-                         channelMax,
-                         factory.getRequestedHeartbeat(),
-                         factory.getSaslConfig(),
-                         new DefaultExceptionHandler());
+                  factory.getPassword(),
+                  new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT)),
+                  Executors.newFixedThreadPool(1),
+                  factory.getVirtualHost(),
+                  factory.getClientProperties(),
+                  factory.getRequestedFrameMax(),
+                  channelMax,
+                  factory.getRequestedHeartbeat(),
+                  factory.getSaslConfig(),
+                  new DefaultExceptionHandler());
 
             this.channelMax = channelMax;
         }
@@ -92,7 +92,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
 
             // Construct a channel directly
             final ChannelN ch = new ChannelN((AMQConnection) conn, n + 1,
-                                                    new ConsumerWorkService(Executors.newSingleThreadExecutor()));
+                                             new ConsumerWorkService(Executors.newSingleThreadExecutor()));
             conn.addShutdownListener(new ShutdownListener() {
                 public void shutdownCompleted(ShutdownSignalException cause) {
                     // make sure channel.open continuation is released
