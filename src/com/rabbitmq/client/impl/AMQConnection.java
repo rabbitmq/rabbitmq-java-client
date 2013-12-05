@@ -382,8 +382,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         try {
             int channelMax =
-                negotiatedMaxValue(this.requestedChannelMax,
-                                   connTune.getChannelMax());
+                negotiateChannelMax(this.requestedChannelMax,
+                                    connTune.getChannelMax());
             _channelManager = new ChannelManager(this._workService, channelMax);
 
             int frameMax =
@@ -419,6 +419,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = false;
 
         return;
+    }
+
+    /**
+     * Private API, allows for easier simulation of bogus clients.
+     */
+    protected int negotiateChannelMax(int requestedChannelMax, int serverMax) {
+        return negotiatedMaxValue(requestedChannelMax, serverMax);
     }
 
     /**
