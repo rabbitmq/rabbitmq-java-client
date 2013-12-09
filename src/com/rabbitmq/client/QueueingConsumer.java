@@ -120,13 +120,14 @@ public class QueueingConsumer extends DefaultConsumer {
                                                ShutdownSignalException sig) {
         consumerTags.remove(consumerTag);
         if (consumerTags.isEmpty()) {
-            _queue.add(new Delivery.ShutdownSignalPoison(sig));
+            _queue.add(new Delivery.Poison<ShutdownSignalException>(true, sig));
         }
     }
 
     @Override public void handleCancel(String consumerTag) throws IOException {
         consumerTags.remove(consumerTag);
-        _queue.add(new Delivery.ConsumerCancelledPoison());
+        _queue.add(new Delivery.Poison<ConsumerCancelledException>(
+                false, new ConsumerCancelledException()));
     }
 
     @Override public void handleDelivery(String consumerTag,
@@ -192,38 +193,25 @@ public class QueueingConsumer extends DefaultConsumer {
 
         static class Poison<T extends RuntimeException & SensibleClone<T>> extends Delivery {
             private final T exception;
-            public Poison(final T exception) {
+            private final boolean needsReQueue;
+
+            public Poison(final boolean needsReQueue, final T exception) {
                 super(null, null, null, null);
                 this.exception = exception;
+                this.needsReQueue = needsReQueue;
             }
 
             @Override
             void throwIfNecessary() {
                 throw Utility.fixStackTrace(exception);
             }
-        }
-
-        static class ConsumerCancelledPoison extends Poison<ConsumerCancelledException> {
-            public ConsumerCancelledPoison() {
-                super(new ConsumerCancelledException());
-            }
 
             @Override
             boolean needsReQueue() {
-                return false;
+                return this.needsReQueue;
             }
         }
 
-        static class ShutdownSignalPoison extends Poison<ShutdownSignalException> {
-            public ShutdownSignalPoison(ShutdownSignalException ex) {
-                super(ex);
-            }
-
-            @Override
-            boolean needsReQueue() {
-                return true;
-            }
-        }
     }
 
     private Delivery handle(final Delivery delivery) throws ConsumerCancelledException,
