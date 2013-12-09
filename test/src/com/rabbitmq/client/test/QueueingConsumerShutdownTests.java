@@ -76,10 +76,8 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
     final BlockingCell<Boolean> result = new BlockingCell<Boolean>();
     setupConsumers(qc);
 
-    listenForException(ShutdownSignalException.class, qc, result);
-
     channel.close();
-    assertTrue("Expected ShutdownSignalException to be thrown", result.get());
+    listenForException(ShutdownSignalException.class, qc);
   }
 
   public void testNConsumerCancellation() throws Exception {
@@ -87,14 +85,8 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
     final Stack<String> queues = setupConsumers(qc);
 
     while (!queues.isEmpty()) {
-      final BlockingCell<Boolean> result = new BlockingCell<Boolean>();
       channel.queueDelete(queues.pop());
-      listenForException(ConsumerCancelledException.class, qc, result);
-      try {
-        result.get(500);
-      } catch (TimeoutException tEx) {
-        fail("Consumer should have thrown an exception!");
-      }
+      listenForException(ConsumerCancelledException.class, qc);
     }
 
     assertNull("Consumer should be ready for next delivery",
@@ -137,17 +129,13 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
   }
 
   private void listenForException(final Class clazz,
-                                  final QueueingConsumer qc,
-                                  final BlockingCell<Boolean> result) {
-    new Thread() {
-      @Override public void run() {
-        try {
-          qc.nextDelivery();
-        } catch (Exception e) {
-          result.set(clazz.isAssignableFrom(e.getClass()));
-        }
-      }
-    }.start();
+                                  final QueueingConsumer qc) {
+    try {
+      qc.nextDelivery();
+    } catch (Exception e) {
+      assertTrue("Expected " + clazz.getName() + " to be thrown!",
+                 clazz.isAssignableFrom(e.getClass()));
+    }
   }
 
   private void cancellationShouldThrowButNotTerminateAllConsumers(QueueingConsumer qc) throws InterruptedException {
