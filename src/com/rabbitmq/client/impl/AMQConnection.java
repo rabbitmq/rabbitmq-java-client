@@ -47,7 +47,6 @@ import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
-import com.rabbitmq.utility.Utility;
 
 final class Copyright {
     final static String COPYRIGHT="Copyright (C) 2007-2013 GoPivotal, Inc.";
@@ -383,8 +382,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         try {
             int channelMax =
-                negotiatedMaxValue(this.requestedChannelMax,
-                                   connTune.getChannelMax());
+                negotiateChannelMax(this.requestedChannelMax,
+                                    connTune.getChannelMax());
             _channelManager = new ChannelManager(this._workService, channelMax);
 
             int frameMax =
@@ -420,6 +419,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = false;
 
         return;
+    }
+
+    /**
+     * Private API, allows for easier simulation of bogus clients.
+     */
+    protected int negotiateChannelMax(int requestedChannelMax, int serverMax) {
+        return negotiatedMaxValue(requestedChannelMax, serverMax);
     }
 
     /**
@@ -474,6 +480,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public ExceptionHandler getExceptionHandler() {
         return _exceptionHandler;
     }
+
+
+    /** Public API
+     *
+     * @return true if this work service instance uses its own executor (as opposed to a shared one)
+     */
+    public boolean willShutDownConsumerExecutor() {
+        return this._workService.usesPrivateExecutor();
+    }
+
 
     /** Public API - {@inheritDoc} */
     public Channel createChannel(int channelNumber) throws IOException {
