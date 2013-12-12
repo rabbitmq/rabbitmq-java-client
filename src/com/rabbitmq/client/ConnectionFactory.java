@@ -90,8 +90,21 @@ public class ConnectionFactory implements Cloneable {
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
 
+<<<<<<< local
+<<<<<<< local
+=======
+>>>>>>> other
     private boolean automaticallyRecover          = true;
+<<<<<<< local
+    private boolean automaticallyRecoverTopology  = true;
+=======
+>>>>>>> other
 
+<<<<<<< local
+=======
+>>>>>>> other
+=======
+>>>>>>> other
     /** @return number of consumer threads in default {@link ExecutorService} */
     @Deprecated
     public int getNumConsumerThreads() {
@@ -181,14 +194,46 @@ public class ConnectionFactory implements Cloneable {
         this.virtualHost = virtualHost;
     }
 
+<<<<<<< local
+<<<<<<< local
+    /**
+     * @return true if the connection will automatically recover from network failures
+     */
+    public boolean willAutomaticallyRecover() {
+=======
     public boolean isAutomaticallyRecovering() {
+>>>>>>> other
         return automaticallyRecover;
     }
 
+<<<<<<< local
+    /**
+     * @return true if the connection will automatically recover exchanges, queues, bindings, and consumers
+     * after network failures
+     */
+    public boolean willAutomaticallyRecoverTopology() {
+        return automaticallyRecoverTopology;
+    }
+
+    /**
+     * Enables or disables automatic connection recovery.
+     * @param automaticallyRecover should the connection automatically recover from network failures?
+     */
+=======
+>>>>>>> other
     public void setAutomaticallyRecover(boolean automaticallyRecover) {
         this.automaticallyRecover = automaticallyRecover;
     }
 
+<<<<<<< local
+    public void setAutomaticallyRecoverTopology(boolean automaticallyRecoverTopology) {
+        this.automaticallyRecoverTopology = automaticallyRecoverTopology;
+    }
+
+=======
+>>>>>>> other
+=======
+>>>>>>> other
     /**
      * Convenience method for setting the fields in an AMQP URI: host,
      * port, username, password and virtual host.  If any part of the
