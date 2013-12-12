@@ -90,6 +90,8 @@ public class ConnectionFactory implements Cloneable {
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
 
+    private boolean automaticallyRecover          = true;
+
     /** @return number of consumer threads in default {@link ExecutorService} */
     @Deprecated
     public int getNumConsumerThreads() {
@@ -177,6 +179,14 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setVirtualHost(String virtualHost) {
         this.virtualHost = virtualHost;
+    }
+
+    public boolean isAutomaticallyRecovering() {
+        return automaticallyRecover;
+    }
+
+    public void setAutomaticallyRecover(boolean automaticallyRecover) {
+        this.automaticallyRecover = automaticallyRecover;
     }
 
     /**
