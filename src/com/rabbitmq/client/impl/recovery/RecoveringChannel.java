@@ -380,7 +380,7 @@ public class RecoveringChannel implements Channel, Recoverable {
         this.connection = connection;
         this.delegate = connDelegate.createChannel(this.getChannelNumber());
 
-        if (this.connection.automaticTopologyRecoveryEnabled()) {
+        if (this.connection.isAutomaticTopologyRecoveryEnabled()) {
             this.recoverTopology();
         }
     }
