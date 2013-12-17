@@ -8,6 +8,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.SocketConnection;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -18,7 +19,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
-public class RecoveringConnection implements Connection, Recoverable {
+public class RecoveringConnection implements Connection, Recoverable, SocketConnection {
     private final ConnectionFactory cf;
     private final Map<Integer, RecoveringChannel> channels;
     private final List<ShutdownListener> shutdownHooks;
@@ -74,9 +75,7 @@ public class RecoveringConnection implements Connection, Recoverable {
 
     synchronized private void beginAutomaticRecovery() throws InterruptedException, IOException {
         Thread.sleep(networkRecoveryInterval);
-        // System.out.println("About to recover connection...");
         this.recoverConnection();
-        // System.out.println("About to recover shutdown hooks...");
         this.recoverShutdownHooks();
         // System.out.println("About to recover channels...");
         this.recoverChannels();
@@ -119,7 +118,8 @@ public class RecoveringConnection implements Connection, Recoverable {
     }
 
     public void start() throws IOException {
-        delegate.start();
+        // no-op, AMQConnection#start is executed in ConnectionFactory#newConnection
+        // and invoking it again will result in a framing error. MK.
     }
 
     private void runChannelRecoveryHooks() {
@@ -277,5 +277,19 @@ public class RecoveringConnection implements Connection, Recoverable {
 
     public void removeRecoveryListener(RecoveryListener listener) {
         this.recoveryListeners.remove(listener);
+    }
+
+    @Override
+    public InetAddress getLocalAddress() {
+        return this.delegate.getLocalAddress();
+    }
+
+    @Override
+    public int getLocalPort() {
+        return this.delegate.getLocalPort();
+    }
+
+    public String getName() {
+        return this.delegate.getName();
     }
 }

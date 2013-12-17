@@ -567,6 +567,10 @@ public class ConnectionFactory implements Cloneable {
         throw (e != null) ? e : new IOException("failed to connect");
     }
 
+    public Connection newRecoveringConnection() throws IOException {
+        return newRecoveringConnection(this.sharedExecutor);
+    }
+
     /**
      * Create a new broker connection that automatically recovers from failures
      * @param executor thread execution service for consumers on the connection
@@ -578,7 +582,6 @@ public class ConnectionFactory implements Cloneable {
         try {
             RecoveringConnection conn = new RecoveringConnection(this);
             conn.init(executor);
-            conn.start();
             return conn;
         } catch (IOException e) {
             lastException = e;
@@ -620,5 +623,9 @@ public class ConnectionFactory implements Cloneable {
 
     public int getNetworkRecoveryInterval() {
         return networkRecoveryInterval;
+    }
+
+    public void setNetworkRecoveryInterval(int networkRecoveryInterval) {
+        this.networkRecoveryInterval = networkRecoveryInterval;
     }
 }

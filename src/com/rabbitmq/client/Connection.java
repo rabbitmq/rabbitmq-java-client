@@ -58,23 +58,11 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
     InetAddress getAddress();
 
     /**
-     * Retrieve the local host.
-     * @return the client socket address.
-     */
-    InetAddress getLocalAddress();
-
-    /**
      * Retrieve the port number.
      * @return the port number of the peer we're connected to.
      */
 
     int getPort();
-
-    /**
-     * Retrieve the local port number.
-     * @return the client socket port number
-     */
-    int getLocalPort();
 
     /**
      * Get the negotiated maximum channel number. Usable channel

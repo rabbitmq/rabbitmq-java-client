@@ -59,7 +59,7 @@ final class Copyright {
  * To create a broker connection, use {@link ConnectionFactory}.  See {@link Connection}
  * for an example.
  */
-public class AMQConnection extends ShutdownNotifierComponent implements Connection {
+public class AMQConnection extends ShutdownNotifierComponent implements Connection, SocketConnection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
 
@@ -173,9 +173,19 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _frameHandler.getAddress();
     }
 
+    @Override
+    public InetAddress getLocalAddress() {
+        return ((SocketFrameHandler)_frameHandler).getLocalAddress();
+    }
+
     /** {@inheritDoc} */
     public int getPort() {
         return _frameHandler.getPort();
+    }
+
+    @Override
+    public int getLocalPort() {
+        return ((SocketFrameHandler)_frameHandler).getLocalPort();
     }
 
     public FrameHandler getFrameHandler(){
