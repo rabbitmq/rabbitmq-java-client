@@ -888,4 +888,21 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void clearBlockedListeners() {
         blockedListeners.clear();
     }
+
+    /**
+     * @return Connection name as displayed and used by rabbitmqctl and management UI
+     */
+    public String getName() {
+        StringBuilder sb = new StringBuilder();
+        SocketFrameHandler fh = (SocketFrameHandler)this._frameHandler;
+        sb.append(fh.getLocalAddress().getHostAddress()).
+           append(":").
+           append(fh.getLocalPort()).
+           append(" -> ").
+           append(fh.getAddress().getHostAddress()).
+           append(":").
+           append(fh.getPort());
+
+        return sb.toString();
+    }
 }
