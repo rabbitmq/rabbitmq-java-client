@@ -47,13 +47,19 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public void close() throws IOException {
-        delegate.close();
-        this.connection.unregisterChannel(this);
+        try {
+          delegate.close();
+        } finally {
+          this.connection.unregisterChannel(this);
+        }
     }
 
     public void close(int closeCode, String closeMessage) throws IOException {
-        delegate.close(closeCode, closeMessage);
-        this.connection.unregisterChannel(this);
+        try {
+          delegate.close(closeCode, closeMessage);
+        } finally {
+          this.connection.unregisterChannel(this);
+        }
     }
 
     public AMQP.Channel.FlowOk flow(boolean active) throws IOException {
