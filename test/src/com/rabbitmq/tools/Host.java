@@ -17,6 +17,10 @@
 
 package com.rabbitmq.tools;
 
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.impl.SocketConnection;
+import com.rabbitmq.client.impl.recovery.RecoveringConnection;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -116,6 +120,11 @@ public class Host {
         rabbitmqctl("close_connection '" + pid + "' 'Closed via rabbitmqctl'");
     }
 
+    public static void closeConnection(SocketConnection c) throws IOException {
+        Host.ConnectionInfo ci = findConnectionInfoFor(Host.listConnections(), c);
+        closeConnection(ci.getPid());
+    }
+
     public static class ConnectionInfo {
         private final String pid;
         private final String name;
@@ -144,6 +153,17 @@ public class Host {
             Matcher m = pattern.matcher(line);
             m.find();
             result.add(new ConnectionInfo(m.group(1), m.group(2)));
+        }
+        return result;
+    }
+
+    private static Host.ConnectionInfo findConnectionInfoFor(List<Host.ConnectionInfo> xs, SocketConnection c) {
+        Host.ConnectionInfo result = null;
+        for (Host.ConnectionInfo ci : xs) {
+            if(c.getName().equals(ci.getName())){
+                result = ci;
+                break;
+            }
         }
         return result;
     }
