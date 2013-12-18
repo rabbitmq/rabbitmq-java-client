@@ -31,13 +31,20 @@ public class ConnectionRecovery extends TestCase {
         ConnectionFactory cf = new ConnectionFactory();
         cf.setNetworkRecoveryInterval(RECOVERY_INTERVAL);
         RecoveringConnection c = (RecoveringConnection) cf.newRecoveringConnection();
-        Channel ch = c.createChannel();
+        Channel ch1 = c.createChannel();
+        Channel ch2 = c.createChannel();
         Host.ConnectionInfo ci = findConnectionInfoFor(Host.listConnections(), c);
 
-        assertTrue(ch.isOpen());
+        assertTrue(ch1.isOpen());
+        assertTrue(ch2.isOpen());
         try {
             Host.closeConnection(ci.getPid());
-            expectChannelRecovery(ch);
+            Thread.sleep(20);
+            assertFalse(ch1.isOpen());
+            assertFalse(ch2.isOpen());
+            Thread.sleep(RECOVERY_INTERVAL + 120);
+            expectChannelRecovery(ch1);
+            expectChannelRecovery(ch2);
         } finally {
             c.abort();
         }
@@ -53,9 +60,6 @@ public class ConnectionRecovery extends TestCase {
     }
 
     private void expectChannelRecovery(Channel ch) throws InterruptedException {
-        Thread.sleep(20);
-        assertFalse(ch.isOpen());
-        Thread.sleep(RECOVERY_INTERVAL + 120);
         assertTrue(ch.isOpen());
     }
 
