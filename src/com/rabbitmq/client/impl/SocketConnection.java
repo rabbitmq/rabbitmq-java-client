@@ -16,4 +16,8 @@ public interface SocketConnection {
      */
     int getLocalPort();
 
+    /**
+     * @return connection name as used by rabbitmqctl and management UI.
+     */
+    String getName();
 }
