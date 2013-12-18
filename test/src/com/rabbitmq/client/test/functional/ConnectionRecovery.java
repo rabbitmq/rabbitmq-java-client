@@ -47,7 +47,7 @@ public class ConnectionRecovery extends TestCase {
         RecoveringConnection c = newRecoveringConnection();
         Channel ch = c.createChannel();
         String q = "java-client.test.recovery.q1";
-        ch.queueDeclare(q, true, false, false, null);
+        declareClientNamedQueue(ch, q);
         try {
             Host.closeConnection(c);
             waitForShutdown();
@@ -61,17 +61,21 @@ public class ConnectionRecovery extends TestCase {
         }
     }
 
+    private AMQP.Queue.DeclareOk declareClientNamedQueue(Channel ch, String q) throws IOException {
+        return ch.queueDeclare(q, true, false, false, null);
+    }
+
     private void waitForShutdown() throws InterruptedException {
         Thread.sleep(20);
     }
 
     private void expectQueueRecovery(Channel ch, String q) throws IOException, InterruptedException {
         ch.queuePurge(q);
-        AMQP.Queue.DeclareOk ok1 = ch.queueDeclare(q, true, false, false, null);
+        AMQP.Queue.DeclareOk ok1 = declareClientNamedQueue(ch, q);
         assertEquals(0, ok1.getMessageCount());
         ch.basicPublish("", q, null, "msg".getBytes());
         Thread.sleep(20);
-        AMQP.Queue.DeclareOk ok2 = ch.queueDeclare(q, true, false, false, null);
+        AMQP.Queue.DeclareOk ok2 = declareClientNamedQueue(ch, q);
         assertEquals(1, ok2.getMessageCount());
     }
 
