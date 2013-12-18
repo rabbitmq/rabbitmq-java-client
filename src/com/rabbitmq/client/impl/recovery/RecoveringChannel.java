@@ -203,7 +203,7 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public AMQP.Queue.DeclareOk queueDeclare() throws IOException {
-        return delegate.queueDeclare();
+        return queueDeclare("", false, true, true, null);
     }
 
     public AMQP.Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive, boolean autoDelete, Map<String, Object> arguments) throws IOException {
@@ -237,7 +237,9 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public AMQP.Queue.BindOk queueBind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException {
-        return delegate.queueBind(queue, exchange, routingKey, arguments);
+        AMQP.Queue.BindOk ok = delegate.queueBind(queue, exchange, routingKey, arguments);
+        recordQueueBinding(queue, exchange, routingKey, arguments);
+        return ok;
     }
 
     public AMQP.Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey) throws IOException {
@@ -490,6 +492,17 @@ public class RecoveringChannel implements Channel, Recoverable {
     public void runRecoveryHooks() {
         for (RecoveryListener f : this.recoveryListeners) {
             f.handleRecovery(this);
+        }
+    }
+
+    private void recordQueueBinding(String queue, String exchange, String routingKey, Map<String, Object> arguments) {
+        RecordedBinding binding = new RecordedQueueBinding(this).
+            source(exchange).
+            destination(queue).
+            routingKey(routingKey).
+            arguments(arguments);
+        if (!this.bindings.contains(binding)) {
+            this.bindings.add(binding);
         }
     }
 }

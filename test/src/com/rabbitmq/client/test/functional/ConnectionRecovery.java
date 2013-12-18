@@ -1,13 +1,13 @@
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.recovery.RecoveringConnection;
 import com.rabbitmq.tools.Host;
 import junit.framework.TestCase;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class ConnectionRecovery extends TestCase {
     public static final int RECOVERY_INTERVAL = 50;
@@ -56,6 +56,30 @@ public class ConnectionRecovery extends TestCase {
             expectChannelRecovery(ch);
             expectQueueRecovery(ch, q);
             ch.queueDelete(q);
+        } finally {
+            c.close();
+        }
+    }
+
+    public void testServerNamedQueueRecovery() throws IOException, InterruptedException {
+        RecoveringConnection c = newRecoveringConnection();
+        Channel ch = c.createChannel();
+        String q = ch.queueDeclare().getQueue();
+        String x = "amq.fanout";
+        ch.queueBind(q, x, "");
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Consumer consumer = new CountingDownConsumer(latch);
+        ch.basicConsume(q, consumer);
+        try {
+            Host.closeConnection(c);
+            waitForShutdown();
+            assertFalse(ch.isOpen());
+            waitForRecovery();
+            expectChannelRecovery(ch);
+            ch.basicPublish(x, "", null, "msg".getBytes());
+            Thread.sleep(20);
+            assertTrue(latch.await(200, TimeUnit.MILLISECONDS));
         } finally {
             c.close();
         }
