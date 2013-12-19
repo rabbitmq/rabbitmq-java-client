@@ -172,6 +172,7 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public AMQP.Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException {
+        this.exchanges.remove(exchange);
         return delegate.exchangeDelete(exchange, ifUnused);
     }
 
@@ -195,10 +196,11 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public AMQP.Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey) throws IOException {
-        return delegate.exchangeUnbind(destination, source, routingKey);
+        return exchangeUnbind(destination, source, routingKey, null);
     }
 
     public AMQP.Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
+        deleteRecordedExchangeBinding(destination, source, routingKey, arguments);
         return delegate.exchangeUnbind(destination, source, routingKey, arguments);
     }
 
@@ -229,6 +231,7 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public AMQP.Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
+        this.queues.remove(queue);
         return delegate.queueDelete(queue, ifUnused, ifEmpty);
     }
 
@@ -247,6 +250,7 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public AMQP.Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException {
+        deleteRecordedQueueBinding(queue, exchange, routingKey, arguments);
         return delegate.queueUnbind(queue, exchange, routingKey, arguments);
     }
 
@@ -504,5 +508,23 @@ public class RecoveringChannel implements Channel, Recoverable {
         if (!this.bindings.contains(binding)) {
             this.bindings.add(binding);
         }
+    }
+
+    private boolean deleteRecordedQueueBinding(String queue, String exchange, String routingKey, Map<String, Object> arguments) {
+        RecordedBinding b = new RecordedQueueBinding(this).
+            source(exchange).
+            destination(queue).
+            routingKey(routingKey).
+            arguments(arguments);
+        return this.bindings.remove(b);
+    }
+
+    private boolean deleteRecordedExchangeBinding(String destination, String source, String routingKey, Map<String, Object> arguments) {
+        RecordedBinding b = new RecordedExchangeBinding(this).
+            source(source).
+            destination(destination).
+            routingKey(routingKey).
+            arguments(arguments);
+        return this.bindings.remove(b);
     }
 }
