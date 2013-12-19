@@ -105,6 +105,34 @@ public class ConnectionRecovery extends TestCase {
         }
     }
 
+    public void testExchangeToExchangeBindingRecovery() throws IOException, InterruptedException {
+        RecoveringConnection c = newRecoveringConnection();
+        Channel ch = c.createChannel();
+        String q = ch.queueDeclare().getQueue();
+        String x1 = "amq.fanout";
+        String x2 = "java-client.test.recovery.x1";
+        ch.exchangeDeclare(x2, "fanout");
+        ch.exchangeBind(x1,x2, "");
+        ch.queueBind(q, x1, "");
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Consumer consumer = new CountingDownConsumer(latch);
+        ch.basicConsume(q, consumer);
+        try {
+            Host.closeConnection(c);
+            waitForShutdown();
+            assertFalse(ch.isOpen());
+            waitForRecovery();
+            expectChannelRecovery(ch);
+            ch.basicPublish(x2, "", null, "msg".getBytes());
+            Thread.sleep(20);
+            assertTrue(latch.await(200, TimeUnit.MILLISECONDS));
+        } finally {
+            ch.exchangeDelete(x2);
+            c.close();
+        }
+    }
+
     private AMQP.Queue.DeclareOk declareClientNamedQueue(Channel ch, String q) throws IOException {
         return ch.queueDeclare(q, true, false, false, null);
     }
