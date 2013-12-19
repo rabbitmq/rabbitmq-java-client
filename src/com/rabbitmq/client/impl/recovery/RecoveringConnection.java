@@ -279,12 +279,10 @@ public class RecoveringConnection implements Connection, Recoverable, SocketConn
         this.recoveryListeners.remove(listener);
     }
 
-    @Override
     public InetAddress getLocalAddress() {
         return this.delegate.getLocalAddress();
     }
 
-    @Override
     public int getLocalPort() {
         return this.delegate.getLocalPort();
     }
