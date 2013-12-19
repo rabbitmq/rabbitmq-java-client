@@ -23,6 +23,26 @@ public class ConnectionRecovery extends TestCase {
         }
     }
 
+
+    public void testConnectionRecoveryWithDisabledTopologyRecovery() throws IOException, InterruptedException {
+        RecoveringConnection c = newRecoveringConnection(true);
+        Channel ch = c.createChannel();
+        String q = "java-client.test.recovery.q2";
+        ch.queueDeclare(q, false, true, false, null);
+        ch.queueDeclarePassive(q);
+        assertTrue(c.isOpen());
+        try {
+            Host.closeConnection(c);
+            expectConnectionRecovery(c);
+            ch.queueDeclarePassive(q);
+            fail("expected passive declaration to throw");
+        } catch (java.io.IOException e) {
+            // expected
+        } finally {
+            c.close();
+        }
+    }
+
     public void testChannelRecovery() throws IOException, InterruptedException {
         RecoveringConnection c = newRecoveringConnection();
         Channel ch1 = c.createChannel();
@@ -121,9 +141,16 @@ public class ConnectionRecovery extends TestCase {
     }
 
     private RecoveringConnection newRecoveringConnection() throws IOException {
-        ConnectionFactory cf = new ConnectionFactory();
-        cf.setNetworkRecoveryInterval(RECOVERY_INTERVAL);
-        return (RecoveringConnection) cf.newRecoveringConnection();
+        return newRecoveringConnection(false);
     }
 
+    private RecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery) throws IOException {
+        ConnectionFactory cf = new ConnectionFactory();
+        cf.setNetworkRecoveryInterval(RECOVERY_INTERVAL);
+        final RecoveringConnection c = (RecoveringConnection) cf.newRecoveringConnection();
+        if(disableTopologyRecovery) {
+            c.disableAutomaticTopologyRecovery();
+        }
+        return c;
+    }
 }
