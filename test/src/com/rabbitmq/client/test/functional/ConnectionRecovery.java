@@ -144,6 +144,33 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
     }
 
+    public void testThatDeletedExchangeDoesNotReappearOnRecover() throws IOException, InterruptedException {
+        String x = "java-client.test.recovery.x3";
+        channel.exchangeDeclare(x, "fanout");
+        channel.exchangeDelete(x);
+        try {
+            closeAndWaitForRecovery(connection);
+            expectChannelRecovery(channel);
+            channel.exchangeDeclarePassive(x);
+            fail("Expected passive declare to fail");
+        } catch (IOException ioe) {
+            // expected
+        }
+    }
+
+    public void testThatDeletedQueueDoesNotReappearOnRecover() throws IOException, InterruptedException {
+        String q = channel.queueDeclare().getQueue();
+        channel.queueDelete(q);
+        try {
+            closeAndWaitForRecovery(connection);
+            expectChannelRecovery(channel);
+            channel.queueDeclarePassive(q);
+            fail("Expected passive declare to fail");
+        } catch (IOException ioe) {
+            // expected
+        }
+    }
+
     private void closeAndWaitForShutdown(RecoveringConnection c) throws IOException, InterruptedException {
         Host.closeConnection(c);
         waitForShutdown();
