@@ -6,6 +6,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -82,7 +83,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     public void testExchangeToExchangeBindingRecovery() throws IOException, InterruptedException {
         String q = channel.queueDeclare().getQueue();
         String x1 = "amq.fanout";
-        String x2 = "java-client.test.recovery.x1";
+        String x2 = generateExchangeName();
         channel.exchangeDeclare(x2, "fanout");
         channel.exchangeBind(x1, x2, "");
         channel.queueBind(q, x1, "");
@@ -100,10 +101,14 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
     }
 
+    private String generateExchangeName() {
+        return "java-client.test.recovery." + UUID.randomUUID().toString();
+    }
+
     public void testThatDeletedQueueBindingsDontReappearOnRecovery() throws IOException, InterruptedException {
         String q = channel.queueDeclare().getQueue();
         String x1 = "amq.fanout";
-        String x2 = "java-client.test.recovery.x2";
+        String x2 = generateExchangeName();
         channel.exchangeDeclare(x2, "fanout");
         channel.exchangeBind(x1, x2, "");
         channel.queueBind(q, x1, "");
@@ -125,7 +130,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     public void testThatDeletedExchangeBindingsDontReappearOnRecovery() throws IOException, InterruptedException {
         String q = channel.queueDeclare().getQueue();
         String x1 = "amq.fanout";
-        String x2 = "java-client.test.recovery.x2";
+        String x2 = generateExchangeName();
         channel.exchangeDeclare(x2, "fanout");
         channel.exchangeBind(x1, x2, "");
         channel.queueBind(q, x1, "");
@@ -145,7 +150,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     public void testThatDeletedExchangeDoesNotReappearOnRecover() throws IOException, InterruptedException {
-        String x = "java-client.test.recovery.x3";
+        String x = generateExchangeName();
         channel.exchangeDeclare(x, "fanout");
         channel.exchangeDelete(x);
         try {
