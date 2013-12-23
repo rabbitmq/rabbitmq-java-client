@@ -420,7 +420,7 @@ public class RecoveringChannel implements Channel, Recoverable {
                 x.recover();
             } catch (Exception e) {
                 System.err.println("Caught an exception while recovering exchange " + x.getName());
-                e.printStackTrace(System.err);
+                this.connection.getExceptionHandler().handleChannelRecoveryException(this, e);
             }
         }
     }
@@ -442,7 +442,7 @@ public class RecoveringChannel implements Channel, Recoverable {
                 }
             } catch (Exception e) {
                 System.err.println("Caught an exception while recovering queue " + oldName);
-                e.printStackTrace(System.err);
+                this.connection.getExceptionHandler().handleChannelRecoveryException(this, e);
             }
         }
     }
@@ -469,7 +469,7 @@ public class RecoveringChannel implements Channel, Recoverable {
                 b.recover();
             } catch (Exception e) {
                 System.err.println("Caught an exception while recovering binding between " + b.getSource() + " and " + b.getDestination());
-                e.printStackTrace(System.err);
+                this.connection.getExceptionHandler().handleChannelRecoveryException(this, e);
             }
         }
     }
@@ -488,14 +488,18 @@ public class RecoveringChannel implements Channel, Recoverable {
                 }
             } catch (Exception e) {
                 System.err.println("Caught an exception while recovering consumer " + tag);
-                e.printStackTrace(System.err);
+                this.connection.getExceptionHandler().handleChannelRecoveryException(this, e);
             }
         }
     }
 
     public void runRecoveryHooks() {
         for (RecoveryListener f : this.recoveryListeners) {
-            f.handleRecovery(this);
+            try {
+                f.handleRecovery(this);
+            } catch (Exception e) {
+                this.connection.getExceptionHandler().handleChannelRecoveryException(this, e);
+            }
         }
     }
 

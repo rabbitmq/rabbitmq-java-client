@@ -8,6 +8,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.ExceptionHandler;
 import com.rabbitmq.client.impl.SocketConnection;
 
 import java.io.IOException;
@@ -59,11 +60,7 @@ public class RecoveringConnection implements Connection, Recoverable, SocketConn
                         c.beginAutomaticRecovery();
                     }
                 } catch (Exception e) {
-                    // TODO: investigate if we can avoid swallowing the exception
-                    //       here without affecting automatic recovery and changing shutdownCompleted
-                    //       signature.
-                    System.err.println("Caught an exception during connection recovery!");
-                    e.printStackTrace(System.err);
+                    c.delegate.getExceptionHandler().handleConnectionRecoveryException(c, e);
                 }
             }
         };
@@ -111,8 +108,7 @@ public class RecoveringConnection implements Connection, Recoverable, SocketConn
             try {
                 ch.automaticallyRecover(this, this.delegate);
             } catch (Throwable t) {
-                System.err.println("Caught an exception when recovering channel " + ch.getChannelNumber());
-                t.printStackTrace(System.err);
+                this.delegate.getExceptionHandler().handleChannelRecoveryException(ch, t);
             }
         }
     }
@@ -277,6 +273,10 @@ public class RecoveringConnection implements Connection, Recoverable, SocketConn
 
     public void removeRecoveryListener(RecoveryListener listener) {
         this.recoveryListeners.remove(listener);
+    }
+
+    public ExceptionHandler getExceptionHandler() {
+        return this.delegate.getExceptionHandler();
     }
 
     public InetAddress getLocalAddress() {

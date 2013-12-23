@@ -88,4 +88,8 @@ public interface ExceptionHandler {
                                  Consumer consumer,
                                  String consumerTag,
                                  String methodName);
+
+    void handleConnectionRecoveryException(Connection conn, Throwable exception);
+
+    void handleChannelRecoveryException(Channel ch, Throwable exception);
 }
