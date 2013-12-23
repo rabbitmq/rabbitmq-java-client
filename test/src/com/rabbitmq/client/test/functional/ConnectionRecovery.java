@@ -2,6 +2,7 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.recovery.Recoverable;
+import com.rabbitmq.client.impl.recovery.RecoveringChannel;
 import com.rabbitmq.client.impl.recovery.RecoveringConnection;
 import com.rabbitmq.client.impl.recovery.RecoveryListener;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -188,6 +189,27 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(connection.isOpen());
         Host.closeConnection(connection);
         expectConnectionRecovery(connection);
+        assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
+    }
+
+    public void testChannelRecoveryCallback() throws IOException, InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(2);
+        final RecoveryListener listener = new RecoveryListener() {
+            public void handleRecovery(Recoverable recoverable) {
+                latch.countDown();
+            }
+        };
+        RecoveringChannel ch1 = (RecoveringChannel) connection.createChannel();
+        ch1.addRecoveryListener(listener);
+        RecoveringChannel ch2 = (RecoveringChannel) connection.createChannel();
+        ch2.addRecoveryListener(listener);
+
+        assertTrue(ch1.isOpen());
+        assertTrue(ch2.isOpen());
+        closeAndWaitForShutdown(connection);
+        waitForRecovery();
+        expectChannelRecovery(ch1);
+        expectChannelRecovery(ch2);
         assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
     }
 
