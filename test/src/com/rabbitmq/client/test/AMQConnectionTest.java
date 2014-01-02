@@ -255,6 +255,14 @@ public class AMQConnectionTest extends TestCase {
             fail("handleConsumerException " + consumerTag + " " + methodName + ": " + ex);
         }
 
+        public void handleConnectionRecoveryException(Connection conn, Throwable ex) {
+            _handledExceptions.add(ex);
+        }
+
+        public void handleChannelRecoveryException(Channel ch, Throwable ex) {
+            _handledExceptions.add(ex);
+        }
+
         public List<Throwable> getHandledExceptions() {
             return _handledExceptions;
         }
