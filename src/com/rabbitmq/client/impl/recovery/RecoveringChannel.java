@@ -28,6 +28,10 @@ public class RecoveringChannel implements Channel, Recoverable {
     private final List<RecordedBinding> bindings = new ArrayList<RecordedBinding>();
     private final Map<String, RecordedConsumer> consumers = new ConcurrentHashMap<String, RecordedConsumer>();
     private final Map<String, RecordedExchange> exchanges = new ConcurrentHashMap<String, RecordedExchange>();
+    private int prefetchCount;
+    private boolean globalQos;
+    private boolean usesPublisherConfirms;
+    private boolean usesTransactions;
 
     public RecoveringChannel(RecoveringConnection connection, Channel delegate) {
         this.connection = connection;
@@ -123,11 +127,14 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public void basicQos(int prefetchSize, int prefetchCount, boolean global) throws IOException {
+        this.prefetchCount = prefetchCount;
+        this.globalQos = global;
         delegate.basicQos(prefetchSize, prefetchCount, global);
     }
 
     public void basicQos(int prefetchCount) throws IOException {
-        delegate.basicQos(prefetchCount);
+
+        basicQos(0, prefetchCount, false);
     }
 
     public void basicPublish(String exchange, String routingKey, AMQP.BasicProperties props, byte[] body) throws IOException {
@@ -317,6 +324,7 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public AMQP.Tx.SelectOk txSelect() throws IOException {
+        this.usesTransactions = true;
         return delegate.txSelect();
     }
 
@@ -329,6 +337,7 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public AMQP.Confirm.SelectOk confirmSelect() throws IOException {
+        this.usesPublisherConfirms = true;
         return delegate.confirmSelect();
     }
 
@@ -391,9 +400,20 @@ public class RecoveringChannel implements Channel, Recoverable {
     public void automaticallyRecover(RecoveringConnection connection, Connection connDelegate) throws IOException {
         this.connection = connection;
         this.delegate = connDelegate.createChannel(this.getChannelNumber());
+        this.recoverState();
 
         if (this.connection.isAutomaticTopologyRecoveryEnabled()) {
             this.recoverTopology();
+        }
+    }
+
+    private void recoverState() throws IOException {
+        basicQos(0, this.prefetchCount, this.globalQos);
+        if(this.usesPublisherConfirms) {
+            this.confirmSelect();
+        }
+        if(this.usesTransactions) {
+            this.txSelect();
         }
     }
 
