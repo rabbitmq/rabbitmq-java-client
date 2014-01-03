@@ -567,6 +567,11 @@ public class ConnectionFactory implements Cloneable {
         throw (e != null) ? e : new IOException("failed to connect");
     }
 
+    /**
+     * Create a new broker connection that automatically recovers from failures
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
     public Connection newRecoveringConnection() throws IOException {
         return newRecoveringConnection(this.sharedExecutor);
     }
