@@ -320,40 +320,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             // We're in normal running mode.
 
             if (method instanceof Basic.Deliver) {
-                Basic.Deliver m = (Basic.Deliver) method;
-
-                Consumer callback = _consumers.get(m.getConsumerTag());
-                if (callback == null) {
-                    if (defaultConsumer == null) {
-                        // No handler set. We should blow up as this message
-                        // needs acking, just dropping it is not enough. See bug
-                        // 22587 for discussion.
-                        throw new IllegalStateException("Unsolicited delivery -" +
-                                " see Channel.setDefaultConsumer to handle this" +
-                                " case.");
-                    }
-                    else {
-                        callback = defaultConsumer;
-                    }
-                }
-
-                Envelope envelope = new Envelope(m.getDeliveryTag(),
-                                                 m.getRedelivered(),
-                                                 m.getExchange(),
-                                                 m.getRoutingKey());
-                try {
-                    this.dispatcher.handleDelivery(callback,
-                                                   m.getConsumerTag(),
-                                                   envelope,
-                                                   (BasicProperties) command.getContentHeader(),
-                                                   command.getContentBody());
-                } catch (Throwable ex) {
-                    getConnection().getExceptionHandler().handleConsumerException(this,
-                                                                                  ex,
-                                                                                  callback,
-                                                                                  m.getConsumerTag(),
-                                                                                  "handleDelivery");
-                }
+                processDelivery(command, (Basic.Deliver) method);
                 return true;
             } else if (method instanceof Basic.Return) {
                 callReturnListeners(command, (Basic.Return) method);
@@ -422,6 +389,43 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 // true.
                 return true;
             }
+        }
+    }
+
+    protected void processDelivery(Command command, Basic.Deliver method) {
+        Basic.Deliver m = (Basic.Deliver) method;
+
+        Consumer callback = _consumers.get(m.getConsumerTag());
+        if (callback == null) {
+            if (defaultConsumer == null) {
+                // No handler set. We should blow up as this message
+                // needs acking, just dropping it is not enough. See bug
+                // 22587 for discussion.
+                throw new IllegalStateException("Unsolicited delivery -" +
+                        " see Channel.setDefaultConsumer to handle this" +
+                        " case.");
+            }
+            else {
+                callback = defaultConsumer;
+            }
+        }
+
+        Envelope envelope = new Envelope(m.getDeliveryTag(),
+                                         m.getRedelivered(),
+                                         m.getExchange(),
+                                         m.getRoutingKey());
+        try {
+            this.dispatcher.handleDelivery(callback,
+                                           m.getConsumerTag(),
+                                           envelope,
+                                           (BasicProperties) command.getContentHeader(),
+                                           command.getContentBody());
+        } catch (Throwable ex) {
+            getConnection().getExceptionHandler().handleConsumerException(this,
+                                                                          ex,
+                                                                          callback,
+                                                                          m.getConsumerTag(),
+                                                                          "handleDelivery");
         }
     }
 
