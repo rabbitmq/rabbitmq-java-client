@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 
 public class RecoveringChannel implements Channel, Recoverable {
-    private Channel delegate;
+    private RecoveryAwareChannelN delegate;
     private RecoveringConnection connection;
     private List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
     private final Map<String, RecordedQueue> queues = new ConcurrentHashMap<String, RecordedQueue>();
@@ -33,7 +33,7 @@ public class RecoveringChannel implements Channel, Recoverable {
     private boolean usesPublisherConfirms;
     private boolean usesTransactions;
 
-    public RecoveringChannel(RecoveringConnection connection, Channel delegate) {
+    public RecoveringChannel(RecoveringConnection connection, RecoveryAwareChannelN delegate) {
         this.connection = connection;
         this.delegate = delegate;
     }
@@ -399,7 +399,7 @@ public class RecoveringChannel implements Channel, Recoverable {
 
     public void automaticallyRecover(RecoveringConnection connection, Connection connDelegate) throws IOException {
         this.connection = connection;
-        this.delegate = connDelegate.createChannel(this.getChannelNumber());
+        this.delegate = (RecoveryAwareChannelN) connDelegate.createChannel(this.getChannelNumber());
         this.recoverState();
 
         if (this.connection.isAutomaticTopologyRecoveryEnabled()) {

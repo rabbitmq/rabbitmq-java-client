@@ -41,7 +41,7 @@ public class RecoveringConnection implements Connection, Recoverable, SocketConn
 
     public void init(ExecutorService executor) throws IOException {
         this.executorService = executor;
-        this.delegate = (AMQConnection) this.cf.newConnection(executor);
+        this.delegate = (AMQConnection) this.cf.newRecoveryAwareConnectionImpl(executor);
         this.addAutomaticRecoveryListener();
     }
 
@@ -137,7 +137,7 @@ public class RecoveringConnection implements Connection, Recoverable, SocketConn
     }
 
     public Channel createChannel() throws IOException {
-        com.rabbitmq.client.Channel ch = delegate.createChannel();
+        RecoveryAwareChannelN ch = (RecoveryAwareChannelN) delegate.createChannel();
         if (ch == null) {
             return null;
         } else {
@@ -153,7 +153,7 @@ public class RecoveringConnection implements Connection, Recoverable, SocketConn
      * @param delegateChannel Channel to wrap.
      * @return Recovering channel.
      */
-    private Channel wrapChannel(com.rabbitmq.client.Channel delegateChannel) {
+    private Channel wrapChannel(RecoveryAwareChannelN delegateChannel) {
         final RecoveringChannel channel = new RecoveringChannel(this, delegateChannel);
         if (delegateChannel == null) {
             return null;

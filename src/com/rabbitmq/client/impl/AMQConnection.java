@@ -46,6 +46,7 @@ import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
+import com.rabbitmq.client.impl.recovery.RecoveryAwareChannelManager;
 import com.rabbitmq.utility.BlockingCell;
 
 final class Copyright {
@@ -102,7 +103,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     };
 
-    private final ConsumerWorkService _workService;
+    protected final ConsumerWorkService _workService;
 
     /** Frame source/sink */
     private final FrameHandler _frameHandler;
@@ -394,7 +395,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             int channelMax =
                 negotiateChannelMax(this.requestedChannelMax,
                                     connTune.getChannelMax());
-            _channelManager = new ChannelManager(this._workService, channelMax);
+            _channelManager = instantiateChannelManager(channelMax);
 
             int frameMax =
                 negotiatedMaxValue(this.requestedFrameMax,
@@ -429,6 +430,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = false;
 
         return;
+    }
+
+    protected ChannelManager instantiateChannelManager(int channelMax) {
+        return new ChannelManager(this._workService, channelMax);
     }
 
     /**
