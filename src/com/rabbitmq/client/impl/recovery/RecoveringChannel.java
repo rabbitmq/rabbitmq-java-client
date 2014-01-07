@@ -408,6 +408,7 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     private void recoverState() throws IOException {
+        this.delegate.updateOffset();
         basicQos(0, this.prefetchCount, this.globalQos);
         if(this.usesPublisherConfirms) {
             this.confirmSelect();

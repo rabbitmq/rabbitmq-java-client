@@ -31,22 +31,39 @@ public class RecoveryAwareChannelN extends ChannelN {
         if(tag > maxSeenDeliveryTag) {
             maxSeenDeliveryTag = tag;
         }
-        super.processDelivery(command, method);
+        super.processDelivery(command, offsetDeliveryTag(method));
+    }
+
+    private AMQImpl.Basic.Deliver offsetDeliveryTag(AMQImpl.Basic.Deliver method) {
+        return new AMQImpl.Basic.Deliver(method.getConsumerTag(),
+                                         method.getDeliveryTag() + activeDeliveryTagOffset,
+                                         method.getRedelivered(),
+                                         method.getExchange(),
+                                         method.getRoutingKey());
     }
 
     @Override
     public void basicAck(long deliveryTag, boolean multiple) throws IOException {
-        super.basicAck(deliveryTag, multiple);
+        long realTag = deliveryTag - activeDeliveryTagOffset;
+        if (realTag > 0) {
+            super.basicAck(realTag, multiple);
+        }
     }
 
     @Override
     public void basicNack(long deliveryTag, boolean multiple, boolean requeue) throws IOException {
-        super.basicNack(deliveryTag, multiple, requeue);
+        long realTag = deliveryTag - activeDeliveryTagOffset;
+        if (realTag > 0) {
+            super.basicNack(realTag, multiple, requeue);
+        }
     }
 
     @Override
     public void basicReject(long deliveryTag, boolean requeue) throws IOException {
-        super.basicReject(deliveryTag, requeue);
+        long realTag = deliveryTag - activeDeliveryTagOffset;
+        if (realTag > 0) {
+            super.basicReject(realTag, requeue);
+        }
     }
 
     /** Private API */
