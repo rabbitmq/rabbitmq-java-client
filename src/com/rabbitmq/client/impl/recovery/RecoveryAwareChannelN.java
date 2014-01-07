@@ -66,9 +66,15 @@ public class RecoveryAwareChannelN extends ChannelN {
         }
     }
 
-    /** Private API */
-    public synchronized void updateOffset() {
-        activeDeliveryTagOffset = maxSeenDeliveryTag;
+    /**
+     * Private API
+     */
+    public synchronized void inheritOffsetFrom(RecoveryAwareChannelN other) {
+        activeDeliveryTagOffset = other.getMaxSeenDeliveryTag();
         maxSeenDeliveryTag = 0;
+    }
+
+    public long getMaxSeenDeliveryTag() {
+        return maxSeenDeliveryTag;
     }
 }

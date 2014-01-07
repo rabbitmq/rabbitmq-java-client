@@ -398,8 +398,10 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public void automaticallyRecover(RecoveringConnection connection, Connection connDelegate) throws IOException {
+        RecoveryAwareChannelN defunctChannel = this.delegate;
         this.connection = connection;
         this.delegate = (RecoveryAwareChannelN) connDelegate.createChannel(this.getChannelNumber());
+        this.delegate.inheritOffsetFrom(defunctChannel);
         this.recoverState();
 
         if (this.connection.isAutomaticTopologyRecoveryEnabled()) {
@@ -408,7 +410,6 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     private void recoverState() throws IOException {
-        this.delegate.updateOffset();
         basicQos(0, this.prefetchCount, this.globalQos);
         if(this.usesPublisherConfirms) {
             this.confirmSelect();
