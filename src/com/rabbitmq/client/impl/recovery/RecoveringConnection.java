@@ -27,7 +27,7 @@ public class RecoveringConnection implements Connection, Recoverable, SocketConn
     private final List<RecoveryListener> recoveryListeners;
     private final int networkRecoveryInterval;
     private ExecutorService executorService;
-    private AMQConnection delegate;
+    private RecoveryAwareAMQConnection delegate;
     private boolean automaticTopologyRecoveryEnabled = true;
 
     public RecoveringConnection(ConnectionFactory cf) {
@@ -41,13 +41,13 @@ public class RecoveringConnection implements Connection, Recoverable, SocketConn
 
     public void init(ExecutorService executor) throws IOException {
         this.executorService = executor;
-        this.delegate = (AMQConnection) this.cf.newRecoveryAwareConnectionImpl(executor);
+        this.delegate = (RecoveryAwareAMQConnection) this.cf.newRecoveryAwareConnectionImpl(executor);
         this.addAutomaticRecoveryListener();
     }
 
     public void init(ExecutorService executor, Address[] addrs) throws IOException {
         this.executorService = executor;
-        this.delegate = (AMQConnection) this.cf.newConnection(executor, addrs);
+        this.delegate = (RecoveryAwareAMQConnection) this.cf.newRecoveryAwareConnectionImpl(executor, addrs);
         this.addAutomaticRecoveryListener();
     }
 
@@ -93,7 +93,7 @@ public class RecoveringConnection implements Connection, Recoverable, SocketConn
         boolean recovering = true;
         while (recovering) {
             try {
-                this.delegate = (AMQConnection) this.cf.newConnection(this.executorService);
+                this.delegate = (RecoveryAwareAMQConnection) this.cf.newRecoveryAwareConnectionImpl(this.executorService);
                 recovering = false;
             } catch (ConnectException ce) {
                 System.err.println("Failed to reconnect: " + ce.getMessage());
