@@ -46,6 +46,7 @@ import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
+import com.rabbitmq.client.impl.recovery.RecoveryAwareChannelManager;
 import com.rabbitmq.utility.BlockingCell;
 
 final class Copyright {
@@ -59,7 +60,7 @@ final class Copyright {
  * To create a broker connection, use {@link ConnectionFactory}.  See {@link Connection}
  * for an example.
  */
-public class AMQConnection extends ShutdownNotifierComponent implements Connection {
+public class AMQConnection extends ShutdownNotifierComponent implements Connection, SocketConnection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
 
@@ -102,7 +103,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     };
 
-    private final ConsumerWorkService _workService;
+    protected final ConsumerWorkService _workService;
 
     /** Frame source/sink */
     private final FrameHandler _frameHandler;
@@ -173,9 +174,19 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _frameHandler.getAddress();
     }
 
+    @Override
+    public InetAddress getLocalAddress() {
+        return ((SocketFrameHandler)_frameHandler).getLocalAddress();
+    }
+
     /** {@inheritDoc} */
     public int getPort() {
         return _frameHandler.getPort();
+    }
+
+    @Override
+    public int getLocalPort() {
+        return ((SocketFrameHandler)_frameHandler).getLocalPort();
     }
 
     public FrameHandler getFrameHandler(){
@@ -384,7 +395,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             int channelMax =
                 negotiateChannelMax(this.requestedChannelMax,
                                     connTune.getChannelMax());
-            _channelManager = new ChannelManager(this._workService, channelMax);
+            _channelManager = instantiateChannelManager(channelMax);
 
             int frameMax =
                 negotiatedMaxValue(this.requestedFrameMax,
@@ -419,6 +430,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = false;
 
         return;
+    }
+
+    protected ChannelManager instantiateChannelManager(int channelMax) {
+        return new ChannelManager(this._workService, channelMax);
     }
 
     /**
@@ -887,5 +902,22 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     public void clearBlockedListeners() {
         blockedListeners.clear();
+    }
+
+    /**
+     * @return Connection name as displayed and used by rabbitmqctl and management UI
+     */
+    public String getName() {
+        StringBuilder sb = new StringBuilder();
+        SocketFrameHandler fh = (SocketFrameHandler)this._frameHandler;
+        sb.append(fh.getLocalAddress().getHostAddress()).
+           append(":").
+           append(fh.getLocalPort()).
+           append(" -> ").
+           append(fh.getAddress().getHostAddress()).
+           append(":").
+           append(fh.getPort());
+
+        return sb.toString();
     }
 }

@@ -25,12 +25,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.recovery.RecoveryAwareChannelN;
 import com.rabbitmq.utility.IntAllocator;
 
 /**
  * Manages a set of channels, indexed by channel number (<code><b>1.._channelMax</b></code>).
  */
-public final class ChannelManager {
+public class ChannelManager {
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 10;
 
     /** Monitor for <code>_channelMap</code> and <code>channelNumberAllocator</code> */
@@ -145,9 +146,13 @@ public final class ChannelManager {
                     + "use. This should never happen. "
                     + "Please report this as a bug.");
         }
-        ChannelN ch = new ChannelN(connection, channelNumber, this.workService);
+        ChannelN ch = instantiateChannel(connection, channelNumber, this.workService);
         _channelMap.put(ch.getChannelNumber(), ch);
         return ch;
+    }
+
+    protected ChannelN instantiateChannel(AMQConnection connection, int channelNumber, ConsumerWorkService workService) {
+        return new ChannelN(connection, channelNumber, workService);
     }
 
     /**

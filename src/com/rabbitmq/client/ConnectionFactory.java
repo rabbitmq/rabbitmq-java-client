@@ -34,8 +34,11 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.ChannelManager;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.SocketFrameHandler;
+import com.rabbitmq.client.impl.recovery.RecoveringConnection;
+import com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnection;
 
 /**
  * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
@@ -89,6 +92,9 @@ public class ConnectionFactory implements Cloneable {
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
+
+    private int networkRecoveryInterval           = 5000;
+    private ChannelManager channelManager = null;
 
     /** @return number of consumer threads in default {@link ExecutorService} */
     @Deprecated
@@ -179,6 +185,7 @@ public class ConnectionFactory implements Cloneable {
         this.virtualHost = virtualHost;
     }
 
+
     /**
      * Convenience method for setting the fields in an AMQP URI: host,
      * port, username, password and virtual host.  If any part of the
@@ -249,6 +256,11 @@ public class ConnectionFactory implements Cloneable {
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
         setUri(new URI(uriString));
+    }
+
+    /** Private API */
+    public void setChannelManager(ChannelManager manager) {
+        this.channelManager = manager;
     }
 
     private String uriDecode(String s) {
@@ -516,17 +528,16 @@ public class ConnectionFactory implements Cloneable {
         for (Address addr : addrs) {
             try {
                 FrameHandler frameHandler = createFrameHandler(addr);
-                AMQConnection conn =
-                    new AMQConnection(username,
-                                      password,
-                                      frameHandler,
-                                      executor,
-                                      virtualHost,
-                                      getClientProperties(),
-                                      requestedFrameMax,
-                                      requestedChannelMax,
-                                      requestedHeartbeat,
-                                      saslConfig);
+                AMQConnection conn = new AMQConnection(username,
+                                                       password,
+                                                       frameHandler,
+                                                       executor,
+                                                       virtualHost,
+                                                       getClientProperties(),
+                                                       requestedFrameMax,
+                                                       requestedChannelMax,
+                                                       requestedHeartbeat,
+                                                       saslConfig);
                 conn.start();
                 return conn;
             } catch (IOException e) {
@@ -534,8 +545,7 @@ public class ConnectionFactory implements Cloneable {
             }
         }
 
-        throw (lastException != null) ? lastException
-                                      : new IOException("failed to connect");
+        return rethrowOrIndicateConnectionFailure(lastException);
     }
 
     /**
@@ -561,11 +571,141 @@ public class ConnectionFactory implements Cloneable {
                             );
     }
 
+    private Connection rethrowOrIndicateConnectionFailure(IOException e) throws IOException {
+        throw (e != null) ? e : new IOException("failed to connect");
+    }
+
+    /**
+     * Create a new broker connection that automatically recovers from failures
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newRecoveringConnection() throws IOException {
+        return newRecoveringConnection(this.sharedExecutor);
+    }
+
+    /**
+     * Create a new broker connection that automatically recovers from failures
+     * @param executor thread execution service for consumers on the connection
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newRecoveringConnection(ExecutorService executor) throws IOException {
+        IOException lastException = null;
+        try {
+            RecoveringConnection conn = new RecoveringConnection(this);
+            conn.init(executor);
+            return conn;
+        } catch (IOException e) {
+            lastException = e;
+        }
+
+        return rethrowOrIndicateConnectionFailure(lastException);
+    }
+
+    /**
+     * Create a new broker connection that automatically recovers from failures
+     * @param executor thread execution service for consumers on the connection
+     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newRecoveringConnection(ExecutorService executor, Address[] addrs)
+            throws IOException
+    {
+        IOException lastException = null;
+        try {
+            RecoveringConnection conn = new RecoveringConnection(this);
+            conn.init(executor, addrs);
+            conn.start();
+            return conn;
+        } catch (IOException e) {
+            lastException = e;
+        }
+
+        return rethrowOrIndicateConnectionFailure(lastException);
+    }
+
     @Override public ConnectionFactory clone(){
         try {
             return (ConnectionFactory)super.clone();
         } catch (CloneNotSupportedException e) {
             throw new Error(e);
         }
+    }
+
+    public int getNetworkRecoveryInterval() {
+        return networkRecoveryInterval;
+    }
+
+    public void setNetworkRecoveryInterval(int networkRecoveryInterval) {
+        this.networkRecoveryInterval = networkRecoveryInterval;
+    }
+
+    /**
+     * Private API.
+     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newRecoveryAwareConnectionImpl(Address[] addrs) throws IOException {
+        return newConnection(this.sharedExecutor, addrs);
+    }
+
+    /**
+     * Private API.
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newRecoveryAwareConnectionImpl() throws IOException {
+        return newRecoveryAwareConnectionImpl(this.sharedExecutor,
+                                                     new Address[]{new Address(getHost(), getPort())}
+        );
+    }
+
+    /**
+     * Private API.
+     * @param executor thread execution service for consumers on the connection
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newRecoveryAwareConnectionImpl(ExecutorService executor) throws IOException {
+        return newRecoveryAwareConnectionImpl(executor,
+                                                     new Address[]{new Address(getHost(), getPort())}
+        );
+    }
+
+    /**
+     * Private API.
+     * @param executor thread execution service for consumers on the connection
+     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newRecoveryAwareConnectionImpl(ExecutorService executor, Address[] addrs)
+            throws IOException
+    {
+        IOException lastException = null;
+        for (Address addr : addrs) {
+            try {
+                FrameHandler frameHandler = createFrameHandler(addr);
+                RecoveryAwareAMQConnection conn = new RecoveryAwareAMQConnection(username,
+                                                                                 password,
+                                                                                 frameHandler,
+                                                                                 executor,
+                                                                                 virtualHost,
+                                                                                 getClientProperties(),
+                                                                                 requestedFrameMax,
+                                                                                 requestedChannelMax,
+                                                                                 requestedHeartbeat,
+                                                                                 saslConfig);
+                conn.start();
+                return conn;
+            } catch (IOException e) {
+                lastException = e;
+            }
+        }
+
+        return rethrowOrIndicateConnectionFailure(lastException);
     }
 }
