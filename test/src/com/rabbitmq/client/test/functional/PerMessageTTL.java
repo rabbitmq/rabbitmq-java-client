@@ -69,12 +69,12 @@ public class PerMessageTTL extends TTLHandling {
                         .build(), new byte[]{});
         long expiryStartTime = System.currentTimeMillis();
         restart();
-        long timeToExpiry = Integer.parseInt(expiryDelay) - (System.currentTimeMillis() - expiryStartTime);
-        if (timeToExpiry > 0L) {
-            Thread.sleep(timeToExpiry);
+        Thread.sleep(Integer.parseInt(expiryDelay));
+        try {
+            assertNull("Message should have expired after broker restart", get());
+        } finally {
+            deleteQueue(TTL_QUEUE_NAME);
         }
-        assertNull("Message should have expired after broker restart", get());
-        deleteQueue(TTL_QUEUE_NAME);
     }
 
 }
