@@ -213,48 +213,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
     }
 
-    public void testBasicAckAfterChannelRecovery() throws IOException, InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
-        Consumer consumer = new Consumer() {
-            @Override
-            public void handleConsumeOk(String consumerTag) {}
-
-            @Override
-            public void handleCancelOk(String consumerTag) {}
-
-            @Override
-            public void handleCancel(String consumerTag) throws IOException {}
-
-            @Override
-            public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {}
-
-            @Override
-            public void handleRecoverOk(String consumerTag) {}
-
-            @Override
-            public void handleDelivery(String consumerTag,
-                                       Envelope envelope,
-                                       AMQP.BasicProperties properties,
-                                       byte[] body) throws IOException {
-                Host.closeConnection(connection);
-                try {
-                    waitForRecovery();
-                    channel.basicAck(envelope.getDeliveryTag(), false);
-                    // shutdown is not supposed to happen but we still
-                    // need to wait
-                    waitForShutdown();
-                    assertTrue(channel.isOpen());
-                    latch.countDown();
-                } catch (InterruptedException e) {}
-            }
-        };
-
-        String q = "q1";
-        channel.queueDeclare(q, true, false, false, null);
-        channel.basicPublish("", q, null, "a msg".getBytes());
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
-    }
-
     private void closeAndWaitForShutdown(RecoveringConnection c) throws IOException, InterruptedException {
         Host.closeConnection(c);
         waitForShutdown();
