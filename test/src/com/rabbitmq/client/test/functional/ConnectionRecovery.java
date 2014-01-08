@@ -11,7 +11,11 @@ import com.rabbitmq.tools.Host;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionRecovery extends BrokerTestCase {
     public static final int RECOVERY_INTERVAL = 50;
@@ -213,6 +217,59 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
     }
 
+    public void testBasicAckAfterChannelRecovery() throws IOException, InterruptedException {
+        final AtomicInteger consumed = new AtomicInteger(0);
+        int n = 5;
+        final CountDownLatch latch = new CountDownLatch(n);
+        Consumer consumer = new Consumer() {
+            @Override
+            public void handleConsumeOk(String consumerTag) {}
+
+            @Override
+            public void handleCancelOk(String consumerTag) {}
+
+            @Override
+            public void handleCancel(String consumerTag) throws IOException {}
+
+            @Override
+            public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {}
+
+            @Override
+            public void handleRecoverOk(String consumerTag) {}
+
+            @Override
+            public void handleDelivery(String consumerTag,
+                                       Envelope envelope,
+                                       AMQP.BasicProperties properties,
+                                       byte[] body) throws IOException {
+                try {
+                    if (consumed.intValue() > 0 && consumed.intValue() % 4 == 0) {
+                        // Imitate some work
+                        Thread.sleep(200);
+                        Host.closeConnection(connection);
+                        waitForRecovery();
+                    }
+                    channel.basicAck(envelope.getDeliveryTag(), false);
+                } catch (InterruptedException e) {}
+                finally {
+                    consumed.incrementAndGet();
+                    latch.countDown();
+                }
+            }
+        };
+
+        String q = channel.queueDeclare().getQueue();
+        channel.basicConsume(q, consumer);
+        RecoveringConnection publishingConnection = newRecoveringConnection(false);
+        Channel publishingChannel = publishingConnection.createChannel();
+        for (int i = 0; i < n; i++) {
+            // publish messages at intervals that allow recovery to finish
+            Thread.sleep(150);
+            publishingChannel.basicPublish("", q, null, "msg".getBytes());
+        }
+        assertTrue(latch.await(n, TimeUnit.SECONDS));
+    }
+
     private void closeAndWaitForShutdown(RecoveringConnection c) throws IOException, InterruptedException {
         Host.closeConnection(c);
         waitForShutdown();
@@ -259,7 +316,8 @@ public class ConnectionRecovery extends BrokerTestCase {
     private RecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery) throws IOException {
         ConnectionFactory cf = new ConnectionFactory();
         cf.setNetworkRecoveryInterval(RECOVERY_INTERVAL);
-        final RecoveringConnection c = (RecoveringConnection) cf.newRecoveringConnection();
+        ExecutorService executor = Executors.newFixedThreadPool(32);
+        final RecoveringConnection c = (RecoveringConnection) cf.newRecoveringConnection(executor);
         if(disableTopologyRecovery) {
             c.disableAutomaticTopologyRecovery();
         }
