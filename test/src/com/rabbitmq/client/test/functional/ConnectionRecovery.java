@@ -316,8 +316,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     private RecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery) throws IOException {
         ConnectionFactory cf = new ConnectionFactory();
         cf.setNetworkRecoveryInterval(RECOVERY_INTERVAL);
-        ExecutorService executor = Executors.newFixedThreadPool(32);
-        final RecoveringConnection c = (RecoveringConnection) cf.newRecoveringConnection(executor);
+        final RecoveringConnection c = (RecoveringConnection) cf.newRecoveringConnection();
         if(disableTopologyRecovery) {
             c.disableAutomaticTopologyRecovery();
         }
