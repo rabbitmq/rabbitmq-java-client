@@ -58,7 +58,8 @@ public class PerfTest {
             long confirm         = intArg(cmd, 'c', -1);
             boolean autoAck      = cmd.hasOption('a');
             int multiAckEvery    = intArg(cmd, 'A', 0);
-            int prefetchCount    = intArg(cmd, 'q', 0);
+            int channelPrefetch  = intArg(cmd, 'q', 0);
+            int consumerPrefetch = intArg(cmd, 'P', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
             int producerMsgCount = intArg(cmd, 'C', 0);
@@ -100,7 +101,8 @@ public class PerfTest {
             p.setMultiAckEvery(    multiAckEvery);
             p.setMinMsgSize(       minMsgSize);
             p.setPredeclared(      predeclared);
-            p.setPrefetchCount(    prefetchCount);
+            p.setConsumerPrefetch( consumerPrefetch);
+            p.setChannelPrefetch(  channelPrefetch);
             p.setProducerCount(    producerCount);
             p.setProducerMsgCount( producerMsgCount);
             p.setProducerTxSize(   producerTxSize);
@@ -146,7 +148,8 @@ public class PerfTest {
         options.addOption(new Option("c", "confirm",       true, "max unconfirmed publishes"));
         options.addOption(new Option("a", "autoack",       false,"auto ack"));
         options.addOption(new Option("A", "multiAckEvery", true, "multi ack every"));
-        options.addOption(new Option("q", "qos",           true, "qos prefetch count"));
+        options.addOption(new Option("q", "qos",           true, "qos (channel) prefetch count"));
+        options.addOption(new Option("P", "prefetch",      true, "consumer prefetch count"));
         options.addOption(new Option("s", "size",          true, "message size"));
         options.addOption(new Option("z", "time",          true, "time limit"));
         options.addOption(new Option("C", "pmessages", true, "producer message count"));
