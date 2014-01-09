@@ -221,22 +221,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         final AtomicInteger consumed = new AtomicInteger(0);
         int n = 5;
         final CountDownLatch latch = new CountDownLatch(n);
-        Consumer consumer = new Consumer() {
-            @Override
-            public void handleConsumeOk(String consumerTag) {}
-
-            @Override
-            public void handleCancelOk(String consumerTag) {}
-
-            @Override
-            public void handleCancel(String consumerTag) throws IOException {}
-
-            @Override
-            public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {}
-
-            @Override
-            public void handleRecoverOk(String consumerTag) {}
-
+        Consumer consumer = new DefaultConsumer(channel) {
             @Override
             public void handleDelivery(String consumerTag,
                                        Envelope envelope,
