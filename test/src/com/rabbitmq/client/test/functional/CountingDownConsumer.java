@@ -1,43 +1,16 @@
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.*;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
-public class CountingDownConsumer implements Consumer {
+public class CountingDownConsumer extends DefaultConsumer {
     private final CountDownLatch latch;
 
-    public CountingDownConsumer(CountDownLatch latch) {
+    public CountingDownConsumer(Channel channel, CountDownLatch latch) {
+        super(channel);
         this.latch = latch;
-    }
-
-    @Override
-    public void handleConsumeOk(String consumerTag) {
-        // no-op
-    }
-
-    @Override
-    public void handleCancelOk(String consumerTag) {
-        // no-op
-    }
-
-    @Override
-    public void handleCancel(String consumerTag) throws IOException {
-        // no-op
-    }
-
-    @Override
-    public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
-        // no-op
-    }
-
-    @Override
-    public void handleRecoverOk(String consumerTag) {
-        // no-op
     }
 
     @Override

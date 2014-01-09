@@ -79,7 +79,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         channel.queueBind(q, x, "");
 
         final CountDownLatch latch = new CountDownLatch(1);
-        Consumer consumer = new CountingDownConsumer(latch);
+        Consumer consumer = new CountingDownConsumer(channel, latch);
         channel.basicConsume(q, consumer);
         closeAndWaitForRecovery(connection);
         expectChannelRecovery(channel);
@@ -96,7 +96,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         channel.queueBind(q, x1, "");
 
         final CountDownLatch latch = new CountDownLatch(1);
-        Consumer consumer = new CountingDownConsumer(latch);
+        Consumer consumer = new CountingDownConsumer(channel, latch);
         channel.basicConsume(q, consumer);
         try {
             closeAndWaitForRecovery(connection);
@@ -122,7 +122,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         channel.queueUnbind(q, x1, "");
 
         final CountDownLatch latch = new CountDownLatch(1);
-        Consumer consumer = new CountingDownConsumer(latch);
+        Consumer consumer = new CountingDownConsumer(channel, latch);
         channel.basicConsume(q, consumer);
         try {
             closeAndWaitForRecovery(connection);
@@ -144,7 +144,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         channel.exchangeUnbind(x1, x2, "");
 
         final CountDownLatch latch = new CountDownLatch(1);
-        Consumer consumer = new CountingDownConsumer(latch);
+        Consumer consumer = new CountingDownConsumer(channel, latch);
         channel.basicConsume(q, consumer);
         try {
             closeAndWaitForRecovery(connection);
@@ -235,7 +235,9 @@ public class ConnectionRecovery extends BrokerTestCase {
                         waitForRecovery();
                     }
                     channel.basicAck(envelope.getDeliveryTag(), false);
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException e) {
+                    // ignore
+                }
                 finally {
                     consumed.incrementAndGet();
                     latch.countDown();
