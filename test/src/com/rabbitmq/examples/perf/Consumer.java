@@ -66,7 +66,7 @@ public class Consumer implements Runnable {
 
         try {
             q = new QueueingConsumer(channel);
-            channel.basicConsume(queueName, autoAck, q);
+            channel.basicConsume(queueName, autoAck, "", false, false, args(prefetch), q);
 
             while ((timeLimit == 0 || now < startTime + timeLimit) &&
                    (msgLimit == 0 || totalMsgCount < msgLimit)) {
@@ -81,7 +81,7 @@ public class Consumer implements Runnable {
                 } catch (ConsumerCancelledException e) {
                     System.out.println("Consumer cancelled by broker. Re-consuming.");
                     q = new QueueingConsumer(channel);
-                    channel.basicConsume(queueName, autoAck, "consumer-tag", false, false, args(prefetch), q);
+                    channel.basicConsume(queueName, autoAck, "", false, false, args(prefetch), q);
                     continue;
                 }
                 totalMsgCount++;
