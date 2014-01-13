@@ -119,8 +119,8 @@ public class Consumer implements Runnable {
         }
     }
 
-    private Map args(int prefetch) {
-        Map a = new HashMap();
+    private Map<String, Object> args(int prefetch) {
+        Map<String, Object> a = new HashMap<String, Object>();
         if (prefetch != 0) {
             a.put("x-prefetch", prefetch);
         }
