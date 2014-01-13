@@ -1,7 +1,13 @@
 package com.rabbitmq.client.impl.recovery;
 
-import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Address;
+import com.rabbitmq.client.BlockedListener;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ShutdownListener;
+import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.ExceptionHandler;
 import com.rabbitmq.client.impl.SocketConnection;
 
