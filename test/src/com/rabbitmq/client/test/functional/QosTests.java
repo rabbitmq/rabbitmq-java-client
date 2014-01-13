@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -65,10 +66,10 @@ public class QosTests extends BrokerTestCase
      * receive n messages - check that we receive no fewer and cannot
      * receive more
      **/
-    public Queue<Delivery> drain(QueueingConsumer c, int n)
+    public static Deque<Delivery> drain(QueueingConsumer c, int n)
         throws IOException
     {
-        Queue<Delivery> res = new LinkedList<Delivery>();
+        Deque<Delivery> res = new LinkedList<Delivery>();
         try {
             long start = System.currentTimeMillis();
             for (int i = 0; i < n; i++) {
