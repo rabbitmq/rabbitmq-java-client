@@ -1,13 +1,15 @@
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Queue;
 
 import static com.rabbitmq.client.test.functional.QosTests.drain;
 
@@ -19,25 +21,84 @@ public class PerConsumerPrefetch extends BrokerTestCase {
         q = channel.queueDeclare().getQueue();
     }
 
-    public void testPrefetch() throws IOException {
+    private interface Closure {
+        public void makeMore(Deque<Delivery> deliveries) throws IOException;
+    }
+
+    public void testSingleAck() throws IOException {
+        testPrefetch(new Closure() {
+            public void makeMore(Deque<Delivery> deliveries) throws IOException {
+                for (Delivery del : deliveries) {
+                    ack(del, false);
+                }
+            }
+        });
+    }
+
+    public void testMultiAck() throws IOException {
+        testPrefetch(new Closure() {
+            public void makeMore(Deque<Delivery> deliveries) throws IOException {
+                ack(deliveries.getLast(), true);
+            }
+        });
+    }
+
+    public void testSingleNack() throws IOException {
+        for (final boolean requeue: Arrays.asList(false, true)) {
+            testPrefetch(new Closure() {
+                public void makeMore(Deque<Delivery> deliveries) throws IOException {
+                    for (Delivery del : deliveries) {
+                        nack(del, false, requeue);
+                    }
+                }
+            });
+        }
+    }
+
+    public void testMultiNack() throws IOException {
+        for (final boolean requeue: Arrays.asList(false, true)) {
+            testPrefetch(new Closure() {
+                public void makeMore(Deque<Delivery> deliveries) throws IOException {
+                    nack(deliveries.getLast(), true, requeue);
+                }
+            });
+        }
+    }
+
+    public void testRecover() throws IOException {
+        testPrefetch(new Closure() {
+            public void makeMore(Deque<Delivery> deliveries) throws IOException {
+                channel.basicRecover();
+            }
+        });
+    }
+
+    private void testPrefetch(Closure closure) throws IOException {
+        QueueingConsumer c = new QueueingConsumer(channel);
+        publish(q, 15);
+        consume(c, 5, false);
+        Deque<Delivery> deliveries = drain(c, 5);
+
+        ack(channel.basicGet(q, false), false);
+        drain(c, 0);
+
+        closure.makeMore(deliveries);
+        drain(c, 5);
+    }
+
+    public void testPrefetchOnEmpty() throws IOException {
         QueueingConsumer c = new QueueingConsumer(channel);
         publish(q, 5);
-        consume(c, false);
-        Queue<Delivery> dels = drain(c, 2);
-        for (Delivery del : dels) {
-            ack(del, false);
-        }
-        Delivery last = drain(c, 2).getLast();
-        ack(last, true);
-        drain(c, 1);
-        publish(q, 5);
-        drain(c, 1);
+        consume(c, 10, false);
+        drain(c, 5);
+        publish(q, 10);
+        drain(c, 5);
     }
 
     public void testAutoAckIgnoresPrefetch() throws IOException {
         QueueingConsumer c = new QueueingConsumer(channel);
         publish(q, 10);
-        consume(c, true);
+        consume(c, 1, true);
         drain(c, 10);
     }
 
@@ -47,12 +108,20 @@ public class PerConsumerPrefetch extends BrokerTestCase {
         }
     }
 
-    private void consume(QueueingConsumer c, boolean autoAck) throws IOException {
-        channel.basicConsume(q, autoAck, "", false, false, args(2), c);
+    private void consume(QueueingConsumer c, int prefetch, boolean autoAck) throws IOException {
+        channel.basicConsume(q, autoAck, "", false, false, args(prefetch), c);
     }
 
     private void ack(Delivery del, boolean multi) throws IOException {
         channel.basicAck(del.getEnvelope().getDeliveryTag(), multi);
+    }
+
+    private void ack(GetResponse get, boolean multi) throws IOException {
+        channel.basicAck(get.getEnvelope().getDeliveryTag(), multi);
+    }
+
+    private void nack(Delivery del, boolean multi, boolean requeue) throws IOException {
+        channel.basicNack(del.getEnvelope().getDeliveryTag(), multi, requeue);
     }
 
     private Map<String, Object> args(int prefetch) {
