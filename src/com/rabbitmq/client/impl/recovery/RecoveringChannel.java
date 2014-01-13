@@ -24,10 +24,6 @@ public class RecoveringChannel implements Channel, Recoverable {
     private RecoveryAwareChannelN delegate;
     private RecoveringConnection connection;
     private List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
-    private final Map<String, RecordedQueue> queues = new ConcurrentHashMap<String, RecordedQueue>();
-    private final List<RecordedBinding> bindings = new ArrayList<RecordedBinding>();
-    private final Map<String, RecordedConsumer> consumers = new ConcurrentHashMap<String, RecordedConsumer>();
-    private final Map<String, RecordedExchange> exchanges = new ConcurrentHashMap<String, RecordedExchange>();
     private int prefetchCount;
     private boolean globalQos;
     private boolean usesPublisherConfirms;
@@ -169,7 +165,7 @@ public class RecoveringChannel implements Channel, Recoverable {
                     durable(durable).
                     autoDelete(autoDelete).
                     arguments(arguments);
-            this.exchanges.put(exchange, x);
+            recordExchange(exchange, x);
         }
         return ok;
     }
@@ -179,7 +175,7 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public AMQP.Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException {
-        this.exchanges.remove(exchange);
+        deleteRecordedExchange(exchange);
         return delegate.exchangeDelete(exchange, ifUnused);
     }
 
@@ -193,12 +189,7 @@ public class RecoveringChannel implements Channel, Recoverable {
 
     public AMQP.Exchange.BindOk exchangeBind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
         AMQP.Exchange.BindOk ok = delegate.exchangeBind(destination, source, routingKey, arguments);
-        RecordedBinding binding = new RecordedExchangeBinding(this).
-                                          source(source).
-                                          destination(destination).
-                                          routingKey(routingKey).
-                                          arguments(arguments);
-        this.bindings.add(binding);
+        recordExchangeBinding(destination, source, routingKey, arguments);
         return ok;
     }
 
@@ -225,7 +216,7 @@ public class RecoveringChannel implements Channel, Recoverable {
         if (queue.equals(RecordedQueue.EMPTY_STRING)) {
             q.serverNamed(true);
         }
-        this.queues.put(ok.getQueue(), q);
+        recordQueue(ok, q);
         return ok;
     }
 
@@ -238,7 +229,7 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public AMQP.Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
-        this.queues.remove(queue);
+        deleteRecordedQueue(queue);
         return delegate.queueDelete(queue, ifUnused, ifEmpty);
     }
 
@@ -294,15 +285,9 @@ public class RecoveringChannel implements Channel, Recoverable {
     }
 
     public String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments, Consumer callback) throws IOException {
-        final String tag = delegate.basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, callback);
-        RecordedConsumer consumer = new RecordedConsumer(this, queue).
-                                            autoAck(autoAck).
-                                            consumerTag(tag).
-                                            exclusive(exclusive).
-                                            arguments(arguments).
-                                            consumer(callback);
-        this.consumers.put(tag, consumer);
-        return tag;
+        final String result = delegate.basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, callback);
+        recordConsumer(result, queue, autoAck, exclusive, arguments, callback);
+        return result;
     }
 
     public void basicCancel(String consumerTag) throws IOException {
@@ -397,6 +382,10 @@ public class RecoveringChannel implements Channel, Recoverable {
         this.recoveryListeners.remove(listener);
     }
 
+    //
+    // Recovery
+    //
+
     public void automaticallyRecover(RecoveringConnection connection, Connection connDelegate) throws IOException {
         RecoveryAwareChannelN defunctChannel = this.delegate;
         this.connection = connection;
@@ -404,9 +393,7 @@ public class RecoveringChannel implements Channel, Recoverable {
         this.delegate.inheritOffsetFrom(defunctChannel);
         this.recoverState();
 
-        if (this.connection.isAutomaticTopologyRecoveryEnabled()) {
-            this.recoverTopology();
-        }
+        this.notifyRecoveryListeners();
     }
 
     private void recoverState() throws IOException {
@@ -419,138 +406,60 @@ public class RecoveringChannel implements Channel, Recoverable {
         }
     }
 
-    private void recoverTopology() {
-        // The recovery sequence is the following:
-        //
-        // 1. Recover exchanges
-        // 2. Recover queues
-        // 3. Recover bindings
-        // 4. Recover consumers
-        recoverExchanges();
-        recoverQueues();
-        recoverBindings();
-        recoverConsumers();
-    }
-
-
-    private void recoverExchanges() {
-        // recorded exchanges are guaranteed to be
-        // non-predefined (we filter out predefined ones
-        // in exchangeDeclare). MK.
-        for (RecordedExchange x : this.exchanges.values()) {
-            try {
-                x.recover();
-            } catch (Exception e) {
-                System.err.println("Caught an exception while recovering exchange " + x.getName());
-                this.connection.getExceptionHandler().handleChannelRecoveryException(this, e);
-            }
-        }
-    }
-
-    public void recoverQueues() {
-        for (Map.Entry<String, RecordedQueue> entry : this.queues.entrySet()) {
-            String oldName = entry.getKey();
-            RecordedQueue q = entry.getValue();
-            try {
-                q.recover();
-                String newName = q.getName();
-                // make sure server-named queues are re-added with
-                // their new names. MK.
-                synchronized (this.queues) {
-                    this.queues.remove(oldName);
-                    this.queues.put(newName, q);
-                    this.propagateQueueNameChangeToBindings(oldName, newName);
-                    this.propagateQueueNameChangeToConsumers(oldName, newName);
-                }
-            } catch (Exception e) {
-                System.err.println("Caught an exception while recovering queue " + oldName);
-                this.connection.getExceptionHandler().handleChannelRecoveryException(this, e);
-            }
-        }
-    }
-
-    private void propagateQueueNameChangeToBindings(String oldName, String newName) {
-        for (RecordedBinding b : this.bindings) {
-            if (b.getDestination().equals(oldName)) {
-                b.setDestination(newName);
-            }
-        }
-    }
-
-    private void propagateQueueNameChangeToConsumers(String oldName, String newName) {
-        for (RecordedConsumer c : this.consumers.values()) {
-            if (c.getQueue().equals(oldName)) {
-                c.setQueue(newName);
-            }
-        }
-    }
-
-    public void recoverBindings() {
-        for (RecordedBinding b : this.bindings) {
-            try {
-                b.recover();
-            } catch (Exception e) {
-                System.err.println("Caught an exception while recovering binding between " + b.getSource() + " and " + b.getDestination());
-                this.connection.getExceptionHandler().handleChannelRecoveryException(this, e);
-            }
-        }
-    }
-
-    public void recoverConsumers() {
-        for (Map.Entry<String, RecordedConsumer> entry : this.consumers.entrySet()) {
-            String tag = entry.getKey();
-            RecordedConsumer consumer = entry.getValue();
-
-            try {
-                String newTag = (String) consumer.recover();
-                // make sure server-generated tags are re-added. MK.
-                synchronized (this.consumers) {
-                    this.consumers.remove(tag);
-                    this.consumers.put(newTag, consumer);
-                }
-            } catch (Exception e) {
-                System.err.println("Caught an exception while recovering consumer " + tag);
-                this.connection.getExceptionHandler().handleChannelRecoveryException(this, e);
-            }
-        }
-    }
-
-    public void runRecoveryHooks() {
+    public void notifyRecoveryListeners() {
         for (RecoveryListener f : this.recoveryListeners) {
-            try {
-                f.handleRecovery(this);
-            } catch (Exception e) {
-                this.connection.getExceptionHandler().handleChannelRecoveryException(this, e);
-            }
+            f.handleRecovery(this);
         }
     }
 
     private void recordQueueBinding(String queue, String exchange, String routingKey, Map<String, Object> arguments) {
-        RecordedBinding binding = new RecordedQueueBinding(this).
-            source(exchange).
-            destination(queue).
-            routingKey(routingKey).
-            arguments(arguments);
-        if (!this.bindings.contains(binding)) {
-            this.bindings.add(binding);
-        }
+        this.connection.recordQueueBinding(this, queue, exchange, routingKey, arguments);
     }
 
     private boolean deleteRecordedQueueBinding(String queue, String exchange, String routingKey, Map<String, Object> arguments) {
-        RecordedBinding b = new RecordedQueueBinding(this).
-            source(exchange).
-            destination(queue).
-            routingKey(routingKey).
-            arguments(arguments);
-        return this.bindings.remove(b);
+        return this.connection.deleteRecordedQueueBinding(this, queue, exchange, routingKey, arguments);
+    }
+
+    private void recordExchangeBinding(String destination, String source, String routingKey, Map<String, Object> arguments) {
+        this.connection.recordExchangeBinding(this, destination, source, routingKey, arguments);
     }
 
     private boolean deleteRecordedExchangeBinding(String destination, String source, String routingKey, Map<String, Object> arguments) {
-        RecordedBinding b = new RecordedExchangeBinding(this).
-            source(source).
-            destination(destination).
-            routingKey(routingKey).
-            arguments(arguments);
-        return this.bindings.remove(b);
+        return this.connection.deleteRecordedExchangeBinding(this, destination, source, routingKey, arguments);
+    }
+
+    private void recordQueue(AMQP.Queue.DeclareOk ok, RecordedQueue q) {
+        this.connection.recordQueue(ok, q);
+    }
+
+    private void deleteRecordedQueue(String queue) {
+        this.connection.deleteRecordedQueue(queue);
+    }
+
+    private void recordExchange(String exchange, RecordedExchange x) {
+        this.connection.recordExchange(exchange, x);
+    }
+
+    private void deleteRecordedExchange(String exchange) {
+        this.connection.deleteRecordedExchange(exchange);
+    }
+
+    private void recordConsumer(String result,
+                                String queue,
+                                boolean autoAck,
+                                boolean exclusive,
+                                Map<String, Object> arguments,
+                                Consumer callback) {
+        RecordedConsumer consumer = new RecordedConsumer(this, queue).
+                                            autoAck(autoAck).
+                                            consumerTag(result).
+                                            exclusive(exclusive).
+                                            arguments(arguments).
+                                            consumer(callback);
+        this.connection.recordConsumer(result, consumer);
+    }
+
+    private void deleteRecordedConsumer(String consumerTag) {
+        this.connection.deleteRecordedConsumer(consumerTag);
     }
 }
