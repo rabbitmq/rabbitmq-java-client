@@ -93,6 +93,8 @@ public class ConnectionFactory implements Cloneable {
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
 
+    private boolean automaticRecovery             = false;
+
     private int networkRecoveryInterval           = 5000;
 
     /** @return number of consumer threads in default {@link ExecutorService} */
@@ -453,6 +455,14 @@ public class ConnectionFactory implements Cloneable {
         setSocketFactory(context.getSocketFactory());
     }
 
+    public boolean isAutomaticRecovery() {
+        return automaticRecovery;
+    }
+
+    public void setAutomaticRecovery(boolean automaticRecovery) {
+        this.automaticRecovery = automaticRecovery;
+    }
+
     protected FrameHandler createFrameHandler(Address addr)
         throws IOException {
 
@@ -522,18 +532,25 @@ public class ConnectionFactory implements Cloneable {
         for (Address addr : addrs) {
             try {
                 FrameHandler frameHandler = createFrameHandler(addr);
-                AMQConnection conn = new AMQConnection(username,
-                                                       password,
-                                                       frameHandler,
-                                                       executor,
-                                                       virtualHost,
-                                                       getClientProperties(),
-                                                       requestedFrameMax,
-                                                       requestedChannelMax,
-                                                       requestedHeartbeat,
-                                                       saslConfig);
-                conn.start();
-                return conn;
+
+                if(isAutomaticRecovery()) {
+                    AutorecoveringConnection conn = new AutorecoveringConnection(this);
+                    conn.init(executor);
+                    return conn;
+                } else {
+                    AMQConnection conn = new AMQConnection(username,
+                                             password,
+                                             frameHandler,
+                                             executor,
+                                             virtualHost,
+                                             getClientProperties(),
+                                             requestedFrameMax,
+                                             requestedChannelMax,
+                                             requestedHeartbeat,
+                                             saslConfig);
+                    conn.start();
+                    return conn;
+                }
             } catch (IOException e) {
                 lastException = e;
             }
@@ -569,56 +586,6 @@ public class ConnectionFactory implements Cloneable {
         throw (e != null) ? e : new IOException("failed to connect");
     }
 
-    /**
-     * Create a new broker connection that automatically recovers from failures
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newRecoveringConnection() throws IOException {
-        return newRecoveringConnection(this.sharedExecutor);
-    }
-
-    /**
-     * Create a new broker connection that automatically recovers from failures
-     * @param executor thread execution service for consumers on the connection
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newRecoveringConnection(ExecutorService executor) throws IOException {
-        IOException lastException = null;
-        try {
-            AutorecoveringConnection conn = new AutorecoveringConnection(this);
-            conn.init(executor);
-            return conn;
-        } catch (IOException e) {
-            lastException = e;
-        }
-
-        return rethrowOrIndicateConnectionFailure(lastException);
-    }
-
-    /**
-     * Create a new broker connection that automatically recovers from failures
-     * @param executor thread execution service for consumers on the connection
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newRecoveringConnection(ExecutorService executor, Address[] addrs)
-            throws IOException
-    {
-        IOException lastException = null;
-        try {
-            AutorecoveringConnection conn = new AutorecoveringConnection(this);
-            conn.init(executor, addrs);
-            conn.start();
-            return conn;
-        } catch (IOException e) {
-            lastException = e;
-        }
-
-        return rethrowOrIndicateConnectionFailure(lastException);
-    }
 
     @Override public ConnectionFactory clone(){
         try {
