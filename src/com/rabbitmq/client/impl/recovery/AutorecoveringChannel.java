@@ -158,14 +158,12 @@ public class AutorecoveringChannel implements Channel, Recoverable {
 
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
         final AMQP.Exchange.DeclareOk ok = delegate.exchangeDeclare(exchange, type, durable, autoDelete, internal, arguments);
-        if(!RecordedExchange.isPredefined(exchange)) {
-            RecordedExchange x = new RecordedExchange(this, exchange).
-                    type(type).
-                    durable(durable).
-                    autoDelete(autoDelete).
-                    arguments(arguments);
-            recordExchange(exchange, x);
-        }
+        RecordedExchange x = new RecordedExchange(this, exchange).
+          type(type).
+          durable(durable).
+          autoDelete(autoDelete).
+          arguments(arguments);
+        recordExchange(exchange, x);
         return ok;
     }
 

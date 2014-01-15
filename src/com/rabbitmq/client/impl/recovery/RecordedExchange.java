@@ -38,9 +38,4 @@ public class RecordedExchange extends RecordedNamedEntity implements Recoverable
         this.arguments = value;
         return this;
     }
-
-    public static boolean isPredefined(String exchange) {
-        return exchange.equals(DEFAULT_EXCHANGE_NAME) || exchange.toLowerCase().startsWith("amq.");
-
-    }
 }
