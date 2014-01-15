@@ -28,7 +28,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     private final int networkRecoveryInterval;
     private ExecutorService executorService;
     private RecoveryAwareAMQConnection delegate;
-    private boolean automaticTopologyRecoveryEnabled = true;
+    private boolean topologyRecovery = true;
 
     // Records topology changes
     private final Map<String, RecordedQueue> recordedQueues = new ConcurrentHashMap<String, RecordedQueue>();
@@ -81,7 +81,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.recoverConnection();
         this.recoverShutdownHooks();
         this.recoverChannels();
-        if(this.isAutomaticTopologyRecoveryEnabled()) {
+        if(this.isTopologyRecoveryEnabled()) {
             this.recoverEntites();
             this.recoverConsumers();
         }
@@ -255,16 +255,12 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         delegate.removeShutdownListener(listener);
     }
 
-    public boolean isAutomaticTopologyRecoveryEnabled() {
-        return this.automaticTopologyRecoveryEnabled;
+    public boolean isTopologyRecoveryEnabled() {
+        return this.topologyRecovery;
     }
 
-    public void enableAutomaticTopologyRecovery() {
-        this.automaticTopologyRecoveryEnabled = true;
-    }
-
-    public void disableAutomaticTopologyRecovery() {
-        this.automaticTopologyRecoveryEnabled = false;
+    public void setTopologyRecovery(boolean topologyRecovery) {
+        this.topologyRecovery = topologyRecovery;
     }
 
     public void addRecoveryListener(RecoveryListener listener) {

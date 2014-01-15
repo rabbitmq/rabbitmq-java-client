@@ -301,10 +301,10 @@ public class ConnectionRecovery extends BrokerTestCase {
         ConnectionFactory cf = new ConnectionFactory();
         cf.setNetworkRecoveryInterval(RECOVERY_INTERVAL);
         cf.setAutomaticRecovery(true);
-        final AutorecoveringConnection c = (AutorecoveringConnection) cf.newConnection();
         if(disableTopologyRecovery) {
-            c.disableAutomaticTopologyRecovery();
+            cf.setTopologyRecovery(false);
         }
+        final AutorecoveringConnection c = (AutorecoveringConnection) cf.newConnection();
         return c;
     }
 

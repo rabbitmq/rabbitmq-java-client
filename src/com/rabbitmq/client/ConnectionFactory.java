@@ -34,7 +34,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ChannelManager;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
@@ -94,6 +93,7 @@ public class ConnectionFactory implements Cloneable {
     private ExecutorService sharedExecutor;
 
     private boolean automaticRecovery             = false;
+    private boolean topologyRecovery              = true;
 
     private int networkRecoveryInterval           = 5000;
 
@@ -455,12 +455,20 @@ public class ConnectionFactory implements Cloneable {
         setSocketFactory(context.getSocketFactory());
     }
 
-    public boolean isAutomaticRecovery() {
+    public boolean isAutomaticRecoveryEnabled() {
         return automaticRecovery;
     }
 
     public void setAutomaticRecovery(boolean automaticRecovery) {
         this.automaticRecovery = automaticRecovery;
+    }
+
+    public boolean isTopologyRecoveryEnabled() {
+        return topologyRecovery;
+    }
+
+    public void setTopologyRecovery(boolean topologyRecovery) {
+        this.topologyRecovery = topologyRecovery;
     }
 
     protected FrameHandler createFrameHandler(Address addr)
@@ -533,8 +541,9 @@ public class ConnectionFactory implements Cloneable {
             try {
                 FrameHandler frameHandler = createFrameHandler(addr);
 
-                if(isAutomaticRecovery()) {
+                if(isAutomaticRecoveryEnabled()) {
                     AutorecoveringConnection conn = new AutorecoveringConnection(this);
+                    conn.setTopologyRecovery(topologyRecovery);
                     conn.init(executor);
                     return conn;
                 } else {
