@@ -653,7 +653,7 @@ public class ConnectionFactory implements Cloneable {
      */
     public Connection newRecoveryAwareConnectionImpl() throws IOException {
         return newRecoveryAwareConnectionImpl(this.sharedExecutor,
-                                                     new Address[]{new Address(getHost(), getPort())}
+                                              new Address[]{new Address(getHost(), getPort())}
         );
     }
 
@@ -665,7 +665,7 @@ public class ConnectionFactory implements Cloneable {
      */
     public Connection newRecoveryAwareConnectionImpl(ExecutorService executor) throws IOException {
         return newRecoveryAwareConnectionImpl(executor,
-                                                     new Address[]{new Address(getHost(), getPort())}
+                                              new Address[]{new Address(getHost(), getPort())}
         );
     }
 
