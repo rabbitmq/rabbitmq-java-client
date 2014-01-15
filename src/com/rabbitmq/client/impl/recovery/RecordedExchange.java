@@ -16,7 +16,7 @@ public class RecordedExchange extends RecordedNamedEntity implements Recoverable
     }
 
     public Object recover() throws IOException {
-        return this.channel.exchangeDeclare(this.name, this.type, this.durable, this.autoDelete, this.arguments);
+        return this.channel.getDelegate().exchangeDeclare(this.name, this.type, this.durable, this.autoDelete, this.arguments);
     }
 
     public RecordedExchange durable(boolean value) {
