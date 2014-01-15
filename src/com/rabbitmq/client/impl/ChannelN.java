@@ -936,6 +936,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public String basicConsume(String queue, boolean autoAck, Map<String, Object> arguments,
+                               Consumer callback)
+        throws IOException
+    {
+        return basicConsume(queue, autoAck, "", false, false, arguments, callback);
+    }
+
+    /** Public API - {@inheritDoc} */
     public String basicConsume(String queue, boolean autoAck, String consumerTag,
                                Consumer callback)
         throws IOException

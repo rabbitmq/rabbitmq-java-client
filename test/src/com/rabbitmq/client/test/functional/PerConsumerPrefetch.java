@@ -109,7 +109,7 @@ public class PerConsumerPrefetch extends BrokerTestCase {
     }
 
     private void consume(QueueingConsumer c, int prefetch, boolean autoAck) throws IOException {
-        channel.basicConsume(q, autoAck, "", false, false, args(prefetch), c);
+        channel.basicConsume(q, autoAck, args(prefetch), c);
     }
 
     private void ack(Delivery del, boolean multi) throws IOException {
