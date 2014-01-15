@@ -4,8 +4,6 @@ import java.io.*;
 import java.util.*;
 
 public class RecordedExchange extends RecordedNamedEntity implements RecoverableEntity {
-    public static final String EMPTY_STRING = "";
-    private static final String DEFAULT_EXCHANGE_NAME = "";
     private boolean durable;
     private boolean autoDelete;
     private Map<String, Object> arguments;
