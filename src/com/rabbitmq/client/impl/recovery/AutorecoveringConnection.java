@@ -81,7 +81,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.recoverConnection();
         this.recoverShutdownHooks();
         this.recoverChannels();
-        if(this.isTopologyRecoveryEnabled()) {
+        if(topologyRecovery) {
             this.recoverEntites();
             this.recoverConsumers();
         }
