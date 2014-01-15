@@ -2,7 +2,7 @@ package com.rabbitmq.client.impl;
 
 import java.net.InetAddress;
 
-public interface SocketConnection {
+public interface NetworkConnection {
 
     /**
      * Retrieve the local host.

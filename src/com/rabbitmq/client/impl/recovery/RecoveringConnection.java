@@ -9,7 +9,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.ExceptionHandler;
-import com.rabbitmq.client.impl.SocketConnection;
+import com.rabbitmq.client.impl.NetworkConnection;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
-public class RecoveringConnection implements Connection, Recoverable, SocketConnection {
+public class RecoveringConnection implements Connection, Recoverable, NetworkConnection {
     private final ConnectionFactory cf;
     private final Map<Integer, RecoveringChannel> channels;
     private final List<ShutdownListener> shutdownHooks;

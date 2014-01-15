@@ -46,7 +46,6 @@ import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
-import com.rabbitmq.client.impl.recovery.RecoveryAwareChannelManager;
 import com.rabbitmq.utility.BlockingCell;
 
 final class Copyright {
@@ -60,7 +59,7 @@ final class Copyright {
  * To create a broker connection, use {@link ConnectionFactory}.  See {@link Connection}
  * for an example.
  */
-public class AMQConnection extends ShutdownNotifierComponent implements Connection, SocketConnection {
+public class AMQConnection extends ShutdownNotifierComponent implements Connection, NetworkConnection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
 
