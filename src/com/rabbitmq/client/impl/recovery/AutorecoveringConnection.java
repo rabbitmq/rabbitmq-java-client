@@ -255,6 +255,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         delegate.removeShutdownListener(listener);
     }
 
+    @SuppressWarnings("unused")
     public boolean isTopologyRecoveryEnabled() {
         return this.topologyRecovery;
     }
@@ -271,6 +272,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.recoveryListeners.remove(listener);
     }
 
+    @SuppressWarnings("unused")
     public ExceptionHandler getExceptionHandler() {
         return this.delegate.getExceptionHandler();
     }
