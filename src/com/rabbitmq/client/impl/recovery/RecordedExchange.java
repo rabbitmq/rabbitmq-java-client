@@ -9,8 +9,6 @@ public class RecordedExchange extends RecordedNamedEntity implements Recoverable
     private boolean durable;
     private boolean autoDelete;
     private Map<String, Object> arguments;
-    private boolean exclusive;
-    private boolean serverNamed;
     private String type;
 
     public RecordedExchange(AutorecoveringChannel channel, String name) {
