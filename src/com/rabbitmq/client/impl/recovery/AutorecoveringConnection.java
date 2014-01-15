@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
-public class RecoveringConnection implements Connection, Recoverable, NetworkConnection {
+public class AutorecoveringConnection implements Connection, Recoverable, NetworkConnection {
     private final ConnectionFactory cf;
     private final Map<Integer, RecoveringChannel> channels;
     private final List<ShutdownListener> shutdownHooks;
@@ -36,7 +36,7 @@ public class RecoveringConnection implements Connection, Recoverable, NetworkCon
     private Map<String, RecordedExchange> recordedExchanges = new ConcurrentHashMap<String, RecordedExchange>();
     private final Map<String, RecordedConsumer> consumers = new ConcurrentHashMap<String, RecordedConsumer>();
 
-    public RecoveringConnection(ConnectionFactory cf) {
+    public AutorecoveringConnection(ConnectionFactory cf) {
         this.cf = cf;
 
         this.channels = new ConcurrentHashMap<Integer, RecoveringChannel>();
@@ -58,7 +58,7 @@ public class RecoveringConnection implements Connection, Recoverable, NetworkCon
     }
 
     private void addAutomaticRecoveryListener() {
-        final RecoveringConnection c = this;
+        final AutorecoveringConnection c = this;
         ShutdownListener automaticRecoveryListener = new ShutdownListener() {
             public void shutdownCompleted(ShutdownSignalException cause) {
                 try {

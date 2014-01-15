@@ -37,7 +37,7 @@ import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ChannelManager;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.SocketFrameHandler;
-import com.rabbitmq.client.impl.recovery.RecoveringConnection;
+import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnection;
 
 /**
@@ -593,7 +593,7 @@ public class ConnectionFactory implements Cloneable {
     public Connection newRecoveringConnection(ExecutorService executor) throws IOException {
         IOException lastException = null;
         try {
-            RecoveringConnection conn = new RecoveringConnection(this);
+            AutorecoveringConnection conn = new AutorecoveringConnection(this);
             conn.init(executor);
             return conn;
         } catch (IOException e) {
@@ -615,7 +615,7 @@ public class ConnectionFactory implements Cloneable {
     {
         IOException lastException = null;
         try {
-            RecoveringConnection conn = new RecoveringConnection(this);
+            AutorecoveringConnection conn = new AutorecoveringConnection(this);
             conn.init(executor, addrs);
             conn.start();
             return conn;

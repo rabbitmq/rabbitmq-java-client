@@ -21,14 +21,14 @@ import java.util.concurrent.TimeoutException;
 
 public class RecoveringChannel implements Channel, Recoverable {
     private RecoveryAwareChannelN delegate;
-    private RecoveringConnection connection;
+    private AutorecoveringConnection connection;
     private List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
     private int prefetchCount;
     private boolean globalQos;
     private boolean usesPublisherConfirms;
     private boolean usesTransactions;
 
-    public RecoveringChannel(RecoveringConnection connection, RecoveryAwareChannelN delegate) {
+    public RecoveringChannel(AutorecoveringConnection connection, RecoveryAwareChannelN delegate) {
         this.connection = connection;
         this.delegate = delegate;
     }
@@ -385,7 +385,7 @@ public class RecoveringChannel implements Channel, Recoverable {
     // Recovery
     //
 
-    public void automaticallyRecover(RecoveringConnection connection, Connection connDelegate) throws IOException {
+    public void automaticallyRecover(AutorecoveringConnection connection, Connection connDelegate) throws IOException {
         RecoveryAwareChannelN defunctChannel = this.delegate;
         this.connection = connection;
         this.delegate = (RecoveryAwareChannelN) connDelegate.createChannel(this.getChannelNumber());

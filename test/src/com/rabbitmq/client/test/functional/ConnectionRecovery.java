@@ -1,9 +1,9 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.impl.recovery.Recoverable;
 import com.rabbitmq.client.impl.recovery.RecoveringChannel;
-import com.rabbitmq.client.impl.recovery.RecoveringConnection;
 import com.rabbitmq.client.impl.recovery.RecoveryListener;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionRecovery extends BrokerTestCase {
     public static final int RECOVERY_INTERVAL = 50;
-    protected RecoveringConnection connection;
+    protected AutorecoveringConnection connection;
 
     public void testConnectionRecovery() throws IOException, InterruptedException {
         assertTrue(connection.isOpen());
@@ -25,7 +25,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     public void testConnectionRecoveryWithDisabledTopologyRecovery() throws IOException, InterruptedException {
-        RecoveringConnection c = newRecoveringConnection(true);
+        AutorecoveringConnection c = newRecoveringConnection(true);
         Channel ch = c.createChannel();
         String q = "java-client.test.recovery.q2";
         ch.queueDeclare(q, false, true, false, null);
@@ -244,7 +244,7 @@ public class ConnectionRecovery extends BrokerTestCase {
 
         String q = channel.queueDeclare().getQueue();
         channel.basicConsume(q, consumer);
-        RecoveringConnection publishingConnection = newRecoveringConnection(false);
+        AutorecoveringConnection publishingConnection = newRecoveringConnection(false);
         Channel publishingChannel = publishingConnection.createChannel();
         for (int i = 0; i < n; i++) {
             // publish messages at intervals that allow recovery to finish
@@ -254,12 +254,12 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(latch.await(n, TimeUnit.SECONDS));
     }
 
-    private void closeAndWaitForShutdown(RecoveringConnection c) throws IOException, InterruptedException {
+    private void closeAndWaitForShutdown(AutorecoveringConnection c) throws IOException, InterruptedException {
         Host.closeConnection(c);
         waitForShutdown();
     }
 
-    private void closeAndWaitForRecovery(RecoveringConnection c) throws IOException, InterruptedException {
+    private void closeAndWaitForRecovery(AutorecoveringConnection c) throws IOException, InterruptedException {
         Host.closeConnection(c);
         waitForRecovery();
     }
@@ -282,7 +282,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertEquals(1, ok2.getMessageCount());
     }
 
-    private void expectConnectionRecovery(RecoveringConnection c) throws InterruptedException {
+    private void expectConnectionRecovery(AutorecoveringConnection c) throws InterruptedException {
         String oldName = c.getName();
         waitForRecovery();
         assertTrue(c.isOpen());
@@ -297,10 +297,10 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(ch.isOpen());
     }
 
-    private RecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery) throws IOException {
+    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery) throws IOException {
         ConnectionFactory cf = new ConnectionFactory();
         cf.setNetworkRecoveryInterval(RECOVERY_INTERVAL);
-        final RecoveringConnection c = (RecoveringConnection) cf.newRecoveringConnection();
+        final AutorecoveringConnection c = (AutorecoveringConnection) cf.newRecoveringConnection();
         if(disableTopologyRecovery) {
             c.disableAutomaticTopologyRecovery();
         }
