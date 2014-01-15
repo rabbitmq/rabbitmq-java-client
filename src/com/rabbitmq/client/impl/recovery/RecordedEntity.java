@@ -1,9 +1,9 @@
 package com.rabbitmq.client.impl.recovery;
 
 public class RecordedEntity {
-    protected final RecoveringChannel channel;
+    protected final AutorecoveringChannel channel;
 
-    public RecordedEntity(RecoveringChannel channel) {
+    public RecordedEntity(AutorecoveringChannel channel) {
         this.channel = channel;
     }
 }

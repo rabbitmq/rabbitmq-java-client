@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutorService;
 
 public class AutorecoveringConnection implements Connection, Recoverable, NetworkConnection {
     private final ConnectionFactory cf;
-    private final Map<Integer, RecoveringChannel> channels;
+    private final Map<Integer, AutorecoveringChannel> channels;
     private final List<ShutdownListener> shutdownHooks;
     private final List<RecoveryListener> recoveryListeners;
     private final int networkRecoveryInterval;
@@ -39,7 +39,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     public AutorecoveringConnection(ConnectionFactory cf) {
         this.cf = cf;
 
-        this.channels = new ConcurrentHashMap<Integer, RecoveringChannel>();
+        this.channels = new ConcurrentHashMap<Integer, AutorecoveringChannel>();
         this.shutdownHooks = new ArrayList<ShutdownListener>();
         this.recoveryListeners = new ArrayList<RecoveryListener>();
         this.networkRecoveryInterval = cf.getNetworkRecoveryInterval();
@@ -110,7 +110,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     private void recoverChannels() {
-        for (RecoveringChannel ch : this.channels.values()) {
+        for (AutorecoveringChannel ch : this.channels.values()) {
             try {
                 ch.automaticallyRecover(this, this.delegate);
             } catch (Throwable t) {
@@ -154,7 +154,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @return Recovering channel.
      */
     private Channel wrapChannel(RecoveryAwareChannelN delegateChannel) {
-        final RecoveringChannel channel = new RecoveringChannel(this, delegateChannel);
+        final AutorecoveringChannel channel = new AutorecoveringChannel(this, delegateChannel);
         if (delegateChannel == null) {
             return null;
         } else {
@@ -163,11 +163,11 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    private void registerChannel(RecoveringChannel channel) {
+    private void registerChannel(AutorecoveringChannel channel) {
         this.channels.put(channel.getChannelNumber(), channel);
     }
 
-    public void unregisterChannel(RecoveringChannel channel) {
+    public void unregisterChannel(AutorecoveringChannel channel) {
         this.channels.remove(channel.getChannelNumber());
     }
 
@@ -396,7 +396,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
 
-    public synchronized void recordQueueBinding(RecoveringChannel ch,
+    public synchronized void recordQueueBinding(AutorecoveringChannel ch,
                                                 String queue,
                                                 String exchange,
                                                 String routingKey,
@@ -411,7 +411,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    public synchronized boolean deleteRecordedQueueBinding(RecoveringChannel ch,
+    public synchronized boolean deleteRecordedQueueBinding(AutorecoveringChannel ch,
                                                            String queue,
                                                            String exchange,
                                                            String routingKey,
@@ -424,7 +424,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         return this.recordedBindings.remove(b);
     }
 
-    public synchronized void recordExchangeBinding(RecoveringChannel ch,
+    public synchronized void recordExchangeBinding(AutorecoveringChannel ch,
                                                    String destination,
                                                    String source,
                                                    String routingKey,
@@ -437,7 +437,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.recordedBindings.add(binding);
     }
 
-    public synchronized boolean deleteRecordedExchangeBinding(RecoveringChannel ch,
+    public synchronized boolean deleteRecordedExchangeBinding(AutorecoveringChannel ch,
                                                               String destination,
                                                               String source,
                                                               String routingKey,

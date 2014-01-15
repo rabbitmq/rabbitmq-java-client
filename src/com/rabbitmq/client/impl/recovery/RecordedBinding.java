@@ -1,7 +1,5 @@
 package com.rabbitmq.client.impl.recovery;
 
-import com.rabbitmq.client.*;
-
 import java.util.Map;
 
 public abstract class RecordedBinding extends RecordedEntity implements RecoverableEntity {
@@ -10,7 +8,7 @@ public abstract class RecordedBinding extends RecordedEntity implements Recovera
     protected String routingKey;
     protected Map<String, Object> arguments;
 
-    public RecordedBinding(RecoveringChannel channel) {
+    public RecordedBinding(AutorecoveringChannel channel) {
         super(channel);
     }
 

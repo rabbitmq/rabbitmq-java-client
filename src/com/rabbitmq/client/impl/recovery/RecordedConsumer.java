@@ -13,7 +13,7 @@ public class RecordedConsumer extends RecordedEntity implements RecoverableEntit
     private boolean autoAck;
     private Map<String, Object> arguments;
 
-    public RecordedConsumer(RecoveringChannel channel, String queue) {
+    public RecordedConsumer(AutorecoveringChannel channel, String queue) {
         super(channel);
         this.queue = queue;
     }

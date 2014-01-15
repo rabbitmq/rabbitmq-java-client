@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-public class RecoveringChannel implements Channel, Recoverable {
+public class AutorecoveringChannel implements Channel, Recoverable {
     private RecoveryAwareChannelN delegate;
     private AutorecoveringConnection connection;
     private List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
@@ -28,7 +28,7 @@ public class RecoveringChannel implements Channel, Recoverable {
     private boolean usesPublisherConfirms;
     private boolean usesTransactions;
 
-    public RecoveringChannel(AutorecoveringConnection connection, RecoveryAwareChannelN delegate) {
+    public AutorecoveringChannel(AutorecoveringConnection connection, RecoveryAwareChannelN delegate) {
         this.connection = connection;
         this.delegate = delegate;
     }

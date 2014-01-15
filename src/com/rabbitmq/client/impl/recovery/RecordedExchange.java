@@ -13,7 +13,7 @@ public class RecordedExchange extends RecordedNamedEntity implements Recoverable
     private boolean serverNamed;
     private String type;
 
-    public RecordedExchange(RecoveringChannel channel, String name) {
+    public RecordedExchange(AutorecoveringChannel channel, String name) {
         super(channel, name);
     }
 

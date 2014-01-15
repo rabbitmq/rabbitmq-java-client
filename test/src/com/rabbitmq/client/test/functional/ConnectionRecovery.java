@@ -1,9 +1,9 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.impl.recovery.Recoverable;
-import com.rabbitmq.client.impl.recovery.RecoveringChannel;
 import com.rabbitmq.client.impl.recovery.RecoveryListener;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
@@ -200,9 +200,9 @@ public class ConnectionRecovery extends BrokerTestCase {
                 latch.countDown();
             }
         };
-        RecoveringChannel ch1 = (RecoveringChannel) connection.createChannel();
+        AutorecoveringChannel ch1 = (AutorecoveringChannel) connection.createChannel();
         ch1.addRecoveryListener(listener);
-        RecoveringChannel ch2 = (RecoveringChannel) connection.createChannel();
+        AutorecoveringChannel ch2 = (AutorecoveringChannel) connection.createChannel();
         ch2.addRecoveryListener(listener);
 
         assertTrue(ch1.isOpen());

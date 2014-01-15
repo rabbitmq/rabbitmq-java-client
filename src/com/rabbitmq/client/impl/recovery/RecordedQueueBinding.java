@@ -3,7 +3,7 @@ package com.rabbitmq.client.impl.recovery;
 import java.io.*;
 
 public class RecordedQueueBinding extends RecordedBinding implements RecoverableEntity {
-    public RecordedQueueBinding(RecoveringChannel channel) {
+    public RecordedQueueBinding(AutorecoveringChannel channel) {
         super(channel);
     }
 

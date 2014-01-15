@@ -13,7 +13,7 @@ public class RecordedQueue extends RecordedNamedEntity implements RecoverableEnt
     private boolean exclusive;
     private boolean serverNamed;
 
-    public RecordedQueue(RecoveringChannel channel, String name) {
+    public RecordedQueue(AutorecoveringChannel channel, String name) {
         super(channel, name);
     }
 
