@@ -94,7 +94,6 @@ public class ConnectionFactory implements Cloneable {
     private ExecutorService sharedExecutor;
 
     private int networkRecoveryInterval           = 5000;
-    private ChannelManager channelManager = null;
 
     /** @return number of consumer threads in default {@link ExecutorService} */
     @Deprecated
@@ -256,11 +255,6 @@ public class ConnectionFactory implements Cloneable {
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
         setUri(new URI(uriString));
-    }
-
-    /** Private API */
-    public void setChannelManager(ChannelManager manager) {
-        this.channelManager = manager;
     }
 
     private String uriDecode(String s) {
