@@ -1,5 +1,7 @@
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
@@ -102,6 +104,30 @@ public class PerConsumerPrefetch extends BrokerTestCase {
         drain(c, 10);
     }
 
+    public void testPrefetchZeroMeansInfinity() throws IOException {
+        QueueingConsumer c = new QueueingConsumer(channel);
+        publish(q, 10);
+        consume(c, 0, false);
+        drain(c, 10);
+    }
+
+    public void testPrefetchValidation() throws IOException {
+        validationFail(-1);
+        validationFail(new HashMap<String, Object>());
+        validationFail("banana");
+    }
+
+    private void validationFail(Object badThing) throws IOException {
+        Channel ch = connection.createChannel();
+        QueueingConsumer c = new QueueingConsumer(ch);
+
+        try {
+            ch.basicConsume(q, false, args(badThing), c);
+        } catch (IOException e) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
+    }
+
     private void publish(String q, int n) throws IOException {
         for (int i = 0; i < n; i++) {
             channel.basicPublish("", q, null, "".getBytes());
@@ -124,11 +150,9 @@ public class PerConsumerPrefetch extends BrokerTestCase {
         channel.basicNack(del.getEnvelope().getDeliveryTag(), multi, requeue);
     }
 
-    private Map<String, Object> args(int prefetch) {
+    private Map<String, Object> args(Object prefetch) {
         Map<String, Object> a = new HashMap<String, Object>();
-        if (prefetch != 0) {
-            a.put("x-prefetch", prefetch);
-        }
+        a.put("x-prefetch", prefetch);
         return a;
     }
 }
