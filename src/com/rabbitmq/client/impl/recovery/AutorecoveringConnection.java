@@ -277,10 +277,16 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         return this.delegate.getExceptionHandler();
     }
 
+    /**
+     * @return client socket address
+     */
     public InetAddress getLocalAddress() {
         return this.delegate.getLocalAddress();
     }
 
+    /**
+     * @return client socket port
+     */
     public int getLocalPort() {
         return this.delegate.getLocalPort();
     }
