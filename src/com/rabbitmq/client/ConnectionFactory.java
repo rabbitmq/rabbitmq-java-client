@@ -462,6 +462,10 @@ public class ConnectionFactory implements Cloneable {
         return automaticRecovery;
     }
 
+    /**
+     * Enables or disables automatic connection recovery
+     * @param automaticRecovery if true, enables connection recovery
+     */
     public void setAutomaticRecovery(boolean automaticRecovery) {
         this.automaticRecovery = automaticRecovery;
     }
