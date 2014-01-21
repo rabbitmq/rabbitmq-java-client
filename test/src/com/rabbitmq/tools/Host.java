@@ -133,6 +133,7 @@ public class Host {
     public static List<ConnectionInfo> listConnections() throws IOException {
         String output = capture(rabbitmqctl("list_connections pid peer_port").getInputStream());
         String[] allLines = output.split("\n");
+        // this pattern must match rabbit_misc:pid_to_string/1
         Pattern pattern = Pattern.compile("(<.+\\.\\d+\\.\\d+\\.\\d+>)\\s+(\\d+)");
 
         ArrayList<ConnectionInfo> result = new ArrayList<ConnectionInfo>();
