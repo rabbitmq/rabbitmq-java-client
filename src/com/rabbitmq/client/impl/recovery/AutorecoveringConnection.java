@@ -285,10 +285,6 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         return this.delegate.getLocalPort();
     }
 
-    public String getName() {
-        return this.delegate.getName();
-    }
-
     //
     // Recovery
     //

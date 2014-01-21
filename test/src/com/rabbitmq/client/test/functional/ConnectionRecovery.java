@@ -283,10 +283,10 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     private void expectConnectionRecovery(AutorecoveringConnection c) throws InterruptedException {
-        String oldName = c.getName();
+        int oldPort = c.getLocalPort();
         waitForRecovery();
         assertTrue(c.isOpen());
-        assertFalse(oldName.equals(c.getName()));
+        assertFalse(oldPort == c.getLocalPort());
     }
 
     private void waitForRecovery() throws InterruptedException {
