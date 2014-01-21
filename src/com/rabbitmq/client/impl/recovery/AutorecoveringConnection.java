@@ -363,7 +363,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    public void recoverBindings() throws TopologyRecoveryException {
+    private void recoverBindings() throws TopologyRecoveryException {
         for (RecordedBinding b : this.recordedBindings) {
             try {
                 b.recover();
@@ -374,7 +374,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    public void recoverConsumers() throws TopologyRecoveryException {
+    private void recoverConsumers() throws TopologyRecoveryException {
         for (Map.Entry<String, RecordedConsumer> entry : this.consumers.entrySet()) {
             String tag = entry.getKey();
             RecordedConsumer consumer = entry.getValue();
@@ -393,7 +393,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
 
-    public synchronized void recordQueueBinding(AutorecoveringChannel ch,
+    synchronized void recordQueueBinding(AutorecoveringChannel ch,
                                                 String queue,
                                                 String exchange,
                                                 String routingKey,
@@ -408,7 +408,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    public synchronized boolean deleteRecordedQueueBinding(AutorecoveringChannel ch,
+    synchronized boolean deleteRecordedQueueBinding(AutorecoveringChannel ch,
                                                            String queue,
                                                            String exchange,
                                                            String routingKey,
@@ -421,7 +421,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         return this.recordedBindings.remove(b);
     }
 
-    public synchronized void recordExchangeBinding(AutorecoveringChannel ch,
+    synchronized void recordExchangeBinding(AutorecoveringChannel ch,
                                                    String destination,
                                                    String source,
                                                    String routingKey,
@@ -434,7 +434,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.recordedBindings.add(binding);
     }
 
-    public synchronized boolean deleteRecordedExchangeBinding(AutorecoveringChannel ch,
+    synchronized boolean deleteRecordedExchangeBinding(AutorecoveringChannel ch,
                                                               String destination,
                                                               String source,
                                                               String routingKey,
@@ -447,27 +447,27 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         return this.recordedBindings.remove(b);
     }
 
-    public void recordQueue(AMQP.Queue.DeclareOk ok, RecordedQueue q) {
+    void recordQueue(AMQP.Queue.DeclareOk ok, RecordedQueue q) {
         this.recordedQueues.put(ok.getQueue(), q);
     }
 
-    public void deleteRecordedQueue(String queue) {
+    void deleteRecordedQueue(String queue) {
         this.recordedQueues.remove(queue);
     }
 
-    public void recordExchange(String exchange, RecordedExchange x) {
+    void recordExchange(String exchange, RecordedExchange x) {
         this.recordedExchanges.put(exchange, x);
     }
 
-    public void deleteRecordedExchange(String exchange) {
+    void deleteRecordedExchange(String exchange) {
         this.recordedExchanges.remove(exchange);
     }
 
-    public void recordConsumer(String result, RecordedConsumer consumer) {
+    void recordConsumer(String result, RecordedConsumer consumer) {
         this.consumers.put(result, consumer);
     }
 
-    public void deleteRecordedConsumer(String consumerTag) {
+    void deleteRecordedConsumer(String consumerTag) {
         this.consumers.remove(consumerTag);
     }
 }
