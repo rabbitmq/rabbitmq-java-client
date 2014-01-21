@@ -295,7 +295,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     // Recovery
     //
 
-    public void notifyRecoveryListeners() {
+    private void notifyRecoveryListeners() {
         for (RecoveryListener f : this.recoveryListeners) {
             f.handleRecovery(this);
         }
