@@ -79,7 +79,7 @@ public class Host {
     private static Process executeCommandProcess(String command) throws IOException
     {
         String[] finalCommand;
-        if (System.getProperty("os.name").toLowerCase().indexOf("windows") != -1) {
+        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
             finalCommand = new String[4];
             finalCommand[0] = "C:\\winnt\\system32\\cmd.exe";
             finalCommand[1] = "/y";
