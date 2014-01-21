@@ -477,6 +477,10 @@ public class ConnectionFactory implements Cloneable {
         return topologyRecovery;
     }
 
+    /**
+     * Enables or disables topology recovery
+     * @param topologyRecovery if true, enables topology recovery
+     */
     public void setTopologyRecovery(boolean topologyRecovery) {
         this.topologyRecovery = topologyRecovery;
     }
