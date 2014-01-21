@@ -455,6 +455,9 @@ public class ConnectionFactory implements Cloneable {
         setSocketFactory(context.getSocketFactory());
     }
 
+    /**
+     * @return true if automatic connection recovery is enabled, false otherwise
+     */
     public boolean isAutomaticRecoveryEnabled() {
         return automaticRecovery;
     }
