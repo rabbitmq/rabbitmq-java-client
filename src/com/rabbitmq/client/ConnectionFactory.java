@@ -618,6 +618,9 @@ public class ConnectionFactory implements Cloneable {
         }
     }
 
+    /**
+     * @return how long will automatic recovery wait before attempting to reconnect, in ms
+     */
     public int getNetworkRecoveryInterval() {
         return networkRecoveryInterval;
     }
