@@ -301,7 +301,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    public void recoverEntites() throws TopologyRecoveryException {
+    private void recoverEntites() throws TopologyRecoveryException {
         // The recovery sequence is the following:
         //
         // 1. Recover exchanges
