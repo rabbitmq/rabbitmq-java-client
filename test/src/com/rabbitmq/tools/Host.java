@@ -113,32 +113,32 @@ public class Host {
 
     public static class ConnectionInfo {
         private final String pid;
-        private final String name;
+        private final int peerPort;
 
-        public ConnectionInfo(String pid, String name) {
+        public ConnectionInfo(String pid, int peerPort) {
             this.pid = pid;
-            this.name = name;
+            this.peerPort = peerPort;
         }
 
         public String getPid() {
             return pid;
         }
 
-        public String getName() {
-            return name;
+        public int getPeerPort() {
+            return peerPort;
         }
     }
 
     public static List<ConnectionInfo> listConnections() throws IOException {
-        String output = capture(rabbitmqctl("list_connections pid name").getInputStream());
+        String output = capture(rabbitmqctl("list_connections pid peer_port").getInputStream());
         String[] allLines = output.split("\n");
-        Pattern pattern = Pattern.compile("(<.+\\.\\d+\\.\\d+\\.\\d+>)\\s+(.+)");
+        Pattern pattern = Pattern.compile("(<.+\\.\\d+\\.\\d+\\.\\d+>)\\s+(\\d+)");
 
         ArrayList<ConnectionInfo> result = new ArrayList<ConnectionInfo>();
         for (String line : Arrays.copyOfRange(allLines, 1, allLines.length - 1)) {
             Matcher m = pattern.matcher(line);
             m.find();
-            result.add(new ConnectionInfo(m.group(1), m.group(2)));
+            result.add(new ConnectionInfo(m.group(1), Integer.valueOf(m.group(2))));
         }
         return result;
     }
@@ -146,7 +146,7 @@ public class Host {
     private static Host.ConnectionInfo findConnectionInfoFor(List<Host.ConnectionInfo> xs, NetworkConnection c) {
         Host.ConnectionInfo result = null;
         for (Host.ConnectionInfo ci : xs) {
-            if(c.getName().equals(ci.getName())){
+            if(c.getLocalPort() == ci.getPeerPort()){
                 result = ci;
                 break;
             }
