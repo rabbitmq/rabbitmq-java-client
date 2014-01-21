@@ -470,6 +470,9 @@ public class ConnectionFactory implements Cloneable {
         this.automaticRecovery = automaticRecovery;
     }
 
+    /**
+     * @return true if topology recovery is enabled, false otherwise
+     */
     public boolean isTopologyRecoveryEnabled() {
         return topologyRecovery;
     }
