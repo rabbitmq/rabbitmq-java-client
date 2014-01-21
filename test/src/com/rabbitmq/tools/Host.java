@@ -38,18 +38,6 @@ public class Host {
         String line;
         StringBuilder buff = new StringBuilder();
         while ((line = br.readLine()) != null) {
-            buff.append(line);
-        }
-        return buff.toString();
-    }
-
-    private static String captureWithNewlines(InputStream is)
-            throws IOException
-    {
-        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String line;
-        StringBuilder buff = new StringBuilder();
-        while ((line = br.readLine()) != null) {
             buff.append(line).append("\n");
         }
         return buff.toString();
@@ -142,7 +130,7 @@ public class Host {
     }
 
     public static List<ConnectionInfo> listConnections() throws IOException {
-        String output = captureWithNewlines(rabbitmqctl("list_connections pid name").getInputStream());
+        String output = capture(rabbitmqctl("list_connections pid name").getInputStream());
         String[] allLines = output.split("\n");
         Pattern pattern = Pattern.compile("(<.+\\.\\d+\\.\\d+\\.\\d+>)\\s+(.+)");
 
