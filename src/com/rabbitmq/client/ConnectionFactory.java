@@ -619,14 +619,14 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * @return how long will automatic recovery wait before attempting to reconnect, in ms
+     * @return how long will automatic recovery wait before attempting to reconnect, in ms; default is 5000
      */
     public int getNetworkRecoveryInterval() {
         return networkRecoveryInterval;
     }
 
     /**
-     * Sets connection recovery interval
+     * Sets connection recovery interval. Default is 5000.
      * @param networkRecoveryInterval how long will automatic recovery wait before attempting to reconnect, in ms
      */
     public void setNetworkRecoveryInterval(int networkRecoveryInterval) {
