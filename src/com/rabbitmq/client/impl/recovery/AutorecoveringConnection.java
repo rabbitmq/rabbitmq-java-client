@@ -372,7 +372,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    public void recoverConsumers() {
+    public void recoverConsumers() throws TopologyRecoveryException {
         for (Map.Entry<String, RecordedConsumer> entry : this.consumers.entrySet()) {
             String tag = entry.getKey();
             RecordedConsumer consumer = entry.getValue();
@@ -384,9 +384,8 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                     this.consumers.remove(tag);
                     this.consumers.put(newTag, consumer);
                 }
-            } catch (Exception e) {
-                System.err.println("Caught an exception while recovering consumer " + tag);
-                e.printStackTrace(System.err);
+            } catch (Exception cause) {
+                throw new TopologyRecoveryException("Caught an exception while recovering consumer " + tag, cause);
             }
         }
     }
