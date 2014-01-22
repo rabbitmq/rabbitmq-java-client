@@ -2,7 +2,6 @@ package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ChannelManager;
 import com.rabbitmq.client.impl.ExceptionHandler;
 import com.rabbitmq.client.impl.FrameHandler;
 

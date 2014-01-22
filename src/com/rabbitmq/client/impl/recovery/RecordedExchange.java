@@ -2,8 +2,8 @@ package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.AMQP;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * @since 3.3.0
