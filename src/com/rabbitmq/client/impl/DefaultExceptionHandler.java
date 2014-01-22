@@ -23,6 +23,7 @@ import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.impl.recovery.TopologyRecoveryException;
 
 /**
  * Default implementation of {@link ExceptionHandler} used by {@link AMQConnection}.
@@ -70,6 +71,11 @@ public class DefaultExceptionHandler implements ExceptionHandler {
 
     public void handleChannelRecoveryException(Channel ch, Throwable exception) {
         System.err.println("Caught an exception when recovering channel " + ch.getChannelNumber());
+        exception.printStackTrace(System.err);
+    }
+
+    public void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException exception) {
+        System.err.println("Caught an exception when recovering topology " + exception.getMessage());
         exception.printStackTrace(System.err);
     }
 
