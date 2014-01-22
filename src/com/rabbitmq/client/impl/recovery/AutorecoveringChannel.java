@@ -403,7 +403,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         }
     }
 
-    public void notifyRecoveryListeners() {
+    private void notifyRecoveryListeners() {
         for (RecoveryListener f : this.recoveryListeners) {
             f.handleRecovery(this);
         }
