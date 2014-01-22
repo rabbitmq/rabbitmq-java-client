@@ -89,7 +89,21 @@ public interface ExceptionHandler {
                                  String consumerTag,
                                  String methodName);
 
+    /**
+     * Perform any required exception processing for the situation
+     * when the driver thread for the connection has an exception
+     * during connection recovery that it can't otherwise deal with.
+     * @param conn the Connection that caught the exception
+     * @param exception the exception caught in the driver thread
+     */
     void handleConnectionRecoveryException(Connection conn, Throwable exception);
 
+    /**
+     * Perform any required exception processing for the situation
+     * when the driver thread for the connection has an exception
+     * during channel recovery that it can't otherwise deal with.
+     * @param ch the Channel that caught the exception
+     * @param exception the exception caught in the driver thread
+     */
     void handleChannelRecoveryException(Channel ch, Throwable exception);
 }
