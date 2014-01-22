@@ -5,6 +5,9 @@ import com.rabbitmq.client.impl.ChannelManager;
 import com.rabbitmq.client.impl.ChannelN;
 import com.rabbitmq.client.impl.ConsumerWorkService;
 
+/**
+ * @since 3.3.0
+ */
 public class RecoveryAwareChannelManager extends ChannelManager {
     public RecoveryAwareChannelManager(ConsumerWorkService workService, int channelMax) {
         super(workService, channelMax);

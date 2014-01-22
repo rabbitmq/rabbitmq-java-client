@@ -2,6 +2,9 @@ package com.rabbitmq.client.impl.recovery;
 
 import java.util.Map;
 
+/**
+ * @since 3.3.0
+ */
 public abstract class RecordedBinding extends RecordedEntity implements RecoverableEntity {
     protected String source;
     protected String destination;

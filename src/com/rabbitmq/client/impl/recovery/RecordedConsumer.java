@@ -5,6 +5,9 @@ import com.rabbitmq.client.*;
 import java.io.*;
 import java.util.*;
 
+/**
+ * @since 3.3.0
+ */
 public class RecordedConsumer extends RecordedEntity implements RecoverableEntity {
     private String queue;
     private String consumerTag;

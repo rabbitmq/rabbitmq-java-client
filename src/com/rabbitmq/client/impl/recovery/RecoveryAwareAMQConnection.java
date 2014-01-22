@@ -9,6 +9,10 @@ import com.rabbitmq.client.impl.FrameHandler;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * {@link com.rabbitmq.client.impl.AMQConnection} modification that uses {@link com.rabbitmq.client.impl.recovery.RecoveryAwareChannelN}
+ * @since 3.3.0
+ */
 public class RecoveryAwareAMQConnection extends AMQConnection {
     public RecoveryAwareAMQConnection(String username,
                                       String password,

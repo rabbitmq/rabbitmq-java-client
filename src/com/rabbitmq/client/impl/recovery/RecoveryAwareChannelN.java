@@ -8,6 +8,13 @@ import com.rabbitmq.client.impl.ConsumerWorkService;
 
 import java.io.IOException;
 
+/**
+ * {@link com.rabbitmq.client.impl.ChannelN} modification that keeps track of delivery
+ * tags and avoids sending <pre>basic.ack</pre>, <pre>basic.nack</pre>, and <pre>basic.reject</pre>
+ * for stale tags.
+ *
+ * @since 3.3.0
+ */
 public class RecoveryAwareChannelN extends ChannelN {
     private long maxSeenDeliveryTag = 0;
     private long activeDeliveryTagOffset = 0;

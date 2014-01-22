@@ -5,6 +5,9 @@ import com.rabbitmq.client.*;
 import java.io.*;
 import java.util.*;
 
+/**
+ * @since 3.3.0
+ */
 public class RecordedQueue extends RecordedNamedEntity implements RecoverableEntity {
     public static final String EMPTY_STRING = "";
     private boolean durable;
