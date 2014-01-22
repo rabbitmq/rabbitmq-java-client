@@ -64,16 +64,25 @@ public class DefaultExceptionHandler implements ExceptionHandler {
                                               + " for channel " + channel);
     }
 
+    /**
+     * @since 3.3.0
+     */
     public void handleConnectionRecoveryException(Connection conn, Throwable exception) {
         System.err.println("Caught an exception during connection recovery!");
         exception.printStackTrace(System.err);
     }
 
+    /**
+     * @since 3.3.0
+     */
     public void handleChannelRecoveryException(Channel ch, Throwable exception) {
         System.err.println("Caught an exception when recovering channel " + ch.getChannelNumber());
         exception.printStackTrace(System.err);
     }
 
+    /**
+     * @since 3.3.0
+     */
     public void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException exception) {
         System.err.println("Caught an exception when recovering topology " + exception.getMessage());
         exception.printStackTrace(System.err);

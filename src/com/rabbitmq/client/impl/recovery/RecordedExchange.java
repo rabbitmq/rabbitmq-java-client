@@ -3,6 +3,9 @@ package com.rabbitmq.client.impl.recovery;
 import java.io.*;
 import java.util.*;
 
+/**
+ * @since 3.3.0
+ */
 public class RecordedExchange extends RecordedNamedEntity implements RecoverableEntity {
     private boolean durable;
     private boolean autoDelete;

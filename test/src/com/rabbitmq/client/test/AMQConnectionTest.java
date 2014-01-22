@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+import com.rabbitmq.client.impl.recovery.TopologyRecoveryException;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
@@ -260,6 +261,11 @@ public class AMQConnectionTest extends TestCase {
         }
 
         public void handleChannelRecoveryException(Channel ch, Throwable ex) {
+            _handledExceptions.add(ex);
+        }
+
+        @Override
+        public void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException ex) {
             _handledExceptions.add(ex);
         }
 

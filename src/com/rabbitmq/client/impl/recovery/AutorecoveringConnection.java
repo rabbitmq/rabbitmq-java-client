@@ -346,7 +346,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         recoverBindings();
     }
 
-    private void recoverExchanges() throws TopologyRecoveryException {
+    private void recoverExchanges() {
         // recorded exchanges are guaranteed to be
         // non-predefined (we filter out predefined ones
         // in exchangeDeclare). MK.
@@ -354,12 +354,13 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             try {
                 x.recover();
             } catch (Exception cause) {
-                throw new TopologyRecoveryException("Caught an exception while recovering exchange " + x.getName(), cause);
+                TopologyRecoveryException e = new TopologyRecoveryException("Caught an exception while recovering exchange " + x.getName(), cause);
+                this.getExceptionHandler().handleTopologyRecoveryException(delegate, x.getDelegateChannel(), e);
             }
         }
     }
 
-    private void recoverQueues() throws TopologyRecoveryException {
+    private void recoverQueues() {
         for (Map.Entry<String, RecordedQueue> entry : this.recordedQueues.entrySet()) {
             String oldName = entry.getKey();
             RecordedQueue q = entry.getValue();
@@ -375,7 +376,8 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                     this.propagateQueueNameChangeToConsumers(oldName, newName);
                 }
             } catch (Exception cause) {
-                throw new TopologyRecoveryException("Caught an exception while recovering queue " + oldName, cause);
+                TopologyRecoveryException e = new TopologyRecoveryException("Caught an exception while recovering queue " + oldName, cause);
+                this.getExceptionHandler().handleTopologyRecoveryException(delegate, q.getDelegateChannel(), e);
             }
         }
     }
@@ -396,18 +398,19 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    private void recoverBindings() throws TopologyRecoveryException {
+    private void recoverBindings() {
         for (RecordedBinding b : this.recordedBindings) {
             try {
                 b.recover();
             } catch (Exception cause) {
                 String message = "Caught an exception while recovering binding between " + b.getSource() + " and " + b.getDestination();
-                throw new TopologyRecoveryException(message, cause);
+                TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
+                this.getExceptionHandler().handleTopologyRecoveryException(delegate, b.getDelegateChannel(), e);
             }
         }
     }
 
-    private void recoverConsumers() throws TopologyRecoveryException {
+    private void recoverConsumers() {
         for (Map.Entry<String, RecordedConsumer> entry : this.consumers.entrySet()) {
             String tag = entry.getKey();
             RecordedConsumer consumer = entry.getValue();
@@ -420,7 +423,8 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                     this.consumers.put(newTag, consumer);
                 }
             } catch (Exception cause) {
-                throw new TopologyRecoveryException("Caught an exception while recovering consumer " + tag, cause);
+                TopologyRecoveryException e = new TopologyRecoveryException("Caught an exception while recovering consumer " + tag, cause);
+                this.getExceptionHandler().handleTopologyRecoveryException(delegate, consumer.getDelegateChannel(), e);
             }
         }
     }
