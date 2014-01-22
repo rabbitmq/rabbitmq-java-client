@@ -1,11 +1,12 @@
 package com.rabbitmq.client.impl.recovery;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
  * @since 3.3.0
  */
-public abstract class RecordedBinding extends RecordedEntity implements RecoverableEntity {
+public abstract class RecordedBinding extends RecordedEntity {
     protected String source;
     protected String destination;
     protected String routingKey;
@@ -49,6 +50,11 @@ public abstract class RecordedBinding extends RecordedEntity implements Recovera
 
     public void setDestination(String destination) {
         this.destination = destination;
+    }
+
+    public Object recover() throws IOException {
+        // Implemented by subclasses
+        return null;
     }
 
     @Override

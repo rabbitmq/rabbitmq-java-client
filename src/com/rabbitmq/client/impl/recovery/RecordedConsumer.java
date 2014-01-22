@@ -8,7 +8,7 @@ import java.util.*;
 /**
  * @since 3.3.0
  */
-public class RecordedConsumer extends RecordedEntity implements RecoverableEntity {
+public class RecordedConsumer extends RecordedEntity {
     private String queue;
     private String consumerTag;
     private Consumer consumer;
@@ -41,7 +41,7 @@ public class RecordedConsumer extends RecordedEntity implements RecoverableEntit
         return this;
     }
 
-    public Object recover() throws IOException {
+    public String recover() throws IOException {
         this.consumerTag = this.channel.basicConsume(this.queue, this.autoAck, this.consumerTag, false, this.exclusive, this.arguments, this.consumer);
         return this.consumerTag;
     }

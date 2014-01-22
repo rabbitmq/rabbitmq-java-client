@@ -8,7 +8,7 @@ import java.util.*;
 /**
  * @since 3.3.0
  */
-public class RecordedQueue extends RecordedNamedEntity implements RecoverableEntity {
+public class RecordedQueue extends RecordedNamedEntity {
     public static final String EMPTY_STRING = "";
     private boolean durable;
     private boolean autoDelete;
@@ -34,7 +34,7 @@ public class RecordedQueue extends RecordedNamedEntity implements RecoverableEnt
         return this.serverNamed;
     }
 
-    public Object recover() throws IOException {
+    public AMQP.Queue.DeclareOk recover() throws IOException {
         AMQP.Queue.DeclareOk ok = this.channel.queueDeclare(this.getNameToUseForRecovery(), this.durable, this.exclusive, this.autoDelete, this.arguments);
         this.name = ok.getQueue();
 

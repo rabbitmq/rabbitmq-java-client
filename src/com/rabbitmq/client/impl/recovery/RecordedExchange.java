@@ -1,12 +1,14 @@
 package com.rabbitmq.client.impl.recovery;
 
+import com.rabbitmq.client.AMQP;
+
 import java.io.*;
 import java.util.*;
 
 /**
  * @since 3.3.0
  */
-public class RecordedExchange extends RecordedNamedEntity implements RecoverableEntity {
+public class RecordedExchange extends RecordedNamedEntity {
     private boolean durable;
     private boolean autoDelete;
     private Map<String, Object> arguments;
@@ -16,7 +18,7 @@ public class RecordedExchange extends RecordedNamedEntity implements Recoverable
         super(channel, name);
     }
 
-    public Object recover() throws IOException {
+    public AMQP.Exchange.DeclareOk recover() throws IOException {
         return this.channel.getDelegate().exchangeDeclare(this.name, this.type, this.durable, this.autoDelete, this.arguments);
     }
 
