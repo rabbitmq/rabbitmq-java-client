@@ -78,7 +78,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     /**
-     * Private API
+     * Private API.
      * @param executor thread execution service for consumers on the connection
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @throws IOException
