@@ -39,6 +39,7 @@ import java.util.concurrent.ExecutorService;
  * @see com.rabbitmq.client.impl.recovery.Recoverable
  * @see com.rabbitmq.client.ConnectionFactory#setAutomaticRecovery(boolean)
  * @see com.rabbitmq.client.ConnectionFactory#setTopologyRecovery(boolean)
+ * @since 3.3.0
  */
 public class AutorecoveringConnection implements Connection, Recoverable, NetworkConnection {
     private final ConnectionFactory cf;

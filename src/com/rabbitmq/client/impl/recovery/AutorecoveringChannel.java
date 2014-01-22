@@ -19,6 +19,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * {@link com.rabbitmq.client.Channel} implementation that is automatically
+ * recovered during connection recovery.
+ *
+ * @since 3.3.0
+ */
 public class AutorecoveringChannel implements Channel, Recoverable {
     private RecoveryAwareChannelN delegate;
     private AutorecoveringConnection connection;
