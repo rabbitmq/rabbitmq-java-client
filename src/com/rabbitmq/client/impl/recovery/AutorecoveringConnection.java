@@ -382,22 +382,6 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    private void propagateQueueNameChangeToBindings(String oldName, String newName) {
-        for (RecordedBinding b : this.recordedBindings) {
-            if (b.getDestination().equals(oldName)) {
-                b.setDestination(newName);
-            }
-        }
-    }
-
-    private void propagateQueueNameChangeToConsumers(String oldName, String newName) {
-        for (RecordedConsumer c : this.consumers.values()) {
-            if (c.getQueue().equals(oldName)) {
-                c.setQueue(newName);
-            }
-        }
-    }
-
     private void recoverBindings() {
         for (RecordedBinding b : this.recordedBindings) {
             try {
@@ -425,6 +409,22 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             } catch (Exception cause) {
                 TopologyRecoveryException e = new TopologyRecoveryException("Caught an exception while recovering consumer " + tag, cause);
                 this.getExceptionHandler().handleTopologyRecoveryException(delegate, consumer.getDelegateChannel(), e);
+            }
+        }
+    }
+
+    private void propagateQueueNameChangeToBindings(String oldName, String newName) {
+        for (RecordedBinding b : this.recordedBindings) {
+            if (b.getDestination().equals(oldName)) {
+                b.setDestination(newName);
+            }
+        }
+    }
+
+    private void propagateQueueNameChangeToConsumers(String oldName, String newName) {
+        for (RecordedConsumer c : this.consumers.values()) {
+            if (c.getQueue().equals(oldName)) {
+                c.setQueue(newName);
             }
         }
     }
