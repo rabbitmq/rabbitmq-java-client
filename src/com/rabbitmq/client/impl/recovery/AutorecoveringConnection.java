@@ -284,6 +284,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         delegate.close(closeCode, closeMessage);
     }
 
+    /**
+     * @see com.rabbitmq.client.ShutdownNotifier#removeShutdownListener(com.rabbitmq.client.ShutdownListener)
+     */
     public void removeShutdownListener(ShutdownListener listener) {
         delegate.removeShutdownListener(listener);
     }
@@ -293,18 +296,33 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         return this.topologyRecovery;
     }
 
+    /**
+     * Private API.
+     * @param topologyRecovery if true, enables topology recovery
+     */
     public void setTopologyRecovery(boolean topologyRecovery) {
         this.topologyRecovery = topologyRecovery;
     }
 
+    /**
+     * Adds the recovery listener
+     * @param listener {@link com.rabbitmq.client.impl.recovery.RecoveryListener} to execute after this connection recovers from network failure
+     */
     public void addRecoveryListener(RecoveryListener listener) {
         this.recoveryListeners.add(listener);
     }
 
+    /**
+     * Removes the recovery listener
+     * @param listener {@link com.rabbitmq.client.impl.recovery.RecoveryListener} to remove
+     */
     public void removeRecoveryListener(RecoveryListener listener) {
         this.recoveryListeners.remove(listener);
     }
 
+    /**
+     * @see com.rabbitmq.client.impl.AMQConnection#getExceptionHandler()
+     */
     @SuppressWarnings("unused")
     public ExceptionHandler getExceptionHandler() {
         return this.delegate.getExceptionHandler();
