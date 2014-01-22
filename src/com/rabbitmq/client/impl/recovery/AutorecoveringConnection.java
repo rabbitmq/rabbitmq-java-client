@@ -501,7 +501,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             RecordedConsumer consumer = entry.getValue();
 
             try {
-                String newTag = (String) consumer.recover();
+                String newTag = consumer.recover();
                 // make sure server-generated tags are re-added. MK.
                 synchronized (this.consumers) {
                     this.consumers.remove(tag);
