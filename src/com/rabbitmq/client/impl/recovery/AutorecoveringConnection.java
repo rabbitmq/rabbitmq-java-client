@@ -65,12 +65,25 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.networkRecoveryInterval = cf.getNetworkRecoveryInterval();
     }
 
+    /**
+     * Private API.
+     * @param executor thread execution service for consumers on the connection
+     * @throws IOException
+     * @see com.rabbitmq.client.ConnectionFactory#newConnection(java.util.concurrent.ExecutorService)
+     */
     public void init(ExecutorService executor) throws IOException {
         this.executorService = executor;
         this.delegate = (RecoveryAwareAMQConnection) this.cf.newRecoveryAwareConnectionImpl(executor);
         this.addAutomaticRecoveryListener();
     }
 
+    /**
+     * Private API
+     * @param executor thread execution service for consumers on the connection
+     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
+     * @throws IOException
+     * @see com.rabbitmq.client.ConnectionFactory#newConnection(java.util.concurrent.ExecutorService, com.rabbitmq.client.Address[])
+     */
     public void init(ExecutorService executor, Address[] addrs) throws IOException {
         this.executorService = executor;
         this.delegate = (RecoveryAwareAMQConnection) this.cf.newRecoveryAwareConnectionImpl(executor, addrs);
