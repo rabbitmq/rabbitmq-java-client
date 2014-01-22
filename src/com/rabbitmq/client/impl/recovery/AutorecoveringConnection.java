@@ -20,6 +20,26 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * Connection implementation that performs automatic recovery when
+ * connection shutdown is not initiated by the application (e.g. due to
+ * an I/O exception).
+ *
+ * Topology (exchanges, queues, bindings, and consumers) can be (and by default is) recovered
+ * as well, in this order:
+ *
+ * <ol>
+ *  <li>Exchanges</li>
+ *  <li>Queues</li>
+ *  <li>Bindings (both queue and exchange-to-exchange)</li>
+ *  <li>Consumers</li>
+ * </ol>
+ *
+ * @see com.rabbitmq.client.Connection
+ * @see com.rabbitmq.client.impl.recovery.Recoverable
+ * @see com.rabbitmq.client.ConnectionFactory#setAutomaticRecovery(boolean)
+ * @see com.rabbitmq.client.ConnectionFactory#setTopologyRecovery(boolean)
+ */
 public class AutorecoveringConnection implements Connection, Recoverable, NetworkConnection {
     private final ConnectionFactory cf;
     private final Map<Integer, AutorecoveringChannel> channels;
