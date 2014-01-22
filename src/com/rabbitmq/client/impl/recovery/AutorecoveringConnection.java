@@ -429,7 +429,6 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-
     synchronized void recordQueueBinding(AutorecoveringChannel ch,
                                                 String queue,
                                                 String exchange,
