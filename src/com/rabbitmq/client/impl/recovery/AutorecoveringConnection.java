@@ -90,6 +90,282 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.addAutomaticRecoveryListener();
     }
 
+    public void start() throws IOException {
+        // no-op, AMQConnection#start is executed in ConnectionFactory#newConnection
+        // and invoking it again will result in a framing error. MK.
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#createChannel()
+     */
+    public Channel createChannel() throws IOException {
+        RecoveryAwareChannelN ch = (RecoveryAwareChannelN) delegate.createChannel();
+        if (ch == null) {
+            return null;
+        } else {
+            return this.wrapChannel(ch);
+        }
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#createChannel(int)
+     */
+    public Channel createChannel(int channelNumber) throws IOException {
+        return delegate.createChannel(channelNumber);
+    }
+
+    /**
+     * Creates a recovering channel from a regular channel and registers it.
+     * If the regular channel cannot be created (e.g. too many channels are open
+     * already), returns null.
+     *
+     * @param delegateChannel Channel to wrap.
+     * @return Recovering channel.
+     */
+    private Channel wrapChannel(RecoveryAwareChannelN delegateChannel) {
+        final AutorecoveringChannel channel = new AutorecoveringChannel(this, delegateChannel);
+        if (delegateChannel == null) {
+            return null;
+        } else {
+            this.registerChannel(channel);
+            return channel;
+        }
+    }
+
+    /**
+     * Private API.
+     * @param channel {@link com.rabbitmq.client.impl.recovery.AutorecoveringChannel} to add
+     *                to the list of channels to recover
+     */
+    private void registerChannel(AutorecoveringChannel channel) {
+        this.channels.put(channel.getChannelNumber(), channel);
+    }
+
+    /**
+     * Private API.
+     * @param channel {@link com.rabbitmq.client.impl.recovery.AutorecoveringChannel} to remove
+     *                from the list of channels to recover
+     */
+    public void unregisterChannel(AutorecoveringChannel channel) {
+        this.channels.remove(channel.getChannelNumber());
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#getServerProperties()
+     */
+    public Map<String, Object> getServerProperties() {
+        return delegate.getServerProperties();
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#getClientProperties()
+     */
+    public Map<String, Object> getClientProperties() {
+        return delegate.getClientProperties();
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#getFrameMax()
+     */
+    public int getFrameMax() {
+        return delegate.getFrameMax();
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#getHeartbeat()
+     */
+    public int getHeartbeat() {
+        return delegate.getHeartbeat();
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#getChannelMax()
+     */
+    public int getChannelMax() {
+        return delegate.getChannelMax();
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#isOpen()
+     */
+    public boolean isOpen() {
+        return delegate.isOpen();
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#close()
+     */
+    public void close() throws IOException {
+        delegate.close();
+    }
+
+    /**
+     * @see Connection#close(int)
+     */
+    public void close(int timeout) throws IOException {
+        delegate.close(timeout);
+    }
+
+    /**
+     * @see Connection#close(int, String, int)
+     */
+    public void close(int closeCode, String closeMessage, int timeout) throws IOException {
+        delegate.close(closeCode, closeMessage, timeout);
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#abort()
+     */
+    public void abort() {
+        delegate.abort();
+    }
+
+    /**
+     * @see Connection#abort(int, String, int)
+     */
+    public void abort(int closeCode, String closeMessage, int timeout) {
+        delegate.abort(closeCode, closeMessage, timeout);
+    }
+
+    /**
+     * @see Connection#abort(int, String)
+     */
+    public void abort(int closeCode, String closeMessage) {
+        delegate.abort(closeCode, closeMessage);
+    }
+
+    /**
+     * @see Connection#abort(int)
+     */
+    public void abort(int timeout) {
+        delegate.abort(timeout);
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#getCloseReason()
+     */
+    public ShutdownSignalException getCloseReason() {
+        return delegate.getCloseReason();
+    }
+
+    /**
+     * @see com.rabbitmq.client.ShutdownNotifier#addShutdownListener(com.rabbitmq.client.ShutdownListener)
+     */
+    public void addBlockedListener(BlockedListener listener) {
+        delegate.addBlockedListener(listener);
+    }
+
+    /**
+     * @see Connection#removeBlockedListener(com.rabbitmq.client.BlockedListener)
+     */
+    public boolean removeBlockedListener(BlockedListener listener) {
+        return delegate.removeBlockedListener(listener);
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#clearBlockedListeners()
+     */
+    public void clearBlockedListeners() {
+        delegate.clearBlockedListeners();
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#close(int, String)
+     */
+    public void close(int closeCode, String closeMessage) throws IOException {
+        delegate.close(closeCode, closeMessage);
+    }
+
+    /**
+     * @see Connection#addShutdownListener(com.rabbitmq.client.ShutdownListener)
+     */
+    public void addShutdownListener(ShutdownListener listener) {
+        delegate.addShutdownListener(listener);
+    }
+
+    /**
+     * @see com.rabbitmq.client.ShutdownNotifier#removeShutdownListener(com.rabbitmq.client.ShutdownListener)
+     */
+    public void removeShutdownListener(ShutdownListener listener) {
+        delegate.removeShutdownListener(listener);
+    }
+
+    /**
+     * @see com.rabbitmq.client.ShutdownNotifier#notifyListeners()
+     */
+    public void notifyListeners() {
+        delegate.notifyListeners();
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isTopologyRecoveryEnabled() {
+        return this.topologyRecovery;
+    }
+
+    /**
+     * Private API.
+     * @param topologyRecovery if true, enables topology recovery
+     */
+    public void setTopologyRecovery(boolean topologyRecovery) {
+        this.topologyRecovery = topologyRecovery;
+    }
+
+    /**
+     * Adds the recovery listener
+     * @param listener {@link com.rabbitmq.client.impl.recovery.RecoveryListener} to execute after this connection recovers from network failure
+     */
+    public void addRecoveryListener(RecoveryListener listener) {
+        this.recoveryListeners.add(listener);
+    }
+
+    /**
+     * Removes the recovery listener
+     * @param listener {@link com.rabbitmq.client.impl.recovery.RecoveryListener} to remove
+     */
+    public void removeRecoveryListener(RecoveryListener listener) {
+        this.recoveryListeners.remove(listener);
+    }
+
+    /**
+     * @see com.rabbitmq.client.impl.AMQConnection#getExceptionHandler()
+     */
+    @SuppressWarnings("unused")
+    public ExceptionHandler getExceptionHandler() {
+        return this.delegate.getExceptionHandler();
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#getPort()
+     */
+    public int getPort() {
+        return delegate.getPort();
+    }
+
+    /**
+     * @see com.rabbitmq.client.Connection#getAddress()
+     */
+    public InetAddress getAddress() {
+        return delegate.getAddress();
+    }
+
+    /**
+     * @return client socket address
+     */
+    public InetAddress getLocalAddress() {
+        return this.delegate.getLocalAddress();
+    }
+
+    /**
+     * @return client socket port
+     */
+    public int getLocalPort() {
+        return this.delegate.getLocalPort();
+    }
+
+    //
+    // Recovery
+    //
+
     private void addAutomaticRecoveryListener() {
         final AutorecoveringConnection c = this;
         ShutdownListener automaticRecoveryListener = new ShutdownListener() {
@@ -151,200 +427,6 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             }
         }
     }
-
-    public void start() throws IOException {
-        // no-op, AMQConnection#start is executed in ConnectionFactory#newConnection
-        // and invoking it again will result in a framing error. MK.
-    }
-
-    public InetAddress getAddress() {
-        return delegate.getAddress();
-    }
-
-    public void abort() {
-        delegate.abort();
-    }
-
-    public Map<String, Object> getServerProperties() {
-        return delegate.getServerProperties();
-    }
-
-    public Channel createChannel() throws IOException {
-        RecoveryAwareChannelN ch = (RecoveryAwareChannelN) delegate.createChannel();
-        if (ch == null) {
-            return null;
-        } else {
-            return this.wrapChannel(ch);
-        }
-    }
-
-    /**
-     * Creates a recovering channel from a regular channel and registers it.
-     * If the regular channel cannot be created (e.g. too many channels are open
-     * already), returns null.
-     *
-     * @param delegateChannel Channel to wrap.
-     * @return Recovering channel.
-     */
-    private Channel wrapChannel(RecoveryAwareChannelN delegateChannel) {
-        final AutorecoveringChannel channel = new AutorecoveringChannel(this, delegateChannel);
-        if (delegateChannel == null) {
-            return null;
-        } else {
-            this.registerChannel(channel);
-            return channel;
-        }
-    }
-
-    private void registerChannel(AutorecoveringChannel channel) {
-        this.channels.put(channel.getChannelNumber(), channel);
-    }
-
-    public void unregisterChannel(AutorecoveringChannel channel) {
-        this.channels.remove(channel.getChannelNumber());
-    }
-
-    public boolean removeBlockedListener(BlockedListener listener) {
-        return delegate.removeBlockedListener(listener);
-    }
-
-    public Map<String, Object> getClientProperties() {
-        return delegate.getClientProperties();
-    }
-
-    public void close(int closeCode, String closeMessage, int timeout) throws IOException {
-        delegate.close(closeCode, closeMessage, timeout);
-    }
-
-    public void abort(int timeout) {
-        delegate.abort(timeout);
-    }
-
-    public boolean isOpen() {
-        return delegate.isOpen();
-    }
-
-    public void close() throws IOException {
-        delegate.close();
-    }
-
-    public void notifyListeners() {
-        delegate.notifyListeners();
-    }
-
-    public int getFrameMax() {
-        return delegate.getFrameMax();
-    }
-
-    public int getHeartbeat() {
-        return delegate.getHeartbeat();
-    }
-
-    public ShutdownSignalException getCloseReason() {
-        return delegate.getCloseReason();
-    }
-
-    public void abort(int closeCode, String closeMessage, int timeout) {
-        delegate.abort(closeCode, closeMessage, timeout);
-    }
-
-    public int getChannelMax() {
-        return delegate.getChannelMax();
-    }
-
-    public void addShutdownListener(ShutdownListener listener) {
-        delegate.addShutdownListener(listener);
-    }
-
-    public Channel createChannel(int channelNumber) throws IOException {
-        return delegate.createChannel(channelNumber);
-    }
-
-    public void abort(int closeCode, String closeMessage) {
-        delegate.abort(closeCode, closeMessage);
-    }
-
-    public void close(int timeout) throws IOException {
-        delegate.close(timeout);
-    }
-
-    public void addBlockedListener(BlockedListener listener) {
-        delegate.addBlockedListener(listener);
-    }
-
-    public int getPort() {
-        return delegate.getPort();
-    }
-
-    public void clearBlockedListeners() {
-        delegate.clearBlockedListeners();
-    }
-
-    public void close(int closeCode, String closeMessage) throws IOException {
-        delegate.close(closeCode, closeMessage);
-    }
-
-    /**
-     * @see com.rabbitmq.client.ShutdownNotifier#removeShutdownListener(com.rabbitmq.client.ShutdownListener)
-     */
-    public void removeShutdownListener(ShutdownListener listener) {
-        delegate.removeShutdownListener(listener);
-    }
-
-    @SuppressWarnings("unused")
-    public boolean isTopologyRecoveryEnabled() {
-        return this.topologyRecovery;
-    }
-
-    /**
-     * Private API.
-     * @param topologyRecovery if true, enables topology recovery
-     */
-    public void setTopologyRecovery(boolean topologyRecovery) {
-        this.topologyRecovery = topologyRecovery;
-    }
-
-    /**
-     * Adds the recovery listener
-     * @param listener {@link com.rabbitmq.client.impl.recovery.RecoveryListener} to execute after this connection recovers from network failure
-     */
-    public void addRecoveryListener(RecoveryListener listener) {
-        this.recoveryListeners.add(listener);
-    }
-
-    /**
-     * Removes the recovery listener
-     * @param listener {@link com.rabbitmq.client.impl.recovery.RecoveryListener} to remove
-     */
-    public void removeRecoveryListener(RecoveryListener listener) {
-        this.recoveryListeners.remove(listener);
-    }
-
-    /**
-     * @see com.rabbitmq.client.impl.AMQConnection#getExceptionHandler()
-     */
-    @SuppressWarnings("unused")
-    public ExceptionHandler getExceptionHandler() {
-        return this.delegate.getExceptionHandler();
-    }
-
-    /**
-     * @return client socket address
-     */
-    public InetAddress getLocalAddress() {
-        return this.delegate.getLocalAddress();
-    }
-
-    /**
-     * @return client socket port
-     */
-    public int getLocalPort() {
-        return this.delegate.getLocalPort();
-    }
-
-    //
-    // Recovery
-    //
 
     private void notifyRecoveryListeners() {
         for (RecoveryListener f : this.recoveryListeners) {
