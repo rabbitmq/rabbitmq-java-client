@@ -39,6 +39,7 @@ public class ClientTests extends TestCase {
         suite.addTestSuite(AMQBuilderApiTest.class);
         suite.addTestSuite(AmqpUriTest.class);
         suite.addTestSuite(JSONReadWriteTest.class);
+        suite.addTestSuite(SharedThreadPoolTest.class);
         return suite;
     }
 }
