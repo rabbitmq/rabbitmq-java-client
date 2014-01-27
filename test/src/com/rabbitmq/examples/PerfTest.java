@@ -70,8 +70,6 @@ public class PerfTest {
 
             String uri           = strArg(cmd, 'h', "amqp://localhost");
 
-            boolean exclusive  = "".equals(queueName);
-
             //setup
             PrintlnStats stats = new PrintlnStats(1000L * samplingInterval,
                                     producerCount > 0,
@@ -88,14 +86,14 @@ public class PerfTest {
 
             MulticastParams p = new MulticastParams();
             p.setAutoAck(          autoAck);
-            p.setAutoDelete(       !exclusive);
+            p.setAutoDelete(       true);
             p.setConfirm(          confirm);
             p.setConsumerCount(    consumerCount);
             p.setConsumerMsgCount( consumerMsgCount);
             p.setConsumerTxSize(   consumerTxSize);
             p.setExchangeName(     exchangeName);
             p.setExchangeType(     exchangeType);
-            p.setExclusive(        exclusive);
+            p.setExclusive(        false);
             p.setFlags(            flags);
             p.setMultiAckEvery(    multiAckEvery);
             p.setMinMsgSize(       minMsgSize);
