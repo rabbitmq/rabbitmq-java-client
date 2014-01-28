@@ -5,10 +5,11 @@ import com.rabbitmq.client.Address;
 import com.rabbitmq.client.BlockedListener;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.ExceptionHandler;
+import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
 
 import java.io.IOException;
@@ -18,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 
 /**
  * Connection implementation that performs automatic recovery when
@@ -42,12 +42,11 @@ import java.util.concurrent.ExecutorService;
  * @since 3.3.0
  */
 public class AutorecoveringConnection implements Connection, Recoverable, NetworkConnection {
-    private final ConnectionFactory cf;
+    private final RecoveryAwareAMQConnectionFactory cf;
     private final Map<Integer, AutorecoveringChannel> channels;
     private final List<ShutdownListener> shutdownHooks;
     private final List<RecoveryListener> recoveryListeners;
-    private final int networkRecoveryInterval;
-    private ExecutorService executorService;
+    private int networkRecoveryInterval;
     private RecoveryAwareAMQConnection delegate;
     private boolean topologyRecovery = true;
 
@@ -57,37 +56,21 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     private Map<String, RecordedExchange> recordedExchanges = new ConcurrentHashMap<String, RecordedExchange>();
     private final Map<String, RecordedConsumer> consumers = new ConcurrentHashMap<String, RecordedConsumer>();
 
-    public AutorecoveringConnection(ConnectionFactory cf) {
-        this.cf = cf;
+    public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, Address[] addrs) {
+        this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addrs);
 
         this.channels = new ConcurrentHashMap<Integer, AutorecoveringChannel>();
         this.shutdownHooks = new ArrayList<ShutdownListener>();
         this.recoveryListeners = new ArrayList<RecoveryListener>();
-        this.networkRecoveryInterval = cf.getNetworkRecoveryInterval();
     }
 
     /**
      * Private API.
-     * @param executor thread execution service for consumers on the connection
      * @throws IOException
      * @see com.rabbitmq.client.ConnectionFactory#newConnection(java.util.concurrent.ExecutorService)
      */
-    public void init(ExecutorService executor) throws IOException {
-        this.executorService = executor;
-        this.delegate = (RecoveryAwareAMQConnection) this.cf.newRecoveryAwareConnectionImpl(executor);
-        this.addAutomaticRecoveryListener();
-    }
-
-    /**
-     * Private API.
-     * @param executor thread execution service for consumers on the connection
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @throws IOException
-     * @see com.rabbitmq.client.ConnectionFactory#newConnection(java.util.concurrent.ExecutorService, com.rabbitmq.client.Address[])
-     */
-    public void init(ExecutorService executor, Address[] addrs) throws IOException {
-        this.executorService = executor;
-        this.delegate = (RecoveryAwareAMQConnection) this.cf.newRecoveryAwareConnectionImpl(executor, addrs);
+    public void init() throws IOException {
+        this.delegate = this.cf.newConnection();
         this.addAutomaticRecoveryListener();
     }
 
@@ -311,6 +294,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.topologyRecovery = topologyRecovery;
     }
 
+    public void setNetworkRecoveryInterval(int networkRecoveryInterval) {
+        this.networkRecoveryInterval = networkRecoveryInterval;
+    }
+
     /**
      * Adds the recovery listener
      * @param listener {@link com.rabbitmq.client.impl.recovery.RecoveryListener} to execute after this connection recovers from network failure
@@ -409,7 +396,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         boolean recovering = true;
         while (recovering) {
             try {
-                this.delegate = (RecoveryAwareAMQConnection) this.cf.newRecoveryAwareConnectionImpl(this.executorService);
+                this.delegate = (RecoveryAwareAMQConnection) this.cf.newConnection();
                 recovering = false;
             } catch (ConnectException ce) {
                 System.err.println("Failed to reconnect: " + ce.getMessage());

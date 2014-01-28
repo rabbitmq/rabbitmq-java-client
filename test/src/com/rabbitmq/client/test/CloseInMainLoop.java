@@ -52,41 +52,32 @@ public class CloseInMainLoop extends BrokerTestCase{
     }
 
     private SpecialConnection(ConnectionFactory factory) throws Exception{
-      super(factory.getUsername(),
-            factory.getPassword(),
-            new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT)),
-            Executors.newFixedThreadPool(1),
-            factory.getVirtualHost(),
-            factory.getClientProperties(),
-            factory.getRequestedFrameMax(),
-            factory.getRequestedChannelMax(),
-            factory.getRequestedHeartbeat(),
-            factory.getSaslConfig(),
-            new DefaultExceptionHandler(){
-                @Override
-                public void handleConsumerException(Channel channel,
-                                                    Throwable exception,
-                                                    Consumer consumer,
-                                                    String consumerTag,
-                                                    String methodName) {
-                    try {
-                        // TODO: change this to call 4-parameter close and make 6-parm one private
-                      ((AMQConnection) channel.getConnection())
-                          .close(AMQP.INTERNAL_ERROR,
-                                 "Internal error in Consumer " + consumerTag,
-                                 false,
-                                 exception,
-                                 -1,
-                                 false);
-                    } catch (Throwable e) {
-                        // Man, this clearly isn't our day.
-                        // TODO: Log the nested failure
-                    } finally {
-                        closeLatch.countDown();
-                    }
-                }
-            });
-
+        super(factory.params(Executors.newFixedThreadPool(1)).exceptionHandler(
+                             new DefaultExceptionHandler(){
+                                 @Override
+                                 public void handleConsumerException(Channel channel,
+                                                                     Throwable exception,
+                                                                     Consumer consumer,
+                                                                     String consumerTag,
+                                                                     String methodName) {
+                                     try {
+                                         // TODO: change this to call 4-parameter close and make 6-parm one private
+                                       ((AMQConnection) channel.getConnection())
+                                           .close(AMQP.INTERNAL_ERROR,
+                                                   "Internal error in Consumer " + consumerTag,
+                                                   false,
+                                                   exception,
+                                                   -1,
+                                                   false);
+                                      } catch (Throwable e) {
+                                         // Man, this clearly isn't our day.
+                                         // TODO: Log the nested failure
+                                     } finally {
+                                         closeLatch.countDown();
+                                     }
+                                 }
+                             }
+        ), new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT)));
         this.start();
       }
 

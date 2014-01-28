@@ -26,6 +26,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.SocketConfigurator;
 
 
 /**
@@ -64,15 +65,18 @@ public class BufferPerformanceMetrics {
 
             for(final boolean useNagle : new boolean[] { false, true }) {
                 ConnectionFactory factory = new ConnectionFactory() {
-                    { setUri(uri); }
-
-                        public void configureSocket(Socket socket)
-                            throws IOException {
-                            socket.setTcpNoDelay(!useNagle);
-                            socket.setReceiveBufferSize(bufferSize);
-                            socket.setSendBufferSize(bufferSize);
-                        }
-                    };
+                    {
+                        setUri(uri);
+                        setSocketConfigurator( new SocketConfigurator() {
+                            @Override
+                            public void configureSocket(Socket socket) throws IOException {
+                                socket.setTcpNoDelay(!useNagle);
+                                socket.setReceiveBufferSize(bufferSize);
+                                socket.setSendBufferSize(bufferSize);
+                            }
+                        });
+                    }
+                };
 
                 Connection connection = factory.newConnection();
                 Channel channel = connection.createChannel();

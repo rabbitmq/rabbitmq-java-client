@@ -197,80 +197,24 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _serverProperties;
     }
 
-    /** Construct a new connection using a default ExeceptionHandler
-     * @param username name used to establish connection
-     * @param password for <code><b>username</b></code>
-     * @param frameHandler for sending and receiving frames on this connection
-     * @param executor thread pool service for consumer threads for channels on this connection
-     * @param virtualHost virtual host of this connection
-     * @param clientProperties client info used in negotiating with the server
-     * @param requestedFrameMax max size of frame offered
-     * @param requestedChannelMax max number of channels offered
-     * @param requestedHeartbeat heart-beat in seconds offered
-     * @param saslConfig sasl configuration hook
-     */
-    public AMQConnection(String username,
-                         String password,
-                         FrameHandler frameHandler,
-                         ExecutorService executor,
-                         String virtualHost,
-                         Map<String, Object> clientProperties,
-                         int requestedFrameMax,
-                         int requestedChannelMax,
-                         int requestedHeartbeat,
-                         SaslConfig saslConfig)
-    {
-        this(username,
-             password,
-             frameHandler,
-             executor,
-             virtualHost,
-             clientProperties,
-             requestedFrameMax,
-             requestedChannelMax,
-             requestedHeartbeat,
-             saslConfig,
-             new DefaultExceptionHandler());
-    }
-
     /** Construct a new connection
-     * @param username name used to establish connection
-     * @param password for <code><b>username</b></code>
-     * @param frameHandler for sending and receiving frames on this connection
-     * @param executor thread pool service for consumer threads for channels on this connection
-     * @param virtualHost virtual host of this connection
-     * @param clientProperties client info used in negotiating with the server
-     * @param requestedFrameMax max size of frame offered
-     * @param requestedChannelMax max number of channels offered
-     * @param requestedHeartbeat heart-beat in seconds offered
-     * @param saslConfig sasl configuration hook
-     * @param execeptionHandler handler for exceptions using this connection
+     * @param params parameters for it
      */
-    public AMQConnection(String username,
-                         String password,
-                         FrameHandler frameHandler,
-                         ExecutorService executor,
-                         String virtualHost,
-                         Map<String, Object> clientProperties,
-                         int requestedFrameMax,
-                         int requestedChannelMax,
-                         int requestedHeartbeat,
-                         SaslConfig saslConfig,
-                         ExceptionHandler execeptionHandler)
+    public AMQConnection(ConnectionParams params, FrameHandler frameHandler)
     {
         checkPreconditions();
-        this.username = username;
-        this.password = password;
+        this.username = params.getUsername();
+        this.password = params.getPassword();
         this._frameHandler = frameHandler;
-        this._virtualHost = virtualHost;
-        this._exceptionHandler = execeptionHandler;
-        this._clientProperties = new HashMap<String, Object>(clientProperties);
-        this.requestedFrameMax = requestedFrameMax;
-        this.requestedChannelMax = requestedChannelMax;
-        this.requestedHeartbeat = requestedHeartbeat;
-        this.saslConfig = saslConfig;
+        this._virtualHost = params.getVirtualHost();
+        this._exceptionHandler = params.getExceptionHandler();
+        this._clientProperties = new HashMap<String, Object>(params.getClientProperties());
+        this.requestedFrameMax = params.getRequestedFrameMax();
+        this.requestedChannelMax = params.getRequestedChannelMax();
+        this.requestedHeartbeat = params.getRequestedHeartbeat();
+        this.saslConfig = params.getSaslConfig();
 
-        this._workService  = new ConsumerWorkService(executor);
+        this._workService  = new ConsumerWorkService(params.getExecutor());
         this._channelManager = null;
 
         this._heartbeatSender = new HeartbeatSender(frameHandler);

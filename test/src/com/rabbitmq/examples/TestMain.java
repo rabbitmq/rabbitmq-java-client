@@ -83,7 +83,7 @@ public class TestMain {
             setUri(uri);
         }
 
-        protected FrameHandler createFrameHandler(Address addr)
+        public FrameHandler createFrameHandler(Address addr)
             throws IOException {
 
             String hostName = addr.getHost();

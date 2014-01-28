@@ -22,8 +22,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -34,10 +32,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.SocketFrameHandler;
+import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
-import com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnection;
 
 /**
  * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
@@ -91,6 +89,7 @@ public class ConnectionFactory implements Cloneable {
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
+    private SocketConfigurator socketConf         = new SocketConfigurator();
 
     private boolean automaticRecovery             = false;
     private boolean topologyRecovery              = true;
@@ -119,15 +118,15 @@ public class ConnectionFactory implements Cloneable {
         this.host = host;
     }
 
-    private int portOrDefault(int port){
-        if(port != USE_DEFAULT_PORT) return port;
-        else if(isSSL()) return DEFAULT_AMQP_OVER_SSL_PORT;
+    public static int portOrDefault(int port, boolean ssl) {
+        if (port != USE_DEFAULT_PORT) return port;
+        else if (ssl) return DEFAULT_AMQP_OVER_SSL_PORT;
         else return DEFAULT_AMQP_PORT;
     }
 
     /** @return the default port to use for connections */
     public int getPort() {
-        return portOrDefault(port);
+        return portOrDefault(port, isSSL());
     }
 
     /**
@@ -394,6 +393,26 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
+     * Get the socket configurator.
+     *
+     * @see #setSocketConfigurator(SocketConfigurator)
+     */
+    public SocketConfigurator getSocketConfigurator() {
+        return socketConf;
+    }
+
+    /**
+     * Set the socket configurator. This gets a chance to "configure" a socket
+     * after it has been opened. The default socket configurator disables
+     * Nagle's algorithm.
+     *
+     * @param socketConfigurator the configurator to use
+     */
+    public void setSocketConfigurator(SocketConfigurator socketConfigurator) {
+        this.socketConf = socketConfigurator;
+    }
+
+    /**
      * Set the executor to use by default for newly created connections.
      * All connections that use this executor share it.
      *
@@ -485,49 +504,8 @@ public class ConnectionFactory implements Cloneable {
         this.topologyRecovery = topologyRecovery;
     }
 
-    protected FrameHandler createFrameHandler(Address addr)
-        throws IOException {
-
-        String hostName = addr.getHost();
-        int portNumber = portOrDefault(addr.getPort());
-        Socket socket = null;
-        try {
-            socket = factory.createSocket();
-            configureSocket(socket);
-            socket.connect(new InetSocketAddress(hostName, portNumber),
-                    connectionTimeout);
-            return createFrameHandler(socket);
-        } catch (IOException ioe) {
-            quietTrySocketClose(socket);
-            throw ioe;
-        }
-    }
-
-    private static void quietTrySocketClose(Socket socket) {
-        if (socket != null)
-            try { socket.close(); } catch (Exception _) {/*ignore exceptions*/}
-    }
-
-    protected FrameHandler createFrameHandler(Socket sock)
-        throws IOException
-    {
-        return new SocketFrameHandler(sock);
-    }
-
-    /**
-     *  Provides a hook to insert custom configuration of the sockets
-     *  used to connect to an AMQP server before they connect.
-     *
-     *  The default behaviour of this method is to disable Nagle's
-     *  algorithm to get more consistently low latency.  However it
-     *  may be overridden freely and there is no requirement to retain
-     *  this behaviour.
-     *
-     *  @param socket The socket that is to be used for the Connection
-     */
-    protected void configureSocket(Socket socket) throws IOException{
-        // disable Nagle's algorithm, for more consistently low latency
-        socket.setTcpNoDelay(true);
+    protected FrameHandlerFactory createFrameHandlerFactory() throws IOException {
+        return new FrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL());
     }
 
     /**
@@ -553,24 +531,18 @@ public class ConnectionFactory implements Cloneable {
         IOException lastException = null;
         for (Address addr : addrs) {
             try {
-                FrameHandler frameHandler = createFrameHandler(addr);
+                FrameHandlerFactory fhFactory = createFrameHandlerFactory();
+                ConnectionParams params = params(executor);
 
-                if(isAutomaticRecoveryEnabled()) {
-                    AutorecoveringConnection conn = new AutorecoveringConnection(this);
+                if (isAutomaticRecoveryEnabled()) {
+                    AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, new Address[]{addr});
+                    conn.setNetworkRecoveryInterval(networkRecoveryInterval);
                     conn.setTopologyRecovery(topologyRecovery);
-                    conn.init(executor);
+                    conn.init();
                     return conn;
                 } else {
-                    AMQConnection conn = new AMQConnection(username,
-                                             password,
-                                             frameHandler,
-                                             executor,
-                                             virtualHost,
-                                             getClientProperties(),
-                                             requestedFrameMax,
-                                             requestedChannelMax,
-                                             requestedHeartbeat,
-                                             saslConfig);
+                    FrameHandler handler = fhFactory.create(addr);
+                    AMQConnection conn = new AMQConnection(params, handler);
                     conn.start();
                     return conn;
                 }
@@ -580,6 +552,11 @@ public class ConnectionFactory implements Cloneable {
         }
 
         return rethrowOrIndicateConnectionFailure(lastException);
+    }
+
+    public ConnectionParams params(ExecutorService executor) {
+        return new ConnectionParams(username, password, executor, virtualHost, getClientProperties(),
+                                    requestedFrameMax, requestedChannelMax, requestedHeartbeat, saslConfig);
     }
 
     /**
@@ -605,7 +582,7 @@ public class ConnectionFactory implements Cloneable {
                             );
     }
 
-    private Connection rethrowOrIndicateConnectionFailure(IOException e) throws IOException {
+    public static Connection rethrowOrIndicateConnectionFailure(IOException e) throws IOException {
         throw (e != null) ? e : new IOException("failed to connect");
     }
 
@@ -631,72 +608,5 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setNetworkRecoveryInterval(int networkRecoveryInterval) {
         this.networkRecoveryInterval = networkRecoveryInterval;
-    }
-
-    /**
-     * Private API.
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newRecoveryAwareConnectionImpl(Address[] addrs) throws IOException {
-        return newConnection(this.sharedExecutor, addrs);
-    }
-
-    /**
-     * Private API.
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newRecoveryAwareConnectionImpl() throws IOException {
-        return newRecoveryAwareConnectionImpl(this.sharedExecutor,
-                                              new Address[]{new Address(getHost(), getPort())}
-        );
-    }
-
-    /**
-     * Private API.
-     * @param executor thread execution service for consumers on the connection
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newRecoveryAwareConnectionImpl(ExecutorService executor) throws IOException {
-        return newRecoveryAwareConnectionImpl(executor,
-                                              new Address[]{new Address(getHost(), getPort())}
-        );
-    }
-
-    /**
-     * Private API.
-     * @param executor thread execution service for consumers on the connection
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newRecoveryAwareConnectionImpl(ExecutorService executor, Address[] addrs)
-            throws IOException
-    {
-        IOException lastException = null;
-        for (Address addr : addrs) {
-            try {
-                FrameHandler frameHandler = createFrameHandler(addr);
-                RecoveryAwareAMQConnection conn = new RecoveryAwareAMQConnection(username,
-                                                                                 password,
-                                                                                 frameHandler,
-                                                                                 executor,
-                                                                                 virtualHost,
-                                                                                 getClientProperties(),
-                                                                                 requestedFrameMax,
-                                                                                 requestedChannelMax,
-                                                                                 requestedHeartbeat,
-                                                                                 saslConfig);
-                conn.start();
-                return conn;
-            } catch (IOException e) {
-                lastException = e;
-            }
-        }
-
-        return rethrowOrIndicateConnectionFailure(lastException);
     }
 }
