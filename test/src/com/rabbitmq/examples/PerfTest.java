@@ -93,7 +93,6 @@ public class PerfTest {
             p.setConsumerTxSize(   consumerTxSize);
             p.setExchangeName(     exchangeName);
             p.setExchangeType(     exchangeType);
-            p.setExclusive(        false);
             p.setFlags(            flags);
             p.setMultiAckEvery(    multiAckEvery);
             p.setMinMsgSize(       minMsgSize);

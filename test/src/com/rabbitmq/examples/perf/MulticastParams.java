@@ -49,7 +49,6 @@ public class MulticastParams {
 
     private int multiAckEvery = 0;
     private boolean autoAck = true;
-    private boolean exclusive = true;
     private boolean autoDelete = false;
 
     private boolean predeclared;
@@ -131,10 +130,6 @@ public class MulticastParams {
         this.flags = flags;
     }
 
-    public void setExclusive(boolean exclusive) {
-        this.exclusive = exclusive;
-    }
-
     public void setAutoDelete(boolean autoDelete) {
         this.autoDelete = autoDelete;
     }
@@ -187,7 +182,7 @@ public class MulticastParams {
     }
 
     public boolean shouldConfigureQueue() {
-        return consumerCount == 0 && !queueName.equals("") && !exclusive;
+        return consumerCount == 0 && !queueName.equals("");
     }
 
     public String configureQueue(Connection connection, String id) throws IOException {
@@ -199,7 +194,7 @@ public class MulticastParams {
         if (!predeclared || !queueExists(connection, queueName)) {
             qName = channel.queueDeclare(queueName,
                                          flags.contains("persistent"),
-                                         exclusive, autoDelete,
+                                         false, autoDelete,
                                          null).getQueue();
         }
         channel.queueBind(qName, exchangeName, id);
