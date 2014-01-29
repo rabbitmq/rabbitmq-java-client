@@ -397,6 +397,7 @@ public class ConnectionFactory implements Cloneable {
      *
      * @see #setSocketConfigurator(SocketConfigurator)
      */
+    @SuppressWarnings("unused")
     public SocketConfigurator getSocketConfigurator() {
         return socketConf;
     }
