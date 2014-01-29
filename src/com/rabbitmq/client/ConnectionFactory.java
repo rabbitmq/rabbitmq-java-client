@@ -493,6 +493,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * @return true if topology recovery is enabled, false otherwise
      */
+    @SuppressWarnings("unused")
     public boolean isTopologyRecoveryEnabled() {
         return topologyRecovery;
     }
