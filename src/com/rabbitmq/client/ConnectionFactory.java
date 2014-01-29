@@ -535,7 +535,7 @@ public class ConnectionFactory implements Cloneable {
                 ConnectionParams params = params(executor);
 
                 if (isAutomaticRecoveryEnabled()) {
-                    AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, new Address[]{addr});
+                    AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addrs);
                     conn.setNetworkRecoveryInterval(networkRecoveryInterval);
                     conn.setTopologyRecovery(topologyRecovery);
                     conn.init();
