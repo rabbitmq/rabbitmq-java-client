@@ -67,7 +67,7 @@ public class BufferPerformanceMetrics {
                 ConnectionFactory factory = new ConnectionFactory() {
                     {
                         setUri(uri);
-                        setSocketConfigurator( new DefaultSocketConfigurator() {
+                        setSocketConfigurator(new DefaultSocketConfigurator() {
                             @Override
                             public void configure(Socket socket) throws IOException {
                                 socket.setTcpNoDelay(!useNagle);
