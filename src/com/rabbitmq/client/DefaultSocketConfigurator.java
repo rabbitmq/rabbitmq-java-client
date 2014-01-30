@@ -3,7 +3,7 @@ package com.rabbitmq.client;
 import java.io.IOException;
 import java.net.Socket;
 
-public class DefaultSocketConfigurator {
+public class DefaultSocketConfigurator implements SocketConfigurator {
     /**
      *  Provides a hook to insert custom configuration of the sockets
      *  used to connect to an AMQP server before they connect.
