@@ -28,7 +28,7 @@ public class FrameHandlerFactory {
         Socket socket = null;
         try {
             socket = factory.createSocket();
-            configurator.configureSocket(socket);
+            configurator.configure(socket);
             socket.connect(new InetSocketAddress(hostName, portNumber),
                     connectionTimeout);
             return create(socket);

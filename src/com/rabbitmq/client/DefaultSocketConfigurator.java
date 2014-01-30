@@ -15,7 +15,7 @@ public class DefaultSocketConfigurator {
      *
      *  @param socket The socket that is to be used for the Connection
      */
-    public void configureSocket(Socket socket) throws IOException {
+    public void configure(Socket socket) throws IOException {
         // disable Nagle's algorithm, for more consistently low latency
         socket.setTcpNoDelay(true);
     }

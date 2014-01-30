@@ -69,7 +69,7 @@ public class BufferPerformanceMetrics {
                         setUri(uri);
                         setSocketConfigurator( new DefaultSocketConfigurator() {
                             @Override
-                            public void configureSocket(Socket socket) throws IOException {
+                            public void configure(Socket socket) throws IOException {
                                 socket.setTcpNoDelay(!useNagle);
                                 socket.setReceiveBufferSize(bufferSize);
                                 socket.setSendBufferSize(bufferSize);
