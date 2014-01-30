@@ -89,7 +89,7 @@ public class ConnectionFactory implements Cloneable {
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
-    private SocketConfigurator socketConf         = new SocketConfigurator();
+    private DefaultSocketConfigurator socketConf         = new DefaultSocketConfigurator();
 
     private boolean automaticRecovery             = false;
     private boolean topologyRecovery              = true;
@@ -395,10 +395,10 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Get the socket configurator.
      *
-     * @see #setSocketConfigurator(SocketConfigurator)
+     * @see #setSocketConfigurator(DefaultSocketConfigurator)
      */
     @SuppressWarnings("unused")
-    public SocketConfigurator getSocketConfigurator() {
+    public DefaultSocketConfigurator getSocketConfigurator() {
         return socketConf;
     }
 
@@ -409,7 +409,7 @@ public class ConnectionFactory implements Cloneable {
      *
      * @param socketConfigurator the configurator to use
      */
-    public void setSocketConfigurator(SocketConfigurator socketConfigurator) {
+    public void setSocketConfigurator(DefaultSocketConfigurator socketConfigurator) {
         this.socketConf = socketConfigurator;
     }
 

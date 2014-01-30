@@ -24,9 +24,9 @@ import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DefaultSocketConfigurator;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.SocketConfigurator;
 
 
 /**
@@ -67,7 +67,7 @@ public class BufferPerformanceMetrics {
                 ConnectionFactory factory = new ConnectionFactory() {
                     {
                         setUri(uri);
-                        setSocketConfigurator( new SocketConfigurator() {
+                        setSocketConfigurator( new DefaultSocketConfigurator() {
                             @Override
                             public void configureSocket(Socket socket) throws IOException {
                                 socket.setTcpNoDelay(!useNagle);

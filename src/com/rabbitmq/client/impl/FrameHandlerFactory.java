@@ -2,7 +2,7 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.SocketConfigurator;
+import com.rabbitmq.client.DefaultSocketConfigurator;
 
 import javax.net.SocketFactory;
 import java.io.IOException;
@@ -12,10 +12,10 @@ import java.net.Socket;
 public class FrameHandlerFactory {
     private int connectionTimeout;
     private SocketFactory factory;
-    private SocketConfigurator configurator;
+    private DefaultSocketConfigurator configurator;
     private boolean ssl;
 
-    public FrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl) {
+    public FrameHandlerFactory(int connectionTimeout, SocketFactory factory, DefaultSocketConfigurator configurator, boolean ssl) {
         this.connectionTimeout = connectionTimeout;
         this.factory = factory;
         this.configurator = configurator;
