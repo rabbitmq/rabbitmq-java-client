@@ -62,6 +62,7 @@ final class Copyright {
 public class AMQConnection extends ShutdownNotifierComponent implements Connection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
+    private Thread mainLoopThread;
 
     /**
      * Retrieve a copy of the default table of client properties that
@@ -311,7 +312,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
 
         // start the main loop going
-        new MainLoop("AMQP Connection " + getHostAddress() + ":" + getPort()).start();
+        MainLoop loop = new MainLoop();
+        mainLoopThread = new Thread(loop, "AMQP Connection " + getHostAddress() + ":" + getPort());
+        mainLoopThread.start();
         // after this point clear-up of MainLoop is triggered by closing the frameHandler.
 
         AMQP.Connection.Start connStart = null;
@@ -528,14 +531,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             Math.min(clientValue, serverValue);
     }
 
-    private class MainLoop extends Thread {
-
-        /**
-         * @param name of thread
-         */
-        MainLoop(String name) {
-            super(name);
-        }
+    private class MainLoop implements Runnable {
 
         /**
          * Channel reader thread main loop. Reads a frame, and if it is
@@ -832,7 +828,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                       boolean abort)
         throws IOException
     {
-        boolean sync = !(Thread.currentThread() instanceof MainLoop);
+        boolean sync = !(Thread.currentThread() == mainLoopThread);
 
         try {
             AMQP.Connection.Close reason =
