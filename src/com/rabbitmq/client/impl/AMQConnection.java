@@ -45,6 +45,7 @@ import com.rabbitmq.client.ProtocolVersionMismatchException;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.ThreadFactory;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 
@@ -63,6 +64,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
     private Thread mainLoopThread;
+    private ThreadFactory threadFactory = new DefaultThreadFactory();
 
     /**
      * Retrieve a copy of the default table of client properties that
@@ -313,7 +315,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         // start the main loop going
         MainLoop loop = new MainLoop();
-        mainLoopThread = new Thread(loop, "AMQP Connection " + getHostAddress() + ":" + getPort());
+        mainLoopThread = threadFactory.newThread(loop, "AMQP Connection " + getHostAddress() + ":" + getPort());
         mainLoopThread.start();
         // after this point clear-up of MainLoop is triggered by closing the frameHandler.
 
@@ -471,6 +473,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (SocketException se) {
             // should do more here?
         }
+    }
+
+    /**
+     * Makes it possible to override thread factory that is used
+     * to instantiate connection network I/O loop. Only necessary
+     * in the environments with restricted
+     * @param threadFactory
+     */
+    public void setThreadFactory(ThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
     }
 
     public Map<String, Object> getClientProperties() {
