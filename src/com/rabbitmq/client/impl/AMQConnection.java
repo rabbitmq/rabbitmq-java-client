@@ -389,7 +389,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             int channelMax =
                 negotiateChannelMax(this.requestedChannelMax,
                                     connTune.getChannelMax());
-            _channelManager = new ChannelManager(this._workService, channelMax);
+            _channelManager = new ChannelManager(this._workService, channelMax, threadFactory);
 
             int frameMax =
                 negotiatedMaxValue(this.requestedFrameMax,
@@ -483,6 +483,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public void setThreadFactory(ThreadFactory threadFactory) {
         this.threadFactory = threadFactory;
+    }
+
+    /**
+     * @return Thread factory used by this connection.
+     */
+    public ThreadFactory getThreadFactory() {
+        return threadFactory;
     }
 
     public Map<String, Object> getClientProperties() {
@@ -687,13 +694,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
         } catch (IOException _) { } // ignore
         _brokerInitiatedShutdown = true;
-        Thread scw = new SocketCloseWait(sse);
-        scw.setName("AMQP Connection Closing Monitor " +
+        SocketCloseWait scw = new SocketCloseWait(sse);
+        Thread waiter = threadFactory.newThread(scw);
+        waiter.setName("AMQP Connection Closing Monitor " +
                 getHostAddress() + ":" + getPort());
-        scw.start();
+        waiter.start();
     }
 
-    private class SocketCloseWait extends Thread {
+    private class SocketCloseWait implements Runnable {
         private final ShutdownSignalException cause;
 
         public SocketCloseWait(ShutdownSignalException sse) {
