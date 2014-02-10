@@ -538,8 +538,6 @@ public class ConnectionFactory implements Cloneable {
 
                 if (isAutomaticRecoveryEnabled()) {
                     AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addrs);
-                    conn.setNetworkRecoveryInterval(networkRecoveryInterval);
-                    conn.setTopologyRecovery(topologyRecovery);
                     conn.init();
                     return conn;
                 } else {
@@ -558,7 +556,8 @@ public class ConnectionFactory implements Cloneable {
 
     public ConnectionParams params(ExecutorService executor) {
         return new ConnectionParams(username, password, executor, virtualHost, getClientProperties(),
-                                    requestedFrameMax, requestedChannelMax, requestedHeartbeat, saslConfig);
+                                    requestedFrameMax, requestedChannelMax, requestedHeartbeat, saslConfig,
+                                    networkRecoveryInterval, topologyRecovery);
     }
 
     /**

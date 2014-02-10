@@ -15,6 +15,8 @@ public class ConnectionParams {
     private final int requestedChannelMax;
     private final int requestedHeartbeat;
     private final SaslConfig saslConfig;
+    private final int networkRecoveryInterval;
+    private final boolean topologyRecovery;
 
     private ExceptionHandler exceptionHandler;
 
@@ -28,10 +30,14 @@ public class ConnectionParams {
      * @param requestedChannelMax max number of channels offered
      * @param requestedHeartbeat heart-beat in seconds offered
      * @param saslConfig sasl configuration hook
+     * @param networkRecoveryInterval interval used when recovering from network failure
+     * @param topologyRecovery should topology (queues, exchanges, bindings, consumers) recovery be performed?
      */
     public ConnectionParams(String username, String password, ExecutorService executor,
                             String virtualHost, Map<String, Object> clientProperties,
-                            int requestedFrameMax, int requestedChannelMax, int requestedHeartbeat, SaslConfig saslConfig) {
+                            int requestedFrameMax, int requestedChannelMax, int requestedHeartbeat,
+                            SaslConfig saslConfig, int networkRecoveryInterval,
+                            boolean topologyRecovery) {
         this.username = username;
         this.password = password;
         this.executor = executor;
@@ -41,6 +47,9 @@ public class ConnectionParams {
         this.requestedChannelMax = requestedChannelMax;
         this.requestedHeartbeat = requestedHeartbeat;
         this.saslConfig = saslConfig;
+        this.networkRecoveryInterval = networkRecoveryInterval;
+        this.topologyRecovery = topologyRecovery;
+        
 
         this.exceptionHandler = new DefaultExceptionHandler();
     }
@@ -92,5 +101,13 @@ public class ConnectionParams {
     public ConnectionParams exceptionHandler(ExceptionHandler exceptionHandler) {
         this.exceptionHandler = exceptionHandler;
         return this;
+    }
+
+    public int getNetworkRecoveryInterval() {
+        return networkRecoveryInterval;
+    }
+
+    public boolean isTopologyRecoveryEnabled() {
+        return topologyRecovery;
     }
 }

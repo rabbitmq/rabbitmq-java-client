@@ -46,9 +46,8 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     private final Map<Integer, AutorecoveringChannel> channels;
     private final List<ShutdownListener> shutdownHooks;
     private final List<RecoveryListener> recoveryListeners;
-    private int networkRecoveryInterval;
+    private final ConnectionParams params;
     private RecoveryAwareAMQConnection delegate;
-    private boolean topologyRecovery = true;
 
     // Records topology changes
     private final Map<String, RecordedQueue> recordedQueues = new ConcurrentHashMap<String, RecordedQueue>();
@@ -58,6 +57,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, Address[] addrs) {
         this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addrs);
+        this.params = params;
 
         this.channels = new ConcurrentHashMap<Integer, AutorecoveringChannel>();
         this.shutdownHooks = new ArrayList<ShutdownListener>();
@@ -271,23 +271,6 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         delegate.notifyListeners();
     }
 
-    @SuppressWarnings("unused")
-    public boolean isTopologyRecoveryEnabled() {
-        return this.topologyRecovery;
-    }
-
-    /**
-     * Private API.
-     * @param topologyRecovery if true, enables topology recovery
-     */
-    public void setTopologyRecovery(boolean topologyRecovery) {
-        this.topologyRecovery = topologyRecovery;
-    }
-
-    public void setNetworkRecoveryInterval(int networkRecoveryInterval) {
-        this.networkRecoveryInterval = networkRecoveryInterval;
-    }
-
     /**
      * Adds the recovery listener
      * @param listener {@link com.rabbitmq.client.impl.recovery.RecoveryListener} to execute after this connection recovers from network failure
@@ -364,11 +347,11 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     synchronized private void beginAutomaticRecovery() throws InterruptedException, IOException, TopologyRecoveryException {
-        Thread.sleep(networkRecoveryInterval);
+        Thread.sleep(this.params.getNetworkRecoveryInterval());
         this.recoverConnection();
         this.recoverShutdownHooks();
         this.recoverChannels();
-        if(topologyRecovery) {
+        if(this.params.isTopologyRecoveryEnabled()) {
             this.recoverEntites();
             this.recoverConsumers();
         }
@@ -391,7 +374,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             } catch (ConnectException ce) {
                 System.err.println("Failed to reconnect: " + ce.getMessage());
                 // TODO: exponential back-off
-                Thread.sleep(networkRecoveryInterval);
+                Thread.sleep(this.params.getNetworkRecoveryInterval());
             }
         }
     }
