@@ -15,4 +15,10 @@ public interface NetworkConnection {
      * @return the client socket port number
      */
     int getLocalPort();
+
+    /** Retrieve address of peer. */
+    InetAddress getAddress();
+
+    /** Retrieve port number of peer. */
+    int getPort();
 }

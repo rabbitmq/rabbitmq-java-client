@@ -29,11 +29,6 @@ import java.net.SocketTimeoutException;
  */
 
 public interface FrameHandler extends NetworkConnection {
-    /** Retrieve address of peer. */
-    InetAddress getAddress();
-
-    /** Retrieve port number of peer. */
-    int getPort();
 
     /**
      * Set the underlying socket's read timeout in milliseconds, if applicable.
