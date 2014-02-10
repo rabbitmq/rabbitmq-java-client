@@ -174,7 +174,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     @Override
     public InetAddress getLocalAddress() {
-        return ((SocketFrameHandler)_frameHandler).getLocalAddress();
+        return _frameHandler.getLocalAddress();
     }
 
     /** {@inheritDoc} */
@@ -184,7 +184,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     @Override
     public int getLocalPort() {
-        return ((SocketFrameHandler)_frameHandler).getLocalPort();
+        return _frameHandler.getLocalPort();
     }
 
     public FrameHandler getFrameHandler(){

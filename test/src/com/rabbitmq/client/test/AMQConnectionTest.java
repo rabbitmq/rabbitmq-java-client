@@ -206,6 +206,16 @@ public class AMQConnectionTest extends TestCase {
         public void flush() throws IOException {
             // no need to implement this: don't bother writing the frame
         }
+
+        @Override
+        public InetAddress getLocalAddress() {
+            return null;
+        }
+
+        @Override
+        public int getLocalPort() {
+            return -1;
+        }
     }
 
     /** Exception handler to facilitate testing. */
