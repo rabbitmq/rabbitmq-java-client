@@ -100,7 +100,7 @@ public class ChannelManager {
         Thread shutdownThread = new Thread( new Runnable() {
             public void run() {
                 for (CountDownLatch latch : sdSet) {
-                    try { latch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS); } catch (Throwable e) { }
+                    try { latch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS); } catch (Throwable e) { /*ignored*/ }
                 }
                 ssWorkService.shutdown();
             }}, "ConsumerWorkServiceShutdown");
