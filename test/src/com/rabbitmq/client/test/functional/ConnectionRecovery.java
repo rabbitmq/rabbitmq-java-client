@@ -304,8 +304,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         if(disableTopologyRecovery) {
             cf.setTopologyRecovery(false);
         }
-        final AutorecoveringConnection c = (AutorecoveringConnection) cf.newConnection();
-        return c;
+        return (AutorecoveringConnection) cf.newConnection();
     }
 
     protected void setUp()
