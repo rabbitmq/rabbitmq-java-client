@@ -8,6 +8,11 @@ import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 public class RecoveryAwareAMQConnectionFactory {
     private ConnectionParams params;
@@ -27,7 +32,7 @@ public class RecoveryAwareAMQConnectionFactory {
     RecoveryAwareAMQConnection newConnection() throws IOException
     {
         IOException lastException = null;
-        for (Address addr : addrs) {
+        for (Address addr : shuffle(addrs)) {
             try {
                 FrameHandler frameHandler = factory.create(addr);
                 RecoveryAwareAMQConnection conn = new RecoveryAwareAMQConnection(params, frameHandler);
@@ -39,5 +44,13 @@ public class RecoveryAwareAMQConnectionFactory {
         }
 
         return (RecoveryAwareAMQConnection) ConnectionFactory.rethrowOrIndicateConnectionFailure(lastException);
+    }
+
+    private Address[] shuffle(Address[] addrs) {
+        List list = new ArrayList<Address>(Arrays.asList(addrs));
+        Collections.shuffle(list);
+        Address[] result = new Address[addrs.length];
+        list.toArray(result);
+        return result;
     }
 }
