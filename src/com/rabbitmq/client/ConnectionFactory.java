@@ -530,28 +530,28 @@ public class ConnectionFactory implements Cloneable {
     public Connection newConnection(ExecutorService executor, Address[] addrs)
         throws IOException
     {
-        IOException lastException = null;
-        for (Address addr : addrs) {
-            try {
-                FrameHandlerFactory fhFactory = createFrameHandlerFactory();
-                ConnectionParams params = params(executor);
+        FrameHandlerFactory fhFactory = createFrameHandlerFactory();
+        ConnectionParams params = params(executor);
 
-                if (isAutomaticRecoveryEnabled()) {
-                    AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addrs);
-                    conn.init();
-                    return conn;
-                } else {
+        if (isAutomaticRecoveryEnabled()) {
+            // see com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnectionFactory#newConnection
+            AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addrs);
+            conn.init();
+            return conn;
+        } else {
+            IOException lastException = null;
+            for (Address addr : addrs) {
+                try {
                     FrameHandler handler = fhFactory.create(addr);
                     AMQConnection conn = new AMQConnection(params, handler);
                     conn.start();
                     return conn;
+                } catch (IOException e) {
+                    lastException = e;
                 }
-            } catch (IOException e) {
-                lastException = e;
             }
+            return rethrowOrIndicateConnectionFailure(lastException);
         }
-
-        return rethrowOrIndicateConnectionFailure(lastException);
     }
 
     public ConnectionParams params(ExecutorService executor) {
