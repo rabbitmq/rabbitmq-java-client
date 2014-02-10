@@ -369,7 +369,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         boolean recovering = true;
         while (recovering) {
             try {
-                this.delegate = (RecoveryAwareAMQConnection) this.cf.newConnection();
+                this.delegate = this.cf.newConnection();
                 recovering = false;
             } catch (ConnectException ce) {
                 System.err.println("Failed to reconnect: " + ce.getMessage());
