@@ -1,4 +1,4 @@
-package com.rabbitmq.client.impl.recovery;
+package com.rabbitmq.client;
 
 /**
  * Indicates an exception thrown during topology recovery.

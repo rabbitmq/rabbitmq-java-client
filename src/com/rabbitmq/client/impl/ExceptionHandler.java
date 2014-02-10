@@ -19,7 +19,7 @@ package com.rabbitmq.client.impl;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.impl.recovery.TopologyRecoveryException;
+import com.rabbitmq.client.TopologyRecoveryException;
 
 /**
  * Interface to an exception-handling object.

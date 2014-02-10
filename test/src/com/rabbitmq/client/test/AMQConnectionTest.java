@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import com.rabbitmq.client.impl.ConnectionParams;
-import com.rabbitmq.client.impl.recovery.TopologyRecoveryException;
+import com.rabbitmq.client.TopologyRecoveryException;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 

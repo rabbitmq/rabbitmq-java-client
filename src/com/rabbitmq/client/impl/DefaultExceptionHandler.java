@@ -23,7 +23,7 @@ import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.impl.recovery.TopologyRecoveryException;
+import com.rabbitmq.client.TopologyRecoveryException;
 
 /**
  * Default implementation of {@link ExceptionHandler} used by {@link AMQConnection}.
