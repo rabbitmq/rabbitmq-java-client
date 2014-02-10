@@ -116,21 +116,11 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    /**
-     * Private API.
-     * @param channel {@link com.rabbitmq.client.impl.recovery.AutorecoveringChannel} to add
-     *                to the list of channels to recover
-     */
-    private void registerChannel(AutorecoveringChannel channel) {
+    void registerChannel(AutorecoveringChannel channel) {
         this.channels.put(channel.getChannelNumber(), channel);
     }
 
-    /**
-     * Private API.
-     * @param channel {@link com.rabbitmq.client.impl.recovery.AutorecoveringChannel} to remove
-     *                from the list of channels to recover
-     */
-    public void unregisterChannel(AutorecoveringChannel channel) {
+    void unregisterChannel(AutorecoveringChannel channel) {
         this.channels.remove(channel.getChannelNumber());
     }
 
