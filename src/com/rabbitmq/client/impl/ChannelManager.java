@@ -25,7 +25,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.impl.recovery.RecoveryAwareChannelN;
 import com.rabbitmq.utility.IntAllocator;
 
 /**
