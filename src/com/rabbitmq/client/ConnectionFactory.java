@@ -401,7 +401,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Retrieve the socket factory used to instantiate new threads.
+     * Retrieve the thread factory used to instantiate new threads.
      * @see com.rabbitmq.client.ThreadFactory
      * @see com.rabbitmq.client.impl.DefaultThreadFactory
      */
