@@ -243,6 +243,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see com.rabbitmq.client.Connection#clearBlockedListeners()
      */
     public void clearBlockedListeners() {
+        this.blockedListeners.clear();
         delegate.clearBlockedListeners();
     }
 
