@@ -100,7 +100,6 @@ public class ConnectionRecovery extends BrokerTestCase {
             public void handleReturn(int replyCode, String replyText, String exchange,
                                      String routingKey, AMQP.BasicProperties properties,
                                      byte[] body) throws IOException {
-                System.out.print("basic.return");
                 latch.countDown();
             }
         });
