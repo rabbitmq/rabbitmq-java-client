@@ -30,6 +30,8 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     private AutorecoveringConnection connection;
     private List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
     private List<ReturnListener> returnListeners = new ArrayList<ReturnListener>();
+    private List<ConfirmListener> confirmListeners = new ArrayList<ConfirmListener>();
+    private List<FlowListener> flowListeners = new ArrayList<FlowListener>();
     private int prefetchCount;
     private boolean globalQos;
     private boolean usesPublisherConfirms;
@@ -100,26 +102,32 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     }
 
     public void addFlowListener(FlowListener listener) {
+        this.flowListeners.add(listener);
         delegate.addFlowListener(listener);
     }
 
     public boolean removeFlowListener(FlowListener listener) {
+        this.flowListeners.remove(listener);
         return delegate.removeFlowListener(listener);
     }
 
     public void clearFlowListeners() {
+        this.flowListeners.clear();
         delegate.clearFlowListeners();
     }
 
     public void addConfirmListener(ConfirmListener listener) {
+        this.confirmListeners.add(listener);
         delegate.addConfirmListener(listener);
     }
 
     public boolean removeConfirmListener(ConfirmListener listener) {
+        this.confirmListeners.remove(listener);
         return delegate.removeConfirmListener(listener);
     }
 
     public void clearConfirmListeners() {
+        this.confirmListeners.clear();
         delegate.clearConfirmListeners();
     }
 
@@ -402,12 +410,26 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         this.recoverState();
 
         this.recoverReturnListeners();
+        this.recoverConfirmListeners();
+        this.recoverFlowListeners();
         this.notifyRecoveryListeners();
     }
 
     private void recoverReturnListeners() {
         for(ReturnListener rl : this.returnListeners) {
             this.delegate.addReturnListener(rl);
+        }
+    }
+
+    private void recoverConfirmListeners() {
+        for(ConfirmListener cl : this.confirmListeners) {
+            this.delegate.addConfirmListener(cl);
+        }
+    }
+
+    private void recoverFlowListeners() {
+        for(FlowListener fl : this.flowListeners) {
+            this.delegate.addFlowListener(fl);
         }
     }
 
