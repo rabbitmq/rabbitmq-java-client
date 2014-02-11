@@ -525,7 +525,7 @@ public class ConnectionFactory implements Cloneable {
      * @param executor thread execution service for consumers on the connection
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @return an interface to the connection
-     * @throws IOException if it encounters a problem
+     * @throws java.io.IOException if it encounters a problem
      */
     public Connection newConnection(ExecutorService executor, Address[] addrs)
         throws IOException
@@ -550,7 +550,7 @@ public class ConnectionFactory implements Cloneable {
                     lastException = e;
                 }
             }
-            return rethrowOrIndicateConnectionFailure(lastException);
+            throw (lastException != null) ? lastException : new IOException("failed to connect");
         }
     }
 
