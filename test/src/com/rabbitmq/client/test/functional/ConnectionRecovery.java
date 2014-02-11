@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionRecovery extends BrokerTestCase {
@@ -108,6 +109,31 @@ public class ConnectionRecovery extends BrokerTestCase {
         expectChannelRecovery(channel);
         channel.basicPublish("", "unknown", true, false, null, "mandatory1".getBytes());
         assertTrue(latch.await(150, TimeUnit.MILLISECONDS));
+    }
+
+    public void testConfirmListenerRecovery() throws IOException, InterruptedException, TimeoutException {
+        int n = 10;
+        String q = channel.queueDeclare(UUID.randomUUID().toString(), false, false, false, null).getQueue();
+        final CountDownLatch latch = new CountDownLatch(n);
+        channel.addConfirmListener(new ConfirmListener() {
+            @Override
+            public void handleAck(long deliveryTag, boolean multiple) throws IOException {
+                latch.countDown();
+            }
+
+            @Override
+            public void handleNack(long deliveryTag, boolean multiple) throws IOException {
+            }
+        });
+        channel.confirmSelect();
+        closeAndWaitForShutdown(connection);
+        waitForRecovery();
+        expectChannelRecovery(channel);
+        for (int i = 0; i < n; i++) {
+            channel.basicPublish("", q, true, false, null, "mandatory1".getBytes());
+        }
+        channel.waitForConfirms(200);
+        assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
     }
 
     public void testClientNamedQueueRecovery() throws IOException, InterruptedException {
