@@ -137,7 +137,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
     }
 
-    public void testClientNamedQueueRecovery() throws IOException, InterruptedException {
+    public void testClientNamedQueueRecovery() throws IOException, InterruptedException, TimeoutException {
         Channel ch = connection.createChannel();
         String q = "java-client.test.recovery.q1";
         declareClientNamedQueue(ch, q);
@@ -361,15 +361,23 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     private void waitForShutdown() throws InterruptedException {
-        Thread.sleep(20);
+        final CountDownLatch latch = new CountDownLatch(1);
+        connection.addShutdownListener(new ShutdownListener() {
+            @Override
+            public void shutdownCompleted(ShutdownSignalException cause) {
+                latch.countDown();
+            }
+        });
+        latch.await(50, TimeUnit.MILLISECONDS);
     }
 
-    private void expectQueueRecovery(Channel ch, String q) throws IOException, InterruptedException {
+    private void expectQueueRecovery(Channel ch, String q) throws IOException, InterruptedException, TimeoutException {
+        ch.confirmSelect();
         ch.queuePurge(q);
         AMQP.Queue.DeclareOk ok1 = declareClientNamedQueue(ch, q);
         assertEquals(0, ok1.getMessageCount());
         ch.basicPublish("", q, null, "msg".getBytes());
-        Thread.sleep(20);
+        ch.waitForConfirms(150);
         AMQP.Queue.DeclareOk ok2 = declareClientNamedQueue(ch, q);
         assertEquals(1, ok2.getMessageCount());
     }
@@ -382,7 +390,15 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     private void waitForRecovery() throws InterruptedException {
-        Thread.sleep(RECOVERY_INTERVAL + 150);
+        final CountDownLatch latch = new CountDownLatch(1);
+        int interval = RECOVERY_INTERVAL + 150;
+        connection.addRecoveryListener(new RecoveryListener() {
+            @Override
+            public void handleRecovery(Recoverable recoverable) {
+                latch.countDown();
+            }
+        });
+        latch.await(interval, TimeUnit.MILLISECONDS);
     }
 
     private void expectChannelRecovery(Channel ch) throws InterruptedException {
