@@ -45,10 +45,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AutorecoveringConnection implements Connection, Recoverable, NetworkConnection {
     private final RecoveryAwareAMQConnectionFactory cf;
     private final Map<Integer, AutorecoveringChannel> channels;
-    private final List<ShutdownListener> shutdownHooks;
-    private final List<RecoveryListener> recoveryListeners;
     private final ConnectionParams params;
     private RecoveryAwareAMQConnection delegate;
+
+    private final List<ShutdownListener> shutdownHooks  = new ArrayList<ShutdownListener>();
+    private final List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
+    private final List<BlockedListener> blockedListeners = new ArrayList<BlockedListener>();
 
     // Records topology changes
     private final Map<String, RecordedQueue> recordedQueues = new ConcurrentHashMap<String, RecordedQueue>();
@@ -61,8 +63,6 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.params = params;
 
         this.channels = new ConcurrentHashMap<Integer, AutorecoveringChannel>();
-        this.shutdownHooks = new ArrayList<ShutdownListener>();
-        this.recoveryListeners = new ArrayList<RecoveryListener>();
     }
 
     /**
@@ -255,6 +255,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see Connection#addShutdownListener(com.rabbitmq.client.ShutdownListener)
      */
     public void addShutdownListener(ShutdownListener listener) {
+        this.shutdownHooks.add(listener);
         delegate.addShutdownListener(listener);
     }
 
@@ -262,6 +263,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see com.rabbitmq.client.ShutdownNotifier#removeShutdownListener(com.rabbitmq.client.ShutdownListener)
      */
     public void removeShutdownListener(ShutdownListener listener) {
+        this.shutdownHooks.remove(listener);
         delegate.removeShutdownListener(listener);
     }
 

@@ -43,6 +43,20 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
     }
 
+    public void testShutdownHooksRecovery() throws IOException, InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(2);
+        connection.addShutdownListener(new ShutdownListener() {
+            @Override
+            public void shutdownCompleted(ShutdownSignalException cause) {
+                latch.countDown();
+            }
+        });
+        assertTrue(connection.isOpen());
+        Host.closeConnection(connection);
+        expectConnectionRecovery(connection);
+        connection.close();
+        assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
+    }
 
     public void testChannelRecovery() throws IOException, InterruptedException {
         Channel ch1 = connection.createChannel();
