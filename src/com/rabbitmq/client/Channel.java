@@ -26,7 +26,6 @@ import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.AMQP.Tx;
 import com.rabbitmq.client.AMQP.Basic;
 import com.rabbitmq.client.AMQP.Confirm;
-import com.rabbitmq.client.AMQP.Channel.FlowOk;
 
 /**
  * Public API: Interface to an AMQ channel. See the <a href="http://www.amqp.org/">spec</a> for details.
@@ -90,17 +89,11 @@ public interface Channel extends ShutdownNotifier {
     void close(int closeCode, String closeMessage) throws IOException;
 
     /**
-     * Set flow on the channel
-     *
-     * @param active if true, the server is asked to start sending. If false, the server is asked to stop sending.
-     * @throws IOException
+     * Indicates whether the server has asked this client to stop
+     * sending content-bearing commands (such as basic.publish) by
+     * issueing a channel.flow{active=false}.
      */
-    FlowOk flow(boolean active) throws IOException;
-
-    /**
-     * Return the current Channel.Flow settings.
-     */
-    FlowOk getFlow();
+    boolean flowBlocked();
 
     /**
      * Abort this channel with the {@link com.rabbitmq.client.AMQP#REPLY_SUCCESS} close code
