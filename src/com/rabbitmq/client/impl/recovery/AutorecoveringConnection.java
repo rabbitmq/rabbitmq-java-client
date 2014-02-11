@@ -227,6 +227,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see com.rabbitmq.client.ShutdownNotifier#addShutdownListener(com.rabbitmq.client.ShutdownListener)
      */
     public void addBlockedListener(BlockedListener listener) {
+        this.blockedListeners.add(listener);
         delegate.addBlockedListener(listener);
     }
 
@@ -234,6 +235,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see Connection#removeBlockedListener(com.rabbitmq.client.BlockedListener)
      */
     public boolean removeBlockedListener(BlockedListener listener) {
+        this.blockedListeners.remove(listener);
         return delegate.removeBlockedListener(listener);
     }
 
@@ -352,7 +354,8 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     synchronized private void beginAutomaticRecovery() throws InterruptedException, IOException, TopologyRecoveryException {
         Thread.sleep(this.params.getNetworkRecoveryInterval());
         this.recoverConnection();
-        this.recoverShutdownHooks();
+        this.recoverShutdownListeners();
+        this.recoverBlockedListeners();
         this.recoverChannels();
         if(this.params.isTopologyRecoveryEnabled()) {
             this.recoverEntites();
@@ -362,9 +365,15 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.notifyRecoveryListeners();
     }
 
-    private void recoverShutdownHooks() {
+    private void recoverShutdownListeners() {
         for (ShutdownListener sh : this.shutdownHooks) {
             this.delegate.addShutdownListener(sh);
+        }
+    }
+
+    private void recoverBlockedListeners() {
+        for (BlockedListener bl : this.blockedListeners) {
+            this.delegate.addBlockedListener(bl);
         }
     }
 

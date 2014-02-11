@@ -58,6 +58,27 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
     }
 
+    public void testBlockedListenerRecovery() throws IOException, InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(2);
+        connection.addBlockedListener(new BlockedListener() {
+            @Override
+            public void handleBlocked(String reason) throws IOException {
+                latch.countDown();
+            }
+
+            @Override
+            public void handleUnblocked() throws IOException {
+                latch.countDown();
+            }
+        });
+        Host.closeConnection(connection);
+        expectConnectionRecovery(connection);
+        block();
+        channel.basicPublish("", "", null, "".getBytes());
+        unblock();
+        assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
+    }
+
     public void testChannelRecovery() throws IOException, InterruptedException {
         Channel ch1 = connection.createChannel();
         Channel ch2 = connection.createChannel();
