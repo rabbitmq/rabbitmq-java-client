@@ -583,11 +583,6 @@ public class ConnectionFactory implements Cloneable {
                             );
     }
 
-    public static Connection rethrowOrIndicateConnectionFailure(IOException e) throws IOException {
-        throw (e != null) ? e : new IOException("failed to connect");
-    }
-
-
     @Override public ConnectionFactory clone(){
         try {
             return (ConnectionFactory)super.clone();

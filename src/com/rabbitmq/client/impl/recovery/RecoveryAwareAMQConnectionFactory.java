@@ -27,7 +27,7 @@ public class RecoveryAwareAMQConnectionFactory {
 
     /**
      * @return an interface to the connection
-     * @throws IOException if it encounters a problem
+     * @throws java.io.IOException if it encounters a problem
      */
     RecoveryAwareAMQConnection newConnection() throws IOException
     {
@@ -43,7 +43,7 @@ public class RecoveryAwareAMQConnectionFactory {
             }
         }
 
-        return (RecoveryAwareAMQConnection) ConnectionFactory.rethrowOrIndicateConnectionFailure(lastException);
+        throw (lastException != null) ? lastException : new IOException("failed to connect");
     }
 
     private Address[] shuffle(Address[] addrs) {
