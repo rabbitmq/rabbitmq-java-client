@@ -93,6 +93,22 @@ public class ConnectionRecovery extends BrokerTestCase {
         expectChannelRecovery(ch2);
     }
 
+    public void testReturnListenerRecovery() throws IOException, InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        channel.addReturnListener(new ReturnListener() {
+            @Override
+            public void handleReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                System.out.print("basic.return");
+                latch.countDown();
+            }
+        });
+        closeAndWaitForShutdown(connection);
+        waitForRecovery();
+        expectChannelRecovery(channel);
+        channel.basicPublish("", "unknown", true, false, null, "mandatory1".getBytes());
+        assertTrue(latch.await(150, TimeUnit.MILLISECONDS));
+    }
+
     public void testClientNamedQueueRecovery() throws IOException, InterruptedException {
         Channel ch = connection.createChannel();
         String q = "java-client.test.recovery.q1";

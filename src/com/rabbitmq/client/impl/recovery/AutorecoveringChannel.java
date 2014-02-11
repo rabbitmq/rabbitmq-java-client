@@ -29,6 +29,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     private RecoveryAwareChannelN delegate;
     private AutorecoveringConnection connection;
     private List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
+    private List<ReturnListener> returnListeners = new ArrayList<ReturnListener>();
     private int prefetchCount;
     private boolean globalQos;
     private boolean usesPublisherConfirms;
@@ -84,14 +85,17 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     }
 
     public void addReturnListener(ReturnListener listener) {
+        this.returnListeners.add(listener);
         delegate.addReturnListener(listener);
     }
 
     public boolean removeReturnListener(ReturnListener listener) {
+        this.returnListeners.remove(listener);
         return delegate.removeReturnListener(listener);
     }
 
     public void clearReturnListeners() {
+        this.returnListeners.clear();
         delegate.clearReturnListeners();
     }
 
@@ -396,7 +400,14 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         this.delegate.inheritOffsetFrom(defunctChannel);
         this.recoverState();
 
+        this.recoverReturnListeners();
         this.notifyRecoveryListeners();
+    }
+
+    private void recoverReturnListeners() {
+        for(ReturnListener rl : this.returnListeners) {
+            this.delegate.addReturnListener(rl);
+        }
     }
 
     private void recoverState() throws IOException {
