@@ -407,11 +407,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         this.connection = connection;
         this.delegate = (RecoveryAwareChannelN) connDelegate.createChannel(this.getChannelNumber());
         this.delegate.inheritOffsetFrom(defunctChannel);
-        this.recoverState();
 
         this.recoverReturnListeners();
         this.recoverConfirmListeners();
         this.recoverFlowListeners();
+        this.recoverState();
         this.notifyRecoveryListeners();
     }
 
