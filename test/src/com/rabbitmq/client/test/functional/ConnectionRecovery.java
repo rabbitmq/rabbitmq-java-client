@@ -232,6 +232,19 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
     }
 
+    public void testThatCancelledConsumerDoesNotReappearOnRecover() throws IOException, InterruptedException {
+        String q = UUID.randomUUID().toString();
+        channel.queueDeclare(q, false, false, false, null);
+        String tag = channel.basicConsume(q, new DefaultConsumer(channel));
+        AMQP.Queue.DeclareOk ok1 = channel.queueDeclarePassive(q);
+        assertEquals(1, ok1.getConsumerCount());
+        channel.basicCancel(tag);
+        closeAndWaitForRecovery(connection);
+        expectChannelRecovery(channel);
+        AMQP.Queue.DeclareOk ok2 = channel.queueDeclarePassive(q);
+        assertEquals(0, ok2.getConsumerCount());
+    }
+
     public void testConnectionRecoveryCallback() throws IOException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         connection.addRecoveryListener(new RecoveryListener() {
