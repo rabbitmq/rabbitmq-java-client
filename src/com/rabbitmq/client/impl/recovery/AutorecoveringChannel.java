@@ -70,12 +70,9 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         }
     }
 
-    public AMQP.Channel.FlowOk flow(boolean active) throws IOException {
-        return delegate.flow(active);
-    }
-
-    public AMQP.Channel.FlowOk getFlow() {
-        return delegate.getFlow();
+    @Override
+    public boolean flowBlocked() {
+        return delegate.flowBlocked();
     }
 
     public void abort() throws IOException {
