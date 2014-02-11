@@ -133,8 +133,8 @@ public class ConnectionRecovery extends BrokerTestCase {
         for (int i = 0; i < n * 20; i++) {
             channel.basicPublish("", q, true, false, null, "mandatory1".getBytes());
         }
-        channel.waitForConfirms(300);
-        assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
+        channel.waitForConfirms(500);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 
     public void testClientNamedQueueRecovery() throws IOException, InterruptedException, TimeoutException {
@@ -160,7 +160,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         closeAndWaitForRecovery(connection);
         expectChannelRecovery(channel);
         channel.basicPublish(x, "", null, "msg".getBytes());
-        assertTrue(latch.await(150, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 
     public void testExchangeToExchangeBindingRecovery() throws IOException, InterruptedException {
@@ -178,7 +178,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             closeAndWaitForRecovery(connection);
             expectChannelRecovery(channel);
             channel.basicPublish(x2, "", null, "msg".getBytes());
-            assertTrue(latch.await(150, TimeUnit.MILLISECONDS));
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
         } finally {
             channel.exchangeDelete(x2);
         }
@@ -204,7 +204,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             closeAndWaitForRecovery(connection);
             expectChannelRecovery(channel);
             channel.basicPublish(x2, "", null, "msg".getBytes());
-            assertFalse(latch.await(150, TimeUnit.MILLISECONDS));
+            assertFalse(latch.await(5, TimeUnit.SECONDS));
         } finally {
             channel.exchangeDelete(x2);
         }
@@ -226,7 +226,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             closeAndWaitForRecovery(connection);
             expectChannelRecovery(channel);
             channel.basicPublish(x2, "", null, "msg".getBytes());
-            assertFalse(latch.await(150, TimeUnit.MILLISECONDS));
+            assertFalse(latch.await(5, TimeUnit.SECONDS));
         } finally {
             channel.exchangeDelete(x2);
         }
@@ -282,7 +282,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(connection.isOpen());
         Host.closeConnection(connection);
         expectConnectionRecovery(connection);
-        assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 
     public void testChannelRecoveryCallback() throws IOException, InterruptedException {
@@ -303,7 +303,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         waitForRecovery();
         expectChannelRecovery(ch1);
         expectChannelRecovery(ch2);
-        assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 
     public void testBasicAckAfterChannelRecovery() throws IOException, InterruptedException {
@@ -368,7 +368,7 @@ public class ConnectionRecovery extends BrokerTestCase {
                 latch.countDown();
             }
         });
-        latch.await(50, TimeUnit.MILLISECONDS);
+        latch.await(5, TimeUnit.SECONDS);
     }
 
     private void expectQueueRecovery(Channel ch, String q) throws IOException, InterruptedException, TimeoutException {
@@ -377,7 +377,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         AMQP.Queue.DeclareOk ok1 = declareClientNamedQueue(ch, q);
         assertEquals(0, ok1.getMessageCount());
         ch.basicPublish("", q, null, "msg".getBytes());
-        ch.waitForConfirms(150);
+        ch.waitForConfirms(500);
         AMQP.Queue.DeclareOk ok2 = declareClientNamedQueue(ch, q);
         assertEquals(1, ok2.getMessageCount());
     }
@@ -391,7 +391,7 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     private void waitForRecovery() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
-        int interval = RECOVERY_INTERVAL + 150;
+        int interval = RECOVERY_INTERVAL + 1000;
         connection.addRecoveryListener(new RecoveryListener() {
             @Override
             public void handleRecovery(Recoverable recoverable) {
