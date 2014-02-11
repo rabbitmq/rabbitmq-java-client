@@ -97,7 +97,9 @@ public class ConnectionRecovery extends BrokerTestCase {
         final CountDownLatch latch = new CountDownLatch(1);
         channel.addReturnListener(new ReturnListener() {
             @Override
-            public void handleReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body) throws IOException {
+            public void handleReturn(int replyCode, String replyText, String exchange,
+                                     String routingKey, AMQP.BasicProperties properties,
+                                     byte[] body) throws IOException {
                 System.out.print("basic.return");
                 latch.countDown();
             }
