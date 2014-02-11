@@ -112,8 +112,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     public void testConfirmListenerRecovery() throws IOException, InterruptedException, TimeoutException {
-        int n = 10;
-        String q = channel.queueDeclare(UUID.randomUUID().toString(), false, false, false, null).getQueue();
+        int n = 3;
         final CountDownLatch latch = new CountDownLatch(n);
         channel.addConfirmListener(new ConfirmListener() {
             @Override
@@ -123,16 +122,18 @@ public class ConnectionRecovery extends BrokerTestCase {
 
             @Override
             public void handleNack(long deliveryTag, boolean multiple) throws IOException {
+                latch.countDown();
             }
         });
-        channel.confirmSelect();
+        String q = channel.queueDeclare(UUID.randomUUID().toString(), false, false, false, null).getQueue();
         closeAndWaitForShutdown(connection);
         waitForRecovery();
         expectChannelRecovery(channel);
-        for (int i = 0; i < n; i++) {
+        channel.confirmSelect();
+        for (int i = 0; i < n * 20; i++) {
             channel.basicPublish("", q, true, false, null, "mandatory1".getBytes());
         }
-        channel.waitForConfirms(200);
+        channel.waitForConfirms(300);
         assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
     }
 
