@@ -1,8 +1,6 @@
 package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.Address;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
@@ -12,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 public class RecoveryAwareAMQConnectionFactory {
     private ConnectionParams params;
