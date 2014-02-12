@@ -363,17 +363,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         return ch.queueDeclare(q, true, false, false, null);
     }
 
-    private void waitForShutdown() throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
-        connection.addShutdownListener(new ShutdownListener() {
-            @Override
-            public void shutdownCompleted(ShutdownSignalException cause) {
-                latch.countDown();
-            }
-        });
-        wait(latch, false);
-    }
-
     private CountDownLatch prepareForShutdown(AutorecoveringConnection conn) throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         conn.addShutdownListener(new ShutdownListener() {
