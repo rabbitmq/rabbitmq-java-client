@@ -116,7 +116,9 @@ public final class ChannelManager {
             }
         };
         Thread shutdownThread = threadFactory.newThread(target, "ConsumerWorkService shutdown monitor");
-        shutdownThread.setDaemon(true);
+        if(Environment.isAllowedToModifyThreads()) {
+            shutdownThread.setDaemon(true);
+        }
         shutdownThread.start();
     }
 
