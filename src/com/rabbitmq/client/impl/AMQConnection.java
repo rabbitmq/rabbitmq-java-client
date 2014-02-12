@@ -266,7 +266,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._workService  = new ConsumerWorkService(executor);
         this._channelManager = null;
 
-        this._heartbeatSender = new HeartbeatSender(frameHandler);
+        this._heartbeatSender = new HeartbeatSender(frameHandler, threadFactory);
         this._brokerInitiatedShutdown = false;
 
         this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
