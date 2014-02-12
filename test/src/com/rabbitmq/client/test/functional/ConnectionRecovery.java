@@ -367,11 +367,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         wait(latch, false);
     }
 
-    private void closeAndWaitForShutdown(AutorecoveringConnection c) throws IOException, InterruptedException {
-        Host.closeConnection(c);
-        waitForShutdown();
-    }
-
     private AMQP.Queue.DeclareOk declareClientNamedQueue(Channel ch, String q) throws IOException {
         return ch.queueDeclare(q, true, false, false, null);
     }
