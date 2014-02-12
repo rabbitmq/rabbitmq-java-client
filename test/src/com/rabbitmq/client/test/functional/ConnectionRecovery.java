@@ -204,7 +204,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             closeAndWaitForRecovery(connection);
             expectChannelRecovery(channel);
             channel.basicPublish(x2, "", null, "msg".getBytes());
-            assertFalse(wait(latch));
+            assertFalse(latch.await(5, TimeUnit.SECONDS));
         } finally {
             channel.exchangeDelete(x2);
         }
@@ -226,7 +226,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             closeAndWaitForRecovery(connection);
             expectChannelRecovery(channel);
             channel.basicPublish(x2, "", null, "msg".getBytes());
-            assertFalse(wait(latch));
+            assertFalse(latch.await(5, TimeUnit.SECONDS));
         } finally {
             channel.exchangeDelete(x2);
         }
