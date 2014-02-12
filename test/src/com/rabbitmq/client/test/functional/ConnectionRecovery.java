@@ -56,7 +56,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         Host.closeConnection(connection);
         expectConnectionRecovery(connection);
         connection.close();
-        assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
+        assertTrue(wait(latch));
     }
 
     public void testBlockedListenerRecovery() throws IOException, InterruptedException {
@@ -77,7 +77,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         block();
         channel.basicPublish("", "", null, "".getBytes());
         unblock();
-        assertTrue(latch.await(50, TimeUnit.MILLISECONDS));
+        assertTrue(wait(latch));
     }
 
     public void testChannelRecovery() throws IOException, InterruptedException {
@@ -108,7 +108,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         waitForRecovery();
         expectChannelRecovery(channel);
         channel.basicPublish("", "unknown", true, false, null, "mandatory1".getBytes());
-        assertTrue(latch.await(150, TimeUnit.MILLISECONDS));
+        assertTrue(wait(latch));
     }
 
     public void testConfirmListenerRecovery() throws IOException, InterruptedException, TimeoutException {
@@ -133,8 +133,8 @@ public class ConnectionRecovery extends BrokerTestCase {
         for (int i = 0; i < n * 20; i++) {
             channel.basicPublish("", q, true, false, null, "mandatory1".getBytes());
         }
-        channel.waitForConfirms(500);
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        waitForConfirms(channel);
+        assertTrue(wait(latch));
     }
 
     public void testClientNamedQueueRecovery() throws IOException, InterruptedException, TimeoutException {
@@ -160,7 +160,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         closeAndWaitForRecovery(connection);
         expectChannelRecovery(channel);
         channel.basicPublish(x, "", null, "msg".getBytes());
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertTrue(wait(latch));
     }
 
     public void testExchangeToExchangeBindingRecovery() throws IOException, InterruptedException {
@@ -178,7 +178,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             closeAndWaitForRecovery(connection);
             expectChannelRecovery(channel);
             channel.basicPublish(x2, "", null, "msg".getBytes());
-            assertTrue(latch.await(5, TimeUnit.SECONDS));
+            assertTrue(wait(latch));
         } finally {
             channel.exchangeDelete(x2);
         }
@@ -204,7 +204,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             closeAndWaitForRecovery(connection);
             expectChannelRecovery(channel);
             channel.basicPublish(x2, "", null, "msg".getBytes());
-            assertFalse(latch.await(5, TimeUnit.SECONDS));
+            assertFalse(wait(latch));
         } finally {
             channel.exchangeDelete(x2);
         }
@@ -226,7 +226,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             closeAndWaitForRecovery(connection);
             expectChannelRecovery(channel);
             channel.basicPublish(x2, "", null, "msg".getBytes());
-            assertFalse(latch.await(5, TimeUnit.SECONDS));
+            assertFalse(wait(latch));
         } finally {
             channel.exchangeDelete(x2);
         }
@@ -282,7 +282,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(connection.isOpen());
         Host.closeConnection(connection);
         expectConnectionRecovery(connection);
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertTrue(wait(latch));
     }
 
     public void testChannelRecoveryCallback() throws IOException, InterruptedException {
@@ -303,7 +303,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         waitForRecovery();
         expectChannelRecovery(ch1);
         expectChannelRecovery(ch2);
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertTrue(wait(latch));
     }
 
     public void testBasicAckAfterChannelRecovery() throws IOException, InterruptedException {
@@ -343,7 +343,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             Thread.sleep(150);
             publishingChannel.basicPublish("", q, null, "msg".getBytes());
         }
-        assertTrue(latch.await(n, TimeUnit.SECONDS));
+        wait(latch);
     }
 
     private void closeAndWaitForShutdown(AutorecoveringConnection c) throws IOException, InterruptedException {
@@ -368,7 +368,7 @@ public class ConnectionRecovery extends BrokerTestCase {
                 latch.countDown();
             }
         });
-        latch.await(5, TimeUnit.SECONDS);
+        wait(latch);
     }
 
     private void expectQueueRecovery(Channel ch, String q) throws IOException, InterruptedException, TimeoutException {
@@ -377,7 +377,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         AMQP.Queue.DeclareOk ok1 = declareClientNamedQueue(ch, q);
         assertEquals(0, ok1.getMessageCount());
         ch.basicPublish("", q, null, "msg".getBytes());
-        ch.waitForConfirms(500);
+        waitForConfirms(ch);
         AMQP.Queue.DeclareOk ok2 = declareClientNamedQueue(ch, q);
         assertEquals(1, ok2.getMessageCount());
     }
@@ -391,14 +391,13 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     private void waitForRecovery() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
-        int interval = RECOVERY_INTERVAL + 1000;
         connection.addRecoveryListener(new RecoveryListener() {
             @Override
             public void handleRecovery(Recoverable recoverable) {
                 latch.countDown();
             }
         });
-        latch.await(interval, TimeUnit.MILLISECONDS);
+        wait(latch);
     }
 
     private void expectChannelRecovery(Channel ch) throws InterruptedException {
@@ -450,5 +449,15 @@ public class ConnectionRecovery extends BrokerTestCase {
         if(channel.isOpen()) {
             channel.close();
         }
+    }
+
+    // Very very generous amount of time to wait, just make sure we never
+    // hang forever
+    private boolean wait(CountDownLatch latch) throws InterruptedException {
+        return latch.await(30, TimeUnit.MINUTES);
+    }
+
+    private void waitForConfirms(Channel ch) throws InterruptedException, TimeoutException {
+        ch.waitForConfirms(30 * 60 * 1000);
     }
 }
