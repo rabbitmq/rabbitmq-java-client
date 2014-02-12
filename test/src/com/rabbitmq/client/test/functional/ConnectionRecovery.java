@@ -334,8 +334,6 @@ public class ConnectionRecovery extends BrokerTestCase {
                                        byte[] body) throws IOException {
                 try {
                     if (consumed.intValue() > 0 && consumed.intValue() % 4 == 0) {
-                        // Imitate some work
-                        Thread.sleep(200);
                         CountDownLatch recoveryLatch = prepareForRecovery(connection);
                         Host.closeConnection(connection);
                         recoveryLatch.await(30, TimeUnit.MINUTES);
@@ -356,8 +354,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         AutorecoveringConnection publishingConnection = newRecoveringConnection(false);
         Channel publishingChannel = publishingConnection.createChannel();
         for (int i = 0; i < n; i++) {
-            // publish messages at intervals that allow recovery to finish
-            Thread.sleep(150);
             publishingChannel.basicPublish("", q, null, "msg".getBytes());
         }
         wait(latch, false);
