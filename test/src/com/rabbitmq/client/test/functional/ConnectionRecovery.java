@@ -21,8 +21,10 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     public void testConnectionRecovery() throws IOException, InterruptedException {
         assertTrue(connection.isOpen());
+        CountDownLatch recoveryLatch = prepareForRecovery(connection);
         Host.closeConnection(connection);
-        expectConnectionRecovery(connection);
+        wait(recoveryLatch);
+        assertTrue(connection.isOpen());
     }
 
     public void testConnectionRecoveryWithDisabledTopologyRecovery() throws IOException, InterruptedException {
@@ -33,8 +35,12 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.queueDeclarePassive(q);
         assertTrue(c.isOpen());
         try {
+            CountDownLatch shutdownLatch = prepareForShutdown(c);
+            CountDownLatch recoveryLatch = prepareForRecovery(c);
             Host.closeConnection(c);
-            expectConnectionRecovery(c);
+            wait(shutdownLatch);
+            wait(recoveryLatch);
+            assertTrue(c.isOpen());
             ch.queueDeclarePassive(q);
             fail("expected passive declaration to throw");
         } catch (java.io.IOException e) {
@@ -53,10 +59,14 @@ public class ConnectionRecovery extends BrokerTestCase {
             }
         });
         assertTrue(connection.isOpen());
+        CountDownLatch shutdownLatch = prepareForShutdown(connection);
+        CountDownLatch recoveryLatch = prepareForRecovery(connection);
         Host.closeConnection(connection);
-        expectConnectionRecovery(connection);
+        wait(shutdownLatch);
+        wait(recoveryLatch);
+        assertTrue(connection.isOpen());
         connection.close();
-        assertTrue(wait(latch));
+        wait(latch);
     }
 
     public void testBlockedListenerRecovery() throws IOException, InterruptedException {
@@ -72,12 +82,15 @@ public class ConnectionRecovery extends BrokerTestCase {
                 latch.countDown();
             }
         });
+        CountDownLatch shutdownLatch = prepareForShutdown(connection);
+        CountDownLatch recoveryLatch = prepareForRecovery(connection);
         Host.closeConnection(connection);
-        expectConnectionRecovery(connection);
+        wait(shutdownLatch);
+        wait(recoveryLatch);
         block();
         channel.basicPublish("", "", null, "".getBytes());
         unblock();
-        assertTrue(wait(latch));
+        wait(latch, false);
     }
 
     public void testChannelRecovery() throws IOException, InterruptedException {
@@ -86,10 +99,11 @@ public class ConnectionRecovery extends BrokerTestCase {
 
         assertTrue(ch1.isOpen());
         assertTrue(ch2.isOpen());
-        closeAndWaitForShutdown(connection);
-        assertFalse(ch1.isOpen());
-        assertFalse(ch2.isOpen());
-        waitForRecovery();
+        CountDownLatch shutdownLatch = prepareForShutdown(connection);
+        CountDownLatch recoveryLatch = prepareForRecovery(connection);
+        Host.closeConnection(connection);
+        wait(shutdownLatch);
+        wait(recoveryLatch);
         expectChannelRecovery(ch1);
         expectChannelRecovery(ch2);
     }
@@ -104,11 +118,14 @@ public class ConnectionRecovery extends BrokerTestCase {
                 latch.countDown();
             }
         });
-        closeAndWaitForShutdown(connection);
-        waitForRecovery();
+        CountDownLatch shutdownLatch = prepareForShutdown(connection);
+        CountDownLatch recoveryLatch = prepareForRecovery(connection);
+        Host.closeConnection(connection);
+        wait(shutdownLatch);
+        wait(recoveryLatch);
         expectChannelRecovery(channel);
         channel.basicPublish("", "unknown", true, false, null, "mandatory1".getBytes());
-        assertTrue(wait(latch));
+        assertTrue(wait(latch, false));
     }
 
     public void testConfirmListenerRecovery() throws IOException, InterruptedException, TimeoutException {
@@ -126,61 +143,66 @@ public class ConnectionRecovery extends BrokerTestCase {
             }
         });
         String q = channel.queueDeclare(UUID.randomUUID().toString(), false, false, false, null).getQueue();
-        closeAndWaitForShutdown(connection);
-        waitForRecovery();
+        CountDownLatch shutdownLatch = prepareForShutdown(connection);
+        CountDownLatch recoveryLatch = prepareForRecovery(connection);
+        Host.closeConnection(connection);
+        wait(shutdownLatch);
+        wait(recoveryLatch);
         expectChannelRecovery(channel);
         channel.confirmSelect();
         for (int i = 0; i < n * 20; i++) {
             channel.basicPublish("", q, true, false, null, "mandatory1".getBytes());
         }
         waitForConfirms(channel);
-        assertTrue(wait(latch));
+        wait(latch, false);
     }
 
     public void testClientNamedQueueRecovery() throws IOException, InterruptedException, TimeoutException {
         Channel ch = connection.createChannel();
         String q = "java-client.test.recovery.q1";
         declareClientNamedQueue(ch, q);
-        closeAndWaitForShutdown(connection);
-        assertFalse(ch.isOpen());
-        waitForRecovery();
+        CountDownLatch shutdownLatch = prepareForShutdown(connection);
+        CountDownLatch recoveryLatch = prepareForRecovery(connection);
+        Host.closeConnection(connection);
+        wait(shutdownLatch);
+        wait(recoveryLatch);
         expectChannelRecovery(ch);
         expectQueueRecovery(ch, q);
         ch.queueDelete(q);
     }
 
     public void testServerNamedQueueRecovery() throws IOException, InterruptedException {
-        String q = channel.queueDeclare().getQueue();
+        String q = channel.queueDeclare("", false, false, false, null).getQueue();
         String x = "amq.fanout";
         channel.queueBind(q, x, "");
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        Consumer consumer = new CountingDownConsumer(channel, latch);
-        channel.basicConsume(q, consumer);
-        closeAndWaitForRecovery(connection);
+        CountDownLatch recoveryLatch = prepareForRecovery(connection);
+        Host.closeConnection(connection);
+        wait(recoveryLatch);
         expectChannelRecovery(channel);
         channel.basicPublish(x, "", null, "msg".getBytes());
-        assertTrue(wait(latch));
+        assertDelivered(q, 1);
+        channel.queueDelete(q);
     }
 
     public void testExchangeToExchangeBindingRecovery() throws IOException, InterruptedException {
-        String q = channel.queueDeclare().getQueue();
+        String q  = channel.queueDeclare("", false, false, false, null).getQueue();
         String x1 = "amq.fanout";
         String x2 = generateExchangeName();
         channel.exchangeDeclare(x2, "fanout");
         channel.exchangeBind(x1, x2, "");
         channel.queueBind(q, x1, "");
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        Consumer consumer = new CountingDownConsumer(channel, latch);
-        channel.basicConsume(q, consumer);
         try {
-            closeAndWaitForRecovery(connection);
+            CountDownLatch recoveryLatch = prepareForRecovery(connection);
+            Host.closeConnection(connection);
+            wait(recoveryLatch);
             expectChannelRecovery(channel);
             channel.basicPublish(x2, "", null, "msg".getBytes());
-            assertTrue(wait(latch));
+            assertDelivered(q, 1);
         } finally {
             channel.exchangeDelete(x2);
+            channel.queueDelete(q);
         }
     }
 
@@ -189,7 +211,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     public void testThatDeletedQueueBindingsDontReappearOnRecovery() throws IOException, InterruptedException {
-        String q = channel.queueDeclare().getQueue();
+        String q  = channel.queueDeclare("", false, false, false, null).getQueue();
         String x1 = "amq.fanout";
         String x2 = generateExchangeName();
         channel.exchangeDeclare(x2, "fanout");
@@ -197,21 +219,21 @@ public class ConnectionRecovery extends BrokerTestCase {
         channel.queueBind(q, x1, "");
         channel.queueUnbind(q, x1, "");
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        Consumer consumer = new CountingDownConsumer(channel, latch);
-        channel.basicConsume(q, consumer);
         try {
-            closeAndWaitForRecovery(connection);
+            CountDownLatch recoveryLatch = prepareForRecovery(connection);
+            Host.closeConnection(connection);
+            wait(recoveryLatch);
             expectChannelRecovery(channel);
             channel.basicPublish(x2, "", null, "msg".getBytes());
-            assertFalse(latch.await(5, TimeUnit.SECONDS));
+            assertDelivered(q, 0);
         } finally {
             channel.exchangeDelete(x2);
+            channel.queueDelete(q);
         }
     }
 
     public void testThatDeletedExchangeBindingsDontReappearOnRecovery() throws IOException, InterruptedException {
-        String q = channel.queueDeclare().getQueue();
+        String q = channel.queueDeclare("", false, false, false, null).getQueue();
         String x1 = "amq.fanout";
         String x2 = generateExchangeName();
         channel.exchangeDeclare(x2, "fanout");
@@ -219,16 +241,16 @@ public class ConnectionRecovery extends BrokerTestCase {
         channel.queueBind(q, x1, "");
         channel.exchangeUnbind(x1, x2, "");
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        Consumer consumer = new CountingDownConsumer(channel, latch);
-        channel.basicConsume(q, consumer);
         try {
-            closeAndWaitForRecovery(connection);
+            CountDownLatch recoveryLatch = prepareForRecovery(connection);
+            Host.closeConnection(connection);
+            wait(recoveryLatch);
             expectChannelRecovery(channel);
             channel.basicPublish(x2, "", null, "msg".getBytes());
-            assertFalse(latch.await(5, TimeUnit.SECONDS));
+            assertDelivered(q, 0);
         } finally {
             channel.exchangeDelete(x2);
+            channel.queueDelete(q);
         }
     }
 
@@ -237,7 +259,9 @@ public class ConnectionRecovery extends BrokerTestCase {
         channel.exchangeDeclare(x, "fanout");
         channel.exchangeDelete(x);
         try {
-            closeAndWaitForRecovery(connection);
+            CountDownLatch recoveryLatch = prepareForRecovery(connection);
+            Host.closeConnection(connection);
+            wait(recoveryLatch);
             expectChannelRecovery(channel);
             channel.exchangeDeclarePassive(x);
             fail("Expected passive declare to fail");
@@ -250,7 +274,9 @@ public class ConnectionRecovery extends BrokerTestCase {
         String q = channel.queueDeclare().getQueue();
         channel.queueDelete(q);
         try {
-            closeAndWaitForRecovery(connection);
+            CountDownLatch recoveryLatch = prepareForRecovery(connection);
+            Host.closeConnection(connection);
+            wait(recoveryLatch);
             expectChannelRecovery(channel);
             channel.queueDeclarePassive(q);
             fail("Expected passive declare to fail");
@@ -266,23 +292,12 @@ public class ConnectionRecovery extends BrokerTestCase {
         AMQP.Queue.DeclareOk ok1 = channel.queueDeclarePassive(q);
         assertEquals(1, ok1.getConsumerCount());
         channel.basicCancel(tag);
-        closeAndWaitForRecovery(connection);
+        CountDownLatch recoveryLatch = prepareForRecovery(connection);
+        Host.closeConnection(connection);
+        wait(recoveryLatch);
         expectChannelRecovery(channel);
         AMQP.Queue.DeclareOk ok2 = channel.queueDeclarePassive(q);
         assertEquals(0, ok2.getConsumerCount());
-    }
-
-    public void testConnectionRecoveryCallback() throws IOException, InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
-        connection.addRecoveryListener(new RecoveryListener() {
-            public void handleRecovery(Recoverable recoverable) {
-                latch.countDown();
-            }
-        });
-        assertTrue(connection.isOpen());
-        Host.closeConnection(connection);
-        expectConnectionRecovery(connection);
-        assertTrue(wait(latch));
     }
 
     public void testChannelRecoveryCallback() throws IOException, InterruptedException {
@@ -299,11 +314,12 @@ public class ConnectionRecovery extends BrokerTestCase {
 
         assertTrue(ch1.isOpen());
         assertTrue(ch2.isOpen());
-        closeAndWaitForShutdown(connection);
-        waitForRecovery();
+        CountDownLatch recoveryLatch = prepareForRecovery(connection);
+        Host.closeConnection(connection);
+        wait(recoveryLatch);
         expectChannelRecovery(ch1);
         expectChannelRecovery(ch2);
-        assertTrue(wait(latch));
+        wait(latch, false);
     }
 
     public void testBasicAckAfterChannelRecovery() throws IOException, InterruptedException {
@@ -318,10 +334,9 @@ public class ConnectionRecovery extends BrokerTestCase {
                                        byte[] body) throws IOException {
                 try {
                     if (consumed.intValue() > 0 && consumed.intValue() % 4 == 0) {
-                        // Imitate some work
-                        Thread.sleep(200);
+                        CountDownLatch recoveryLatch = prepareForRecovery(connection);
                         Host.closeConnection(connection);
-                        waitForRecovery();
+                        recoveryLatch.await(30, TimeUnit.MINUTES);
                     }
                     channel.basicAck(envelope.getDeliveryTag(), false);
                 } catch (InterruptedException e) {
@@ -339,36 +354,24 @@ public class ConnectionRecovery extends BrokerTestCase {
         AutorecoveringConnection publishingConnection = newRecoveringConnection(false);
         Channel publishingChannel = publishingConnection.createChannel();
         for (int i = 0; i < n; i++) {
-            // publish messages at intervals that allow recovery to finish
-            Thread.sleep(150);
             publishingChannel.basicPublish("", q, null, "msg".getBytes());
         }
-        wait(latch);
-    }
-
-    private void closeAndWaitForShutdown(AutorecoveringConnection c) throws IOException, InterruptedException {
-        Host.closeConnection(c);
-        waitForShutdown();
-    }
-
-    private void closeAndWaitForRecovery(AutorecoveringConnection c) throws IOException, InterruptedException {
-        Host.closeConnection(c);
-        waitForRecovery();
+        wait(latch, false);
     }
 
     private AMQP.Queue.DeclareOk declareClientNamedQueue(Channel ch, String q) throws IOException {
         return ch.queueDeclare(q, true, false, false, null);
     }
 
-    private void waitForShutdown() throws InterruptedException {
+    private CountDownLatch prepareForShutdown(AutorecoveringConnection conn) throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
-        connection.addShutdownListener(new ShutdownListener() {
+        conn.addShutdownListener(new ShutdownListener() {
             @Override
             public void shutdownCompleted(ShutdownSignalException cause) {
                 latch.countDown();
             }
         });
-        wait(latch);
+        return latch;
     }
 
     private void expectQueueRecovery(Channel ch, String q) throws IOException, InterruptedException, TimeoutException {
@@ -382,22 +385,15 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertEquals(1, ok2.getMessageCount());
     }
 
-    private void expectConnectionRecovery(AutorecoveringConnection c) throws InterruptedException {
-        int oldPort = c.getLocalPort();
-        waitForRecovery();
-        assertTrue(c.isOpen());
-        assertFalse(oldPort == c.getLocalPort());
-    }
-
-    private void waitForRecovery() throws InterruptedException {
+    private CountDownLatch prepareForRecovery(AutorecoveringConnection conn) {
         final CountDownLatch latch = new CountDownLatch(1);
-        connection.addRecoveryListener(new RecoveryListener() {
+        conn.addRecoveryListener(new RecoveryListener() {
             @Override
             public void handleRecovery(Recoverable recoverable) {
                 latch.countDown();
             }
         });
-        wait(latch);
+        return latch;
     }
 
     private void expectChannelRecovery(Channel ch) throws InterruptedException {
@@ -451,10 +447,19 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
     }
 
+    private boolean wait(CountDownLatch latch) throws InterruptedException {
+        return wait(latch, true);
+    }
+
     // Very very generous amount of time to wait, just make sure we never
     // hang forever
-    private boolean wait(CountDownLatch latch) throws InterruptedException {
-        return latch.await(30, TimeUnit.MINUTES);
+    private boolean wait(CountDownLatch latch, boolean expectSuccess) throws InterruptedException {
+        // System.out.println("Latch: " + latch.getCount() + " in test " + this.getName());
+        final boolean result = latch.await(30, TimeUnit.SECONDS);
+        if(expectSuccess) {
+            assertTrue(result);
+        }
+        return result;
     }
 
     private void waitForConfirms(Channel ch) throws InterruptedException, TimeoutException {

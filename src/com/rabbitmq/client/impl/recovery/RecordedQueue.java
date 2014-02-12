@@ -1,7 +1,5 @@
 package com.rabbitmq.client.impl.recovery;
 
-import com.rabbitmq.client.AMQP;
-
 import java.io.IOException;
 import java.util.Map;
 
@@ -34,11 +32,12 @@ public class RecordedQueue extends RecordedNamedEntity {
         return this.serverNamed;
     }
 
-    public AMQP.Queue.DeclareOk recover() throws IOException {
-        AMQP.Queue.DeclareOk ok = this.channel.queueDeclare(this.getNameToUseForRecovery(), this.durable, this.exclusive, this.autoDelete, this.arguments);
-        this.name = ok.getQueue();
-
-        return ok;
+    public void recover() throws IOException {
+        this.name = this.channel.queueDeclare(this.getNameToUseForRecovery(),
+                                                     this.durable,
+                                                     this.exclusive,
+                                                     this.autoDelete,
+                                                     this.arguments).getQueue();
     }
 
     public String getNameToUseForRecovery() {
