@@ -25,6 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.ThreadFactory;
 import com.rabbitmq.utility.IntAllocator;
 
 /**
@@ -45,12 +46,17 @@ public class ChannelManager {
 
     /** Maximum channel number available on this connection. */
     private final int _channelMax;
+    private final ThreadFactory threadFactory;
 
     public int getChannelMax(){
       return _channelMax;
     }
 
     public ChannelManager(ConsumerWorkService workService, int channelMax) {
+        this(workService, channelMax, new DefaultThreadFactory());
+    }
+
+    public ChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory) {
         if (channelMax == 0) {
             // The framing encoding only allows for unsigned 16-bit integers
             // for the channel number
@@ -60,6 +66,7 @@ public class ChannelManager {
         channelNumberAllocator = new IntAllocator(1, channelMax);
 
         this.workService = workService;
+        this.threadFactory = threadFactory;
     }
 
     /**
@@ -97,14 +104,18 @@ public class ChannelManager {
     private void scheduleShutdownProcessing() {
         final Set<CountDownLatch> sdSet = new HashSet<CountDownLatch>(shutdownSet);
         final ConsumerWorkService ssWorkService = workService;
-        Thread shutdownThread = new Thread( new Runnable() {
+        Runnable target = new Runnable() {
             public void run() {
                 for (CountDownLatch latch : sdSet) {
                     try { latch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS); } catch (Throwable e) { /*ignored*/ }
                 }
                 ssWorkService.shutdown();
-            }}, "ConsumerWorkServiceShutdown");
-        shutdownThread.setDaemon(true);
+            }
+        };
+        Thread shutdownThread = threadFactory.newThread(target, "ConsumerWorkService shutdown monitor");
+        if(Environment.isAllowedToModifyThreads()) {
+            shutdownThread.setDaemon(true);
+        }
         shutdownThread.start();
     }
 

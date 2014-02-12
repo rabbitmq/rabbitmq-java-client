@@ -44,6 +44,7 @@ import com.rabbitmq.client.ProtocolVersionMismatchException;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.ThreadFactory;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 
@@ -61,6 +62,8 @@ final class Copyright {
 public class AMQConnection extends ShutdownNotifierComponent implements Connection, NetworkConnection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
+    private Thread mainLoopThread;
+    private ThreadFactory threadFactory = new DefaultThreadFactory();
 
     /**
      * Retrieve a copy of the default table of client properties that
@@ -216,7 +219,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._workService  = new ConsumerWorkService(params.getExecutor());
         this._channelManager = null;
 
-        this._heartbeatSender = new HeartbeatSender(frameHandler);
+        this._heartbeatSender = new HeartbeatSender(frameHandler, threadFactory);
         this._brokerInitiatedShutdown = false;
 
         this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
@@ -264,7 +267,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
 
         // start the main loop going
-        new MainLoop("AMQP Connection " + getHostAddress() + ":" + getPort()).start();
+        MainLoop loop = new MainLoop();
+        mainLoopThread = threadFactory.newThread(loop, "AMQP Connection " + getHostAddress() + ":" + getPort());
+        mainLoopThread.start();
         // after this point clear-up of MainLoop is triggered by closing the frameHandler.
 
         AMQP.Connection.Start connStart = null;
@@ -337,7 +342,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             int channelMax =
                 negotiateChannelMax(this.requestedChannelMax,
                                     connTune.getChannelMax());
-            _channelManager = instantiateChannelManager(channelMax);
+            _channelManager = instantiateChannelManager(channelMax, threadFactory);
 
             int frameMax =
                 negotiatedMaxValue(this.requestedFrameMax,
@@ -374,8 +379,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return;
     }
 
-    protected ChannelManager instantiateChannelManager(int channelMax) {
-        return new ChannelManager(this._workService, channelMax);
+    protected ChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
+        return new ChannelManager(this._workService, channelMax, threadFactory);
     }
 
     /**
@@ -425,6 +430,23 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (SocketException se) {
             // should do more here?
         }
+    }
+
+    /**
+     * Makes it possible to override thread factory that is used
+     * to instantiate connection network I/O loop. Only necessary
+     * in the environments with restricted
+     * @param threadFactory
+     */
+    public void setThreadFactory(ThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
+    }
+
+    /**
+     * @return Thread factory used by this connection.
+     */
+    public ThreadFactory getThreadFactory() {
+        return threadFactory;
     }
 
     public Map<String, Object> getClientProperties() {
@@ -485,14 +507,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             Math.min(clientValue, serverValue);
     }
 
-    private class MainLoop extends Thread {
-
-        /**
-         * @param name of thread
-         */
-        MainLoop(String name) {
-            super(name);
-        }
+    private class MainLoop implements Runnable {
 
         /**
          * Channel reader thread main loop. Reads a frame, and if it is
@@ -636,13 +651,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
         } catch (IOException _) { } // ignore
         _brokerInitiatedShutdown = true;
-        Thread scw = new SocketCloseWait(sse);
-        scw.setName("AMQP Connection Closing Monitor " +
+        SocketCloseWait scw = new SocketCloseWait(sse);
+        Thread waiter = threadFactory.newThread(scw);
+        waiter.setName("AMQP Connection Closing Monitor " +
                 getHostAddress() + ":" + getPort());
-        scw.start();
+        waiter.start();
     }
 
-    private class SocketCloseWait extends Thread {
+    private class SocketCloseWait implements Runnable {
         private final ShutdownSignalException cause;
 
         public SocketCloseWait(ShutdownSignalException sse) {
@@ -789,7 +805,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                       boolean abort)
         throws IOException
     {
-        boolean sync = !(Thread.currentThread() instanceof MainLoop);
+        boolean sync = !(Thread.currentThread() == mainLoopThread);
 
         try {
             AMQP.Connection.Close reason =

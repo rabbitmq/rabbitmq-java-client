@@ -32,6 +32,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.DefaultThreadFactory;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
@@ -89,6 +90,7 @@ public class ConnectionFactory implements Cloneable {
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
+    private ThreadFactory threadFactory           = new DefaultThreadFactory();
     private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
 
     private boolean automaticRecovery             = false;
@@ -426,6 +428,24 @@ public class ConnectionFactory implements Cloneable {
         this.sharedExecutor = executor;
     }
 
+    /**
+     * Retrieve the thread factory used to instantiate new threads.
+     * @see com.rabbitmq.client.ThreadFactory
+     * @see com.rabbitmq.client.impl.DefaultThreadFactory
+     */
+    public ThreadFactory getThreadFactory() {
+        return threadFactory;
+    }
+
+    /**
+     * Set the thread factory to use for newly created connections.
+     * @see com.rabbitmq.client.ThreadFactory
+     * @see com.rabbitmq.client.impl.DefaultThreadFactory
+     */
+    public void setThreadFactory(ThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
+    }
+
     public boolean isSSL(){
         return getSocketFactory() instanceof SSLSocketFactory;
     }
@@ -544,6 +564,7 @@ public class ConnectionFactory implements Cloneable {
                 try {
                     FrameHandler handler = fhFactory.create(addr);
                     AMQConnection conn = new AMQConnection(params, handler);
+                    conn.setThreadFactory(this.threadFactory);
                     conn.start();
                     return conn;
                 } catch (IOException e) {
