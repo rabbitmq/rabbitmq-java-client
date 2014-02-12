@@ -172,41 +172,37 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     public void testServerNamedQueueRecovery() throws IOException, InterruptedException {
-        String q = channel.queueDeclare().getQueue();
+        String q = channel.queueDeclare("", false, false, false, null).getQueue();
         String x = "amq.fanout";
         channel.queueBind(q, x, "");
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        Consumer consumer = new CountingDownConsumer(channel, latch);
-        channel.basicConsume(q, consumer);
         CountDownLatch recoveryLatch = prepareForRecovery(connection);
         Host.closeConnection(connection);
         wait(recoveryLatch);
         expectChannelRecovery(channel);
         channel.basicPublish(x, "", null, "msg".getBytes());
-        wait(latch, false);
+        assertDelivered(q, 1);
+        channel.queueDelete(q);
     }
 
     public void testExchangeToExchangeBindingRecovery() throws IOException, InterruptedException {
-        String q = channel.queueDeclare().getQueue();
+        String q  = channel.queueDeclare("", false, false, false, null).getQueue();
         String x1 = "amq.fanout";
         String x2 = generateExchangeName();
         channel.exchangeDeclare(x2, "fanout");
         channel.exchangeBind(x1, x2, "");
         channel.queueBind(q, x1, "");
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        Consumer consumer = new CountingDownConsumer(channel, latch);
-        channel.basicConsume(q, consumer);
         try {
             CountDownLatch recoveryLatch = prepareForRecovery(connection);
             Host.closeConnection(connection);
             wait(recoveryLatch);
             expectChannelRecovery(channel);
             channel.basicPublish(x2, "", null, "msg".getBytes());
-            wait(latch, false);
+            assertDelivered(q, 1);
         } finally {
             channel.exchangeDelete(x2);
+            channel.queueDelete(q);
         }
     }
 
