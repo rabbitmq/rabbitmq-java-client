@@ -52,9 +52,8 @@ public abstract class RecordedBinding extends RecordedEntity {
         this.destination = destination;
     }
 
-    public Object recover() throws IOException {
+    public void recover() throws IOException {
         // Implemented by subclasses
-        return null;
     }
 
     @Override
