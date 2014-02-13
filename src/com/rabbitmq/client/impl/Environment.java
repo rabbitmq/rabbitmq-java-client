@@ -1,7 +1,5 @@
 package com.rabbitmq.client.impl;
 
-import java.security.AccessControlException;
-
 /**
  * Infers information about the execution environment, e.g.
  * security permissions.
