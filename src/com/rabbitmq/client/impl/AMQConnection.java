@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -62,6 +63,7 @@ final class Copyright {
 public class AMQConnection extends ShutdownNotifierComponent implements Connection, NetworkConnection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
+    private final ExecutorService executor;
     private Thread mainLoopThread;
     private ThreadFactory threadFactory = new DefaultThreadFactory();
 
@@ -104,7 +106,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     };
 
-    protected final ConsumerWorkService _workService;
+    protected ConsumerWorkService _workService = null;
 
     /** Frame source/sink */
     private final FrameHandler _frameHandler;
@@ -215,8 +217,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.requestedChannelMax = params.getRequestedChannelMax();
         this.requestedHeartbeat = params.getRequestedHeartbeat();
         this.saslConfig = params.getSaslConfig();
+        this.executor = params.getExecutor();
 
-        this._workService  = new ConsumerWorkService(params.getExecutor());
         this._channelManager = null;
 
         this._brokerInitiatedShutdown = false;
@@ -224,8 +226,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
     }
 
-    private void initializeHeartbeatSender(FrameHandler frameHandler) {
-        this._heartbeatSender = new HeartbeatSender(frameHandler, threadFactory);
+    private void initializeConsumerWorkService() {
+        this._workService  = new ConsumerWorkService(executor, threadFactory);
+    }
+
+    private void initializeHeartbeatSender() {
+        this._heartbeatSender = new HeartbeatSender(_frameHandler, threadFactory);
     }
 
     /**
@@ -247,7 +253,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void start()
         throws IOException
     {
-        initializeHeartbeatSender(_frameHandler);
+        initializeConsumerWorkService();
+        initializeHeartbeatSender();
         this._running = true;
         // Make sure that the first thing we do is to send the header,
         // which should cause any socket errors to show up for us, rather
