@@ -127,7 +127,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private volatile boolean _inConnectionNegotiation;
 
     /** Manages heart-beat sending for this connection */
-    private final HeartbeatSender _heartbeatSender;
+    private HeartbeatSender _heartbeatSender;
 
     private final String _virtualHost;
     private final Map<String, Object> _clientProperties;
@@ -219,10 +219,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._workService  = new ConsumerWorkService(params.getExecutor());
         this._channelManager = null;
 
-        this._heartbeatSender = new HeartbeatSender(frameHandler, threadFactory);
         this._brokerInitiatedShutdown = false;
 
         this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
+    }
+
+    private void initializeHeartbeatSender(FrameHandler frameHandler) {
+        this._heartbeatSender = new HeartbeatSender(frameHandler, threadFactory);
     }
 
     /**
@@ -244,6 +247,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void start()
         throws IOException
     {
+        initializeHeartbeatSender(_frameHandler);
         this._running = true;
         // Make sure that the first thing we do is to send the header,
         // which should cause any socket errors to show up for us, rather
