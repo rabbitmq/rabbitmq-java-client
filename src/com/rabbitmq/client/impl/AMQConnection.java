@@ -31,6 +31,7 @@ import java.util.concurrent.TimeoutException;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.BlockedListener;
+import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;

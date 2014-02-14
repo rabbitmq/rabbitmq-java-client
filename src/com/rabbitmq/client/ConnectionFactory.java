@@ -34,7 +34,6 @@ import javax.net.ssl.TrustManager;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.DefaultExceptionHandler;
-import com.rabbitmq.client.impl.ExceptionHandler;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
@@ -432,7 +431,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Get the exception handler.
      *
-     * @see com.rabbitmq.client.impl.ExceptionHandler
+     * @see ExceptionHandler
      */
     public ExceptionHandler getExceptionHandler() {
         return exceptionHandler;
@@ -441,7 +440,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Set the exception handler to use by default for newly created connections.
      *
-     * @see com.rabbitmq.client.impl.ExceptionHandler
+     * @see ExceptionHandler
      */
 
     public void setExceptionHandler(ExceptionHandler exceptionHandler) {

@@ -1,5 +1,6 @@
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.SaslConfig;
 
 import java.util.Map;
