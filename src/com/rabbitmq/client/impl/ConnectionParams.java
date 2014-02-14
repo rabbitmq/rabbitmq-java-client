@@ -32,12 +32,13 @@ public class ConnectionParams {
      * @param saslConfig sasl configuration hook
      * @param networkRecoveryInterval interval used when recovering from network failure
      * @param topologyRecovery should topology (queues, exchanges, bindings, consumers) recovery be performed?
+     * @param exceptionHandler
      */
     public ConnectionParams(String username, String password, ExecutorService executor,
                             String virtualHost, Map<String, Object> clientProperties,
                             int requestedFrameMax, int requestedChannelMax, int requestedHeartbeat,
                             SaslConfig saslConfig, int networkRecoveryInterval,
-                            boolean topologyRecovery) {
+                            boolean topologyRecovery, ExceptionHandler exceptionHandler) {
         this.username = username;
         this.password = password;
         this.executor = executor;

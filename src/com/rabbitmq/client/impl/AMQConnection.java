@@ -110,7 +110,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private volatile boolean _running = false;
 
     /** Handler for (uncaught) exceptions that crop up in the {@link MainLoop}. */
-    private final ExceptionHandler _exceptionHandler;
+    private ExceptionHandler _exceptionHandler;
 
     /** Object used for blocking main application thread when doing all the necessary
      * connection shutdown operations
@@ -214,6 +214,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.saslConfig = params.getSaslConfig();
 
         this._workService  = new ConsumerWorkService(params.getExecutor());
+        this._exceptionHandler = params.getExceptionHandler();
         this._channelManager = null;
 
         this._heartbeatSender = new HeartbeatSender(frameHandler);
