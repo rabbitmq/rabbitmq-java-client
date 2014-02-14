@@ -233,4 +233,6 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * Remove all {@link BlockedListener}s.
      */
     void clearBlockedListeners();
+
+    ExceptionHandler getExceptionHandler();
 }

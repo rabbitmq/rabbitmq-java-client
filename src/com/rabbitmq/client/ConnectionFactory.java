@@ -91,7 +91,7 @@ public class ConnectionFactory implements Cloneable {
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
     private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
-    private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
+    private ExceptionHandler exceptionHandler     = null;
 
     private boolean automaticRecovery             = false;
     private boolean topologyRecovery              = true;

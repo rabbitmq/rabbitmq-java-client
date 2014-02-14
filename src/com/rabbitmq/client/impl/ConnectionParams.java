@@ -51,9 +51,8 @@ public class ConnectionParams {
         this.saslConfig = saslConfig;
         this.networkRecoveryInterval = networkRecoveryInterval;
         this.topologyRecovery = topologyRecovery;
-        
 
-        this.exceptionHandler = new DefaultExceptionHandler();
+        this.exceptionHandler = exceptionHandler;
     }
 
     public String getUsername() {
@@ -101,7 +100,7 @@ public class ConnectionParams {
     }
 
     public ConnectionParams exceptionHandler(ExceptionHandler exceptionHandler) {
-        this.exceptionHandler = exceptionHandler;
+        setExceptionHandler(exceptionHandler);
         return this;
     }
 
