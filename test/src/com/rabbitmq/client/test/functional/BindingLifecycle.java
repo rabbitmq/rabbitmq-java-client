@@ -185,9 +185,14 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * Test the behaviour of queue.unbind
      */
     public void testUnbind() throws Exception {
+        for (String exchange: new String[]{"amq.fanout", "amq.direct", "amq.topic", "amq.headers"}) {
+            testUnbind(exchange);
+        }
+    }
 
+    public void testUnbind(String exchange) throws Exception {
         Binding b = new Binding(channel.queueDeclare().getQueue(),
-                                "amq.direct",
+                                exchange,
                                 "quay");
 
         // failure cases
