@@ -86,4 +86,15 @@ public class GetResponse {
     public int getMessageCount() {
         return messageCount;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("GetResponse(envelope=").append(envelope);
+        sb.append(", props=").append(props);
+        sb.append(", messageCount=").append(messageCount);
+        sb.append(", body=(elided, ").append(body.length).append(" bytes long)");
+        sb.append(")");
+        return sb.toString();
+    }
 }
