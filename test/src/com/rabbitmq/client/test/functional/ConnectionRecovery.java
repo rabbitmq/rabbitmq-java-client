@@ -455,7 +455,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     // hang forever
     private boolean wait(CountDownLatch latch, boolean expectSuccess) throws InterruptedException {
         // System.out.println("Latch: " + latch.getCount() + " in test " + this.getName());
-        final boolean result = latch.await(30, TimeUnit.SECONDS);
+        final boolean result = latch.await(30, TimeUnit.MINUTES);
         if(expectSuccess) {
             assertTrue(result);
         }
