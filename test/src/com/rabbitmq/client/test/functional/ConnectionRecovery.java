@@ -90,7 +90,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         block();
         channel.basicPublish("", "", null, "".getBytes());
         unblock();
-        wait(latch, false);
+        wait(latch);
     }
 
     public void testChannelRecovery() throws IOException, InterruptedException {
@@ -125,7 +125,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         wait(recoveryLatch);
         expectChannelRecovery(channel);
         channel.basicPublish("", "unknown", true, false, null, "mandatory1".getBytes());
-        wait(latch, false);
+        wait(latch);
     }
 
     public void testConfirmListenerRecovery() throws IOException, InterruptedException, TimeoutException {
@@ -154,7 +154,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             channel.basicPublish("", q, true, false, null, "mandatory1".getBytes());
         }
         waitForConfirms(channel);
-        wait(latch, false);
+        wait(latch);
     }
 
     public void testClientNamedQueueRecovery() throws IOException, InterruptedException, TimeoutException {
@@ -319,7 +319,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         wait(recoveryLatch);
         expectChannelRecovery(ch1);
         expectChannelRecovery(ch2);
-        wait(latch, false);
+        wait(latch);
     }
 
     public void testBasicAckAfterChannelRecovery() throws IOException, InterruptedException {
