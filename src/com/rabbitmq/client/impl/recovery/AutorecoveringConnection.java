@@ -359,7 +359,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.recoverBlockedListeners();
         this.recoverChannels();
         if(this.params.isTopologyRecoveryEnabled()) {
-            this.recoverEntites();
+            this.recoverEntities();
             this.recoverConsumers();
         }
 
@@ -408,7 +408,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    private void recoverEntites() throws TopologyRecoveryException {
+    private void recoverEntities() throws TopologyRecoveryException {
         // The recovery sequence is the following:
         //
         // 1. Recover exchanges
