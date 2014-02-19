@@ -25,6 +25,14 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(connection.isOpen());
     }
 
+    public void testConnectionRecoveryWithMultipleAddresses() throws IOException, InterruptedException {
+        final Address[] addresses = {new Address("127.0.0.1"), new Address("127.0.0.1", 5672)};
+        AutorecoveringConnection c = newRecoveringConnection(addresses);
+        assertTrue(c.isOpen());
+        closeAndWaitForRecovery(c);
+        assertTrue(c.isOpen());
+    }
+
     public void testConnectionRecoveryWithDisabledTopologyRecovery() throws IOException, InterruptedException {
         AutorecoveringConnection c = newRecoveringConnection(true);
         Channel ch = c.createChannel();
@@ -368,13 +376,27 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery) throws IOException {
+        ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
+        return (AutorecoveringConnection) cf.newConnection();
+    }
+
+    private AutorecoveringConnection newRecoveringConnection(Address[] addresses) throws IOException {
+        return newRecoveringConnection(false, addresses);
+    }
+
+    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery, Address[] addresses) throws IOException {
+        ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
+        return (AutorecoveringConnection) cf.newConnection(addresses);
+    }
+
+    private ConnectionFactory buildConnectionFactoryWithRecoveryEnabled(boolean disableTopologyRecovery) {
         ConnectionFactory cf = new ConnectionFactory();
         cf.setNetworkRecoveryInterval(RECOVERY_INTERVAL);
         cf.setAutomaticRecovery(true);
         if (disableTopologyRecovery) {
             cf.setTopologyRecovery(false);
         }
-        return (AutorecoveringConnection) cf.newConnection();
+        return cf;
     }
 
     protected void setUp()
