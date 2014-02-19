@@ -476,6 +476,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
+     * Returns true if automatic connection recovery is enabled, false otherwise
      * @return true if automatic connection recovery is enabled, false otherwise
      */
     public boolean isAutomaticRecoveryEnabled() {
@@ -491,6 +492,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
+     * Returns true if topology recovery is enabled, false otherwise
      * @return true if topology recovery is enabled, false otherwise
      */
     @SuppressWarnings("unused")
@@ -592,6 +594,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
+     * Returns automatic connection recovery interval in milliseconds.
      * @return how long will automatic recovery wait before attempting to reconnect, in ms; default is 5000
      */
     public int getNetworkRecoveryInterval() {
