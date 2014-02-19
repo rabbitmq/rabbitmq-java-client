@@ -356,7 +356,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         for (int i = 0; i < n; i++) {
             publishingChannel.basicPublish("", q, null, "msg".getBytes());
         }
-        wait(latch, false);
+        wait(latch);
     }
 
     private AMQP.Queue.DeclareOk declareClientNamedQueue(Channel ch, String q) throws IOException {
