@@ -125,7 +125,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         wait(recoveryLatch);
         expectChannelRecovery(channel);
         channel.basicPublish("", "unknown", true, false, null, "mandatory1".getBytes());
-        assertTrue(wait(latch, false));
+        wait(latch, false);
     }
 
     public void testConfirmListenerRecovery() throws IOException, InterruptedException, TimeoutException {
