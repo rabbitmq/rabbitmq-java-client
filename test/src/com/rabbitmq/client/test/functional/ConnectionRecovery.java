@@ -436,11 +436,10 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
     }
 
-    private boolean wait(CountDownLatch latch) throws InterruptedException {
+    private void wait(CountDownLatch latch) throws InterruptedException {
         // Very very generous amount of time to wait, just make sure we never
         // hang forever
         assertTrue(latch.await(30, TimeUnit.MINUTES));
-        return true;
     }
 
     private void waitForConfirms(Channel ch) throws InterruptedException, TimeoutException {
