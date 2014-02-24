@@ -7,7 +7,6 @@ import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ChannelN;
-import com.rabbitmq.client.impl.DefaultExceptionHandler;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.impl.ConsumerWorkService;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -26,18 +25,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
         }
 
         private SpecialConnection(ConnectionFactory factory, int channelMax) throws Exception {
-            super(factory.getUsername(),
-                  factory.getPassword(),
-                  new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT)),
-                  Executors.newFixedThreadPool(1),
-                  factory.getVirtualHost(),
-                  factory.getClientProperties(),
-                  factory.getRequestedFrameMax(),
-                  channelMax,
-                  factory.getRequestedHeartbeat(),
-                  factory.getSaslConfig(),
-                  new DefaultExceptionHandler());
-
+            super(factory.params(Executors.newFixedThreadPool(1)), new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT)));
             this.channelMax = channelMax;
         }
 

@@ -16,6 +16,8 @@
 
 package com.rabbitmq.client;
 
+import com.rabbitmq.client.impl.NetworkConnection;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Map;
@@ -50,7 +52,7 @@ import java.util.Map;
  * Current implementations are thread-safe for code at the client API level,
  * and in fact thread-safe internally except for code within RPC calls.
  */
-public interface Connection extends ShutdownNotifier { // rename to AMQPConnection later, this is a temporary name
+public interface Connection extends ShutdownNotifier, NetworkConnection, Recoverable { // rename to AMQPConnection later, this is a temporary name
     /**
      * Retrieve the host.
      * @return the hostname of the peer we're connected to.
@@ -233,5 +235,4 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * Remove all {@link BlockedListener}s.
      */
     void clearBlockedListeners();
-
 }

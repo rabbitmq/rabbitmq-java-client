@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -42,6 +41,7 @@ import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.ProtocolVersionMismatchException;
+import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -59,7 +59,7 @@ final class Copyright {
  * To create a broker connection, use {@link ConnectionFactory}.  See {@link Connection}
  * for an example.
  */
-public class AMQConnection extends ShutdownNotifierComponent implements Connection {
+public class AMQConnection extends ShutdownNotifierComponent implements Connection, NetworkConnection {
     /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
     public static final int HANDSHAKE_TIMEOUT = 10000;
 
@@ -102,7 +102,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     };
 
-    private final ConsumerWorkService _workService;
+    protected final ConsumerWorkService _workService;
 
     /** Frame source/sink */
     private final FrameHandler _frameHandler;
@@ -173,9 +173,19 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _frameHandler.getAddress();
     }
 
+    @Override
+    public InetAddress getLocalAddress() {
+        return _frameHandler.getLocalAddress();
+    }
+
     /** {@inheritDoc} */
     public int getPort() {
         return _frameHandler.getPort();
+    }
+
+    @Override
+    public int getLocalPort() {
+        return _frameHandler.getLocalPort();
     }
 
     public FrameHandler getFrameHandler(){
@@ -187,80 +197,24 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _serverProperties;
     }
 
-    /** Construct a new connection using a default ExeceptionHandler
-     * @param username name used to establish connection
-     * @param password for <code><b>username</b></code>
-     * @param frameHandler for sending and receiving frames on this connection
-     * @param executor thread pool service for consumer threads for channels on this connection
-     * @param virtualHost virtual host of this connection
-     * @param clientProperties client info used in negotiating with the server
-     * @param requestedFrameMax max size of frame offered
-     * @param requestedChannelMax max number of channels offered
-     * @param requestedHeartbeat heart-beat in seconds offered
-     * @param saslConfig sasl configuration hook
-     */
-    public AMQConnection(String username,
-                         String password,
-                         FrameHandler frameHandler,
-                         ExecutorService executor,
-                         String virtualHost,
-                         Map<String, Object> clientProperties,
-                         int requestedFrameMax,
-                         int requestedChannelMax,
-                         int requestedHeartbeat,
-                         SaslConfig saslConfig)
-    {
-        this(username,
-             password,
-             frameHandler,
-             executor,
-             virtualHost,
-             clientProperties,
-             requestedFrameMax,
-             requestedChannelMax,
-             requestedHeartbeat,
-             saslConfig,
-             new DefaultExceptionHandler());
-    }
-
     /** Construct a new connection
-     * @param username name used to establish connection
-     * @param password for <code><b>username</b></code>
-     * @param frameHandler for sending and receiving frames on this connection
-     * @param executor thread pool service for consumer threads for channels on this connection
-     * @param virtualHost virtual host of this connection
-     * @param clientProperties client info used in negotiating with the server
-     * @param requestedFrameMax max size of frame offered
-     * @param requestedChannelMax max number of channels offered
-     * @param requestedHeartbeat heart-beat in seconds offered
-     * @param saslConfig sasl configuration hook
-     * @param execeptionHandler handler for exceptions using this connection
+     * @param params parameters for it
      */
-    public AMQConnection(String username,
-                         String password,
-                         FrameHandler frameHandler,
-                         ExecutorService executor,
-                         String virtualHost,
-                         Map<String, Object> clientProperties,
-                         int requestedFrameMax,
-                         int requestedChannelMax,
-                         int requestedHeartbeat,
-                         SaslConfig saslConfig,
-                         ExceptionHandler execeptionHandler)
+    public AMQConnection(ConnectionParams params, FrameHandler frameHandler)
     {
         checkPreconditions();
-        this.username = username;
-        this.password = password;
+        this.username = params.getUsername();
+        this.password = params.getPassword();
         this._frameHandler = frameHandler;
-        this._virtualHost = virtualHost;
-        this._exceptionHandler = execeptionHandler;
-        this._clientProperties = new HashMap<String, Object>(clientProperties);
-        this.requestedFrameMax = requestedFrameMax;
-        this.requestedChannelMax = requestedChannelMax;
-        this.requestedHeartbeat = requestedHeartbeat;
-        this.saslConfig = saslConfig;
+        this._virtualHost = params.getVirtualHost();
+        this._exceptionHandler = params.getExceptionHandler();
+        this._clientProperties = new HashMap<String, Object>(params.getClientProperties());
+        this.requestedFrameMax = params.getRequestedFrameMax();
+        this.requestedChannelMax = params.getRequestedChannelMax();
+        this.requestedHeartbeat = params.getRequestedHeartbeat();
+        this.saslConfig = params.getSaslConfig();
 
-        this._workService  = new ConsumerWorkService(executor);
+        this._workService  = new ConsumerWorkService(params.getExecutor());
         this._channelManager = null;
 
         this._heartbeatSender = new HeartbeatSender(frameHandler);
@@ -384,7 +338,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             int channelMax =
                 negotiateChannelMax(this.requestedChannelMax,
                                     connTune.getChannelMax());
-            _channelManager = new ChannelManager(this._workService, channelMax);
+            _channelManager = instantiateChannelManager(channelMax);
 
             int frameMax =
                 negotiatedMaxValue(this.requestedFrameMax,
@@ -419,6 +373,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = false;
 
         return;
+    }
+
+    protected ChannelManager instantiateChannelManager(int channelMax) {
+        return new ChannelManager(this._workService, channelMax);
     }
 
     /**
@@ -887,5 +845,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     public void clearBlockedListeners() {
         blockedListeners.clear();
+    }
+
+
+    @Override
+    public void addRecoveryListener(RecoveryListener listener) {
+        throw new UnsupportedOperationException("only recoverable connections support recovery listeners");
+    }
+
+    @Override
+    public void removeRecoveryListener(RecoveryListener listener) {
+        throw new UnsupportedOperationException("only recoverable connections support recovery listeners");
     }
 }
