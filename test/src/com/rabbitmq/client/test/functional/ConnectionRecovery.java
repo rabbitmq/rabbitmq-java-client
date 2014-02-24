@@ -22,26 +22,23 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(connection.isOpen());
         closeAndWaitForRecovery();
         assertTrue(connection.isOpen());
-        connection.abort();
     }
 
     public void testConnectionRecoveryWithServerRestart() throws IOException, InterruptedException {
         assertTrue(connection.isOpen());
         restartPrimaryAndWaitForRecovery();
         assertTrue(connection.isOpen());
-        connection.abort();
-        assertFalse(connection.isOpen());
     }
 
     public void testConnectionRecoveryWithMultipleAddresses() throws IOException, InterruptedException {
         final Address[] addresses = {new Address("127.0.0.1"), new Address("127.0.0.1", 5672)};
+        AutorecoveringConnection c = newRecoveringConnection(addresses);
         try {
-            AutorecoveringConnection c = newRecoveringConnection(addresses);
             assertTrue(c.isOpen());
             closeAndWaitForRecovery(c);
             assertTrue(c.isOpen());
         } finally {
-            channel.abort();
+            c.abort();
         }
 
     }
@@ -102,7 +99,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         channel.basicPublish("", "", null, "".getBytes());
         unblock();
         wait(latch);
-        connection.abort();
     }
 
     public void testChannelRecovery() throws IOException, InterruptedException {
@@ -114,7 +110,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         closeAndWaitForRecovery();
         expectChannelRecovery(ch1);
         expectChannelRecovery(ch2);
-        connection.abort();
     }
 
     public void testReturnListenerRecovery() throws IOException, InterruptedException {
@@ -131,7 +126,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         expectChannelRecovery(channel);
         channel.basicPublish("", "unknown", true, false, null, "mandatory1".getBytes());
         wait(latch);
-        connection.abort();
     }
 
     public void testConfirmListenerRecovery() throws IOException, InterruptedException, TimeoutException {
@@ -157,7 +151,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
         waitForConfirms(channel);
         wait(latch);
-        connection.abort();
     }
 
     public void testClientNamedQueueRecovery() throws IOException, InterruptedException, TimeoutException {
@@ -168,7 +161,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         expectChannelRecovery(ch);
         expectQueueRecovery(ch, q);
         ch.queueDelete(q);
-        connection.abort();
     }
 
     public void testServerNamedQueueRecovery() throws IOException, InterruptedException {
@@ -181,7 +173,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         channel.basicPublish(x, "", null, "msg".getBytes());
         assertDelivered(q, 1);
         channel.queueDelete(q);
-        connection.abort();
     }
 
     public void testExchangeToExchangeBindingRecovery() throws IOException, InterruptedException {
@@ -200,7 +191,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         } finally {
             channel.exchangeDelete(x2);
             channel.queueDelete(q);
-            connection.abort();
         }
     }
 
@@ -225,7 +215,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         } finally {
             channel.exchangeDelete(x2);
             channel.queueDelete(q);
-            connection.abort();
         }
     }
 
@@ -246,7 +235,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         } finally {
             channel.exchangeDelete(x2);
             channel.queueDelete(q);
-            connection.abort();
         }
     }
 
@@ -261,8 +249,6 @@ public class ConnectionRecovery extends BrokerTestCase {
             fail("Expected passive declare to fail");
         } catch (IOException ioe) {
             // expected
-        } finally {
-            connection.abort();
         }
     }
 
@@ -276,8 +262,6 @@ public class ConnectionRecovery extends BrokerTestCase {
             fail("Expected passive declare to fail");
         } catch (IOException ioe) {
             // expected
-        } finally {
-            connection.abort();
         }
     }
 
@@ -292,7 +276,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         expectChannelRecovery(channel);
         AMQP.Queue.DeclareOk ok2 = channel.queueDeclarePassive(q);
         assertEquals(0, ok2.getConsumerCount());
-        connection.abort();
     }
 
     public void testChannelRecoveryCallback() throws IOException, InterruptedException {
@@ -313,7 +296,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         expectChannelRecovery(ch1);
         expectChannelRecovery(ch2);
         wait(latch);
-        connection.abort();
     }
 
     public void testBasicAckAfterChannelRecovery() throws IOException, InterruptedException {
@@ -351,7 +333,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
         wait(latch);
         publishingConnection.abort();
-        connection.abort();
     }
 
     private AMQP.Queue.DeclareOk declareClientNamedQueue(Channel ch, String q) throws IOException {
