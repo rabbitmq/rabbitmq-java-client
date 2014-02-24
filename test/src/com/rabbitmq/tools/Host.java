@@ -127,7 +127,6 @@ public class Host {
         }
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static List<ConnectionInfo> listConnections() throws IOException {
         String output = capture(rabbitmqctl("list_connections pid peer_port").getInputStream());
         String[] allLines = output.split("\n");
