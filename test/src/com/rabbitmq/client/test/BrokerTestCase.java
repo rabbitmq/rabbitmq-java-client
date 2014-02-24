@@ -35,7 +35,12 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.tools.Host;
 
 public class BrokerTestCase extends TestCase {
-    protected ConnectionFactory connectionFactory = new ConnectionFactory();
+    protected ConnectionFactory connectionFactory = newConnectionFactory();
+
+    protected ConnectionFactory newConnectionFactory() {
+        final ConnectionFactory cf = new ConnectionFactory();
+        return cf;
+    }
 
     protected Connection connection;
     protected Channel channel;
