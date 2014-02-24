@@ -235,4 +235,6 @@ public interface Connection extends ShutdownNotifier, NetworkConnection, Recover
      * Remove all {@link BlockedListener}s.
      */
     void clearBlockedListeners();
+
+    ExceptionHandler getExceptionHandler();
 }

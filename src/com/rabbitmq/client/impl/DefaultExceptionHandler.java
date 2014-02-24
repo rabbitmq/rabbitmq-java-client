@@ -24,10 +24,11 @@ import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.TopologyRecoveryException;
 
 /**
- * Default implementation of {@link ExceptionHandler} used by {@link AMQConnection}.
+ * Default implementation of {@link com.rabbitmq.client.ExceptionHandler} used by {@link AMQConnection}.
  */
 public class DefaultExceptionHandler implements ExceptionHandler {
     public void handleUnexpectedConnectionDriverException(Connection conn, Throwable exception) {
