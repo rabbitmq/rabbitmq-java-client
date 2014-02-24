@@ -17,6 +17,7 @@
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
+import java.net.ConnectException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AlreadyClosedException;
@@ -68,8 +69,15 @@ public class DefaultExceptionHandler implements ExceptionHandler {
      * @since 3.3.0
      */
     public void handleConnectionRecoveryException(Connection conn, Throwable exception) {
-        System.err.println("Caught an exception during connection recovery!");
-        exception.printStackTrace(System.err);
+        // ignore java.net.ConnectException as those are
+        // expected during recovery and will only produce noisy
+        // traces
+        if (exception instanceof ConnectException) {
+            // no-op
+        } else {
+            System.err.println("Caught an exception during connection recovery!");
+            exception.printStackTrace(System.err);
+        }
     }
 
     /**
