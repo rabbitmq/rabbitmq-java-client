@@ -330,7 +330,7 @@ public class ConnectionRecovery extends BrokerTestCase {
                 try {
                     if (consumed.intValue() > 0 && consumed.intValue() % 4 == 0) {
                         CountDownLatch recoveryLatch = prepareForRecovery(connection);
-                        Host.closeConnection((NetworkConnection) connection);
+                        Host.closeConnection(connection);
                         recoveryLatch.await(30, TimeUnit.MINUTES);
                     }
                     channel.basicAck(envelope.getDeliveryTag(), false);
@@ -372,7 +372,7 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     private CountDownLatch prepareForRecovery(Connection conn) {
         final CountDownLatch latch = new CountDownLatch(1);
-        ((AutorecoveringConnection)conn).addRecoveryListener(new RecoveryListener() {
+        conn.addRecoveryListener(new RecoveryListener() {
             @Override
             public void handleRecovery(Recoverable recoverable) {
                 latch.countDown();
