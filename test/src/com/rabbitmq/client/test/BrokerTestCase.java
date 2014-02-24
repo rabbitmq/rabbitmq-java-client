@@ -38,8 +38,7 @@ public class BrokerTestCase extends TestCase {
     protected ConnectionFactory connectionFactory = newConnectionFactory();
 
     protected ConnectionFactory newConnectionFactory() {
-        final ConnectionFactory cf = new ConnectionFactory();
-        return cf;
+        return new ConnectionFactory();
     }
 
     protected Connection connection;
