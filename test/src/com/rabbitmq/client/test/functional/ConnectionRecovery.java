@@ -1,10 +1,11 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
-import com.rabbitmq.client.impl.recovery.Recoverable;
-import com.rabbitmq.client.impl.recovery.RecoveryListener;
+import com.rabbitmq.client.Recoverable;
+import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
@@ -17,7 +18,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionRecovery extends BrokerTestCase {
     public static final int RECOVERY_INTERVAL = 2000;
-    protected AutorecoveringConnection connection;
 
     public void testConnectionRecovery() throws IOException, InterruptedException {
         assertTrue(connection.isOpen());
@@ -330,7 +330,7 @@ public class ConnectionRecovery extends BrokerTestCase {
                 try {
                     if (consumed.intValue() > 0 && consumed.intValue() % 4 == 0) {
                         CountDownLatch recoveryLatch = prepareForRecovery(connection);
-                        Host.closeConnection(connection);
+                        Host.closeConnection((NetworkConnection) connection);
                         recoveryLatch.await(30, TimeUnit.MINUTES);
                     }
                     channel.basicAck(envelope.getDeliveryTag(), false);
@@ -351,6 +351,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             publishingChannel.basicPublish("", q, null, "msg".getBytes());
         }
         wait(latch);
+        publishingConnection.abort();
         connection.abort();
     }
 
@@ -369,9 +370,9 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertEquals(1, ok2.getMessageCount());
     }
 
-    private CountDownLatch prepareForRecovery(AutorecoveringConnection conn) {
+    private CountDownLatch prepareForRecovery(Connection conn) {
         final CountDownLatch latch = new CountDownLatch(1);
-        conn.addRecoveryListener(new RecoveryListener() {
+        ((AutorecoveringConnection)conn).addRecoveryListener(new RecoveryListener() {
             @Override
             public void handleRecovery(Recoverable recoverable) {
                 latch.countDown();
@@ -380,7 +381,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         return latch;
     }
 
-    private CountDownLatch prepareForShutdown(AutorecoveringConnection conn) throws InterruptedException {
+    private CountDownLatch prepareForShutdown(Connection conn) throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         conn.addShutdownListener(new ShutdownListener() {
             @Override
@@ -392,7 +393,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     private void closeAndWaitForRecovery() throws IOException, InterruptedException {
-        closeAndWaitForRecovery(this.connection);
+        closeAndWaitForRecovery((AutorecoveringConnection)this.connection);
     }
 
     private void closeAndWaitForRecovery(AutorecoveringConnection connection) throws IOException, InterruptedException {
@@ -405,7 +406,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         restartPrimaryAndWaitForRecovery(this.connection);
     }
 
-    private void restartPrimaryAndWaitForRecovery(AutorecoveringConnection connection) throws IOException, InterruptedException {
+    private void restartPrimaryAndWaitForRecovery(Connection connection) throws IOException, InterruptedException {
         CountDownLatch latch = prepareForRecovery(connection);
         // restart without tearing down and setting up
         // new connection and channel
@@ -415,18 +416,6 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     private void expectChannelRecovery(Channel ch) throws InterruptedException {
         assertTrue(ch.isOpen());
-    }
-
-    protected void setUp()
-            throws IOException {
-        openConnection();
-        openChannel();
-    }
-
-    protected void tearDown()
-            throws IOException {
-        closeChannel();
-        closeConnection();
     }
 
     @Override
@@ -456,17 +445,6 @@ public class ConnectionRecovery extends BrokerTestCase {
             cf.setTopologyRecovery(false);
         }
         return cf;
-    }
-
-    @Override
-    public void openConnection() throws IOException {
-        connection = newRecoveringConnection(false);
-    }
-
-    @Override
-    public void openChannel()
-            throws IOException {
-        channel = connection.createChannel();
     }
 
     private void wait(CountDownLatch latch) throws InterruptedException {
