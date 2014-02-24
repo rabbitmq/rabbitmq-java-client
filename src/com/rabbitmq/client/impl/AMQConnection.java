@@ -41,6 +41,7 @@ import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.ProtocolVersionMismatchException;
+import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -844,5 +845,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     public void clearBlockedListeners() {
         blockedListeners.clear();
+    }
+
+
+    @Override
+    public void addRecoveryListener(RecoveryListener listener) {
+        throw new UnsupportedOperationException("only recoverable connections support recovery listeners");
+    }
+
+    @Override
+    public void removeRecoveryListener(RecoveryListener listener) {
+        throw new UnsupportedOperationException("only recoverable connections support recovery listeners");
     }
 }

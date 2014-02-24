@@ -5,6 +5,8 @@ import com.rabbitmq.client.Address;
 import com.rabbitmq.client.BlockedListener;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.Recoverable;
+import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.TopologyRecoveryException;
@@ -37,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * </ol>
  *
  * @see com.rabbitmq.client.Connection
- * @see com.rabbitmq.client.impl.recovery.Recoverable
+ * @see com.rabbitmq.client.Recoverable
  * @see com.rabbitmq.client.ConnectionFactory#setAutomaticRecovery(boolean)
  * @see com.rabbitmq.client.ConnectionFactory#setTopologyRecovery(boolean)
  * @since 3.3.0
@@ -279,7 +281,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     /**
      * Adds the recovery listener
-     * @param listener {@link com.rabbitmq.client.impl.recovery.RecoveryListener} to execute after this connection recovers from network failure
+     * @param listener {@link com.rabbitmq.client.RecoveryListener} to execute after this connection recovers from network failure
      */
     public void addRecoveryListener(RecoveryListener listener) {
         this.recoveryListeners.add(listener);
@@ -287,7 +289,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     /**
      * Removes the recovery listener
-     * @param listener {@link com.rabbitmq.client.impl.recovery.RecoveryListener} to remove
+     * @param listener {@link com.rabbitmq.client.RecoveryListener} to remove
      */
     public void removeRecoveryListener(RecoveryListener listener) {
         this.recoveryListeners.remove(listener);
@@ -385,9 +387,11 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                 this.delegate = this.cf.newConnection();
                 recovering = false;
             } catch (ConnectException ce) {
-                this.delegate.getExceptionHandler().handleConnectionRecoveryException(this, ce);
                 // TODO: exponential back-off
                 Thread.sleep(this.params.getNetworkRecoveryInterval());
+                this.getExceptionHandler().handleConnectionRecoveryException(this, ce);
+            } catch (Exception e) {
+                this.getExceptionHandler().handleConnectionRecoveryException(this, e);
             }
         }
     }

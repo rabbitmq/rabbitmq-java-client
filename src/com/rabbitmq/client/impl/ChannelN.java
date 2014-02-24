@@ -37,6 +37,7 @@ import com.rabbitmq.client.FlowListener;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.UnexpectedMethodError;
@@ -1089,5 +1090,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             if (unconfirmedSet.isEmpty())
                 unconfirmedSet.notifyAll();
         }
+    }
+
+    @Override
+    public void addRecoveryListener(RecoveryListener listener) {
+        throw new UnsupportedOperationException("only channels on recoverable connections support recovery listeners");
+    }
+
+    @Override
+    public void removeRecoveryListener(RecoveryListener listener) {
+        throw new UnsupportedOperationException("only channels on recoverable connections support recovery listeners");
     }
 }

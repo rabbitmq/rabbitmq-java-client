@@ -1,4 +1,4 @@
-package com.rabbitmq.client.impl.recovery;
+package com.rabbitmq.client;
 
 /**
  * Provides a way to register (network, AMQP 0-9-1) connection recovery

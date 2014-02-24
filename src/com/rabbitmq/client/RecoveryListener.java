@@ -1,4 +1,4 @@
-package com.rabbitmq.client.impl.recovery;
+package com.rabbitmq.client;
 
 /**
  * A RecoveryListener receives notifications about completed automatic connection
