@@ -35,7 +35,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ExceptionHandler;
+import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
 

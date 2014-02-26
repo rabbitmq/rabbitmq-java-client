@@ -1,5 +1,6 @@
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.SaslConfig;
 
 import java.util.Map;
@@ -32,12 +33,13 @@ public class ConnectionParams {
      * @param saslConfig sasl configuration hook
      * @param networkRecoveryInterval interval used when recovering from network failure
      * @param topologyRecovery should topology (queues, exchanges, bindings, consumers) recovery be performed?
+     * @param exceptionHandler
      */
     public ConnectionParams(String username, String password, ExecutorService executor,
                             String virtualHost, Map<String, Object> clientProperties,
                             int requestedFrameMax, int requestedChannelMax, int requestedHeartbeat,
                             SaslConfig saslConfig, int networkRecoveryInterval,
-                            boolean topologyRecovery) {
+                            boolean topologyRecovery, ExceptionHandler exceptionHandler) {
         this.username = username;
         this.password = password;
         this.executor = executor;
@@ -49,9 +51,8 @@ public class ConnectionParams {
         this.saslConfig = saslConfig;
         this.networkRecoveryInterval = networkRecoveryInterval;
         this.topologyRecovery = topologyRecovery;
-        
 
-        this.exceptionHandler = new DefaultExceptionHandler();
+        this.exceptionHandler = exceptionHandler;
     }
 
     public String getUsername() {
@@ -99,7 +100,7 @@ public class ConnectionParams {
     }
 
     public ConnectionParams exceptionHandler(ExceptionHandler exceptionHandler) {
-        this.exceptionHandler = exceptionHandler;
+        setExceptionHandler(exceptionHandler);
         return this;
     }
 

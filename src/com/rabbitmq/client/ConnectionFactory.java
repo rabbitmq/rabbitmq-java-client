@@ -33,6 +33,7 @@ import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
+import com.rabbitmq.client.impl.DefaultExceptionHandler;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
@@ -90,6 +91,7 @@ public class ConnectionFactory implements Cloneable {
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
     private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
+    private ExceptionHandler exceptionHandler     = null;
 
     private boolean automaticRecovery             = false;
     private boolean topologyRecovery              = true;
@@ -426,6 +428,25 @@ public class ConnectionFactory implements Cloneable {
         this.sharedExecutor = executor;
     }
 
+    /**
+     * Get the exception handler.
+     *
+     * @see ExceptionHandler
+     */
+    public ExceptionHandler getExceptionHandler() {
+        return exceptionHandler;
+    }
+
+    /**
+     * Set the exception handler to use by default for newly created connections.
+     *
+     * @see ExceptionHandler
+     */
+
+    public void setExceptionHandler(ExceptionHandler exceptionHandler) {
+        this.exceptionHandler = exceptionHandler;
+    }
+
     public boolean isSSL(){
         return getSocketFactory() instanceof SSLSocketFactory;
     }
@@ -559,7 +580,7 @@ public class ConnectionFactory implements Cloneable {
     public ConnectionParams params(ExecutorService executor) {
         return new ConnectionParams(username, password, executor, virtualHost, getClientProperties(),
                                     requestedFrameMax, requestedChannelMax, requestedHeartbeat, saslConfig,
-                                    networkRecoveryInterval, topologyRecovery);
+                                    networkRecoveryInterval, topologyRecovery, exceptionHandler);
     }
 
     /**
