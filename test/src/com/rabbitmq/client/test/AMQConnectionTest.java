@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+import com.rabbitmq.client.impl.ConnectionParams;
+import com.rabbitmq.client.TopologyRecoveryException;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
@@ -87,17 +89,9 @@ public class AMQConnectionTest extends TestCase {
         MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, _mockFrameHandler.countHeadersSent());
         try {
-            new AMQConnection(factory.getUsername(),
-                    factory.getPassword(),
-                    _mockFrameHandler,
-                    Executors.newFixedThreadPool(1),
-                    factory.getVirtualHost(),
-                    factory.getClientProperties(),
-                    factory.getRequestedFrameMax(),
-                    factory.getRequestedChannelMax(),
-                    factory.getRequestedHeartbeat(),
-                    factory.getSaslConfig(),
-                    handler).start();
+            ConnectionParams params = factory.params(Executors.newFixedThreadPool(1));
+            params.setExceptionHandler(handler);
+            new AMQConnection(params, _mockFrameHandler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
            // As expected
@@ -129,17 +123,9 @@ public class AMQConnectionTest extends TestCase {
         MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, this._mockFrameHandler.countHeadersSent());
         try {
-            new AMQConnection(factory.getUsername(),
-                    factory.getPassword(),
-                    this._mockFrameHandler,
-                    Executors.newFixedThreadPool(1),
-                    factory.getVirtualHost(),
-                    factory.getClientProperties(),
-                    factory.getRequestedFrameMax(),
-                    factory.getRequestedChannelMax(),
-                    factory.getRequestedHeartbeat(),
-                    factory.getSaslConfig(),
-                    handler).start();
+            ConnectionParams params = factory.params(Executors.newFixedThreadPool(1));
+            params.setExceptionHandler(handler);
+            new AMQConnection(params, this._mockFrameHandler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
            // As expected
@@ -220,6 +206,16 @@ public class AMQConnectionTest extends TestCase {
         public void flush() throws IOException {
             // no need to implement this: don't bother writing the frame
         }
+
+        @Override
+        public InetAddress getLocalAddress() {
+            return null;
+        }
+
+        @Override
+        public int getLocalPort() {
+            return -1;
+        }
     }
 
     /** Exception handler to facilitate testing. */
@@ -253,6 +249,19 @@ public class AMQConnectionTest extends TestCase {
                                             String methodName)
         {
             fail("handleConsumerException " + consumerTag + " " + methodName + ": " + ex);
+        }
+
+        public void handleConnectionRecoveryException(Connection conn, Throwable ex) {
+            _handledExceptions.add(ex);
+        }
+
+        public void handleChannelRecoveryException(Channel ch, Throwable ex) {
+            _handledExceptions.add(ex);
+        }
+
+        @Override
+        public void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException ex) {
+            _handledExceptions.add(ex);
         }
 
         public List<Throwable> getHandledExceptions() {

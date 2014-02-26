@@ -28,12 +28,7 @@ import java.net.SocketTimeoutException;
  * Implementations must be thread-safe, and not allow frames to be interleaved, either while reading or writing.
  */
 
-public interface FrameHandler {
-    /** Retrieve address of peer. */
-    InetAddress getAddress();
-
-    /** Retrieve port number of peer. */
-    int getPort();
+public interface FrameHandler extends NetworkConnection {
 
     /**
      * Set the underlying socket's read timeout in milliseconds, if applicable.

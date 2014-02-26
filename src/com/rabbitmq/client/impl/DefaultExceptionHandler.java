@@ -17,12 +17,14 @@
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
+import java.net.ConnectException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.TopologyRecoveryException;
 
 /**
  * Default implementation of {@link ExceptionHandler} used by {@link AMQConnection}.
@@ -61,6 +63,37 @@ public class DefaultExceptionHandler implements ExceptionHandler {
                                               + " (" + consumerTag + ")"
                                               + " method " + methodName
                                               + " for channel " + channel);
+    }
+
+    /**
+     * @since 3.3.0
+     */
+    public void handleConnectionRecoveryException(Connection conn, Throwable exception) {
+        // ignore java.net.ConnectException as those are
+        // expected during recovery and will only produce noisy
+        // traces
+        if (exception instanceof ConnectException) {
+            // no-op
+        } else {
+            System.err.println("Caught an exception during connection recovery!");
+            exception.printStackTrace(System.err);
+        }
+    }
+
+    /**
+     * @since 3.3.0
+     */
+    public void handleChannelRecoveryException(Channel ch, Throwable exception) {
+        System.err.println("Caught an exception when recovering channel " + ch.getChannelNumber());
+        exception.printStackTrace(System.err);
+    }
+
+    /**
+     * @since 3.3.0
+     */
+    public void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException exception) {
+        System.err.println("Caught an exception when recovering topology " + exception.getMessage());
+        exception.printStackTrace(System.err);
     }
 
     protected void handleChannelKiller(Channel channel, Throwable exception, String what) {

@@ -57,16 +57,6 @@ public class BlockedConnection extends BrokerTestCase {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-    private void block() throws IOException, InterruptedException {
-        Host.rabbitmqctl("set_vm_memory_high_watermark 0.000000001");
-        setResourceAlarm("disk");
-    }
-
-    private void unblock() throws IOException, InterruptedException {
-        Host.rabbitmqctl("set_vm_memory_high_watermark 0.4");
-        clearResourceAlarm("disk");
-    }
-
     private Connection connection(final CountDownLatch latch) throws IOException {
         ConnectionFactory factory = new ConnectionFactory();
         Connection connection = factory.newConnection();

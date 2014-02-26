@@ -43,7 +43,7 @@ public class Address {
      */
     public Address(String host) {
         _host = host;
-        _port = -1;
+        _port = ConnectionFactory.USE_DEFAULT_PORT;
     }
 
     /**

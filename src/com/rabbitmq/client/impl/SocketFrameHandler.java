@@ -58,6 +58,10 @@ public class SocketFrameHandler implements FrameHandler {
         return _socket.getInetAddress();
     }
 
+    public InetAddress getLocalAddress() {
+        return _socket.getLocalAddress();
+    }
+
     // For testing only
     public DataInputStream getInputStream() {
         return _inputStream;
@@ -65,6 +69,10 @@ public class SocketFrameHandler implements FrameHandler {
 
     public int getPort() {
         return _socket.getPort();
+    }
+
+    public int getLocalPort() {
+        return _socket.getLocalPort();
     }
 
     public void setTimeout(int timeoutMs)

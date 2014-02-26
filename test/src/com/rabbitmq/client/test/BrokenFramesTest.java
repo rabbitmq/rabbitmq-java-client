@@ -66,17 +66,7 @@ public class BrokenFramesTest extends TestCase {
         myFrameHandler.setFrames(frames.iterator());
 
         try {
-            new AMQConnection(factory.getUsername(),
-                              factory.getPassword(),
-                              myFrameHandler,
-                              Executors.newFixedThreadPool(1),
-                              factory.getVirtualHost(),
-                              factory.getClientProperties(),
-                              factory.getRequestedFrameMax(),
-                              factory.getRequestedChannelMax(),
-                              factory.getRequestedHeartbeat(),
-                              factory.getSaslConfig())
-            .start();
+            new AMQConnection(factory.params(Executors.newFixedThreadPool(1)), myFrameHandler).start();
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
@@ -102,17 +92,7 @@ public class BrokenFramesTest extends TestCase {
         myFrameHandler.setFrames(frames.iterator());
 
         try {
-            new AMQConnection(factory.getUsername(),
-                              factory.getPassword(),
-                              myFrameHandler,
-                              Executors.newFixedThreadPool(1),
-                              factory.getVirtualHost(),
-                              factory.getClientProperties(),
-                              factory.getRequestedFrameMax(),
-                              factory.getRequestedChannelMax(),
-                              factory.getRequestedHeartbeat(),
-                              factory.getSaslConfig())
-                    .start();
+            new AMQConnection(factory.params(Executors.newFixedThreadPool(1)), myFrameHandler).start();
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
@@ -176,6 +156,16 @@ public class BrokenFramesTest extends TestCase {
 
         public void flush() throws IOException {
             // no need to implement this: don't bother writing the frame
+        }
+
+        @Override
+        public InetAddress getLocalAddress() {
+            return null;
+        }
+
+        @Override
+        public int getLocalPort() {
+            return -1;
         }
     }
 
