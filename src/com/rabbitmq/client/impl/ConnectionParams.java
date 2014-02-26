@@ -49,7 +49,6 @@ public class ConnectionParams {
         this.saslConfig = saslConfig;
         this.networkRecoveryInterval = networkRecoveryInterval;
         this.topologyRecovery = topologyRecovery;
-        
 
         this.exceptionHandler = new DefaultExceptionHandler();
     }
