@@ -420,9 +420,9 @@ public class ConnectionRecovery extends BrokerTestCase {
     private ConnectionFactory buildConnectionFactoryWithRecoveryEnabled(boolean disableTopologyRecovery) {
         ConnectionFactory cf = new ConnectionFactory();
         cf.setNetworkRecoveryInterval(RECOVERY_INTERVAL);
-        cf.setAutomaticRecovery(true);
+        cf.setAutomaticRecoveryEnabled(true);
         if (disableTopologyRecovery) {
-            cf.setTopologyRecovery(false);
+            cf.setTopologyRecoveryEnabled(false);
         }
         return cf;
     }
