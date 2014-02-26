@@ -487,7 +487,7 @@ public class ConnectionFactory implements Cloneable {
      * Enables or disables automatic connection recovery
      * @param automaticRecovery if true, enables connection recovery
      */
-    public void setAutomaticRecovery(boolean automaticRecovery) {
+    public void setAutomaticRecoveryEnabled(boolean automaticRecovery) {
         this.automaticRecovery = automaticRecovery;
     }
 
@@ -504,7 +504,7 @@ public class ConnectionFactory implements Cloneable {
      * Enables or disables topology recovery
      * @param topologyRecovery if true, enables topology recovery
      */
-    public void setTopologyRecovery(boolean topologyRecovery) {
+    public void setTopologyRecoveryEnabled(boolean topologyRecovery) {
         this.topologyRecovery = topologyRecovery;
     }
 
