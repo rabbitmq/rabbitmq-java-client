@@ -431,7 +431,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Get the exception handler.
      *
-     * @see ExceptionHandler
+     * @see com.rabbitmq.client.ExceptionHandler
      */
     public ExceptionHandler getExceptionHandler() {
         return exceptionHandler;
@@ -440,7 +440,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Set the exception handler to use for newly created connections.
      *
-     * @see ExceptionHandler
+     * @see com.rabbitmq.client.ExceptionHandler
      */
 
     public void setExceptionHandler(ExceptionHandler exceptionHandler) {
