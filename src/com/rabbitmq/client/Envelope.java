@@ -48,7 +48,11 @@ public class Envelope {
     }
 
     /**
-     * Get the redelivery flag included in this parameter envelope
+     * Get the redelivery flag included in this parameter envelope. This is a
+     * hint as to whether this message may have been delivered before (but not
+     * acknowledged). If the flag is not set, the message definitely has not
+     * been delivered before. If it is set, it may have been delivered before.
+     *
      * @return the redelivery flag
      */
     public boolean isRedeliver() {
