@@ -438,7 +438,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Set the exception handler to use by default for newly created connections.
+     * Set the exception handler to use for newly created connections.
      *
      * @see ExceptionHandler
      */
