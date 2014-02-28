@@ -72,7 +72,6 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         }
     }
 
-    @Override
     public boolean flowBlocked() {
         return delegate.flowBlocked();
     }
