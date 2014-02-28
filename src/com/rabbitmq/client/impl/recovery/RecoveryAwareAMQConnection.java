@@ -1,5 +1,6 @@
 package com.rabbitmq.client.impl.recovery;
 
+import com.rabbitmq.client.ThreadFactory;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandler;
@@ -14,7 +15,7 @@ public class RecoveryAwareAMQConnection extends AMQConnection {
     }
 
     @Override
-    protected RecoveryAwareChannelManager instantiateChannelManager(int channelMax) {
+    protected RecoveryAwareChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
         return new RecoveryAwareChannelManager(super._workService, channelMax);
     }
 }
