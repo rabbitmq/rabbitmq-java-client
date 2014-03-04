@@ -23,7 +23,7 @@ public class ConsumerPriorities extends BrokerTestCase {
         Channel ch = connection.createChannel();
         String queue = ch.queueDeclare().getQueue();
         try {
-            ch.basicConsume(queue, true, "", false, false, args, new QueueingConsumer(ch));
+            ch.basicConsume(queue, true, args, new QueueingConsumer(ch));
             fail("Validation should fail for " + args);
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
@@ -37,14 +37,14 @@ public class ConsumerPriorities extends BrokerTestCase {
         QueueingConsumer highConsumer = new QueueingConsumer(channel);
         QueueingConsumer medConsumer = new QueueingConsumer(channel);
         QueueingConsumer lowConsumer = new QueueingConsumer(channel);
-        channel.basicConsume(queue, true, "high", false, false, args(1), highConsumer);
-        channel.basicConsume(queue, true, "med", false, false, null, medConsumer);
-        channel.basicConsume(queue, true, "low", false, false, args(-1), lowConsumer);
+        String high = channel.basicConsume(queue, true, args(1), highConsumer);
+        String med = channel.basicConsume(queue, true, medConsumer);
+        channel.basicConsume(queue, true, args(-1), lowConsumer);
 
         publish(queue, COUNT, "high");
-        channel.basicCancel("high");
+        channel.basicCancel(high);
         publish(queue, COUNT, "med");
-        channel.basicCancel("med");
+        channel.basicCancel(med);
         publish(queue, COUNT, "low");
 
         assertContents(highConsumer, COUNT, "high");

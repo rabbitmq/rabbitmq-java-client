@@ -75,5 +75,6 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(HeadersExchangeValidation.class);
         suite.addTestSuite(ConsumerPriorities.class);
         suite.addTestSuite(Policies.class);
+        suite.addTestSuite(PerConsumerPrefetch.class);
     }
 }
