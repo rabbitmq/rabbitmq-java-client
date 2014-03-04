@@ -25,8 +25,6 @@ import com.rabbitmq.client.ShutdownSignalException;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Consumer implements Runnable {
 
@@ -34,7 +32,6 @@ public class Consumer implements Runnable {
     private Channel channel;
     private String           id;
     private String           queueName;
-    private int              prefetch;
     private int              txSize;
     private boolean          autoAck;
     private int              multiAckEvery;
@@ -43,12 +40,11 @@ public class Consumer implements Runnable {
     private long             timeLimit;
 
     public Consumer(Channel channel, String id,
-                    String queueName, int prefetch, int txSize, boolean autoAck,
+                    String queueName, int txSize, boolean autoAck,
                     int multiAckEvery, Stats stats, int msgLimit, int timeLimit) {
 
         this.channel       = channel;
         this.id            = id;
-        this.prefetch      = prefetch;
         this.queueName     = queueName;
         this.txSize        = txSize;
         this.autoAck       = autoAck;
@@ -66,7 +62,7 @@ public class Consumer implements Runnable {
 
         try {
             q = new QueueingConsumer(channel);
-            channel.basicConsume(queueName, autoAck, args(prefetch), q);
+            channel.basicConsume(queueName, autoAck, q);
 
             while ((timeLimit == 0 || now < startTime + timeLimit) &&
                    (msgLimit == 0 || totalMsgCount < msgLimit)) {
@@ -81,7 +77,7 @@ public class Consumer implements Runnable {
                 } catch (ConsumerCancelledException e) {
                     System.out.println("Consumer cancelled by broker. Re-consuming.");
                     q = new QueueingConsumer(channel);
-                    channel.basicConsume(queueName, autoAck, args(prefetch), q);
+                    channel.basicConsume(queueName, autoAck, q);
                     continue;
                 }
                 totalMsgCount++;
@@ -117,13 +113,5 @@ public class Consumer implements Runnable {
         } catch (ShutdownSignalException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private Map<String, Object> args(int prefetch) {
-        Map<String, Object> a = new HashMap<String, Object>();
-        if (prefetch != 0) {
-            a.put("x-prefetch", prefetch);
-        }
-        return a;
     }
 }

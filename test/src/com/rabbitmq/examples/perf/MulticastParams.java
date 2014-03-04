@@ -185,8 +185,9 @@ public class MulticastParams {
         Channel channel = connection.createChannel();
         if (consumerTxSize > 0) channel.txSelect();
         String qName = configureQueue(connection, id);
-        if (channelPrefetch > 0) channel.basicQos(channelPrefetch);
-        return new Consumer(channel, id, qName, consumerPrefetch,
+        if (consumerPrefetch > 0) channel.basicQos(consumerPrefetch);
+        if (channelPrefetch > 0) channel.basicQos(channelPrefetch, true);
+        return new Consumer(channel, id, qName,
                                          consumerTxSize, autoAck, multiAckEvery,
                                          stats, consumerMsgCount, timeLimit);
     }

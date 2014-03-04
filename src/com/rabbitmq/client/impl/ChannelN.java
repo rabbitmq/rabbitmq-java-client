@@ -596,6 +596,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public void basicQos(int prefetchCount, boolean global)
+            throws IOException
+    {
+        basicQos(0, prefetchCount, global);
+    }
+
+    /** Public API - {@inheritDoc} */
     public void basicQos(int prefetchCount)
 	throws IOException
     {
