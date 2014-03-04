@@ -1,7 +1,5 @@
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
@@ -10,8 +8,6 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
 
 import static com.rabbitmq.client.test.functional.QosTests.drain;
 
@@ -111,23 +107,6 @@ public class PerConsumerPrefetch extends BrokerTestCase {
         drain(c, 10);
     }
 
-    public void testPrefetchValidation() throws IOException {
-        validationFail(-1);
-        validationFail(new HashMap<String, Object>());
-        validationFail("banana");
-    }
-
-    private void validationFail(Object badThing) throws IOException {
-        Channel ch = connection.createChannel();
-        QueueingConsumer c = new QueueingConsumer(ch);
-
-        try {
-            ch.basicConsume(q, false, args(badThing), c);
-        } catch (IOException e) {
-            checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
-        }
-    }
-
     private void publish(String q, int n) throws IOException {
         for (int i = 0; i < n; i++) {
             channel.basicPublish("", q, null, "".getBytes());
@@ -135,7 +114,8 @@ public class PerConsumerPrefetch extends BrokerTestCase {
     }
 
     private void consume(QueueingConsumer c, int prefetch, boolean autoAck) throws IOException {
-        channel.basicConsume(q, autoAck, args(prefetch), c);
+        channel.basicQos(prefetch);
+        channel.basicConsume(q, autoAck, c);
     }
 
     private void ack(Delivery del, boolean multi) throws IOException {
@@ -148,11 +128,5 @@ public class PerConsumerPrefetch extends BrokerTestCase {
 
     private void nack(Delivery del, boolean multi, boolean requeue) throws IOException {
         channel.basicNack(del.getEnvelope().getDeliveryTag(), multi, requeue);
-    }
-
-    private Map<String, Object> args(Object prefetch) {
-        Map<String, Object> a = new HashMap<String, Object>();
-        a.put("x-prefetch", prefetch);
-        return a;
     }
 }
