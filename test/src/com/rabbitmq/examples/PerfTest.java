@@ -58,7 +58,7 @@ public class PerfTest {
             long confirm         = intArg(cmd, 'c', -1);
             boolean autoAck      = cmd.hasOption('a');
             int multiAckEvery    = intArg(cmd, 'A', 0);
-            int channelPrefetch  = intArg(cmd, 'G', 0);
+            int channelPrefetch  = intArg(cmd, 'Q', 0);
             int consumerPrefetch = intArg(cmd, 'q', 0);
             int minMsgSize       = intArg(cmd, 's', 0);
             int timeLimit        = intArg(cmd, 'z', 0);
@@ -146,7 +146,7 @@ public class PerfTest {
         options.addOption(new Option("a", "autoack",       false,"auto ack"));
         options.addOption(new Option("A", "multiAckEvery", true, "multi ack every"));
         options.addOption(new Option("q", "qos",           true, "consumer prefetch count"));
-        options.addOption(new Option("G", "globalQos",     true, "channel prefetch count"));
+        options.addOption(new Option("Q", "globalQos",     true, "channel prefetch count"));
         options.addOption(new Option("s", "size",          true, "message size"));
         options.addOption(new Option("z", "time",          true, "time limit"));
         options.addOption(new Option("C", "pmessages", true, "producer message count"));
