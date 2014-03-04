@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
 
 import com.rabbitmq.client.Channel;
 
-final class ConsumerWorkService {
+final public class ConsumerWorkService {
     private static final int MAX_RUNNABLE_BLOCK_SIZE = 16;
     private static final int DEFAULT_NUM_THREADS = 5;
     private final ExecutorService executor;
@@ -61,6 +61,14 @@ final class ConsumerWorkService {
         if (this.workPool.addWorkItem(channel, runnable)) {
             this.executor.execute(new WorkPoolRunnable());
         }
+    }
+
+    /**
+     * @return true if executor used by this work service is managed
+     *              by it and wasn't provided by the user
+     */
+    public boolean usesPrivateExecutor() {
+        return privateExecutor;
     }
 
     private final class WorkPoolRunnable implements Runnable {

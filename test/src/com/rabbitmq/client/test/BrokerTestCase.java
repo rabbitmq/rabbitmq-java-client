@@ -35,7 +35,11 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.tools.Host;
 
 public class BrokerTestCase extends TestCase {
-    protected ConnectionFactory connectionFactory = new ConnectionFactory();
+    protected ConnectionFactory connectionFactory = newConnectionFactory();
+
+    protected ConnectionFactory newConnectionFactory() {
+        return new ConnectionFactory();
+    }
 
     protected Connection connection;
     protected Channel channel;
@@ -260,5 +264,15 @@ public class BrokerTestCase extends TestCase {
 
     protected void clearResourceAlarm(String source) throws IOException, InterruptedException {
         Host.executeCommand("cd ../rabbitmq-test; make clear-resource-alarm SOURCE=" + source);
+    }
+
+    protected void block() throws IOException, InterruptedException {
+        Host.rabbitmqctl("set_vm_memory_high_watermark 0.000000001");
+        setResourceAlarm("disk");
+    }
+
+    protected void unblock() throws IOException, InterruptedException {
+        Host.rabbitmqctl("set_vm_memory_high_watermark 0.4");
+        clearResourceAlarm("disk");
     }
 }

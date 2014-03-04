@@ -19,6 +19,7 @@ package com.rabbitmq.client.impl;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.TopologyRecoveryException;
 
 /**
  * Interface to an exception-handling object.
@@ -47,7 +48,7 @@ public interface ExceptionHandler {
      * Perform any required exception processing for the situation
      * when the driver thread for the connection has called a
      * FlowListener's handleFlow method, and that method has
-     * thrown an exeption.
+     * thrown an exception.
      * @param channel the ChannelN that held the FlowListener
      * @param exception the exception thrown by FlowListener.handleFlow
      */
@@ -88,4 +89,34 @@ public interface ExceptionHandler {
                                  Consumer consumer,
                                  String consumerTag,
                                  String methodName);
+
+    /**
+     * Perform any required exception processing for the situation
+     * when the driver thread for the connection has an exception
+     * during connection recovery that it can't otherwise deal with.
+     * @param conn the Connection that caught the exception
+     * @param exception the exception caught in the driver thread
+     */
+    void handleConnectionRecoveryException(Connection conn, Throwable exception);
+
+    /**
+     * Perform any required exception processing for the situation
+     * when the driver thread for the connection has an exception
+     * during channel recovery that it can't otherwise deal with.
+     * @param ch the Channel that caught the exception
+     * @param exception the exception caught in the driver thread
+     */
+    void handleChannelRecoveryException(Channel ch, Throwable exception);
+
+    /**
+     * Perform any required exception processing for the situation
+     * when the driver thread for the connection has an exception
+     * during topology (exchanges, queues, bindings, consumers) recovery
+     * that it can't otherwise deal with.
+     * @param conn the Connection that caught the exception
+     * @param ch the Channel that caught the exception
+     * @param exception the exception caught in the driver thread
+     */
+
+    void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException exception);
 }

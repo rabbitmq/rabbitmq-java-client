@@ -129,9 +129,7 @@ public class QosScaling {
         channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);
         try {
-            channel.flow(false);
             publish(consume(consumer));
-            channel.flow(true);
             return drain(consumer);
         } finally {
             connection.abort();
