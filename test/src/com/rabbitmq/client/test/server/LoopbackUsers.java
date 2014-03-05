@@ -1,8 +1,6 @@
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.Address;
 import com.rabbitmq.client.AuthenticationFailureException;
-import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.tools.Host;
 import junit.framework.TestCase;
@@ -73,19 +71,20 @@ public class LoopbackUsers extends TestCase {
 
     // Find the first IP address of a network interface that is up, not loopback, not point to point (e.g. VPN thing)
     private static InetAddress findRealIPAddress() throws SocketException {
-        Enumeration<NetworkInterface> ifs = NetworkInterface.getNetworkInterfaces();
-        while (ifs.hasMoreElements()) {
-            NetworkInterface nif = ifs.nextElement();
-            if (nif.isUp() && !nif.isPointToPoint() && !nif.isLoopback() && !nif.isVirtual()) {
-                Enumeration<InetAddress> addrs = nif.getInetAddresses();
-                while (addrs.hasMoreElements()) {
-                    InetAddress addr = addrs.nextElement();
-                    if (addr instanceof Inet4Address) {
-                        return addr;
-                    }
-                }
-            }
-        }
-        throw new RuntimeException("Could not determine real network address");
+        throw new RuntimeException("this test will be enabled once we stop supporting Java 1.5");
+//        Enumeration<NetworkInterface> ifs = NetworkInterface.getNetworkInterfaces();
+//        while (ifs.hasMoreElements()) {
+//            NetworkInterface nif = ifs.nextElement();
+//            if (nif.isUp() && !nif.isPointToPoint() && !nif.isLoopback() && !nif.isVirtual()) {
+//                Enumeration<InetAddress> addrs = nif.getInetAddresses();
+//                while (addrs.hasMoreElements()) {
+//                    InetAddress addr = addrs.nextElement();
+//                    if (addr instanceof Inet4Address) {
+//                        return addr;
+//                    }
+//                }
+//            }
+//        }
+//        throw new RuntimeException("Could not determine real network address");
     }
 }
