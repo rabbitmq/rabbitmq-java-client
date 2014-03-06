@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -65,10 +66,10 @@ public class QosTests extends BrokerTestCase
      * receive n messages - check that we receive no fewer and cannot
      * receive more
      **/
-    public Queue<Delivery> drain(QueueingConsumer c, int n)
+    public static Deque<Delivery> drain(QueueingConsumer c, int n)
         throws IOException
     {
-        Queue<Delivery> res = new LinkedList<Delivery>();
+        Deque<Delivery> res = new LinkedList<Delivery>();
         try {
             long start = System.currentTimeMillis();
             for (int i = 0; i < n; i++) {
@@ -83,17 +84,6 @@ public class QosTests extends BrokerTestCase
             fail("interrupted");
         }
         return res;
-    }
-
-    public void testMessageLimitGlobalFails()
-        throws IOException
-    {
-        try {
-            channel.basicQos(0, 1, true);
-            fail("basic.qos{global=false} should not be supported");
-        } catch (IOException ioe) {
-            checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
-        }
     }
 
     public void testMessageLimitPrefetchSizeFails()
@@ -120,7 +110,7 @@ public class QosTests extends BrokerTestCase
     {
         QueueingConsumer c = new QueueingConsumer(channel);
         declareBindConsume(channel, c, true);
-        channel.basicQos(1);
+        channel.basicQos(1, true);
         fill(2);
         drain(c, 2);
     }
@@ -128,7 +118,7 @@ public class QosTests extends BrokerTestCase
     public void testNoAckObeysLimit()
         throws IOException
     {
-        channel.basicQos(1);
+        channel.basicQos(1, true);
         QueueingConsumer c1 = new QueueingConsumer(channel);
         declareBindConsume(channel, c1, false);
         fill(1);
@@ -201,7 +191,7 @@ public class QosTests extends BrokerTestCase
         //channel & queue, and a prefetch limit set, that all
         //consumers get a fair share of the messages.
 
-        channel.basicQos(1);
+        channel.basicQos(1, true);
         String q = channel.queueDeclare().getQueue();
         channel.queueBind(q, "amq.fanout", "");
 
@@ -246,7 +236,7 @@ public class QosTests extends BrokerTestCase
     public void testConsumerLifecycle()
         throws IOException
     {
-        channel.basicQos(1);
+        channel.basicQos(1, true);
         QueueingConsumer c = new QueueingConsumer(channel);
         String queue = "qosTest";
         channel.queueDeclare(queue, false, false, false, null);
@@ -269,7 +259,7 @@ public class QosTests extends BrokerTestCase
     {
         QueueingConsumer c = new QueueingConsumer(channel);
         declareBindConsume(c);
-        channel.basicQos(1);
+        channel.basicQos(1, true);
         fill(3);
         //We actually only guarantee that the limit takes effect
         //*eventually*, so this can in fact fail. It's pretty unlikely
@@ -284,7 +274,7 @@ public class QosTests extends BrokerTestCase
     {
         QueueingConsumer c = new QueueingConsumer(channel);
         configure(c, 1, 3);
-        channel.basicQos(2);
+        channel.basicQos(2, true);
         drain(c, 1);
     }
 
@@ -293,7 +283,7 @@ public class QosTests extends BrokerTestCase
     {
         QueueingConsumer c = new QueueingConsumer(channel);
         Queue<Delivery> d = configure(c, 2, 4);
-        channel.basicQos(1);
+        channel.basicQos(1, true);
         drain(c, 0);
         ack(d, true);
         drain(c, 1);
@@ -304,7 +294,7 @@ public class QosTests extends BrokerTestCase
     {
         QueueingConsumer c = new QueueingConsumer(channel);
         configure(c, 1, 3);
-        channel.basicQos(0);
+        channel.basicQos(0, true);
         drain(c, 2);
     }
 
@@ -319,8 +309,8 @@ public class QosTests extends BrokerTestCase
         String q2 = declareBindConsume(ch2, c2, false);
         ch1.basicConsume(q2, false, c1);
         ch2.basicConsume(q1, false, c2);
-        ch1.basicQos(1);
-        ch2.basicQos(1);
+        ch1.basicQos(1, true);
+        ch2.basicQos(1, true);
         fill(5);
         Queue<Delivery> d1 = drain(c1, 1);
         Queue<Delivery> d2 = drain(c2, 1);
@@ -339,13 +329,13 @@ public class QosTests extends BrokerTestCase
         declareBindConsume(c);
         fill(1);
         drain(c, 1);
-        channel.basicQos(2);
+        channel.basicQos(2, true);
         fill(2);
         drain(c, 1);
     }
 
     public void testRecoverReducesLimit() throws Exception {
-        channel.basicQos(2);
+        channel.basicQos(2, true);
         QueueingConsumer c = new QueueingConsumer(channel);
         declareBindConsume(c);
         fill(3);
@@ -426,7 +416,7 @@ public class QosTests extends BrokerTestCase
                                      int messages)
         throws IOException
     {
-        channel.basicQos(limit);
+        channel.basicQos(limit, true);
 
         //declare/bind/consume-from queues
         List <String> queues = new ArrayList<String>();
@@ -445,7 +435,7 @@ public class QosTests extends BrokerTestCase
                                         int messages)
         throws IOException
     {
-        channel.basicQos(limit);
+        channel.basicQos(limit, true);
         declareBindConsume(c);
         fill(messages);
         return drain(c, limit);
