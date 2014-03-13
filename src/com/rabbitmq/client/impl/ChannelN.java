@@ -477,7 +477,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     private void asyncShutdown(Command command) throws IOException {
         ShutdownSignalException signal = new ShutdownSignalException(false,
                                                                      false,
-                                                                     command,
+                                                                     command.getMethod(),
                                                                      this);
         synchronized (_channelMutex) {
             try {
