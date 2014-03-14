@@ -51,7 +51,6 @@ public class ConnectionParams {
         this.saslConfig = saslConfig;
         this.networkRecoveryInterval = networkRecoveryInterval;
         this.topologyRecovery = topologyRecovery;
-
         this.exceptionHandler = exceptionHandler;
     }
 
@@ -93,15 +92,6 @@ public class ConnectionParams {
 
     public ExceptionHandler getExceptionHandler() {
         return exceptionHandler;
-    }
-
-    public void setExceptionHandler(ExceptionHandler exceptionHandler) {
-        this.exceptionHandler = exceptionHandler;
-    }
-
-    public ConnectionParams exceptionHandler(ExceptionHandler exceptionHandler) {
-        setExceptionHandler(exceptionHandler);
-        return this;
     }
 
     public int getNetworkRecoveryInterval() {
