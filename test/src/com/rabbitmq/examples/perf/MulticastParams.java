@@ -32,7 +32,8 @@ public class MulticastParams {
     private int producerCount = 1;
     private int consumerTxSize = 0;
     private int producerTxSize = 0;
-    private int prefetchCount = 0;
+    private int channelPrefetch = 0;
+    private int consumerPrefetch = 0;
     private int minMsgSize = 0;
 
     private int timeLimit = 0;
@@ -101,8 +102,12 @@ public class MulticastParams {
         this.multiAckEvery = multiAckEvery;
     }
 
-    public void setPrefetchCount(int prefetchCount) {
-        this.prefetchCount = prefetchCount;
+    public void setChannelPrefetch(int channelPrefetch) {
+        this.channelPrefetch = channelPrefetch;
+    }
+
+    public void setConsumerPrefetch(int consumerPrefetch) {
+        this.consumerPrefetch = consumerPrefetch;
     }
 
     public void setMinMsgSize(int minMsgSize) {
@@ -175,7 +180,8 @@ public class MulticastParams {
         Channel channel = connection.createChannel();
         if (consumerTxSize > 0) channel.txSelect();
         String qName = configureQueue(connection, id);
-        if (prefetchCount > 0) channel.basicQos(prefetchCount);
+        if (consumerPrefetch > 0) channel.basicQos(consumerPrefetch);
+        if (channelPrefetch > 0) channel.basicQos(channelPrefetch, true);
         return new Consumer(channel, id, qName,
                                          consumerTxSize, autoAck, multiAckEvery,
                                          stats, consumerMsgCount, timeLimit);

@@ -128,11 +128,11 @@ public class Host {
     }
 
     public static List<ConnectionInfo> listConnections() throws IOException {
-        String output = capture(rabbitmqctl("list_connections pid peer_port").getInputStream());
+        String output = capture(rabbitmqctl("list_connections -q pid peer_port").getInputStream());
         String[] allLines = output.split("\n");
 
         ArrayList<ConnectionInfo> result = new ArrayList<ConnectionInfo>();
-        for (String line : Arrays.copyOfRange(allLines, 1, allLines.length - 1)) {
+        for (String line : allLines) {
             // line: <rabbit@mercurio.1.11491.0>	58713
             String[] columns = line.split("\t");
             result.add(new ConnectionInfo(columns[0], Integer.valueOf(columns[1])));

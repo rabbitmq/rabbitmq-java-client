@@ -69,7 +69,6 @@ public class ConnectionRecovery extends BrokerTestCase {
     public void testShutdownHooksRecovery() throws IOException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(2);
         connection.addShutdownListener(new ShutdownListener() {
-            @Override
             public void shutdownCompleted(ShutdownSignalException cause) {
                 latch.countDown();
             }
@@ -84,12 +83,10 @@ public class ConnectionRecovery extends BrokerTestCase {
     public void testBlockedListenerRecovery() throws IOException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(2);
         connection.addBlockedListener(new BlockedListener() {
-            @Override
             public void handleBlocked(String reason) throws IOException {
                 latch.countDown();
             }
 
-            @Override
             public void handleUnblocked() throws IOException {
                 latch.countDown();
             }
@@ -115,7 +112,6 @@ public class ConnectionRecovery extends BrokerTestCase {
     public void testReturnListenerRecovery() throws IOException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         channel.addReturnListener(new ReturnListener() {
-            @Override
             public void handleReturn(int replyCode, String replyText, String exchange,
                                      String routingKey, AMQP.BasicProperties properties,
                                      byte[] body) throws IOException {
@@ -132,12 +128,10 @@ public class ConnectionRecovery extends BrokerTestCase {
         int n = 3;
         final CountDownLatch latch = new CountDownLatch(n);
         channel.addConfirmListener(new ConfirmListener() {
-            @Override
             public void handleAck(long deliveryTag, boolean multiple) throws IOException {
                 latch.countDown();
             }
 
-            @Override
             public void handleNack(long deliveryTag, boolean multiple) throws IOException {
                 latch.countDown();
             }
@@ -312,7 +306,7 @@ public class ConnectionRecovery extends BrokerTestCase {
                     if (consumed.intValue() > 0 && consumed.intValue() % 4 == 0) {
                         CountDownLatch recoveryLatch = prepareForRecovery(connection);
                         Host.closeConnection((AutorecoveringConnection)connection);
-                        recoveryLatch.await(30, TimeUnit.MINUTES);
+                        ConnectionRecovery.wait(recoveryLatch);
                     }
                     channel.basicAck(envelope.getDeliveryTag(), false);
                 } catch (InterruptedException e) {
@@ -353,7 +347,6 @@ public class ConnectionRecovery extends BrokerTestCase {
     private CountDownLatch prepareForRecovery(Connection conn) {
         final CountDownLatch latch = new CountDownLatch(1);
         ((AutorecoveringConnection)conn).addRecoveryListener(new RecoveryListener() {
-            @Override
             public void handleRecovery(Recoverable recoverable) {
                 latch.countDown();
             }
@@ -364,7 +357,6 @@ public class ConnectionRecovery extends BrokerTestCase {
     private CountDownLatch prepareForShutdown(Connection conn) throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         conn.addShutdownListener(new ShutdownListener() {
-            @Override
             public void shutdownCompleted(ShutdownSignalException cause) {
                 latch.countDown();
             }
@@ -427,10 +419,10 @@ public class ConnectionRecovery extends BrokerTestCase {
         return cf;
     }
 
-    private void wait(CountDownLatch latch) throws InterruptedException {
+    private static void wait(CountDownLatch latch) throws InterruptedException {
         // Very very generous amount of time to wait, just make sure we never
         // hang forever
-        assertTrue(latch.await(30, TimeUnit.MINUTES));
+        assertTrue(latch.await(1800, TimeUnit.SECONDS));
     }
 
     private void waitForConfirms(Channel ch) throws InterruptedException, TimeoutException {

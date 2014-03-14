@@ -215,10 +215,23 @@ public interface Channel extends ShutdownNotifier {
      * @param prefetchCount maximum number of messages that the server
      * will deliver, 0 if unlimited
      * @param global true if the settings should be applied to the
-     * entire connection rather than just the current channel
+     * entire channel rather than each consumer
      * @throws java.io.IOException if an error is encountered
      */
     void basicQos(int prefetchSize, int prefetchCount, boolean global) throws IOException;
+
+    /**
+     * Request a specific prefetchCount "quality of service" settings
+     * for this channel.
+     *
+     * @see #basicQos(int, int, boolean)
+     * @param prefetchCount maximum number of messages that the server
+     * will deliver, 0 if unlimited
+     * @param global true if the settings should be applied to the
+     * entire channel rather than each consumer
+     * @throws java.io.IOException if an error is encountered
+     */
+    void basicQos(int prefetchCount, boolean global) throws IOException;
 
     /**
      * Request a specific prefetchCount "quality of service" settings

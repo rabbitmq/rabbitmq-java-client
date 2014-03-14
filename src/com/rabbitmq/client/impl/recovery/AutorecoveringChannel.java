@@ -34,8 +34,8 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     private List<ReturnListener> returnListeners = new ArrayList<ReturnListener>();
     private List<ConfirmListener> confirmListeners = new ArrayList<ConfirmListener>();
     private List<FlowListener> flowListeners = new ArrayList<FlowListener>();
-    private int prefetchCount;
-    private boolean globalQos;
+    private int prefetchCountConsumer;
+    private int prefetchCountGlobal;
     private boolean usesPublisherConfirms;
     private boolean usesTransactions;
 
@@ -72,7 +72,6 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         }
     }
 
-    @Override
     public boolean flowBlocked() {
         return delegate.flowBlocked();
     }
@@ -139,14 +138,21 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     }
 
     public void basicQos(int prefetchSize, int prefetchCount, boolean global) throws IOException {
-        this.prefetchCount = prefetchCount;
-        this.globalQos = global;
+        if (global) {
+            this.prefetchCountGlobal = prefetchCount;
+        } else {
+            this.prefetchCountConsumer = prefetchCount;
+        }
+
         delegate.basicQos(prefetchSize, prefetchCount, global);
     }
 
     public void basicQos(int prefetchCount) throws IOException {
-
         basicQos(0, prefetchCount, false);
+    }
+
+    public void basicQos(int prefetchCount, boolean global) throws IOException {
+        basicQos(0, prefetchCount, global);
     }
 
     public void basicPublish(String exchange, String routingKey, AMQP.BasicProperties props, byte[] body) throws IOException {
@@ -433,7 +439,12 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     }
 
     private void recoverState() throws IOException {
-        basicQos(0, this.prefetchCount, this.globalQos);
+        if (this.prefetchCountConsumer != 0) {
+            basicQos(this.prefetchCountConsumer, false);
+        }
+        if (this.prefetchCountGlobal != 0) {
+            basicQos(this.prefetchCountGlobal, true);
+        }
         if(this.usesPublisherConfirms) {
             this.confirmSelect();
         }
