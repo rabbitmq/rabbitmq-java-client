@@ -216,6 +216,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.requestedHeartbeat = params.getRequestedHeartbeat();
         this.saslConfig = params.getSaslConfig();
         this.executor = params.getExecutor();
+        this.threadFactory = params.getThreadFactory();
 
         this._channelManager = null;
 

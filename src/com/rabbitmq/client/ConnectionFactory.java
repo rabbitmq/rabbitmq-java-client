@@ -566,7 +566,6 @@ public class ConnectionFactory implements Cloneable {
                 try {
                     FrameHandler handler = fhFactory.create(addr);
                     AMQConnection conn = new AMQConnection(params, handler);
-                    conn.setThreadFactory(this.threadFactory);
                     conn.start();
                     return conn;
                 } catch (IOException e) {
@@ -580,7 +579,7 @@ public class ConnectionFactory implements Cloneable {
     public ConnectionParams params(ExecutorService executor) {
         return new ConnectionParams(username, password, executor, virtualHost, getClientProperties(),
                                     requestedFrameMax, requestedChannelMax, requestedHeartbeat, saslConfig,
-                                    networkRecoveryInterval, topologyRecovery);
+                                    networkRecoveryInterval, topologyRecovery, threadFactory);
     }
 
     /**

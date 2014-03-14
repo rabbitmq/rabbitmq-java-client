@@ -1,6 +1,7 @@
 package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.SaslConfig;
+import com.rabbitmq.client.ThreadFactory;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -19,8 +20,9 @@ public class ConnectionParams {
     private final boolean topologyRecovery;
 
     private ExceptionHandler exceptionHandler;
+  private ThreadFactory threadFactory;
 
-    /**
+  /**
      * @param username name used to establish connection
      * @param password for <code><b>username</b></code>
      * @param executor thread pool service for consumer threads for channels on this connection
@@ -32,12 +34,13 @@ public class ConnectionParams {
      * @param saslConfig sasl configuration hook
      * @param networkRecoveryInterval interval used when recovering from network failure
      * @param topologyRecovery should topology (queues, exchanges, bindings, consumers) recovery be performed?
+     * @param threadFactory
      */
     public ConnectionParams(String username, String password, ExecutorService executor,
                             String virtualHost, Map<String, Object> clientProperties,
                             int requestedFrameMax, int requestedChannelMax, int requestedHeartbeat,
                             SaslConfig saslConfig, int networkRecoveryInterval,
-                            boolean topologyRecovery) {
+                            boolean topologyRecovery, ThreadFactory threadFactory) {
         this.username = username;
         this.password = password;
         this.executor = executor;
@@ -51,6 +54,7 @@ public class ConnectionParams {
         this.topologyRecovery = topologyRecovery;
 
         this.exceptionHandler = new DefaultExceptionHandler();
+        this.threadFactory = threadFactory;
     }
 
     public String getUsername() {
@@ -109,4 +113,8 @@ public class ConnectionParams {
     public boolean isTopologyRecoveryEnabled() {
         return topologyRecovery;
     }
+
+  public ThreadFactory getThreadFactory() {
+    return threadFactory;
+  }
 }
