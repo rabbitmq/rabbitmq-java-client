@@ -46,6 +46,16 @@ public class ExceptionHandling extends TestCase {
         wait(latch);
     }
 
+    public void testNullExceptionHandler() {
+      ConnectionFactory cf = new ConnectionFactory();
+      try {
+        cf.setExceptionHandler(null);
+        fail("expected setExceptionHandler to throw");
+      } catch (IllegalArgumentException iae) {
+        // expected
+      }
+    }
+
     private void wait(CountDownLatch latch) throws InterruptedException {
         latch.await(30, TimeUnit.MINUTES);
     }

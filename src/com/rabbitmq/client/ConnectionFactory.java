@@ -91,7 +91,7 @@ public class ConnectionFactory implements Cloneable {
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
     private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
-    private ExceptionHandler exceptionHandler     = null;
+    private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
 
     private boolean automaticRecovery             = false;
     private boolean topologyRecovery              = true;
@@ -444,6 +444,9 @@ public class ConnectionFactory implements Cloneable {
      */
 
     public void setExceptionHandler(ExceptionHandler exceptionHandler) {
+        if (exceptionHandler == null) {
+          throw new IllegalArgumentException("exception handler cannot be null!");
+        }
         this.exceptionHandler = exceptionHandler;
     }
 

@@ -111,7 +111,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private volatile boolean _running = false;
 
     /** Handler for (uncaught) exceptions that crop up in the {@link MainLoop}. */
-    private ExceptionHandler _exceptionHandler = new DefaultExceptionHandler();
+    private ExceptionHandler _exceptionHandler;
 
     /** Object used for blocking main application thread when doing all the necessary
      * connection shutdown operations
@@ -207,7 +207,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.password = params.getPassword();
         this._frameHandler = frameHandler;
         this._virtualHost = params.getVirtualHost();
-        this._exceptionHandler = params.getExceptionHandler();
         this._clientProperties = new HashMap<String, Object>(params.getClientProperties());
         this.requestedFrameMax = params.getRequestedFrameMax();
         this.requestedChannelMax = params.getRequestedChannelMax();
@@ -215,7 +214,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.saslConfig = params.getSaslConfig();
 
         this._workService  = new ConsumerWorkService(params.getExecutor());
-        this._exceptionHandler = params.getExceptionHandler();
+        this._exceptionHandler = initExceptionHandler(params);
         this._channelManager = null;
 
         this._heartbeatSender = new HeartbeatSender(frameHandler);
@@ -224,7 +223,18 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
     }
 
-    /**
+  private ExceptionHandler initExceptionHandler(ConnectionParams params) {
+    ExceptionHandler result = params.getExceptionHandler();
+    // null exception handler causes I/O thread to fail,
+    // so be extra defensive here
+    if(result == null) {
+      return new DefaultExceptionHandler();
+    } else {
+      return result;
+    }
+  }
+
+  /**
      * Start up the connection, including the MainLoop thread.
      * Sends the protocol
      * version negotiation header, and runs through
