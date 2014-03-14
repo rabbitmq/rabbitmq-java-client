@@ -121,7 +121,6 @@ public class AMQConnectionTest extends TestCase {
      */
     public void testConnectionHangInNegotiation() {
         this._mockFrameHandler.setTimeoutCount(10); // to limit hang
-        MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, this._mockFrameHandler.countHeadersSent());
         try {
             ConnectionParams params = factory.params(Executors.newFixedThreadPool(1));
@@ -132,7 +131,7 @@ public class AMQConnectionTest extends TestCase {
         }
         assertEquals(1, this._mockFrameHandler.countHeadersSent());
         // _connection.close(0, CLOSE_MESSAGE);
-        List<Throwable> exceptionList = handler.getHandledExceptions();
+        List<Throwable> exceptionList = exceptionHandler.getHandledExceptions();
         assertEquals("Only one exception expected", 1, exceptionList.size());
         assertEquals("Wrong type of exception returned.", SocketTimeoutException.class, exceptionList.get(0).getClass());
     }
