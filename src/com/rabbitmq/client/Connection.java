@@ -233,4 +233,11 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * Remove all {@link BlockedListener}s.
      */
     void clearBlockedListeners();
+
+    /**
+     * Get the exception handler.
+     *
+     * @see com.rabbitmq.client.ExceptionHandler
+     */
+    ExceptionHandler getExceptionHandler();
 }

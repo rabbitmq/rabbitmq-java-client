@@ -11,7 +11,7 @@ import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.TopologyRecoveryException;
 import com.rabbitmq.client.impl.ConnectionParams;
-import com.rabbitmq.client.impl.ExceptionHandler;
+import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
 

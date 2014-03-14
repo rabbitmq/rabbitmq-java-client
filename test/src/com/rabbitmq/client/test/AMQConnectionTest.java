@@ -35,7 +35,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ExceptionHandler;
+import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
 
@@ -59,6 +59,7 @@ public class AMQConnectionTest extends TestCase {
     /** The mock frame handler used to test connection behaviour. */
     private MockFrameHandler _mockFrameHandler;
     private ConnectionFactory factory;
+    private MyExceptionHandler exceptionHandler;
 
     /** Setup the environment for this test
      * @see junit.framework.TestCase#setUp()
@@ -68,6 +69,8 @@ public class AMQConnectionTest extends TestCase {
         super.setUp();
         _mockFrameHandler = new MockFrameHandler();
         factory = new ConnectionFactory();
+        exceptionHandler = new MyExceptionHandler();
+        factory.setExceptionHandler(exceptionHandler);
     }
 
     /** Tear down the environment for this test
@@ -86,11 +89,9 @@ public class AMQConnectionTest extends TestCase {
     public void testConnectionSendsSingleHeaderAndTimesOut() {
         IOException exception = new SocketTimeoutException();
         _mockFrameHandler.setExceptionOnReadingFrames(exception);
-        MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, _mockFrameHandler.countHeadersSent());
         try {
             ConnectionParams params = factory.params(Executors.newFixedThreadPool(1));
-            params.setExceptionHandler(handler);
             new AMQConnection(params, _mockFrameHandler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
@@ -98,7 +99,7 @@ public class AMQConnectionTest extends TestCase {
         }
         assertEquals(1, _mockFrameHandler.countHeadersSent());
         // _connection.close(0, CLOSE_MESSAGE);
-        List<Throwable> exceptionList = handler.getHandledExceptions();
+        List<Throwable> exceptionList = exceptionHandler.getHandledExceptions();
         assertEquals(Collections.<Throwable>singletonList(exception), exceptionList);
     }
 
@@ -120,11 +121,9 @@ public class AMQConnectionTest extends TestCase {
      */
     public void testConnectionHangInNegotiation() {
         this._mockFrameHandler.setTimeoutCount(10); // to limit hang
-        MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, this._mockFrameHandler.countHeadersSent());
         try {
             ConnectionParams params = factory.params(Executors.newFixedThreadPool(1));
-            params.setExceptionHandler(handler);
             new AMQConnection(params, this._mockFrameHandler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
@@ -132,7 +131,7 @@ public class AMQConnectionTest extends TestCase {
         }
         assertEquals(1, this._mockFrameHandler.countHeadersSent());
         // _connection.close(0, CLOSE_MESSAGE);
-        List<Throwable> exceptionList = handler.getHandledExceptions();
+        List<Throwable> exceptionList = exceptionHandler.getHandledExceptions();
         assertEquals("Only one exception expected", 1, exceptionList.size());
         assertEquals("Wrong type of exception returned.", SocketTimeoutException.class, exceptionList.get(0).getClass());
     }

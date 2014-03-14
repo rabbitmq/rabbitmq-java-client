@@ -31,6 +31,7 @@ import java.util.concurrent.TimeoutException;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.BlockedListener;
+import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
@@ -110,7 +111,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private volatile boolean _running = false;
 
     /** Handler for (uncaught) exceptions that crop up in the {@link MainLoop}. */
-    private final ExceptionHandler _exceptionHandler;
+    private ExceptionHandler _exceptionHandler;
 
     /** Object used for blocking main application thread when doing all the necessary
      * connection shutdown operations
@@ -205,6 +206,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._frameHandler = frameHandler;
         this._virtualHost = params.getVirtualHost();
         this._exceptionHandler = params.getExceptionHandler();
+
         this._clientProperties = new HashMap<String, Object>(params.getClientProperties());
         this.requestedFrameMax = params.getRequestedFrameMax();
         this.requestedChannelMax = params.getRequestedChannelMax();
@@ -220,7 +222,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
     }
 
-    /**
+  /**
      * Start up the connection, including the MainLoop thread.
      * Sends the protocol
      * version negotiation header, and runs through
