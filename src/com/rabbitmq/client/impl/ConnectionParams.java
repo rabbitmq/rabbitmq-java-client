@@ -35,11 +35,8 @@ public class ConnectionParams {
      * @param saslConfig sasl configuration hook
      * @param networkRecoveryInterval interval used when recovering from network failure
      * @param topologyRecovery should topology (queues, exchanges, bindings, consumers) recovery be performed?
-<<<<<<< local
      * @param threadFactory
-=======
      * @param exceptionHandler
->>>>>>> other
      */
     public ConnectionParams(String username, String password, ExecutorService executor,
                             String virtualHost, Map<String, Object> clientProperties,
