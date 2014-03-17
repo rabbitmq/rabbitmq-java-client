@@ -670,8 +670,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _brokerInitiatedShutdown = true;
         SocketCloseWait scw = new SocketCloseWait(sse);
         Thread waiter = threadFactory.newThread(scw);
-        waiter.setName("AMQP Connection Closing Monitor " +
-                getHostAddress() + ":" + getPort());
+        if(Environment.isAllowedToModifyThreads()) {
+            waiter.setName("AMQP Connection Closing Monitor " +
+                                   getHostAddress() + ":" + getPort());
+        }
         waiter.start();
     }
 
