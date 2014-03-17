@@ -237,9 +237,8 @@ public class MulticastParams {
         }
         catch (IOException e) {
             ShutdownSignalException sse = (ShutdownSignalException) e.getCause();
-            Command closeCommand = (Command) sse.getReason();
             if (!sse.isHardError()) {
-                AMQP.Channel.Close closeMethod = (AMQP.Channel.Close) closeCommand.getMethod();
+                AMQP.Channel.Close closeMethod = (AMQP.Channel.Close) sse.getReason();
                 if (closeMethod.getReplyCode() == AMQP.NOT_FOUND) {
                     return false;
                 }

@@ -129,20 +129,8 @@ public class BrokerTestCase extends TestCase {
         checkShutdownSignal(expectedCode, sse);
     }
 
-    public void checkShutdownSignal(int expectedCode, AlreadyClosedException ace) {
-        ShutdownNotifierComponent snc = (ShutdownNotifierComponent) ace.getReference();
-        ShutdownSignalException sse = snc.getCloseReason();
-        checkShutdownSignal(expectedCode, sse);
-    }
-
     public void checkShutdownSignal(int expectedCode, ShutdownSignalException sse) {
-        Object reason = sse.getReason();
-        Method method;
-        if (reason instanceof Command) {
-            method = ((Command) reason).getMethod();
-        } else {
-            method = (Method) reason;
-        }
+        Method method = sse.getReason();
         channel = null;
         if (sse.isHardError()) {
             connection = null;

@@ -187,7 +187,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         throws AlreadyClosedException
     {
         if (!isOpen()) {
-            throw new AlreadyClosedException("Attempt to use closed channel", this);
+            throw new AlreadyClosedException(getCloseReason());
         }
     }
 
@@ -262,7 +262,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             synchronized (_channelMutex) {
                 if (!setShutdownCauseIfOpen(signal)) {
                     if (!ignoreClosed)
-                        throw new AlreadyClosedException("Attempt to use closed channel", this);
+                        throw new AlreadyClosedException(getCloseReason());
                 }
 
                 _channelMutex.notifyAll();
