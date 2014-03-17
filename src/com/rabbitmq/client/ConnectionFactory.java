@@ -32,6 +32,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.DefaultThreadFactory;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.DefaultExceptionHandler;
 import com.rabbitmq.client.impl.FrameHandler;
@@ -90,6 +91,7 @@ public class ConnectionFactory implements Cloneable {
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
+    private ThreadFactory threadFactory           = new DefaultThreadFactory();
     private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
     private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
 
@@ -429,20 +431,40 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Get the exception handler.
-     *
-     * @see com.rabbitmq.client.ExceptionHandler
+     * Retrieve the thread factory used to instantiate new threads.
+     * @see com.rabbitmq.client.ThreadFactory
+     * @see com.rabbitmq.client.impl.DefaultThreadFactory
      */
+    public ThreadFactory getThreadFactory() {
+        return threadFactory;
+    }
+
+    /**
+     * Set the thread factory used to instantiate new threads.
+     * @see com.rabbitmq.client.ThreadFactory
+     * @see com.rabbitmq.client.impl.DefaultThreadFactory
+     */
+    public void setThreadFactory(ThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
+    }
+
+    /**
+    * Get the exception handler.
+    *
+    * @see com.rabbitmq.client.ExceptionHandler
+    */
     public ExceptionHandler getExceptionHandler() {
         return exceptionHandler;
     }
 
     /**
+     * Set the thread factory to use for newly created connections.
+     * @see com.rabbitmq.client.ThreadFactory
+     * @see com.rabbitmq.client.impl.DefaultThreadFactory
      * Set the exception handler to use for newly created connections.
      *
      * @see com.rabbitmq.client.ExceptionHandler
      */
-
     public void setExceptionHandler(ExceptionHandler exceptionHandler) {
         if (exceptionHandler == null) {
           throw new IllegalArgumentException("exception handler cannot be null!");
@@ -583,7 +605,7 @@ public class ConnectionFactory implements Cloneable {
     public ConnectionParams params(ExecutorService executor) {
         return new ConnectionParams(username, password, executor, virtualHost, getClientProperties(),
                                     requestedFrameMax, requestedChannelMax, requestedHeartbeat, saslConfig,
-                                    networkRecoveryInterval, topologyRecovery, exceptionHandler);
+                                    networkRecoveryInterval, topologyRecovery, exceptionHandler, threadFactory);
     }
 
     /**
