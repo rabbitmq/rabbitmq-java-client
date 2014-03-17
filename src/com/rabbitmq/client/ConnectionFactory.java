@@ -92,7 +92,7 @@ public class ConnectionFactory implements Cloneable {
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
-    private ThreadFactory threadFactory = Executors.defaultThreadFactory();
+    private ThreadFactory threadFactory           = Executors.defaultThreadFactory();
     private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
     private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
 
