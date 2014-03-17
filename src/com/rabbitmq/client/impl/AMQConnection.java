@@ -281,11 +281,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         // start the main loop going
         MainLoop loop = new MainLoop();
-        final String threadName = "AMQP Connection " + getHostAddress() + ":" + getPort();
-        mainLoopThread = threadFactory.newThread(loop);
-        if(Environment.isAllowedToModifyThreads()) {
-            mainLoopThread.setName(threadName);
-        }
+        final String name = "AMQP Connection " + getHostAddress() + ":" + getPort();
+        mainLoopThread = Environment.newThread(threadFactory, loop, name);
         mainLoopThread.start();
         // after this point clear-up of MainLoop is triggered by closing the frameHandler.
 
@@ -669,11 +666,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (IOException _) { } // ignore
         _brokerInitiatedShutdown = true;
         SocketCloseWait scw = new SocketCloseWait(sse);
-        Thread waiter = threadFactory.newThread(scw);
-        if(Environment.isAllowedToModifyThreads()) {
-            waiter.setName("AMQP Connection Closing Monitor " +
-                                   getHostAddress() + ":" + getPort());
-        }
+        final String name = "AMQP Connection Closing Monitor " +
+                                    getHostAddress() + ":" + getPort();
+        Thread waiter = Environment.newThread(threadFactory, scw, name);
         waiter.start();
     }
 

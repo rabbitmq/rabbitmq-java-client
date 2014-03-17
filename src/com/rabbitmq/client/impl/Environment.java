@@ -1,5 +1,7 @@
 package com.rabbitmq.client.impl;
 
+import java.util.concurrent.ThreadFactory;
+
 /**
  * Infers information about the execution environment, e.g.
  * security permissions.
@@ -14,5 +16,21 @@ class Environment {
         } catch (SecurityException se) {
             return false;
         }
+    }
+
+    public static Thread newThread(ThreadFactory factory, Runnable runnable, String name) {
+        Thread t = factory.newThread(runnable);
+        if(isAllowedToModifyThreads()) {
+            t.setName(name);
+        }
+        return t;
+    }
+
+    public static Thread newThread(ThreadFactory factory, Runnable runnable, String name, boolean isDaemon) {
+        Thread t = newThread(factory, runnable, name);
+        if(isAllowedToModifyThreads()) {
+            t.setDaemon(isDaemon);
+        }
+        return t;
     }
 }

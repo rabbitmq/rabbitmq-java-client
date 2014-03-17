@@ -113,11 +113,7 @@ public class ChannelManager {
                 ssWorkService.shutdown();
             }
         };
-        Thread shutdownThread = threadFactory.newThread(target);
-        if(Environment.isAllowedToModifyThreads()) {
-            shutdownThread.setName("ConsumerWorkService shutdown monitor");
-            shutdownThread.setDaemon(true);
-        }
+        Thread shutdownThread = Environment.newThread(threadFactory, target, "ConsumerWorkService shutdown monitor", true);
         shutdownThread.start();
     }
 
