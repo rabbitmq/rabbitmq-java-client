@@ -458,11 +458,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Set the thread factory to use for newly created connections.
-     * @see com.rabbitmq.client.ThreadFactory
-     * @see com.rabbitmq.client.impl.DefaultThreadFactory
      * Set the exception handler to use for newly created connections.
-     *
      * @see com.rabbitmq.client.ExceptionHandler
      */
     public void setExceptionHandler(ExceptionHandler exceptionHandler) {
