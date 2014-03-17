@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
@@ -46,7 +48,6 @@ import com.rabbitmq.client.ProtocolVersionMismatchException;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.ThreadFactory;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 
@@ -66,7 +67,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public static final int HANDSHAKE_TIMEOUT = 10000;
     private final ExecutorService executor;
     private Thread mainLoopThread;
-    private ThreadFactory threadFactory = new DefaultThreadFactory();
+    private ThreadFactory threadFactory = Executors.defaultThreadFactory();
 
     /**
      * Retrieve a copy of the default table of client properties that
@@ -280,7 +281,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         // start the main loop going
         MainLoop loop = new MainLoop();
-        mainLoopThread = threadFactory.newThread(loop, "AMQP Connection " + getHostAddress() + ":" + getPort());
+        final String threadName = "AMQP Connection " + getHostAddress() + ":" + getPort();
+        mainLoopThread = threadFactory.newThread(loop);
+        if(Environment.isAllowedToModifyThreads()) {
+            mainLoopThread.setName(threadName);
+        }
         mainLoopThread.start();
         // after this point clear-up of MainLoop is triggered by closing the frameHandler.
 

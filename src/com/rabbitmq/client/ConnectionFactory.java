@@ -25,6 +25,8 @@ import java.util.concurrent.ExecutorService;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
@@ -32,7 +34,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.DefaultThreadFactory;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.DefaultExceptionHandler;
 import com.rabbitmq.client.impl.FrameHandler;
@@ -91,7 +92,7 @@ public class ConnectionFactory implements Cloneable {
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
-    private ThreadFactory threadFactory           = new DefaultThreadFactory();
+    private ThreadFactory threadFactory = Executors.defaultThreadFactory();
     private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
     private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
 
@@ -432,8 +433,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Retrieve the thread factory used to instantiate new threads.
-     * @see com.rabbitmq.client.ThreadFactory
-     * @see com.rabbitmq.client.impl.DefaultThreadFactory
+     * @see ThreadFactory
      */
     public ThreadFactory getThreadFactory() {
         return threadFactory;
@@ -441,8 +441,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Set the thread factory used to instantiate new threads.
-     * @see com.rabbitmq.client.ThreadFactory
-     * @see com.rabbitmq.client.impl.DefaultThreadFactory
+     * @see ThreadFactory
      */
     public void setThreadFactory(ThreadFactory threadFactory) {
         this.threadFactory = threadFactory;

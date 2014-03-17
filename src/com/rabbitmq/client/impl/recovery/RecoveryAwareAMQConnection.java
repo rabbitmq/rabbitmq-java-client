@@ -1,9 +1,10 @@
 package com.rabbitmq.client.impl.recovery;
 
-import com.rabbitmq.client.ThreadFactory;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandler;
+
+import java.util.concurrent.ThreadFactory;
 
 /**
  * {@link com.rabbitmq.client.impl.AMQConnection} modification that uses {@link com.rabbitmq.client.impl.recovery.RecoveryAwareChannelN}

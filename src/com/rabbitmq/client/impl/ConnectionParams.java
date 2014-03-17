@@ -2,10 +2,10 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.SaslConfig;
-import com.rabbitmq.client.ThreadFactory;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 public class ConnectionParams {
     private final String username;
@@ -21,7 +21,7 @@ public class ConnectionParams {
     private final boolean topologyRecovery;
 
     private ExceptionHandler exceptionHandler;
-  private ThreadFactory threadFactory;
+    private ThreadFactory threadFactory;
 
   /**
      * @param username name used to establish connection

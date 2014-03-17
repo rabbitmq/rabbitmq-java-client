@@ -7,7 +7,6 @@ import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ChannelN;
-import com.rabbitmq.client.impl.DefaultThreadFactory;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.impl.ConsumerWorkService;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -81,7 +80,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
 
             // Construct a channel directly
             final ChannelN ch = new ChannelN((AMQConnection) conn, n + 1,
-                                             new ConsumerWorkService(Executors.newSingleThreadExecutor(), new DefaultThreadFactory()));
+                                             new ConsumerWorkService(Executors.newSingleThreadExecutor(), Executors.defaultThreadFactory()));
             conn.addShutdownListener(new ShutdownListener() {
                 public void shutdownCompleted(ShutdownSignalException cause) {
                     // make sure channel.open continuation is released

@@ -22,10 +22,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.ThreadFactory;
 import com.rabbitmq.utility.IntAllocator;
 
 /**
@@ -53,7 +54,7 @@ public class ChannelManager {
     }
 
     public ChannelManager(ConsumerWorkService workService, int channelMax) {
-        this(workService, channelMax, new DefaultThreadFactory());
+        this(workService, channelMax, Executors.defaultThreadFactory());
     }
 
     public ChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory) {
@@ -112,8 +113,9 @@ public class ChannelManager {
                 ssWorkService.shutdown();
             }
         };
-        Thread shutdownThread = threadFactory.newThread(target, "ConsumerWorkService shutdown monitor");
+        Thread shutdownThread = threadFactory.newThread(target);
         if(Environment.isAllowedToModifyThreads()) {
+            shutdownThread.setName("ConsumerWorkService shutdown monitor");
             shutdownThread.setDaemon(true);
         }
         shutdownThread.start();
