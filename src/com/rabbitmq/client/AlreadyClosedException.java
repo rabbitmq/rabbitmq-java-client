@@ -25,8 +25,11 @@ public class AlreadyClosedException extends ShutdownSignalException {
     /** Default for suppressing warnings without version check. */
     private static final long serialVersionUID = 1L;
 
-    public AlreadyClosedException(String s, Object ref)
+    public AlreadyClosedException(ShutdownSignalException sse)
     {
-        super(true, true, s, ref);
+        super(sse.isHardError(),
+              sse.isInitiatedByApplication(),
+              sse.getReason(),
+              sse.getReference());
     }
 }
