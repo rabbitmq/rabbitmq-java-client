@@ -164,7 +164,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         throws AlreadyClosedException
     {
         if (!isOpen()) {
-            throw new AlreadyClosedException("Attempt to use closed connection", this);
+            throw new AlreadyClosedException(getCloseReason());
         }
     }
 
@@ -312,14 +312,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                         response = sm.handleChallenge(challenge, this.username, this.password);
                     }
                 } catch (ShutdownSignalException e) {
-                    Object shutdownReason = e.getReason();
-                    if (shutdownReason instanceof AMQCommand) {
-                        Method shutdownMethod = ((AMQCommand) shutdownReason).getMethod();
-                        if (shutdownMethod instanceof AMQP.Connection.Close) {
-                            AMQP.Connection.Close shutdownClose =  (AMQP.Connection.Close) shutdownMethod;
-                            if (shutdownClose.getReplyCode() == AMQP.ACCESS_REFUSED) {
-                                throw new AuthenticationFailureException(shutdownClose.getReplyText());
-                            }
+                    Method shutdownMethod = e.getReason();
+                    if (shutdownMethod instanceof AMQP.Connection.Close) {
+                        AMQP.Connection.Close shutdownClose =  (AMQP.Connection.Close) shutdownMethod;
+                        if (shutdownClose.getReplyCode() == AMQP.ACCESS_REFUSED) {
+                            throw new AuthenticationFailureException(shutdownClose.getReplyText());
                         }
                     }
                     throw new PossibleAuthenticationFailureException(e);
@@ -534,11 +531,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 }
             } catch (EOFException ex) {
                 if (!_brokerInitiatedShutdown)
-                    shutdown(ex, false, ex, true);
+                    shutdown(null, false, ex, true);
             } catch (Throwable ex) {
                 _exceptionHandler.handleUnexpectedConnectionDriverException(AMQConnection.this,
                                                                             ex);
-                shutdown(ex, false, ex, true);
+                shutdown(null, false, ex, true);
             } finally {
                 // Finally, shut down our underlying data connection.
                 _frameHandler.close();
@@ -631,7 +628,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     public void handleConnectionClose(Command closeCommand) {
-        ShutdownSignalException sse = shutdown(closeCommand, false, null, _inConnectionNegotiation);
+        ShutdownSignalException sse = shutdown(closeCommand.getMethod(), false, null, _inConnectionNegotiation);
         try {
             _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
         } catch (IOException _) { } // ignore
@@ -664,13 +661,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * built from the argument, and stops this connection from accepting further work from the
      * application. {@link com.rabbitmq.client.ShutdownListener ShutdownListener}s for the
      * connection are notified when the main loop terminates.
-     * @param reason object being shutdown
+     * @param reason description of reason for the exception
      * @param initiatedByApplication true if caused by a client command
      * @param cause trigger exception which caused shutdown
      * @param notifyRpc true if outstanding rpc should be informed of shutdown
      * @return a shutdown signal built using the given arguments
      */
-    public ShutdownSignalException shutdown(Object reason,
+    public ShutdownSignalException shutdown(Method reason,
                          boolean initiatedByApplication,
                          Throwable cause,
                          boolean notifyRpc)
@@ -680,7 +677,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return sse;
     }
 
-    private ShutdownSignalException startShutdown(Object reason,
+    private ShutdownSignalException startShutdown(Method reason,
                          boolean initiatedByApplication,
                          Throwable cause,
                          boolean notifyRpc)
@@ -690,7 +687,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         sse.initCause(cause);
         if (!setShutdownCauseIfOpen(sse)) {
             if (initiatedByApplication)
-                throw new AlreadyClosedException("Attempt to use closed connection", this);
+                throw new AlreadyClosedException(getCloseReason());
         }
 
         // stop any heartbeating
@@ -813,8 +810,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
               _channel0.quiescingTransmit(reason);
             }
         } catch (TimeoutException tte) {
-            if (!abort)
-                throw new ShutdownSignalException(true, true, tte, this);
+            if (!abort) {
+                ShutdownSignalException sse = new ShutdownSignalException(true, true, null, this);
+                sse.initCause(cause);
+                throw sse;
+            }
         } catch (ShutdownSignalException sse) {
             if (!abort)
                 throw sse;
