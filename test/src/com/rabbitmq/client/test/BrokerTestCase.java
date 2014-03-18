@@ -18,7 +18,10 @@
 package com.rabbitmq.client.test;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
+import com.rabbitmq.client.test.server.HATests;
 import junit.framework.TestCase;
 
 import com.rabbitmq.client.Channel;
@@ -36,6 +39,7 @@ import com.rabbitmq.tools.Host;
 
 public class BrokerTestCase extends TestCase {
     protected ConnectionFactory connectionFactory = newConnectionFactory();
+    private Set<String> policies = new HashSet<String>();
 
     protected ConnectionFactory newConnectionFactory() {
         return new ConnectionFactory();
@@ -262,5 +266,28 @@ public class BrokerTestCase extends TestCase {
     protected void unblock() throws IOException, InterruptedException {
         Host.rabbitmqctl("set_vm_memory_high_watermark 0.4");
         clearResourceAlarm("disk");
+    }
+
+    protected String escapeDefinition(String definition) {
+        return definition.replaceAll(",", "\\\\,").replaceAll("\"", "\\\\\\\"");
+    }
+
+    protected void setPolicy(String name, String pattern, String definition) throws IOException {
+        // We need to override the HA policy that we use in HATests, so
+        // priority 1. But we still want a valid test of HA, so add the
+        // ha-mode definition.
+        if (HATests.HA_TESTS_RUNNING) {
+            definition += ",\"ha-mode\":\"all\"";
+        }
+        Host.rabbitmqctl("set_policy --priority 1 " + name + " " + pattern +
+                         " {" + escapeDefinition(definition) + "}");
+        policies.add(name);
+    }
+
+    protected void clearPolicies() throws IOException {
+        for (String policy : policies) {
+            Host.rabbitmqctl("clear_policy " + policy);
+        }
+        policies.clear();
     }
 }
