@@ -57,6 +57,6 @@ public class ExceptionHandling extends TestCase {
     }
 
     private void wait(CountDownLatch latch) throws InterruptedException {
-        latch.await(30, TimeUnit.MINUTES);
+        latch.await(1800, TimeUnit.SECONDS);
     }
 }

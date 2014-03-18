@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -477,7 +477,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     private void asyncShutdown(Command command) throws IOException {
         ShutdownSignalException signal = new ShutdownSignalException(false,
                                                                      false,
-                                                                     command,
+                                                                     command.getMethod(),
                                                                      this);
         synchronized (_channelMutex) {
             try {
