@@ -529,7 +529,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
          * Continues running until the "running" flag is set false by
          * shutdown().
          */
-        @Override public void run() {
+        public void run() {
             try {
                 while (_running) {
                     Frame frame = _frameHandler.readFrame();
@@ -679,7 +679,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             cause = sse;
         }
 
-        @Override public void run() {
+        public void run() {
             try {
                 _appContinuation.uninterruptibleGet();
             } finally {
