@@ -49,12 +49,6 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
         restartPrimary();
     }
 
-    private void restartPrimary() throws IOException {
-        tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
-        setUp();
-    }
-
     /**
      *   Tests whether durable bindings are correctly recovered.
      */
