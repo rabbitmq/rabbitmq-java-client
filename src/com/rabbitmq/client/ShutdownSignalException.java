@@ -57,10 +57,25 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
                                    boolean initiatedByApplication,
                                    Method reason, Object ref)
     {
-        super((initiatedByApplication
-               ? ("clean " + (hardError ? "connection" : "channel") + " shutdown")
-               : ((hardError ? "connection" : "channel") + " error"))
-              + "; reason: " + reason);
+        this(hardError, initiatedByApplication, reason, ref, "");
+    }
+
+    /**
+     * Construct a ShutdownSignalException from the arguments.
+     * @param hardError the relevant hard error
+     * @param initiatedByApplication if the shutdown was client-initiated
+     * @param reason AMQP method describing the exception reason
+     * @param ref Reference to Connection or Channel that fired the signal
+     * @param messagePrefix prefix to add to exception message
+     */
+    public ShutdownSignalException(boolean hardError,
+                                   boolean initiatedByApplication,
+                                   Method reason, Object ref, String messagePrefix)
+    {
+        super(messagePrefix + (initiatedByApplication
+                       ? ("clean " + (hardError ? "connection" : "channel") + " shutdown")
+                       : ((hardError ? "connection" : "channel") + " error"))
+                      + "; reason: " + reason);
         this._hardError = hardError;
         this._initiatedByApplication = initiatedByApplication;
         this._reason = reason;
