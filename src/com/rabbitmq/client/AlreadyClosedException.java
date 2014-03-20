@@ -31,6 +31,6 @@ public class AlreadyClosedException extends ShutdownSignalException {
               sse.isInitiatedByApplication(),
               sse.getReason(),
               sse.getReference(),
-              (sse.isHardError() ? "connection" : "channel" + " is already closed due to "));
+              (sse.isHardError() ? "connection" : "channel" + " is already closed due to previous "));
     }
 }
