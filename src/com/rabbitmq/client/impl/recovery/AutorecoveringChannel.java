@@ -304,6 +304,10 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return basicConsume(queue, autoAck, consumerTag, false, false, null, callback);
     }
 
+    public String basicConsume(String queue, boolean autoAck, Map<String, Object> arguments, Consumer callback) throws IOException {
+        return basicConsume(queue, autoAck, "", false, false, arguments, callback);
+    }
+
     public String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments, Consumer callback) throws IOException {
         final String result = delegate.basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, callback);
         recordConsumer(result, queue, autoAck, exclusive, arguments, callback);
