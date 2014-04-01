@@ -26,7 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-public class Consumer implements Runnable {
+public class Consumer extends ProducerConsumerBase implements Runnable {
 
     private QueueingConsumer q;
     private Channel channel;
@@ -41,11 +41,12 @@ public class Consumer implements Runnable {
 
     public Consumer(Channel channel, String id,
                     String queueName, int txSize, boolean autoAck,
-                    int multiAckEvery, Stats stats, int msgLimit, int timeLimit) {
+                    int multiAckEvery, Stats stats, float rateLimit, int msgLimit, int timeLimit) {
 
         this.channel       = channel;
         this.id            = id;
         this.queueName     = queueName;
+        this.rateLimit     = rateLimit;
         this.txSize        = txSize;
         this.autoAck       = autoAck;
         this.multiAckEvery = multiAckEvery;
@@ -58,6 +59,8 @@ public class Consumer implements Runnable {
         long now;
         long startTime;
         startTime = now = System.currentTimeMillis();
+        lastStatsTime = startTime;
+        msgCount = 0;
         int totalMsgCount = 0;
 
         try {
@@ -65,7 +68,8 @@ public class Consumer implements Runnable {
             channel.basicConsume(queueName, autoAck, q);
 
             while ((timeLimit == 0 || now < startTime + timeLimit) &&
-                   (msgLimit == 0 || totalMsgCount < msgLimit)) {
+                   (msgLimit == 0 || msgCount < msgLimit)) {
+                delay(now);
                 QueueingConsumer.Delivery delivery;
                 try {
                     if (timeLimit == 0) {
@@ -81,6 +85,7 @@ public class Consumer implements Runnable {
                     continue;
                 }
                 totalMsgCount++;
+                msgCount++;
 
                 DataInputStream d = new DataInputStream(new ByteArrayInputStream(delivery.getBody()));
                 d.readInt();
