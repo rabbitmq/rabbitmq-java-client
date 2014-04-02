@@ -8,8 +8,7 @@ public class ProducerConsumerBase {
     protected long  lastStatsTime;
     protected int   msgCount;
 
-    protected void delay(long now)
-        throws InterruptedException {
+    protected void delay(long now) {
 
         long elapsed = now - lastStatsTime;
         //example: rateLimit is 5000 msg/s,
@@ -19,7 +18,11 @@ public class ProducerConsumerBase {
         long pause = (long) (rateLimit == 0.0f ?
             0.0f : (msgCount * 1000.0 / rateLimit - elapsed));
         if (pause > 0) {
-            Thread.sleep(pause);
+            try {
+                Thread.sleep(pause);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

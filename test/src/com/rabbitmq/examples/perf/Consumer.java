@@ -16,20 +16,21 @@
 
 package com.rabbitmq.examples.perf;
 
+import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 
 public class Consumer extends ProducerConsumerBase implements Runnable {
 
-    private QueueingConsumer q;
-    private Channel channel;
+    private ConsumerImpl     q;
+    private Channel          channel;
     private String           id;
     private String           queueName;
     private int              txSize;
@@ -38,6 +39,7 @@ public class Consumer extends ProducerConsumerBase implements Runnable {
     private Stats stats;
     private int              msgLimit;
     private long             timeLimit;
+    private CountDownLatch   latch = new CountDownLatch(1);
 
     public Consumer(Channel channel, String id,
                     String queueName, int txSize, boolean autoAck,
@@ -56,43 +58,43 @@ public class Consumer extends ProducerConsumerBase implements Runnable {
     }
 
     public void run() {
+        try {
+            q = new ConsumerImpl(channel);
+            channel.basicConsume(queueName, autoAck, q);
+            latch.await();
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ShutdownSignalException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private class ConsumerImpl extends DefaultConsumer {
         long now;
         long startTime;
-        startTime = now = System.currentTimeMillis();
-        lastStatsTime = startTime;
-        msgCount = 0;
         int totalMsgCount = 0;
 
-        try {
-            q = new QueueingConsumer(channel);
-            channel.basicConsume(queueName, autoAck, q);
+        private ConsumerImpl(Channel channel) {
+            super(channel);
+            startTime = now = System.currentTimeMillis();
+            lastStatsTime = startTime;
+            msgCount = 0;
+        }
 
-            while ((timeLimit == 0 || now < startTime + timeLimit) &&
-                   (msgLimit == 0 || msgCount < msgLimit)) {
-                delay(now);
-                QueueingConsumer.Delivery delivery;
-                try {
-                    if (timeLimit == 0) {
-                        delivery = q.nextDelivery();
-                    } else {
-                        delivery = q.nextDelivery(startTime + timeLimit - now);
-                        if (delivery == null) break;
-                    }
-                } catch (ConsumerCancelledException e) {
-                    System.out.println("Consumer cancelled by broker. Re-consuming.");
-                    q = new QueueingConsumer(channel);
-                    channel.basicConsume(queueName, autoAck, q);
-                    continue;
-                }
+        @Override
+        public void handleDelivery(String consumerTag, Envelope envelope, BasicProperties properties, byte[] body) throws IOException {
+            if ((timeLimit == 0 || now < startTime + timeLimit) &&
+                (msgLimit == 0 || msgCount < msgLimit)) {
                 totalMsgCount++;
                 msgCount++;
 
-                DataInputStream d = new DataInputStream(new ByteArrayInputStream(delivery.getBody()));
+                DataInputStream d = new DataInputStream(new ByteArrayInputStream(body));
                 d.readInt();
                 long msgNano = d.readLong();
                 long nano = System.nanoTime();
-
-                Envelope envelope = delivery.getEnvelope();
 
                 if (!autoAck) {
                     if (multiAckEvery == 0) {
@@ -109,14 +111,17 @@ public class Consumer extends ProducerConsumerBase implements Runnable {
                 now = System.currentTimeMillis();
 
                 stats.handleRecv(id.equals(envelope.getRoutingKey()) ? (nano - msgNano) : 0L);
+                delay(now);
             }
+            else {
+                latch.countDown();
+            }
+        }
 
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException (e);
-        } catch (ShutdownSignalException e) {
-            throw new RuntimeException(e);
+        @Override
+        public void handleCancel(String consumerTag) throws IOException {
+            System.out.println("Consumer cancelled by broker. Re-consuming.");
+            channel.basicConsume(queueName, autoAck, q);
         }
     }
 }
