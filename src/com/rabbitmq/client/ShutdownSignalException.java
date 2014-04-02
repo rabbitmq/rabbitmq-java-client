@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
@@ -41,7 +41,7 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
     private final boolean _initiatedByApplication;
 
     /** Possible explanation */
-    private final Object _reason;
+    private final Method _reason;
 
     /** Either Channel or Connection instance, depending on _hardError */
     private final Object _ref;
@@ -50,17 +50,32 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
      * Construct a ShutdownSignalException from the arguments.
      * @param hardError the relevant hard error
      * @param initiatedByApplication if the shutdown was client-initiated
-     * @param reason Object describing the origin of the exception
+     * @param reason AMQP method describing the exception reason
      * @param ref Reference to Connection or Channel that fired the signal
      */
     public ShutdownSignalException(boolean hardError,
                                    boolean initiatedByApplication,
-                                   Object reason, Object ref)
+                                   Method reason, Object ref)
     {
-        super((initiatedByApplication
-               ? ("clean " + (hardError ? "connection" : "channel") + " shutdown")
-               : ((hardError ? "connection" : "channel") + " error"))
-              + "; reason: " + reason);
+        this(hardError, initiatedByApplication, reason, ref, "");
+    }
+
+    /**
+     * Construct a ShutdownSignalException from the arguments.
+     * @param hardError the relevant hard error
+     * @param initiatedByApplication if the shutdown was client-initiated
+     * @param reason AMQP method describing the exception reason
+     * @param ref Reference to Connection or Channel that fired the signal
+     * @param messagePrefix prefix to add to exception message
+     */
+    public ShutdownSignalException(boolean hardError,
+                                   boolean initiatedByApplication,
+                                   Method reason, Object ref, String messagePrefix)
+    {
+        super(messagePrefix + (initiatedByApplication
+                       ? ("clean " + (hardError ? "connection" : "channel") + " shutdown")
+                       : ((hardError ? "connection" : "channel") + " error"))
+                      + "; reason: " + reason);
         this._hardError = hardError;
         this._initiatedByApplication = initiatedByApplication;
         this._reason = reason;
@@ -77,8 +92,8 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
      */
     public boolean isInitiatedByApplication() { return _initiatedByApplication; }
 
-    /** @return the reason object, if any */
-    public Object getReason() { return _reason; }
+    /** @return the reason, if any */
+    public Method getReason() { return _reason; }
 
     /** @return Reference to Connection or Channel object that fired the signal **/
     public Object getReference() { return _ref; }

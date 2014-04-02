@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -66,17 +66,7 @@ public class BrokenFramesTest extends TestCase {
         myFrameHandler.setFrames(frames.iterator());
 
         try {
-            new AMQConnection(factory.getUsername(),
-                              factory.getPassword(),
-                              myFrameHandler,
-                              Executors.newFixedThreadPool(1),
-                              factory.getVirtualHost(),
-                              factory.getClientProperties(),
-                              factory.getRequestedFrameMax(),
-                              factory.getRequestedChannelMax(),
-                              factory.getRequestedHeartbeat(),
-                              factory.getSaslConfig())
-            .start();
+            new AMQConnection(factory.params(Executors.newFixedThreadPool(1)), myFrameHandler).start();
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
@@ -102,17 +92,7 @@ public class BrokenFramesTest extends TestCase {
         myFrameHandler.setFrames(frames.iterator());
 
         try {
-            new AMQConnection(factory.getUsername(),
-                              factory.getPassword(),
-                              myFrameHandler,
-                              Executors.newFixedThreadPool(1),
-                              factory.getVirtualHost(),
-                              factory.getClientProperties(),
-                              factory.getRequestedFrameMax(),
-                              factory.getRequestedChannelMax(),
-                              factory.getRequestedHeartbeat(),
-                              factory.getSaslConfig())
-                    .start();
+            new AMQConnection(factory.params(Executors.newFixedThreadPool(1)), myFrameHandler).start();
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
@@ -176,6 +156,14 @@ public class BrokenFramesTest extends TestCase {
 
         public void flush() throws IOException {
             // no need to implement this: don't bother writing the frame
+        }
+
+        public InetAddress getLocalAddress() {
+            return null;
+        }
+
+        public int getLocalPort() {
+            return -1;
         }
     }
 

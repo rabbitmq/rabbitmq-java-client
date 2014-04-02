@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
@@ -22,11 +22,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
@@ -34,8 +34,11 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.ConnectionParams;
+import com.rabbitmq.client.impl.DefaultExceptionHandler;
 import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.SocketFrameHandler;
+import com.rabbitmq.client.impl.FrameHandlerFactory;
+import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 
 /**
  * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
@@ -88,6 +91,15 @@ public class ConnectionFactory implements Cloneable {
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
+    private ExecutorService sharedExecutor;
+    private ThreadFactory threadFactory           = Executors.defaultThreadFactory();
+    private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
+    private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
+
+    private boolean automaticRecovery             = false;
+    private boolean topologyRecovery              = true;
+
+    private int networkRecoveryInterval           = 5000;
 
     /** @return number of consumer threads in default {@link ExecutorService} */
     @Deprecated
@@ -111,15 +123,15 @@ public class ConnectionFactory implements Cloneable {
         this.host = host;
     }
 
-    private int portOrDefault(int port){
-        if(port != USE_DEFAULT_PORT) return port;
-        else if(isSSL()) return DEFAULT_AMQP_OVER_SSL_PORT;
+    public static int portOrDefault(int port, boolean ssl) {
+        if (port != USE_DEFAULT_PORT) return port;
+        else if (ssl) return DEFAULT_AMQP_OVER_SSL_PORT;
         else return DEFAULT_AMQP_PORT;
     }
 
     /** @return the default port to use for connections */
     public int getPort() {
-        return portOrDefault(port);
+        return portOrDefault(port, isSSL());
     }
 
     /**
@@ -177,6 +189,7 @@ public class ConnectionFactory implements Cloneable {
     public void setVirtualHost(String virtualHost) {
         this.virtualHost = virtualHost;
     }
+
 
     /**
      * Convenience method for setting the fields in an AMQP URI: host,
@@ -384,6 +397,76 @@ public class ConnectionFactory implements Cloneable {
         this.factory = factory;
     }
 
+    /**
+     * Get the socket configurator.
+     *
+     * @see #setSocketConfigurator(SocketConfigurator)
+     */
+    @SuppressWarnings("unused")
+    public SocketConfigurator getSocketConfigurator() {
+        return socketConf;
+    }
+
+    /**
+     * Set the socket configurator. This gets a chance to "configure" a socket
+     * after it has been opened. The default socket configurator disables
+     * Nagle's algorithm.
+     *
+     * @param socketConfigurator the configurator to use
+     */
+    public void setSocketConfigurator(SocketConfigurator socketConfigurator) {
+        this.socketConf = socketConfigurator;
+    }
+
+    /**
+     * Set the executor to use by default for newly created connections.
+     * All connections that use this executor share it.
+     *
+     * It's developer's responsibility to shut down the executor
+     * when it is no longer needed.
+     *
+     * @param executor
+     */
+    public void setSharedExecutor(ExecutorService executor) {
+        this.sharedExecutor = executor;
+    }
+
+    /**
+     * Retrieve the thread factory used to instantiate new threads.
+     * @see ThreadFactory
+     */
+    public ThreadFactory getThreadFactory() {
+        return threadFactory;
+    }
+
+    /**
+     * Set the thread factory used to instantiate new threads.
+     * @see ThreadFactory
+     */
+    public void setThreadFactory(ThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
+    }
+
+    /**
+    * Get the exception handler.
+    *
+    * @see com.rabbitmq.client.ExceptionHandler
+    */
+    public ExceptionHandler getExceptionHandler() {
+        return exceptionHandler;
+    }
+
+    /**
+     * Set the exception handler to use for newly created connections.
+     * @see com.rabbitmq.client.ExceptionHandler
+     */
+    public void setExceptionHandler(ExceptionHandler exceptionHandler) {
+        if (exceptionHandler == null) {
+          throw new IllegalArgumentException("exception handler cannot be null!");
+        }
+        this.exceptionHandler = exceptionHandler;
+    }
+
     public boolean isSSL(){
         return getSocketFactory() instanceof SSLSocketFactory;
     }
@@ -433,49 +516,41 @@ public class ConnectionFactory implements Cloneable {
         setSocketFactory(context.getSocketFactory());
     }
 
-    protected FrameHandler createFrameHandler(Address addr)
-        throws IOException {
-
-        String hostName = addr.getHost();
-        int portNumber = portOrDefault(addr.getPort());
-        Socket socket = null;
-        try {
-            socket = factory.createSocket();
-            configureSocket(socket);
-            socket.connect(new InetSocketAddress(hostName, portNumber),
-                    connectionTimeout);
-            return createFrameHandler(socket);
-        } catch (IOException ioe) {
-            quietTrySocketClose(socket);
-            throw ioe;
-        }
-    }
-
-    private static void quietTrySocketClose(Socket socket) {
-        if (socket != null)
-            try { socket.close(); } catch (Exception _) {/*ignore exceptions*/}
-    }
-
-    protected FrameHandler createFrameHandler(Socket sock)
-        throws IOException
-    {
-        return new SocketFrameHandler(sock);
+    /**
+     * Returns true if automatic connection recovery is enabled, false otherwise
+     * @return true if automatic connection recovery is enabled, false otherwise
+     */
+    public boolean isAutomaticRecoveryEnabled() {
+        return automaticRecovery;
     }
 
     /**
-     *  Provides a hook to insert custom configuration of the sockets
-     *  used to connect to an AMQP server before they connect.
-     *
-     *  The default behaviour of this method is to disable Nagle's
-     *  algorithm to get more consistently low latency.  However it
-     *  may be overridden freely and there is no requirement to retain
-     *  this behaviour.
-     *
-     *  @param socket The socket that is to be used for the Connection
+     * Enables or disables automatic connection recovery
+     * @param automaticRecovery if true, enables connection recovery
      */
-    protected void configureSocket(Socket socket) throws IOException{
-        // disable Nagle's algorithm, for more consistently low latency
-        socket.setTcpNoDelay(true);
+    public void setAutomaticRecoveryEnabled(boolean automaticRecovery) {
+        this.automaticRecovery = automaticRecovery;
+    }
+
+    /**
+     * Returns true if topology recovery is enabled, false otherwise
+     * @return true if topology recovery is enabled, false otherwise
+     */
+    @SuppressWarnings("unused")
+    public boolean isTopologyRecoveryEnabled() {
+        return topologyRecovery;
+    }
+
+    /**
+     * Enables or disables topology recovery
+     * @param topologyRecovery if true, enables topology recovery
+     */
+    public void setTopologyRecoveryEnabled(boolean topologyRecovery) {
+        this.topologyRecovery = topologyRecovery;
+    }
+
+    protected FrameHandlerFactory createFrameHandlerFactory() throws IOException {
+        return new FrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL());
     }
 
     /**
@@ -485,7 +560,7 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection(Address[] addrs) throws IOException {
-        return newConnection(null, addrs);
+        return newConnection(this.sharedExecutor, addrs);
     }
 
     /**
@@ -493,35 +568,39 @@ public class ConnectionFactory implements Cloneable {
      * @param executor thread execution service for consumers on the connection
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @return an interface to the connection
-     * @throws IOException if it encounters a problem
+     * @throws java.io.IOException if it encounters a problem
      */
     public Connection newConnection(ExecutorService executor, Address[] addrs)
         throws IOException
     {
-        IOException lastException = null;
-        for (Address addr : addrs) {
-            try {
-                FrameHandler frameHandler = createFrameHandler(addr);
-                AMQConnection conn =
-                    new AMQConnection(username,
-                                      password,
-                                      frameHandler,
-                                      executor,
-                                      virtualHost,
-                                      getClientProperties(),
-                                      requestedFrameMax,
-                                      requestedChannelMax,
-                                      requestedHeartbeat,
-                                      saslConfig);
-                conn.start();
-                return conn;
-            } catch (IOException e) {
-                lastException = e;
-            }
-        }
+        FrameHandlerFactory fhFactory = createFrameHandlerFactory();
+        ConnectionParams params = params(executor);
 
-        throw (lastException != null) ? lastException
-                                      : new IOException("failed to connect");
+        if (isAutomaticRecoveryEnabled()) {
+            // see com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnectionFactory#newConnection
+            AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addrs);
+            conn.init();
+            return conn;
+        } else {
+            IOException lastException = null;
+            for (Address addr : addrs) {
+                try {
+                    FrameHandler handler = fhFactory.create(addr);
+                    AMQConnection conn = new AMQConnection(params, handler);
+                    conn.start();
+                    return conn;
+                } catch (IOException e) {
+                    lastException = e;
+                }
+            }
+            throw (lastException != null) ? lastException : new IOException("failed to connect");
+        }
+    }
+
+    public ConnectionParams params(ExecutorService executor) {
+        return new ConnectionParams(username, password, executor, virtualHost, getClientProperties(),
+                                    requestedFrameMax, requestedChannelMax, requestedHeartbeat, saslConfig,
+                                    networkRecoveryInterval, topologyRecovery, exceptionHandler, threadFactory);
     }
 
     /**
@@ -530,7 +609,7 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection() throws IOException {
-        return newConnection(null,
+        return newConnection(this.sharedExecutor,
                              new Address[] {new Address(getHost(), getPort())}
                             );
     }
@@ -553,5 +632,21 @@ public class ConnectionFactory implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new Error(e);
         }
+    }
+
+    /**
+     * Returns automatic connection recovery interval in milliseconds.
+     * @return how long will automatic recovery wait before attempting to reconnect, in ms; default is 5000
+     */
+    public int getNetworkRecoveryInterval() {
+        return networkRecoveryInterval;
+    }
+
+    /**
+     * Sets connection recovery interval. Default is 5000.
+     * @param networkRecoveryInterval how long will automatic recovery wait before attempting to reconnect, in ms
+     */
+    public void setNetworkRecoveryInterval(int networkRecoveryInterval) {
+        this.networkRecoveryInterval = networkRecoveryInterval;
     }
 }

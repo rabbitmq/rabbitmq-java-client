@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -25,8 +25,12 @@ public class AlreadyClosedException extends ShutdownSignalException {
     /** Default for suppressing warnings without version check. */
     private static final long serialVersionUID = 1L;
 
-    public AlreadyClosedException(String s, Object ref)
+    public AlreadyClosedException(ShutdownSignalException sse)
     {
-        super(true, true, s, ref);
+        super(sse.isHardError(),
+              sse.isInitiatedByApplication(),
+              sse.getReason(),
+              sse.getReference(),
+              (sse.isHardError() ? "connection" : "channel" + " is already closed due to previous "));
     }
 }

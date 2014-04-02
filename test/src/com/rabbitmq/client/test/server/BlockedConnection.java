@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -55,16 +55,6 @@ public class BlockedConnection extends BrokerTestCase {
         publish(connection);
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-    }
-
-    private void block() throws IOException, InterruptedException {
-        Host.rabbitmqctl("set_vm_memory_high_watermark 0.000000001");
-        setResourceAlarm("disk");
-    }
-
-    private void unblock() throws IOException, InterruptedException {
-        Host.rabbitmqctl("set_vm_memory_high_watermark 0.4");
-        clearResourceAlarm("disk");
     }
 
     private Connection connection(final CountDownLatch latch) throws IOException {

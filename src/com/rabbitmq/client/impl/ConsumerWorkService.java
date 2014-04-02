@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2011-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2011-2014 GoPivotal, Inc.  All rights reserved.
 
 package com.rabbitmq.client.impl;
 
@@ -19,19 +19,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import com.rabbitmq.client.Channel;
 
-final class ConsumerWorkService {
+final public class ConsumerWorkService {
     private static final int MAX_RUNNABLE_BLOCK_SIZE = 16;
     private static final int DEFAULT_NUM_THREADS = 5;
     private final ExecutorService executor;
     private final boolean privateExecutor;
     private final WorkPool<Channel, Runnable> workPool;
 
-    public ConsumerWorkService(ExecutorService executor) {
+    public ConsumerWorkService(ExecutorService executor, ThreadFactory threadFactory) {
         this.privateExecutor = (executor == null);
-        this.executor = (executor == null) ? Executors.newFixedThreadPool(DEFAULT_NUM_THREADS)
+        this.executor = (executor == null) ? Executors.newFixedThreadPool(DEFAULT_NUM_THREADS, threadFactory)
                                            : executor;
         this.workPool = new WorkPool<Channel, Runnable>();
     }
@@ -61,6 +62,14 @@ final class ConsumerWorkService {
         if (this.workPool.addWorkItem(channel, runnable)) {
             this.executor.execute(new WorkPoolRunnable());
         }
+    }
+
+    /**
+     * @return true if executor used by this work service is managed
+     *              by it and wasn't provided by the user
+     */
+    public boolean usesPrivateExecutor() {
+        return privateExecutor;
     }
 
     private final class WorkPoolRunnable implements Runnable {

@@ -11,12 +11,13 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
@@ -138,16 +139,7 @@ public class FrameMax extends BrokerTestCase {
         public GenerousAMQConnection(ConnectionFactory factory,
                                      FrameHandler      handler,
                                      ExecutorService   executor) {
-            super(factory.getUsername(),
-                  factory.getPassword(),
-                  handler,
-                  executor,
-                  factory.getVirtualHost(),
-                  factory.getClientProperties(),
-                  factory.getRequestedFrameMax(),
-                  factory.getRequestedChannelMax(),
-                  factory.getRequestedHeartbeat(),
-                  factory.getSaslConfig());
+            super(factory.params(executor), handler);
         }
 
         @Override public int getFrameMax() {
@@ -166,7 +158,7 @@ public class FrameMax extends BrokerTestCase {
             IOException lastException = null;
             for (Address addr : addrs) {
                 try {
-                    FrameHandler frameHandler = createFrameHandler(addr);
+                    FrameHandler frameHandler = createFrameHandlerFactory().create(addr);
                     AMQConnection conn = new GenerousAMQConnection(this, frameHandler, executor);
                     conn.start();
                     return conn;

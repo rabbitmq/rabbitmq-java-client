@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -187,7 +187,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         throws AlreadyClosedException
     {
         if (!isOpen()) {
-            throw new AlreadyClosedException("Attempt to use closed channel", this);
+            throw new AlreadyClosedException(getCloseReason());
         }
     }
 
@@ -262,7 +262,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             synchronized (_channelMutex) {
                 if (!setShutdownCauseIfOpen(signal)) {
                     if (!ignoreClosed)
-                        throw new AlreadyClosedException("Attempt to use closed channel", this);
+                        throw new AlreadyClosedException(getCloseReason());
                 }
 
                 _channelMutex.notifyAll();

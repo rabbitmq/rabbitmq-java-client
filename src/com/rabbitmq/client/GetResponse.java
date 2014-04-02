@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
@@ -85,5 +85,16 @@ public class GetResponse {
      */
     public int getMessageCount() {
         return messageCount;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("GetResponse(envelope=").append(envelope);
+        sb.append(", props=").append(props);
+        sb.append(", messageCount=").append(messageCount);
+        sb.append(", body=(elided, ").append(body.length).append(" bytes long)");
+        sb.append(")");
+        return sb.toString();
     }
 }

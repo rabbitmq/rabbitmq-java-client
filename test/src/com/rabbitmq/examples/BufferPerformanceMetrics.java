@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.examples;
@@ -24,6 +24,7 @@ import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DefaultSocketConfigurator;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 
@@ -64,15 +65,18 @@ public class BufferPerformanceMetrics {
 
             for(final boolean useNagle : new boolean[] { false, true }) {
                 ConnectionFactory factory = new ConnectionFactory() {
-                    { setUri(uri); }
-
-                        public void configureSocket(Socket socket)
-                            throws IOException {
-                            socket.setTcpNoDelay(!useNagle);
-                            socket.setReceiveBufferSize(bufferSize);
-                            socket.setSendBufferSize(bufferSize);
-                        }
-                    };
+                    {
+                        setUri(uri);
+                        setSocketConfigurator(new DefaultSocketConfigurator() {
+                            @Override
+                            public void configure(Socket socket) throws IOException {
+                                socket.setTcpNoDelay(!useNagle);
+                                socket.setReceiveBufferSize(bufferSize);
+                                socket.setSendBufferSize(bufferSize);
+                            }
+                        });
+                    }
+                };
 
                 Connection connection = factory.newConnection();
                 Channel channel = connection.createChannel();

@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -58,6 +58,10 @@ public class SocketFrameHandler implements FrameHandler {
         return _socket.getInetAddress();
     }
 
+    public InetAddress getLocalAddress() {
+        return _socket.getLocalAddress();
+    }
+
     // For testing only
     public DataInputStream getInputStream() {
         return _inputStream;
@@ -65,6 +69,10 @@ public class SocketFrameHandler implements FrameHandler {
 
     public int getPort() {
         return _socket.getPort();
+    }
+
+    public int getLocalPort() {
+        return _socket.getLocalPort();
     }
 
     public void setTimeout(int timeoutMs)

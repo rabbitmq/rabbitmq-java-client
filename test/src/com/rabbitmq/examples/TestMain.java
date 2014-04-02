@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -29,16 +29,21 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.DefaultSocketConfigurator;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.SocketConfigurator;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.utility.BlockingCell;
+
+import javax.net.SocketFactory;
 
 public class TestMain {
     public static void main(String[] args) throws IOException, URISyntaxException {
@@ -75,6 +80,25 @@ public class TestMain {
         private final int protocolMajor;
         private final int protocolMinor;
 
+        private class TestFrameHandlerFactory extends FrameHandlerFactory {
+            public TestFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl) {
+                super(connectionTimeout, factory, configurator, ssl);
+            }
+
+            @Override
+            public FrameHandler create(Address addr) throws IOException {
+                String hostName = addr.getHost();
+                int portNumber = addr.getPort();
+                if (portNumber == -1) portNumber = AMQP.PROTOCOL.PORT;
+                return new SocketFrameHandler(getSocketFactory().createSocket(hostName, portNumber)) {
+                    @Override
+                    public void sendHeader() throws IOException {
+                        sendHeader(protocolMajor, protocolMinor);
+                    }
+                };
+            }
+        }
+
         public TestConnectionFactory(int major, int minor, String uri)
             throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
         {
@@ -83,17 +107,10 @@ public class TestMain {
             setUri(uri);
         }
 
-        protected FrameHandler createFrameHandler(Address addr)
+        @Override
+        public FrameHandlerFactory createFrameHandlerFactory()
             throws IOException {
-
-            String hostName = addr.getHost();
-            int portNumber = addr.getPort();
-            if (portNumber == -1) portNumber = AMQP.PROTOCOL.PORT;
-            return new SocketFrameHandler(getSocketFactory().createSocket(hostName, portNumber)) {
-                    public void sendHeader() throws IOException {
-                        sendHeader(protocolMajor, protocolMinor);
-                    }
-                };
+            return new TestFrameHandlerFactory(10, SocketFactory.getDefault(), new DefaultSocketConfigurator(), false);
         }
     }
 

@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test;
@@ -36,10 +36,38 @@ import com.rabbitmq.client.impl.DefaultExceptionHandler;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 
 public class CloseInMainLoop extends BrokerTestCase{
+    private final CountDownLatch closeLatch = new CountDownLatch(1);
 
-  private final CountDownLatch closeLatch = new CountDownLatch(1);
+    private ConnectionFactory specialConnectionFactory() {
+        ConnectionFactory f = new ConnectionFactory();
+        f.setExceptionHandler(new DefaultExceptionHandler(){
+            @Override
+            public void handleConsumerException(Channel channel,
+                                                Throwable exception,
+                                                Consumer consumer,
+                                                String consumerTag,
+                                                String methodName) {
+                try {
+                    // TODO: change this to call 4-parameter close and make 6-parm one private
+                    ((AMQConnection) channel.getConnection())
+                            .close(AMQP.INTERNAL_ERROR,
+                                    "Internal error in Consumer " + consumerTag,
+                                    false,
+                                    exception,
+                                    -1,
+                                    false);
+                } catch (Throwable e) {
+                    // Man, this clearly isn't our day.
+                    // TODO: Log the nested failure
+                } finally {
+                    closeLatch.countDown();
+                }
+            }
+        });
+        return f;
+    }
 
-  class SpecialConnection extends AMQConnection{
+    class SpecialConnection extends AMQConnection{
     private AtomicBoolean validShutdown = new AtomicBoolean(false);
 
     public boolean hadValidShutdown(){
@@ -48,54 +76,16 @@ public class CloseInMainLoop extends BrokerTestCase{
     }
 
     public SpecialConnection() throws Exception {
-        this(new ConnectionFactory());
-    }
-
-    private SpecialConnection(ConnectionFactory factory) throws Exception{
-      super(factory.getUsername(),
-            factory.getPassword(),
-            new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT)),
-            Executors.newFixedThreadPool(1),
-            factory.getVirtualHost(),
-            factory.getClientProperties(),
-            factory.getRequestedFrameMax(),
-            factory.getRequestedChannelMax(),
-            factory.getRequestedHeartbeat(),
-            factory.getSaslConfig(),
-            new DefaultExceptionHandler(){
-                @Override
-                public void handleConsumerException(Channel channel,
-                                                    Throwable exception,
-                                                    Consumer consumer,
-                                                    String consumerTag,
-                                                    String methodName) {
-                    try {
-                        // TODO: change this to call 4-parameter close and make 6-parm one private
-                      ((AMQConnection) channel.getConnection())
-                          .close(AMQP.INTERNAL_ERROR,
-                                 "Internal error in Consumer " + consumerTag,
-                                 false,
-                                 exception,
-                                 -1,
-                                 false);
-                    } catch (Throwable e) {
-                        // Man, this clearly isn't our day.
-                        // TODO: Log the nested failure
-                    } finally {
-                        closeLatch.countDown();
-                    }
-                }
-            });
-
+        super(specialConnectionFactory().params(Executors.newFixedThreadPool(1)),
+              new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT)));
         this.start();
-      }
+    }
 
     @Override
     public boolean processControlCommand(Command c) throws IOException{
       if(c.getMethod() instanceof AMQP.Connection.CloseOk) validShutdown.set(true);
       return super.processControlCommand(c);
     }
-
   }
 
   public void testCloseOKNormallyReceived() throws Exception{

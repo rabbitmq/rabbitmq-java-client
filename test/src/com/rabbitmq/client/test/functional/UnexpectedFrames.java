@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test.functional;
@@ -21,11 +21,15 @@ import java.net.Socket;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DefaultSocketConfigurator;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.test.BrokerTestCase;
+
+import javax.net.SocketFactory;
 
 /**
  * Test that the server correctly handles us when we send it bad frames
@@ -67,9 +71,17 @@ public class UnexpectedFrames extends BrokerTestCase {
     }
 
     private static class ConfusedConnectionFactory extends ConnectionFactory {
+        @Override protected FrameHandlerFactory createFrameHandlerFactory() {
+            return new ConfusedFrameHandlerFactory();
+        }
+    }
 
-        @Override protected FrameHandler createFrameHandler(Socket sock)
-            throws IOException {
+    private static class ConfusedFrameHandlerFactory extends FrameHandlerFactory {
+        private ConfusedFrameHandlerFactory() {
+            super(1000, SocketFactory.getDefault(), new DefaultSocketConfigurator(), false);
+        }
+
+        @Override public FrameHandler create(Socket sock) throws IOException {
             return new ConfusedFrameHandler(sock);
         }
     }

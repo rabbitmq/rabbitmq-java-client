@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test;
@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+import com.rabbitmq.client.impl.ConnectionParams;
+import com.rabbitmq.client.TopologyRecoveryException;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
@@ -33,7 +35,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ExceptionHandler;
+import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
 
@@ -57,6 +59,7 @@ public class AMQConnectionTest extends TestCase {
     /** The mock frame handler used to test connection behaviour. */
     private MockFrameHandler _mockFrameHandler;
     private ConnectionFactory factory;
+    private MyExceptionHandler exceptionHandler;
 
     /** Setup the environment for this test
      * @see junit.framework.TestCase#setUp()
@@ -66,6 +69,8 @@ public class AMQConnectionTest extends TestCase {
         super.setUp();
         _mockFrameHandler = new MockFrameHandler();
         factory = new ConnectionFactory();
+        exceptionHandler = new MyExceptionHandler();
+        factory.setExceptionHandler(exceptionHandler);
     }
 
     /** Tear down the environment for this test
@@ -84,27 +89,17 @@ public class AMQConnectionTest extends TestCase {
     public void testConnectionSendsSingleHeaderAndTimesOut() {
         IOException exception = new SocketTimeoutException();
         _mockFrameHandler.setExceptionOnReadingFrames(exception);
-        MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, _mockFrameHandler.countHeadersSent());
         try {
-            new AMQConnection(factory.getUsername(),
-                    factory.getPassword(),
-                    _mockFrameHandler,
-                    Executors.newFixedThreadPool(1),
-                    factory.getVirtualHost(),
-                    factory.getClientProperties(),
-                    factory.getRequestedFrameMax(),
-                    factory.getRequestedChannelMax(),
-                    factory.getRequestedHeartbeat(),
-                    factory.getSaslConfig(),
-                    handler).start();
+            ConnectionParams params = factory.params(Executors.newFixedThreadPool(1));
+            new AMQConnection(params, _mockFrameHandler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
            // As expected
         }
         assertEquals(1, _mockFrameHandler.countHeadersSent());
         // _connection.close(0, CLOSE_MESSAGE);
-        List<Throwable> exceptionList = handler.getHandledExceptions();
+        List<Throwable> exceptionList = exceptionHandler.getHandledExceptions();
         assertEquals(Collections.<Throwable>singletonList(exception), exceptionList);
     }
 
@@ -126,27 +121,17 @@ public class AMQConnectionTest extends TestCase {
      */
     public void testConnectionHangInNegotiation() {
         this._mockFrameHandler.setTimeoutCount(10); // to limit hang
-        MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, this._mockFrameHandler.countHeadersSent());
         try {
-            new AMQConnection(factory.getUsername(),
-                    factory.getPassword(),
-                    this._mockFrameHandler,
-                    Executors.newFixedThreadPool(1),
-                    factory.getVirtualHost(),
-                    factory.getClientProperties(),
-                    factory.getRequestedFrameMax(),
-                    factory.getRequestedChannelMax(),
-                    factory.getRequestedHeartbeat(),
-                    factory.getSaslConfig(),
-                    handler).start();
+            ConnectionParams params = factory.params(Executors.newFixedThreadPool(1));
+            new AMQConnection(params, this._mockFrameHandler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
            // As expected
         }
         assertEquals(1, this._mockFrameHandler.countHeadersSent());
         // _connection.close(0, CLOSE_MESSAGE);
-        List<Throwable> exceptionList = handler.getHandledExceptions();
+        List<Throwable> exceptionList = exceptionHandler.getHandledExceptions();
         assertEquals("Only one exception expected", 1, exceptionList.size());
         assertEquals("Wrong type of exception returned.", SocketTimeoutException.class, exceptionList.get(0).getClass());
     }
@@ -220,6 +205,14 @@ public class AMQConnectionTest extends TestCase {
         public void flush() throws IOException {
             // no need to implement this: don't bother writing the frame
         }
+
+        public InetAddress getLocalAddress() {
+            return null;
+        }
+
+        public int getLocalPort() {
+            return -1;
+        }
     }
 
     /** Exception handler to facilitate testing. */
@@ -253,6 +246,18 @@ public class AMQConnectionTest extends TestCase {
                                             String methodName)
         {
             fail("handleConsumerException " + consumerTag + " " + methodName + ": " + ex);
+        }
+
+        public void handleConnectionRecoveryException(Connection conn, Throwable ex) {
+            _handledExceptions.add(ex);
+        }
+
+        public void handleChannelRecoveryException(Channel ch, Throwable ex) {
+            _handledExceptions.add(ex);
+        }
+
+        public void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException ex) {
+            _handledExceptions.add(ex);
         }
 
         public List<Throwable> getHandledExceptions() {

@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -75,5 +75,8 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(HeadersExchangeValidation.class);
         suite.addTestSuite(ConsumerPriorities.class);
         suite.addTestSuite(Policies.class);
+        suite.addTestSuite(ConnectionRecovery.class);
+        suite.addTestSuite(ExceptionHandling.class);
+        suite.addTestSuite(PerConsumerPrefetch.class);
     }
 }

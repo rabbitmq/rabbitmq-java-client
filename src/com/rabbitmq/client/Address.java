@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -43,7 +43,7 @@ public class Address {
      */
     public Address(String host) {
         _host = host;
-        _port = -1;
+        _port = ConnectionFactory.USE_DEFAULT_PORT;
     }
 
     /**

@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -320,40 +320,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             // We're in normal running mode.
 
             if (method instanceof Basic.Deliver) {
-                Basic.Deliver m = (Basic.Deliver) method;
-
-                Consumer callback = _consumers.get(m.getConsumerTag());
-                if (callback == null) {
-                    if (defaultConsumer == null) {
-                        // No handler set. We should blow up as this message
-                        // needs acking, just dropping it is not enough. See bug
-                        // 22587 for discussion.
-                        throw new IllegalStateException("Unsolicited delivery -" +
-                                " see Channel.setDefaultConsumer to handle this" +
-                                " case.");
-                    }
-                    else {
-                        callback = defaultConsumer;
-                    }
-                }
-
-                Envelope envelope = new Envelope(m.getDeliveryTag(),
-                                                 m.getRedelivered(),
-                                                 m.getExchange(),
-                                                 m.getRoutingKey());
-                try {
-                    this.dispatcher.handleDelivery(callback,
-                                                   m.getConsumerTag(),
-                                                   envelope,
-                                                   (BasicProperties) command.getContentHeader(),
-                                                   command.getContentBody());
-                } catch (Throwable ex) {
-                    getConnection().getExceptionHandler().handleConsumerException(this,
-                                                                                  ex,
-                                                                                  callback,
-                                                                                  m.getConsumerTag(),
-                                                                                  "handleDelivery");
-                }
+                processDelivery(command, (Basic.Deliver) method);
                 return true;
             } else if (method instanceof Basic.Return) {
                 callReturnListeners(command, (Basic.Return) method);
@@ -425,6 +392,43 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
+    protected void processDelivery(Command command, Basic.Deliver method) {
+        Basic.Deliver m = (Basic.Deliver) method;
+
+        Consumer callback = _consumers.get(m.getConsumerTag());
+        if (callback == null) {
+            if (defaultConsumer == null) {
+                // No handler set. We should blow up as this message
+                // needs acking, just dropping it is not enough. See bug
+                // 22587 for discussion.
+                throw new IllegalStateException("Unsolicited delivery -" +
+                        " see Channel.setDefaultConsumer to handle this" +
+                        " case.");
+            }
+            else {
+                callback = defaultConsumer;
+            }
+        }
+
+        Envelope envelope = new Envelope(m.getDeliveryTag(),
+                                         m.getRedelivered(),
+                                         m.getExchange(),
+                                         m.getRoutingKey());
+        try {
+            this.dispatcher.handleDelivery(callback,
+                                           m.getConsumerTag(),
+                                           envelope,
+                                           (BasicProperties) command.getContentHeader(),
+                                           command.getContentBody());
+        } catch (Throwable ex) {
+            getConnection().getExceptionHandler().handleConsumerException(this,
+                                                                          ex,
+                                                                          callback,
+                                                                          m.getConsumerTag(),
+                                                                          "handleDelivery");
+        }
+    }
+
     private void callReturnListeners(Command command, Basic.Return basicReturn) {
         try {
             for (ReturnListener l : this.returnListeners) {
@@ -473,7 +477,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     private void asyncShutdown(Command command) throws IOException {
         ShutdownSignalException signal = new ShutdownSignalException(false,
                                                                      false,
-                                                                     command,
+                                                                     command.getMethod(),
                                                                      this);
         synchronized (_channelMutex) {
             try {
@@ -593,6 +597,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 	throws IOException
     {
 	exnWrappingRpc(new Basic.Qos(prefetchSize, prefetchCount, global));
+    }
+
+    /** Public API - {@inheritDoc} */
+    public void basicQos(int prefetchCount, boolean global)
+            throws IOException
+    {
+        basicQos(0, prefetchCount, global);
     }
 
     /** Public API - {@inheritDoc} */
@@ -936,6 +947,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public String basicConsume(String queue, boolean autoAck, Map<String, Object> arguments,
+                               Consumer callback)
+        throws IOException
+    {
+        return basicConsume(queue, autoAck, "", false, false, arguments, callback);
+    }
+
+    /** Public API - {@inheritDoc} */
     public String basicConsume(String queue, boolean autoAck, String consumerTag,
                                Consumer callback)
         throws IOException
@@ -1057,13 +1076,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public Channel.FlowOk flow(final boolean a) throws IOException {
-        return (Channel.FlowOk) exnWrappingRpc(new Channel.Flow(a)).getMethod();
-    }
-
-    /** Public API - {@inheritDoc} */
-    public Channel.FlowOk getFlow() {
-        return new Channel.FlowOk(!_blockContent);
+    public boolean flowBlocked() {
+        return _blockContent;
     }
 
     /** Public API - {@inheritDoc} */

@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
@@ -234,4 +234,10 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      */
     void clearBlockedListeners();
 
+    /**
+     * Get the exception handler.
+     *
+     * @see com.rabbitmq.client.ExceptionHandler
+     */
+    ExceptionHandler getExceptionHandler();
 }

@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2013 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -39,6 +39,7 @@ public class ClientTests extends TestCase {
         suite.addTestSuite(AMQBuilderApiTest.class);
         suite.addTestSuite(AmqpUriTest.class);
         suite.addTestSuite(JSONReadWriteTest.class);
+        suite.addTestSuite(SharedThreadPoolTest.class);
         return suite;
     }
 }
