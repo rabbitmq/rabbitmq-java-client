@@ -8,7 +8,7 @@ set -e
 #   SIGNING_KEY -- the signing key to use
 #   GNUPG_PATH -- the path to the home directory for gnupg
 
-NEXUS_ROOT="http://$CREDS@oss.sonatype.org/service/local/staging/deploy/maven2/com/rabbitmq/amqp-client/$VERSION"
+NEXUS_ROOT="https://$CREDS@oss.sonatype.org/service/local/staging/deploy/maven2/com/rabbitmq/amqp-client/$VERSION"
 unset http_proxy
 unset https_proxy
 unset no_proxy
