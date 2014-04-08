@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
 
@@ -38,6 +39,18 @@ public class UserIDHeader extends BrokerTestCase {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
         } catch (AlreadyClosedException e) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, e);
+        }
+    }
+
+    public void testImpersonatedUserId() throws IOException {
+        Host.rabbitmqctl("set_user_tags guest administrator impersonator");
+        connection = null;
+        channel = null;
+        setUp();
+        try {
+            publish(BAD);
+        } finally {
+            Host.rabbitmqctl("set_user_tags guest administrator");
         }
     }
 
