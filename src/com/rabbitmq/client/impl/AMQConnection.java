@@ -52,7 +52,7 @@ import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 
 final class Copyright {
-    final static String COPYRIGHT="Copyright (C) 2007-2013 GoPivotal, Inc.";
+    final static String COPYRIGHT="Copyright (C) 2007-2014 GoPivotal, Inc.";
     final static String LICENSE="Licensed under the MPL. See http://www.rabbitmq.com/";
 }
 
