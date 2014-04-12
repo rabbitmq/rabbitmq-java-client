@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -439,7 +440,8 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     private void recoverQueues() {
-        for (Map.Entry<String, RecordedQueue> entry : this.recordedQueues.entrySet()) {
+        Map<String, RecordedQueue> copy = new HashMap<String, RecordedQueue>(this.recordedQueues);
+        for (Map.Entry<String, RecordedQueue> entry : copy.entrySet()) {
             String oldName = entry.getKey();
             RecordedQueue q = entry.getValue();
             try {
@@ -473,7 +475,8 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     private void recoverConsumers() {
-        for (Map.Entry<String, RecordedConsumer> entry : this.consumers.entrySet()) {
+        Map<String, RecordedConsumer> copy = new HashMap<String, RecordedConsumer>(this.consumers);
+        for (Map.Entry<String, RecordedConsumer> entry : copy.entrySet()) {
             String tag = entry.getKey();
             RecordedConsumer consumer = entry.getValue();
 

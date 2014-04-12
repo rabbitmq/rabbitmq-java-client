@@ -9,6 +9,8 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -259,17 +261,33 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
     }
 
-    public void testThatCancelledConsumerDoesNotReappearOnRecover() throws IOException, InterruptedException {
-        String q = UUID.randomUUID().toString();
-        channel.queueDeclare(q, false, false, false, null);
-        String tag = channel.basicConsume(q, new DefaultConsumer(channel));
+    public void testConsumerRecoveryWithManyConsumers() throws IOException, InterruptedException {
+        String q = channel.queueDeclare(UUID.randomUUID().toString(), false, false, false, null).getQueue();
+        final int n = 1024;
+        for (int i = 0; i < n; i++) {
+            channel.basicConsume(q, new DefaultConsumer(channel));
+        }
         AMQP.Queue.DeclareOk ok1 = channel.queueDeclarePassive(q);
-        assertEquals(1, ok1.getConsumerCount());
-        channel.basicCancel(tag);
+        assertEquals(n, ok1.getConsumerCount());
         closeAndWaitForRecovery();
         expectChannelRecovery(channel);
         AMQP.Queue.DeclareOk ok2 = channel.queueDeclarePassive(q);
-        assertEquals(0, ok2.getConsumerCount());
+        assertEquals(n, ok2.getConsumerCount());
+
+    }
+
+    public void testQueueRecoveryWithManyQueues() throws IOException, InterruptedException, TimeoutException {
+        List<String> qs = new ArrayList<String>();
+        final int n = 1024;
+        for (int i = 0; i < n; i++) {
+            qs.add(channel.queueDeclare(UUID.randomUUID().toString(), true, false, false, null).getQueue());
+        }
+        closeAndWaitForRecovery();
+        expectChannelRecovery(channel);
+        for(String q : qs) {
+            expectQueueRecovery(channel, q);
+            channel.queueDelete(q);
+        }
     }
 
     public void testChannelRecoveryCallback() throws IOException, InterruptedException {
