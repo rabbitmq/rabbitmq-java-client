@@ -31,7 +31,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Semaphore;
 
-public class Producer implements Runnable, ReturnListener,
+public class Producer extends ProducerConsumerBase implements Runnable, ReturnListener,
         ConfirmListener
 {
     private Channel channel;
@@ -41,17 +41,12 @@ public class Producer implements Runnable, ReturnListener,
     private boolean immediate;
     private boolean persistent;
     private int     txSize;
-    private float   rateLimit;
     private int     msgLimit;
     private long    timeLimit;
 
     private Stats   stats;
 
     private byte[]  message;
-
-    private long    startTime;
-    private long    lastStatsTime;
-    private int     msgCount;
 
     private Semaphore confirmPool;
     private volatile SortedSet<Long> unconfirmedSet =
@@ -124,7 +119,10 @@ public class Producer implements Runnable, ReturnListener,
     }
 
     public void run() {
-        long now = startTime = lastStatsTime = System.currentTimeMillis();
+        long now;
+        long startTime;
+        startTime = now = System.currentTimeMillis();
+        lastStatsTime = startTime;
         msgCount = 0;
         int totalMsgCount = 0;
 
@@ -162,21 +160,6 @@ public class Producer implements Runnable, ReturnListener,
                              mandatory, immediate,
                              persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
                              msg);
-    }
-
-    private void delay(long now)
-        throws InterruptedException {
-
-        long elapsed = now - lastStatsTime;
-        //example: rateLimit is 5000 msg/s,
-        //10 ms have elapsed, we have sent 200 messages
-        //the 200 msgs we have actually sent should have taken us
-        //200 * 1000 / 5000 = 40 ms. So we pause for 40ms - 10ms
-        long pause = (long) (rateLimit == 0.0f ?
-            0.0f : (msgCount * 1000.0 / rateLimit - elapsed));
-        if (pause > 0) {
-            Thread.sleep(pause);
-        }
     }
 
     private byte[] createMessage(int sequenceNumber)

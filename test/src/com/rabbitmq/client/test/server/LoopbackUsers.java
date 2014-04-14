@@ -71,20 +71,19 @@ public class LoopbackUsers extends TestCase {
 
     // Find the first IP address of a network interface that is up, not loopback, not point to point (e.g. VPN thing)
     private static InetAddress findRealIPAddress() throws SocketException {
-        throw new RuntimeException("this test will be enabled once we stop supporting Java 1.5");
-//        Enumeration<NetworkInterface> ifs = NetworkInterface.getNetworkInterfaces();
-//        while (ifs.hasMoreElements()) {
-//            NetworkInterface nif = ifs.nextElement();
-//            if (nif.isUp() && !nif.isPointToPoint() && !nif.isLoopback() && !nif.isVirtual()) {
-//                Enumeration<InetAddress> addrs = nif.getInetAddresses();
-//                while (addrs.hasMoreElements()) {
-//                    InetAddress addr = addrs.nextElement();
-//                    if (addr instanceof Inet4Address) {
-//                        return addr;
-//                    }
-//                }
-//            }
-//        }
-//        throw new RuntimeException("Could not determine real network address");
+        Enumeration<NetworkInterface> ifs = NetworkInterface.getNetworkInterfaces();
+        while (ifs.hasMoreElements()) {
+            NetworkInterface nif = ifs.nextElement();
+            if (nif.isUp() && !nif.isPointToPoint() && !nif.isLoopback() && !nif.isVirtual()) {
+                Enumeration<InetAddress> addrs = nif.getInetAddresses();
+                while (addrs.hasMoreElements()) {
+                    InetAddress addr = addrs.nextElement();
+                    if (addr instanceof Inet4Address) {
+                        return addr;
+                    }
+                }
+            }
+        }
+        throw new RuntimeException("Could not determine real network address");
     }
 }

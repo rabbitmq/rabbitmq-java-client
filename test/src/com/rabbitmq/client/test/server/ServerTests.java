@@ -42,6 +42,6 @@ public class ServerTests extends TestCase {
         suite.addTestSuite(Shutdown.class);
         suite.addTestSuite(BlockedConnection.class);
         suite.addTestSuite(ChannelLimitNegotiation.class);
-        //suite.addTestSuite(LoopbackUsers.class);
+        suite.addTestSuite(LoopbackUsers.class);
     }
 }
