@@ -265,13 +265,11 @@ public class ConnectionRecovery extends BrokerTestCase {
         String q = UUID.randomUUID().toString();
         channel.queueDeclare(q, false, false, false, null);
         String tag = channel.basicConsume(q, new DefaultConsumer(channel));
-        AMQP.Queue.DeclareOk ok1 = channel.queueDeclarePassive(q);
-        assertEquals(1, ok1.getConsumerCount());
+        assertConsumerCount(1, q);
         channel.basicCancel(tag);
         closeAndWaitForRecovery();
         expectChannelRecovery(channel);
-        AMQP.Queue.DeclareOk ok2 = channel.queueDeclarePassive(q);
-        assertEquals(0, ok2.getConsumerCount());
+        assertConsumerCount(0, q);
     }
 
     public void testConsumerRecoveryWithManyConsumers() throws IOException, InterruptedException {
@@ -280,12 +278,10 @@ public class ConnectionRecovery extends BrokerTestCase {
         for (int i = 0; i < n; i++) {
             channel.basicConsume(q, new DefaultConsumer(channel));
         }
-        AMQP.Queue.DeclareOk ok1 = channel.queueDeclarePassive(q);
-        assertEquals(n, ok1.getConsumerCount());
+        assertConsumerCount(n, q);
         closeAndWaitForRecovery();
         expectChannelRecovery(channel);
-        AMQP.Queue.DeclareOk ok2 = channel.queueDeclarePassive(q);
-        assertEquals(n, ok2.getConsumerCount());
+        assertConsumerCount(n, q);
 
     }
 
@@ -358,6 +354,10 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
         wait(latch);
         publishingConnection.abort();
+    }
+
+    private void assertConsumerCount(int exp, String q) throws IOException {
+        assertEquals(exp, channel.queueDeclarePassive(q).getConsumerCount());
     }
 
     private AMQP.Queue.DeclareOk declareClientNamedQueue(Channel ch, String q) throws IOException {
