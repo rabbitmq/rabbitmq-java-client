@@ -45,6 +45,7 @@ public class MulticastParams {
     private String exchangeType = "direct";
     private String queueName = "";
     private String routingKey = null;
+    private boolean randomRKey = false;
 
     private List<?> flags = new ArrayList<Object>();
 
@@ -68,6 +69,10 @@ public class MulticastParams {
 
     public void setRoutingKey(String routingKey) {
         this.routingKey = routingKey;
+    }
+
+    public void setRandomRKey(boolean randomRKey) {
+        this.randomRKey = randomRKey;
     }
 
     public void setProducerRateLimit(float producerRateLimit) {
@@ -163,6 +168,10 @@ public class MulticastParams {
         return routingKey;
     }
 
+    public boolean getRandomRKey() {
+        return randomRKey;
+    }
+
     public Producer createProducer(Connection connection, Stats stats, String id) throws IOException {
         Channel channel = connection.createChannel();
         if (producerTxSize > 0) channel.txSelect();
@@ -171,7 +180,7 @@ public class MulticastParams {
             channel.exchangeDeclare(exchangeName, exchangeType);
         }
         final Producer producer = new Producer(channel, exchangeName, id,
-                                               flags, producerTxSize,
+                                               randomRKey, flags, producerTxSize,
                                                producerRateLimit, producerMsgCount,
                                                minMsgSize, timeLimit,
                                                confirm, stats);

@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.Semaphore;
 
 public class Producer extends ProducerConsumerBase implements Runnable, ReturnListener,
@@ -37,6 +38,7 @@ public class Producer extends ProducerConsumerBase implements Runnable, ReturnLi
     private Channel channel;
     private String  exchangeName;
     private String  id;
+    private boolean randomRKey;
     private boolean mandatory;
     private boolean immediate;
     private boolean persistent;
@@ -52,7 +54,7 @@ public class Producer extends ProducerConsumerBase implements Runnable, ReturnLi
     private volatile SortedSet<Long> unconfirmedSet =
         Collections.synchronizedSortedSet(new TreeSet<Long>());
 
-    public Producer(Channel channel, String exchangeName, String id,
+    public Producer(Channel channel, String exchangeName, String id, boolean randomRKey,
                     List<?> flags, int txSize,
                     float rateLimit, int msgLimit, int minMsgSize, int timeLimit,
                     long confirm, Stats stats)
@@ -61,6 +63,7 @@ public class Producer extends ProducerConsumerBase implements Runnable, ReturnLi
         this.channel      = channel;
         this.exchangeName = exchangeName;
         this.id           = id;
+        this.randomRKey   = randomRKey;
         this.mandatory    = flags.contains("mandatory");
         this.immediate    = flags.contains("immediate");
         this.persistent   = flags.contains("persistent");
@@ -156,7 +159,7 @@ public class Producer extends ProducerConsumerBase implements Runnable, ReturnLi
         throws IOException {
 
         unconfirmedSet.add(channel.getNextPublishSeqNo());
-        channel.basicPublish(exchangeName, id,
+        channel.basicPublish(exchangeName, randomRKey ? UUID.randomUUID().toString() : id,
                              mandatory, immediate,
                              persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
                              msg);
