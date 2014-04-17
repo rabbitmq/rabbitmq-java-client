@@ -71,28 +71,6 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
     assertEquals(0, count.get());
   }
 
-  public void testNConsumerShutdown() throws Exception {
-    final QueueingConsumer qc = new QueueingConsumer(channel);
-    final BlockingCell<Boolean> result = new BlockingCell<Boolean>();
-    setupConsumers(qc);
-
-    channel.close();
-    listenForException(ShutdownSignalException.class, qc);
-  }
-
-  public void testNConsumerCancellation() throws Exception {
-    final QueueingConsumer qc = new QueueingConsumer(channel);
-    final Stack<String> queues = setupConsumers(qc);
-
-    while (!queues.isEmpty()) {
-      channel.queueDelete(queues.pop());
-      listenForException(ConsumerCancelledException.class, qc);
-    }
-
-    assertNull("Consumer should be ready for next delivery",
-               qc.nextDelivery(500));
-  }
-
   public void testFailureModes() throws Exception {
     final QueueingConsumer qc = new QueueingConsumer(channel);
     createTestQueue("q1", qc);
@@ -100,6 +78,8 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
 
     // the first basic.cancel arrived when we had only one consumer!
     checkForCancellationSignal(qc);
+    assertNull("Consumer should be ready for next delivery",
+               qc.nextDelivery(500));
 
     createTestQueue("q2", qc);
     basicPublishVolatile("q2");
@@ -128,8 +108,8 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
     return queues;
   }
 
-  private void listenForException(final Class clazz,
-                                  final QueueingConsumer qc) {
+  private static void listenForException(final Class clazz,
+                                         final QueueingConsumer qc) {
     try {
       qc.nextDelivery();
     } catch (Exception e) {
@@ -147,12 +127,7 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
   }
 
   private void checkForCancellationSignal(QueueingConsumer qc) throws InterruptedException {
-    try {
-      qc.nextDelivery();
-    } catch (ConsumerCancelledException cEx) {
-      return;
-    }
-    fail("Expected Consumer Cancelled Exception, but wasn't thrown!");
+    listenForException(ConsumerCancelledException.class, qc);
   }
 
   private void shutdownStateShouldBePermanent(QueueingConsumer qc) throws IOException, InterruptedException {
@@ -162,12 +137,7 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
   }
 
   private static void checkForShutdownSignal(QueueingConsumer qc) throws InterruptedException {
-    try {
-      qc.nextDelivery();
-    } catch (ShutdownSignalException sEx) {
-      return;
-    }
-    fail("Expect Shutdown Signal Exception, but was not thrown!");
+    listenForException(ShutdownSignalException.class, qc);
   }
 
   private void createTestQueue(final String queue, final Consumer qc) throws IOException {
