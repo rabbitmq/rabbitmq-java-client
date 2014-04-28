@@ -127,8 +127,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     public void testConfirmListenerRecovery() throws IOException, InterruptedException, TimeoutException {
-        int n = 3;
-        final CountDownLatch latch = new CountDownLatch(n);
+        final CountDownLatch latch = new CountDownLatch(1);
         channel.addConfirmListener(new ConfirmListener() {
             public void handleAck(long deliveryTag, boolean multiple) throws IOException {
                 latch.countDown();
@@ -142,9 +141,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         closeAndWaitForRecovery();
         expectChannelRecovery(channel);
         channel.confirmSelect();
-        for (int i = 0; i < n * 20; i++) {
-            channel.basicPublish("", q, true, false, null, "mandatory1".getBytes());
-        }
+        basicPublishVolatile(q);
         waitForConfirms(channel);
         wait(latch);
     }
