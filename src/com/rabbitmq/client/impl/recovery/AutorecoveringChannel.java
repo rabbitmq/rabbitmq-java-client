@@ -129,6 +129,10 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         delegate.clearConfirmListeners();
     }
 
+    public int getConfirmListenerCount() {
+        return this.confirmListeners.size();
+    }
+
     public Consumer getDefaultConsumer() {
         return delegate.getDefaultConsumer();
     }
