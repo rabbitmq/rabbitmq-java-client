@@ -31,6 +31,7 @@ public class ExceptionMessages extends BrokerTestCase {
             channel.close();
             channel.queueDeclare(uuid, false, false, false, null);
         } catch (AlreadyClosedException ace) {
+            System.out.println(ace.getMessage());
             assertTrue(ace.getMessage().startsWith("channel is already closed due to clean channel shutdown"));
         }
     }
