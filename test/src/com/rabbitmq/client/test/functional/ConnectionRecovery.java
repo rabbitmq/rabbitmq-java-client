@@ -141,7 +141,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         closeAndWaitForRecovery();
         expectChannelRecovery(channel);
         channel.confirmSelect();
-        channel.basicPublish("", q, true, false, null, "mandatory1".getBytes());
+        basicPublishVolatile(q);
         waitForConfirms(channel);
         wait(latch);
     }
