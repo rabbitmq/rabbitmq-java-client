@@ -57,7 +57,7 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
                                    boolean initiatedByApplication,
                                    Method reason, Object ref)
     {
-        this(hardError, initiatedByApplication, reason, ref, "");
+        this(hardError, initiatedByApplication, reason, ref, "", null);
     }
 
     /**
@@ -70,17 +70,31 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
      */
     public ShutdownSignalException(boolean hardError,
                                    boolean initiatedByApplication,
-                                   Method reason, Object ref, String messagePrefix)
+                                   Method reason, Object ref, String messagePrefix, Throwable cause)
     {
-        super(messagePrefix + (initiatedByApplication
-                       ? ("clean " + (hardError ? "connection" : "channel") + " shutdown")
-                       : ((hardError ? "connection" : "channel") + " error"))
-                      + "; reason: " + reason);
+        super(composeMessage(hardError, initiatedByApplication, reason, messagePrefix, cause));
         this._hardError = hardError;
         this._initiatedByApplication = initiatedByApplication;
         this._reason = reason;
         // Depending on hardError what we got is either Connection or Channel reference
         this._ref = ref;
+    }
+
+    private static String composeMessage(boolean hardError, boolean initiatedByApplication,
+                                         Method reason, String messagePrefix, Throwable cause) {
+        final String connectionOrChannel = hardError ? "connection" : "channel";
+        final String appInitiated = "clean " + connectionOrChannel + " shutdown";
+        final String nonAppInitiated = connectionOrChannel + " error";
+        final String explanation = initiatedByApplication ? appInitiated : nonAppInitiated;
+
+        StringBuilder result = new StringBuilder(messagePrefix).append(explanation);
+        if(reason != null) {
+            result.append("; protocol method: ").append(reason);
+        }
+        if(cause != null) {
+            result.append("; cause: ").append(cause);
+        }
+        return result.toString();
     }
 
     /** @return true if this signals a connection error, or false if a channel error */

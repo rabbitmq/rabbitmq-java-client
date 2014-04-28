@@ -717,7 +717,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         sse.initCause(cause);
         if (!setShutdownCauseIfOpen(sse)) {
             if (initiatedByApplication)
-                throw new AlreadyClosedException(getCloseReason());
+                throw new AlreadyClosedException(getCloseReason(), cause);
         }
 
         // stop any heartbeating
