@@ -431,7 +431,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             try {
                 x.recover();
             } catch (Exception cause) {
-                TopologyRecoveryException e = new TopologyRecoveryException("Caught an exception while recovering exchange " + x.getName(), cause);
+                final String message = "Caught an exception while recovering exchange " + x.getName() +
+                        ": " + cause.getMessage();
+                TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
                 this.getExceptionHandler().handleTopologyRecoveryException(delegate, x.getDelegateChannel(), e);
             }
         }
@@ -454,7 +456,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                     this.propagateQueueNameChangeToConsumers(oldName, newName);
                 }
             } catch (Exception cause) {
-                TopologyRecoveryException e = new TopologyRecoveryException("Caught an exception while recovering queue " + oldName, cause);
+                final String message = "Caught an exception while recovering queue " + oldName +
+                                               ": " + cause.getMessage();
+                TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
                 this.getExceptionHandler().handleTopologyRecoveryException(delegate, q.getDelegateChannel(), e);
             }
         }
@@ -465,7 +469,8 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             try {
                 b.recover();
             } catch (Exception cause) {
-                String message = "Caught an exception while recovering binding between " + b.getSource() + " and " + b.getDestination();
+                String message = "Caught an exception while recovering binding between " + b.getSource() +
+                                         " and " + b.getDestination() + ": " + cause.getMessage();
                 TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
                 this.getExceptionHandler().handleTopologyRecoveryException(delegate, b.getDelegateChannel(), e);
             }
@@ -486,7 +491,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                     this.consumers.put(newTag, consumer);
                 }
             } catch (Exception cause) {
-                TopologyRecoveryException e = new TopologyRecoveryException("Caught an exception while recovering consumer " + tag, cause);
+                final String message = "Caught an exception while recovering consumer " + tag +
+                        ": " + cause.getMessage();
+                TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
                 this.getExceptionHandler().handleTopologyRecoveryException(delegate, consumer.getDelegateChannel(), e);
             }
         }
