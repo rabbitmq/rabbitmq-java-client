@@ -387,11 +387,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             try {
                 this.delegate = this.cf.newConnection();
                 recovering = false;
-            } catch (ConnectException ce) {
+            } catch (Exception e) {
                 // TODO: exponential back-off
                 Thread.sleep(this.params.getNetworkRecoveryInterval());
-                this.getExceptionHandler().handleConnectionRecoveryException(this, ce);
-            } catch (Exception e) {
                 this.getExceptionHandler().handleConnectionRecoveryException(this, e);
             }
         }
