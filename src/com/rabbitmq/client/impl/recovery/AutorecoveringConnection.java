@@ -41,8 +41,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @see com.rabbitmq.client.Connection
  * @see com.rabbitmq.client.Recoverable
- * @see com.rabbitmq.client.ConnectionFactory#setAutomaticRecovery(boolean)
- * @see com.rabbitmq.client.ConnectionFactory#setTopologyRecovery(boolean)
+ * @see com.rabbitmq.client.ConnectionFactory#setAutomaticRecoveryEnabled(boolean)
+ * @see com.rabbitmq.client.ConnectionFactory#setTopologyRecoveryEnabled(boolean)
  * @since 3.3.0
  */
 public class AutorecoveringConnection implements Connection, Recoverable, NetworkConnection {
