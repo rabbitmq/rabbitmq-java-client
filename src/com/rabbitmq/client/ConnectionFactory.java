@@ -409,7 +409,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Set the socket configurator. This gets a chance to "configure" a socket
-     * after it has been opened. The default socket configurator disables
+     * before it has been opened. The default socket configurator disables
      * Nagle's algorithm.
      *
      * @param socketConfigurator the configurator to use
