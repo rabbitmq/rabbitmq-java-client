@@ -45,31 +45,32 @@ public class PerfTest {
                 System.exit(0);
             }
 
-            String exchangeType  = strArg(cmd, 't', "direct");
-            String exchangeName  = strArg(cmd, 'e', exchangeType);
-            String queueName     = strArg(cmd, 'u', "");
-            String routingKey    = strArg(cmd, 'k', null);
-            int samplingInterval = intArg(cmd, 'i', 1);
-            float rateLimit      = floatArg(cmd, 'r', 0.0f);
-            int producerCount    = intArg(cmd, 'x', 1);
-            int consumerCount    = intArg(cmd, 'y', 1);
-            int producerTxSize   = intArg(cmd, 'm', 0);
-            int consumerTxSize   = intArg(cmd, 'n', 0);
-            long confirm         = intArg(cmd, 'c', -1);
-            boolean autoAck      = cmd.hasOption('a');
-            int multiAckEvery    = intArg(cmd, 'A', 0);
-            int channelPrefetch  = intArg(cmd, 'Q', 0);
-            int consumerPrefetch = intArg(cmd, 'q', 0);
-            int minMsgSize       = intArg(cmd, 's', 0);
-            int timeLimit        = intArg(cmd, 'z', 0);
-            int producerMsgCount = intArg(cmd, 'C', 0);
-            int consumerMsgCount = intArg(cmd, 'D', 0);
-            List<?> flags        = lstArg(cmd, 'f');
-            int frameMax         = intArg(cmd, 'M', 0);
-            int heartbeat        = intArg(cmd, 'b', 0);
-            boolean predeclared  = cmd.hasOption('p');
+            String exchangeType     = strArg(cmd, 't', "direct");
+            String exchangeName     = strArg(cmd, 'e', exchangeType);
+            String queueName        = strArg(cmd, 'u', "");
+            String routingKey       = strArg(cmd, 'k', null);
+            int samplingInterval    = intArg(cmd, 'i', 1);
+            float producerRateLimit = floatArg(cmd, 'r', 0.0f);
+            float consumerRateLimit = floatArg(cmd, 'R', 0.0f);
+            int producerCount       = intArg(cmd, 'x', 1);
+            int consumerCount       = intArg(cmd, 'y', 1);
+            int producerTxSize      = intArg(cmd, 'm', 0);
+            int consumerTxSize      = intArg(cmd, 'n', 0);
+            long confirm            = intArg(cmd, 'c', -1);
+            boolean autoAck         = cmd.hasOption('a');
+            int multiAckEvery       = intArg(cmd, 'A', 0);
+            int channelPrefetch     = intArg(cmd, 'Q', 0);
+            int consumerPrefetch    = intArg(cmd, 'q', 0);
+            int minMsgSize          = intArg(cmd, 's', 0);
+            int timeLimit           = intArg(cmd, 'z', 0);
+            int producerMsgCount    = intArg(cmd, 'C', 0);
+            int consumerMsgCount    = intArg(cmd, 'D', 0);
+            List<?> flags           = lstArg(cmd, 'f');
+            int frameMax            = intArg(cmd, 'M', 0);
+            int heartbeat           = intArg(cmd, 'b', 0);
+            boolean predeclared     = cmd.hasOption('p');
 
-            String uri           = strArg(cmd, 'h', "amqp://localhost");
+            String uri              = strArg(cmd, 'h', "amqp://localhost");
 
             //setup
             PrintlnStats stats = new PrintlnStats(1000L * samplingInterval,
@@ -91,6 +92,7 @@ public class PerfTest {
             p.setConfirm(          confirm);
             p.setConsumerCount(    consumerCount);
             p.setConsumerMsgCount( consumerMsgCount);
+            p.setConsumerRateLimit(consumerRateLimit);
             p.setConsumerTxSize(   consumerTxSize);
             p.setExchangeName(     exchangeName);
             p.setExchangeType(     exchangeType);
@@ -105,7 +107,7 @@ public class PerfTest {
             p.setProducerTxSize(   producerTxSize);
             p.setQueueName(        queueName);
             p.setRoutingKey(       routingKey);
-            p.setRateLimit(        rateLimit);
+            p.setProducerRateLimit(producerRateLimit);
             p.setTimeLimit(        timeLimit);
 
             MulticastSet set = new MulticastSet(stats, factory, p);
@@ -137,7 +139,8 @@ public class PerfTest {
         options.addOption(new Option("u", "queue",         true, "queue name"));
         options.addOption(new Option("k", "routingKey",    true, "routing key"));
         options.addOption(new Option("i", "interval",      true, "sampling interval"));
-        options.addOption(new Option("r", "rate",          true, "rate limit"));
+        options.addOption(new Option("r", "rate",          true, "producer rate limit"));
+        options.addOption(new Option("R", "consumerRate",  true, "consumer rate limit"));
         options.addOption(new Option("x", "producers",     true, "producer count"));
         options.addOption(new Option("y", "consumers",     true, "consumer count"));
         options.addOption(new Option("m", "ptxsize",       true, "producer tx size"));
