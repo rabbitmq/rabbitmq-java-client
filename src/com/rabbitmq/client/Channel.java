@@ -344,6 +344,28 @@ public interface Channel extends ShutdownNotifier {
                                               Map<String, Object> arguments) throws IOException;
 
     /**
+     * Like {@link Channel#exchangeDeclare(String, String, boolean, boolean, java.util.Map)} but
+     * sets nowait parameter to true and returns nothing (as there will be no response from
+     * the server).
+     *
+     * @param exchange the name of the exchange
+     * @param type the exchange type
+     * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
+     * @param autoDelete true if the server should delete the exchange when it is no longer in use
+     * @param internal true if the exchange is internal, i.e. can't be directly
+     * published to by a client.
+     * @param arguments other properties (construction arguments) for the exchange
+     * @return a declaration-confirm method to indicate the exchange was successfully declared
+     * @throws java.io.IOException if an error is encountered
+     */
+    void exchangeDeclareNowait(String exchange,
+                               String type,
+                               boolean durable,
+                               boolean autoDelete,
+                               boolean internal,
+                               Map<String, Object> arguments) throws IOException;
+
+    /**
      * Declare an exchange passively; that is, check if the named exchange exists.
      * @param name check the existence of an exchange named this
      * @throws IOException the server will raise a 404 channel exception if the named exchange does not exist.
@@ -445,6 +467,19 @@ public interface Channel extends ShutdownNotifier {
      */
     Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive, boolean autoDelete,
                                  Map<String, Object> arguments) throws IOException;
+
+    /**
+     * Like {@link Channel#queueDeclare(String, boolean, boolean, boolean, java.util.Map)} but sets nowait
+     * flag to true and returns no result (as there will be no response from the server).
+     * @param queue the name of the queue
+     * @param durable true if we are declaring a durable queue (the queue will survive a server restart)
+     * @param exclusive true if we are declaring an exclusive queue (restricted to this connection)
+     * @param autoDelete true if we are declaring an autodelete queue (server will delete it when no longer in use)
+     * @param arguments other properties (construction arguments) for the queue
+     * @throws java.io.IOException if an error is encountered
+     */
+    void queueDeclareNowait(String queue, boolean durable, boolean exclusive, boolean autoDelete,
+                            Map<String, Object> arguments) throws IOException;
 
     /**
      * Declare a queue passively; i.e., check if it exists.  In AMQP

@@ -664,6 +664,24 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                arguments);
     }
 
+    public void exchangeDeclareNowait(String exchange,
+                                      String type,
+                                      boolean durable,
+                                      boolean autoDelete,
+                                      boolean internal,
+                                      Map<String, Object> arguments) throws IOException {
+        transmit(new AMQCommand(new Exchange.Declare.Builder()
+                                .exchange(exchange)
+                                .type(type)
+                                .durable(durable)
+                                .autoDelete(autoDelete)
+                                .internal(internal)
+                                .arguments(arguments)
+                                .passive(false)
+                                .nowait(true)
+                                .build()));
+    }
+
     /** Public API - {@inheritDoc} */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
                                               boolean durable,
@@ -792,6 +810,23 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return queueDeclare("", false, true, true, null);
+    }
+
+    /** Public API - {@inheritDoc} */
+    public void queueDeclareNowait(String queue,
+                                   boolean durable,
+                                   boolean exclusive,
+                                   boolean autoDelete,
+                                   Map<String, Object> arguments) throws IOException {
+        transmit(new AMQCommand(new Queue.Declare.Builder()
+                                .queue(queue)
+                                .durable(durable)
+                                .exclusive(exclusive)
+                                .autoDelete(autoDelete)
+                                .arguments(arguments)
+                                .passive(false)
+                                .nowait(true)
+                                .build()));
     }
 
     /** Public API - {@inheritDoc} */
