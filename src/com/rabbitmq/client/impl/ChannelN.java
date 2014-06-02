@@ -870,6 +870,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                .getMethod();
     }
 
+    @Override
+    public void queueDeleteNowait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
+        transmit(new AMQCommand(new Queue.Delete.Builder()
+                                        .queue(queue)
+                                        .ifUnused(ifUnused)
+                                        .ifEmpty(ifEmpty)
+                                        .nowait(true)
+                                        .build()));
+    }
+
     /** Public API - {@inheritDoc} */
     public Queue.DeleteOk queueDelete(String queue)
         throws IOException

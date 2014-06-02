@@ -529,6 +529,18 @@ public interface Channel extends ShutdownNotifier {
     Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty) throws IOException;
 
     /**
+     * Like {@link Channel#queueDelete(String, boolean, boolean)} but sets nowait parameter
+     * to true and returns nothing (as there will be no response from the server).
+     * @see com.rabbitmq.client.AMQP.Queue.Delete
+     * @see com.rabbitmq.client.AMQP.Queue.DeleteOk
+     * @param queue the name of the queue
+     * @param ifUnused true if the queue should be deleted only if not in use
+     * @param ifEmpty true if the queue should be deleted only if empty
+     * @throws java.io.IOException if an error is encountered
+     */
+    void queueDeleteNowait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException;
+
+    /**
      * Bind a queue to an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Queue.Bind
      * @see com.rabbitmq.client.AMQP.Queue.BindOk

@@ -278,6 +278,12 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return delegate.queueDelete(queue, ifUnused, ifEmpty);
     }
 
+    @Override
+    public void queueDeleteNowait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
+        deleteRecordedQueue(queue);
+        delegate.queueDeleteNowait(queue, ifUnused, ifEmpty);
+    }
+
     public AMQP.Queue.BindOk queueBind(String queue, String exchange, String routingKey) throws IOException {
         return queueBind(queue, exchange, routingKey, null);
     }

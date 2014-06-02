@@ -37,4 +37,10 @@ public class Nowait extends BrokerTestCase {
         }
     }
 
+    public void testQueueDeleteWithNowait() throws IOException {
+        String q = generateQueueName();
+        channel.queueDeclareNowait(q, false, true, true, null);
+        channel.queueDeleteNowait(q, false, false);
+    }
+
 }
