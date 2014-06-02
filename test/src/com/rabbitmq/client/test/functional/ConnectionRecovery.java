@@ -187,10 +187,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
     }
 
-    private String generateExchangeName() {
-        return "java-client.test.recovery." + UUID.randomUUID().toString();
-    }
-
     public void testThatDeletedQueueBindingsDontReappearOnRecovery() throws IOException, InterruptedException {
         String q = channel.queueDeclare("", false, false, false, null).getQueue();
         String x1 = "amq.fanout";

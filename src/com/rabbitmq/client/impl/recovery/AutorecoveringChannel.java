@@ -190,6 +190,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return ok;
     }
 
+    @Override
+    public void exchangeDeclareNowait(String exchange, String type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
+        delegate.exchangeDeclareNowait(exchange, type, durable, autoDelete, internal, arguments);
+    }
+
     public AMQP.Exchange.DeclareOk exchangeDeclarePassive(String name) throws IOException {
         return delegate.exchangeDeclarePassive(name);
     }
@@ -238,6 +243,14 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         }
         recordQueue(ok, q);
         return ok;
+    }
+
+    public void queueDeclareNowait(String queue,
+                                   boolean durable,
+                                   boolean exclusive,
+                                   boolean autoDelete,
+                                   Map<String, Object> arguments) throws IOException {
+        delegate.queueDeclareNowait(queue, durable, exclusive, autoDelete, arguments);
     }
 
     public AMQP.Queue.DeclareOk queueDeclarePassive(String queue) throws IOException {
