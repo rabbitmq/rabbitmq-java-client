@@ -573,6 +573,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.recordedQueues.put(ok.getQueue(), q);
     }
 
+    void recordQueue(String queue, RecordedQueue meta) {
+        this.recordedQueues.put(queue, meta);
+    }
+
     void deleteRecordedQueue(String queue) {
         this.recordedQueues.remove(queue);
     }
