@@ -26,4 +26,15 @@ public class Nowait extends BrokerTestCase {
             channel.exchangeDelete(x);
         }
     }
+
+    public void testExchangeBindWithNowait() throws IOException {
+        String x = generateExchangeName();
+        try {
+            channel.exchangeDeclareNowait(x, "fanout", false, false, false, null);
+            channel.exchangeBindNowait(x, "amq.fanout", "", null);
+        } finally {
+            channel.exchangeDelete(x);
+        }
+    }
+
 }
