@@ -419,6 +419,17 @@ public interface Channel extends ShutdownNotifier {
     Exchange.BindOk exchangeBind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
 
     /**
+     * Like {@link Channel#exchangeBind(String, String, String, java.util.Map)} but sets nowait parameter
+     * to true and returns void (as there will be no response from the server).
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
+     * @throws java.io.IOException if an error is encountered
+     */
+    void exchangeBindNowait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
+
+    /**
      * Unbind an exchange from an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk

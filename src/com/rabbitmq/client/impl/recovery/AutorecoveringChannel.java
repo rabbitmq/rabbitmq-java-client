@@ -218,6 +218,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return ok;
     }
 
+    public void exchangeBindNowait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
+        delegate.exchangeBindNowait(destination, source, routingKey, arguments);
+        recordExchangeBinding(destination, source, routingKey, arguments);
+    }
+
     public AMQP.Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey) throws IOException {
         return exchangeUnbind(destination, source, routingKey, null);
     }

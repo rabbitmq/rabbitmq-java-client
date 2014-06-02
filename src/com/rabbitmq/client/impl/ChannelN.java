@@ -764,6 +764,20 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public void exchangeBindNowait(String destination,
+                                   String source,
+                                   String routingKey,
+                                   Map<String, Object> arguments) throws IOException {
+        transmit(new AMQCommand(new Exchange.Bind.Builder()
+                                .destination(destination)
+                                .source(source)
+                                .routingKey(routingKey)
+                                .arguments(arguments)
+                                .nowait(true)
+                                .build()));
+    }
+
+    /** Public API - {@inheritDoc} */
     public Exchange.BindOk exchangeBind(String destination, String source,
             String routingKey) throws IOException {
         return exchangeBind(destination, source, routingKey, null);
