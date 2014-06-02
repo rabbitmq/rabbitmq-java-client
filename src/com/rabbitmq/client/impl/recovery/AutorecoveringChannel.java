@@ -250,7 +250,14 @@ public class AutorecoveringChannel implements Channel, Recoverable {
                                    boolean exclusive,
                                    boolean autoDelete,
                                    Map<String, Object> arguments) throws IOException {
+        RecordedQueue meta = new RecordedQueue(this, queue).
+            durable(durable).
+            exclusive(exclusive).
+            autoDelete(autoDelete).
+            arguments(arguments);
         delegate.queueDeclareNowait(queue, durable, exclusive, autoDelete, arguments);
+        recordQueue(queue, meta);
+
     }
 
     public AMQP.Queue.DeclareOk queueDeclarePassive(String queue) throws IOException {
@@ -499,6 +506,10 @@ public class AutorecoveringChannel implements Channel, Recoverable {
 
     private void recordQueue(AMQP.Queue.DeclareOk ok, RecordedQueue q) {
         this.connection.recordQueue(ok, q);
+    }
+
+    private void recordQueue(String queue, RecordedQueue meta) {
+        this.connection.recordQueue(queue, meta);
     }
 
     private void deleteRecordedQueue(String queue) {
