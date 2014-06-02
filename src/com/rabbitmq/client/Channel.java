@@ -384,6 +384,18 @@ public interface Channel extends ShutdownNotifier {
     Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException;
 
     /**
+     * Like {@link Channel#exchangeDelete(String, boolean)} but sets nowait parameter to true
+     * and returns void (as there will be no response from the server).
+     * @see com.rabbitmq.client.AMQP.Exchange.Delete
+     * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
+     * @param exchange the name of the exchange
+     * @param ifUnused true to indicate that the exchange is only to be deleted if it is unused
+     * @throws java.io.IOException if an error is encountered
+     */
+    void exchangeDeleteNowait(String exchange, boolean ifUnused) throws IOException;
+
+
+    /**
      * Delete an exchange, without regard for whether it is in use or not
      * @see com.rabbitmq.client.AMQP.Exchange.Delete
      * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk

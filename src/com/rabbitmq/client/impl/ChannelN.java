@@ -743,6 +743,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public void exchangeDeleteNowait(String exchange, boolean ifUnused) throws IOException {
+        transmit(new AMQCommand(new Exchange.Delete.Builder()
+                                        .exchange(exchange)
+                                        .ifUnused(ifUnused)
+                                        .nowait(true)
+                                        .build()));
+    }
+
+    /** Public API - {@inheritDoc} */
     public Exchange.DeleteOk exchangeDelete(String exchange)
         throws IOException
     {

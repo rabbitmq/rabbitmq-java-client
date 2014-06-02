@@ -204,6 +204,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return delegate.exchangeDelete(exchange, ifUnused);
     }
 
+    public void exchangeDeleteNowait(String exchange, boolean ifUnused) throws IOException {
+        deleteRecordedExchange(exchange);
+        delegate.exchangeDeleteNowait(exchange, ifUnused);
+    }
+
     public AMQP.Exchange.DeleteOk exchangeDelete(String exchange) throws IOException {
         return exchangeDelete(exchange, false);
     }
