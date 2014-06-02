@@ -508,6 +508,18 @@ public interface Channel extends ShutdownNotifier {
     Queue.BindOk queueBind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
 
     /**
+     * Same as {@link Channel#queueDeclare(String, boolean, boolean, boolean, java.util.Map)} but sets nowait
+     * parameter to true and returns void (as there will be no response
+     * from the server).
+     * @param queue the name of the queue
+     * @param exchange the name of the exchange
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
+     * @throws java.io.IOException if an error is encountered
+     */
+    void queueBindNowait(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
+
+    /**
      * Unbinds a queue from an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Queue.Unbind
      * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
