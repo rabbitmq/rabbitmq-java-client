@@ -393,7 +393,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     protected void processDelivery(Command command, Basic.Deliver method) {
-        Basic.Deliver m = (Basic.Deliver) method;
+        Basic.Deliver m = method;
 
         Consumer callback = _consumers.get(m.getConsumerTag());
         if (callback == null) {
@@ -1059,8 +1059,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             }
         };
 
-        rpc((Method)
-            new Basic.Consume.Builder()
+        rpc(new Basic.Consume.Builder()
              .queue(queue)
              .consumerTag(consumerTag)
              .noLocal(noLocal)
