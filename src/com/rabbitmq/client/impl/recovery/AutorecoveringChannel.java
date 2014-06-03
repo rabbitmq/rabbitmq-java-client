@@ -192,6 +192,12 @@ public class AutorecoveringChannel implements Channel, Recoverable {
 
     @Override
     public void exchangeDeclareNowait(String exchange, String type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
+        RecordedExchange x = new RecordedExchange(this, exchange).
+          type(type).
+          durable(durable).
+          autoDelete(autoDelete).
+          arguments(arguments);
+        recordExchange(exchange, x);
         delegate.exchangeDeclareNowait(exchange, type, durable, autoDelete, internal, arguments);
     }
 
