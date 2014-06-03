@@ -176,6 +176,16 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.queueDelete(q);
     }
 
+    public void testClientNamedQueueRecoveryWithNoWait() throws IOException, InterruptedException, TimeoutException {
+        Channel ch = connection.createChannel();
+        String q = "java-client.test.recovery.q1-nowait";
+        declareClientNamedQueueNoWait(ch, q);
+        closeAndWaitForRecovery();
+        expectChannelRecovery(ch);
+        expectQueueRecovery(ch, q);
+        ch.queueDelete(q);
+    }
+
     public void testServerNamedQueueRecovery() throws IOException, InterruptedException {
         String q = channel.queueDeclare("", false, false, false, null).getQueue();
         String x = "amq.fanout";
@@ -375,6 +385,10 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     private AMQP.Queue.DeclareOk declareClientNamedQueue(Channel ch, String q) throws IOException {
         return ch.queueDeclare(q, true, false, false, null);
+    }
+
+    private void declareClientNamedQueueNoWait(Channel ch, String q) throws IOException {
+        ch.queueDeclareNoWait(q, true, false, false, null);
     }
 
     private AMQP.Exchange.DeclareOk declareExchange(Channel ch, String x) throws IOException {
