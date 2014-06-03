@@ -7,20 +7,20 @@ import java.io.IOException;
 public class Nowait extends BrokerTestCase {
     public void testQueueDeclareWithNowait() throws IOException {
         String q = generateQueueName();
-        channel.queueDeclareNowait(q, false, true, true, null);
+        channel.queueDeclareNoWait(q, false, true, true, null);
         channel.queueDeclarePassive(q);
     }
 
     public void testQueueBindWithNowait() throws IOException {
         String q = generateQueueName();
-        channel.queueDeclareNowait(q, false, true, true, null);
-        channel.queueBindNowait(q, "amq.fanout", "", null);
+        channel.queueDeclareNoWait(q, false, true, true, null);
+        channel.queueBindNoWait(q, "amq.fanout", "", null);
     }
 
     public void testExchangeDeclareWithNowait() throws IOException {
         String x = generateExchangeName();
         try {
-            channel.exchangeDeclareNowait(x, "fanout", false, false, false, null);
+            channel.exchangeDeclareNoWait(x, "fanout", false, false, false, null);
             channel.exchangeDeclarePassive(x);
         } finally {
             channel.exchangeDelete(x);
@@ -30,8 +30,8 @@ public class Nowait extends BrokerTestCase {
     public void testExchangeBindWithNowait() throws IOException {
         String x = generateExchangeName();
         try {
-            channel.exchangeDeclareNowait(x, "fanout", false, false, false, null);
-            channel.exchangeBindNowait(x, "amq.fanout", "", null);
+            channel.exchangeDeclareNoWait(x, "fanout", false, false, false, null);
+            channel.exchangeBindNoWait(x, "amq.fanout", "", null);
         } finally {
             channel.exchangeDelete(x);
         }
@@ -39,13 +39,13 @@ public class Nowait extends BrokerTestCase {
 
     public void testQueueDeleteWithNowait() throws IOException {
         String q = generateQueueName();
-        channel.queueDeclareNowait(q, false, true, true, null);
-        channel.queueDeleteNowait(q, false, false);
+        channel.queueDeclareNoWait(q, false, true, true, null);
+        channel.queueDeleteNoWait(q, false, false);
     }
 
     public void testExchangeDeleteWithNowait() throws IOException {
         String x = generateExchangeName();
-        channel.exchangeDeclareNowait(x, "fanout", false, false, false, null);
-        channel.exchangeDeleteNowait(x, false);
+        channel.exchangeDeclareNoWait(x, "fanout", false, false, false, null);
+        channel.exchangeDeleteNoWait(x, false);
     }
 }

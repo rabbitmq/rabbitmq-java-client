@@ -664,7 +664,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                arguments);
     }
 
-    public void exchangeDeclareNowait(String exchange,
+    public void exchangeDeclareNoWait(String exchange,
                                       String type,
                                       boolean durable,
                                       boolean autoDelete,
@@ -743,7 +743,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public void exchangeDeleteNowait(String exchange, boolean ifUnused) throws IOException {
+    public void exchangeDeleteNoWait(String exchange, boolean ifUnused) throws IOException {
         transmit(new AMQCommand(new Exchange.Delete.Builder()
                                         .exchange(exchange)
                                         .ifUnused(ifUnused)
@@ -773,7 +773,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public void exchangeBindNowait(String destination,
+    public void exchangeBindNoWait(String destination,
                                    String source,
                                    String routingKey,
                                    Map<String, Object> arguments) throws IOException {
@@ -836,7 +836,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public void queueDeclareNowait(String queue,
+    public void queueDeclareNoWait(String queue,
                                    boolean durable,
                                    boolean exclusive,
                                    boolean autoDelete,
@@ -880,7 +880,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     @Override
-    public void queueDeleteNowait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
+    public void queueDeleteNoWait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
         transmit(new AMQCommand(new Queue.Delete.Builder()
                                         .queue(queue)
                                         .ifUnused(ifUnused)
@@ -920,7 +920,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public void queueBindNowait(String queue,
+    public void queueBindNoWait(String queue,
                                 String exchange,
                                 String routingKey,
                                 Map<String, Object> arguments) throws IOException {

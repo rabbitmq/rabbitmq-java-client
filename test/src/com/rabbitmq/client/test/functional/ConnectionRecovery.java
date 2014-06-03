@@ -382,7 +382,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     private void declareExchangeNoWait(Channel ch, String x) throws IOException {
-        ch.exchangeDeclareNowait(x, "fanout", false, false, false, null);
+        ch.exchangeDeclareNoWait(x, "fanout", false, false, false, null);
     }
 
     private void expectQueueRecovery(Channel ch, String q) throws IOException, InterruptedException, TimeoutException {

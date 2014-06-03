@@ -358,7 +358,7 @@ public interface Channel extends ShutdownNotifier {
      * @return a declaration-confirm method to indicate the exchange was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
-    void exchangeDeclareNowait(String exchange,
+    void exchangeDeclareNoWait(String exchange,
                                String type,
                                boolean durable,
                                boolean autoDelete,
@@ -392,7 +392,7 @@ public interface Channel extends ShutdownNotifier {
      * @param ifUnused true to indicate that the exchange is only to be deleted if it is unused
      * @throws java.io.IOException if an error is encountered
      */
-    void exchangeDeleteNowait(String exchange, boolean ifUnused) throws IOException;
+    void exchangeDeleteNoWait(String exchange, boolean ifUnused) throws IOException;
 
 
     /**
@@ -439,7 +439,7 @@ public interface Channel extends ShutdownNotifier {
      * @param arguments other properties (binding parameters)
      * @throws java.io.IOException if an error is encountered
      */
-    void exchangeBindNowait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
+    void exchangeBindNoWait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
 
     /**
      * Unbind an exchange from an exchange, with no extra arguments.
@@ -501,7 +501,7 @@ public interface Channel extends ShutdownNotifier {
      * @param arguments other properties (construction arguments) for the queue
      * @throws java.io.IOException if an error is encountered
      */
-    void queueDeclareNowait(String queue, boolean durable, boolean exclusive, boolean autoDelete,
+    void queueDeclareNoWait(String queue, boolean durable, boolean exclusive, boolean autoDelete,
                             Map<String, Object> arguments) throws IOException;
 
     /**
@@ -550,7 +550,7 @@ public interface Channel extends ShutdownNotifier {
      * @param ifEmpty true if the queue should be deleted only if empty
      * @throws java.io.IOException if an error is encountered
      */
-    void queueDeleteNowait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException;
+    void queueDeleteNoWait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException;
 
     /**
      * Bind a queue to an exchange, with no extra arguments.
@@ -587,7 +587,7 @@ public interface Channel extends ShutdownNotifier {
      * @param arguments other properties (binding parameters)
      * @throws java.io.IOException if an error is encountered
      */
-    void queueBindNowait(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
+    void queueBindNoWait(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
 
     /**
      * Unbinds a queue from an exchange, with no extra arguments.

@@ -191,14 +191,14 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     }
 
     @Override
-    public void exchangeDeclareNowait(String exchange, String type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
+    public void exchangeDeclareNoWait(String exchange, String type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
         RecordedExchange x = new RecordedExchange(this, exchange).
           type(type).
           durable(durable).
           autoDelete(autoDelete).
           arguments(arguments);
         recordExchange(exchange, x);
-        delegate.exchangeDeclareNowait(exchange, type, durable, autoDelete, internal, arguments);
+        delegate.exchangeDeclareNoWait(exchange, type, durable, autoDelete, internal, arguments);
     }
 
     public AMQP.Exchange.DeclareOk exchangeDeclarePassive(String name) throws IOException {
@@ -210,9 +210,9 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return delegate.exchangeDelete(exchange, ifUnused);
     }
 
-    public void exchangeDeleteNowait(String exchange, boolean ifUnused) throws IOException {
+    public void exchangeDeleteNoWait(String exchange, boolean ifUnused) throws IOException {
         deleteRecordedExchange(exchange);
-        delegate.exchangeDeleteNowait(exchange, ifUnused);
+        delegate.exchangeDeleteNoWait(exchange, ifUnused);
     }
 
     public AMQP.Exchange.DeleteOk exchangeDelete(String exchange) throws IOException {
@@ -229,8 +229,8 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return ok;
     }
 
-    public void exchangeBindNowait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
-        delegate.exchangeBindNowait(destination, source, routingKey, arguments);
+    public void exchangeBindNoWait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
+        delegate.exchangeBindNoWait(destination, source, routingKey, arguments);
         recordExchangeBinding(destination, source, routingKey, arguments);
     }
 
@@ -261,7 +261,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return ok;
     }
 
-    public void queueDeclareNowait(String queue,
+    public void queueDeclareNoWait(String queue,
                                    boolean durable,
                                    boolean exclusive,
                                    boolean autoDelete,
@@ -271,7 +271,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
             exclusive(exclusive).
             autoDelete(autoDelete).
             arguments(arguments);
-        delegate.queueDeclareNowait(queue, durable, exclusive, autoDelete, arguments);
+        delegate.queueDeclareNoWait(queue, durable, exclusive, autoDelete, arguments);
         recordQueue(queue, meta);
 
     }
@@ -290,9 +290,9 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     }
 
     @Override
-    public void queueDeleteNowait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
+    public void queueDeleteNoWait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
         deleteRecordedQueue(queue);
-        delegate.queueDeleteNowait(queue, ifUnused, ifEmpty);
+        delegate.queueDeleteNoWait(queue, ifUnused, ifEmpty);
     }
 
     public AMQP.Queue.BindOk queueBind(String queue, String exchange, String routingKey) throws IOException {
@@ -305,8 +305,8 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return ok;
     }
 
-    public void queueBindNowait(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException {
-        delegate.queueBindNowait(queue, exchange, routingKey, arguments);
+    public void queueBindNoWait(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException {
+        delegate.queueBindNoWait(queue, exchange, routingKey, arguments);
         recordQueueBinding(queue, exchange, routingKey, arguments);
     }
 
