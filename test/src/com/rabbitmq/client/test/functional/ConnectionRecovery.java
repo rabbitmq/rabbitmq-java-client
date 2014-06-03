@@ -167,19 +167,20 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     public void testClientNamedQueueRecovery() throws IOException, InterruptedException, TimeoutException {
-        Channel ch = connection.createChannel();
-        String q = "java-client.test.recovery.q1";
-        declareClientNamedQueue(ch, q);
-        closeAndWaitForRecovery();
-        expectChannelRecovery(ch);
-        expectQueueRecovery(ch, q);
-        ch.queueDelete(q);
+        testClientNamedQueueRecoveryWith("java-client.test.recovery.q1", false);
     }
 
     public void testClientNamedQueueRecoveryWithNoWait() throws IOException, InterruptedException, TimeoutException {
+        testClientNamedQueueRecoveryWith("java-client.test.recovery.q1-nowait", true);
+    }
+
+    protected void testClientNamedQueueRecoveryWith(String q, boolean noWait) throws IOException, InterruptedException, TimeoutException {
         Channel ch = connection.createChannel();
-        String q = "java-client.test.recovery.q1-nowait";
-        declareClientNamedQueueNoWait(ch, q);
+        if(noWait) {
+            declareClientNamedQueueNoWait(ch, q);
+        } else {
+            declareClientNamedQueue(ch, q);
+        }
         closeAndWaitForRecovery();
         expectChannelRecovery(ch);
         expectQueueRecovery(ch, q);
