@@ -289,7 +289,6 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return delegate.queueDelete(queue, ifUnused, ifEmpty);
     }
 
-    @Override
     public void queueDeleteNoWait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
         deleteRecordedQueue(queue);
         delegate.queueDeleteNoWait(queue, ifUnused, ifEmpty);
