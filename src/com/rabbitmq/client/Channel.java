@@ -467,6 +467,17 @@ public interface Channel extends ShutdownNotifier {
     Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
 
     /**
+     * Same as {@link Channel#exchangeUnbind(String, String, String, java.util.Map)} but sets no-wait parameter to true
+     * and retuns nothing (as there will be no response from the server).
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
+     * @throws java.io.IOException if an error is encountered
+     */
+    void exchangeUnbindNoWait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
+
+    /**
      * Actively declare a server-named exclusive, autodelete, non-durable queue.
      * The name of the new queue is held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk} result.
      * @see com.rabbitmq.client.AMQP.Queue.Declare

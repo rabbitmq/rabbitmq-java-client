@@ -243,6 +243,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return delegate.exchangeUnbind(destination, source, routingKey, arguments);
     }
 
+    public void exchangeUnbindNoWait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
+        delegate.exchangeUnbindNoWait(destination, source, routingKey, arguments);
+        deleteRecordedExchangeBinding(destination, source, routingKey, arguments);
+    }
+
     public AMQP.Queue.DeclareOk queueDeclare() throws IOException {
         return queueDeclare("", false, true, true, null);
     }

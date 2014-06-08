@@ -813,6 +813,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public void exchangeUnbindNoWait(String destination, String source,
+                                     String routingKey, Map<String, Object> arguments)
+            throws IOException {
+        transmit(new AMQCommand(new Exchange.Unbind.Builder()
+                                 .destination(destination)
+                                 .source(source)
+                                 .routingKey(routingKey)
+                                 .arguments(arguments)
+                                 .nowait(true)
+                                 .build()));
+    }
+
+    /** Public API - {@inheritDoc} */
     public Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive,
                                         boolean autoDelete, Map<String, Object> arguments)
         throws IOException
