@@ -30,7 +30,7 @@ import java.util.concurrent.TimeoutException;
 public class AutorecoveringChannel implements Channel, Recoverable {
     private RecoveryAwareChannelN delegate;
     private AutorecoveringConnection connection;
-    private final List<ShutdownListener> shutdownHooks  = new ArrayList<ShutdownListener>();
+    private List<ShutdownListener> shutdownHooks  = new ArrayList<ShutdownListener>();
     private List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
     private List<ReturnListener> returnListeners = new ArrayList<ReturnListener>();
     private List<ConfirmListener> confirmListeners = new ArrayList<ConfirmListener>();
