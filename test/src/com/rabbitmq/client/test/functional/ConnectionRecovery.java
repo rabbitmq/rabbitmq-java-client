@@ -146,10 +146,41 @@ public class ConnectionRecovery extends BrokerTestCase {
         wait(latch);
     }
 
-    public void testClientNamedQueueRecovery() throws IOException, InterruptedException, TimeoutException {
+    public void testExchangeRecovery() throws IOException, InterruptedException, TimeoutException {
         Channel ch = connection.createChannel();
-        String q = "java-client.test.recovery.q1";
-        declareClientNamedQueue(ch, q);
+        String x = "java-client.test.recovery.x1";
+        declareExchange(ch, x);
+        closeAndWaitForRecovery();
+        expectChannelRecovery(ch);
+        expectExchangeRecovery(ch, x);
+        ch.exchangeDelete(x);
+    }
+
+    public void testExchangeRecoveryWithNoWait() throws IOException, InterruptedException, TimeoutException {
+        Channel ch = connection.createChannel();
+        String x = "java-client.test.recovery.x1-nowait";
+        declareExchangeNoWait(ch, x);
+        closeAndWaitForRecovery();
+        expectChannelRecovery(ch);
+        expectExchangeRecovery(ch, x);
+        ch.exchangeDelete(x);
+    }
+
+    public void testClientNamedQueueRecovery() throws IOException, InterruptedException, TimeoutException {
+        testClientNamedQueueRecoveryWith("java-client.test.recovery.q1", false);
+    }
+
+    public void testClientNamedQueueRecoveryWithNoWait() throws IOException, InterruptedException, TimeoutException {
+        testClientNamedQueueRecoveryWith("java-client.test.recovery.q1-nowait", true);
+    }
+
+    protected void testClientNamedQueueRecoveryWith(String q, boolean noWait) throws IOException, InterruptedException, TimeoutException {
+        Channel ch = connection.createChannel();
+        if(noWait) {
+            declareClientNamedQueueNoWait(ch, q);
+        } else {
+            declareClientNamedQueue(ch, q);
+        }
         closeAndWaitForRecovery();
         expectChannelRecovery(ch);
         expectQueueRecovery(ch, q);
@@ -185,10 +216,6 @@ public class ConnectionRecovery extends BrokerTestCase {
             channel.exchangeDelete(x2);
             channel.queueDelete(q);
         }
-    }
-
-    private String generateExchangeName() {
-        return "java-client.test.recovery." + UUID.randomUUID().toString();
     }
 
     public void testThatDeletedQueueBindingsDontReappearOnRecovery() throws IOException, InterruptedException {
@@ -361,6 +388,18 @@ public class ConnectionRecovery extends BrokerTestCase {
         return ch.queueDeclare(q, true, false, false, null);
     }
 
+    private void declareClientNamedQueueNoWait(Channel ch, String q) throws IOException {
+        ch.queueDeclareNoWait(q, true, false, false, null);
+    }
+
+    private AMQP.Exchange.DeclareOk declareExchange(Channel ch, String x) throws IOException {
+        return ch.exchangeDeclare(x, "fanout", false);
+    }
+
+    private void declareExchangeNoWait(Channel ch, String x) throws IOException {
+        ch.exchangeDeclareNoWait(x, "fanout", false, false, false, null);
+    }
+
     private void expectQueueRecovery(Channel ch, String q) throws IOException, InterruptedException, TimeoutException {
         ch.confirmSelect();
         ch.queuePurge(q);
@@ -370,6 +409,16 @@ public class ConnectionRecovery extends BrokerTestCase {
         waitForConfirms(ch);
         AMQP.Queue.DeclareOk ok2 = declareClientNamedQueue(ch, q);
         assertEquals(1, ok2.getMessageCount());
+    }
+
+    private void expectExchangeRecovery(Channel ch, String x) throws IOException, InterruptedException, TimeoutException {
+        ch.confirmSelect();
+        String q = ch.queueDeclare().getQueue();
+        final String rk = "routing-key";
+        ch.queueBind(q, x, rk);
+        ch.basicPublish(x, rk, null, "msg".getBytes());
+        waitForConfirms(ch);
+        ch.exchangeDeclarePassive(x);
     }
 
     private CountDownLatch prepareForRecovery(Connection conn) {

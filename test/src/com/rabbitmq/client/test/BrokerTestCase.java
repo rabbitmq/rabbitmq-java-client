@@ -18,6 +18,7 @@
 package com.rabbitmq.client.test;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import junit.framework.TestCase;
 
@@ -262,5 +263,13 @@ public class BrokerTestCase extends TestCase {
     protected void unblock() throws IOException, InterruptedException {
         Host.rabbitmqctl("set_vm_memory_high_watermark 0.4");
         clearResourceAlarm("disk");
+    }
+
+    protected String generateQueueName() {
+        return "queue" + UUID.randomUUID().toString();
+    }
+
+    protected String generateExchangeName() {
+        return "exchange" + UUID.randomUUID().toString();
     }
 }
