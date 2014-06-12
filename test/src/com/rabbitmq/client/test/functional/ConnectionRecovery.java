@@ -68,13 +68,29 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
     }
 
-    public void testShutdownHooksRecovery() throws IOException, InterruptedException {
+    public void testShutdownHooksRecoveryOnConnection() throws IOException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(2);
         connection.addShutdownListener(new ShutdownListener() {
             public void shutdownCompleted(ShutdownSignalException cause) {
                 latch.countDown();
             }
         });
+        assertTrue(connection.isOpen());
+        closeAndWaitForRecovery();
+        assertTrue(connection.isOpen());
+        connection.close();
+        wait(latch);
+    }
+
+    public void testShutdownHooksRecoveryOnChannel() throws IOException, InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(3);
+        channel.addShutdownListener(new ShutdownListener() {
+            public void shutdownCompleted(ShutdownSignalException cause) {
+                latch.countDown();
+            }
+        });
+        assertTrue(connection.isOpen());
+        closeAndWaitForRecovery();
         assertTrue(connection.isOpen());
         closeAndWaitForRecovery();
         assertTrue(connection.isOpen());

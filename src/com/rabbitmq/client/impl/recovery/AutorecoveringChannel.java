@@ -30,6 +30,7 @@ import java.util.concurrent.TimeoutException;
 public class AutorecoveringChannel implements Channel, Recoverable {
     private RecoveryAwareChannelN delegate;
     private AutorecoveringConnection connection;
+    private List<ShutdownListener> shutdownHooks  = new ArrayList<ShutdownListener>();
     private List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
     private List<ReturnListener> returnListeners = new ArrayList<ReturnListener>();
     private List<ConfirmListener> confirmListeners = new ArrayList<ConfirmListener>();
@@ -430,11 +431,16 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return delegate.rpc(method);
     }
 
+    /**
+     * @see Connection#addShutdownListener(com.rabbitmq.client.ShutdownListener)
+     */
     public void addShutdownListener(ShutdownListener listener) {
+        this.shutdownHooks.add(listener);
         delegate.addShutdownListener(listener);
     }
 
     public void removeShutdownListener(ShutdownListener listener) {
+        this.shutdownHooks.remove(listener);
         delegate.removeShutdownListener(listener);
     }
 
@@ -468,11 +474,18 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         this.delegate = (RecoveryAwareChannelN) connDelegate.createChannel(this.getChannelNumber());
         this.delegate.inheritOffsetFrom(defunctChannel);
 
+        this.recoverShutdownListeners();
         this.recoverReturnListeners();
         this.recoverConfirmListeners();
         this.recoverFlowListeners();
         this.recoverState();
         this.notifyRecoveryListeners();
+    }
+
+    private void recoverShutdownListeners() {
+        for (ShutdownListener sh : this.shutdownHooks) {
+            this.delegate.addShutdownListener(sh);
+        }
     }
 
     private void recoverReturnListeners() {
