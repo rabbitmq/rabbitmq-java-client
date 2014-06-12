@@ -30,9 +30,8 @@ public class Nowait extends BrokerTestCase {
     public void testExchangeBindWithNowait() throws IOException {
         String x = generateExchangeName();
         try {
-            channel.exchangeDeclare(x, "fanout", false, false, false, null);
-            channel.exchangeBind(x, "amq.fanout", "", null);
-            channel.exchangeUnbindNoWait(x, "amq.fanout", "", null);
+            channel.exchangeDeclareNoWait(x, "fanout", false, false, false, null);
+            channel.exchangeBindNoWait(x, "amq.fanout", "", null);
         } finally {
             channel.exchangeDelete(x);
         }
@@ -41,8 +40,9 @@ public class Nowait extends BrokerTestCase {
     public void testExchangeUnbindWithNowait() throws IOException {
         String x = generateExchangeName();
         try {
-            channel.exchangeDeclareNoWait(x, "fanout", false, false, false, null);
-            channel.exchangeBindNoWait(x, "amq.fanout", "", null);
+            channel.exchangeDeclare(x, "fanout", false, false, false, null);
+            channel.exchangeBind(x, "amq.fanout", "", null);
+            channel.exchangeUnbindNoWait(x, "amq.fanout", "", null);
         } finally {
             channel.exchangeDelete(x);
         }
