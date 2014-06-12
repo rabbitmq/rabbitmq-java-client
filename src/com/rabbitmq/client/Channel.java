@@ -468,7 +468,7 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Same as {@link Channel#exchangeUnbind(String, String, String, java.util.Map)} but sets no-wait parameter to true
-     * and retuns nothing (as there will be no response from the server).
+     * and returns nothing (as there will be no response from the server).
      * @param destination the name of the exchange to which messages flow across the binding
      * @param source the name of the exchange from which messages flow across the binding
      * @param routingKey the routine key to use for the binding
