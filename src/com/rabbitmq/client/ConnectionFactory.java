@@ -41,9 +41,8 @@ import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 
 /**
- * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
+ * The standard {@link com.rabbitmq.client.IConnectionFactory} implementation.
  */
-
 public class ConnectionFactory implements Cloneable, IConnectionFactory {
 
     /** Default Executor threads */
@@ -94,13 +93,13 @@ public class ConnectionFactory implements Cloneable, IConnectionFactory {
         throw new IllegalArgumentException("setNumConsumerThreads not supported -- create explicit ExecutorService instead.");
     }
 
-    /** @return the default host to use for connections */
+    /** {@inheritDoc} */
     @Override
     public String getHost() {
         return host;
     }
 
-    /** @param host the default host to use for connections */
+    /** {@inheritDoc} */
     @Override
     public void setHost(String host) {
         this.host = host;
@@ -112,83 +111,55 @@ public class ConnectionFactory implements Cloneable, IConnectionFactory {
         else return DEFAULT_AMQP_PORT;
     }
 
-    /** @return the default port to use for connections */
+    /** {@inheritDoc} */
     @Override
     public int getPort() {
         return portOrDefault(port, isSSL());
     }
 
-    /**
-     * Set the target port.
-     * @param port the default port to use for connections
-     */
+    /** {@inheritDoc} */
     @Override
     public void setPort(int port) {
         this.port = port;
     }
 
-    /**
-     * Retrieve the user name.
-     * @return the AMQP user name to use when connecting to the broker
-     */
+    /** {@inheritDoc} */
     @Override
     public String getUsername() {
         return this.username;
     }
 
-    /**
-     * Set the user name.
-     * @param username the AMQP user name to use when connecting to the broker
-     */
+    /** {@inheritDoc} */
     @Override
     public void setUsername(String username) {
         this.username = username;
     }
 
-    /**
-     * Retrieve the password.
-     * @return the password to use when connecting to the broker
-     */
+    /** {@inheritDoc} */
     @Override
     public String getPassword() {
         return this.password;
     }
 
-    /**
-     * Set the password.
-     * @param password the password to use when connecting to the broker
-     */
+    /** {@inheritDoc} */
     @Override
     public void setPassword(String password) {
         this.password = password;
     }
 
-    /**
-     * Retrieve the virtual host.
-     * @return the virtual host to use when connecting to the broker
-     */
+    /** {@inheritDoc} */
     @Override
     public String getVirtualHost() {
         return this.virtualHost;
     }
 
-    /**
-     * Set the virtual host.
-     * @param virtualHost the virtual host to use when connecting to the broker
-     */
+    /** {@inheritDoc} */
     @Override
     public void setVirtualHost(String virtualHost) {
         this.virtualHost = virtualHost;
     }
 
-
-    /**
-     * Convenience method for setting the fields in an AMQP URI: host,
-     * port, username, password and virtual host.  If any part of the
-     * URI is ommited, the ConnectionFactory's corresponding variable
-     * is left unchanged.
-     * @param uri is the AMQP URI containing the data
-     */
+    /** {@inheritDoc} */
     @Override
     public void setUri(URI uri)
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
@@ -239,16 +210,7 @@ public class ConnectionFactory implements Cloneable, IConnectionFactory {
         }
     }
 
-    /**
-     * Convenience method for setting the fields in an AMQP URI: host,
-     * port, username, password and virtual host.  If any part of the
-     * URI is ommited, the ConnectionFactory's corresponding variable
-     * is left unchanged.  Note that not all valid AMQP URIs are
-     * accepted; in particular, the hostname must be given if the
-     * port, username or password are given, and escapes in the
-     * hostname are not permitted.
-     * @param uriString is the AMQP URI containing the data
-     */
+    /** {@inheritDoc} */
     @Override
     public void setUri(String uriString)
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
@@ -267,212 +229,128 @@ public class ConnectionFactory implements Cloneable, IConnectionFactory {
         }
     }
 
-    /**
-     * Retrieve the requested maximum channel number
-     * @return the initially requested maximum channel number; zero for unlimited
-     */
+    /** {@inheritDoc} */
     @Override
     public int getRequestedChannelMax() {
         return this.requestedChannelMax;
     }
 
-    /**
-     * Set the requested maximum channel number
-     * @param requestedChannelMax initially requested maximum channel number; zero for unlimited
-     */
+    /** {@inheritDoc} */
     @Override
     public void setRequestedChannelMax(int requestedChannelMax) {
         this.requestedChannelMax = requestedChannelMax;
     }
 
-    /**
-     * Retrieve the requested maximum frame size
-     * @return the initially requested maximum frame size, in octets; zero for unlimited
-     */
+    /** {@inheritDoc} */
     @Override
     public int getRequestedFrameMax() {
         return this.requestedFrameMax;
     }
 
-    /**
-     * Set the requested maximum frame size
-     * @param requestedFrameMax initially requested maximum frame size, in octets; zero for unlimited
-     */
+    /** {@inheritDoc} */
     @Override
     public void setRequestedFrameMax(int requestedFrameMax) {
         this.requestedFrameMax = requestedFrameMax;
     }
 
-    /**
-     * Retrieve the requested heartbeat interval.
-     * @return the initially requested heartbeat interval, in seconds; zero for none
-     */
+    /** {@inheritDoc} */
     @Override
     public int getRequestedHeartbeat() {
         return this.requestedHeartbeat;
     }
 
-    /**
-     * Set the connection timeout.
-     * @param connectionTimeout connection establishment timeout in milliseconds; zero for infinite
-     */
+    /** {@inheritDoc} */
     @Override
     public void setConnectionTimeout(int connectionTimeout) {
         this.connectionTimeout = connectionTimeout;
     }
 
-    /**
-     * Retrieve the connection timeout.
-     * @return the connection timeout, in milliseconds; zero for infinite
-     */
+    /** {@inheritDoc} */
     @Override
     public int getConnectionTimeout() {
         return this.connectionTimeout;
     }
 
-    /**
-     * Set the requested heartbeat.
-     * @param requestedHeartbeat the initially requested heartbeat interval, in seconds; zero for none
-     */
+    /** {@inheritDoc} */
     @Override
     public void setRequestedHeartbeat(int requestedHeartbeat) {
         this.requestedHeartbeat = requestedHeartbeat;
     }
 
-    /**
-     * Retrieve the currently-configured table of client properties
-     * that will be sent to the server during connection
-     * startup. Clients may add, delete, and alter keys in this
-     * table. Such changes will take effect when the next new
-     * connection is started using this factory.
-     * @return the map of client properties
-     * @see #setClientProperties
-     */
+    /** {@inheritDoc} */
     @Override
     public Map<String, Object> getClientProperties() {
         return _clientProperties;
     }
 
-    /**
-     * Replace the table of client properties that will be sent to the
-     * server during subsequent connection startups.
-     * @param clientProperties the map of extra client properties
-     * @see #getClientProperties
-     */
+    /** {@inheritDoc} */
     @Override
     public void setClientProperties(Map<String, Object> clientProperties) {
         _clientProperties = clientProperties;
     }
 
-    /**
-     * Gets the sasl config to use when authenticating
-     * @return the sasl config
-     * @see com.rabbitmq.client.SaslConfig
-     */
+    /** {@inheritDoc} */
     @Override
     public SaslConfig getSaslConfig() {
         return saslConfig;
     }
 
-    /**
-     * Sets the sasl config to use when authenticating
-     * @param saslConfig
-     * @see com.rabbitmq.client.SaslConfig
-     */
+    /** {@inheritDoc} */
     @Override
     public void setSaslConfig(SaslConfig saslConfig) {
         this.saslConfig = saslConfig;
     }
 
-    /**
-     * Retrieve the socket factory used to make connections with.
-     */
+    /** {@inheritDoc} */
     @Override
     public SocketFactory getSocketFactory() {
         return this.factory;
     }
 
-    /**
-     * Set the socket factory used to make connections with. Can be
-     * used to enable SSL connections by passing in a
-     * javax.net.ssl.SSLSocketFactory instance.
-     *
-     * @see #useSslProtocol
-     */
+    /** {@inheritDoc} */
     @Override
     public void setSocketFactory(SocketFactory factory) {
         this.factory = factory;
     }
 
-    /**
-     * Get the socket configurator.
-     *
-     * @see #setSocketConfigurator(SocketConfigurator)
-     */
+    /** {@inheritDoc} */
     @Override
     @SuppressWarnings("unused")
     public SocketConfigurator getSocketConfigurator() {
         return socketConf;
     }
 
-    /**
-     * Set the socket configurator. This gets a chance to "configure" a socket
-     * before it has been opened. The default socket configurator disables
-     * Nagle's algorithm.
-     *
-     * @param socketConfigurator the configurator to use
-     */
+    /** {@inheritDoc} */
     @Override
     public void setSocketConfigurator(SocketConfigurator socketConfigurator) {
         this.socketConf = socketConfigurator;
     }
 
-    /**
-     * Set the executor to use by default for newly created connections.
-     * All connections that use this executor share it.
-     *
-     * It's developer's responsibility to shut down the executor
-     * when it is no longer needed.
-     *
-     * @param executor
-     */
+    /** {@inheritDoc} */
     @Override
     public void setSharedExecutor(ExecutorService executor) {
         this.sharedExecutor = executor;
     }
 
-    /**
-     * Retrieve the thread factory used to instantiate new threads.
-     * @see ThreadFactory
-     */
+    /** {@inheritDoc} */
     @Override
     public ThreadFactory getThreadFactory() {
         return threadFactory;
     }
 
-    /**
-     * Set the thread factory used to instantiate new threads.
-     * @see ThreadFactory
-     */
+    /** {@inheritDoc} */
     @Override
     public void setThreadFactory(ThreadFactory threadFactory) {
         this.threadFactory = threadFactory;
     }
 
-    /**
-    * Get the exception handler.
-    *
-    * @see com.rabbitmq.client.ExceptionHandler
-    */
+    /** {@inheritDoc} */
     @Override
     public ExceptionHandler getExceptionHandler() {
         return exceptionHandler;
     }
 
-    /**
-     * Set the exception handler to use for newly created connections.
-     * @see com.rabbitmq.client.ExceptionHandler
-     */
+    /** {@inheritDoc} */
     @Override
     public void setExceptionHandler(ExceptionHandler exceptionHandler) {
         if (exceptionHandler == null) {
@@ -486,10 +364,7 @@ public class ConnectionFactory implements Cloneable, IConnectionFactory {
         return getSocketFactory() instanceof SSLSocketFactory;
     }
 
-    /**
-     * Convenience method for setting up a SSL socket factory, using
-     * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
-     */
+    /** {@inheritDoc} */
     @Override
     public void useSslProtocol()
         throws NoSuchAlgorithmException, KeyManagementException
@@ -497,10 +372,7 @@ public class ConnectionFactory implements Cloneable, IConnectionFactory {
         useSslProtocol(DEFAULT_SSL_PROTOCOL);
     }
 
-    /**
-     * Convenience method for setting up a SSL socket factory, using
-     * the supplied protocol and a very trusting TrustManager.
-     */
+    /** {@inheritDoc} */
     @Override
     public void useSslProtocol(String protocol)
         throws NoSuchAlgorithmException, KeyManagementException
@@ -508,12 +380,7 @@ public class ConnectionFactory implements Cloneable, IConnectionFactory {
         useSslProtocol(protocol, new NullTrustManager());
     }
 
-    /**
-     * Convenience method for setting up an SSL socket factory.
-     * Pass in the SSL protocol to use, e.g. "TLS" or "SSLv3".
-     *
-     * @param protocol SSL protocol to use.
-     */
+    /** {@inheritDoc} */
     @Override
     public void useSslProtocol(String protocol, TrustManager trustManager)
         throws NoSuchAlgorithmException, KeyManagementException
@@ -523,50 +390,33 @@ public class ConnectionFactory implements Cloneable, IConnectionFactory {
         useSslProtocol(c);
     }
 
-    /**
-     * Convenience method for setting up an SSL socket factory.
-     * Pass in an initialized SSLContext.
-     *
-     * @param context An initialized SSLContext
-     */
+    /** {@inheritDoc} */
     @Override
     public void useSslProtocol(SSLContext context)
     {
         setSocketFactory(context.getSocketFactory());
     }
 
-    /**
-     * Returns true if automatic connection recovery is enabled, false otherwise
-     * @return true if automatic connection recovery is enabled, false otherwise
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean isAutomaticRecoveryEnabled() {
         return automaticRecovery;
     }
 
-    /**
-     * Enables or disables automatic connection recovery
-     * @param automaticRecovery if true, enables connection recovery
-     */
+    /** {@inheritDoc} */
     @Override
     public void setAutomaticRecoveryEnabled(boolean automaticRecovery) {
         this.automaticRecovery = automaticRecovery;
     }
 
-    /**
-     * Returns true if topology recovery is enabled, false otherwise
-     * @return true if topology recovery is enabled, false otherwise
-     */
+    /** {@inheritDoc} */
     @Override
     @SuppressWarnings("unused")
     public boolean isTopologyRecoveryEnabled() {
         return topologyRecovery;
     }
 
-    /**
-     * Enables or disables topology recovery
-     * @param topologyRecovery if true, enables topology recovery
-     */
+    /** {@inheritDoc} */
     @Override
     public void setTopologyRecoveryEnabled(boolean topologyRecovery) {
         this.topologyRecovery = topologyRecovery;
@@ -576,24 +426,13 @@ public class ConnectionFactory implements Cloneable, IConnectionFactory {
         return new FrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL());
     }
 
-    /**
-     * Create a new broker connection
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
+    /** {@inheritDoc} */
     @Override
     public Connection newConnection(Address[] addrs) throws IOException {
         return newConnection(this.sharedExecutor, addrs);
     }
 
-    /**
-     * Create a new broker connection
-     * @param executor thread execution service for consumers on the connection
-     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @return an interface to the connection
-     * @throws java.io.IOException if it encounters a problem
-     */
+    /** {@inheritDoc} */
     @Override
     public Connection newConnection(ExecutorService executor, Address[] addrs)
         throws IOException
@@ -628,11 +467,7 @@ public class ConnectionFactory implements Cloneable, IConnectionFactory {
                                     networkRecoveryInterval, topologyRecovery, exceptionHandler, threadFactory);
     }
 
-    /**
-     * Create a new broker connection
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
+    /** {@inheritDoc} */
     @Override
     public Connection newConnection() throws IOException {
         return newConnection(this.sharedExecutor,
@@ -640,12 +475,7 @@ public class ConnectionFactory implements Cloneable, IConnectionFactory {
                             );
     }
 
-    /**
-     * Create a new broker connection
-     * @param executor thread execution service for consumers on the connection
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
+    /** {@inheritDoc} */
     @Override
     public Connection newConnection(ExecutorService executor) throws IOException {
         return newConnection(executor,
@@ -661,19 +491,13 @@ public class ConnectionFactory implements Cloneable, IConnectionFactory {
         }
     }
 
-    /**
-     * Returns automatic connection recovery interval in milliseconds.
-     * @return how long will automatic recovery wait before attempting to reconnect, in ms; default is 5000
-     */
+    /** {@inheritDoc} */
     @Override
     public int getNetworkRecoveryInterval() {
         return networkRecoveryInterval;
     }
 
-    /**
-     * Sets connection recovery interval. Default is 5000.
-     * @param networkRecoveryInterval how long will automatic recovery wait before attempting to reconnect, in ms
-     */
+    /** {@inheritDoc} */
     @Override
     public void setNetworkRecoveryInterval(int networkRecoveryInterval) {
         this.networkRecoveryInterval = networkRecoveryInterval;
