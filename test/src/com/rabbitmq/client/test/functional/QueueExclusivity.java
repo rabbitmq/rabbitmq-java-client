@@ -36,7 +36,7 @@ public class QueueExclusivity extends BrokerTestCase {
     String q = "exclusiveQ";
 
     protected void createResources() throws IOException {
-        altConnection = connectionFactory.newConnection();
+        altConnection = cf.newConnection();
         altChannel = altConnection.createChannel();
         altChannel.queueDeclare(q,
         // not durable, exclusive, not auto-delete

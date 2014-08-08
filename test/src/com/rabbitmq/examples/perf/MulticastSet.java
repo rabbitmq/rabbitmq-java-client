@@ -16,9 +16,8 @@
 
 package com.rabbitmq.examples.perf;
 
-import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -26,10 +25,10 @@ import java.util.UUID;
 public class MulticastSet {
     private final String id;
     private final Stats stats;
-    private final ConnectionFactory factory;
+    private final IConnectionFactory factory;
     private final MulticastParams params;
 
-    public MulticastSet(Stats stats, ConnectionFactory factory,
+    public MulticastSet(Stats stats, IConnectionFactory factory,
                         MulticastParams params) {
         if (params.getRoutingKey() == null) {
             this.id = UUID.randomUUID().toString();

@@ -20,6 +20,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
@@ -59,7 +60,7 @@ public class StressManagement {
     }
 
     protected final Parameters params;
-    protected final ConnectionFactory connectionFactory =
+    protected final IConnectionFactory IConnectionFactory =
         new ConnectionFactory();
     protected Connection connection;
     protected Channel publishChannel;
@@ -70,9 +71,9 @@ public class StressManagement {
     }
 
     public long run() throws IOException {
-        connectionFactory.setHost(params.host);
-        connectionFactory.setPort(params.port);
-        connection = connectionFactory.newConnection();
+        IConnectionFactory.setHost(params.host);
+        IConnectionFactory.setPort(params.port);
+        connection = IConnectionFactory.newConnection();
         publishChannel = connection.createChannel();
 
         System.out.println("Declaring...");

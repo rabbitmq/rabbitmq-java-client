@@ -19,6 +19,7 @@ package com.rabbitmq.examples;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.tools.jsonrpc.JsonRpcServer;
 
 public class HelloJsonServer {
@@ -26,7 +27,7 @@ public class HelloJsonServer {
         try {
             String uri = (args.length > 0) ? args[0] : "amqp://localhost";
 
-            ConnectionFactory connFactory = new ConnectionFactory();
+            IConnectionFactory connFactory = new ConnectionFactory();
             connFactory.setUri(uri);
             Connection conn = connFactory.newConnection();
             final Channel ch = conn.createChannel();

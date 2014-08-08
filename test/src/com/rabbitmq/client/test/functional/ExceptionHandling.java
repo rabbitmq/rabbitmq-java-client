@@ -8,6 +8,7 @@ import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.ExceptionHandler;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.impl.DefaultExceptionHandler;
 import junit.framework.TestCase;
 
@@ -16,8 +17,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class ExceptionHandling extends TestCase {
-    private ConnectionFactory newConnectionFactory(ExceptionHandler eh) {
-        ConnectionFactory cf = new ConnectionFactory();
+    private IConnectionFactory newConnectionFactory(ExceptionHandler eh) {
+        IConnectionFactory cf = new ConnectionFactory();
         cf.setExceptionHandler(eh);
         return cf;
     }
@@ -30,7 +31,7 @@ public class ExceptionHandling extends TestCase {
                 latch.countDown();
             }
         };
-        ConnectionFactory cf = newConnectionFactory(eh);
+        IConnectionFactory cf = newConnectionFactory(eh);
         assertEquals(cf.getExceptionHandler(), eh);
         Connection conn = cf.newConnection();
         assertEquals(conn.getExceptionHandler(), eh);
@@ -47,7 +48,7 @@ public class ExceptionHandling extends TestCase {
     }
 
     public void testNullExceptionHandler() {
-      ConnectionFactory cf = new ConnectionFactory();
+      IConnectionFactory cf = new ConnectionFactory();
       try {
         cf.setExceptionHandler(null);
         fail("expected setExceptionHandler to throw");

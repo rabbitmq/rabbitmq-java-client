@@ -1,6 +1,7 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.impl.AMQConnection;
 
 import java.io.IOException;
@@ -9,7 +10,7 @@ import java.util.concurrent.Executors;
 
 public class SharedThreadPoolTest extends BrokerTestCase {
     public void testWillShutDownExecutor() throws IOException {
-        ConnectionFactory cf = new ConnectionFactory();
+        IConnectionFactory cf = new ConnectionFactory();
         ExecutorService executor = Executors.newFixedThreadPool(8);
         cf.setSharedExecutor(executor);
 

@@ -489,7 +489,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery) throws IOException {
-        ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
+        IConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
         return (AutorecoveringConnection) cf.newConnection();
     }
 
@@ -498,7 +498,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery, Address[] addresses) throws IOException {
-        ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
+        IConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
         return (AutorecoveringConnection) cf.newConnection(addresses);
     }
 

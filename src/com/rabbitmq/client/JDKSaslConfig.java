@@ -40,7 +40,7 @@ import java.util.Set;
 public class JDKSaslConfig implements SaslConfig {
     private static final String[] DEFAULT_PREFERRED_MECHANISMS = new String[]{"PLAIN"};
 
-    private final ConnectionFactory factory;
+    private final IConnectionFactory factory;
     private final List<String> mechanisms;
     private final CallbackHandler callbackHandler;
 
@@ -49,7 +49,7 @@ public class JDKSaslConfig implements SaslConfig {
      *
      * @param factory - the ConnectionFactory to use to obtain username, password and host
      */
-    public JDKSaslConfig(ConnectionFactory factory) {
+    public JDKSaslConfig(IConnectionFactory factory) {
         this(factory, DEFAULT_PREFERRED_MECHANISMS);
     }
 
@@ -59,7 +59,7 @@ public class JDKSaslConfig implements SaslConfig {
      * @param factory - the ConnectionFactory to use to obtain username, password and host
      * @param mechanisms - a list of SASL mechanisms to use (in descending order of preference)
      */
-    public JDKSaslConfig(ConnectionFactory factory, String[] mechanisms) {
+    public JDKSaslConfig(IConnectionFactory factory, String[] mechanisms) {
         this.factory = factory;
         callbackHandler = new UsernamePasswordCallbackHandler(factory);
         this.mechanisms = Arrays.asList(mechanisms);
@@ -103,8 +103,8 @@ public class JDKSaslConfig implements SaslConfig {
     }
 
     private class UsernamePasswordCallbackHandler implements CallbackHandler {
-        private ConnectionFactory factory;
-        public UsernamePasswordCallbackHandler(ConnectionFactory factory) {
+        private IConnectionFactory factory;
+        public UsernamePasswordCallbackHandler(IConnectionFactory factory) {
             this.factory = factory;
         }
 

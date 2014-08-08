@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.AuthenticationFailureException;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.Map;
@@ -43,7 +44,7 @@ public class Permissions extends BrokerTestCase
         factory.setUsername("test");
         factory.setPassword("test");
         factory.setVirtualHost("/test");
-        connectionFactory = factory;
+        cf = factory;
     }
 
     protected void setUp()
@@ -84,7 +85,7 @@ public class Permissions extends BrokerTestCase
     protected void createResources()
         throws IOException
     {
-        ConnectionFactory factory = new ConnectionFactory();
+        IConnectionFactory factory = new ConnectionFactory();
         factory.setUsername("testadmin");
         factory.setPassword("test");
         factory.setVirtualHost("/test");
@@ -119,7 +120,7 @@ public class Permissions extends BrokerTestCase
 
     public void testAuth()
     {
-        ConnectionFactory unAuthFactory = new ConnectionFactory();
+        IConnectionFactory unAuthFactory = new ConnectionFactory();
         unAuthFactory.setUsername("test");
         unAuthFactory.setPassword("tset");
 

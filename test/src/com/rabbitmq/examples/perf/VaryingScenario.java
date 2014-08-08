@@ -16,24 +16,24 @@
 
 package com.rabbitmq.examples.perf;
 
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class VaryingScenario implements Scenario {
     private String name;
-    private ConnectionFactory factory;
+    private IConnectionFactory factory;
     private MulticastParams[] params;
     private VaryingScenarioStats stats = new VaryingScenarioStats();
     private Variable[] variables;
 
-    public VaryingScenario(String name, ConnectionFactory factory,
+    public VaryingScenario(String name, IConnectionFactory factory,
                            MulticastParams params, Variable... variables) {
         this(name, factory, new MulticastParams[]{params}, variables);
     }
 
-    public VaryingScenario(String name, ConnectionFactory factory,
+    public VaryingScenario(String name, IConnectionFactory factory,
                            MulticastParams[] params, Variable... variables) {
         this.name = name;
         this.factory = factory;

@@ -37,7 +37,7 @@ public class UnverifiedConnection extends BrokerTestCase {
         throws IOException
     {
         try {
-            connectionFactory.useSslProtocol();
+            cf.useSslProtocol();
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex.toString());
         } catch (KeyManagementException ex) {
@@ -46,7 +46,7 @@ public class UnverifiedConnection extends BrokerTestCase {
 
 
         if (connection == null) {
-            connection = connectionFactory.newConnection();
+            connection = cf.newConnection();
         }
     }
 

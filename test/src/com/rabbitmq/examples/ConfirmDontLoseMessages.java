@@ -22,13 +22,14 @@ import java.io.IOException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 
 public class ConfirmDontLoseMessages {
     static int msgCount = 10000;
     final static String QUEUE_NAME = "confirm-test";
-    static ConnectionFactory connectionFactory;
+    static IConnectionFactory IConnectionFactory;
 
     public static void main(String[] args)
         throws IOException, InterruptedException
@@ -37,7 +38,7 @@ public class ConfirmDontLoseMessages {
                 msgCount = Integer.parseInt(args[0]);
         }
 
-        connectionFactory = new ConnectionFactory();
+        IConnectionFactory = new ConnectionFactory();
 
         // Consume msgCount messages.
         (new Thread(new Consumer())).start();
@@ -51,7 +52,7 @@ public class ConfirmDontLoseMessages {
                 long startTime = System.currentTimeMillis();
 
                 // Setup
-                Connection conn = connectionFactory.newConnection();
+                Connection conn = IConnectionFactory.newConnection();
                 Channel ch = conn.createChannel();
                 ch.queueDeclare(QUEUE_NAME, true, false, false, null);
                 ch.confirmSelect();
@@ -84,7 +85,7 @@ public class ConfirmDontLoseMessages {
         public void run() {
             try {
                 // Setup
-                Connection conn = connectionFactory.newConnection();
+                Connection conn = IConnectionFactory.newConnection();
                 Channel ch = conn.createChannel();
                 ch.queueDeclare(QUEUE_NAME, true, false, false, null);
 

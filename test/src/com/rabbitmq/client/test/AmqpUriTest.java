@@ -17,6 +17,7 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -74,7 +75,7 @@ public class AmqpUriTest extends BrokerTestCase
                               String host, int port, String vhost)
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
-        ConnectionFactory cf = new ConnectionFactory();
+        IConnectionFactory cf = new ConnectionFactory();
         cf.setUri(uri);
 
         assertEquals(user, cf.getUsername());

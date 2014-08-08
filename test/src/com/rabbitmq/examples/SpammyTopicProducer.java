@@ -21,6 +21,7 @@ import java.util.Random;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 
 /**
  * This producer creates messages with constantly changing topic keys, sending as
@@ -49,7 +50,7 @@ public class SpammyTopicProducer {
             String message = (args.length > 3) ? args[3] :
                 "the time is " + new java.util.Date().toString();
 
-            ConnectionFactory cfconn = new ConnectionFactory();
+            IConnectionFactory cfconn = new ConnectionFactory();
             cfconn.setUri(uri);
             Connection conn = cfconn.newConnection();
 

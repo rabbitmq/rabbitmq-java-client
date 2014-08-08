@@ -88,7 +88,7 @@ public class UnexpectedFrames extends BrokerTestCase {
 
     public UnexpectedFrames() {
         super();
-        connectionFactory = new ConfusedConnectionFactory();
+        cf = new ConfusedConnectionFactory();
     }
 
     public void testMissingHeader() throws IOException {

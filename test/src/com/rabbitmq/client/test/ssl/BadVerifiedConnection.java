@@ -67,8 +67,8 @@ public class BadVerifiedConnection extends UnverifiedConnection {
             SSLContext c = SSLContext.getInstance("SSLv3");
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-            connectionFactory = new ConnectionFactory();
-            connectionFactory.useSslProtocol(c);
+            cf = new ConnectionFactory();
+            cf.useSslProtocol(c);
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex.toString());
         } catch (KeyManagementException ex) {
@@ -83,7 +83,7 @@ public class BadVerifiedConnection extends UnverifiedConnection {
 
         if (connection == null) {
             try {
-                connection = connectionFactory.newConnection();
+                connection = cf.newConnection();
                 fail();
             } catch (SSLHandshakeException e) {
             } catch (IOException e) {

@@ -19,6 +19,7 @@ package com.rabbitmq.examples;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 
 /**
  * Java Application. Repeatedly generate (and get) messages on multiple concurrently processing channels.
@@ -84,7 +85,7 @@ public class TracerConcurrencyTest {
      * @return connection
      */
     private static final Connection createConnectionAndResources() throws Exception {
-        ConnectionFactory cf = new ConnectionFactory();
+        IConnectionFactory cf = new ConnectionFactory();
         cf.setUri(uri);
         Connection conn = cf.newConnection();
         Channel setup = conn.createChannel();

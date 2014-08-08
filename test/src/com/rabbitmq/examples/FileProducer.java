@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.rabbitmq.client.IConnectionFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -52,7 +53,7 @@ public class FileProducer {
 	    String exchange = strArg(cmd, 'e', null);
 	    String routingKey = strArg(cmd, 'k', null);
 
-            ConnectionFactory connFactory = new ConnectionFactory();
+            IConnectionFactory connFactory = new ConnectionFactory();
             connFactory.setUri(uri);
             Connection conn = connFactory.newConnection();
 

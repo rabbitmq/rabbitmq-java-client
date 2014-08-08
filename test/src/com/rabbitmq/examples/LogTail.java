@@ -19,6 +19,7 @@ package com.rabbitmq.examples;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
 public class LogTail {
@@ -27,7 +28,7 @@ public class LogTail {
             String uri = (args.length > 0) ? args[0] : "amqp://localhost";
             String exchange = (args.length > 1) ? args[1] : "amq.rabbitmq.log";
 
-            ConnectionFactory cfconn = new ConnectionFactory();
+            IConnectionFactory cfconn = new ConnectionFactory();
             cfconn.setUri(uri);
             Connection conn = cfconn.newConnection();
 

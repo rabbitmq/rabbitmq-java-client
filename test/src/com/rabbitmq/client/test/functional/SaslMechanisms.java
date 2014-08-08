@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.PossibleAuthenticationFailureException;
 import com.rabbitmq.client.SaslConfig;
@@ -99,7 +100,7 @@ public class SaslMechanisms extends BrokerTestCase {
     }
 
     public void testConnectionCloseAuthFailurePassword() throws IOException {
-        connectionCloseAuthFailure(connectionFactory.getUsername(), "incorrect-password");
+        connectionCloseAuthFailure(cf.getUsername(), "incorrect-password");
     }
 
     public void connectionCloseAuthFailure(String username, String password) throws IOException {
@@ -118,7 +119,7 @@ public class SaslMechanisms extends BrokerTestCase {
     // start a connection without capabilities, causing authentication failures
     // to be reported by the broker by closing the connection
     private Connection connectionWithoutCapabilities(String username, String password) throws IOException {
-        ConnectionFactory customFactory = connectionFactory.clone();
+        IConnectionFactory customFactory = cf.clone();
         customFactory.setUsername(username);
         customFactory.setPassword(password);
         Map<String, Object> customProperties = AMQConnection.defaultClientProperties();
@@ -128,7 +129,7 @@ public class SaslMechanisms extends BrokerTestCase {
     }
 
     private void loginOk(String name, byte[][] responses) throws IOException {
-        ConnectionFactory factory = new ConnectionFactory();
+        IConnectionFactory factory = new ConnectionFactory();
         factory.setSaslConfig(new Config(name, responses));
         Connection connection = factory.newConnection();
         connection.close();

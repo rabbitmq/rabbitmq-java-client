@@ -19,6 +19,7 @@ package com.rabbitmq.examples;
 import java.util.Arrays;
 import java.util.List;
 
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.examples.perf.MulticastParams;
 import com.rabbitmq.examples.perf.MulticastSet;
 import com.rabbitmq.examples.perf.Stats;
@@ -80,7 +81,7 @@ public class PerfTest {
                                      flags.contains("immediate")),
                                     confirm != -1);
 
-            ConnectionFactory factory = new ConnectionFactory();
+            IConnectionFactory factory = new ConnectionFactory();
             factory.setUri(uri);
             factory.setRequestedFrameMax(frameMax);
             factory.setRequestedHeartbeat(heartbeat);

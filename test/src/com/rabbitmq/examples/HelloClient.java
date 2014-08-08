@@ -19,6 +19,7 @@ package com.rabbitmq.examples;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.RpcClient;
 
 public class HelloClient {
@@ -27,7 +28,7 @@ public class HelloClient {
             String request = (args.length > 0) ? args[0] : "Rabbit";
             String uri = (args.length > 1) ? args[1] : "amqp://localhost";
 
-            ConnectionFactory cfconn = new ConnectionFactory();
+            IConnectionFactory cfconn = new ConnectionFactory();
             cfconn.setUri(uri);
             Connection conn = cfconn.newConnection();
             Channel ch = conn.createChannel();

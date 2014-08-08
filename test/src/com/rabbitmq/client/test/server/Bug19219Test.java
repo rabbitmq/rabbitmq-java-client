@@ -128,7 +128,7 @@ public class Bug19219Test extends BrokerTestCase {
 
     private void startPublisher() throws IOException, InterruptedException {
 
-        final Connection conn = connectionFactory.newConnection();
+        final Connection conn = cf.newConnection();
         final Channel pubCh = conn.createChannel();
 
         //This forces the initialisation of the guid generation, which

@@ -32,6 +32,7 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.DefaultSocketConfigurator;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.ReturnListener;
@@ -126,7 +127,7 @@ public class TestMain {
             throw new RuntimeException("expected socket close");
         } catch (IOException e) {}
 
-        ConnectionFactory factory;
+        IConnectionFactory factory;
         factory = new ConnectionFactory();
         factory.setUsername("invalid");
         factory.setPassword("invalid");
@@ -200,12 +201,12 @@ public class TestMain {
     public static void runProducerConsumerTest(String uri, int commitEvery)
         throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
-        ConnectionFactory cfconnp = new ConnectionFactory();
+        IConnectionFactory cfconnp = new ConnectionFactory();
         cfconnp.setUri(uri);
         Connection connp = cfconnp.newConnection();
         ProducerMain p = new ProducerMain(connp, 2000, 10000, false, commitEvery, true);
         new Thread(p).start();
-        ConnectionFactory cfconnc = new ConnectionFactory();
+        IConnectionFactory cfconnc = new ConnectionFactory();
         cfconnc.setUri(uri);
         Connection connc = cfconnc.newConnection();
         ConsumerMain c = new ConsumerMain(connc, false, true);

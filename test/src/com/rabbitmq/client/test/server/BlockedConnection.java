@@ -21,9 +21,9 @@ import com.rabbitmq.client.BlockedListener;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -58,7 +58,7 @@ public class BlockedConnection extends BrokerTestCase {
     }
 
     private Connection connection(final CountDownLatch latch) throws IOException {
-        ConnectionFactory factory = new ConnectionFactory();
+        IConnectionFactory factory = new ConnectionFactory();
         Connection connection = factory.newConnection();
         connection.addBlockedListener(new BlockedListener() {
             public void handleBlocked(String reason) throws IOException {

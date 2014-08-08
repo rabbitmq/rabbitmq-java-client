@@ -16,22 +16,22 @@
 
 package com.rabbitmq.examples.perf;
 
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 
 import java.io.IOException;
 
 public class SimpleScenario implements Scenario {
     private String name;
-    private ConnectionFactory factory;
+    private IConnectionFactory factory;
     private MulticastParams[] params;
     private long interval;
     private SimpleScenarioStats stats;
 
-    public SimpleScenario(String name, ConnectionFactory factory, MulticastParams... params) {
+    public SimpleScenario(String name, IConnectionFactory factory, MulticastParams... params) {
         this(name, factory, 1000L, params);
     }
 
-    public SimpleScenario(String name, ConnectionFactory factory, long interval, MulticastParams... params) {
+    public SimpleScenario(String name, IConnectionFactory factory, long interval, MulticastParams... params) {
         this.name = name;
         this.factory = factory;
         this.params = params;

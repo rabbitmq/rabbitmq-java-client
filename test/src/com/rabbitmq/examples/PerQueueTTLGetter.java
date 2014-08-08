@@ -20,13 +20,14 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.IConnectionFactory;
 
 /**
  */
 public class PerQueueTTLGetter {
 
     public static void main(String[] args) throws Exception {
-        ConnectionFactory factory = new ConnectionFactory();
+        IConnectionFactory factory = new ConnectionFactory();
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
 

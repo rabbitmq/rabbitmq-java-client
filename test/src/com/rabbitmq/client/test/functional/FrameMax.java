@@ -17,7 +17,7 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.impl.ConnectionParams;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
@@ -43,8 +43,8 @@ public class FrameMax extends BrokerTestCase {
     final static int REAL_FRAME_MAX = FRAME_MAX - 8;
 
     public FrameMax() {
-        connectionFactory = new MyConnectionFactory();
-        connectionFactory.setRequestedFrameMax(FRAME_MAX);
+        cf = new MyConnectionFactory();
+        cf.setRequestedFrameMax(FRAME_MAX);
     }
 
     /* Publish a message of size FRAME_MAX.  The broker should split
@@ -74,7 +74,7 @@ public class FrameMax extends BrokerTestCase {
     public void testRejectLargeFramesDuringConnectionNegotiation()
         throws IOException
     {
-        ConnectionFactory cf = new ConnectionFactory();
+        IConnectionFactory cf = new ConnectionFactory();
         cf.getClientProperties().put("too_long", LongStringHelper.asLongString(new byte[AMQP.FRAME_MIN_SIZE]));
         try {
             cf.newConnection();
@@ -90,7 +90,7 @@ public class FrameMax extends BrokerTestCase {
     {
         closeChannel();
         closeConnection();
-        ConnectionFactory cf = new GenerousConnectionFactory();
+        IConnectionFactory cf = new GenerousConnectionFactory();
         connection = cf.newConnection();
         openChannel();
         try {

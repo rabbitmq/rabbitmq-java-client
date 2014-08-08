@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.util.Map;
 import java.util.UUID;
 
+import com.rabbitmq.client.IConnectionFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -61,7 +62,7 @@ public class FileConsumer {
 		System.exit(2);
 	    }
 
-            ConnectionFactory connFactory = new ConnectionFactory();
+            IConnectionFactory connFactory = new ConnectionFactory();
             connFactory.setUri(uri);
             Connection conn = connFactory.newConnection();
 

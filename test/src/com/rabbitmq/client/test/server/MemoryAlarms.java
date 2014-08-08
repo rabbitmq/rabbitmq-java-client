@@ -22,7 +22,6 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.tools.Host;
 
 public class MemoryAlarms extends BrokerTestCase {
 
@@ -33,10 +32,10 @@ public class MemoryAlarms extends BrokerTestCase {
 
     @Override
     protected void setUp() throws IOException {
-        connectionFactory.setRequestedHeartbeat(1);
+        cf.setRequestedHeartbeat(1);
         super.setUp();
         if (connection2 == null) {
-            connection2 = connectionFactory.newConnection();
+            connection2 = cf.newConnection();
         }
         channel2 = connection2.createChannel();
     }
@@ -52,7 +51,7 @@ public class MemoryAlarms extends BrokerTestCase {
             connection2 = null;
         }
         super.tearDown();
-        connectionFactory.setRequestedHeartbeat(0);
+        cf.setRequestedHeartbeat(0);
     }
 
     @Override

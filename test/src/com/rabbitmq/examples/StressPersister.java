@@ -24,6 +24,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.rabbitmq.client.IConnectionFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -83,7 +84,7 @@ public class StressPersister {
     public int repeatCount;
     public int sampleGranularity;
 
-    public ConnectionFactory connectionFactory;
+    public IConnectionFactory IConnectionFactory;
     public long topStartTime;
     public PrintWriter logOut;
 
@@ -112,12 +113,12 @@ public class StressPersister {
         repeatCount = intArg(cmd, 'c', backlogSize * 5);
         sampleGranularity = intArg(cmd, 's', Math.max(5, repeatCount / 250));
 
-        connectionFactory = new ConnectionFactory();
-        connectionFactory.setUri(uri);
+        IConnectionFactory = new ConnectionFactory();
+        IConnectionFactory.setUri(uri);
     }
 
     public Connection newConnection() throws IOException {
-        return connectionFactory.newConnection();
+        return IConnectionFactory.newConnection();
     }
 
     public void run() throws IOException, InterruptedException {

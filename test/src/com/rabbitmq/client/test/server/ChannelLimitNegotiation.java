@@ -3,6 +3,7 @@ package com.rabbitmq.client.test.server;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQConnection;
@@ -40,7 +41,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
 
     public void testChannelMaxLowerThanServerMinimum() throws Exception {
         int n = 64;
-        ConnectionFactory cf = new ConnectionFactory();
+        IConnectionFactory cf = new ConnectionFactory();
         cf.setRequestedChannelMax(n);
 
         Connection conn = cf.newConnection();
@@ -68,7 +69,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
 
         try {
             Host.rabbitmqctl("eval 'application:set_env(rabbit, channel_max, " + n + ").'");
-            ConnectionFactory cf = new ConnectionFactory();
+            IConnectionFactory cf = new ConnectionFactory();
             Connection conn = cf.newConnection();
             assertEquals(n, conn.getChannelMax());
 

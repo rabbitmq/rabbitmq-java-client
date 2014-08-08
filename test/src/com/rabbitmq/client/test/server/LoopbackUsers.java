@@ -2,6 +2,7 @@ package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.tools.Host;
 import junit.framework.TestCase;
 
@@ -61,8 +62,8 @@ public class LoopbackUsers extends TestCase {
         }
     }
 
-    private ConnectionFactory getFactory(String name, String addr) {
-        ConnectionFactory factory = new ConnectionFactory();
+    private IConnectionFactory getFactory(String name, String addr) {
+        IConnectionFactory factory = new ConnectionFactory();
         factory.setUsername(name);
         factory.setPassword(name);
         factory.setHost(addr);

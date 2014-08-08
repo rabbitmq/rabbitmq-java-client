@@ -25,6 +25,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultSocketConfigurator;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 
@@ -64,7 +65,7 @@ public class BufferPerformanceMetrics {
                 consumeRateNoNagle = 0;
 
             for(final boolean useNagle : new boolean[] { false, true }) {
-                ConnectionFactory factory = new ConnectionFactory() {
+                IConnectionFactory factory = new ConnectionFactory() {
                     {
                         setUri(uri);
                         setSocketConfigurator(new DefaultSocketConfigurator() {

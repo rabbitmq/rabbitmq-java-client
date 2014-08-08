@@ -27,7 +27,7 @@ public class Heartbeat extends BrokerTestCase {
     public Heartbeat()
     {
         super();
-        connectionFactory.setRequestedHeartbeat(1);
+        cf.setRequestedHeartbeat(1);
     }
 
     public void testHeartbeat()

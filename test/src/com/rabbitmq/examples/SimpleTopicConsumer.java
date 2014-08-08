@@ -20,6 +20,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
 public class SimpleTopicConsumer {
@@ -41,7 +42,7 @@ public class SimpleTopicConsumer {
             String exchange = (args.length > 2) ? args[2] : null;
             String queue = (args.length > 3) ? args[3] : null;
 
-            ConnectionFactory cfconn = new ConnectionFactory();
+            IConnectionFactory cfconn = new ConnectionFactory();
             cfconn.setUri(uri);
             Connection conn = cfconn.newConnection();
 

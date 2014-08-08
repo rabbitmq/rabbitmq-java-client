@@ -20,10 +20,10 @@ package com.rabbitmq.client.test;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.rabbitmq.client.IConnectionFactory;
 import junit.framework.TestCase;
 
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
@@ -31,12 +31,11 @@ import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.impl.ShutdownNotifierComponent;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.tools.Host;
 
 public class BrokerTestCase extends TestCase {
-    protected ConnectionFactory connectionFactory = newConnectionFactory();
+    protected ConnectionFactory cf = newConnectionFactory();
 
     protected ConnectionFactory newConnectionFactory() {
         return new ConnectionFactory();
@@ -100,7 +99,7 @@ public class BrokerTestCase extends TestCase {
     public void openConnection()
             throws IOException {
         if (connection == null) {
-            connection = connectionFactory.newConnection();
+            connection = cf.newConnection();
         }
     }
 

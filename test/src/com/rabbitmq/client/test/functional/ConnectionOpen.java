@@ -22,6 +22,7 @@ import java.io.DataInputStream;
 import java.net.Socket;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.impl.SocketFrameHandler;
@@ -36,7 +37,7 @@ import junit.framework.TestCase;
  */
 public class ConnectionOpen extends TestCase {
     public void testCorrectProtocolHeader() throws IOException {
-        ConnectionFactory factory = new ConnectionFactory();
+        IConnectionFactory factory = new ConnectionFactory();
         SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
         fh.sendHeader();
         AMQCommand command = new AMQCommand();
@@ -53,7 +54,7 @@ public class ConnectionOpen extends TestCase {
     }
 
     public void testCrazyProtocolHeader() throws IOException {
-        ConnectionFactory factory = new ConnectionFactory();
+        IConnectionFactory factory = new ConnectionFactory();
         // keep the frame handler's socket
         Socket fhSocket = factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT);
         SocketFrameHandler fh = new SocketFrameHandler(fhSocket);
@@ -86,7 +87,7 @@ public class ConnectionOpen extends TestCase {
     }
 
     public void testFrameMaxLessThanFrameMinSize() throws IOException {
-        ConnectionFactory factory = new ConnectionFactory();
+        IConnectionFactory factory = new ConnectionFactory();
         factory.setRequestedFrameMax(100);
         try {
             factory.newConnection();

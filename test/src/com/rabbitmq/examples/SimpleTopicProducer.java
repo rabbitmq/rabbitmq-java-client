@@ -19,6 +19,7 @@ package com.rabbitmq.examples;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 
 public class SimpleTopicProducer {
     public static final String DEFAULT_TOPIC = "one.two.three.four";
@@ -41,7 +42,7 @@ public class SimpleTopicProducer {
             String message = (args.length > 3) ? args[3] :
                 "the time is " + new java.util.Date().toString();
 
-            ConnectionFactory cfconn = new ConnectionFactory();
+            IConnectionFactory cfconn = new ConnectionFactory();
             cfconn.setUri(uri);
             Connection conn = cfconn.newConnection();
 

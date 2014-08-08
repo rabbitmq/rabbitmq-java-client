@@ -20,6 +20,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 
 import java.util.Collections;
 
@@ -28,7 +29,7 @@ import java.util.Collections;
 public class PerQueueTTLPublisher {
 
     public static void main(String[] args) throws Exception {
-        ConnectionFactory factory = new ConnectionFactory();
+        IConnectionFactory factory = new ConnectionFactory();
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
 

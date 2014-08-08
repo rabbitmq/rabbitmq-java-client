@@ -19,6 +19,7 @@ package com.rabbitmq.examples;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
 public class SimpleConsumer {
@@ -27,7 +28,7 @@ public class SimpleConsumer {
             String uri = (args.length > 0) ? args[0] : "amqp://localhost";
             String queueName = (args.length > 1) ? args[1] : "SimpleQueue";
 
-            ConnectionFactory connFactory = new ConnectionFactory();
+            IConnectionFactory connFactory = new ConnectionFactory();
             connFactory.setUri(uri);
             Connection conn = connFactory.newConnection();
 

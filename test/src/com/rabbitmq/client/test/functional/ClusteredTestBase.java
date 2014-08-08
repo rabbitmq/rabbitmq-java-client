@@ -19,7 +19,7 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
@@ -56,7 +56,7 @@ public class ClusteredTestBase extends BrokerTestCase {
         super.openConnection();
         if (clusteredConnection == null) {
             try {
-                ConnectionFactory cf2 = connectionFactory.clone();
+                IConnectionFactory cf2 = cf.clone();
                 cf2.setHost("localhost");
                 cf2.setPort(5673);
                 clusteredConnection = cf2.newConnection();

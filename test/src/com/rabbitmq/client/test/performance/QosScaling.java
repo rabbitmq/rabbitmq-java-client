@@ -21,6 +21,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
 import org.apache.commons.cli.CommandLine;
@@ -68,7 +69,7 @@ public class QosScaling {
     }
 
     protected final Parameters params;
-    protected final ConnectionFactory connectionFactory =
+    protected final IConnectionFactory IConnectionFactory =
         new ConnectionFactory();
     protected Connection connection;
     protected Channel channel;
@@ -122,9 +123,9 @@ public class QosScaling {
     }
 
     public long run() throws IOException {
-        connectionFactory.setHost(params.host);
-        connectionFactory.setPort(params.port);
-        connection = connectionFactory.newConnection();
+        IConnectionFactory.setHost(params.host);
+        IConnectionFactory.setPort(params.port);
+        connection = IConnectionFactory.newConnection();
         channel = connection.createChannel();
         channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);

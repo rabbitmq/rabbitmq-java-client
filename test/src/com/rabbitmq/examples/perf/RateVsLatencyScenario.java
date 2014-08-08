@@ -16,15 +16,15 @@
 
 package com.rabbitmq.examples.perf;
 
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 
 public class RateVsLatencyScenario implements Scenario {
     private String name;
-    private ConnectionFactory factory;
+    private IConnectionFactory factory;
     private MulticastParams params;
     private VaryingScenario impl;
 
-    public RateVsLatencyScenario(String name, ConnectionFactory factory, MulticastParams params) {
+    public RateVsLatencyScenario(String name, IConnectionFactory factory, MulticastParams params) {
         this.name = name;
         this.factory = factory;
         this.params = params;

@@ -19,6 +19,7 @@ package com.rabbitmq.examples;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 
 public class SimpleProducer {
     public static void main(String[] args) {
@@ -29,7 +30,7 @@ public class SimpleProducer {
             String exchange = (args.length > 2) ? args[2] : "";
             String routingKey = (args.length > 3) ? args[3] : "SimpleQueue";
 
-            ConnectionFactory cfconn = new ConnectionFactory();
+            IConnectionFactory cfconn = new ConnectionFactory();
             cfconn.setUri(uri);
             Connection conn = cfconn.newConnection();
 

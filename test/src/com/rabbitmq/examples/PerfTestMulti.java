@@ -17,6 +17,7 @@
 package com.rabbitmq.examples;
 
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 import com.rabbitmq.examples.perf.Scenario;
 import com.rabbitmq.examples.perf.ScenarioFactory;
 import com.rabbitmq.tools.json.JSONReader;
@@ -34,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 public class PerfTestMulti {
-    private static final ConnectionFactory factory = new ConnectionFactory();
+    private static final IConnectionFactory factory = new ConnectionFactory();
 
     private static Map<String, Object> results = new HashMap<String, Object>();
 

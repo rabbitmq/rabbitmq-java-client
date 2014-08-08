@@ -1,12 +1,12 @@
 package com.rabbitmq.examples.perf;
 
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.IConnectionFactory;
 
 import java.util.List;
 import java.util.Map;
 
 public class ScenarioFactory {
-    public static Scenario fromJSON(Map json, ConnectionFactory factory) {
+    public static Scenario fromJSON(Map json, IConnectionFactory factory) {
         String type = read("type", json, String.class);
         String name = read("name", json, String.class);
         Integer interval = read("interval", json, Integer.class, 1000);
