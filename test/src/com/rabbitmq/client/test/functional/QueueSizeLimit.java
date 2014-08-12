@@ -18,6 +18,7 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,72 +31,87 @@ import java.util.Map;
  */
 public class QueueSizeLimit extends BrokerTestCase {
 
+    private static final int MSG_LENGTH = 1000;
     private final int MAXMAXLENGTH = 3;
     private final String q = "queue-maxlength";
 
+    private enum Type {msgs, bytes}
+
     public void testQueueSize()  throws IOException, InterruptedException {
         for (int maxLen = 0; maxLen <= MAXMAXLENGTH; maxLen ++){
-            setupNonDlxTest(maxLen, false);
-            assertHead(maxLen, "msg2", q);
-            deleteQueue(q);
+            for (Type type : Type.values()) {
+                setupNonDlxTest(maxLen, type, false);
+                assertHead(maxLen, "msg2", q);
+                deleteQueue(q);
+            }
         }
     }
 
     public void testQueueSizeUnacked()  throws IOException, InterruptedException {
-        for (int maxLen = 0; maxLen <= MAXMAXLENGTH; maxLen ++){
-            setupNonDlxTest(maxLen, true);
-            assertHead(maxLen > 0 ? 1 : 0, "msg" + (maxLen + 1), q);
-            deleteQueue(q);
+        for (int maxLen = 0; maxLen <= MAXMAXLENGTH; maxLen ++) {
+            for (Type type : Type.values()) {
+                setupNonDlxTest(maxLen, type, true);
+                assertHead(maxLen > 0 ? 1 : 0, "msg" + (maxLen + 1), q);
+                deleteQueue(q);
+            }
         }
     }
 
     public void testQueueSizeDlx()  throws IOException, InterruptedException {
         for (int maxLen = 0; maxLen <= MAXMAXLENGTH; maxLen ++){
-            setupDlxTest(maxLen, false);
-            assertHead(1, "msg1", "DLQ");
-            deleteQueue(q);
-            deleteQueue("DLQ");
+            for (Type type : Type.values()) {
+                setupDlxTest(maxLen, type, false);
+                assertHead(1, "msg1", "DLQ");
+                deleteQueue(q);
+                deleteQueue("DLQ");
+            }
         }
     }
 
     public void testQueueSizeUnackedDlx()  throws IOException, InterruptedException {
         for (int maxLen = 0; maxLen <= MAXMAXLENGTH; maxLen ++){
-            setupDlxTest(maxLen, true);
-            assertHead(maxLen > 0 ? 0 : 1, "msg1", "DLQ");
-            deleteQueue(q);
-            deleteQueue("DLQ");
+            for (Type type : Type.values()) {
+                setupDlxTest(maxLen, type, true);
+                assertHead(maxLen > 0 ? 0 : 1, "msg1", "DLQ");
+                deleteQueue(q);
+                deleteQueue("DLQ");
+            }
         }
     }
 
     public void testRequeue() throws IOException, InterruptedException  {
         for (int maxLen = 1; maxLen <= MAXMAXLENGTH; maxLen ++) {
-            declareQueue(maxLen, false);
-            setupRequeueTest(maxLen);
-            assertHead(maxLen, "msg1", q);
-            deleteQueue(q);
+            for (Type type : Type.values()) {
+                declareQueue(maxLen, type, false);
+                setupRequeueTest(maxLen);
+                assertHead(maxLen, "msg1", q);
+                deleteQueue(q);
+            }
         }
     }
 
     public void testRequeueWithDlx() throws IOException, InterruptedException  {
         for (int maxLen = 1; maxLen <= MAXMAXLENGTH; maxLen ++) {
-            declareQueue(maxLen, true);
-            setupRequeueTest(maxLen);
-            assertHead(maxLen, "msg1", q);
-            assertHead(maxLen, "msg1", "DLQ");
-            deleteQueue(q);
-            deleteQueue("DLQ");
+            for (Type type : Type.values()) {
+                declareQueue(maxLen, type, true);
+                setupRequeueTest(maxLen);
+                assertHead(maxLen, "msg1", q);
+                assertHead(maxLen, "msg1", "DLQ");
+                deleteQueue(q);
+                deleteQueue("DLQ");
+            }
         }
     }
 
-    private void setupNonDlxTest(int maxLen, boolean unAcked) throws IOException, InterruptedException {
-        declareQueue(maxLen, false);
+    private void setupNonDlxTest(int maxLen, Type type, boolean unAcked) throws IOException, InterruptedException {
+        declareQueue(maxLen, type, false);
         fill(maxLen);
         if (unAcked) getUnacked(maxLen);
         publish("msg" + (maxLen + 1));
     }
 
-    private void setupDlxTest(int maxLen, boolean unAcked) throws IOException, InterruptedException {
-        declareQueue(maxLen, true);
+    private void setupDlxTest(int maxLen, Type type, boolean unAcked) throws IOException, InterruptedException {
+        declareQueue(maxLen, type, true);
         fill(maxLen);
         if (unAcked) getUnacked(maxLen);
         publish("msg" + (maxLen + 1));
@@ -113,9 +129,15 @@ public class QueueSizeLimit extends BrokerTestCase {
             channel.basicNack(tags.get(maxLen - 1), true, true);
     }
 
-    private void declareQueue(int maxLen, boolean dlx) throws IOException {
+    private void declareQueue(int maxLen, Type type, boolean dlx) throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-max-length", maxLen);
+        if (type == Type.msgs) {
+            args.put("x-max-length", maxLen);
+        }
+        else {
+            args.put("x-max-length-bytes", maxLen * MSG_LENGTH);
+        }
+
         if (dlx) {
             args.put("x-dead-letter-exchange", "amq.fanout");
             channel.queueDeclare("DLQ", false, true, false, null);
@@ -130,15 +152,15 @@ public class QueueSizeLimit extends BrokerTestCase {
         }
     }
 
-    private void publish(String payload) throws IOException, InterruptedException {
-        basicPublishVolatile(payload.getBytes(), q);
+    private void publish(String id) throws IOException, InterruptedException {
+        basicPublishVolatile(new byte[MSG_LENGTH], "", q, MessageProperties.BASIC.builder().messageId(id).build());
     }
 
-    private void assertHead(int expectedLength, String expectedHeadPayload, String queueName) throws IOException {
+    private void assertHead(int expectedLength, String expectedHeadId, String queueName) throws IOException {
         GetResponse head = channel.basicGet(queueName, true);
         if (expectedLength > 0) {
             assertNotNull(head);
-            assertEquals(expectedHeadPayload, new String(head.getBody()));
+            assertEquals(expectedHeadId, head.getProps().getMessageId());
             assertEquals(expectedLength, head.getMessageCount() + 1);
         } else {
             assertNull(head);

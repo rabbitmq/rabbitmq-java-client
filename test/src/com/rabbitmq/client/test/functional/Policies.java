@@ -32,11 +32,12 @@ public class Policies extends BrokerTestCase {
     private static final int DELAY = 100; // MILLIS
 
     @Override protected void createResources() throws IOException {
-        setPolicy("AE", "^has-ae", "\"alternate-exchange\":\"ae\"");
-        setPolicy("DLX", "^has-dlx", "\"dead-letter-exchange\":\"dlx\",\"dead-letter-routing-key\":\"rk\"");
-        setPolicy("TTL", "^has-ttl", "\"message-ttl\":" + DELAY);
-        setPolicy("Expires", "^has-expires", "\"expires\":" + DELAY);
-        setPolicy("MaxLength", "^has-max-length", "\"max-length\":1");
+        setPolicy("AE", "^has-ae$", "\"alternate-exchange\":\"ae\"");
+        setPolicy("DLX", "^has-dlx$", "\"dead-letter-exchange\":\"dlx\",\"dead-letter-routing-key\":\"rk\"");
+        setPolicy("TTL", "^has-ttl$", "\"message-ttl\":" + DELAY);
+        setPolicy("Expires", "^has-expires$", "\"expires\":" + DELAY);
+        setPolicy("MaxLength", "^has-max-length$", "\"max-length\":1");
+        setPolicy("MaxLengthBytes", "^has-max-length-bytes$", "\"max-length-bytes\":1000");
         channel.exchangeDeclare("has-ae", "fanout");
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("alternate-exchange", "ae2");
@@ -167,6 +168,27 @@ public class Policies extends BrokerTestCase {
         assertDelivered(q, 2);
     }
 
+    // limit 1000 bytes, msgs 100 each
+    public void testMaxLengthBytes() throws IOException, InterruptedException {
+        String q = declareQueue("has-max-length-bytes", null);
+        basicPublishVolatileN(q, 20);
+        assertDelivered(q, 10);
+        clearPolicies();
+
+        basicPublishVolatileN(q, 20);
+        assertDelivered(q, 20);
+    }
+
+    public void testMaxLengthBytesArgs() throws IOException, InterruptedException {
+        String q = declareQueue("has-max-length-bytes", args("x-max-length-bytes", 1500));
+        basicPublishVolatileN(q, 20);
+        assertDelivered(q, 10);
+        clearPolicies();
+
+        basicPublishVolatileN(q, 20);
+        assertDelivered(q, 15);
+    }
+
     @Override protected void releaseResources() throws IOException {
         clearPolicies();
         channel.exchangeDelete("has-ae");
@@ -228,7 +250,7 @@ public class Policies extends BrokerTestCase {
 
     private void basicPublishVolatileN(String q, int count) throws IOException {
         for (int i = 0; i < count; i++) {
-            basicPublishVolatile(q);
+            basicPublishVolatile(new byte[100], q);
         }
     }
 
