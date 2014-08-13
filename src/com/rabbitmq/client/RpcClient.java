@@ -58,8 +58,6 @@ public class RpcClient {
     /** Contains the most recently-used request correlation ID */
     private int _correlationId;
 
-    /** The name of our private reply queue */
-    private String _replyQueue;
     /** Consumer attached to our reply queue */
     private DefaultConsumer _consumer;
 
@@ -73,7 +71,6 @@ public class RpcClient {
      * @param routingKey the routing key
      * @param timeout milliseconds before timing out on wait for response
      * @throws IOException if an error is encountered
-     * @see #setupReplyQueue
      */
     public RpcClient(Channel channel, String exchange, String routingKey, int timeout) throws IOException {
         _channel = channel;
@@ -83,7 +80,6 @@ public class RpcClient {
         _timeout = timeout;
         _correlationId = 0;
 
-        _replyQueue = setupReplyQueue();
         _consumer = setupConsumer();
     }
 
@@ -98,7 +94,6 @@ public class RpcClient {
      * @param exchange the exchange to connect to
      * @param routingKey the routing key
      * @throws IOException if an error is encountered
-     * @see #setupReplyQueue
      */
     public RpcClient(Channel channel, String exchange, String routingKey) throws IOException {
         this(channel, exchange, routingKey, NO_TIMEOUT);
@@ -123,16 +118,6 @@ public class RpcClient {
             _channel.basicCancel(_consumer.getConsumerTag());
             _consumer = null;
         }
-    }
-
-    /**
-     * Creates a server-named exclusive autodelete queue to use for
-     * receiving replies to RPC requests.
-     * @throws IOException if an error is encountered
-     * @return the name of the reply queue
-     */
-    protected String setupReplyQueue() throws IOException {
-        return _channel.queueDeclare("", false, true, true, null).getQueue();
     }
 
     /**
@@ -167,7 +152,7 @@ public class RpcClient {
                 }
             }
         };
-        _channel.basicConsume(_replyQueue, true, consumer);
+        _channel.basicConsume("amq.reply-to", true, consumer);
         return consumer;
     }
 
@@ -186,7 +171,7 @@ public class RpcClient {
             _correlationId++;
             String replyId = "" + _correlationId;
             props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
-                    .correlationId(replyId).replyTo(_replyQueue).build();
+                    .correlationId(replyId).replyTo("amq.reply-consumer").build();
             _continuationMap.put(replyId, k);
         }
         publish(props, message);
@@ -330,14 +315,6 @@ public class RpcClient {
      */
     public int getCorrelationId() {
         return _correlationId;
-    }
-
-    /**
-     * Retrieve the reply queue.
-     * @return the name of the client's reply queue
-     */
-    public String getReplyQueue() {
-        return _replyQueue;
     }
 
     /**
