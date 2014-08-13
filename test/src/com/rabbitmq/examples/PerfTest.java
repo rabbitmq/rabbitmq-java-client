@@ -49,7 +49,7 @@ public class PerfTest {
             String exchangeName     = strArg(cmd, 'e', exchangeType);
             String queueName        = strArg(cmd, 'u', "");
             String routingKey       = strArg(cmd, 'k', null);
-            boolean randomRKey      = cmd.hasOption('K');
+            boolean randomRoutingKey      = cmd.hasOption('K');
             int samplingInterval    = intArg(cmd, 'i', 1);
             float producerRateLimit = floatArg(cmd, 'r', 0.0f);
             float consumerRateLimit = floatArg(cmd, 'R', 0.0f);
@@ -108,7 +108,7 @@ public class PerfTest {
             p.setProducerTxSize(   producerTxSize);
             p.setQueueName(        queueName);
             p.setRoutingKey(       routingKey);
-            p.setRandomRKey(       randomRKey);
+            p.setRandomRoutingKey(       randomRoutingKey);
             p.setProducerRateLimit(producerRateLimit);
             p.setTimeLimit(        timeLimit);
 
@@ -140,7 +140,7 @@ public class PerfTest {
         options.addOption(new Option("e", "exchange",      true, "exchange name"));
         options.addOption(new Option("u", "queue",         true, "queue name"));
         options.addOption(new Option("k", "routingKey",    true, "routing key"));
-        options.addOption(new Option("K", "randomRKey",    false,"use random routing key per message"));
+        options.addOption(new Option("K", "randomRoutingKey",    false,"use random routing key per message"));
         options.addOption(new Option("i", "interval",      true, "sampling interval"));
         options.addOption(new Option("r", "rate",          true, "producer rate limit"));
         options.addOption(new Option("R", "consumerRate",  true, "consumer rate limit"));
