@@ -60,18 +60,18 @@ public class Producer extends ProducerConsumerBase implements Runnable, ReturnLi
                     long confirm, Stats stats)
         throws IOException {
 
-        this.channel      = channel;
-        this.exchangeName = exchangeName;
-        this.id           = id;
+        this.channel          = channel;
+        this.exchangeName     = exchangeName;
+        this.id               = id;
         this.randomRoutingKey = randomRoutingKey;
-        this.mandatory    = flags.contains("mandatory");
-        this.immediate    = flags.contains("immediate");
-        this.persistent   = flags.contains("persistent");
-        this.txSize       = txSize;
-        this.rateLimit    = rateLimit;
-        this.msgLimit     = msgLimit;
-        this.timeLimit    = 1000L * timeLimit;
-        this.message      = new byte[minMsgSize];
+        this.mandatory        = flags.contains("mandatory");
+        this.immediate        = flags.contains("immediate");
+        this.persistent       = flags.contains("persistent");
+        this.txSize           = txSize;
+        this.rateLimit        = rateLimit;
+        this.msgLimit         = msgLimit;
+        this.timeLimit        = 1000L * timeLimit;
+        this.message          = new byte[minMsgSize];
         if (confirm > 0) {
             this.confirmPool  = new Semaphore((int)confirm);
         }
