@@ -444,7 +444,7 @@
         </jar>
     </target>
 
-  <target name="dist" depends="jar, test-jar">
+  <target name="dist" depends="jar, test-jar" description="Build all library JARs and documentation">
     <mkdir dir="${dist.out}"/>
     <copy todir="${dist.out}">
       <!-- ant doesn't seem to provide any form of usable abstraction over sets of file names -->
