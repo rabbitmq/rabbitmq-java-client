@@ -78,5 +78,6 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(ConnectionRecovery.class);
         suite.addTestSuite(ExceptionHandling.class);
         suite.addTestSuite(PerConsumerPrefetch.class);
+        suite.addTestSuite(ReplyTo.class);
     }
 }
