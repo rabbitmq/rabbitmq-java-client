@@ -152,7 +152,7 @@ public class RpcClient {
                 }
             }
         };
-        _channel.basicConsume("amq.reply-to", true, consumer);
+        _channel.basicConsume("amq.rabbitmq.reply-to", true, consumer);
         return consumer;
     }
 
@@ -171,7 +171,7 @@ public class RpcClient {
             _correlationId++;
             String replyId = "" + _correlationId;
             props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
-                    .correlationId(replyId).replyTo("amq.reply-consumer").build();
+                    .correlationId(replyId).replyTo("amq.rabbitmq.reply-to").build();
             _continuationMap.put(replyId, k);
         }
         publish(props, message);
