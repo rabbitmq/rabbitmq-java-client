@@ -36,10 +36,10 @@ import com.rabbitmq.client.impl.ValueWriter;
 import com.rabbitmq.utility.BlockingCell;
 
 /**
- * Convenience class which manages a temporary reply queue for simple RPC-style communication.
+ * Convenience class which manages simple RPC-style communication.
  * The class is agnostic about the format of RPC arguments / return values.
  * It simply provides a mechanism for sending a message to an exchange with a given routing key,
- * and waiting for a response on a reply queue.
+ * and waiting for a response.
 */
 public class RpcClient {
     /** Channel we are communicating on */
