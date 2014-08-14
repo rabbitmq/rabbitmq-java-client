@@ -464,7 +464,7 @@
     </copy>
   </target>
 
-  <target name="clean">
+  <target name="clean" description="Cleans build artifacts">
     <delete dir="build"/>
   </target>
 
