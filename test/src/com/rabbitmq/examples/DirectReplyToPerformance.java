@@ -19,24 +19,27 @@ import java.util.concurrent.CountDownLatch;
 public class DirectReplyToPerformance {
     private static final String DIRECT_QUEUE = "amq.rabbitmq.reply-to";
     private static final String SERVER_QUEUE = "server-queue";
-    private static final int CLIENTS = 1;
-    private static final int RPC_COUNT_PER_CLIENT = 1000;
+    private static final int CLIENTS = 5;
+    private static final int RPC_COUNT_PER_CLIENT = 2000;
 
     public static void main(String[] args) throws Exception {
         String uri = args[0];
         start(new Server(uri));
 
-        doTest(uri, DirectReply.class);
-        doTest(uri, SharedReplyQueue.class);
-        doTest(uri, PerRPCReplyQueue.class);
+        doTest(uri, DirectReply.class,      true);
+        doTest(uri, SharedReplyQueue.class, true);
+        doTest(uri, PerRPCReplyQueue.class, true);
+        doTest(uri, DirectReply.class,      false);
+        doTest(uri, SharedReplyQueue.class, false);
+        doTest(uri, PerRPCReplyQueue.class, false);
         System.exit(0);
     }
 
-    private static void doTest(String uri, Class strategy) throws Exception {
-        System.out.println("*** " + strategy.getSimpleName());
+    private static void doTest(String uri, Class strategy, boolean reuseConnection) throws Exception {
+        System.out.println("*** " + strategy.getSimpleName() + (reuseConnection ? " (reusing connections)" : ""));
         CountDownLatch latch = new CountDownLatch(CLIENTS);
         for (int i = 0; i < CLIENTS; i++) {
-            start(new Client(uri, latch, (ReplyQueueStrategy) strategy.newInstance()));
+            start(new Client(uri, latch, (ReplyQueueStrategy) strategy.newInstance(), reuseConnection));
         }
         latch.await();
     }
@@ -138,11 +141,13 @@ public class DirectReplyToPerformance {
         private String uri;
         private CountDownLatch globalLatch;
         private ReplyQueueStrategy strategy;
+        private boolean reuseConnection;
 
-        public Client(String uri, CountDownLatch latch, ReplyQueueStrategy strategy) {
+        public Client(String uri, CountDownLatch latch, ReplyQueueStrategy strategy, boolean reuseConnection) {
             this.uri = uri;
             this.globalLatch = latch;
             this.strategy = strategy;
+            this.reuseConnection = reuseConnection;
         }
 
         public void run() throws Exception {
@@ -151,18 +156,31 @@ public class DirectReplyToPerformance {
             final CountDownLatch[] latch = new CountDownLatch[1];
             long time = System.nanoTime();
             Consumer cons = new ClientConsumer(latch);
-            Connection conn = factory.newConnection();
-            Channel ch = conn.createChannel();
+            Connection conn = null;
+            Channel ch = null;
+            if (reuseConnection) {
+                conn = factory.newConnection();
+                ch = conn.createChannel();
+            }
             for (int i = 0; i < RPC_COUNT_PER_CLIENT; i++) {
                 latch[0] = new CountDownLatch(1);
+                if (!reuseConnection) {
+                    conn = factory.newConnection();
+                    ch = conn.createChannel();
+                }
 
                 String replyTo = strategy.preMsg(ch, cons);
                 AMQP.BasicProperties props = MessageProperties.MINIMAL_BASIC.builder().replyTo(replyTo).build();
                 ch.basicPublish("", SERVER_QUEUE, props, "Hello client!".getBytes());
                 latch[0].await();
                 strategy.postMsg(ch);
+                if (!reuseConnection) {
+                    conn.close();
+                }
             }
-            conn.close();
+            if (reuseConnection) {
+                conn.close();
+            }
             System.out.println((System.nanoTime() - time) / (1000 * RPC_COUNT_PER_CLIENT) + "us per RPC");
             globalLatch.countDown();
         }
