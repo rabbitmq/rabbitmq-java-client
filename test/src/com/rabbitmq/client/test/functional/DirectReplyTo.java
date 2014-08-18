@@ -9,7 +9,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 
-public class ReplyTo extends BrokerTestCase {
+public class DirectReplyTo extends BrokerTestCase {
     private static final String QUEUE = "amq.rabbitmq.reply-to";
 
     public void testRoundTrip() throws IOException, InterruptedException {
