@@ -2,6 +2,7 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
@@ -15,6 +16,7 @@ public class DirectReplyTo extends BrokerTestCase {
     public void testRoundTrip() throws IOException, InterruptedException {
         QueueingConsumer c = new QueueingConsumer(channel);
         String replyTo = rpcFirstHalf(c);
+        declare(connection, replyTo, true);
         channel.confirmSelect();
         basicPublishVolatile("response".getBytes(), "", replyTo, MessageProperties.BASIC);
         channel.waitForConfirms();
@@ -29,10 +31,24 @@ public class DirectReplyTo extends BrokerTestCase {
         // 5 chars should overwrite part of the key but not the pid; aiming to prove
         // we can't publish using just the pid
         replyTo = replyTo.substring(0, replyTo.length() - 5) + "xxxxx";
+        declare(connection, replyTo, false);
         basicPublishVolatile("response".getBytes(), "", replyTo, MessageProperties.BASIC);
 
         QueueingConsumer.Delivery del = c.nextDelivery(500);
         assertNull(del);
+    }
+
+    private void declare(Connection connection, String q, boolean expectedExists) throws IOException {
+        Channel ch = connection.createChannel();
+        try {
+            ch.queueDeclarePassive(q);
+            assertTrue(expectedExists);
+        } catch (IOException e) {
+            assertFalse(expectedExists);
+            checkShutdownSignal(AMQP.NOT_FOUND, e);
+            // Hmmm...
+            channel = connection.createChannel();
+        }
     }
 
     public void testConsumeFail() throws IOException, InterruptedException {
