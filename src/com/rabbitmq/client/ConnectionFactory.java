@@ -99,7 +99,10 @@ public class ConnectionFactory implements Cloneable {
     private boolean automaticRecovery             = false;
     private boolean topologyRecovery              = true;
 
-    private int networkRecoveryInterval           = 5000;
+    // long is used to make sure the users can use both ints
+    // and longs safely. It is unlikely that anybody'd need
+    // to use recovery intervals > Integer.MAX_VALUE in practice.
+    private long networkRecoveryInterval          = 5000;
 
     /** @return number of consumer threads in default {@link ExecutorService} */
     @Deprecated
@@ -638,7 +641,7 @@ public class ConnectionFactory implements Cloneable {
      * Returns automatic connection recovery interval in milliseconds.
      * @return how long will automatic recovery wait before attempting to reconnect, in ms; default is 5000
      */
-    public int getNetworkRecoveryInterval() {
+    public long getNetworkRecoveryInterval() {
         return networkRecoveryInterval;
     }
 
@@ -647,6 +650,14 @@ public class ConnectionFactory implements Cloneable {
      * @param networkRecoveryInterval how long will automatic recovery wait before attempting to reconnect, in ms
      */
     public void setNetworkRecoveryInterval(int networkRecoveryInterval) {
+        this.networkRecoveryInterval = networkRecoveryInterval;
+    }
+
+    /**
+     * Sets connection recovery interval. Default is 5000.
+     * @param networkRecoveryInterval how long will automatic recovery wait before attempting to reconnect, in ms
+     */
+    public void setNetworkRecoveryInterval(long networkRecoveryInterval) {
         this.networkRecoveryInterval = networkRecoveryInterval;
     }
 }

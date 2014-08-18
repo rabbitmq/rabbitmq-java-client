@@ -18,7 +18,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionRecovery extends BrokerTestCase {
-    public static final int RECOVERY_INTERVAL = 2000;
+    public static final long RECOVERY_INTERVAL = 2000;
 
     public void testConnectionRecovery() throws IOException, InterruptedException {
         assertTrue(connection.isOpen());
