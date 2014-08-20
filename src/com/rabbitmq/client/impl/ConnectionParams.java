@@ -17,7 +17,7 @@ public class ConnectionParams {
     private final int requestedChannelMax;
     private final int requestedHeartbeat;
     private final SaslConfig saslConfig;
-    private final int networkRecoveryInterval;
+    private final long networkRecoveryInterval;
     private final boolean topologyRecovery;
 
     private ExceptionHandler exceptionHandler;
@@ -41,7 +41,7 @@ public class ConnectionParams {
     public ConnectionParams(String username, String password, ExecutorService executor,
                             String virtualHost, Map<String, Object> clientProperties,
                             int requestedFrameMax, int requestedChannelMax, int requestedHeartbeat,
-                            SaslConfig saslConfig, int networkRecoveryInterval,
+                            SaslConfig saslConfig, long networkRecoveryInterval,
                             boolean topologyRecovery, ExceptionHandler exceptionHandler, ThreadFactory threadFactory) {
         this.username = username;
         this.password = password;
@@ -98,7 +98,7 @@ public class ConnectionParams {
         return exceptionHandler;
     }
 
-    public int getNetworkRecoveryInterval() {
+    public long getNetworkRecoveryInterval() {
         return networkRecoveryInterval;
     }
 
