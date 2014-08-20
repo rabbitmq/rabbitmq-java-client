@@ -171,7 +171,7 @@ public class DirectReplyToPerformance {
 
                 String replyTo = strategy.preMsg(ch, cons);
                 AMQP.BasicProperties props = MessageProperties.MINIMAL_BASIC.builder().replyTo(replyTo).build();
-                ch.basicPublish("", SERVER_QUEUE, props, "Hello client!".getBytes());
+                ch.basicPublish("", SERVER_QUEUE, props, "Hello server!".getBytes());
                 latch[0].await();
                 strategy.postMsg(ch);
                 if (!reuseConnection) {
