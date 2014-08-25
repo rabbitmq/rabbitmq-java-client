@@ -5,6 +5,8 @@ import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.Recoverable;
 import com.rabbitmq.client.RecoveryListener;
+import com.rabbitmq.client.impl.recovery.ConsumerRecoveryListener;
+import com.rabbitmq.client.impl.recovery.QueueRecoveryListener;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
@@ -16,6 +18,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ConnectionRecovery extends BrokerTestCase {
     public static final long RECOVERY_INTERVAL = 2000;
@@ -208,10 +211,24 @@ public class ConnectionRecovery extends BrokerTestCase {
         String x = "amq.fanout";
         channel.queueBind(q, x, "");
 
+        final AtomicReference<String> nameBefore = new AtomicReference<String>();
+        final AtomicReference<String> nameAfter  = new AtomicReference<String>();
+        final CountDownLatch listenerLatch = new CountDownLatch(1);
+        ((AutorecoveringConnection)connection).addQueueRecoveryListener(new QueueRecoveryListener() {
+            @Override
+            public void queueRecovered(String oldName, String newName) {
+                nameBefore.set(oldName);
+                nameAfter.set(newName);
+                listenerLatch.countDown();
+            }
+        });
+
         closeAndWaitForRecovery();
+        wait(listenerLatch);
         expectChannelRecovery(channel);
         channel.basicPublish(x, "", null, "msg".getBytes());
         assertDelivered(q, 1);
+        assertFalse(nameBefore.get().equals(nameAfter.get()));
         channel.queueDelete(q);
     }
 
@@ -318,8 +335,22 @@ public class ConnectionRecovery extends BrokerTestCase {
         for (int i = 0; i < n; i++) {
             channel.basicConsume(q, new DefaultConsumer(channel));
         }
+        final AtomicReference<String> tagA = new AtomicReference<String>();
+        final AtomicReference<String> tagB = new AtomicReference<String>();
+        final CountDownLatch listenerLatch = new CountDownLatch(n);
+        ((AutorecoveringConnection)connection).addConsumerRecoveryListener(new ConsumerRecoveryListener() {
+            @Override
+            public void consumerRecovered(String oldConsumerTag, String newConsumerTag) {
+                tagA.set(oldConsumerTag);
+                tagB.set(newConsumerTag);
+                listenerLatch.countDown();
+            }
+        });
+
         assertConsumerCount(n, q);
         closeAndWaitForRecovery();
+        wait(listenerLatch);
+        assertTrue(tagA.get().equals(tagB.get()));
         expectChannelRecovery(channel);
         assertConsumerCount(n, q);
 
