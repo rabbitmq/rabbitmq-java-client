@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test.functional;
@@ -21,11 +21,15 @@ import java.net.Socket;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DefaultSocketConfigurator;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.test.BrokerTestCase;
+
+import javax.net.SocketFactory;
 
 /**
  * Test that the server correctly handles us when we send it bad frames
@@ -67,9 +71,17 @@ public class UnexpectedFrames extends BrokerTestCase {
     }
 
     private static class ConfusedConnectionFactory extends ConnectionFactory {
+        @Override protected FrameHandlerFactory createFrameHandlerFactory() {
+            return new ConfusedFrameHandlerFactory();
+        }
+    }
 
-        @Override protected FrameHandler createFrameHandler(Socket sock)
-            throws IOException {
+    private static class ConfusedFrameHandlerFactory extends FrameHandlerFactory {
+        private ConfusedFrameHandlerFactory() {
+            super(1000, SocketFactory.getDefault(), new DefaultSocketConfigurator(), false);
+        }
+
+        @Override public FrameHandler create(Socket sock) throws IOException {
             return new ConfusedFrameHandler(sock);
         }
     }
@@ -96,10 +108,8 @@ public class UnexpectedFrames extends BrokerTestCase {
                 if (frame.type == AMQP.FRAME_METHOD) {
                     // We can't just skip the method as that will lead us to
                     // send 0 bytes and hang waiting for a response.
-                    Frame confusedFrame = new Frame(AMQP.FRAME_HEADER,
-                                                    frame.channel,
-                                                    frame.getPayload());
-                    return confusedFrame;
+                    return new Frame(AMQP.FRAME_HEADER,
+                                     frame.channel, frame.getPayload());
                 }
                 return frame;
             }
@@ -119,12 +129,11 @@ public class UnexpectedFrames extends BrokerTestCase {
 
     public void testWrongClassInHeader() throws IOException {
         expectUnexpectedFrameError(new Confuser() {
-            public Frame confuse(Frame frame) throws IOException {
+            public Frame confuse(Frame frame) {
                 if (frame.type == AMQP.FRAME_HEADER) {
                     byte[] payload = frame.getPayload();
                     Frame confusedFrame = new Frame(AMQP.FRAME_HEADER,
-                            frame.channel,
-                            payload);
+                                                    frame.channel, payload);
                     // First two bytes = class ID, must match class ID from
                     // method.
                     payload[0] = 12;
@@ -136,22 +145,42 @@ public class UnexpectedFrames extends BrokerTestCase {
         });
     }
 
-    private void expectUnexpectedFrameError(Confuser confuser)
-        throws IOException {
+    public void testHeartbeatOnChannel() throws IOException {
+        expectUnexpectedFrameError(new Confuser() {
+            public Frame confuse(Frame frame) {
+                if (frame.type == AMQP.FRAME_METHOD) {
+                    return new Frame(AMQP.FRAME_HEARTBEAT, frame.channel);
+                }
+                return frame;
+            }
+        });
+    }
 
+    public void testUnknownFrameType() throws IOException {
+        expectError(AMQP.FRAME_ERROR, new Confuser() {
+            public Frame confuse(Frame frame) {
+                if (frame.type == AMQP.FRAME_METHOD) {
+                    return new Frame(0, frame.channel,
+                                     "1234567890\0001234567890".getBytes());
+                }
+                return frame;
+            }
+        });
+    }
+
+    private void expectError(int error, Confuser confuser) throws IOException {
         ((ConfusedFrameHandler)((AMQConnection)connection).getFrameHandler()).
             confuser = confuser;
 
         //NB: the frame confuser relies on the encoding of the
         //method field to be at least 8 bytes long
         channel.basicPublish("", "routing key", null, "Hello".getBytes());
-        // TODO remove when bug 24086 is fixed.
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        expectError(AMQP.UNEXPECTED_FRAME);
+        expectError(error);
+    }
+
+    private void expectUnexpectedFrameError(Confuser confuser)
+        throws IOException {
+        expectError(AMQP.UNEXPECTED_FRAME, confuser);
     }
 
 }

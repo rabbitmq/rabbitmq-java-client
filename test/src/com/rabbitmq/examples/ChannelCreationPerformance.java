@@ -10,15 +10,18 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
-
 
 package com.rabbitmq.examples;
 
-import com.rabbitmq.client.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 
 class ChannelCreationPerformance {
     static Connection connect() throws Exception{
@@ -32,27 +35,27 @@ class ChannelCreationPerformance {
 
     abstract static class PerformanceTest{
       String name;
-      Connection c; 
+      Connection c;
       int i;
 
       PerformanceTest(String name){
         this.name = name;
       }
-      
+
       void run() throws Exception{
         System.out.println(name);
         for(i = START; i <= CHANNEL_MAX ; i += STEP){
           c = connect();
-          long start = System.currentTimeMillis(); 
-          body(); 
+          long start = System.currentTimeMillis();
+          body();
           long time = System.currentTimeMillis() - start;
           System.out.println(i + "\t" + time + " (" + (1000 * i / ((double)time)) + " channels/s)");
           c.close();
         }
-      } 
+      }
 
       abstract void body() throws Exception;
-    
+
     }
 
     public static void main(String[] args) throws Exception{
@@ -62,7 +65,7 @@ class ChannelCreationPerformance {
               c.createChannel();
           }
         }
-      }.run(); 
+      }.run();
 
       new PerformanceTest("Sequential creation followed by close:"){
         void body() throws Exception{
@@ -70,14 +73,14 @@ class ChannelCreationPerformance {
               c.createChannel().close();
           }
         }
-      }.run(); 
+      }.run();
 
       new PerformanceTest("Sequential creation then bulk close:"){
         void body() throws Exception{
           ArrayList<Channel> channels = new ArrayList<Channel>();
           for(int j = 1; j <= i; j++){
               channels.add(c.createChannel());
-          } 
+          }
           for(Channel chan : channels) chan.close();
         }
       }.run();
@@ -87,7 +90,7 @@ class ChannelCreationPerformance {
           ArrayList<Channel> channels = new ArrayList<Channel>();
           for(int j = 1; j <= i; j++){
               channels.add(c.createChannel());
-          } 
+          }
           Collections.shuffle(channels);
           for(Channel chan : channels) chan.close();
         }

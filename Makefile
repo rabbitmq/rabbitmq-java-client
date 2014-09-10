@@ -7,6 +7,7 @@ GNUPG_PATH=~
 
 WEB_URL=http://www.rabbitmq.com/
 NEXUS_STAGE_URL=http://oss.sonatype.org/service/local/staging/deploy/maven2
+MAVEN_NEXUS_VERSION=1.7
 
 AMQP_CODEGEN_DIR=$(shell fgrep sibling.codegen.dir build.properties | sed -e 's:sibling\.codegen\.dir=::')
 
@@ -21,11 +22,11 @@ clean:
 distclean: clean
 	make -C $(AMQP_CODEGEN_DIR) clean
 
-dist: distclean srcdist dist_all
+dist: distclean srcdist dist_all maven-bundle
 
 dist_all: dist1.5 javadoc-archive
 
-maven-bundle: distclean
+maven-bundle:
 	ant -Dimpl.version=$(VERSION) maven-bundle
 
 dist1.5:
@@ -63,7 +64,7 @@ srcdist: distclean
 	(cd build; zip -q -r $(SRC_ARCHIVE).zip $(SRC_ARCHIVE))
 	(cd build; rm -rf $(SRC_ARCHIVE))
 
-stage-maven-bundle: maven-bundle
+stage-and-promote-maven-bundle:
 	( \
 	  cd build/bundle; \
 	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
@@ -77,23 +78,14 @@ stage-maven-bundle: maven-bundle
 	    amqp-client-$(VERSION).jar \
 	    amqp-client-$(VERSION)-javadoc.jar \
 	    amqp-client-$(VERSION)-sources.jar && \
-	  mvn org.sonatype.plugins:nexus-maven-plugin:staging-close \
-	    -Dnexus.url=http://oss.sonatype.org \
-	    -Dnexus.username=$$NEXUS_USERNAME \
-	    -Dnexus.password=$$NEXUS_PASSWORD \
-	    -B \
-	    -Dnexus.description="Public release of $$VERSION" \
-	)
-
-promote-maven-bundle:
-	( \
-	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
-	  NEXUS_PASSWORD=`cat $(GNUPG_PATH)/../nexus/password`; \
-	  mvn org.sonatype.plugins:nexus-maven-plugin:staging-promote \
+	  mvn org.sonatype.plugins:nexus-maven-plugin:$(MAVEN_NEXUS_VERSION):staging-close \
+	      org.sonatype.plugins:nexus-maven-plugin:$(MAVEN_NEXUS_VERSION):staging-promote \
 	    -Dnexus.url=http://oss.sonatype.org \
 	    -Dnexus.username=$$NEXUS_USERNAME \
 	    -Dnexus.password=$$NEXUS_PASSWORD \
 	    -Dnexus.promote.autoSelectOverride=true \
 	    -DtargetRepositoryId=releases \
 	    -B \
+	    -Dnexus.description="Public release of $$VERSION" \
 	)
+

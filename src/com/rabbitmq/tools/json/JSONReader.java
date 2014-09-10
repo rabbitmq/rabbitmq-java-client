@@ -1,6 +1,6 @@
 /*
-Copyright 2006, 2007 Frank Carver
-Copyright 2007 Tony Garnock-Jones
+   Copyright (c) 2006-2007 Frank Carver
+   Copyright (c) 2007-2014 GoPivotal, Inc. All Rights Reserved
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -59,9 +59,22 @@ public class JSONReader {
     }
 
     private void skipWhiteSpace() {
-        while (Character.isWhitespace(c)) {
-            next();
-        }
+        boolean cont;
+
+        do {
+            cont = true;
+            if (Character.isWhitespace(c)) {
+                next();
+            }
+            else if (c == '/' && next() == '/') {
+                while (c != '\n') {
+                    next();
+                }
+            }
+            else {
+                cont = false;
+            }
+        } while (cont);
     }
 
     public Object read(String string) {
@@ -74,9 +87,10 @@ public class JSONReader {
         Object ret = null;
         skipWhiteSpace();
 
-        if (c == '"') {
+        if (c == '"' || c == '\'') {
+            char sep = c;
             next();
-            ret = string();
+            ret = string(sep);
         } else if (c == '[') {
             next();
             ret = array();
@@ -97,17 +111,19 @@ public class JSONReader {
             next();
         } else if (c == 't' && next() == 'r' && next() == 'u' && next() == 'e') {
             ret = Boolean.TRUE;
-	    next();
+            next();
         } else if (c == 'f' && next() == 'a' && next() == 'l' && next() == 's' && next() == 'e') {
             ret = Boolean.FALSE;
-	    next();
+            next();
         } else if (c == 'n' && next() == 'u' && next() == 'l' && next() == 'l') {
-	    next();
+            next();
         } else if (Character.isDigit(c) || c == '-') {
             ret = number();
         }
+        else {
+            throw new IllegalStateException("Found invalid token while parsing JSON (around character "+(it.getIndex()-it.getBeginIndex())+"): " + ret);
+        }
 
-        // System.out.println("token: " + ret); // enable this line to see the token stream
         token = ret;
         return ret;
     }
@@ -158,17 +174,20 @@ public class JSONReader {
             addDigits();
         }
 
-	String result = buf.toString();
-	try {
-	    return new Integer(result);
-	} catch (NumberFormatException nfe) {
-	    return new Double(result);
-	}
+        String result = buf.toString();
+        try {
+            return new Integer(result);
+        } catch (NumberFormatException nfe) {
+            return new Double(result);
+        }
     }
 
-    private Object string() {
+    /**
+     * Read a string with a specific delimiter (either ' or ")
+     */
+    private Object string(char sep) {
         buf.setLength(0);
-        while (c != '"') {
+        while (c != sep) {
             if (c == '\\') {
                 next();
                 if (c == 'u') {
@@ -177,6 +196,12 @@ public class JSONReader {
                     Object value = escapes.get(new Character(c));
                     if (value != null) {
                         add(((Character) value).charValue());
+                    }
+                    // if escaping is invalid, if we're going to ignore the error,
+                    // it makes more sense to put in the literal character instead
+                    // of just skipping it, so we do that
+                    else {
+                        add();
                     }
                 }
             } else {
@@ -207,7 +232,7 @@ public class JSONReader {
         int value = 0;
         for (int i = 0; i < 4; ++i) {
             switch (next()) {
-            case '0': case '1': case '2': case '3': case '4': 
+            case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
                 value = (value << 4) + c - '0';
                 break;

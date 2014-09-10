@@ -10,15 +10,15 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.PossibleAuthenticationFailureException;
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.Map;
@@ -127,7 +127,7 @@ public class Permissions extends BrokerTestCase
             unAuthFactory.newConnection();
             fail("Exception expected if password is wrong");
         } catch (IOException e) {
-            assertTrue(e instanceof PossibleAuthenticationFailureException);
+            assertTrue(e instanceof AuthenticationFailureException);
             String msg = e.getMessage();
             assertTrue("Exception message should contain 'auth'",
                        msg.toLowerCase().contains("auth"));
@@ -237,6 +237,17 @@ public class Permissions extends BrokerTestCase
                 createAltExchConfigTest("configure-and-read-me"));
     }
 
+    public void testDLXConfiguration()
+            throws IOException
+    {
+        runTest(false, false, false, false,
+                createDLXConfigTest("configure-me"));
+        runTest(false, false, false, false,
+                createDLXConfigTest("configure-and-write-me"));
+        runTest(false, true, false, false,
+                createDLXConfigTest("configure-and-read-me"));
+    }
+
     public void testNoAccess()
         throws IOException, InterruptedException
     {
@@ -316,6 +327,18 @@ public class Permissions extends BrokerTestCase
                 args.put("alternate-exchange", ae);
                 channel.exchangeDeclare(exchange, "direct", false, false, args);
                 channel.exchangeDelete(exchange);
+            }};
+    }
+
+    protected WithName createDLXConfigTest(final String queue)
+            throws IOException
+    {
+        return new WithName() {
+            public void with(String dlx) throws IOException {
+                Map<String, Object> args = new HashMap<String, Object>();
+                args.put("x-dead-letter-exchange", dlx);
+                channel.queueDeclare(queue, false, false, false, args);
+                channel.queueDelete(queue);
             }};
     }
 

@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -22,6 +22,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.ShutdownSignalException;
@@ -30,8 +32,7 @@ import com.rabbitmq.utility.IntAllocator;
 /**
  * Manages a set of channels, indexed by channel number (<code><b>1.._channelMax</b></code>).
  */
-
-public final class ChannelManager {
+public class ChannelManager {
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 10;
 
     /** Monitor for <code>_channelMap</code> and <code>channelNumberAllocator</code> */
@@ -46,12 +47,17 @@ public final class ChannelManager {
 
     /** Maximum channel number available on this connection. */
     private final int _channelMax;
+    private final ThreadFactory threadFactory;
 
     public int getChannelMax(){
       return _channelMax;
     }
 
     public ChannelManager(ConsumerWorkService workService, int channelMax) {
+        this(workService, channelMax, Executors.defaultThreadFactory());
+    }
+
+    public ChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory) {
         if (channelMax == 0) {
             // The framing encoding only allows for unsigned 16-bit integers
             // for the channel number
@@ -59,8 +65,9 @@ public final class ChannelManager {
         }
         _channelMax = channelMax;
         channelNumberAllocator = new IntAllocator(1, channelMax);
-        
+
         this.workService = workService;
+        this.threadFactory = threadFactory;
     }
 
     /**
@@ -77,6 +84,10 @@ public final class ChannelManager {
         }
     }
 
+    /**
+     * Handle shutdown. All the managed {@link com.rabbitmq.client.Channel Channel}s are shutdown.
+     * @param signal reason for shutdown
+     */
     public void handleSignal(ShutdownSignalException signal) {
         Set<ChannelN> channels;
         synchronized(this.monitor) {
@@ -86,6 +97,7 @@ public final class ChannelManager {
             releaseChannelNumber(channel);
             channel.processShutdownSignal(signal, true, true);
             shutdownSet.add(channel.getShutdownLatch());
+            channel.notifyListeners();
         }
         scheduleShutdownProcessing();
     }
@@ -93,14 +105,15 @@ public final class ChannelManager {
     private void scheduleShutdownProcessing() {
         final Set<CountDownLatch> sdSet = new HashSet<CountDownLatch>(shutdownSet);
         final ConsumerWorkService ssWorkService = workService;
-        Thread shutdownThread = new Thread( new Runnable() {
+        Runnable target = new Runnable() {
             public void run() {
                 for (CountDownLatch latch : sdSet) {
-                    try { latch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS); } catch (Throwable e) { }
+                    try { latch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS); } catch (Throwable e) { /*ignored*/ }
                 }
                 ssWorkService.shutdown();
-            }}, "ConsumerWorkServiceShutdown");
-        shutdownThread.setDaemon(true);
+            }
+        };
+        Thread shutdownThread = Environment.newThread(threadFactory, target, "ConsumerWorkService shutdown monitor", true);
         shutdownThread.start();
     }
 
@@ -141,9 +154,13 @@ public final class ChannelManager {
                     + "use. This should never happen. "
                     + "Please report this as a bug.");
         }
-        ChannelN ch = new ChannelN(connection, channelNumber, this.workService);
+        ChannelN ch = instantiateChannel(connection, channelNumber, this.workService);
         _channelMap.put(ch.getChannelNumber(), ch);
         return ch;
+    }
+
+    protected ChannelN instantiateChannel(AMQConnection connection, int channelNumber, ConsumerWorkService workService) {
+        return new ChannelN(connection, channelNumber, workService);
     }
 
     /**

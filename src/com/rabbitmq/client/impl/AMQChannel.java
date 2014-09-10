@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -99,9 +99,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * @return the wrapped exception
      */
     public static IOException wrap(ShutdownSignalException ex) {
-        IOException ioe = new IOException();
-        ioe.initCause(ex);
-        return ioe;
+        return wrap(ex, null);
     }
 
     public static IOException wrap(ShutdownSignalException ex, String message) {
@@ -153,12 +151,16 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public void enqueueRpc(RpcContinuation k)
     {
         synchronized (_channelMutex) {
+            boolean waitClearedInterruptStatus = false;
             while (_activeRpc != null) {
                 try {
                     _channelMutex.wait();
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    waitClearedInterruptStatus = true;
                 }
+            }
+            if (waitClearedInterruptStatus) {
+                Thread.currentThread().interrupt();
             }
             _activeRpc = k;
         }
@@ -185,7 +187,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         throws AlreadyClosedException
     {
         if (!isOpen()) {
-            throw new AlreadyClosedException("Attempt to use closed channel", this);
+            throw new AlreadyClosedException(getCloseReason());
         }
     }
 
@@ -260,7 +262,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             synchronized (_channelMutex) {
                 if (!setShutdownCauseIfOpen(signal)) {
                     if (!ignoreClosed)
-                        throw new AlreadyClosedException("Attempt to use closed channel", this);
+                        throw new AlreadyClosedException(getCloseReason());
                 }
 
                 _channelMutex.notifyAll();

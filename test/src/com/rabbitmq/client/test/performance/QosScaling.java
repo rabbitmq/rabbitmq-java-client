@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -129,9 +129,7 @@ public class QosScaling {
         channel.basicQos(1);
         QueueingConsumer consumer = new QueueingConsumer(channel);
         try {
-            channel.flow(false);
             publish(consume(consumer));
-            channel.flow(true);
             return drain(consumer);
         } finally {
             connection.abort();

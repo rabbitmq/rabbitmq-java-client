@@ -10,16 +10,14 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
-
 
 package com.rabbitmq.examples;
 
 import java.util.Random;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -64,7 +62,7 @@ public class SpammyTopicProducer {
             }
 
             System.out.println("Sending to exchange " + exchange + ", prefix: " + topicPrefix);
-            
+
             int thisTimeCount = 0;
             int allTimeCount = 0;
             long startTime = System.currentTimeMillis();

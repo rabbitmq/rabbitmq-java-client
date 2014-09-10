@@ -10,15 +10,11 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
-package com.rabbitmq.client.impl;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Consumer;
+package com.rabbitmq.client;
 
 /**
  * Interface to an exception-handling object.
@@ -47,7 +43,7 @@ public interface ExceptionHandler {
      * Perform any required exception processing for the situation
      * when the driver thread for the connection has called a
      * FlowListener's handleFlow method, and that method has
-     * thrown an exeption.
+     * thrown an exception.
      * @param channel the ChannelN that held the FlowListener
      * @param exception the exception thrown by FlowListener.handleFlow
      */
@@ -65,6 +61,16 @@ public interface ExceptionHandler {
 
     /**
      * Perform any required exception processing for the situation
+     * when the driver thread for the connection has called a
+     * BlockedListener's method, and that method has
+     * thrown an exception.
+     * @param connection the Connection that held the BlockedListener
+     * @param exception the exception thrown by the BlockedListener
+     */
+    void handleBlockedListenerException(Connection connection, Throwable exception);
+
+    /**
+     * Perform any required exception processing for the situation
      * when the driver thread for the connection has called a method
      * on a Consumer, and that method has thrown an exception.
      * @param channel the ChannelN that held the Consumer
@@ -78,4 +84,34 @@ public interface ExceptionHandler {
                                  Consumer consumer,
                                  String consumerTag,
                                  String methodName);
+
+    /**
+     * Perform any required exception processing for the situation
+     * when the driver thread for the connection has an exception
+     * during connection recovery that it can't otherwise deal with.
+     * @param conn the Connection that caught the exception
+     * @param exception the exception caught in the driver thread
+     */
+    void handleConnectionRecoveryException(Connection conn, Throwable exception);
+
+    /**
+     * Perform any required exception processing for the situation
+     * when the driver thread for the connection has an exception
+     * during channel recovery that it can't otherwise deal with.
+     * @param ch the Channel that caught the exception
+     * @param exception the exception caught in the driver thread
+     */
+    void handleChannelRecoveryException(Channel ch, Throwable exception);
+
+    /**
+     * Perform any required exception processing for the situation
+     * when the driver thread for the connection has an exception
+     * during topology (exchanges, queues, bindings, consumers) recovery
+     * that it can't otherwise deal with.
+     * @param conn the Connection that caught the exception
+     * @param ch the Channel that caught the exception
+     * @param exception the exception caught in the driver thread
+     */
+
+    void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException exception);
 }

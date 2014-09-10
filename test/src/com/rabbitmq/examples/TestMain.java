@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -29,17 +29,21 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.DefaultSocketConfigurator;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.SocketConfigurator;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.utility.BlockingCell;
-import com.rabbitmq.utility.Utility;
+
+import javax.net.SocketFactory;
 
 public class TestMain {
     public static void main(String[] args) throws IOException, URISyntaxException {
@@ -76,6 +80,25 @@ public class TestMain {
         private final int protocolMajor;
         private final int protocolMinor;
 
+        private class TestFrameHandlerFactory extends FrameHandlerFactory {
+            public TestFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl) {
+                super(connectionTimeout, factory, configurator, ssl);
+            }
+
+            @Override
+            public FrameHandler create(Address addr) throws IOException {
+                String hostName = addr.getHost();
+                int portNumber = addr.getPort();
+                if (portNumber == -1) portNumber = AMQP.PROTOCOL.PORT;
+                return new SocketFrameHandler(getSocketFactory().createSocket(hostName, portNumber)) {
+                    @Override
+                    public void sendHeader() throws IOException {
+                        sendHeader(protocolMajor, protocolMinor);
+                    }
+                };
+            }
+        }
+
         public TestConnectionFactory(int major, int minor, String uri)
             throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
         {
@@ -84,17 +107,10 @@ public class TestMain {
             setUri(uri);
         }
 
-        protected FrameHandler createFrameHandler(Address addr)
+        @Override
+        public FrameHandlerFactory createFrameHandlerFactory()
             throws IOException {
-
-            String hostName = addr.getHost();
-            int portNumber = addr.getPort();
-            if (portNumber == -1) portNumber = AMQP.PROTOCOL.PORT;
-            return new SocketFrameHandler(getSocketFactory().createSocket(hostName, portNumber)) {
-                    public void sendHeader() throws IOException {
-                        sendHeader(protocolMajor, protocolMinor);
-                    }
-                };
+            return new TestFrameHandlerFactory(10, SocketFactory.getDefault(), new DefaultSocketConfigurator(), false);
         }
     }
 
@@ -199,9 +215,7 @@ public class TestMain {
     public static void sleep(int ms) {
         try {
             Thread.sleep(ms);
-        } catch (InterruptedException ie) {
-            Utility.emptyStatement();
-        }
+        } catch (InterruptedException _) { } // ignore
     }
 
     private Connection _connection;
@@ -232,7 +246,7 @@ public class TestMain {
         final int batchSize = 5;
 
         _ch1 = createChannel();
-        
+
         String queueName =_ch1.queueDeclare().getQueue();
 
         sendLotsOfTrivialMessages(batchSize, queueName);
@@ -251,13 +265,10 @@ public class TestMain {
         _ch1.basicCancel(cTag2);
 
         tryTopics();
-        tryBasicReturn();
 
         queueName =_ch1.queueDeclare().getQueue();
         sendLotsOfTrivialMessages(batchSize, queueName);
         expect(batchSize, drain(batchSize, queueName, true));
-
-        tryTransaction(queueName);
 
         _ch1.close();
 
@@ -452,45 +463,6 @@ public class TestMain {
         }
     }
 
-    public void tryBasicReturn() throws IOException {
-        log("About to try mandatory/immediate publications");
-
-        String mx = "mandatoryTestExchange";
-        _ch1.exchangeDeclare(mx, "fanout", false, true, null);
-
-        setChannelReturnListener();
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, false, null, "one".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_ROUTE);
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, true, null, "two".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_ROUTE);
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", false, true, null, "three".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
-
-        String mq = "mandatoryTestQueue";
-        _ch1.queueDeclare(mq, false, false, true, null);
-        _ch1.queueBind(mq, mx, "");
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, true, null, "four".getBytes());
-        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
-
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish(mx, "", true, false, null, "five".getBytes());
-        drain(1, mq, true);
-        _ch1.queueDelete(mq, true, true);
-
-        unsetChannelReturnListener();
-
-        log("Completed basic.return testing.");
-        
-    }
-
     private void unsetChannelReturnListener() {
         _ch1.clearReturnListeners();
         log("ReturnListeners unset");
@@ -505,35 +477,6 @@ public class TestMain {
             }
         }
     }
-
-    public void tryTransaction(String queueName) throws IOException {
-
-        log("About to tryTranscation");
-
-        _ch1.txSelect();
-
-        setChannelReturnListener();
-
-        //test basicReturn handling in tx context
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish("", queueName, false, false, null, "normal".getBytes());
-        _ch1.basicPublish("", queueName, true, false, null, "mandatory".getBytes());
-        _ch1.basicPublish("", "bogus", true, false, null, "mandatory".getBytes());
-        _ch1.txCommit();
-        doBasicReturn(returnCell, AMQP.NO_ROUTE);
-        returnCell = new BlockingCell<Object>();
-        _ch1.basicPublish("", "bogus", false, true, null, "immediate".getBytes());
-        _ch1.txCommit();
-        doBasicReturn(returnCell, AMQP.NO_CONSUMERS);
-        returnCell = new BlockingCell<Object>();
-        _ch1.txCommit();
-        expect(2, drain(10, queueName, false));
-
-        unsetChannelReturnListener();
-        log("Finished tryTransaction");
-    }
-
-
 
     // utility: tell what Java compiler version a class was compiled with
     public static String getCompilerVersion(Class<?> clazz) throws IOException {

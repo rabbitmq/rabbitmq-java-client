@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -36,7 +36,7 @@ import com.rabbitmq.client.MalformedFrameException;
  */
 public class ValueReader
 {
-    private static final long INT_MASK = 0xffffffff;
+    private static final long INT_MASK = 0xffffffffL;
 
     /**
      * Protected API - Cast an int to a long without extending the

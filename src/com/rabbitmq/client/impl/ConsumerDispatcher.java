@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2011-2014 GoPivotal, Inc.  All rights reserved.
 
 package com.rabbitmq.client.impl;
 
@@ -27,12 +27,11 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * Dispatches notifications to a {@link Consumer} on an
- * internally-managed executor service and work pool.
+ * Dispatches notifications to a {@link Consumer} on an internally-managed executor service and work
+ * pool.
  * <p/>
- * Each {@link Channel} has a single {@link ConsumerDispatcher},
- * but the executor service and work pool may be shared with other channels, typically those on the same
- * {@link Connection}.
+ * Each {@link Channel} has a single <code>ConsumerDispatcher</code>, but the executor service and work
+ * pool may be shared with other channels, typically those on the same {@link AMQConnection}.
  */
 final class ConsumerDispatcher {
 
@@ -46,7 +45,7 @@ final class ConsumerDispatcher {
     private volatile boolean shutdownConsumersDriven = false;
     private volatile CountDownLatch shutdownConsumersComplete;
 
-    private volatile ShutdownSignalException shutdownSignal;
+    private volatile ShutdownSignalException shutdownSignal = null;
 
     public ConsumerDispatcher(AMQConnection connection,
                               Channel channel,
@@ -101,6 +100,25 @@ final class ConsumerDispatcher {
         });
     }
 
+    public void handleCancel(final Consumer delegate, final String consumerTag) {
+        executeUnlessShuttingDown(
+        new Runnable() {
+      public void run() {
+                try {
+                    delegate.handleCancel(consumerTag);
+                } catch (Throwable ex) {
+                    connection.getExceptionHandler().handleConsumerException(
+                            channel,
+                            ex,
+                            delegate,
+                            consumerTag,
+                            "handleCancel");
+                }
+      }
+    });
+  }
+
+
     public void handleRecoverOk(final Consumer delegate, final String consumerTag) {
         executeUnlessShuttingDown(
         new Runnable() {
@@ -145,8 +163,9 @@ final class ConsumerDispatcher {
             // Execute shutdown processing even if there are no consumers.
             execute(new Runnable() {
                 public void run() {
-                    notifyConsumersOfShutdown(consumers, signal);
+                    ConsumerDispatcher.this.notifyConsumersOfShutdown(consumers, signal);
                     ConsumerDispatcher.this.shutdown(signal);
+                    ConsumerDispatcher.this.workService.stopWork(ConsumerDispatcher.this.channel);
                     latch.countDown();
                 }
             });

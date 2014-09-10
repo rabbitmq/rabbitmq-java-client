@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -188,13 +188,13 @@ public class ConsumerMain implements Runnable {
                 sumL += v;
             }
 
-            double avgL = sumL / messageCount;
-            System.out.println("CONSUMER -  Message count: " + messageCount);
-            System.out.println("Total time, milliseconds: " + totalDelta);
-            System.out.println("Overall messages-per-second: " + (messageCount / (totalDelta / 1000.0)));
-            System.out.println("Min latency, milliseconds: " + minL);
-            System.out.println("Avg latency, milliseconds: " + avgL);
-            System.out.println("Max latency, milliseconds: " + maxL);
+            System.out.println("CONSUMER -       Overall: "
+                            + String.format("%d messages in %dms, a rate of %.2f msgs/sec", messageCount,
+                                    totalDelta,
+                                    (messageCount / (totalDelta / 1000.0))));
+            System.out.println("Latency  - Min (Avg) Max: "
+                    + String.format("%dms (%.2fms) %dms", minL, sumL
+                            / messageCount, maxL));
 
             if (writeStats) {
                 PrintStream o = new PrintStream(new FileOutputStream("simple-latency-experiment.csv"));

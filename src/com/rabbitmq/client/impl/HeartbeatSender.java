@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -22,11 +22,12 @@ import com.rabbitmq.client.AMQP;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
 import java.io.IOException;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Manages heartbeat sending for a {@link AMQConnection}.
@@ -39,6 +40,7 @@ final class HeartbeatSender {
     private final Object monitor = new Object();
 
     private final FrameHandler frameHandler;
+    private final ThreadFactory threadFactory;
 
     private ScheduledExecutorService executor;
 
@@ -48,8 +50,9 @@ final class HeartbeatSender {
 
     private volatile long lastActivityTime;
 
-    HeartbeatSender(FrameHandler frameHandler) {
+    HeartbeatSender(FrameHandler frameHandler, ThreadFactory threadFactory) {
         this.frameHandler = frameHandler;
+        this.threadFactory = threadFactory;
     }
 
     public void signalActivity() {
@@ -86,7 +89,7 @@ final class HeartbeatSender {
     private ScheduledExecutorService createExecutorIfNecessary() {
         synchronized (this.monitor) {
             if (this.executor == null) {
-                this.executor = Executors.newSingleThreadScheduledExecutor();
+                this.executor = Executors.newSingleThreadScheduledExecutor(threadFactory);
             }
             return this.executor;
         }
@@ -131,6 +134,7 @@ final class HeartbeatSender {
 
                 if (now > (lastActivityTime + this.heartbeatNanos)) {
                     frameHandler.writeFrame(new Frame(AMQP.FRAME_HEARTBEAT, 0));
+                    frameHandler.flush();
                 }
             } catch (IOException e) {
                 // ignore
