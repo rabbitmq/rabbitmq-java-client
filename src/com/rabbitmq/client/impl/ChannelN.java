@@ -393,7 +393,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     protected void processDelivery(Command command, Basic.Deliver method) {
-        Basic.Deliver m = (Basic.Deliver) method;
+        Basic.Deliver m = method;
 
         Consumer callback = _consumers.get(m.getConsumerTag());
         if (callback == null) {
@@ -664,6 +664,24 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                arguments);
     }
 
+    public void exchangeDeclareNoWait(String exchange,
+                                      String type,
+                                      boolean durable,
+                                      boolean autoDelete,
+                                      boolean internal,
+                                      Map<String, Object> arguments) throws IOException {
+        transmit(new AMQCommand(new Exchange.Declare.Builder()
+                                .exchange(exchange)
+                                .type(type)
+                                .durable(durable)
+                                .autoDelete(autoDelete)
+                                .internal(internal)
+                                .arguments(arguments)
+                                .passive(false)
+                                .nowait(true)
+                                .build()));
+    }
+
     /** Public API - {@inheritDoc} */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
                                               boolean durable,
@@ -725,6 +743,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public void exchangeDeleteNoWait(String exchange, boolean ifUnused) throws IOException {
+        transmit(new AMQCommand(new Exchange.Delete.Builder()
+                                        .exchange(exchange)
+                                        .ifUnused(ifUnused)
+                                        .nowait(true)
+                                        .build()));
+    }
+
+    /** Public API - {@inheritDoc} */
     public Exchange.DeleteOk exchangeDelete(String exchange)
         throws IOException
     {
@@ -743,6 +770,20 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                .arguments(arguments)
                               .build())
                .getMethod();
+    }
+
+    /** Public API - {@inheritDoc} */
+    public void exchangeBindNoWait(String destination,
+                                   String source,
+                                   String routingKey,
+                                   Map<String, Object> arguments) throws IOException {
+        transmit(new AMQCommand(new Exchange.Bind.Builder()
+                                .destination(destination)
+                                .source(source)
+                                .routingKey(routingKey)
+                                .arguments(arguments)
+                                .nowait(true)
+                                .build()));
     }
 
     /** Public API - {@inheritDoc} */
@@ -772,6 +813,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public void exchangeUnbindNoWait(String destination, String source,
+                                     String routingKey, Map<String, Object> arguments)
+            throws IOException {
+        transmit(new AMQCommand(new Exchange.Unbind.Builder()
+                                 .destination(destination)
+                                 .source(source)
+                                 .routingKey(routingKey)
+                                 .arguments(arguments)
+                                 .nowait(true)
+                                 .build()));
+    }
+
+    /** Public API - {@inheritDoc} */
     public Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive,
                                         boolean autoDelete, Map<String, Object> arguments)
         throws IOException
@@ -792,6 +846,23 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         return queueDeclare("", false, true, true, null);
+    }
+
+    /** Public API - {@inheritDoc} */
+    public void queueDeclareNoWait(String queue,
+                                   boolean durable,
+                                   boolean exclusive,
+                                   boolean autoDelete,
+                                   Map<String, Object> arguments) throws IOException {
+        transmit(new AMQCommand(new Queue.Declare.Builder()
+                                .queue(queue)
+                                .durable(durable)
+                                .exclusive(exclusive)
+                                .autoDelete(autoDelete)
+                                .arguments(arguments)
+                                .passive(false)
+                                .nowait(true)
+                                .build()));
     }
 
     /** Public API - {@inheritDoc} */
@@ -819,6 +890,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                .ifEmpty(ifEmpty)
                               .build())
                .getMethod();
+    }
+
+    @Override
+    public void queueDeleteNoWait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
+        transmit(new AMQCommand(new Queue.Delete.Builder()
+                                        .queue(queue)
+                                        .ifUnused(ifUnused)
+                                        .ifEmpty(ifEmpty)
+                                        .nowait(true)
+                                        .build()));
     }
 
     /** Public API - {@inheritDoc} */
@@ -849,6 +930,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     {
 
         return queueBind(queue, exchange, routingKey, null);
+    }
+
+    /** Public API - {@inheritDoc} */
+    public void queueBindNoWait(String queue,
+                                String exchange,
+                                String routingKey,
+                                Map<String, Object> arguments) throws IOException {
+        transmit(new AMQCommand(new Queue.Bind.Builder()
+                                .queue(queue)
+                                .exchange(exchange)
+                                .routingKey(routingKey)
+                                .arguments(arguments)
+                                .build()));
     }
 
     /** Public API - {@inheritDoc} */
@@ -978,8 +1072,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             }
         };
 
-        rpc((Method)
-            new Basic.Consume.Builder()
+        rpc(new Basic.Consume.Builder()
              .queue(queue)
              .consumerTag(consumerTag)
              .noLocal(noLocal)

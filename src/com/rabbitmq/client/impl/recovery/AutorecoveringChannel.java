@@ -191,6 +191,17 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return ok;
     }
 
+    @Override
+    public void exchangeDeclareNoWait(String exchange, String type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
+        RecordedExchange x = new RecordedExchange(this, exchange).
+          type(type).
+          durable(durable).
+          autoDelete(autoDelete).
+          arguments(arguments);
+        recordExchange(exchange, x);
+        delegate.exchangeDeclareNoWait(exchange, type, durable, autoDelete, internal, arguments);
+    }
+
     public AMQP.Exchange.DeclareOk exchangeDeclarePassive(String name) throws IOException {
         return delegate.exchangeDeclarePassive(name);
     }
@@ -198,6 +209,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     public AMQP.Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException {
         deleteRecordedExchange(exchange);
         return delegate.exchangeDelete(exchange, ifUnused);
+    }
+
+    public void exchangeDeleteNoWait(String exchange, boolean ifUnused) throws IOException {
+        deleteRecordedExchange(exchange);
+        delegate.exchangeDeleteNoWait(exchange, ifUnused);
     }
 
     public AMQP.Exchange.DeleteOk exchangeDelete(String exchange) throws IOException {
@@ -214,6 +230,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return ok;
     }
 
+    public void exchangeBindNoWait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
+        delegate.exchangeBindNoWait(destination, source, routingKey, arguments);
+        recordExchangeBinding(destination, source, routingKey, arguments);
+    }
+
     public AMQP.Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey) throws IOException {
         return exchangeUnbind(destination, source, routingKey, null);
     }
@@ -221,6 +242,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     public AMQP.Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
         deleteRecordedExchangeBinding(destination, source, routingKey, arguments);
         return delegate.exchangeUnbind(destination, source, routingKey, arguments);
+    }
+
+    public void exchangeUnbindNoWait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
+        delegate.exchangeUnbindNoWait(destination, source, routingKey, arguments);
+        deleteRecordedExchangeBinding(destination, source, routingKey, arguments);
     }
 
     public AMQP.Queue.DeclareOk queueDeclare() throws IOException {
@@ -241,6 +267,21 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return ok;
     }
 
+    public void queueDeclareNoWait(String queue,
+                                   boolean durable,
+                                   boolean exclusive,
+                                   boolean autoDelete,
+                                   Map<String, Object> arguments) throws IOException {
+        RecordedQueue meta = new RecordedQueue(this, queue).
+            durable(durable).
+            exclusive(exclusive).
+            autoDelete(autoDelete).
+            arguments(arguments);
+        delegate.queueDeclareNoWait(queue, durable, exclusive, autoDelete, arguments);
+        recordQueue(queue, meta);
+
+    }
+
     public AMQP.Queue.DeclareOk queueDeclarePassive(String queue) throws IOException {
         return delegate.queueDeclarePassive(queue);
     }
@@ -254,6 +295,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return delegate.queueDelete(queue, ifUnused, ifEmpty);
     }
 
+    public void queueDeleteNoWait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
+        deleteRecordedQueue(queue);
+        delegate.queueDeleteNoWait(queue, ifUnused, ifEmpty);
+    }
+
     public AMQP.Queue.BindOk queueBind(String queue, String exchange, String routingKey) throws IOException {
         return queueBind(queue, exchange, routingKey, null);
     }
@@ -262,6 +308,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         AMQP.Queue.BindOk ok = delegate.queueBind(queue, exchange, routingKey, arguments);
         recordQueueBinding(queue, exchange, routingKey, arguments);
         return ok;
+    }
+
+    public void queueBindNoWait(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException {
+        delegate.queueBindNoWait(queue, exchange, routingKey, arguments);
+        recordQueueBinding(queue, exchange, routingKey, arguments);
     }
 
     public AMQP.Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey) throws IOException {
@@ -494,6 +545,10 @@ public class AutorecoveringChannel implements Channel, Recoverable {
 
     private void recordQueue(AMQP.Queue.DeclareOk ok, RecordedQueue q) {
         this.connection.recordQueue(ok, q);
+    }
+
+    private void recordQueue(String queue, RecordedQueue meta) {
+        this.connection.recordQueue(queue, meta);
     }
 
     private void deleteRecordedQueue(String queue) {

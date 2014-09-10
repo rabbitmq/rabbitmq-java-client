@@ -60,6 +60,8 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     private final List<RecordedBinding> recordedBindings = new ArrayList<RecordedBinding>();
     private Map<String, RecordedExchange> recordedExchanges = new ConcurrentHashMap<String, RecordedExchange>();
     private final Map<String, RecordedConsumer> consumers = new ConcurrentHashMap<String, RecordedConsumer>();
+    private List<ConsumerRecoveryListener> consumerRecoveryListeners = new ArrayList<ConsumerRecoveryListener>();
+    private List<QueueRecoveryListener> queueRecoveryListeners = new ArrayList<QueueRecoveryListener>();
 
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, Address[] addrs) {
         this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addrs);
@@ -355,6 +357,44 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
+    /**
+     * Not part of the public API. Mean to be used by JVM RabbitMQ clients that build on
+     * top of the Java client and need to be notified when server-named queue name changes
+     * after recovery.
+     *
+     * @param listener listener that observes queue name changes after recovery
+     */
+    public void addQueueRecoveryListener(QueueRecoveryListener listener) {
+        this.queueRecoveryListeners.add(listener);
+    }
+
+    /**
+     * @see com.rabbitmq.client.impl.recovery.AutorecoveringConnection#addQueueRecoveryListener
+     * @param listener listener to be removed
+     */
+    public void removeQueueRecoveryListener(QueueRecoveryListener listener) {
+        this.queueRecoveryListeners.remove(listener);
+    }
+
+    /**
+     * Not part of the public API. Mean to be used by JVM RabbitMQ clients that build on
+     * top of the Java client and need to be notified when consumer tag changes
+     * after recovery.
+     *
+     * @param listener listener that observes consumer tag changes after recovery
+     */
+    public void addConsumerRecoveryListener(ConsumerRecoveryListener listener) {
+        this.consumerRecoveryListeners.add(listener);
+    }
+
+    /**
+     * @see com.rabbitmq.client.impl.recovery.AutorecoveringConnection#addConsumerRecoveryListener(ConsumerRecoveryListener)
+     * @param listener listener to be removed
+     */
+    public void removeConsumerRecoveryListener(ConsumerRecoveryListener listener) {
+        this.consumerRecoveryListeners.remove(listener);
+    }
+
     synchronized private void beginAutomaticRecovery() throws InterruptedException, IOException, TopologyRecoveryException {
         Thread.sleep(this.params.getNetworkRecoveryInterval());
         this.recoverConnection();
@@ -455,6 +495,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                     this.propagateQueueNameChangeToBindings(oldName, newName);
                     this.propagateQueueNameChangeToConsumers(oldName, newName);
                 }
+                for(QueueRecoveryListener qrl : this.queueRecoveryListeners) {
+                    qrl.queueRecovered(oldName, newName);
+                }
             } catch (Exception cause) {
                 final String message = "Caught an exception while recovering queue " + oldName +
                                                ": " + cause.getMessage();
@@ -489,6 +532,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                 synchronized (this.consumers) {
                     this.consumers.remove(tag);
                     this.consumers.put(newTag, consumer);
+                }
+                for(ConsumerRecoveryListener crl : this.consumerRecoveryListeners) {
+                    crl.consumerRecovered(tag, newTag);
                 }
             } catch (Exception cause) {
                 final String message = "Caught an exception while recovering consumer " + tag +
@@ -571,6 +617,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     void recordQueue(AMQP.Queue.DeclareOk ok, RecordedQueue q) {
         this.recordedQueues.put(ok.getQueue(), q);
+    }
+
+    void recordQueue(String queue, RecordedQueue meta) {
+        this.recordedQueues.put(queue, meta);
     }
 
     void deleteRecordedQueue(String queue) {
