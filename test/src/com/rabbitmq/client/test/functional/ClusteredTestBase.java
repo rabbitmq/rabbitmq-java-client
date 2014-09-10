@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test.functional;
@@ -21,6 +21,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
 
@@ -120,5 +121,13 @@ public class ClusteredTestBase extends BrokerTestCase {
             alternateConnection = null;
         }
         super.closeConnection();
+    }
+
+    protected void stopSecondary() throws IOException {
+        Host.executeCommand("cd ../rabbitmq-test; make stop-secondary-app");
+    }
+
+    protected void startSecondary() throws IOException {
+        Host.executeCommand("cd ../rabbitmq-test; make start-secondary-app");
     }
 }

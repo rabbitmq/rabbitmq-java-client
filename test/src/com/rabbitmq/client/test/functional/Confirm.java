@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -54,61 +54,40 @@ public class Confirm extends BrokerTestCase
         channel.queueDeclare("confirm-test-2", true, true, false, null);
         channel.basicConsume("confirm-test-2", true,
                              new DefaultConsumer(channel));
-        Map<String, Object> argMap =
-            Collections.singletonMap(TTL_ARG, (Object)1);
-        channel.queueDeclare("confirm-ttl", true, true, false, argMap);
         channel.queueBind("confirm-test", "amq.direct",
                           "confirm-multiple-queues");
         channel.queueBind("confirm-test-2", "amq.direct",
                           "confirm-multiple-queues");
     }
 
-    public void testTransient()
-        throws IOException, InterruptedException {
-        confirmTest("", "confirm-test", false, false, false);
-    }
-
-    public void testPersistentSimple()
+    public void testPersistentMandatoryCombinations()
         throws IOException, InterruptedException
     {
-        confirmTest("", "confirm-test", true, false, false);
+        boolean b[] = { false, true };
+        for (boolean persistent : b) {
+            for (boolean mandatory : b) {
+                confirmTest("", "confirm-test", persistent, mandatory);
+            }
+        }
     }
 
     public void testNonDurable()
         throws IOException, InterruptedException
     {
-        confirmTest("", "confirm-test-nondurable", true, false, false);
+        confirmTest("", "confirm-test-nondurable", true, false);
     }
 
-    public void testPersistentImmediate()
+    public void testMandatoryNoRoute()
         throws IOException, InterruptedException
     {
-        confirmTest("", "confirm-test", true, false, true);
-    }
-
-    public void testPersistentImmediateNoConsumer()
-        throws IOException, InterruptedException
-    {
-        confirmTest("", "confirm-test-noconsumer", true, false, true);
-    }
-
-    public void testPersistentMandatory()
-        throws IOException, InterruptedException
-    {
-        confirmTest("", "confirm-test", true, true, false);
-    }
-
-    public void testPersistentMandatoryReturn()
-        throws IOException, InterruptedException
-    {
-        confirmTest("", "confirm-test-doesnotexist", true, true, false);
+        confirmTest("", "confirm-test-doesnotexist", false, true);
+        confirmTest("", "confirm-test-doesnotexist",  true, true);
     }
 
     public void testMultipleQueues()
         throws IOException, InterruptedException
     {
-        confirmTest("amq.direct", "confirm-multiple-queues",
-                    true, false, false);
+        confirmTest("amq.direct", "confirm-multiple-queues", true, false);
     }
 
     /* For testQueueDelete and testQueuePurge to be
@@ -119,7 +98,7 @@ public class Confirm extends BrokerTestCase
     public void testQueueDelete()
         throws IOException, InterruptedException
     {
-        publishN("","confirm-test-noconsumer", true, false, false);
+        publishN("","confirm-test-noconsumer", true, false);
 
         channel.queueDelete("confirm-test-noconsumer");
 
@@ -129,7 +108,7 @@ public class Confirm extends BrokerTestCase
     public void testQueuePurge()
         throws IOException, InterruptedException
     {
-        publishN("", "confirm-test-noconsumer", true, false, false);
+        publishN("", "confirm-test-noconsumer", true, false);
 
         channel.queuePurge("confirm-test-noconsumer");
 
@@ -147,9 +126,16 @@ public class Confirm extends BrokerTestCase
     public void testQueueTTL()
         throws IOException, InterruptedException
     {
-        publishN("", "confirm-ttl", true, false, false);
+        for (int ttl : new int[]{ 1, 0 }) {
+            Map<String, Object> argMap =
+                Collections.singletonMap(TTL_ARG, (Object)ttl);
+            channel.queueDeclare("confirm-ttl", true, true, false, argMap);
 
-        channel.waitForConfirmsOrDie();
+            publishN("", "confirm-ttl", true, false);
+            channel.waitForConfirmsOrDie();
+
+            channel.queueDelete("confirm-ttl");
+        }
     }
 
     public void testBasicRejectRequeue()
@@ -169,7 +155,7 @@ public class Confirm extends BrokerTestCase
     public void testBasicRecover()
         throws IOException, InterruptedException
     {
-        publishN("", "confirm-test-noconsumer", true, false, false);
+        publishN("", "confirm-test-noconsumer", true, false);
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
             GetResponse resp =
@@ -234,7 +220,7 @@ public class Confirm extends BrokerTestCase
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
             unconfirmedSet.add(channel.getNextPublishSeqNo());
-            publish("", "confirm-test", true, false, false);
+            publish("", "confirm-test", true, false);
         }
 
         channel.waitForConfirmsOrDie();
@@ -243,19 +229,22 @@ public class Confirm extends BrokerTestCase
         }
     }
 
-    public void testWaitForConfirmsNoOp()
+    public void testWaitForConfirmsWithoutConfirmSelected()
         throws IOException, InterruptedException
     {
         channel = connection.createChannel();
         // Don't enable Confirm mode
-        publish("", "confirm-test", true, false, false);
-        channel.waitForConfirmsOrDie(); // Nop
+        publish("", "confirm-test", true, false);
+        try {
+            channel.waitForConfirms();
+            fail("waitForConfirms without confirms selected succeeded");
+        } catch (IllegalStateException _) {}
     }
 
     public void testWaitForConfirmsException()
         throws IOException, InterruptedException
     {
-        publishN("", "confirm-test", true, false, false);
+        publishN("", "confirm-test", true, false);
         channel.close();
         try {
             channel.waitForConfirmsOrDie();
@@ -271,29 +260,27 @@ public class Confirm extends BrokerTestCase
 
     /* Publish NUM_MESSAGES messages and wait for confirmations. */
     public void confirmTest(String exchange, String queueName,
-                            boolean persistent, boolean mandatory,
-                            boolean immediate)
+                            boolean persistent, boolean mandatory)
         throws IOException, InterruptedException
     {
-        publishN(exchange, queueName, persistent, mandatory, immediate);
+        publishN(exchange, queueName, persistent, mandatory);
 
         channel.waitForConfirmsOrDie();
     }
 
     private void publishN(String exchangeName, String queueName,
-                          boolean persistent, boolean mandatory,
-                          boolean immediate)
+                          boolean persistent, boolean mandatory)
         throws IOException
     {
         for (long i = 0; i < NUM_MESSAGES; i++) {
-            publish(exchangeName, queueName, persistent, mandatory, immediate);
+            publish(exchangeName, queueName, persistent, mandatory);
         }
     }
 
     private void basicRejectCommon(boolean requeue)
         throws IOException
     {
-        publishN("", "confirm-test-noconsumer", true, false, false);
+        publishN("", "confirm-test-noconsumer", true, false);
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
             GetResponse resp =
@@ -304,10 +291,9 @@ public class Confirm extends BrokerTestCase
     }
 
     protected void publish(String exchangeName, String queueName,
-                           boolean persistent, boolean mandatory,
-                           boolean immediate)
+                           boolean persistent, boolean mandatory)
         throws IOException {
-        channel.basicPublish(exchangeName, queueName, mandatory, immediate,
+        channel.basicPublish(exchangeName, queueName, mandatory, false,
                              persistent ? MessageProperties.PERSISTENT_BASIC
                                         : MessageProperties.BASIC,
                              "nop".getBytes());

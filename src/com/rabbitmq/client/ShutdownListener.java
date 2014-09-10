@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -19,8 +19,17 @@ package com.rabbitmq.client;
 
 import java.util.EventListener;
 
+/**
+ * A ShutdownListener receives information about the shutdown of connections and
+ * channels. Note that when a connection is shut down, its associated channels are also
+ * considered shut down and their ShutdownListeners will be notified (with the same cause).
+ * Because of this, and the fact that channel ShutdownListeners execute in the connection's
+ * thread, attempting to make blocking calls on a connection inside the listener will
+ * lead to deadlock.
+ *
+ * @see ShutdownNotifier
+ * @see ShutdownSignalException
+ */
 public interface ShutdownListener extends EventListener {
-
     public void shutdownCompleted(ShutdownSignalException cause);
-
 }

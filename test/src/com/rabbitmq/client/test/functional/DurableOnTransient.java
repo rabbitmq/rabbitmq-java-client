@@ -10,20 +10,19 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 
-public class DurableOnTransient extends BrokerTestCase
+public class DurableOnTransient extends ClusteredTestBase
 {
     protected static final String Q = "DurableQueue";
     protected static final String X = "TransientExchange";
@@ -60,5 +59,27 @@ public class DurableOnTransient extends BrokerTestCase
         channel.queueBind(Q, X, "");
         basicPublish();
         assertNotNull(basicGet());
+    }
+
+    public void testSemiDurableBindingRemoval() throws IOException {
+        if (clusteredConnection != null) {
+            declareTransientTopicExchange("x");
+            clusteredChannel.queueDeclare("q", true, false, false, null);
+            channel.queueBind("q", "x", "k");
+
+            stopSecondary();
+
+            deleteExchange("x");
+
+            startSecondary();
+
+            declareTransientTopicExchange("x");
+
+            basicPublishVolatile("x", "k");
+            assertDelivered("q", 0);
+
+            deleteQueue("q");
+            deleteExchange("x");
+        }
     }
 }

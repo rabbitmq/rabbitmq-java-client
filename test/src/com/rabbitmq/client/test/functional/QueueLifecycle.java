@@ -10,14 +10,15 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +26,9 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 
-// Test queue auto-delete and exclusive semantics.
+/**
+ * Test queue auto-delete and exclusive semantics.
+ */
 public class QueueLifecycle extends BrokerTestCase {
 
     void verifyQueueExists(String name) throws IOException {
@@ -77,12 +80,13 @@ public class QueueLifecycle extends BrokerTestCase {
         fail("Queue.declare should have been rejected as not equivalent");
     }
 
-    // From amqp-0-9-1.xml, for "passive" property, "equivalent" rule:
-    // "If not set and the queue exists, the server MUST check that the
-    // existing queue has the same values for durable, exclusive,
-    // auto-delete, and arguments fields. The server MUST respond with
-    // Declare-Ok if the requested queue matches these fields, and MUST
-    // raise a channel exception if not."
+    /** From amqp-0-9-1.xml, for "passive" property, "equivalent" rule:
+     * "If not set and the queue exists, the server MUST check that the
+     * existing queue has the same values for durable, exclusive,
+     * auto-delete, and arguments fields. The server MUST respond with
+     * Declare-Ok if the requested queue matches these fields, and MUST
+     * raise a channel exception if not."
+     */
     public void testQueueEquivalence() throws IOException {
         String q = "queue";
         channel.queueDeclare(q, false, false, false, null);
@@ -154,4 +158,12 @@ public class QueueLifecycle extends BrokerTestCase {
         verifyQueueMissing(name);
     }
 
+    public void testArgumentArrays() throws IOException {
+        Map<String, Object> args = new HashMap<String, Object>();
+        String[] arr = new String[]{"foo", "bar", "baz"};
+        args.put("my-key", arr);
+        String queueName = "argumentArraysQueue";
+        channel.queueDeclare(queueName, true, true, false, args);
+        verifyQueue(queueName, true, true, false, args);
+    }
 }

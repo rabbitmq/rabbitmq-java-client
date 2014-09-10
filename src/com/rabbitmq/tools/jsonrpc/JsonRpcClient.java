@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.tools.jsonrpc;
@@ -31,15 +31,13 @@ import com.rabbitmq.tools.json.JSONReader;
 import com.rabbitmq.tools.json.JSONWriter;
 
 /**
-	  <a
-	  href="http://json-rpc.org/wd/JSON-RPC-1-1-WD-20060807.html">JSON-RPC</a>
-	  is a lightweight RPC mechanism using <a
-	  href="http://www.json.org/">JSON</a> as a data language for
-	  request and reply messages. It is rapidly becoming a
-	  standard in web development, where it is used to make RPC
-	  requests over HTTP. RabbitMQ provides an AMQP transport
-	  binding for JSON-RPC in the form of
-	  the <code>JsonRpcClient</code> class.
+	  <a href="http://json-rpc.org">JSON-RPC</a> is a lightweight
+	  RPC mechanism using <a href="http://www.json.org/">JSON</a>
+	  as a data language for request and reply messages. It is
+	  rapidly becoming a standard in web development, where it is
+	  used to make RPC requests over HTTP. RabbitMQ provides an
+	  AMQP transport binding for JSON-RPC in the form of the
+	  <code>JsonRpcClient</code> class.
 
 	  JSON-RPC services are self-describing - each service is able
 	  to list its supported procedures, and each procedure

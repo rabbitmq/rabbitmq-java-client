@@ -10,15 +10,15 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.impl.WorkPoolTests;
 import com.rabbitmq.client.test.Bug20004Test;
-import com.rabbitmq.client.test.impl.WorkPoolTests;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -26,6 +26,11 @@ import junit.framework.TestSuite;
 public class FunctionalTests extends TestCase {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("functional");
+        add(suite);
+        return suite;
+    }
+
+    public static void add(TestSuite suite) {
         suite.addTestSuite(ConnectionOpen.class);
         suite.addTestSuite(Heartbeat.class);
         suite.addTestSuite(Tables.class);
@@ -50,19 +55,29 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(QueueLifecycle.class);
         suite.addTestSuite(QueueLease.class);
         suite.addTestSuite(QueueExclusivity.class);
+        suite.addTestSuite(QueueSizeLimit.class);
         suite.addTestSuite(InvalidAcks.class);
         suite.addTestSuite(InvalidAcksTx.class);
         suite.addTestSuite(DefaultExchange.class);
         suite.addTestSuite(UnbindAutoDeleteExchange.class);
         suite.addTestSuite(Confirm.class);
-        suite.addTestSuite(ConsumerCancelNotificiation.class);
+        suite.addTestSuite(ConsumerCancelNotification.class);
         suite.addTestSuite(UnexpectedFrames.class);
         suite.addTestSuite(PerQueueTTL.class);
+        suite.addTestSuite(PerMessageTTL.class);
+        suite.addTestSuite(PerQueueVsPerMessageTTL.class);
+        suite.addTestSuite(DeadLetterExchange.class);
         suite.addTestSuite(SaslMechanisms.class);
         suite.addTestSuite(UserIDHeader.class);
         suite.addTestSuite(InternalExchange.class);
         suite.addTestSuite(CcRoutes.class);
         suite.addTestSuite(WorkPoolTests.class);
-        return suite;
+        suite.addTestSuite(HeadersExchangeValidation.class);
+        suite.addTestSuite(ConsumerPriorities.class);
+        suite.addTestSuite(Policies.class);
+        suite.addTestSuite(ConnectionRecovery.class);
+        suite.addTestSuite(ExceptionHandling.class);
+        suite.addTestSuite(PerConsumerPrefetch.class);
+        suite.addTestSuite(DirectReplyTo.class);
     }
 }

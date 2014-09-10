@@ -10,14 +10,14 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
 package com.rabbitmq.client;
 
-/*
+/**
  * Thrown when application tries to perform an action on connection/channel
  * which was already closed
  */
@@ -25,8 +25,21 @@ public class AlreadyClosedException extends ShutdownSignalException {
     /** Default for suppressing warnings without version check. */
     private static final long serialVersionUID = 1L;
 
-    public AlreadyClosedException(String s, Object ref)
-    {
-        super(true, true, s, ref);
+    public AlreadyClosedException(ShutdownSignalException sse) {
+        this(sse, null);
+    }
+
+    public AlreadyClosedException(ShutdownSignalException sse, Throwable cause) {
+        super(sse.isHardError(),
+              sse.isInitiatedByApplication(),
+              sse.getReason(),
+              sse.getReference(),
+              composeMessagePrefix(sse),
+              ((cause == null) ? sse.getCause() : cause));
+    }
+
+    private static String composeMessagePrefix(ShutdownSignalException sse) {
+        String connectionOrChannel = sse.isHardError() ? "connection " : "channel ";
+        return connectionOrChannel + "is already closed due to ";
     }
 }

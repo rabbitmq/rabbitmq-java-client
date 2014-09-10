@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -28,12 +28,7 @@ import java.net.SocketTimeoutException;
  * Implementations must be thread-safe, and not allow frames to be interleaved, either while reading or writing.
  */
 
-public interface FrameHandler {
-    /** Retrieve address of peer. */
-    InetAddress getAddress();
-
-    /** Retrieve port number of peer. */
-    int getPort();
+public interface FrameHandler extends NetworkConnection {
 
     /**
      * Set the underlying socket's read timeout in milliseconds, if applicable.
@@ -70,6 +65,12 @@ public interface FrameHandler {
      * @throws IOException if there is a problem accessing the connection
      */
     void writeFrame(Frame frame) throws IOException;
+
+    /**
+     * Flush the underlying data connection.
+     * @throws IOException if there is a problem accessing the connection
+     */
+    void flush() throws IOException;
 
     /** Close the underlying data connection (complaint not permitted). */
     void close();

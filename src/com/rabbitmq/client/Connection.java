@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client;
@@ -214,4 +214,30 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      * operations, use -1 for infinity
      */
     void abort(int closeCode, String closeMessage, int timeout);
+
+    /**
+     * Add a {@link BlockedListener}.
+     * @param listener the listener to add
+     */
+    void addBlockedListener(BlockedListener listener);
+
+    /**
+     * Remove a {@link BlockedListener}.
+     * @param listener the listener to remove
+     * @return <code><b>true</b></code> if the listener was found and removed,
+     * <code><b>false</b></code> otherwise
+     */
+    boolean removeBlockedListener(BlockedListener listener);
+
+    /**
+     * Remove all {@link BlockedListener}s.
+     */
+    void clearBlockedListeners();
+
+    /**
+     * Get the exception handler.
+     *
+     * @see com.rabbitmq.client.ExceptionHandler
+     */
+    ExceptionHandler getExceptionHandler();
 }

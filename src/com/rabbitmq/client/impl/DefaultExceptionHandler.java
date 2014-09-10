@@ -10,19 +10,26 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
+import java.net.ConnectException;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.ExceptionHandler;
+import com.rabbitmq.client.TopologyRecoveryException;
 
+/**
+ * Default implementation of {@link com.rabbitmq.client.ExceptionHandler} used by {@link AMQConnection}.
+ */
 public class DefaultExceptionHandler implements ExceptionHandler {
     public void handleUnexpectedConnectionDriverException(Connection conn, Throwable exception) {
         // TODO: Log this somewhere, just in case we have a bug like
@@ -45,6 +52,10 @@ public class DefaultExceptionHandler implements ExceptionHandler {
         handleChannelKiller(channel, exception, "ConfirmListener.handle{N,A}ck");
     }
 
+    public void handleBlockedListenerException(Connection connection, Throwable exception) {
+        handleConnectionKiller(connection, exception, "BlockedListener");
+    }
+
     public void handleConsumerException(Channel channel, Throwable exception,
                                         Consumer consumer, String consumerTag,
                                         String methodName)
@@ -55,23 +66,70 @@ public class DefaultExceptionHandler implements ExceptionHandler {
                                               + " for channel " + channel);
     }
 
-    protected void handleChannelKiller(Channel channel,
-                                       Throwable exception,
-                                       String what)
-    {
-        // TODO: Convert to logging framework
-        System.err.println(what + " threw an exception for channel " +
-                           channel + ":");
+    /**
+     * @since 3.3.0
+     */
+    public void handleConnectionRecoveryException(Connection conn, Throwable exception) {
+        // ignore java.net.ConnectException as those are
+        // expected during recovery and will only produce noisy
+        // traces
+        if (exception instanceof ConnectException) {
+            // no-op
+        } else {
+            System.err.println("Caught an exception during connection recovery!");
+            exception.printStackTrace(System.err);
+        }
+    }
+
+    /**
+     * @since 3.3.0
+     */
+    public void handleChannelRecoveryException(Channel ch, Throwable exception) {
+        System.err.println("Caught an exception when recovering channel " + ch.getChannelNumber());
+        exception.printStackTrace(System.err);
+    }
+
+    /**
+     * @since 3.3.0
+     */
+    public void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException exception) {
+        System.err.println("Caught an exception when recovering topology " + exception.getMessage());
+        exception.printStackTrace(System.err);
+    }
+
+    protected void handleChannelKiller(Channel channel, Throwable exception, String what) {
+        // TODO: log the exception
+        System.err.println("DefaultExceptionHandler: " + what + " threw an exception for channel "
+                + channel + ":");
         exception.printStackTrace();
         try {
-            ((AMQConnection) channel.getConnection()).close(AMQP.INTERNAL_ERROR,
-                                                            "Internal error in " + what,
-                                                            false,
-                                                            exception);
+            channel.close(AMQP.REPLY_SUCCESS, "Closed due to exception from " + what);
+        } catch (AlreadyClosedException ace) {
+            // noop
         } catch (IOException ioe) {
-            // Man, this clearly isn't our day.
-            // Ignore the exception? TODO: Log the nested failure
+            // TODO: log the failure
+            System.err.println("Failure during close of channel " + channel + " after " + exception
+                    + ":");
+            ioe.printStackTrace();
+            channel.getConnection().abort(AMQP.INTERNAL_ERROR, "Internal error closing channel for " + what);
         }
+    }
 
+    protected void handleConnectionKiller(Connection connection, Throwable exception, String what) {
+        // TODO: log the exception
+        System.err.println("DefaultExceptionHandler: " + what + " threw an exception for connection "
+                + connection + ":");
+        exception.printStackTrace();
+        try {
+            connection.close(AMQP.REPLY_SUCCESS, "Closed due to exception from " + what);
+        } catch (AlreadyClosedException ace) {
+            // noop
+        } catch (IOException ioe) {
+            // TODO: log the failure
+            System.err.println("Failure during close of connection " + connection + " after " + exception
+                    + ":");
+            ioe.printStackTrace();
+            connection.abort(AMQP.INTERNAL_ERROR, "Internal error closing connection for " + what);
+        }
     }
 }

@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test;
@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+import com.rabbitmq.client.impl.ConnectionParams;
+import com.rabbitmq.client.TopologyRecoveryException;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
@@ -33,7 +35,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ExceptionHandler;
+import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
 
@@ -44,8 +46,8 @@ import com.rabbitmq.client.impl.FrameHandler;
 public class AMQConnectionTest extends TestCase {
     // private static final String CLOSE_MESSAGE = "terminated by test";
 
-    /** 
-     * Build a suite of tests 
+    /**
+     * Build a suite of tests
      * @return the test suite for this class
      */
     public static TestSuite suite() {
@@ -57,6 +59,7 @@ public class AMQConnectionTest extends TestCase {
     /** The mock frame handler used to test connection behaviour. */
     private MockFrameHandler _mockFrameHandler;
     private ConnectionFactory factory;
+    private MyExceptionHandler exceptionHandler;
 
     /** Setup the environment for this test
      * @see junit.framework.TestCase#setUp()
@@ -66,6 +69,8 @@ public class AMQConnectionTest extends TestCase {
         super.setUp();
         _mockFrameHandler = new MockFrameHandler();
         factory = new ConnectionFactory();
+        exceptionHandler = new MyExceptionHandler();
+        factory.setExceptionHandler(exceptionHandler);
     }
 
     /** Tear down the environment for this test
@@ -79,35 +84,25 @@ public class AMQConnectionTest extends TestCase {
     }
 
     /** Check the AMQConnection does send exactly 1 initial header, and deal correctly with
-     * the frame handler throwing an exception when we try to read data 
+     * the frame handler throwing an exception when we try to read data
      */
     public void testConnectionSendsSingleHeaderAndTimesOut() {
         IOException exception = new SocketTimeoutException();
         _mockFrameHandler.setExceptionOnReadingFrames(exception);
-        MyExceptionHandler handler = new MyExceptionHandler();
         assertEquals(0, _mockFrameHandler.countHeadersSent());
         try {
-            new AMQConnection(factory.getUsername(),
-                    factory.getPassword(),
-                    _mockFrameHandler,
-                    Executors.newFixedThreadPool(1),
-                    factory.getVirtualHost(),
-                    factory.getClientProperties(),
-                    factory.getRequestedFrameMax(),
-                    factory.getRequestedChannelMax(),
-                    factory.getRequestedHeartbeat(),
-                    factory.getSaslConfig(),
-                    handler).start();
+            ConnectionParams params = factory.params(Executors.newFixedThreadPool(1));
+            new AMQConnection(params, _mockFrameHandler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
-           // As expected 
+           // As expected
         }
         assertEquals(1, _mockFrameHandler.countHeadersSent());
         // _connection.close(0, CLOSE_MESSAGE);
-        List<Throwable> exceptionList = handler.getHandledExceptions();
+        List<Throwable> exceptionList = exceptionHandler.getHandledExceptions();
         assertEquals(Collections.<Throwable>singletonList(exception), exceptionList);
     }
-   
+
     /** Check we can open a connection once, but not twice.
      * @throws IOException */
 //    public void testCanOpenConnectionOnceOnly() throws IOException {
@@ -121,18 +116,39 @@ public class AMQConnectionTest extends TestCase {
 //        }
 //    }
 
-// add test that we time out if no initial Start command is received,
-// setting a timeout and having the FrameHandler return null
-    
+    /**
+     * Test that we catch timeout between connect and negotiation of the connection being finished.
+     */
+    public void testConnectionHangInNegotiation() {
+        this._mockFrameHandler.setTimeoutCount(10); // to limit hang
+        assertEquals(0, this._mockFrameHandler.countHeadersSent());
+        try {
+            ConnectionParams params = factory.params(Executors.newFixedThreadPool(1));
+            new AMQConnection(params, this._mockFrameHandler).start();
+            fail("Connection should have thrown exception");
+        } catch(IOException signal) {
+           // As expected
+        }
+        assertEquals(1, this._mockFrameHandler.countHeadersSent());
+        // _connection.close(0, CLOSE_MESSAGE);
+        List<Throwable> exceptionList = exceptionHandler.getHandledExceptions();
+        assertEquals("Only one exception expected", 1, exceptionList.size());
+        assertEquals("Wrong type of exception returned.", SocketTimeoutException.class, exceptionList.get(0).getClass());
+    }
+
     /** Mock frame handler to facilitate testing. */
     private static class MockFrameHandler implements FrameHandler {
         /** How many times has sendHeader() been called? */
         private int _numHeadersSent;
-        
+
+        private int timeout;
+
         /** An optional exception for us to throw on reading frames */
         private IOException _exceptionOnReadingFrames;
 
-        /** count how many headers we've sent 
+        private int timeoutCount = 0;
+
+        /** count how many headers we've sent
          * @return the number of sent headers
          */
         public int countHeadersSent() {
@@ -143,20 +159,27 @@ public class AMQConnectionTest extends TestCase {
             _exceptionOnReadingFrames = exception;
         }
 
+        public void setTimeoutCount(int timeoutCount) {
+            this.timeoutCount = timeoutCount;
+        }
+
         public Frame readFrame() throws IOException {
             if (_exceptionOnReadingFrames != null) {
                 throw _exceptionOnReadingFrames;
             }
-            return null;
-            // throw new SocketTimeoutException(); // simulate a socket timeout
+            if (this.timeoutCount > 0) {
+                if (--this.timeoutCount == 0)
+                    throw new IOException("Mock Framehandler: too many timeouts.");
+            }
+            return null; // simulate a socket timeout
         }
 
         public void sendHeader() throws IOException {
-            _numHeadersSent++;            
+            _numHeadersSent++;
         }
 
         public void setTimeout(int timeoutMs) throws SocketException {
-            // no need to implement this: don't bother changing the timeout
+            this.timeout = timeoutMs;
         }
 
         public void writeFrame(Frame frame) throws IOException {
@@ -168,7 +191,7 @@ public class AMQConnectionTest extends TestCase {
         }
 
         public int getTimeout() throws SocketException {
-            return 0;
+            return this.timeout;
         }
 
         public InetAddress getAddress() {
@@ -178,9 +201,21 @@ public class AMQConnectionTest extends TestCase {
         public int getPort() {
             return -1;
         }
+
+        public void flush() throws IOException {
+            // no need to implement this: don't bother writing the frame
+        }
+
+        public InetAddress getLocalAddress() {
+            return null;
+        }
+
+        public int getLocalPort() {
+            return -1;
+        }
     }
 
-    /** Mock frame handler to facilitate testing. */
+    /** Exception handler to facilitate testing. */
     private class MyExceptionHandler implements ExceptionHandler {
         private List<Throwable> _handledExceptions = new ArrayList<Throwable>();
 
@@ -200,6 +235,10 @@ public class AMQConnectionTest extends TestCase {
             fail("handleConfirmListenerException: " + ex);
         }
 
+        public void handleBlockedListenerException(Connection conn, Throwable ex) {
+            fail("handleBlockedListenerException: " + ex);
+        }
+
         public void handleConsumerException(Channel ch,
                                             Throwable ex,
                                             Consumer c,
@@ -208,7 +247,19 @@ public class AMQConnectionTest extends TestCase {
         {
             fail("handleConsumerException " + consumerTag + " " + methodName + ": " + ex);
         }
-        
+
+        public void handleConnectionRecoveryException(Connection conn, Throwable ex) {
+            _handledExceptions.add(ex);
+        }
+
+        public void handleChannelRecoveryException(Channel ch, Throwable ex) {
+            _handledExceptions.add(ex);
+        }
+
+        public void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException ex) {
+            _handledExceptions.add(ex);
+        }
+
         public List<Throwable> getHandledExceptions() {
             return _handledExceptions;
         }

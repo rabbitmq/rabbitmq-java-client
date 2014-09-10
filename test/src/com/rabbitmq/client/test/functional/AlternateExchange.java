@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -139,19 +139,18 @@ public class AlternateExchange extends BrokerTestCase
      *
      * @param key the routing key of the message to be sent
      * @param mandatory whether the message should be marked as 'mandatory'
-     * @param immediate whether the message should be marked as 'immediate'
      * @param expected indicates which queues we expect the message to
      *        get routed to
      * @param ret whether a 'basic.return' is expected
      *
      * @see #checkGet(boolean[])
      */
-    protected void check(String key, boolean mandatory, boolean immediate,
-                         boolean[] expected, boolean ret)
+    protected void check(String key, boolean mandatory, boolean[] expected,
+                         boolean ret)
         throws IOException {
 
         gotReturn.set(false);
-        channel.basicPublish("x", key, mandatory, immediate, null,
+        channel.basicPublish("x", key, mandatory, false, null,
                              "ae-test".getBytes());
         checkGet(expected);
         assertEquals(ret, gotReturn.get());
@@ -159,16 +158,16 @@ public class AlternateExchange extends BrokerTestCase
 
     protected void check(String key, boolean[] expected, boolean ret)
         throws IOException {
-        check(key, false, false, expected, ret);
+        check(key, false, expected, ret);
     }
 
-    protected void check(String key, boolean mandatory, boolean immediate,
-                         boolean ret) throws IOException {
-        check(key, mandatory, immediate, expected(key), ret);
+    protected void check(String key, boolean mandatory, boolean ret)
+        throws IOException {
+        check(key, mandatory, expected(key), ret);
     }
 
     protected void check(String key, boolean ret) throws IOException {
-        check(key, false, false, ret);
+        check(key, false, ret);
     }
 
     /**
@@ -198,9 +197,7 @@ public class AlternateExchange extends BrokerTestCase
             //ordinary
             check(k, false);
             //mandatory
-            check(k, true, false, k.equals("z"));
-            //immediate
-            check(k, false, true, unrouted, true);
+            check(k, true, k.equals("z"));
         }
 
         cleanup();

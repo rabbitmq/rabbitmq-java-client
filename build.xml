@@ -308,7 +308,7 @@
   	</fail>
   </target>
 
-  <target name="test-suite-run" depends="test-client, test-ssl, test-server, test-functional, test-main-silent"/>
+  <target name="test-suite-run" depends="test-client, test-ssl, test-server, test-functional, test-functional-and-server-with-ha, test-main-silent"/>
 
   <target name="test-client" depends="test-build" description="Run the client test suites.">
     <junit printSummary="withOutAndErr"
@@ -366,6 +366,19 @@
       <formatter type="xml"/>
       <test todir="${build.out}"
         name="com.rabbitmq.client.test.server.ServerTests"/>
+    </junit>
+  </target>
+
+  <!-- TODO: merge test-server, test-functional and this into one, once umbrellas have been merged -->
+  <target name="test-functional-and-server-with-ha" depends="detect-umbrella, test-build" if="UMBRELLA_AVAILABLE">
+    <junit printSummary="withOutAndErr"
+        haltOnFailure="${haltOnFailureJunit}"
+        failureproperty="test.failure"
+        fork="yes">
+      <classpath refid="test.classpath"/>
+      <formatter type="plain"/>
+      <formatter type="xml"/>
+      <test todir="${build.out}" name="com.rabbitmq.client.test.server.HATests"/>
     </junit>
   </target>
 
@@ -431,7 +444,7 @@
         </jar>
     </target>
 
-  <target name="dist" depends="jar, test-jar">
+  <target name="dist" depends="jar, test-jar" description="Build all library JARs and documentation">
     <mkdir dir="${dist.out}"/>
     <copy todir="${dist.out}">
       <!-- ant doesn't seem to provide any form of usable abstraction over sets of file names -->
@@ -451,7 +464,7 @@
     </copy>
   </target>
 
-  <target name="clean">
+  <target name="clean" description="Cleans build artifacts">
     <delete dir="build"/>
   </target>
 

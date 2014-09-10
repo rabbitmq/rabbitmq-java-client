@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -65,18 +65,8 @@ public class BrokenFramesTest extends TestCase {
         frames.add(new Frame(AMQP.FRAME_HEADER, 0));
         myFrameHandler.setFrames(frames.iterator());
 
-        AMQConnection conn = new AMQConnection(factory.getUsername(),
-                                               factory.getPassword(),
-                                               myFrameHandler,
-                                               Executors.newFixedThreadPool(1),
-                                               factory.getVirtualHost(),
-                                               factory.getClientProperties(),
-                                               factory.getRequestedFrameMax(),
-                                               factory.getRequestedChannelMax(),
-                                               factory.getRequestedHeartbeat(),
-                                               factory.getSaslConfig());
         try {
-            conn.start();
+            new AMQConnection(factory.params(Executors.newFixedThreadPool(1)), myFrameHandler).start();
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
@@ -84,35 +74,25 @@ public class BrokenFramesTest extends TestCase {
             assertEquals(AMQP.FRAME_METHOD, unexpectedFrameError.getExpectedFrameType());
             return;
         }
-        
+
         fail("No UnexpectedFrameError thrown");
     }
-    
+
     public void testMethodThenBody() throws Exception {
         List<Frame> frames = new ArrayList<Frame>();
-        
+
         byte[] contentBody = new byte[10];
         int channelNumber = 0;
-        
+
         Publish method = new Publish(1, "test", "test", false, false);
 
         frames.add(method.toFrame(0));
         frames.add(Frame.fromBodyFragment(channelNumber, contentBody, 0, contentBody.length));
-        
+
         myFrameHandler.setFrames(frames.iterator());
- 
+
         try {
-            new AMQConnection(factory.getUsername(),
-                              factory.getPassword(),
-                              myFrameHandler,
-                              Executors.newFixedThreadPool(1),
-                              factory.getVirtualHost(),
-                              factory.getClientProperties(),
-                              factory.getRequestedFrameMax(),
-                              factory.getRequestedChannelMax(),
-                              factory.getRequestedHeartbeat(),
-                              factory.getSaslConfig())
-                    .start();
+            new AMQConnection(factory.params(Executors.newFixedThreadPool(1)), myFrameHandler).start();
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
@@ -120,7 +100,7 @@ public class BrokenFramesTest extends TestCase {
             assertEquals(AMQP.FRAME_HEADER, unexpectedFrameError.getExpectedFrameType());
             return;
         }
-        
+
         fail("No UnexpectedFrameError thrown");
     }
 
@@ -132,7 +112,7 @@ public class BrokenFramesTest extends TestCase {
                 return (UnexpectedFrameError) t;
             }
         }
-        
+
         return null;
     }
 
@@ -171,6 +151,18 @@ public class BrokenFramesTest extends TestCase {
         }
 
         public int getPort() {
+            return -1;
+        }
+
+        public void flush() throws IOException {
+            // no need to implement this: don't bother writing the frame
+        }
+
+        public InetAddress getLocalAddress() {
+            return null;
+        }
+
+        public int getLocalPort() {
             return -1;
         }
     }

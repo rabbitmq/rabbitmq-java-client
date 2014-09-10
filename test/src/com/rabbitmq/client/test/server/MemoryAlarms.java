@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test.server;
@@ -62,20 +62,18 @@ public class MemoryAlarms extends BrokerTestCase {
 
     @Override
     protected void releaseResources() throws IOException {
-        channel.queueDelete(Q);
-    }
-
-    protected void setMemoryAlarm() throws IOException, InterruptedException {
-        Host.executeCommand("cd ../rabbitmq-test; make set-memory-alarm");
-    }
-
-    protected void clearMemoryAlarm() throws IOException, InterruptedException {
-        Host.executeCommand("cd ../rabbitmq-test; make clear-memory-alarm");
+        try {
+            clearAllResourceAlarms();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            channel.queueDelete(Q);
+        }
     }
 
     public void testFlowControl() throws IOException, InterruptedException {
         basicPublishVolatile(Q);
-        setMemoryAlarm();
+        setResourceAlarm("memory");
         // non-publish actions only after an alarm should be fine
         assertNotNull(basicGet(Q));
         QueueingConsumer c = new QueueingConsumer(channel);
@@ -86,12 +84,34 @@ public class MemoryAlarms extends BrokerTestCase {
         // by heartbeat (3x heartbeat interval + epsilon)
         assertNull(c.nextDelivery(3100));
         // once the alarm has cleared the publishes should go through
-        clearMemoryAlarm();
-        assertNotNull(c.nextDelivery());
+        clearResourceAlarm("memory");
+        assertNotNull(c.nextDelivery(3100));
         // everything should be back to normal
         channel.basicCancel(consumerTag);
         basicPublishVolatile(Q);
         assertNotNull(basicGet(Q));
     }
+
+
+    public void testOverlappingAlarmsFlowControl() throws IOException, InterruptedException {
+        QueueingConsumer c = new QueueingConsumer(channel);
+        String consumerTag = channel.basicConsume(Q, true, c);
+
+        setResourceAlarm("memory");
+        basicPublishVolatile(Q);
+
+        assertNull(c.nextDelivery(100));
+        setResourceAlarm("disk");
+        assertNull(c.nextDelivery(100));
+        clearResourceAlarm("memory");
+        assertNull(c.nextDelivery(100));
+        clearResourceAlarm("disk");
+        assertNotNull(c.nextDelivery(3100));
+
+        channel.basicCancel(consumerTag);
+        basicPublishVolatile(Q);
+        assertNotNull(basicGet(Q));
+    }
+
 
 }

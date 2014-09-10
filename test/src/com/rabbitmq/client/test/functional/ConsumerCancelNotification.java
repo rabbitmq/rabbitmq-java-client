@@ -10,23 +10,27 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
-public class ConsumerCancelNotificiation extends BrokerTestCase {
+import java.io.IOException;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+public class ConsumerCancelNotification extends BrokerTestCase {
 
     private final String queue = "cancel_notification_queue";
 
@@ -79,5 +83,47 @@ public class ConsumerCancelNotificiation extends BrokerTestCase {
         channel.queueDelete(queue);
         assertTrue(result.take());
         t.join();
+    }
+
+
+    class AlteringConsumer extends DefaultConsumer {
+        private final String altQueue;
+        private final CountDownLatch latch;
+
+        public AlteringConsumer(Channel channel, String altQueue, CountDownLatch latch) {
+            super(channel);
+            this.altQueue = altQueue;
+            this.latch = latch;
+        }
+
+        @Override
+        public void handleShutdownSignal(String consumerTag,
+                                         ShutdownSignalException sig) {
+            // no-op
+        }
+
+        @Override
+        public void handleCancel(String consumerTag) {
+            try {
+                this.getChannel().queueDeclare(this.altQueue, false, true, false, null);
+                latch.countDown();
+            } catch (IOException e) {
+                // e.printStackTrace();
+            }
+        }
+    }
+
+    public void testConsumerCancellationHandlerUsesBlockingOperations()
+            throws IOException, InterruptedException {
+        final String altQueue = "basic.cancel.fallback";
+        channel.queueDeclare(queue, false, true, false, null);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        final AlteringConsumer consumer = new AlteringConsumer(channel, altQueue, latch);
+
+        channel.basicConsume(queue, consumer);
+        channel.queueDelete(queue);
+
+        latch.await(2, TimeUnit.SECONDS);
     }
 }

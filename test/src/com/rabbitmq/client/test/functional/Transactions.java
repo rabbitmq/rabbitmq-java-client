@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -29,13 +29,6 @@ public class Transactions extends BrokerTestCase
     protected static final String Q = "Transactions";
 
     protected long latestTag = 0L;
-
-    protected void setUp()
-        throws IOException
-    {
-        super.setUp();
-        closeChannel();
-    }
 
     protected void createResources() throws IOException {
         channel.queueDeclare(Q, false, false, false, null);
@@ -95,20 +88,35 @@ public class Transactions extends BrokerTestCase
         basicAck(latestTag, false);
     }
 
+    private long[] publishSelectAndGet(int n)
+        throws IOException
+    {
+        for (int i = 0; i < n; i++) {
+            basicPublish();
+        }
+
+        txSelect();
+
+        long tags[] = new long[n];
+        for (int i = 0; i < n; i++) {
+            tags[i] = basicGet().getEnvelope().getDeliveryTag();
+        }
+
+        return tags;
+    }
+
     /*
       publishes are embargoed until commit
      */
     public void testCommitPublish()
         throws IOException
     {
-        openChannel();
         txSelect();
         basicPublish();
         assertNull(basicGet());
         txCommit();
         assertNotNull(basicGet());
         txCommit();
-        closeChannel();
     }
 
     /*
@@ -117,12 +125,10 @@ public class Transactions extends BrokerTestCase
     public void testRollbackPublish()
         throws IOException
     {
-        openChannel();
         txSelect();
         basicPublish();
         txRollback();
         assertNull(basicGet());
-        closeChannel();
     }
 
     /*
@@ -131,13 +137,11 @@ public class Transactions extends BrokerTestCase
     public void testRollbackPublishOnClose()
         throws IOException
     {
-        openChannel();
         txSelect();
         basicPublish();
         closeChannel();
         openChannel();
         assertNull(basicGet());
-        closeChannel();
     }
 
     /*
@@ -146,7 +150,6 @@ public class Transactions extends BrokerTestCase
     public void testRequeueOnClose()
         throws IOException
     {
-        openChannel();
         basicPublish();
         basicPublish();
         txSelect();
@@ -159,7 +162,6 @@ public class Transactions extends BrokerTestCase
         basicAck();
         assertNotNull(basicGet());
         basicAck();
-        closeChannel();
     }
 
     /*
@@ -169,7 +171,6 @@ public class Transactions extends BrokerTestCase
     public void testCommitAcks()
         throws IOException
     {
-        openChannel();
         basicPublish();
         basicPublish();
         txSelect();
@@ -183,7 +184,19 @@ public class Transactions extends BrokerTestCase
         assertNotNull(basicGet());
         basicAck();
         assertNull(basicGet());
-        closeChannel();
+    }
+
+    /*
+    */
+    public void testCommitAcksOutOfOrder()
+        throws IOException
+    {
+        long tags[] = publishSelectAndGet(4);
+        channel.basicNack(tags[3], false, false);
+        channel.basicNack(tags[2], false, false);
+        channel.basicAck(tags[1], false);
+        channel.basicAck(tags[0], false);
+        txCommit();
     }
 
     /*
@@ -193,7 +206,6 @@ public class Transactions extends BrokerTestCase
     public void testRollbackAcksAndReAck()
         throws IOException
     {
-        openChannel();
         basicPublish();
         txSelect();
         basicGet();
@@ -205,7 +217,6 @@ public class Transactions extends BrokerTestCase
         openChannel();
         assertNotNull(basicGet());
         basicAck();
-        closeChannel();
     }
 
     /*
@@ -214,7 +225,6 @@ public class Transactions extends BrokerTestCase
     public void testUnknownTagAck()
         throws IOException
     {
-        openChannel();
         basicPublish();
         txSelect();
         basicGet();
@@ -223,7 +233,6 @@ public class Transactions extends BrokerTestCase
         // "On a transacted channel, this check MUST be done immediately and
         // not delayed until a Tx.Commit."
         expectError(AMQP.PRECONDITION_FAILED);
-        openChannel();
     }
 
     /*
@@ -232,7 +241,6 @@ public class Transactions extends BrokerTestCase
     public void testNoRequeueOnRollback()
         throws IOException
     {
-        openChannel();
         basicPublish();
         basicPublish();
         txSelect();
@@ -241,7 +249,6 @@ public class Transactions extends BrokerTestCase
         basicGet();
         txRollback();
         assertNull(basicGet());
-        closeChannel();
     }
 
     /*
@@ -250,14 +257,12 @@ public class Transactions extends BrokerTestCase
     public void testAutoAck()
         throws IOException
     {
-        openChannel();
         basicPublish();
         txSelect();
         basicGet(true);
         closeChannel();
         openChannel();
         assertNull(basicGet());
-        closeChannel();
     }
 
     /*
@@ -266,7 +271,6 @@ public class Transactions extends BrokerTestCase
     public void testAckAll()
         throws IOException
     {
-        openChannel();
         basicPublish();
         basicPublish();
         txSelect();
@@ -277,13 +281,11 @@ public class Transactions extends BrokerTestCase
         closeChannel();
         openChannel();
         assertNull(basicGet());
-        closeChannel();
     }
 
     public void testNonTransactedCommit()
         throws IOException
     {
-        openChannel();
         try {
             txCommit();
             fail("Expected channel error");
@@ -295,7 +297,6 @@ public class Transactions extends BrokerTestCase
     public void testNonTransactedRollback()
         throws IOException
     {
-        openChannel();
         try {
             txRollback();
             fail("Expected channel error");
@@ -307,7 +308,6 @@ public class Transactions extends BrokerTestCase
     public void testRedeliverAckedUncommitted()
         throws IOException
     {
-        openChannel();
         txSelect();
         basicPublish();
         txCommit();
@@ -320,13 +320,11 @@ public class Transactions extends BrokerTestCase
 
         assertNull("Acked uncommitted message redelivered",
                    basicGet(true));
-        closeChannel();
     }
 
     public void testCommitWithDeletedQueue()
         throws IOException
     {
-        openChannel();
         txSelect();
         basicPublish();
         releaseResources();
@@ -338,23 +336,14 @@ public class Transactions extends BrokerTestCase
             openChannel();
             fail("commit failed");
         } finally {
-            createResources();
-            closeChannel();
+            createResources(); // To allow teardown to function cleanly
         }
     }
 
     public void testShuffleAcksBeforeRollback()
         throws IOException
     {
-        openChannel();
-        for (int i = 0; i < 3; i++) {
-            basicPublish();
-        }
-        txSelect();
-        long tags[] = new long[3];
-        for (int i = 0; i < 3; i++) {
-            tags[i] = basicGet().getEnvelope().getDeliveryTag();
-        }
+        long tags[] = publishSelectAndGet(3);
         basicAck(tags[2], false);
         basicAck(tags[1], false);
         txRollback();
@@ -362,5 +351,121 @@ public class Transactions extends BrokerTestCase
         basicAck(tags[1], false);
         basicAck(tags[2], false);
         txCommit();
+    }
+
+    private abstract class NackMethod {
+        abstract public void nack(long tag, boolean requeue)
+            throws IOException;
+
+        public void nack(boolean requeue)
+            throws IOException
+        {
+            nack(latestTag, requeue);
+        }
+
+        public void nack()
+            throws IOException
+        {
+            nack(latestTag, true);
+        }
+    }
+
+    private NackMethod basicNack = new NackMethod() {
+            public void nack(long tag, boolean requeue)
+                throws IOException
+            {
+                channel.basicNack(tag, false, requeue);
+            }
+        };
+
+    private NackMethod basicReject = new NackMethod() {
+            public void nack(long tag, boolean requeue)
+                throws IOException
+            {
+                channel.basicReject(tag, requeue);
+            }
+        };
+
+    /*
+      messages with nacks get requeued after the transaction commit.
+      messages with nacks with requeue = false are not requeued.
+    */
+    public void commitNacks(NackMethod method)
+        throws IOException
+    {
+        basicPublish();
+        basicPublish();
+        txSelect();
+        basicGet();
+        method.nack();
+        basicGet();
+        method.nack(false);
+        assertNull(basicGet());
+        txCommit();
+        assertNotNull(basicGet());
+        assertNull(basicGet());
+    }
+
+    public void rollbackNacks(NackMethod method)
+        throws IOException
+    {
+        basicPublish();
+        txSelect();
+        basicGet();
+        method.nack(true);
+        txRollback();
+        assertNull(basicGet());
+    }
+
+    public void commitAcksAndNacks(NackMethod method)
+        throws IOException
+    {
+        long tags[] = publishSelectAndGet(3);
+        basicAck(tags[1], false);
+        basicAck(tags[0], false);
+        method.nack(tags[2], false);
+        txRollback();
+        basicAck(tags[2], false);
+        method.nack(tags[0], true);
+        method.nack(tags[1], false);
+        txCommit();
+        assertNotNull(basicGet());
+        assertNull(basicGet());
+    }
+
+    public void testCommitNacks()
+        throws IOException
+    {
+        commitNacks(basicNack);
+    }
+
+    public void testRollbackNacks()
+        throws IOException
+    {
+        rollbackNacks(basicNack);
+    }
+
+    public void testCommitAcksAndNacks()
+        throws IOException
+    {
+        commitAcksAndNacks(basicNack);
+    }
+
+    public void testCommitRejects()
+        throws IOException
+    {
+        commitNacks(basicReject);
+    }
+
+    public void testRollbackRejects()
+        throws IOException
+    {
+        rollbackNacks(basicReject);
+    }
+
+    public void testCommitAcksAndRejects()
+        throws IOException
+    {
+        commitAcksAndNacks(basicReject);
     }
 }

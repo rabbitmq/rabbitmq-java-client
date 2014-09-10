@@ -10,13 +10,12 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.*;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
@@ -29,6 +28,7 @@ import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 /**
  * Test for bug 19219 - timeouts due to task parallelism in channel

@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 
@@ -117,19 +117,13 @@ public class Recover extends BrokerTestCase {
         throws IOException, InterruptedException {
         verifyNoRedeliveryWithAutoAck(recoverSync);
     }
-    
+
     public void testRequeueFalseNotSupported() throws Exception {
         try {
             channel.basicRecover(false);
             fail("basicRecover(false) should not be supported");
         } catch(IOException ioe) {
-            ShutdownSignalException sse = 
-                (ShutdownSignalException) ioe.getCause();
-            Command reason = (Command) sse.getReason();
-            AMQP.Connection.Close close = 
-                (AMQP.Connection.Close) reason.getMethod();
-            assertEquals("NOT_IMPLEMENTED - requeue=false", 
-                close.getReplyText());
+            checkShutdownSignal(AMQP.NOT_IMPLEMENTED, ioe);
         }
     }
 }

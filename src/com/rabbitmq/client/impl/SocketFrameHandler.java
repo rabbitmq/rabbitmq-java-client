@@ -10,8 +10,8 @@
 //
 //  The Original Code is RabbitMQ.
 //
-//  The Initial Developer of the Original Code is VMware, Inc.
-//  Copyright (c) 2007-2011 VMware, Inc.  All rights reserved.
+//  The Initial Developer of the Original Code is GoPivotal, Inc.
+//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -58,6 +58,10 @@ public class SocketFrameHandler implements FrameHandler {
         return _socket.getInetAddress();
     }
 
+    public InetAddress getLocalAddress() {
+        return _socket.getLocalAddress();
+    }
+
     // For testing only
     public DataInputStream getInputStream() {
         return _inputStream;
@@ -65,6 +69,10 @@ public class SocketFrameHandler implements FrameHandler {
 
     public int getPort() {
         return _socket.getPort();
+    }
+
+    public int getLocalPort() {
+        return _socket.getLocalPort();
     }
 
     public void setTimeout(int timeoutMs)
@@ -135,16 +143,16 @@ public class SocketFrameHandler implements FrameHandler {
     public void writeFrame(Frame frame) throws IOException {
         synchronized (_outputStream) {
             frame.writeTo(_outputStream);
-            _outputStream.flush();
         }
     }
 
+    public void flush() throws IOException {
+        _outputStream.flush();
+    }
+
     public void close() {
-        try {
-            _socket.setSoLinger(true, SOCKET_CLOSING_TIMEOUT);
-            _socket.close();
-        } catch (IOException ioe) {
-            // Ignore.
-        }
+        try { _socket.setSoLinger(true, SOCKET_CLOSING_TIMEOUT); } catch (Exception _) {}
+        try { flush();                                           } catch (Exception _) {}
+        try { _socket.close();                                   } catch (Exception _) {}
     }
 }
