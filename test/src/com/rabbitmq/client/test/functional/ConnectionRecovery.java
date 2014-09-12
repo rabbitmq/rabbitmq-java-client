@@ -206,6 +206,21 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.queueDelete(q);
     }
 
+    // bug 26364
+    public void testDeclarationOfManyAutoDeleteQueuesWithTransientConsumer() throws IOException {
+        Channel ch = connection.createChannel();
+        assertEquals(0, ((AutorecoveringConnection)connection).getRecordedQueues().size());
+        for(int i = 0; i < 20000; i++) {
+            String q = UUID.randomUUID().toString();
+            ch.queueDeclareNoWait(q, false, false, true, null);
+            QueueingConsumer dummy = new QueueingConsumer(ch);
+            String tag = ch.basicConsume(q, true, dummy);
+            ch.basicCancel(tag);
+        }
+        assertEquals(0, ((AutorecoveringConnection)connection).getRecordedQueues().size());
+        ch.close();
+    }
+
     public void testServerNamedQueueRecovery() throws IOException, InterruptedException {
         String q = channel.queueDeclare("", false, false, false, null).getQueue();
         String x = "amq.fanout";

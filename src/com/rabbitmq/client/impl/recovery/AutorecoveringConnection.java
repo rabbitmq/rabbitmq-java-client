@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -639,7 +640,35 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.consumers.put(result, consumer);
     }
 
-    void deleteRecordedConsumer(String consumerTag) {
-        this.consumers.remove(consumerTag);
+    RecordedConsumer deleteRecordedConsumer(String consumerTag) {
+        return this.consumers.remove(consumerTag);
+    }
+
+    void maybeDeleteRecordedAutoDeleteQueue(String queue) {
+        synchronized (this.recordedQueues) {
+            synchronized (this.consumers) {
+                if(!hasMoreConsumersOnQueue(this.consumers.values(), queue)) {
+                    RecordedQueue q = this.recordedQueues.get(queue);
+                    // last consumer on this connection is gone, remove recorded queue
+                    // if it is auto-deleted. See bug 26364.
+                    if(q.isAutoDelete()) { this.recordedQueues.remove(queue); }
+                }
+            }
+        }
+    }
+
+    boolean hasMoreConsumersOnQueue(Collection<RecordedConsumer> consumers, String queue) {
+        boolean result = false;
+        for (RecordedConsumer c : consumers) {
+            if(queue.equals(c.getQueue())) {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+
+    public Map<String, RecordedQueue> getRecordedQueues() {
+        return recordedQueues;
     }
 }

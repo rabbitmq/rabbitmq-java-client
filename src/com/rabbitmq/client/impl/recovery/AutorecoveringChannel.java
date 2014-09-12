@@ -367,7 +367,8 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     }
 
     public void basicCancel(String consumerTag) throws IOException {
-        this.deleteRecordedConsumer(consumerTag);
+        RecordedConsumer c = this.deleteRecordedConsumer(consumerTag);
+        this.maybeDeleteRecordedAutoDeleteQueue(c.getQueue());
         delegate.basicCancel(consumerTag);
     }
 
@@ -578,7 +579,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         this.connection.recordConsumer(result, consumer);
     }
 
-    private void deleteRecordedConsumer(String consumerTag) {
-        this.connection.deleteRecordedConsumer(consumerTag);
+    private RecordedConsumer deleteRecordedConsumer(String consumerTag) {
+        return this.connection.deleteRecordedConsumer(consumerTag);
+    }
+
+    private void maybeDeleteRecordedAutoDeleteQueue(String queue) {
+        this.connection.maybeDeleteRecordedAutoDeleteQueue(queue);
     }
 }
