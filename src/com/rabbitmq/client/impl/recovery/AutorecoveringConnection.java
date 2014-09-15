@@ -21,8 +21,11 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -626,6 +629,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     void deleteRecordedQueue(String queue) {
         this.recordedQueues.remove(queue);
+        Set<RecordedBinding> xs = this.removeBindingsWithDestination(queue);
+        for (RecordedBinding b : xs) {
+            this.maybeDeleteRecordedAutoDeleteExchange(b.getSource());
+        }
     }
 
     void recordExchange(String exchange, RecordedExchange x) {
@@ -634,6 +641,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     void deleteRecordedExchange(String exchange) {
         this.recordedExchanges.remove(exchange);
+        Set<RecordedBinding> xs = this.removeBindingsWithDestination(exchange);
+        for (RecordedBinding b : xs) {
+            this.maybeDeleteRecordedAutoDeleteExchange(b.getSource());
+        }
     }
 
     void recordConsumer(String result, RecordedConsumer consumer) {
@@ -687,6 +698,18 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             if(queue.equals(c.getQueue())) {
                 result = true;
                 break;
+            }
+        }
+        return result;
+    }
+
+    Set<RecordedBinding> removeBindingsWithDestination(String s) {
+        Set<RecordedBinding> result = new HashSet<RecordedBinding>();
+        for (Iterator<RecordedBinding> it = this.recordedBindings.iterator(); it.hasNext(); ) {
+            RecordedBinding b = it.next();
+            if(b.getDestination().equals(s)) {
+                it.remove();
+                result.add(b);
             }
         }
         return result;
