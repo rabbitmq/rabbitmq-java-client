@@ -14,6 +14,7 @@ import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.AMQImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -221,11 +222,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     }
 
     public AMQP.Exchange.BindOk exchangeBind(String destination, String source, String routingKey) throws IOException {
-        return delegate.exchangeBind(destination, source, routingKey);
+        return exchangeBind(destination, source, routingKey, null);
     }
 
     public AMQP.Exchange.BindOk exchangeBind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
-        AMQP.Exchange.BindOk ok = delegate.exchangeBind(destination, source, routingKey, arguments);
+        final AMQP.Exchange.BindOk ok = delegate.exchangeBind(destination, source, routingKey, arguments);
         recordExchangeBinding(destination, source, routingKey, arguments);
         return ok;
     }
@@ -241,6 +242,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
 
     public AMQP.Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
         deleteRecordedExchangeBinding(destination, source, routingKey, arguments);
+        this.maybeDeleteRecordedAutoDeleteExchange(source);
         return delegate.exchangeUnbind(destination, source, routingKey, arguments);
     }
 
@@ -321,6 +323,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
 
     public AMQP.Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException {
         deleteRecordedQueueBinding(queue, exchange, routingKey, arguments);
+        this.maybeDeleteRecordedAutoDeleteExchange(exchange);
         return delegate.queueUnbind(queue, exchange, routingKey, arguments);
     }
 
@@ -367,7 +370,8 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     }
 
     public void basicCancel(String consumerTag) throws IOException {
-        this.deleteRecordedConsumer(consumerTag);
+        RecordedConsumer c = this.deleteRecordedConsumer(consumerTag);
+        this.maybeDeleteRecordedAutoDeleteQueue(c.getQueue());
         delegate.basicCancel(consumerTag);
     }
 
@@ -578,7 +582,15 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         this.connection.recordConsumer(result, consumer);
     }
 
-    private void deleteRecordedConsumer(String consumerTag) {
-        this.connection.deleteRecordedConsumer(consumerTag);
+    private RecordedConsumer deleteRecordedConsumer(String consumerTag) {
+        return this.connection.deleteRecordedConsumer(consumerTag);
+    }
+
+    private void maybeDeleteRecordedAutoDeleteQueue(String queue) {
+        this.connection.maybeDeleteRecordedAutoDeleteQueue(queue);
+    }
+
+    private void maybeDeleteRecordedAutoDeleteExchange(String exchange) {
+        this.connection.maybeDeleteRecordedAutoDeleteExchange(exchange);
     }
 }

@@ -206,6 +206,82 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.queueDelete(q);
     }
 
+    public void testDeclarationOfManyAutoDeleteQueuesWithTransientConsumer() throws IOException {
+        Channel ch = connection.createChannel();
+        assertRecordedQueues(connection, 0);
+        for(int i = 0; i < 5000; i++) {
+            String q = UUID.randomUUID().toString();
+            ch.queueDeclare(q, false, false, true, null);
+            QueueingConsumer dummy = new QueueingConsumer(ch);
+            String tag = ch.basicConsume(q, true, dummy);
+            ch.basicCancel(tag);
+        }
+        assertRecordedQueues(connection, 0);
+        ch.close();
+    }
+
+    public void testDeclarationofManyAutoDeleteExchangesWithTransientQueuesThatAreUnbound() throws IOException {
+        Channel ch = connection.createChannel();
+        assertRecordedExchanges(connection, 0);
+        for(int i = 0; i < 5000; i++) {
+            String x = UUID.randomUUID().toString();
+            ch.exchangeDeclare(x, "fanout", false, true, null);
+            String q = ch.queueDeclare().getQueue();
+            final String rk = "doesn't matter";
+            ch.queueBind(q, x, rk);
+            ch.queueUnbind(q, x, rk);
+            ch.queueDelete(q);
+        }
+        assertRecordedExchanges(connection, 0);
+        ch.close();
+    }
+
+    public void testDeclarationofManyAutoDeleteExchangesWithTransientQueuesThatAreDeleted() throws IOException {
+        Channel ch = connection.createChannel();
+        assertRecordedExchanges(connection, 0);
+        for(int i = 0; i < 5000; i++) {
+            String x = UUID.randomUUID().toString();
+            ch.exchangeDeclare(x, "fanout", false, true, null);
+            String q = ch.queueDeclare().getQueue();
+            ch.queueBind(q, x, "doesn't matter");
+            ch.queueDelete(q);
+        }
+        assertRecordedExchanges(connection, 0);
+        ch.close();
+    }
+
+    public void testDeclarationofManyAutoDeleteExchangesWithTransientExchangesThatAreUnbound() throws IOException {
+        Channel ch = connection.createChannel();
+        assertRecordedExchanges(connection, 0);
+        for(int i = 0; i < 5000; i++) {
+            String src = "src-" + UUID.randomUUID().toString();
+            String dest = "dest-" + UUID.randomUUID().toString();
+            ch.exchangeDeclare(src, "fanout", false, true, null);
+            ch.exchangeDeclare(dest, "fanout", false, true, null);
+            final String rk = "doesn't matter";
+            ch.exchangeBind(dest, src, rk);
+            ch.exchangeUnbind(dest, src, rk);
+            ch.exchangeDelete(dest);
+        }
+        assertRecordedExchanges(connection, 0);
+        ch.close();
+    }
+
+    public void testDeclarationofManyAutoDeleteExchangesWithTransientExchangesThatAreDeleted() throws IOException {
+        Channel ch = connection.createChannel();
+        assertRecordedExchanges(connection, 0);
+        for(int i = 0; i < 5000; i++) {
+            String src = "src-" + UUID.randomUUID().toString();
+            String dest = "dest-" + UUID.randomUUID().toString();
+            ch.exchangeDeclare(src, "fanout", false, true, null);
+            ch.exchangeDeclare(dest, "fanout", false, true, null);
+            ch.exchangeBind(dest, src, "doesn't matter");
+            ch.exchangeDelete(dest);
+        }
+        assertRecordedExchanges(connection, 0);
+        ch.close();
+    }
+
     public void testServerNamedQueueRecovery() throws IOException, InterruptedException {
         String q = channel.queueDeclare("", false, false, false, null).getQueue();
         String x = "amq.fanout";
@@ -551,5 +627,13 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     private void waitForConfirms(Channel ch) throws InterruptedException, TimeoutException {
         ch.waitForConfirms(30 * 60 * 1000);
+    }
+
+    protected void assertRecordedQueues(Connection conn, int size) {
+        assertEquals(size, ((AutorecoveringConnection)conn).getRecordedQueues().size());
+    }
+
+    protected void assertRecordedExchanges(Connection conn, int size) {
+        assertEquals(size, ((AutorecoveringConnection)conn).getRecordedExchanges().size());
     }
 }

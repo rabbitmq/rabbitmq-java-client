@@ -19,9 +19,13 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -58,10 +62,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     // Records topology changes
     private final Map<String, RecordedQueue> recordedQueues = new ConcurrentHashMap<String, RecordedQueue>();
     private final List<RecordedBinding> recordedBindings = new ArrayList<RecordedBinding>();
-    private Map<String, RecordedExchange> recordedExchanges = new ConcurrentHashMap<String, RecordedExchange>();
+    private final Map<String, RecordedExchange> recordedExchanges = new ConcurrentHashMap<String, RecordedExchange>();
     private final Map<String, RecordedConsumer> consumers = new ConcurrentHashMap<String, RecordedConsumer>();
-    private List<ConsumerRecoveryListener> consumerRecoveryListeners = new ArrayList<ConsumerRecoveryListener>();
-    private List<QueueRecoveryListener> queueRecoveryListeners = new ArrayList<QueueRecoveryListener>();
+    private final List<ConsumerRecoveryListener> consumerRecoveryListeners = new ArrayList<ConsumerRecoveryListener>();
+    private final List<QueueRecoveryListener> queueRecoveryListeners = new ArrayList<QueueRecoveryListener>();
 
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, Address[] addrs) {
         this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addrs);
@@ -625,6 +629,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     void deleteRecordedQueue(String queue) {
         this.recordedQueues.remove(queue);
+        Set<RecordedBinding> xs = this.removeBindingsWithDestination(queue);
+        for (RecordedBinding b : xs) {
+            this.maybeDeleteRecordedAutoDeleteExchange(b.getSource());
+        }
     }
 
     void recordExchange(String exchange, RecordedExchange x) {
@@ -633,13 +641,85 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     void deleteRecordedExchange(String exchange) {
         this.recordedExchanges.remove(exchange);
+        Set<RecordedBinding> xs = this.removeBindingsWithDestination(exchange);
+        for (RecordedBinding b : xs) {
+            this.maybeDeleteRecordedAutoDeleteExchange(b.getSource());
+        }
     }
 
     void recordConsumer(String result, RecordedConsumer consumer) {
         this.consumers.put(result, consumer);
     }
 
-    void deleteRecordedConsumer(String consumerTag) {
-        this.consumers.remove(consumerTag);
+    RecordedConsumer deleteRecordedConsumer(String consumerTag) {
+        return this.consumers.remove(consumerTag);
+    }
+
+    void maybeDeleteRecordedAutoDeleteQueue(String queue) {
+        synchronized (this.recordedQueues) {
+            synchronized (this.consumers) {
+                if(!hasMoreConsumersOnQueue(this.consumers.values(), queue)) {
+                    RecordedQueue q = this.recordedQueues.get(queue);
+                    // last consumer on this connection is gone, remove recorded queue
+                    // if it is auto-deleted. See bug 26364.
+                    if((q != null) && q.isAutoDelete()) { this.recordedQueues.remove(queue); }
+                }
+            }
+        }
+    }
+
+    void maybeDeleteRecordedAutoDeleteExchange(String exchange) {
+        synchronized (this.recordedExchanges) {
+            synchronized (this.consumers) {
+                if(!hasMoreDestinationsBoundToExchange(this.recordedBindings, exchange)) {
+                    RecordedExchange x = this.recordedExchanges.get(exchange);
+                    // last binding where this exchange is the source is gone, remove recorded exchange
+                    // if it is auto-deleted. See bug 26364.
+                    if((x != null) && x.isAutoDelete()) { this.recordedExchanges.remove(exchange); }
+                }
+            }
+        }
+    }
+
+    boolean hasMoreDestinationsBoundToExchange(List<RecordedBinding> bindings, String exchange) {
+        boolean result = false;
+        for (RecordedBinding b : bindings) {
+            if(exchange.equals(b.getSource())) {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+
+    boolean hasMoreConsumersOnQueue(Collection<RecordedConsumer> consumers, String queue) {
+        boolean result = false;
+        for (RecordedConsumer c : consumers) {
+            if(queue.equals(c.getQueue())) {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+
+    Set<RecordedBinding> removeBindingsWithDestination(String s) {
+        Set<RecordedBinding> result = new HashSet<RecordedBinding>();
+        for (Iterator<RecordedBinding> it = this.recordedBindings.iterator(); it.hasNext(); ) {
+            RecordedBinding b = it.next();
+            if(b.getDestination().equals(s)) {
+                it.remove();
+                result.add(b);
+            }
+        }
+        return result;
+    }
+
+    public Map<String, RecordedQueue> getRecordedQueues() {
+        return recordedQueues;
+    }
+
+    public Map<String, RecordedExchange> getRecordedExchanges() {
+        return recordedExchanges;
     }
 }
