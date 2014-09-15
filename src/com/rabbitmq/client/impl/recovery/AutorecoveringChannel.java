@@ -321,6 +321,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
 
     public AMQP.Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException {
         deleteRecordedQueueBinding(queue, exchange, routingKey, arguments);
+        this.maybeDeleteRecordedAutoDeleteExchange(exchange);
         return delegate.queueUnbind(queue, exchange, routingKey, arguments);
     }
 
@@ -585,5 +586,9 @@ public class AutorecoveringChannel implements Channel, Recoverable {
 
     private void maybeDeleteRecordedAutoDeleteQueue(String queue) {
         this.connection.maybeDeleteRecordedAutoDeleteQueue(queue);
+    }
+
+    private void maybeDeleteRecordedAutoDeleteExchange(String exchange) {
+        this.connection.maybeDeleteRecordedAutoDeleteExchange(exchange);
     }
 }

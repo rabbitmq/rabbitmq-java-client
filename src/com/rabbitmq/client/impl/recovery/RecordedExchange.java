@@ -39,4 +39,8 @@ public class RecordedExchange extends RecordedNamedEntity {
         this.arguments = value;
         return this;
     }
+
+    public boolean isAutoDelete() {
+        return autoDelete;
+    }
 }

@@ -59,10 +59,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     // Records topology changes
     private final Map<String, RecordedQueue> recordedQueues = new ConcurrentHashMap<String, RecordedQueue>();
     private final List<RecordedBinding> recordedBindings = new ArrayList<RecordedBinding>();
-    private Map<String, RecordedExchange> recordedExchanges = new ConcurrentHashMap<String, RecordedExchange>();
+    private final Map<String, RecordedExchange> recordedExchanges = new ConcurrentHashMap<String, RecordedExchange>();
     private final Map<String, RecordedConsumer> consumers = new ConcurrentHashMap<String, RecordedConsumer>();
-    private List<ConsumerRecoveryListener> consumerRecoveryListeners = new ArrayList<ConsumerRecoveryListener>();
-    private List<QueueRecoveryListener> queueRecoveryListeners = new ArrayList<QueueRecoveryListener>();
+    private final List<ConsumerRecoveryListener> consumerRecoveryListeners = new ArrayList<ConsumerRecoveryListener>();
+    private final List<QueueRecoveryListener> queueRecoveryListeners = new ArrayList<QueueRecoveryListener>();
 
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, Address[] addrs) {
         this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addrs);
@@ -651,10 +651,34 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                     RecordedQueue q = this.recordedQueues.get(queue);
                     // last consumer on this connection is gone, remove recorded queue
                     // if it is auto-deleted. See bug 26364.
-                    if(q.isAutoDelete()) { this.recordedQueues.remove(queue); }
+                    if((q != null) && q.isAutoDelete()) { this.recordedQueues.remove(queue); }
                 }
             }
         }
+    }
+
+    void maybeDeleteRecordedAutoDeleteExchange(String exchange) {
+        synchronized (this.recordedExchanges) {
+            synchronized (this.consumers) {
+                if(!hasMoreDestinationsBoundToExchange(this.recordedBindings, exchange)) {
+                    RecordedExchange x = this.recordedExchanges.get(exchange);
+                    // last binding where this exchange is the source is gone, remove recorded exchange
+                    // if it is auto-deleted. See bug 26364.
+                    if((x != null) && x.isAutoDelete()) { this.recordedExchanges.remove(exchange); }
+                }
+            }
+        }
+    }
+
+    boolean hasMoreDestinationsBoundToExchange(List<RecordedBinding> bindings, String exchange) {
+        boolean result = false;
+        for (RecordedBinding b : bindings) {
+            if(exchange.equals(b.getSource())) {
+                result = true;
+                break;
+            }
+        }
+        return result;
     }
 
     boolean hasMoreConsumersOnQueue(Collection<RecordedConsumer> consumers, String queue) {
@@ -670,5 +694,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     public Map<String, RecordedQueue> getRecordedQueues() {
         return recordedQueues;
+    }
+
+    public Map<String, RecordedExchange> getRecordedExchanges() {
+        return recordedExchanges;
     }
 }

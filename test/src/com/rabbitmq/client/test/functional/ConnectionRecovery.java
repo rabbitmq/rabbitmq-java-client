@@ -210,7 +210,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     public void testDeclarationOfManyAutoDeleteQueuesWithTransientConsumer() throws IOException {
         Channel ch = connection.createChannel();
         assertEquals(0, ((AutorecoveringConnection)connection).getRecordedQueues().size());
-        for(int i = 0; i < 20000; i++) {
+        for(int i = 0; i < 5000; i++) {
             String q = UUID.randomUUID().toString();
             ch.queueDeclareNoWait(q, false, false, true, null);
             QueueingConsumer dummy = new QueueingConsumer(ch);
@@ -218,6 +218,23 @@ public class ConnectionRecovery extends BrokerTestCase {
             ch.basicCancel(tag);
         }
         assertEquals(0, ((AutorecoveringConnection)connection).getRecordedQueues().size());
+        ch.close();
+    }
+
+    // bug 26364
+    public void testDeclarationofManyAutoDeleteExchangesWithTransientQueues() throws IOException {
+        Channel ch = connection.createChannel();
+        assertEquals(0, ((AutorecoveringConnection)connection).getRecordedExchanges().size());
+        for(int i = 0; i < 5000; i++) {
+            String x = UUID.randomUUID().toString();
+            ch.exchangeDeclare(x, "fanout", false, true, null);
+            String q = ch.queueDeclare().getQueue();
+            final String rk = "doesn't matter";
+            ch.queueBind(q, x, rk);
+            ch.queueUnbind(q, x, rk);
+            ch.queueDelete(q);
+        }
+        assertEquals(0, ((AutorecoveringConnection)connection).getRecordedExchanges().size());
         ch.close();
     }
 
