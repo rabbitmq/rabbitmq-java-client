@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class Consumer extends ProducerConsumerBase implements Runnable {
 
@@ -61,7 +62,12 @@ public class Consumer extends ProducerConsumerBase implements Runnable {
         try {
             q = new ConsumerImpl(channel);
             channel.basicConsume(queueName, autoAck, q);
-            latch.await();
+            if (timeLimit == 0) {
+                latch.await();
+            }
+            else {
+                latch.await(timeLimit, TimeUnit.MILLISECONDS);
+            }
 
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -74,20 +80,17 @@ public class Consumer extends ProducerConsumerBase implements Runnable {
 
     private class ConsumerImpl extends DefaultConsumer {
         long now;
-        long startTime;
         int totalMsgCount = 0;
 
         private ConsumerImpl(Channel channel) {
             super(channel);
-            startTime = now = System.currentTimeMillis();
-            lastStatsTime = startTime;
+            lastStatsTime = now = System.currentTimeMillis();
             msgCount = 0;
         }
 
         @Override
         public void handleDelivery(String consumerTag, Envelope envelope, BasicProperties properties, byte[] body) throws IOException {
-            if ((timeLimit == 0 || now < startTime + timeLimit) &&
-                (msgLimit == 0 || msgCount < msgLimit)) {
+            if (msgLimit == 0 || msgCount < msgLimit) {
                 totalMsgCount++;
                 msgCount++;
 
