@@ -66,6 +66,7 @@ public class ScenarioFactory {
 
     private static MulticastParams paramsFromJSON(Map json) {
         MulticastParams params = new MulticastParams();
+        params.setAutoDelete(true);
         for (Object key : json.keySet()) {
             PerfUtil.setValue(params, hyphensToCamel((String)key), json.get(key));
         }
