@@ -41,7 +41,7 @@ public class RateVsLatencyScenario implements Scenario {
             rates[i] = (int) (factors[i] * maxRate);
         }
         impl = new VaryingScenario("untitled", factory, params,
-                new MulticastVariable("rateLimit", (Object[]) rates));
+                new MulticastVariable("producerRateLimit", (Object[]) rates));
         impl.run();
     }
 
