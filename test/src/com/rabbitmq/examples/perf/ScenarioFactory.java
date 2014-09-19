@@ -12,6 +12,15 @@ public class ScenarioFactory {
         Integer interval = read("interval", json, Integer.class, 1000);
         List paramsJSON = read("params", json, List.class);
 
+        String uri = read("uri", json, String.class);
+        try {
+            factory.setUri(uri);
+        } catch(Exception e) {
+            System.out.println("scenario: " + name + " with malformed uri: "
+                               + uri + " - " + e.getMessage());
+            System.exit(1);
+        }
+
         MulticastParams[] params = new MulticastParams[paramsJSON.size()];
         for (int i = 0; i < paramsJSON.size(); i++) {
             params[i] = paramsFromJSON((Map) paramsJSON.get(i));
