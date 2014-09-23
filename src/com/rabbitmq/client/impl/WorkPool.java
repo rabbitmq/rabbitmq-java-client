@@ -3,10 +3,10 @@ package com.rabbitmq.client.impl;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * This is a generic implementation of the <q>Channels</q> specification
@@ -67,12 +67,14 @@ import java.util.Set;
  * @param <W> Work -- type of work item
  */
 public class WorkPool<K, W> {
+    private static final int MAX_QUEUE_LENGTH = 1000;
+
     /** An injective queue of <i>ready</i> clients. */
     private final SetQueue<K> ready = new SetQueue<K>();
     /** The set of clients which have work <i>in progress</i>. */
     private final Set<K> inProgress = new HashSet<K>();
     /** The pool of registered clients, with their work queues. */
-    private final Map<K, LinkedList<W>> pool = new HashMap<K, LinkedList<W>>();
+    private final Map<K, BlockingQueue<W>> pool = new HashMap<K, BlockingQueue<W>>();
 
     /**
      * Add client <code><b>key</b></code> to pool of item queues, with an empty queue.
@@ -84,7 +86,7 @@ public class WorkPool<K, W> {
     public void registerKey(K key) {
         synchronized (this) {
             if (!this.pool.containsKey(key)) {
-                this.pool.put(key, new LinkedList<W>());
+                this.pool.put(key, new LinkedBlockingQueue<W>(MAX_QUEUE_LENGTH));
             }
         }
     }
@@ -126,7 +128,7 @@ public class WorkPool<K, W> {
         synchronized (this) {
             K nextKey = readyToInProgress();
             if (nextKey != null) {
-                LinkedList<W> queue = this.pool.get(nextKey);
+                BlockingQueue<W> queue = this.pool.get(nextKey);
                 drainTo(queue, to, size);
             }
             return nextKey;
@@ -141,7 +143,7 @@ public class WorkPool<K, W> {
      * @param maxElements to take from deList
      * @return number of elements actually taken
      */
-    private static <W> int drainTo(LinkedList<W> deList, Collection<W> c, int maxElements) {
+    private static <W> int drainTo(BlockingQueue<W> deList, Collection<W> c, int maxElements) {
         int n = 0;
         while (n < maxElements) {
             W first = deList.poll();
@@ -164,9 +166,14 @@ public class WorkPool<K, W> {
      */
     public boolean addWorkItem(K key, W item) {
         synchronized (this) {
-            Queue<W> queue = this.pool.get(key);
+            BlockingQueue<W> queue = this.pool.get(key);
             if (queue != null) {
-                queue.offer(item);
+                try {
+                    queue.put(item);
+                } catch (InterruptedException e) {
+                    // ok
+                }
+
                 if (isDormant(key)) {
                     dormantToReady(key);
                     return true;
@@ -202,7 +209,7 @@ public class WorkPool<K, W> {
     }
 
     private boolean moreWorkItems(K key) {
-        LinkedList<W> leList = this.pool.get(key);
+        BlockingQueue<W> leList = this.pool.get(key);
         return leList != null && !leList.isEmpty();
     }
 
