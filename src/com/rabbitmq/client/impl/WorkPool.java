@@ -67,15 +67,12 @@ import java.util.Set;
  * @param <W> Work -- type of work item
  */
 public class WorkPool<K, W> {
-
-    /** protecting <code>ready</code>, <code>inProgress</code> and <code>pool</code> */
-    private final Object monitor = new Object();
-        /** An injective queue of <i>ready</i> clients. */
-        private final SetQueue<K> ready = new SetQueue<K>();
-        /** The set of clients which have work <i>in progress</i>. */
-        private final Set<K> inProgress = new HashSet<K>();
-        /** The pool of registered clients, with their work queues. */
-        private final Map<K, LinkedList<W>> pool = new HashMap<K, LinkedList<W>>();
+    /** An injective queue of <i>ready</i> clients. */
+    private final SetQueue<K> ready = new SetQueue<K>();
+    /** The set of clients which have work <i>in progress</i>. */
+    private final Set<K> inProgress = new HashSet<K>();
+    /** The pool of registered clients, with their work queues. */
+    private final Map<K, LinkedList<W>> pool = new HashMap<K, LinkedList<W>>();
 
     /**
      * Add client <code><b>key</b></code> to pool of item queues, with an empty queue.
@@ -85,7 +82,7 @@ public class WorkPool<K, W> {
      * @param key client to add to pool
      */
     public void registerKey(K key) {
-        synchronized (this.monitor) {
+        synchronized (this) {
             if (!this.pool.containsKey(key)) {
                 this.pool.put(key, new LinkedList<W>());
             }
@@ -97,7 +94,7 @@ public class WorkPool<K, W> {
      * @param key of client to unregister
      */
     public void unregisterKey(K key) {
-        synchronized (this.monitor) {
+        synchronized (this) {
             this.pool.remove(key);
             this.ready.remove(key);
             this.inProgress.remove(key);
@@ -108,7 +105,7 @@ public class WorkPool<K, W> {
      * Remove all clients from pool and from any other state.
      */
     public void unregisterAllKeys() {
-        synchronized (this.monitor) {
+        synchronized (this) {
             this.pool.clear();
             this.ready.clear();
             this.inProgress.clear();
@@ -126,7 +123,7 @@ public class WorkPool<K, W> {
      * @return key of client to whom items belong, or <code><b>null</b></code> if there is none.
      */
     public K nextWorkBlock(Collection<W> to, int size) {
-        synchronized (this.monitor) {
+        synchronized (this) {
             K nextKey = readyToInProgress();
             if (nextKey != null) {
                 LinkedList<W> queue = this.pool.get(nextKey);
@@ -166,7 +163,7 @@ public class WorkPool<K, W> {
      * &mdash; <i>as a result of this work item</i>
      */
     public boolean addWorkItem(K key, W item) {
-        synchronized (this.monitor) {
+        synchronized (this) {
             Queue<W> queue = this.pool.get(key);
             if (queue != null) {
                 queue.offer(item);
@@ -187,7 +184,7 @@ public class WorkPool<K, W> {
      * @throws IllegalStateException if registered client not <i>in progress</i>
      */
     public boolean finishWorkBlock(K key) {
-        synchronized (this.monitor) {
+        synchronized (this) {
             if (!this.isRegistered(key))
                 return false;
             if (!this.inProgress.contains(key)) {
@@ -206,7 +203,7 @@ public class WorkPool<K, W> {
 
     private boolean moreWorkItems(K key) {
         LinkedList<W> leList = this.pool.get(key);
-        return (leList==null ? false : !leList.isEmpty());
+        return leList != null && !leList.isEmpty();
     }
 
     /* State identification functions */
@@ -216,9 +213,9 @@ public class WorkPool<K, W> {
     private boolean isDormant(K key){ return !isInProgress(key) && !isReady(key) && isRegistered(key); }
 
     /* State transition methods - all assume key registered */
-    private void inProgressToReady(K key){ this.inProgress.remove(key); this.ready.addIfNotPresent(key); };
-    private void inProgressToDormant(K key){ this.inProgress.remove(key); };
-    private void dormantToReady(K key){ this.ready.addIfNotPresent(key); };
+    private void inProgressToReady(K key){ this.inProgress.remove(key); this.ready.addIfNotPresent(key); }
+    private void inProgressToDormant(K key){ this.inProgress.remove(key); }
+    private void dormantToReady(K key){ this.ready.addIfNotPresent(key); }
 
     /* Basic work selector and state transition step */
     private K readyToInProgress() {
@@ -227,5 +224,5 @@ public class WorkPool<K, W> {
             this.inProgress.add(key);
         }
         return key;
-    };
+    }
 }
