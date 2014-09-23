@@ -165,22 +165,26 @@ public class WorkPool<K, W> {
      * &mdash; <i>as a result of this work item</i>
      */
     public boolean addWorkItem(K key, W item) {
+        BlockingQueue<W> queue;
         synchronized (this) {
-            BlockingQueue<W> queue = this.pool.get(key);
-            if (queue != null) {
-                try {
-                    queue.put(item);
-                } catch (InterruptedException e) {
-                    // ok
-                }
+            queue = this.pool.get(key);
+        }
+        // The put operation may block. We need to make sure we are not holding the lock while that happens.
+        if (queue != null) {
+            try {
+                queue.put(item);
+            } catch (InterruptedException e) {
+                // ok
+            }
 
+            synchronized (this) {
                 if (isDormant(key)) {
                     dormantToReady(key);
                     return true;
                 }
             }
-            return false;
         }
+        return false;
     }
 
     /**
