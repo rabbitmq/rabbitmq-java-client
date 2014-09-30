@@ -220,7 +220,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.close();
     }
 
-    public void testDeclarationofManyAutoDeleteExchangesWithTransientQueuesThatAreUnbound() throws IOException {
+    public void testDeclarationOfManyAutoDeleteExchangesWithTransientQueuesThatAreUnbound() throws IOException {
         Channel ch = connection.createChannel();
         assertRecordedExchanges(connection, 0);
         for(int i = 0; i < 5000; i++) {
@@ -236,7 +236,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.close();
     }
 
-    public void testDeclarationofManyAutoDeleteExchangesWithTransientQueuesThatAreDeleted() throws IOException {
+    public void testDeclarationOfManyAutoDeleteExchangesWithTransientQueuesThatAreDeleted() throws IOException {
         Channel ch = connection.createChannel();
         assertRecordedExchanges(connection, 0);
         for(int i = 0; i < 5000; i++) {
@@ -250,7 +250,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.close();
     }
 
-    public void testDeclarationofManyAutoDeleteExchangesWithTransientExchangesThatAreUnbound() throws IOException {
+    public void testDeclarationOfManyAutoDeleteExchangesWithTransientExchangesThatAreUnbound() throws IOException {
         Channel ch = connection.createChannel();
         assertRecordedExchanges(connection, 0);
         for(int i = 0; i < 5000; i++) {
@@ -267,7 +267,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.close();
     }
 
-    public void testDeclarationofManyAutoDeleteExchangesWithTransientExchangesThatAreDeleted() throws IOException {
+    public void testDeclarationOfManyAutoDeleteExchangesWithTransientExchangesThatAreDeleted() throws IOException {
         Channel ch = connection.createChannel();
         assertRecordedExchanges(connection, 0);
         for(int i = 0; i < 5000; i++) {
