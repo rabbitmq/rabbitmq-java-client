@@ -1188,14 +1188,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     @Override
     public void enqueueRpc(RpcContinuation k) {
-        super.enqueueRpc(k);
-        dispatcher.setLimited(false);
+        synchronized (_channelMutex) {
+            super.enqueueRpc(k);
+            dispatcher.setLimited(false);
+        }
     }
 
     @Override
     public RpcContinuation nextOutstandingRpc() {
-        dispatcher.setLimited(true);
-        return super.nextOutstandingRpc();
+        synchronized (_channelMutex) {
+            RpcContinuation res = super.nextOutstandingRpc();
+            if (res != null) dispatcher.setLimited(true);
+            return res;
+        }
     }
 
     private void handleAckNack(long seqNo, boolean multiple, boolean nack) {

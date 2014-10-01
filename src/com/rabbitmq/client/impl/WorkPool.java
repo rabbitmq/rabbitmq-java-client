@@ -71,7 +71,19 @@ public class WorkPool<K, W> {
 
     // This is like a LinkedBlockingQueue of limited length except you can turn the limit
     // on and off. And it only has the methods we need.
-    // TODO synchronised how?
+    //
+    // This class is partly synchronised because:
+    //
+    // a) we cannot make put(T) synchronised as it may block indefinitely. Therefore we
+    //    only lock before modifying the list.
+    // b) we don't want to make setLimited() synchronised as it is called frequently by
+    //    the channel.
+    // c) anyway the issue with setLimited() is not that it be synchronised itself but
+    //    that calls to it should alternate between false and true. We assert this, but
+    //    it should not be able to go wrong because the RPC calls in AMQChannel and
+    //    ChannelN are all protected by the _channelMutex; we can't have more than one
+    //    outstanding RPC or finish the same RPC twice.
+
     private static class WorkQueue<T> {
         private Semaphore semaphore;
         private LinkedList<T> list;
@@ -90,10 +102,12 @@ public class WorkPool<K, W> {
                 assert !semaphore.hasQueuedThreads();
                 semaphore.acquire();
             }
-            list.add(t);
+            synchronized (this) {
+                list.add(t);
+            }
         }
 
-        public T poll() {
+        public synchronized T poll() {
             T res = list.poll();
 
             if (list.size() <= maxLengthWhenLimited && semaphore.hasQueuedThreads()) {
@@ -104,6 +118,7 @@ public class WorkPool<K, W> {
         }
 
         public void setLimited(boolean limited) {
+            assert this.limited != limited;
             this.limited = limited;
             if (!limited && semaphore.hasQueuedThreads()) {
                 semaphore.release();
