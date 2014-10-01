@@ -3,10 +3,10 @@ package com.rabbitmq.client.impl;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 
 /**
  * This is a generic implementation of the <q>Channels</q> specification
@@ -69,12 +69,58 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class WorkPool<K, W> {
     private static final int MAX_QUEUE_LENGTH = 1000;
 
+    // This is like a LinkedBlockingQueue of limited length except you can turn the limit
+    // on and off. And it only has the methods we need.
+    // TODO synchronised how?
+    private static class WorkQueue<T> {
+        private Semaphore semaphore;
+        private LinkedList<T> list;
+        private boolean limited;
+        private int maxLengthWhenLimited;
+
+        private WorkQueue(int maxLengthWhenLimited) {
+            this.semaphore = new Semaphore(1);
+            this.list = new LinkedList<T>();
+            this.limited = true;
+            this.maxLengthWhenLimited = maxLengthWhenLimited;
+        }
+
+        public boolean put(T t) throws InterruptedException {
+            if (limited && list.size() > maxLengthWhenLimited) {
+                assert !semaphore.hasQueuedThreads();
+                semaphore.acquire();
+            }
+            return list.offer(t);
+        }
+
+        public T poll() {
+            T res = list.poll();
+
+            if (list.size() <= maxLengthWhenLimited && semaphore.hasQueuedThreads()) {
+                semaphore.release();
+            }
+
+            return res;
+        }
+
+        public void setLimited(boolean limited) {
+            this.limited = limited;
+            if (!limited && semaphore.hasQueuedThreads()) {
+                semaphore.release();
+            }
+        }
+
+        public boolean isEmpty() {
+            return list.isEmpty();
+        }
+    }
+
     /** An injective queue of <i>ready</i> clients. */
     private final SetQueue<K> ready = new SetQueue<K>();
     /** The set of clients which have work <i>in progress</i>. */
     private final Set<K> inProgress = new HashSet<K>();
     /** The pool of registered clients, with their work queues. */
-    private final Map<K, BlockingQueue<W>> pool = new HashMap<K, BlockingQueue<W>>();
+    private final Map<K, WorkQueue<W>> pool = new HashMap<K, WorkQueue<W>>();
 
     /**
      * Add client <code><b>key</b></code> to pool of item queues, with an empty queue.
@@ -86,7 +132,16 @@ public class WorkPool<K, W> {
     public void registerKey(K key) {
         synchronized (this) {
             if (!this.pool.containsKey(key)) {
-                this.pool.put(key, new LinkedBlockingQueue<W>(MAX_QUEUE_LENGTH));
+                this.pool.put(key, new WorkQueue<W>(MAX_QUEUE_LENGTH));
+            }
+        }
+    }
+
+    public void limit(K key, boolean limited) {
+        synchronized (this) {
+            WorkQueue<W> queue = this.pool.get(key);
+            if (queue != null) {
+                queue.setLimited(limited);
             }
         }
     }
@@ -128,7 +183,7 @@ public class WorkPool<K, W> {
         synchronized (this) {
             K nextKey = readyToInProgress();
             if (nextKey != null) {
-                BlockingQueue<W> queue = this.pool.get(nextKey);
+                WorkQueue<W> queue = this.pool.get(nextKey);
                 drainTo(queue, to, size);
             }
             return nextKey;
@@ -143,7 +198,7 @@ public class WorkPool<K, W> {
      * @param maxElements to take from deList
      * @return number of elements actually taken
      */
-    private static <W> int drainTo(BlockingQueue<W> deList, Collection<W> c, int maxElements) {
+    private static <W> int drainTo(WorkQueue<W> deList, Collection<W> c, int maxElements) {
         int n = 0;
         while (n < maxElements) {
             W first = deList.poll();
@@ -165,7 +220,7 @@ public class WorkPool<K, W> {
      * &mdash; <i>as a result of this work item</i>
      */
     public boolean addWorkItem(K key, W item) {
-        BlockingQueue<W> queue;
+        WorkQueue<W> queue;
         synchronized (this) {
             queue = this.pool.get(key);
         }
@@ -213,7 +268,7 @@ public class WorkPool<K, W> {
     }
 
     private boolean moreWorkItems(K key) {
-        BlockingQueue<W> leList = this.pool.get(key);
+        WorkQueue<W> leList = this.pool.get(key);
         return leList != null && !leList.isEmpty();
     }
 
