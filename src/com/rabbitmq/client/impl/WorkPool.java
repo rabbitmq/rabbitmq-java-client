@@ -85,12 +85,12 @@ public class WorkPool<K, W> {
             this.maxLengthWhenLimited = maxLengthWhenLimited;
         }
 
-        public boolean put(T t) throws InterruptedException {
+        public void put(T t) throws InterruptedException {
             if (limited && list.size() > maxLengthWhenLimited) {
                 assert !semaphore.hasQueuedThreads();
                 semaphore.acquire();
             }
-            return list.offer(t);
+            list.add(t);
         }
 
         public T poll() {
