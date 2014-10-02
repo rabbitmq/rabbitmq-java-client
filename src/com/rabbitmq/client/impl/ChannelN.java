@@ -1190,7 +1190,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void enqueueRpc(RpcContinuation k) {
         synchronized (_channelMutex) {
             super.enqueueRpc(k);
-            dispatcher.setLimited(false);
+            dispatcher.setUnlimited(true);
         }
     }
 
@@ -1198,7 +1198,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public RpcContinuation nextOutstandingRpc() {
         synchronized (_channelMutex) {
             RpcContinuation res = super.nextOutstandingRpc();
-            if (res != null) dispatcher.setLimited(true);
+            if (res != null) dispatcher.setUnlimited(false);
             return res;
         }
     }
