@@ -122,6 +122,11 @@ public class Consumer extends ProducerConsumerBase implements Runnable {
         }
 
         @Override
+        public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
+            latch.countDown();
+        }
+
+        @Override
         public void handleCancel(String consumerTag) throws IOException {
             System.out.println("Consumer cancelled by broker. Re-consuming.");
             channel.basicConsume(queueName, autoAck, q);
