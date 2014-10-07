@@ -80,7 +80,8 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
 
             // Construct a channel directly
             final ChannelN ch = new ChannelN((AMQConnection) conn, n + 1,
-                                             new ConsumerWorkService(Executors.newSingleThreadExecutor(), Executors.defaultThreadFactory()));
+                                             new ConsumerWorkService(Executors.newSingleThreadExecutor(),
+                                                     Executors.defaultThreadFactory(), ConnectionFactory.DEFAULT_SHUTDOWN_TIMEOUT));
             conn.addShutdownListener(new ShutdownListener() {
                 public void shutdownCompleted(ShutdownSignalException cause) {
                     // make sure channel.open continuation is released
