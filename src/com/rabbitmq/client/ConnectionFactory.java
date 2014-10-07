@@ -75,6 +75,9 @@ public class ConnectionFactory implements Cloneable {
     /** The default connection timeout;
      *  zero means wait indefinitely */
     public static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
+    /** The default shutdown timeout;
+     *  zero means wait indefinitely */
+    public static final int    DEFAULT_SHUTDOWN_TIMEOUT = 10000;
 
     /** The default SSL protocol */
     private static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
@@ -88,6 +91,7 @@ public class ConnectionFactory implements Cloneable {
     private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
     private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
     private int connectionTimeout                 = DEFAULT_CONNECTION_TIMEOUT;
+    private int shutdownTimeout                   = DEFAULT_SHUTDOWN_TIMEOUT;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
@@ -331,6 +335,26 @@ public class ConnectionFactory implements Cloneable {
      */
     public int getConnectionTimeout() {
         return this.connectionTimeout;
+    }
+
+    /**
+     * Set the shutdown timeout. This is the amount of time that Consumer implementations have to
+     * continue working through deliveries (and other Consumer callbacks) <b>after</b> the connection
+     * has closed but before the ConsumerWorkService is torn down. If consumers exceed this timeout
+     * then any remaining queued deliveries (and other Consumer callbacks, <b>including</b>
+     * the Consumer's handleShutdownSignal() invocation) will be lost.
+     * @param shutdownTimeout shutdown timeout in milliseconds; zero for infinite; default 10000
+     */
+    public void setShutdownTimeout(int shutdownTimeout) {
+        this.shutdownTimeout = shutdownTimeout;
+    }
+
+    /**
+     * Retrieve the shutdown timeout.
+     * @return the shutdown timeout, in milliseconds; zero for infinite
+     */
+    public int getShutdownTimeout() {
+        return shutdownTimeout;
     }
 
     /**
@@ -602,7 +626,7 @@ public class ConnectionFactory implements Cloneable {
 
     public ConnectionParams params(ExecutorService executor) {
         return new ConnectionParams(username, password, executor, virtualHost, getClientProperties(),
-                                    requestedFrameMax, requestedChannelMax, requestedHeartbeat, saslConfig,
+                                    requestedFrameMax, requestedChannelMax, requestedHeartbeat, shutdownTimeout, saslConfig,
                                     networkRecoveryInterval, topologyRecovery, exceptionHandler, threadFactory);
     }
 

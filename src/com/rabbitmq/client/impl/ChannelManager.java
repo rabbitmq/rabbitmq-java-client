@@ -33,8 +33,6 @@ import com.rabbitmq.utility.IntAllocator;
  * Manages a set of channels, indexed by channel number (<code><b>1.._channelMax</b></code>).
  */
 public class ChannelManager {
-    private static final int SHUTDOWN_TIMEOUT_SECONDS = 10;
-
     /** Monitor for <code>_channelMap</code> and <code>channelNumberAllocator</code> */
     private final Object monitor = new Object();
         /** Mapping from <code><b>1.._channelMax</b></code> to {@link ChannelN} instance */
@@ -108,7 +106,13 @@ public class ChannelManager {
         Runnable target = new Runnable() {
             public void run() {
                 for (CountDownLatch latch : sdSet) {
-                    try { latch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS); } catch (Throwable e) { /*ignored*/ }
+                    try {
+                        int shutdownTimeout = ssWorkService.getShutdownTimeout();
+                        if (shutdownTimeout == 0) latch.await();
+                        else                      latch.await(shutdownTimeout, TimeUnit.MILLISECONDS);
+                    } catch (Throwable e) {
+                         /*ignored*/
+                    }
                 }
                 ssWorkService.shutdown();
             }

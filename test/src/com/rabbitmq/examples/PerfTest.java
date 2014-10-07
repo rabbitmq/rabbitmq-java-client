@@ -82,6 +82,7 @@ public class PerfTest {
                                     confirm != -1);
 
             ConnectionFactory factory = new ConnectionFactory();
+            factory.setShutdownTimeout(0); // So we still shut down even with slow consumers
             factory.setUri(uri);
             factory.setRequestedFrameMax(frameMax);
             factory.setRequestedHeartbeat(heartbeat);
