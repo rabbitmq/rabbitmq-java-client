@@ -64,6 +64,10 @@ final public class ConsumerWorkService {
         this.workPool.registerKey(channel);
     }
 
+    public void unlimit(Channel channel, boolean unlimited) {
+        this.workPool.unlimit(channel, unlimited);
+    }
+
     public void addWork(Channel channel, Runnable runnable) {
         if (this.workPool.addWorkItem(channel, runnable)) {
             this.executor.execute(new WorkPoolRunnable());

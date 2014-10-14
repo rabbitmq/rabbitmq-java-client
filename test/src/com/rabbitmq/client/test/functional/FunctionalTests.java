@@ -40,9 +40,8 @@ public class FunctionalTests extends TestCase {
         suite.addTestSuite(Recover.class);
         suite.addTestSuite(Reject.class);
         suite.addTestSuite(Transactions.class);
-        // TODO uncomment after we fix bug 26396 one way or the other
-        //suite.addTestSuite(RequeueOnConnectionClose.class);
-        //suite.addTestSuite(RequeueOnChannelClose.class);
+        suite.addTestSuite(RequeueOnConnectionClose.class);
+        suite.addTestSuite(RequeueOnChannelClose.class);
         suite.addTestSuite(DurableOnTransient.class);
         suite.addTestSuite(NoRequeueOnCancel.class);
         suite.addTestSuite(Bug20004Test.class);

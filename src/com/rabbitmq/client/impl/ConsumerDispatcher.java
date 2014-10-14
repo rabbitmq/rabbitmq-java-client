@@ -62,6 +62,10 @@ final class ConsumerDispatcher {
         this.shuttingDown = true;
     }
 
+    public void setUnlimited(boolean unlimited) {
+        this.workService.unlimit(channel, unlimited);
+    }
+
     public void handleConsumeOk(final Consumer delegate,
                                 final String consumerTag) {
         executeUnlessShuttingDown(
