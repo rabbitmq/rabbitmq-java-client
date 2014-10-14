@@ -432,6 +432,20 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     }
 
+    public void testSubsequentRecoveriesWithClientNamedQueue() throws IOException, InterruptedException {
+        String q = channel.queueDeclare(UUID.randomUUID().toString(), false, false, false, null).getQueue();
+
+        assertConsumerCount(0, q);
+        channel.basicConsume(q, new DefaultConsumer(channel));
+
+        for(int i = 0; i < 10; i++) {
+            assertConsumerCount(1, q);
+            closeAndWaitForRecovery();
+        }
+
+        channel.queueDelete(q);
+    }
+
     public void testQueueRecoveryWithManyQueues() throws IOException, InterruptedException, TimeoutException {
         List<String> qs = new ArrayList<String>();
         final int n = 1024;

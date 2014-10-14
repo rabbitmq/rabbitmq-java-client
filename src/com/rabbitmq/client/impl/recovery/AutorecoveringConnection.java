@@ -356,7 +356,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             }
         };
         synchronized (this) {
-            this.shutdownHooks.add(automaticRecoveryListener);
+            if(!this.shutdownHooks.contains(automaticRecoveryListener)) {
+                this.shutdownHooks.add(automaticRecoveryListener);
+            }
             this.delegate.addShutdownListener(automaticRecoveryListener);
         }
     }
