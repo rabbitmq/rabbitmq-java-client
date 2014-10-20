@@ -80,7 +80,7 @@ public class ConnectionFactory implements Cloneable {
     public static final int    DEFAULT_SHUTDOWN_TIMEOUT = 10000;
 
     /** The default SSL protocol */
-    private static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
+    private static final String DEFAULT_SSL_PROTOCOL = "TLSv1";
 
     private String username                       = DEFAULT_USER;
     private String password                       = DEFAULT_PASS;
@@ -520,7 +520,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Convenience method for setting up an SSL socket factory.
-     * Pass in the SSL protocol to use, e.g. "TLS" or "SSLv3".
+     * Pass in the SSL protocol to use, e.g. "TLSv1" or "TLSv1.2".
      *
      * @param protocol SSL protocol to use.
      */
