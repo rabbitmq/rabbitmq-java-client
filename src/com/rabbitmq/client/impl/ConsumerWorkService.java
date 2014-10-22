@@ -29,12 +29,18 @@ final public class ConsumerWorkService {
     private final ExecutorService executor;
     private final boolean privateExecutor;
     private final WorkPool<Channel, Runnable> workPool;
+    private final int shutdownTimeout;
 
-    public ConsumerWorkService(ExecutorService executor, ThreadFactory threadFactory) {
+    public ConsumerWorkService(ExecutorService executor, ThreadFactory threadFactory, int shutdownTimeout) {
         this.privateExecutor = (executor == null);
         this.executor = (executor == null) ? Executors.newFixedThreadPool(DEFAULT_NUM_THREADS, threadFactory)
                                            : executor;
         this.workPool = new WorkPool<Channel, Runnable>();
+        this.shutdownTimeout = shutdownTimeout;
+    }
+
+    public int getShutdownTimeout() {
+        return shutdownTimeout;
     }
 
     /**
@@ -56,6 +62,10 @@ final public class ConsumerWorkService {
 
     public void registerKey(Channel channel) {
         this.workPool.registerKey(channel);
+    }
+
+    public void unlimit(Channel channel, boolean unlimited) {
+        this.workPool.unlimit(channel, unlimited);
     }
 
     public void addWork(Channel channel, Runnable runnable) {

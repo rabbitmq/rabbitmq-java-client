@@ -18,7 +18,6 @@ package com.rabbitmq.examples.perf;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ShutdownSignalException;
 
@@ -37,7 +36,8 @@ public class MulticastParams {
     private int minMsgSize = 0;
 
     private int timeLimit = 0;
-    private float rateLimit = 0;
+    private float producerRateLimit = 0;
+    private float consumerRateLimit = 0;
     private int producerMsgCount = 0;
     private int consumerMsgCount = 0;
 
@@ -45,6 +45,7 @@ public class MulticastParams {
     private String exchangeType = "direct";
     private String queueName = "";
     private String routingKey = null;
+    private boolean randomRoutingKey = false;
 
     private List<?> flags = new ArrayList<Object>();
 
@@ -70,12 +71,20 @@ public class MulticastParams {
         this.routingKey = routingKey;
     }
 
-    public void setRateLimit(float rateLimit) {
-        this.rateLimit = rateLimit;
+    public void setRandomRoutingKey(boolean randomRoutingKey) {
+        this.randomRoutingKey = randomRoutingKey;
+    }
+
+    public void setProducerRateLimit(float producerRateLimit) {
+        this.producerRateLimit = producerRateLimit;
     }
 
     public void setProducerCount(int producerCount) {
         this.producerCount = producerCount;
+    }
+
+    public void setConsumerRateLimit(float consumerRateLimit) {
+        this.consumerRateLimit = consumerRateLimit;
     }
 
     public void setConsumerCount(int consumerCount) {
@@ -159,6 +168,10 @@ public class MulticastParams {
         return routingKey;
     }
 
+    public boolean getRandomRoutingKey() {
+        return randomRoutingKey;
+    }
+
     public Producer createProducer(Connection connection, Stats stats, String id) throws IOException {
         Channel channel = connection.createChannel();
         if (producerTxSize > 0) channel.txSelect();
@@ -167,8 +180,8 @@ public class MulticastParams {
             channel.exchangeDeclare(exchangeName, exchangeType);
         }
         final Producer producer = new Producer(channel, exchangeName, id,
-                                               flags, producerTxSize,
-                                               rateLimit, producerMsgCount,
+                                               randomRoutingKey, flags, producerTxSize,
+                                               producerRateLimit, producerMsgCount,
                                                minMsgSize, timeLimit,
                                                confirm, stats);
         channel.addReturnListener(producer);
@@ -184,7 +197,7 @@ public class MulticastParams {
         if (channelPrefetch > 0) channel.basicQos(channelPrefetch, true);
         return new Consumer(channel, id, qName,
                                          consumerTxSize, autoAck, multiAckEvery,
-                                         stats, consumerMsgCount, timeLimit);
+                                         stats, consumerRateLimit, consumerMsgCount, timeLimit);
     }
 
     public boolean shouldConfigureQueue() {

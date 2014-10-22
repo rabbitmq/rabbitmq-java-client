@@ -29,19 +29,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.Semaphore;
 
-public class Producer implements Runnable, ReturnListener,
+public class Producer extends ProducerConsumerBase implements Runnable, ReturnListener,
         ConfirmListener
 {
     private Channel channel;
     private String  exchangeName;
     private String  id;
+    private boolean randomRoutingKey;
     private boolean mandatory;
     private boolean immediate;
     private boolean persistent;
     private int     txSize;
-    private float   rateLimit;
     private int     msgLimit;
     private long    timeLimit;
 
@@ -49,31 +50,28 @@ public class Producer implements Runnable, ReturnListener,
 
     private byte[]  message;
 
-    private long    startTime;
-    private long    lastStatsTime;
-    private int     msgCount;
-
     private Semaphore confirmPool;
     private volatile SortedSet<Long> unconfirmedSet =
         Collections.synchronizedSortedSet(new TreeSet<Long>());
 
-    public Producer(Channel channel, String exchangeName, String id,
+    public Producer(Channel channel, String exchangeName, String id, boolean randomRoutingKey,
                     List<?> flags, int txSize,
                     float rateLimit, int msgLimit, int minMsgSize, int timeLimit,
                     long confirm, Stats stats)
         throws IOException {
 
-        this.channel      = channel;
-        this.exchangeName = exchangeName;
-        this.id           = id;
-        this.mandatory    = flags.contains("mandatory");
-        this.immediate    = flags.contains("immediate");
-        this.persistent   = flags.contains("persistent");
-        this.txSize       = txSize;
-        this.rateLimit    = rateLimit;
-        this.msgLimit     = msgLimit;
-        this.timeLimit    = 1000L * timeLimit;
-        this.message      = new byte[minMsgSize];
+        this.channel          = channel;
+        this.exchangeName     = exchangeName;
+        this.id               = id;
+        this.randomRoutingKey = randomRoutingKey;
+        this.mandatory        = flags.contains("mandatory");
+        this.immediate        = flags.contains("immediate");
+        this.persistent       = flags.contains("persistent");
+        this.txSize           = txSize;
+        this.rateLimit        = rateLimit;
+        this.msgLimit         = msgLimit;
+        this.timeLimit        = 1000L * timeLimit;
+        this.message          = new byte[minMsgSize];
         if (confirm > 0) {
             this.confirmPool  = new Semaphore((int)confirm);
         }
@@ -124,7 +122,10 @@ public class Producer implements Runnable, ReturnListener,
     }
 
     public void run() {
-        long now = startTime = lastStatsTime = System.currentTimeMillis();
+        long now;
+        long startTime;
+        startTime = now = System.currentTimeMillis();
+        lastStatsTime = startTime;
         msgCount = 0;
         int totalMsgCount = 0;
 
@@ -158,25 +159,10 @@ public class Producer implements Runnable, ReturnListener,
         throws IOException {
 
         unconfirmedSet.add(channel.getNextPublishSeqNo());
-        channel.basicPublish(exchangeName, id,
+        channel.basicPublish(exchangeName, randomRoutingKey ? UUID.randomUUID().toString() : id,
                              mandatory, immediate,
                              persistent ? MessageProperties.MINIMAL_PERSISTENT_BASIC : MessageProperties.MINIMAL_BASIC,
                              msg);
-    }
-
-    private void delay(long now)
-        throws InterruptedException {
-
-        long elapsed = now - lastStatsTime;
-        //example: rateLimit is 5000 msg/s,
-        //10 ms have elapsed, we have sent 200 messages
-        //the 200 msgs we have actually sent should have taken us
-        //200 * 1000 / 5000 = 40 ms. So we pause for 40ms - 10ms
-        long pause = (long) (rateLimit == 0.0f ?
-            0.0f : (msgCount * 1000.0 / rateLimit - elapsed));
-        if (pause > 0) {
-            Thread.sleep(pause);
-        }
     }
 
     private byte[] createMessage(int sequenceNumber)

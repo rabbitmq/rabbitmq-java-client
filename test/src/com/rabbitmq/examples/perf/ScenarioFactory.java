@@ -7,10 +7,19 @@ import java.util.Map;
 
 public class ScenarioFactory {
     public static Scenario fromJSON(Map json, ConnectionFactory factory) {
+        String uri = "amqp://localhost";
         String type = read("type", json, String.class);
         String name = read("name", json, String.class);
         Integer interval = read("interval", json, Integer.class, 1000);
         List paramsJSON = read("params", json, List.class);
+
+        try {
+            uri = read("uri", json, String.class);
+            factory.setUri(uri);
+        } catch(Exception e) {
+            throw new RuntimeException("scenario: " + name + " with malformed uri: "
+                                       + uri + " - " + e.getMessage());
+        }
 
         MulticastParams[] params = new MulticastParams[paramsJSON.size()];
         for (int i = 0; i < paramsJSON.size(); i++) {
@@ -66,6 +75,7 @@ public class ScenarioFactory {
 
     private static MulticastParams paramsFromJSON(Map json) {
         MulticastParams params = new MulticastParams();
+        params.setAutoDelete(true);
         for (Object key : json.keySet()) {
             PerfUtil.setValue(params, hyphensToCamel((String)key), json.get(key));
         }

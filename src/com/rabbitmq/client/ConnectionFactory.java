@@ -75,9 +75,12 @@ public class ConnectionFactory implements Cloneable {
     /** The default connection timeout;
      *  zero means wait indefinitely */
     public static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
+    /** The default shutdown timeout;
+     *  zero means wait indefinitely */
+    public static final int    DEFAULT_SHUTDOWN_TIMEOUT = 10000;
 
     /** The default SSL protocol */
-    private static final String DEFAULT_SSL_PROTOCOL = "SSLv3";
+    private static final String DEFAULT_SSL_PROTOCOL = "TLSv1";
 
     private String username                       = DEFAULT_USER;
     private String password                       = DEFAULT_PASS;
@@ -88,6 +91,7 @@ public class ConnectionFactory implements Cloneable {
     private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
     private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
     private int connectionTimeout                 = DEFAULT_CONNECTION_TIMEOUT;
+    private int shutdownTimeout                   = DEFAULT_SHUTDOWN_TIMEOUT;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
@@ -99,7 +103,10 @@ public class ConnectionFactory implements Cloneable {
     private boolean automaticRecovery             = false;
     private boolean topologyRecovery              = true;
 
-    private int networkRecoveryInterval           = 5000;
+    // long is used to make sure the users can use both ints
+    // and longs safely. It is unlikely that anybody'd need
+    // to use recovery intervals > Integer.MAX_VALUE in practice.
+    private long networkRecoveryInterval          = 5000;
 
     /** @return number of consumer threads in default {@link ExecutorService} */
     @Deprecated
@@ -331,6 +338,26 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
+     * Set the shutdown timeout. This is the amount of time that Consumer implementations have to
+     * continue working through deliveries (and other Consumer callbacks) <b>after</b> the connection
+     * has closed but before the ConsumerWorkService is torn down. If consumers exceed this timeout
+     * then any remaining queued deliveries (and other Consumer callbacks, <b>including</b>
+     * the Consumer's handleShutdownSignal() invocation) will be lost.
+     * @param shutdownTimeout shutdown timeout in milliseconds; zero for infinite; default 10000
+     */
+    public void setShutdownTimeout(int shutdownTimeout) {
+        this.shutdownTimeout = shutdownTimeout;
+    }
+
+    /**
+     * Retrieve the shutdown timeout.
+     * @return the shutdown timeout, in milliseconds; zero for infinite
+     */
+    public int getShutdownTimeout() {
+        return shutdownTimeout;
+    }
+
+    /**
      * Set the requested heartbeat.
      * @param requestedHeartbeat the initially requested heartbeat interval, in seconds; zero for none
      */
@@ -493,7 +520,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Convenience method for setting up an SSL socket factory.
-     * Pass in the SSL protocol to use, e.g. "TLS" or "SSLv3".
+     * Pass in the SSL protocol to use, e.g. "TLSv1" or "TLSv1.2".
      *
      * @param protocol SSL protocol to use.
      */
@@ -599,7 +626,7 @@ public class ConnectionFactory implements Cloneable {
 
     public ConnectionParams params(ExecutorService executor) {
         return new ConnectionParams(username, password, executor, virtualHost, getClientProperties(),
-                                    requestedFrameMax, requestedChannelMax, requestedHeartbeat, saslConfig,
+                                    requestedFrameMax, requestedChannelMax, requestedHeartbeat, shutdownTimeout, saslConfig,
                                     networkRecoveryInterval, topologyRecovery, exceptionHandler, threadFactory);
     }
 
@@ -638,7 +665,7 @@ public class ConnectionFactory implements Cloneable {
      * Returns automatic connection recovery interval in milliseconds.
      * @return how long will automatic recovery wait before attempting to reconnect, in ms; default is 5000
      */
-    public int getNetworkRecoveryInterval() {
+    public long getNetworkRecoveryInterval() {
         return networkRecoveryInterval;
     }
 
@@ -647,6 +674,14 @@ public class ConnectionFactory implements Cloneable {
      * @param networkRecoveryInterval how long will automatic recovery wait before attempting to reconnect, in ms
      */
     public void setNetworkRecoveryInterval(int networkRecoveryInterval) {
+        this.networkRecoveryInterval = networkRecoveryInterval;
+    }
+
+    /**
+     * Sets connection recovery interval. Default is 5000.
+     * @param networkRecoveryInterval how long will automatic recovery wait before attempting to reconnect, in ms
+     */
+    public void setNetworkRecoveryInterval(long networkRecoveryInterval) {
         this.networkRecoveryInterval = networkRecoveryInterval;
     }
 }

@@ -139,6 +139,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final int requestedHeartbeat;
     private final int requestedChannelMax;
     private final int requestedFrameMax;
+    private final int shutdownTimeout;
     private final String username;
     private final String password;
     private final Collection<BlockedListener> blockedListeners = new CopyOnWriteArrayList<BlockedListener>();
@@ -217,6 +218,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.requestedFrameMax = params.getRequestedFrameMax();
         this.requestedChannelMax = params.getRequestedChannelMax();
         this.requestedHeartbeat = params.getRequestedHeartbeat();
+        this.shutdownTimeout = params.getShutdownTimeout();
         this.saslConfig = params.getSaslConfig();
         this.executor = params.getExecutor();
         this.threadFactory = params.getThreadFactory();
@@ -229,7 +231,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     private void initializeConsumerWorkService() {
-        this._workService  = new ConsumerWorkService(executor, threadFactory);
+        this._workService  = new ConsumerWorkService(executor, threadFactory, shutdownTimeout);
     }
 
     private void initializeHeartbeatSender() {

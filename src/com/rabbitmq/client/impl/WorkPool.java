@@ -5,8 +5,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This is a generic implementation of the <q>Channels</q> specification
@@ -67,15 +68,99 @@ import java.util.Set;
  * @param <W> Work -- type of work item
  */
 public class WorkPool<K, W> {
+    private static final int MAX_QUEUE_LENGTH = 1000;
 
-    /** protecting <code>ready</code>, <code>inProgress</code> and <code>pool</code> */
-    private final Object monitor = new Object();
-        /** An injective queue of <i>ready</i> clients. */
-        private final SetQueue<K> ready = new SetQueue<K>();
-        /** The set of clients which have work <i>in progress</i>. */
-        private final Set<K> inProgress = new HashSet<K>();
-        /** The pool of registered clients, with their work queues. */
-        private final Map<K, LinkedList<W>> pool = new HashMap<K, LinkedList<W>>();
+    // This is like a LinkedBlockingQueue of limited length except you can turn the limit
+    // on and off. And it only has the methods we need.
+    //
+    // This class is partly synchronised because:
+    //
+    // a) we cannot make put(T) synchronised as it may block indefinitely. Therefore we
+    //    only lock before modifying the list.
+    // b) we don't want to make setUnlimited() synchronised as it is called frequently by
+    //    the channel.
+    // c) anyway the issue with setUnlimited() is not that it be synchronised itself but
+    //    that calls to it should alternate between false and true. We assert this, but
+    //    it should not be able to go wrong because the RPC calls in AMQChannel and
+    //    ChannelN are all protected by the _channelMutex; we can't have more than one
+    //    outstanding RPC or finish the same RPC twice.
+
+    private class WorkQueue {
+        private LinkedList<W> list;
+        private boolean unlimited;
+        private int maxLengthWhenLimited;
+
+        private WorkQueue(int maxLengthWhenLimited) {
+            this.list = new LinkedList<W>();
+            this.unlimited = false; // Just for assertions
+            this.maxLengthWhenLimited = maxLengthWhenLimited;
+        }
+
+        public void put(W w) throws InterruptedException {
+            if (list.size() > maxLengthWhenLimited) {
+                acquireSemaphore();
+            }
+            synchronized (this) {
+                list.add(w);
+            }
+        }
+
+        public synchronized W poll() {
+            W res = list.poll();
+
+            if (list.size() <= maxLengthWhenLimited) {
+                releaseSemaphore();
+            }
+
+            return res;
+        }
+
+        public void setUnlimited(boolean unlimited) {
+            assert this.unlimited != unlimited;
+            this.unlimited = unlimited;
+            if (unlimited) {
+                increaseUnlimited();
+            }
+            else {
+                decreaseUnlimited();
+            }
+        }
+
+        public boolean isEmpty() {
+            return list.isEmpty();
+        }
+    }
+
+    /** An injective queue of <i>ready</i> clients. */
+    private final SetQueue<K> ready = new SetQueue<K>();
+    /** The set of clients which have work <i>in progress</i>. */
+    private final Set<K> inProgress = new HashSet<K>();
+    /** The pool of registered clients, with their work queues. */
+    private final Map<K, WorkQueue> pool = new HashMap<K, WorkQueue>();
+
+    // The semaphore should only be used when unlimitedQueues == 0, otherwise we ignore it and
+    // thus don't block the connection.
+    private Semaphore semaphore = new Semaphore(1);
+    private AtomicInteger unlimitedQueues = new AtomicInteger(0);
+
+    private void acquireSemaphore() throws InterruptedException {
+        if (unlimitedQueues.get() == 0) {
+            semaphore.acquire();
+        }
+    }
+
+    private void releaseSemaphore() {
+        semaphore.release();
+    }
+
+    private void increaseUnlimited() {
+        unlimitedQueues.getAndIncrement();
+        semaphore.release();
+    }
+
+    private void decreaseUnlimited() {
+        unlimitedQueues.getAndDecrement();
+    }
 
     /**
      * Add client <code><b>key</b></code> to pool of item queues, with an empty queue.
@@ -85,9 +170,18 @@ public class WorkPool<K, W> {
      * @param key client to add to pool
      */
     public void registerKey(K key) {
-        synchronized (this.monitor) {
+        synchronized (this) {
             if (!this.pool.containsKey(key)) {
-                this.pool.put(key, new LinkedList<W>());
+                this.pool.put(key, new WorkQueue(MAX_QUEUE_LENGTH));
+            }
+        }
+    }
+
+    public void unlimit(K key, boolean unlimited) {
+        synchronized (this) {
+            WorkQueue queue = this.pool.get(key);
+            if (queue != null) {
+                queue.setUnlimited(unlimited);
             }
         }
     }
@@ -97,7 +191,7 @@ public class WorkPool<K, W> {
      * @param key of client to unregister
      */
     public void unregisterKey(K key) {
-        synchronized (this.monitor) {
+        synchronized (this) {
             this.pool.remove(key);
             this.ready.remove(key);
             this.inProgress.remove(key);
@@ -108,7 +202,7 @@ public class WorkPool<K, W> {
      * Remove all clients from pool and from any other state.
      */
     public void unregisterAllKeys() {
-        synchronized (this.monitor) {
+        synchronized (this) {
             this.pool.clear();
             this.ready.clear();
             this.inProgress.clear();
@@ -126,10 +220,10 @@ public class WorkPool<K, W> {
      * @return key of client to whom items belong, or <code><b>null</b></code> if there is none.
      */
     public K nextWorkBlock(Collection<W> to, int size) {
-        synchronized (this.monitor) {
+        synchronized (this) {
             K nextKey = readyToInProgress();
             if (nextKey != null) {
-                LinkedList<W> queue = this.pool.get(nextKey);
+                WorkQueue queue = this.pool.get(nextKey);
                 drainTo(queue, to, size);
             }
             return nextKey;
@@ -138,13 +232,12 @@ public class WorkPool<K, W> {
 
     /**
      * Private implementation of <code><b>drainTo</b></code> (not implemented for <code><b>LinkedList&lt;W&gt;</b></code>s).
-     * @param <W> element type
      * @param deList to take (poll) elements from
      * @param c to add elements to
      * @param maxElements to take from deList
      * @return number of elements actually taken
      */
-    private static <W> int drainTo(LinkedList<W> deList, Collection<W> c, int maxElements) {
+    private int drainTo(WorkQueue deList, Collection<W> c, int maxElements) {
         int n = 0;
         while (n < maxElements) {
             W first = deList.poll();
@@ -166,17 +259,26 @@ public class WorkPool<K, W> {
      * &mdash; <i>as a result of this work item</i>
      */
     public boolean addWorkItem(K key, W item) {
-        synchronized (this.monitor) {
-            Queue<W> queue = this.pool.get(key);
-            if (queue != null) {
-                queue.offer(item);
+        WorkQueue queue;
+        synchronized (this) {
+            queue = this.pool.get(key);
+        }
+        // The put operation may block. We need to make sure we are not holding the lock while that happens.
+        if (queue != null) {
+            try {
+                queue.put(item);
+            } catch (InterruptedException e) {
+                // ok
+            }
+
+            synchronized (this) {
                 if (isDormant(key)) {
                     dormantToReady(key);
                     return true;
                 }
             }
-            return false;
         }
+        return false;
     }
 
     /**
@@ -187,7 +289,7 @@ public class WorkPool<K, W> {
      * @throws IllegalStateException if registered client not <i>in progress</i>
      */
     public boolean finishWorkBlock(K key) {
-        synchronized (this.monitor) {
+        synchronized (this) {
             if (!this.isRegistered(key))
                 return false;
             if (!this.inProgress.contains(key)) {
@@ -205,8 +307,8 @@ public class WorkPool<K, W> {
     }
 
     private boolean moreWorkItems(K key) {
-        LinkedList<W> leList = this.pool.get(key);
-        return (leList==null ? false : !leList.isEmpty());
+        WorkQueue leList = this.pool.get(key);
+        return leList != null && !leList.isEmpty();
     }
 
     /* State identification functions */
@@ -216,9 +318,9 @@ public class WorkPool<K, W> {
     private boolean isDormant(K key){ return !isInProgress(key) && !isReady(key) && isRegistered(key); }
 
     /* State transition methods - all assume key registered */
-    private void inProgressToReady(K key){ this.inProgress.remove(key); this.ready.addIfNotPresent(key); };
-    private void inProgressToDormant(K key){ this.inProgress.remove(key); };
-    private void dormantToReady(K key){ this.ready.addIfNotPresent(key); };
+    private void inProgressToReady(K key){ this.inProgress.remove(key); this.ready.addIfNotPresent(key); }
+    private void inProgressToDormant(K key){ this.inProgress.remove(key); }
+    private void dormantToReady(K key){ this.ready.addIfNotPresent(key); }
 
     /* Basic work selector and state transition step */
     private K readyToInProgress() {
@@ -227,5 +329,5 @@ public class WorkPool<K, W> {
             this.inProgress.add(key);
         }
         return key;
-    };
+    }
 }

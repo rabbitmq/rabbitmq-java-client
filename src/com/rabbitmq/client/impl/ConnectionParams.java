@@ -16,8 +16,9 @@ public class ConnectionParams {
     private final int requestedFrameMax;
     private final int requestedChannelMax;
     private final int requestedHeartbeat;
+    private final int shutdownTimeout;
     private final SaslConfig saslConfig;
-    private final int networkRecoveryInterval;
+    private final long networkRecoveryInterval;
     private final boolean topologyRecovery;
 
     private ExceptionHandler exceptionHandler;
@@ -41,7 +42,7 @@ public class ConnectionParams {
     public ConnectionParams(String username, String password, ExecutorService executor,
                             String virtualHost, Map<String, Object> clientProperties,
                             int requestedFrameMax, int requestedChannelMax, int requestedHeartbeat,
-                            SaslConfig saslConfig, int networkRecoveryInterval,
+                            int shutdownTimeout, SaslConfig saslConfig, long networkRecoveryInterval,
                             boolean topologyRecovery, ExceptionHandler exceptionHandler, ThreadFactory threadFactory) {
         this.username = username;
         this.password = password;
@@ -51,6 +52,7 @@ public class ConnectionParams {
         this.requestedFrameMax = requestedFrameMax;
         this.requestedChannelMax = requestedChannelMax;
         this.requestedHeartbeat = requestedHeartbeat;
+        this.shutdownTimeout = shutdownTimeout;
         this.saslConfig = saslConfig;
         this.networkRecoveryInterval = networkRecoveryInterval;
         this.topologyRecovery = topologyRecovery;
@@ -90,6 +92,10 @@ public class ConnectionParams {
         return requestedHeartbeat;
     }
 
+    public int getShutdownTimeout() {
+        return shutdownTimeout;
+    }
+
     public SaslConfig getSaslConfig() {
         return saslConfig;
     }
@@ -98,7 +104,7 @@ public class ConnectionParams {
         return exceptionHandler;
     }
 
-    public int getNetworkRecoveryInterval() {
+    public long getNetworkRecoveryInterval() {
         return networkRecoveryInterval;
     }
 

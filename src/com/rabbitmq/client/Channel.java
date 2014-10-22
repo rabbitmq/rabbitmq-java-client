@@ -344,6 +344,28 @@ public interface Channel extends ShutdownNotifier {
                                               Map<String, Object> arguments) throws IOException;
 
     /**
+     * Like {@link Channel#exchangeDeclare(String, String, boolean, boolean, java.util.Map)} but
+     * sets nowait parameter to true and returns nothing (as there will be no response from
+     * the server).
+     *
+     * @param exchange the name of the exchange
+     * @param type the exchange type
+     * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
+     * @param autoDelete true if the server should delete the exchange when it is no longer in use
+     * @param internal true if the exchange is internal, i.e. can't be directly
+     * published to by a client.
+     * @param arguments other properties (construction arguments) for the exchange
+     * @return a declaration-confirm method to indicate the exchange was successfully declared
+     * @throws java.io.IOException if an error is encountered
+     */
+    void exchangeDeclareNoWait(String exchange,
+                               String type,
+                               boolean durable,
+                               boolean autoDelete,
+                               boolean internal,
+                               Map<String, Object> arguments) throws IOException;
+
+    /**
      * Declare an exchange passively; that is, check if the named exchange exists.
      * @param name check the existence of an exchange named this
      * @throws IOException the server will raise a 404 channel exception if the named exchange does not exist.
@@ -360,6 +382,18 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      */
     Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException;
+
+    /**
+     * Like {@link Channel#exchangeDelete(String, boolean)} but sets nowait parameter to true
+     * and returns void (as there will be no response from the server).
+     * @see com.rabbitmq.client.AMQP.Exchange.Delete
+     * @see com.rabbitmq.client.AMQP.Exchange.DeleteOk
+     * @param exchange the name of the exchange
+     * @param ifUnused true to indicate that the exchange is only to be deleted if it is unused
+     * @throws java.io.IOException if an error is encountered
+     */
+    void exchangeDeleteNoWait(String exchange, boolean ifUnused) throws IOException;
+
 
     /**
      * Delete an exchange, without regard for whether it is in use or not
@@ -397,6 +431,17 @@ public interface Channel extends ShutdownNotifier {
     Exchange.BindOk exchangeBind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
 
     /**
+     * Like {@link Channel#exchangeBind(String, String, String, java.util.Map)} but sets nowait parameter
+     * to true and returns void (as there will be no response from the server).
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
+     * @throws java.io.IOException if an error is encountered
+     */
+    void exchangeBindNoWait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
+
+    /**
      * Unbind an exchange from an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Exchange.Bind
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
@@ -422,6 +467,17 @@ public interface Channel extends ShutdownNotifier {
     Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
 
     /**
+     * Same as {@link Channel#exchangeUnbind(String, String, String, java.util.Map)} but sets no-wait parameter to true
+     * and returns nothing (as there will be no response from the server).
+     * @param destination the name of the exchange to which messages flow across the binding
+     * @param source the name of the exchange from which messages flow across the binding
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
+     * @throws java.io.IOException if an error is encountered
+     */
+    void exchangeUnbindNoWait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException;
+
+    /**
      * Actively declare a server-named exclusive, autodelete, non-durable queue.
      * The name of the new queue is held in the "queue" field of the {@link com.rabbitmq.client.AMQP.Queue.DeclareOk} result.
      * @see com.rabbitmq.client.AMQP.Queue.Declare
@@ -445,6 +501,19 @@ public interface Channel extends ShutdownNotifier {
      */
     Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive, boolean autoDelete,
                                  Map<String, Object> arguments) throws IOException;
+
+    /**
+     * Like {@link Channel#queueDeclare(String, boolean, boolean, boolean, java.util.Map)} but sets nowait
+     * flag to true and returns no result (as there will be no response from the server).
+     * @param queue the name of the queue
+     * @param durable true if we are declaring a durable queue (the queue will survive a server restart)
+     * @param exclusive true if we are declaring an exclusive queue (restricted to this connection)
+     * @param autoDelete true if we are declaring an autodelete queue (server will delete it when no longer in use)
+     * @param arguments other properties (construction arguments) for the queue
+     * @throws java.io.IOException if an error is encountered
+     */
+    void queueDeclareNoWait(String queue, boolean durable, boolean exclusive, boolean autoDelete,
+                            Map<String, Object> arguments) throws IOException;
 
     /**
      * Declare a queue passively; i.e., check if it exists.  In AMQP
@@ -483,6 +552,18 @@ public interface Channel extends ShutdownNotifier {
     Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty) throws IOException;
 
     /**
+     * Like {@link Channel#queueDelete(String, boolean, boolean)} but sets nowait parameter
+     * to true and returns nothing (as there will be no response from the server).
+     * @see com.rabbitmq.client.AMQP.Queue.Delete
+     * @see com.rabbitmq.client.AMQP.Queue.DeleteOk
+     * @param queue the name of the queue
+     * @param ifUnused true if the queue should be deleted only if not in use
+     * @param ifEmpty true if the queue should be deleted only if empty
+     * @throws java.io.IOException if an error is encountered
+     */
+    void queueDeleteNoWait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException;
+
+    /**
      * Bind a queue to an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Queue.Bind
      * @see com.rabbitmq.client.AMQP.Queue.BindOk
@@ -506,6 +587,18 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      */
     Queue.BindOk queueBind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
+
+    /**
+     * Same as {@link Channel#queueDeclare(String, boolean, boolean, boolean, java.util.Map)} but sets nowait
+     * parameter to true and returns void (as there will be no response
+     * from the server).
+     * @param queue the name of the queue
+     * @param exchange the name of the exchange
+     * @param routingKey the routine key to use for the binding
+     * @param arguments other properties (binding parameters)
+     * @throws java.io.IOException if an error is encountered
+     */
+    void queueBindNoWait(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
 
     /**
      * Unbinds a queue from an exchange, with no extra arguments.
