@@ -11,6 +11,6 @@ public class RecordedExchangeBinding extends RecordedBinding {
     }
 
     public void recover() throws IOException {
-        this.channel.getDelegate().exchangeBind(this.source, this.destination, this.routingKey, this.arguments);
+        this.channel.getDelegate().exchangeBind(this.destination, this.source, this.routingKey, this.arguments);
     }
 }
