@@ -724,4 +724,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     public Map<String, RecordedExchange> getRecordedExchanges() {
         return recordedExchanges;
     }
+
+    @Override
+    public String toString() {
+        return this.delegate.toString();
+    }
 }
