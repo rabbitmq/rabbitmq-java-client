@@ -40,7 +40,7 @@ public class HATests extends TestSuite {
     public static class SetUp extends TestCase {
         @Override
         protected void setUp() throws Exception {
-            Host.executeCommand("cd ../rabbitmq-test; make enable-ha");
+            Host.invokeMakeTarget("enable-ha");
             HA_TESTS_RUNNING = true;
         }
 
@@ -50,7 +50,7 @@ public class HATests extends TestSuite {
     public static class TearDown extends TestCase {
         @Override
         protected void tearDown() throws Exception {
-            Host.executeCommand("cd ../rabbitmq-test; make disable-ha");
+            Host.invokeMakeTarget("disable-ha");
             HA_TESTS_RUNNING = false;
         }
 

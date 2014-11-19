@@ -94,7 +94,7 @@ public class BrokerTestCase extends TestCase {
 
     protected void bareRestart()
             throws IOException {
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
+        Host.invokeMakeTarget("restart-app");
     }
 
     public void openConnection()
@@ -248,11 +248,11 @@ public class BrokerTestCase extends TestCase {
     }
 
     protected void setResourceAlarm(String source) throws IOException, InterruptedException {
-        Host.executeCommand("cd ../rabbitmq-test; make set-resource-alarm SOURCE=" + source);
+        Host.invokeMakeTarget("set-resource-alarm SOURCE=" + source);
     }
 
     protected void clearResourceAlarm(String source) throws IOException, InterruptedException {
-        Host.executeCommand("cd ../rabbitmq-test; make clear-resource-alarm SOURCE=" + source);
+        Host.invokeMakeTarget("clear-resource-alarm SOURCE=" + source);
     }
 
     protected void block() throws IOException, InterruptedException {

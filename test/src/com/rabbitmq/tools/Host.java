@@ -100,6 +100,24 @@ public class Host {
         return executeCommandIgnoringErrors("../rabbitmq-server/scripts/rabbitmqctl " + command);
     }
 
+    public static Process invokeMakeTarget(String command) throws IOException {
+        return executeCommand("cd ../rabbitmq-test; " + makeCommand() + " " + command);
+    }
+
+    private static String makeCommand()
+    {
+        // Get the make(1) executable to use from the environment:
+        // make(1) provides the path to itself in $MAKE.
+        String makecmd = System.getenv("MAKE");
+
+        // Default to "make" if the environment variable is unset.
+        if (makecmd == null) {
+            makecmd = "make";
+        }
+
+        return makecmd;
+    }
+
     public static void closeConnection(String pid) throws IOException {
         rabbitmqctl("close_connection '" + pid + "' 'Closed via rabbitmqctl'");
     }
