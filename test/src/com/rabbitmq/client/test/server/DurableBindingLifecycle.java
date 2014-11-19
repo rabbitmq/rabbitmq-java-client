@@ -44,14 +44,14 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
             alternateConnection = null;
             alternateChannel = null;
 
-            Host.executeCommand("cd ../rabbitmq-test; make restart-secondary-node");
+            Host.invokeMakeTarget("restart-secondary-node");
         }
         restartPrimary();
     }
 
     private void restartPrimary() throws IOException {
         tearDown();
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
+        bareRestart();
         setUp();
     }
 
