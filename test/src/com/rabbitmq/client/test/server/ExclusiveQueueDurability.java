@@ -51,7 +51,7 @@ public class ExclusiveQueueDurability extends BrokerTestCase {
     private void restartPrimaryAbruptly() throws IOException {
         connection = null;
         channel = null;
-        Host.executeCommand("cd ../rabbitmq-test; make restart-app");
+        bareRestart();
         setUp();
     }
 

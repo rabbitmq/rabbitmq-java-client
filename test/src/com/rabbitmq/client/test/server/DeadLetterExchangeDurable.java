@@ -39,9 +39,9 @@ public class DeadLetterExchangeDurable extends BrokerTestCase {
         }
 
         closeConnection();
-        Host.executeCommand("cd ../rabbitmq-test; make stop-app");
+        Host.invokeMakeTarget("stop-app");
         Thread.sleep(5000);
-        Host.executeCommand("cd ../rabbitmq-test; make start-app");
+        Host.invokeMakeTarget("start-app");
         openConnection();
         openChannel();
 

@@ -93,12 +93,8 @@ public class FrameMax extends BrokerTestCase {
         ConnectionFactory cf = new GenerousConnectionFactory();
         connection = cf.newConnection();
         openChannel();
-        try {
-            basicPublishVolatile(new byte[connection.getFrameMax()], "void");
-            channel.basicQos(0);
-            fail("Expected exception when publishing");
-        } catch (IOException e) {
-        }
+        basicPublishVolatile(new byte[connection.getFrameMax()], "void");
+        expectError(AMQP.FRAME_ERROR);
     }
 
     /* ConnectionFactory that uses MyFrameHandler rather than
