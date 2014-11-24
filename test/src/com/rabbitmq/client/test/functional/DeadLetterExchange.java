@@ -56,6 +56,20 @@ public class DeadLetterExchange extends BrokerTestCase {
         declareQueue("some.random.exchange.name");
     }
 
+    public void testDeclareQueueWithEquivalentDeadLetterExchange()
+        throws IOException
+    {
+        declareQueue(DLX);
+        declareQueue(DLX);
+    }
+
+    public void testDeclareQueueWithEquivalentDeadLetterRoutingKey()
+        throws IOException
+    {
+        declareQueue(TEST_QUEUE_NAME, DLX, "routing_key", null);
+        declareQueue(TEST_QUEUE_NAME, DLX, "routing_key", null);
+    }
+
     public void testDeclareQueueWithInvalidDeadLetterExchangeArg()
         throws IOException
     {
@@ -67,12 +81,38 @@ public class DeadLetterExchange extends BrokerTestCase {
         }
     }
 
+    public void testRedeclareQueueWithInvalidDeadLetterExchangeArg()
+        throws IOException
+    {
+        declareQueue("inequivalent_dlx_name", "dlx_foo", null, null);
+        try {
+            declareQueue("inequivalent_dlx_name", 133, null, null);
+            fail("x-dead-letter-exchange must be a valid exchange name " +
+                    "and must not change in subsequent declarations");
+        } catch (IOException ex) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
+        }
+    }
+
     public void testDeclareQueueWithInvalidDeadLetterRoutingKeyArg()
         throws IOException
     {
         try {
             declareQueue("foo", "amq.direct", 144, null);
             fail("x-dead-letter-routing-key must be a string");
+        } catch (IOException ex) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
+        }
+    }
+
+    public void testRedeclareQueueWithInvalidDeadLetterRoutingKeyArg()
+        throws IOException
+    {
+        declareQueue("inequivalent_dlx_rk", "amq.direct", "dlx_rk", null);
+        try {
+            declareQueue("inequivalent_dlx_rk", "amq.direct", 144, null);
+            fail("x-dead-letter-routing-key must be a string and must not " +
+                    "change in subsequent declarations");
         } catch (IOException ex) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
         }
@@ -90,7 +130,23 @@ public class DeadLetterExchange extends BrokerTestCase {
         } catch (IOException ex) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
         }
+    }
 
+    public void testRedeclareQueueWithRoutingKeyButNoDeadLetterExchange()
+        throws IOException
+    {
+        try {
+            Map<String, Object> args = new HashMap<String, Object>();
+            channel.queueDeclare("bar", false, true, false, args);
+
+            args.put(DLX_RK_ARG, "foo");
+
+            channel.queueDeclare("bar", false, true, false, args);
+            fail("x-dead-letter-exchange must be specified if " +
+                    "x-dead-letter-routing-key is set");
+        } catch (IOException ex) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
+        }
     }
 
     public void testDeadLetterQueueTTLExpiredMessages() throws Exception {
