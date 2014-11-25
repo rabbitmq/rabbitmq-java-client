@@ -86,7 +86,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     {
         declareQueue("inequivalent_dlx_name", "dlx_foo", null, null);
         try {
-            declareQueue("inequivalent_dlx_name", 133, null, null);
+            declareQueue("inequivalent_dlx_name", "dlx_bar", null, null);
             fail("x-dead-letter-exchange must be a valid exchange name " +
                     "and must not change in subsequent declarations");
         } catch (IOException ex) {
@@ -110,7 +110,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     {
         declareQueue("inequivalent_dlx_rk", "amq.direct", "dlx_rk", null);
         try {
-            declareQueue("inequivalent_dlx_rk", "amq.direct", 144, null);
+            declareQueue("inequivalent_dlx_rk", "amq.direct", "dlx_rk2", null);
             fail("x-dead-letter-routing-key must be a string and must not " +
                     "change in subsequent declarations");
         } catch (IOException ex) {
