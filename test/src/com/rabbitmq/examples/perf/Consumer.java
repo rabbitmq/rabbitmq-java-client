@@ -90,10 +90,10 @@ public class Consumer extends ProducerConsumerBase implements Runnable {
 
         @Override
         public void handleDelivery(String consumerTag, Envelope envelope, BasicProperties properties, byte[] body) throws IOException {
-            if (msgLimit == 0 || msgCount < msgLimit) {
-                totalMsgCount++;
-                msgCount++;
+            totalMsgCount++;
+            msgCount++;
 
+            if (msgLimit == 0 || msgCount < msgLimit) {
                 DataInputStream d = new DataInputStream(new ByteArrayInputStream(body));
                 d.readInt();
                 long msgNano = d.readLong();
