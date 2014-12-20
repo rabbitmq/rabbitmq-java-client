@@ -206,6 +206,22 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.queueDelete(q);
     }
 
+    public void testClientNamedQueueBindingRecovery() throws IOException, InterruptedException, TimeoutException {
+        String q   = "java-client.test.recovery.q2";
+        String x   = "tmp-fanout";
+        Channel ch = connection.createChannel();
+        ch.queueDelete(q);
+        ch.exchangeDelete(x);
+        ch.exchangeDeclare(x, "fanout");
+        declareClientNamedAutoDeleteQueue(ch, q);
+        ch.queueBind(q, x, "");
+        closeAndWaitForRecovery();
+        expectChannelRecovery(ch);
+        expectAutoDeleteQueueAndBindingRecovery(ch, x, q);
+        ch.queueDelete(q);
+        ch.exchangeDelete(x);
+    }
+
     public void testDeclarationOfManyAutoDeleteQueuesWithTransientConsumer() throws IOException {
         Channel ch = connection.createChannel();
         assertRecordedQueues(connection, 0);
@@ -525,6 +541,11 @@ public class ConnectionRecovery extends BrokerTestCase {
         return ch.queueDeclare(q, true, false, false, null);
     }
 
+    private AMQP.Queue.DeclareOk declareClientNamedAutoDeleteQueue(Channel ch, String q) throws IOException {
+        return ch.queueDeclare(q, true, false, true, null);
+    }
+
+
     private void declareClientNamedQueueNoWait(Channel ch, String q) throws IOException {
         ch.queueDeclareNoWait(q, true, false, false, null);
     }
@@ -545,6 +566,19 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.basicPublish("", q, null, "msg".getBytes());
         waitForConfirms(ch);
         AMQP.Queue.DeclareOk ok2 = declareClientNamedQueue(ch, q);
+        assertEquals(1, ok2.getMessageCount());
+    }
+
+    private void expectAutoDeleteQueueAndBindingRecovery(Channel ch, String x, String q) throws IOException, InterruptedException,
+                                                                                    TimeoutException {
+        ch.confirmSelect();
+        ch.queuePurge(q);
+        AMQP.Queue.DeclareOk ok1 = declareClientNamedAutoDeleteQueue(ch, q);
+        assertEquals(0, ok1.getMessageCount());
+        ch.exchangeDeclare(x, "fanout");
+        ch.basicPublish(x, "", null, "msg".getBytes());
+        waitForConfirms(ch);
+        AMQP.Queue.DeclareOk ok2 = declareClientNamedAutoDeleteQueue(ch, q);
         assertEquals(1, ok2.getMessageCount());
     }
 
