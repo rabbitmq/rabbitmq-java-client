@@ -58,7 +58,7 @@ import com.rabbitmq.client.AMQP.Confirm;
  *
  */
 
-public interface Channel extends ShutdownNotifier {
+public interface Channel extends ShutdownNotifier, AutoCloseable {
     /**
      * Retrieve this channel's channel number.
      * @return the channel number
