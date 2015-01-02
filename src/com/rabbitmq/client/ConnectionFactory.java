@@ -21,10 +21,11 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
@@ -636,21 +637,32 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection() throws IOException {
-        return newConnection(this.sharedExecutor,
-                             new Address[] {new Address(getHost(), getPort())}
-                            );
+    	Address[] addresses = getAllAddresses(getHost());
+        return newConnection(this.sharedExecutor,addresses);
     }
 
-    /**
+    private Address[] getAllAddresses(String hostname) throws UnknownHostException {
+    	
+    	InetAddress[] allByName = InetAddress.getAllByName(hostname);
+
+		Address addrs[] = new Address[allByName.length];
+		for(int i=0; i < addrs.length;i++) {
+			addrs[i]= new Address(allByName[i].getHostAddress(),getPort()); 
+		}
+
+		return addrs;
+	}
+
+	/**
      * Create a new broker connection
      * @param executor thread execution service for consumers on the connection
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection(ExecutorService executor) throws IOException {
-        return newConnection(executor,
-                             new Address[] {new Address(getHost(), getPort())}
-                            );
+    	Address[] addresses = getAllAddresses(getHost());
+    	
+        return newConnection(executor,addresses);
     }
 
     @Override public ConnectionFactory clone(){
