@@ -93,7 +93,7 @@ public class Consumer extends ProducerConsumerBase implements Runnable {
             totalMsgCount++;
             msgCount++;
 
-            if (msgLimit == 0 || msgCount < msgLimit) {
+            if (msgLimit == 0 || msgCount <= msgLimit) {
                 DataInputStream d = new DataInputStream(new ByteArrayInputStream(body));
                 d.readInt();
                 long msgNano = d.readLong();
@@ -116,7 +116,7 @@ public class Consumer extends ProducerConsumerBase implements Runnable {
                 stats.handleRecv(id.equals(envelope.getRoutingKey()) ? (nano - msgNano) : 0L);
                 delay(now);
             }
-            else {
+            if (msgLimit != 0 && msgCount >= msgLimit) { // NB: not quite the inverse of above
                 latch.countDown();
             }
         }
