@@ -63,6 +63,7 @@ public class ScenarioFactory {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> T read0(String key, Map map, Class<T> clazz) {
         Object o = map.get(key);
         if (clazz.isAssignableFrom(o.getClass())) {

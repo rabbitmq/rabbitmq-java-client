@@ -255,63 +255,63 @@ public class Permissions extends BrokerTestCase
         Thread.sleep(2000);
 
         assertAccessRefused(new WithName() {
-            public void with(String _) throws IOException {
+            public void with(String _e) throws IOException {
                 channel.queueDeclare();
             }
         }
         );
 
         assertAccessRefused(new WithName() {
-            public void with(String _) throws IOException {
+            public void with(String _e) throws IOException {
                 channel.queueDeclare("justaqueue", false, false, true, null);
             }
         }
         );
         assertAccessRefused(new WithName() {
-            public void with(String _) throws IOException {
+            public void with(String _e) throws IOException {
                 channel.queueDelete("configure");
             }
         }
         );
         assertAccessRefused(new WithName() {
-            public void with(String _) throws IOException {
+            public void with(String _e) throws IOException {
                 channel.queueBind("write", "write", "write");
             }
         }
         );
         assertAccessRefused(new WithName() {
-            public void with(String _) throws IOException {
+            public void with(String _e) throws IOException {
                 channel.queuePurge("read");
             }
         }
         );
         assertAccessRefused(new WithName() {
-            public void with(String _) throws IOException {
+            public void with(String _e) throws IOException {
                 channel.exchangeDeclare("justanexchange", "direct");
             }
         }
         );
         assertAccessRefused(new WithName() {
-            public void with(String _) throws IOException {
+            public void with(String _e) throws IOException {
                 channel.exchangeDeclare("configure", "direct");
             }
         }
         );
         assertAccessRefused(new WithName() {
-            public void with(String _) throws IOException {
+            public void with(String _e) throws IOException {
                 channel.basicPublish("write", "", null, "foo".getBytes());
                 channel.basicQos(0);
             }
         }
         );
         assertAccessRefused(new WithName() {
-            public void with(String _) throws IOException {
+            public void with(String _e) throws IOException {
                 channel.basicGet("read", false);
             }
         }
         );
         assertAccessRefused(new WithName() {
-            public void with(String _) throws IOException {
+            public void with(String _e) throws IOException {
                 channel.basicConsume("read", null);
             }
         }

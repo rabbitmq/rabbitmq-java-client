@@ -34,6 +34,7 @@ public class VaryingScenarioStats implements ScenarioStats {
         return stats;
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> results() {
         Map<String, Object> map = new HashMap<String, Object>();
 

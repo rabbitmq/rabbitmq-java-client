@@ -38,6 +38,7 @@ public class PerfTestMulti {
 
     private static Map<String, Object> results = new HashMap<String, Object>();
 
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {
             System.out.println("Usage: PerfTestMulti input-json-file output-json-file");

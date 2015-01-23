@@ -101,7 +101,7 @@ public class QueueSizeLimit extends BrokerTestCase {
         publish("msg" + (maxLen + 1));
         try {
             Thread.sleep(100);
-        } catch (InterruptedException _) { }
+        } catch (InterruptedException _e) { }
     }
 
     private void setupRequeueTest(int maxLen) throws IOException, InterruptedException {

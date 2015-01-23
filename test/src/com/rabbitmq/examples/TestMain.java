@@ -215,7 +215,7 @@ public class TestMain {
     public static void sleep(int ms) {
         try {
             Thread.sleep(ms);
-        } catch (InterruptedException _) { } // ignore
+        } catch (InterruptedException _e) { } // ignore
     }
 
     private Connection _connection;
