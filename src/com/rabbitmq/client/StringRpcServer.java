@@ -36,18 +36,19 @@ public class StringRpcServer extends RpcServer {
      * handleStringCall. If UTF-8 is not understood by this JVM, falls
      * back to the platform default.
      */
+    @SuppressWarnings("unused")
     public byte[] handleCall(byte[] requestBody, AMQP.BasicProperties replyProperties)
     {
         String request;
         try {
             request = new String(requestBody, STRING_ENCODING);
-        } catch (IOException _) {
+        } catch (IOException _e) {
             request = new String(requestBody);
         }
         String reply = handleStringCall(request, replyProperties);
         try {
             return reply.getBytes(STRING_ENCODING);
-        } catch (IOException _) {
+        } catch (IOException _e) {
             return reply.getBytes();
         }
     }
@@ -77,7 +78,7 @@ public class StringRpcServer extends RpcServer {
     {
         try {
             handleStringCast(new String(requestBody, STRING_ENCODING));
-        } catch (IOException _) {
+        } catch (IOException _e) {
             handleStringCast(new String(requestBody));
         }
     }

@@ -603,6 +603,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Handles incoming control commands on channel zero.
      * @see ChannelN#processAsync
      */
+    @SuppressWarnings("unused")
     public boolean processControlCommand(Command c) throws IOException
     {
         // Similar trick to ChannelN.processAsync used here, except
@@ -643,7 +644,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 // Already shutting down, so just send back a CloseOk.
                 try {
                     _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
-                } catch (IOException _) { } // ignore
+                } catch (IOException _e) { } // ignore
                 return true;
             } else if (method instanceof AMQP.Connection.CloseOk) {
                 // It's our final "RPC". Time to shut down.
@@ -658,11 +659,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
+    @SuppressWarnings("unused")
     public void handleConnectionClose(Command closeCommand) {
         ShutdownSignalException sse = shutdown(closeCommand.getMethod(), false, null, _inConnectionNegotiation);
         try {
             _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
-        } catch (IOException _) { } // ignore
+        } catch (IOException _e) { } // ignore
         _brokerInitiatedShutdown = true;
         SocketCloseWait scw = new SocketCloseWait(sse);
         final String name = "AMQP Connection Closing Monitor " +
@@ -782,11 +784,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** Public API - {@inheritDoc} */
+    @SuppressWarnings("unused")
     public void abort(int closeCode, String closeMessage, int timeout)
     {
         try {
             close(closeCode, closeMessage, true, null, timeout, true);
-        } catch (IOException _) { } // ignore
+        } catch (IOException _e) { } // ignore
     }
 
     /**

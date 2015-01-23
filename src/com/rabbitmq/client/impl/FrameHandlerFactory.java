@@ -45,6 +45,6 @@ public class FrameHandlerFactory {
 
     private static void quietTrySocketClose(Socket socket) {
         if (socket != null)
-            try { socket.close(); } catch (Exception _) {/*ignore exceptions*/}
+            try { socket.close(); } catch (Exception _e) {/*ignore exceptions*/}
     }
 }
