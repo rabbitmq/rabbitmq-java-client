@@ -373,8 +373,8 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(DLQ2, DLX, "test-other");
 
         Map<String, Object> headers = new HashMap<String, Object>();
-        headers.put("CC", Arrays.asList(new String[]{"foo"}));
-        headers.put("BCC", Arrays.asList(new String[]{"bar"}));
+        headers.put("CC", Arrays.asList("foo"));
+        headers.put("BCC", Arrays.asList("bar"));
 
         publishN(MSG_COUNT, (new AMQP.BasicProperties.Builder())
                                .headers(headers)
@@ -396,7 +396,7 @@ public class DeadLetterExchange extends BrokerTestCase {
                     assertEquals(1, death.size());
                     assertDeathReason(death, 0, TEST_QUEUE_NAME,
                                       "expired", "amq.direct",
-                                      Arrays.asList(new String[]{"test", "foo"}));
+                                      Arrays.asList("test", "foo"));
                 }
             });
     }
@@ -460,7 +460,7 @@ public class DeadLetterExchange extends BrokerTestCase {
                 assertEquals(1, death.size());
                 assertDeathReason(death, 0, TEST_QUEUE_NAME, reason,
                         "amq.direct",
-                        Arrays.asList(new String[]{"test"}));
+                        Arrays.asList("test"));
             }
         });
     }
