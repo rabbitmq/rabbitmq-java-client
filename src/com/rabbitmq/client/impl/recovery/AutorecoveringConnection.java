@@ -496,7 +496,6 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                 // make sure server-named queues are re-added with
                 // their new names. MK.
                 synchronized (this.recordedQueues) {
-                    this.recordedQueues.put(newName, q);
                     this.propagateQueueNameChangeToBindings(oldName, newName);
                     this.propagateQueueNameChangeToConsumers(oldName, newName);
                     // bug26552:
@@ -506,6 +505,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                     if(q.isServerNamed()) {
                         deleteRecordedQueue(oldName);
                     }
+                    this.recordedQueues.put(newName, q);
                 }
                 for(QueueRecoveryListener qrl : this.queueRecoveryListeners) {
                     qrl.queueRecovered(oldName, newName);
