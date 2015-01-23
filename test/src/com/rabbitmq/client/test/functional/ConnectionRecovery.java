@@ -222,6 +222,60 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.exchangeDelete(x);
     }
 
+    // bug 26552
+    public void testClientNamedTransientAutoDeleteQueueAndBindingRecovery() throws IOException, InterruptedException, TimeoutException {
+        String q   = UUID.randomUUID().toString();
+        String x   = "tmp-fanout";
+        Channel ch = connection.createChannel();
+        ch.queueDelete(q);
+        ch.exchangeDelete(x);
+        ch.exchangeDeclare(x, "fanout");
+        ch.queueDeclare(q, false, false, true, null);
+        ch.queueBind(q, x, "");
+        restartPrimaryAndWaitForRecovery();
+        expectChannelRecovery(ch);
+        ch.confirmSelect();
+        ch.queuePurge(q);
+        ch.exchangeDeclare(x, "fanout");
+        ch.basicPublish(x, "", null, "msg".getBytes());
+        waitForConfirms(ch);
+        AMQP.Queue.DeclareOk ok = ch.queueDeclare(q, false, false, true, null);
+        assertEquals(1, ok.getMessageCount());
+        ch.queueDelete(q);
+        ch.exchangeDelete(x);
+    }
+
+    // bug 26552
+    public void testServerNamedTransientAutoDeleteQueueAndBindingRecovery() throws IOException, InterruptedException, TimeoutException {
+        String x   = "tmp-fanout";
+        Channel ch = connection.createChannel();
+        ch.exchangeDelete(x);
+        ch.exchangeDeclare(x, "fanout");
+        String q = ch.queueDeclare("", false, false, true, null).getQueue();
+        final AtomicReference<String> nameBefore = new AtomicReference<String>(q);
+        final AtomicReference<String> nameAfter  = new AtomicReference<String>();
+        final CountDownLatch listenerLatch = new CountDownLatch(1);
+        ((AutorecoveringConnection)connection).addQueueRecoveryListener(new QueueRecoveryListener() {
+            @Override
+            public void queueRecovered(String oldName, String newName) {
+                nameBefore.set(oldName);
+                nameAfter.set(newName);
+                listenerLatch.countDown();
+            }
+        });
+        ch.queueBind(nameBefore.get(), x, "");
+        restartPrimaryAndWaitForRecovery();
+        expectChannelRecovery(ch);
+        ch.confirmSelect();
+        ch.exchangeDeclare(x, "fanout");
+        ch.basicPublish(x, "", null, "msg".getBytes());
+        waitForConfirms(ch);
+        AMQP.Queue.DeclareOk ok = ch.queueDeclarePassive(nameAfter.get());
+        assertEquals(1, ok.getMessageCount());
+        ch.queueDelete(nameAfter.get());
+        ch.exchangeDelete(x);
+    }
+
     public void testDeclarationOfManyAutoDeleteQueuesWithTransientConsumer() throws IOException {
         Channel ch = connection.createChannel();
         assertRecordedQueues(connection, 0);
