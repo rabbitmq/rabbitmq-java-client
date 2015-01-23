@@ -33,11 +33,6 @@ public class Broker {
     private static final String HIPE_C = "{rabbit, [{hipe_compile, true}]}";
     private static final String COARSE_C = "{rabbitmq_management_agent, [{force_fine_statistics, false}]}";
 
-    public static final Broker DEFAULT = new Broker("default");
-    public static final Broker HIPE = new Broker("hipe", "[" + HIPE_C + "].");
-    public static final Broker COARSE = new Broker("coarse", "[" + COARSE_C + "].");
-    public static final Broker HIPE_COARSE = new Broker("hipe_coarse", "[" + HIPE_C + "," + COARSE_C + "].");
-
     private final String name;
     private final String config;
 

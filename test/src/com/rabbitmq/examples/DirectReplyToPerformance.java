@@ -203,6 +203,6 @@ public class DirectReplyToPerformance {
         public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
             latch[0].countDown();
         }
-    };
+    }
 
 }
