@@ -80,7 +80,6 @@ public class ConnectionOpen extends TestCase {
             } catch (MalformedFrameException mfe) {
                 fail("Expected nothing, rather than a badly-formed something");
             } catch (IOException ioe) {
-                return;
             }
         }
     }
