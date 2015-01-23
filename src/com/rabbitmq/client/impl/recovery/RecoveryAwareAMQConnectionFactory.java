@@ -44,7 +44,7 @@ public class RecoveryAwareAMQConnectionFactory {
     }
 
     private Address[] shuffle(Address[] addrs) {
-        List list = new ArrayList<Address>(Arrays.asList(addrs));
+        List<Address> list = new ArrayList<Address>(Arrays.asList(addrs));
         Collections.shuffle(list);
         Address[] result = new Address[addrs.length];
         list.toArray(result);
