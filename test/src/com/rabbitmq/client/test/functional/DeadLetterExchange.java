@@ -30,7 +30,6 @@ public class DeadLetterExchange extends BrokerTestCase {
     public static final String DLQ = "queue.dlq";
     public static final String DLQ2 = "queue.dlq2";
     public static final int MSG_COUNT = 10;
-    public static final int MSG_COUNT_MANY = 1000;
     public static final int TTL = 1000;
 
     @Override
