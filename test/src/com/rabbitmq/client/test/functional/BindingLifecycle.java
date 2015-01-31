@@ -92,7 +92,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
     public void testExchangeDelete() throws IOException {
 
         boolean durable = true;
-        Binding binding = setupExchangeAndRouteMessage(durable);
+        Binding binding = setupExchangeAndRouteMessage(true);
 
         // Nuke the exchange and repeat this test, this time you
         // expect nothing to get routed
@@ -116,7 +116,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
     public void testExchangeIfUnused() throws IOException {
 
         boolean durable = true;
-        Binding binding = setupExchangeBindings(durable);
+        Binding binding = setupExchangeBindings(true);
 
         try {
             channel.exchangeDelete(binding.x, true);
