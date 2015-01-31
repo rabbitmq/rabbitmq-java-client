@@ -31,16 +31,16 @@ import java.util.concurrent.TimeUnit;
 public class Consumer extends ProducerConsumerBase implements Runnable {
 
     private ConsumerImpl     q;
-    private Channel          channel;
-    private String           id;
-    private String           queueName;
-    private int              txSize;
-    private boolean          autoAck;
-    private int              multiAckEvery;
-    private Stats stats;
-    private int              msgLimit;
-    private long             timeLimit;
-    private CountDownLatch   latch = new CountDownLatch(1);
+    private final Channel          channel;
+    private final String           id;
+    private final String           queueName;
+    private final int              txSize;
+    private final boolean          autoAck;
+    private final int              multiAckEvery;
+    private final Stats stats;
+    private final int              msgLimit;
+    private final long             timeLimit;
+    private final CountDownLatch   latch = new CountDownLatch(1);
 
     public Consumer(Channel channel, String id,
                     String queueName, int txSize, boolean autoAck,

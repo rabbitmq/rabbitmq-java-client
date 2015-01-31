@@ -63,7 +63,7 @@ public class SingleShotLinearTimer {
     private static final long NANOS_IN_MILLI = 1000 * 1000;
     
     private class TimerThread implements Runnable {
-        private long _runTime;
+        private final long _runTime;
         
         public TimerThread(long timeoutMillisec) {
             _runTime = System.nanoTime() / NANOS_IN_MILLI + timeoutMillisec;

@@ -72,11 +72,11 @@ public class ConsumerMain implements Runnable {
         }
     }
 
-    public Connection _connection;
+    public final Connection _connection;
 
-    public boolean _writeStats;
+    public final boolean _writeStats;
 
-    public boolean _autoAck;
+    public final boolean _autoAck;
 
     public ConsumerMain(Connection connection, boolean writeStats, boolean autoAck) {
         _connection = connection;

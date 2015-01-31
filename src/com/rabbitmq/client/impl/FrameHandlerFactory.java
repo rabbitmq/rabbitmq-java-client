@@ -10,10 +10,10 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 public class FrameHandlerFactory {
-    private int connectionTimeout;
-    private SocketFactory factory;
-    private SocketConfigurator configurator;
-    private boolean ssl;
+    private final int connectionTimeout;
+    private final SocketFactory factory;
+    private final SocketConfigurator configurator;
+    private final boolean ssl;
 
     public FrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl) {
         this.connectionTimeout = connectionTimeout;

@@ -30,9 +30,9 @@ import java.util.Map;
 
 public class CcRoutes extends BrokerTestCase  {
 
-    static private String[] queues = new String[]{"queue1", "queue2", "queue3"};
-    protected String exDirect = "direct_cc_exchange";
-    protected String exTopic = "topic_cc_exchange";
+    static private final String[] queues = new String[]{"queue1", "queue2", "queue3"};
+    protected final String exDirect = "direct_cc_exchange";
+    protected final String exTopic = "topic_cc_exchange";
     protected BasicProperties.Builder propsBuilder;
     protected Map<String, Object> headers;
     protected List<String> ccList;

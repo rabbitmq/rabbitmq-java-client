@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class WorkPoolTests extends TestCase {
 
-    private WorkPool<String, Object> pool = new WorkPool<String, Object>();
+    private final WorkPool<String, Object> pool = new WorkPool<String, Object>();
 
     /**
      * Test unknown key tolerated silently

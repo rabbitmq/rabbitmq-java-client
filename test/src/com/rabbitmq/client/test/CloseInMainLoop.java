@@ -68,7 +68,7 @@ public class CloseInMainLoop extends BrokerTestCase{
     }
 
     class SpecialConnection extends AMQConnection{
-    private AtomicBoolean validShutdown = new AtomicBoolean(false);
+    private final AtomicBoolean validShutdown = new AtomicBoolean(false);
 
     public boolean hadValidShutdown(){
       if(isOpen()) throw new IllegalStateException("hadValidShutdown called while connection is still open");

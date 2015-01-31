@@ -31,7 +31,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 public class Recover extends BrokerTestCase {
 
     String queue;
-    byte[] body = "message".getBytes();
+    final byte[] body = "message".getBytes();
 
     public void createResources() throws IOException {
         AMQP.Queue.DeclareOk ok = channel.queueDeclare();
@@ -76,20 +76,20 @@ public class Recover extends BrokerTestCase {
         assertNull("should be no message available", channel.basicGet(queue, true));
     }
 
-    RecoverCallback recoverAsync = new RecoverCallback() {
+    final RecoverCallback recoverAsync = new RecoverCallback() {
             @SuppressWarnings("deprecation")
             public void recover(Channel channel) throws IOException {
                 channel.basicRecoverAsync(true);
             }
         };
 
-    RecoverCallback recoverSync = new RecoverCallback() {
+    final RecoverCallback recoverSync = new RecoverCallback() {
             public void recover(Channel channel) throws IOException {
                 channel.basicRecover(true);
             }
         };
 
-    RecoverCallback recoverSyncConvenience = new RecoverCallback() {
+    final RecoverCallback recoverSyncConvenience = new RecoverCallback() {
             public void recover(Channel channel) throws IOException {
                 channel.basicRecover();
             }

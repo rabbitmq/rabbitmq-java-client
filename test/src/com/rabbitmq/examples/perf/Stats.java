@@ -17,9 +17,9 @@
 package com.rabbitmq.examples.perf;
 
 public abstract class Stats {
-    protected long    interval;
+    protected final long    interval;
 
-    protected long    startTime;
+    protected final long    startTime;
     protected long    lastStatsTime;
 
     protected int     sendCountInterval;

@@ -21,8 +21,8 @@ public class ConnectionParams {
     private final long networkRecoveryInterval;
     private final boolean topologyRecovery;
 
-    private ExceptionHandler exceptionHandler;
-    private ThreadFactory threadFactory;
+    private final ExceptionHandler exceptionHandler;
+    private final ThreadFactory threadFactory;
 
   /**
      * @param username name used to establish connection

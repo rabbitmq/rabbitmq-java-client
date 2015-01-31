@@ -86,9 +86,9 @@ public class WorkPool<K, W> {
     //    outstanding RPC or finish the same RPC twice.
 
     private class WorkQueue {
-        private LinkedList<W> list;
+        private final LinkedList<W> list;
         private boolean unlimited;
-        private int maxLengthWhenLimited;
+        private final int maxLengthWhenLimited;
 
         private WorkQueue(int maxLengthWhenLimited) {
             this.list = new LinkedList<W>();
@@ -140,8 +140,8 @@ public class WorkPool<K, W> {
 
     // The semaphore should only be used when unlimitedQueues == 0, otherwise we ignore it and
     // thus don't block the connection.
-    private Semaphore semaphore = new Semaphore(1);
-    private AtomicInteger unlimitedQueues = new AtomicInteger(0);
+    private final Semaphore semaphore = new Semaphore(1);
+    private final AtomicInteger unlimitedQueues = new AtomicInteger(0);
 
     private void acquireSemaphore() throws InterruptedException {
         if (unlimitedQueues.get() == 0) {

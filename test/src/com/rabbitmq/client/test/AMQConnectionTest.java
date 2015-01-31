@@ -217,7 +217,7 @@ public class AMQConnectionTest extends TestCase {
 
     /** Exception handler to facilitate testing. */
     private class MyExceptionHandler implements ExceptionHandler {
-        private List<Throwable> _handledExceptions = new ArrayList<Throwable>();
+        private final List<Throwable> _handledExceptions = new ArrayList<Throwable>();
 
         public void handleUnexpectedConnectionDriverException(Connection conn, Throwable ex) {
             _handledExceptions.add(ex);

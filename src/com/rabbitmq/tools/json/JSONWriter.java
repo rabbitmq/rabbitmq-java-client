@@ -41,7 +41,7 @@ import java.util.Set;
 public class JSONWriter {
     private boolean indentMode = false;
     private int indentLevel = 0;
-    private StringBuilder buf = new StringBuilder();
+    private final StringBuilder buf = new StringBuilder();
 
     public JSONWriter() {}
 
@@ -260,7 +260,7 @@ public class JSONWriter {
         buf.append(c);
     }
 
-    static char[] hex = "0123456789ABCDEF".toCharArray();
+    static final char[] hex = "0123456789ABCDEF".toCharArray();
 
     private void unicode(char c) {
         add("\\u");

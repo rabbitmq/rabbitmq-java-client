@@ -31,7 +31,7 @@ public class UnverifiedConnection extends BrokerTestCase {
 
     public Exception caughtException = null;
     public boolean completed = false;
-    public boolean created = false;
+    public final boolean created = false;
 
     public void openConnection()
         throws IOException

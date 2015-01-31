@@ -22,11 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VaryingScenario implements Scenario {
-    private String name;
-    private ConnectionFactory factory;
-    private MulticastParams[] params;
-    private VaryingScenarioStats stats = new VaryingScenarioStats();
-    private Variable[] variables;
+    private final String name;
+    private final ConnectionFactory factory;
+    private final MulticastParams[] params;
+    private final VaryingScenarioStats stats = new VaryingScenarioStats();
+    private final Variable[] variables;
 
     public VaryingScenario(String name, ConnectionFactory factory,
                            MulticastParams params, Variable... variables) {

@@ -36,7 +36,7 @@ import java.util.Map;
 public class PerfTestMulti {
     private static final ConnectionFactory factory = new ConnectionFactory();
 
-    private static Map<String, Object> results = new HashMap<String, Object>();
+    private static final Map<String, Object> results = new HashMap<String, Object>();
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {

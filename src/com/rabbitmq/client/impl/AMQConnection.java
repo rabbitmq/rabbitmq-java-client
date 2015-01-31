@@ -117,7 +117,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private volatile boolean _running = false;
 
     /** Handler for (uncaught) exceptions that crop up in the {@link MainLoop}. */
-    private ExceptionHandler _exceptionHandler;
+    private final ExceptionHandler _exceptionHandler;
 
     /** Object used for blocking main application thread when doing all the necessary
      * connection shutdown operations

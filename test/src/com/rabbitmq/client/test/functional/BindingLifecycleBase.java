@@ -144,9 +144,9 @@ public class BindingLifecycleBase extends ClusteredTestBase {
 
   protected static class Binding {
 
-    String q;
-    String x;
-    String k;
+    final String q;
+    final String x;
+    final String k;
 
     static Binding randomBinding() {
       return new Binding(randomString(), randomString(), randomString());

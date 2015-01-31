@@ -33,11 +33,11 @@ import java.util.ArrayList;
 public class QosScaling {
 
     protected static class Parameters {
-        String host;
-        int port;
-        int messageCount;
-        int queueCount;
-        int emptyCount;
+        final String host;
+        final int port;
+        final int messageCount;
+        final int queueCount;
+        final int emptyCount;
 
         public static CommandLine parseCommandLine(String[] args) {
             CLIHelper helper = CLIHelper.defaultHelper();

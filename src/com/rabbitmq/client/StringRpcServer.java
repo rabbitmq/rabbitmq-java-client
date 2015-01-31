@@ -29,7 +29,7 @@ public class StringRpcServer extends RpcServer {
     public StringRpcServer(Channel channel, String queueName) throws IOException
     { super(channel, queueName); }
 
-    public static String STRING_ENCODING = "UTF-8";
+    public static final String STRING_ENCODING = "UTF-8";
 
     /**
      * Overridden to do UTF-8 processing, and delegate to

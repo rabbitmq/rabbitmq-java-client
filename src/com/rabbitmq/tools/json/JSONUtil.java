@@ -58,7 +58,7 @@ public class JSONUtil {
 		Method setter = prop.getWriteMethod();
 		if (setter != null && !Modifier.isStatic(setter.getModifiers())) {
 		    //System.out.println(target + " " + name + " <- " + source.get(name));
-		    setter.invoke(target, new Object[] { source.get(name) });
+		    setter.invoke(target, source.get(name));
 		}
 	    }
 	}

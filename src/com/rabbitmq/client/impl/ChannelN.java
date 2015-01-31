@@ -94,7 +94,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Set of currently unconfirmed messages (i.e. messages that have
      *  not been ack'd or nack'd by the server yet. */
-    private volatile SortedSet<Long> unconfirmedSet =
+    private final SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
     /** Whether any nacks have been received since the last waitForConfirms(). */

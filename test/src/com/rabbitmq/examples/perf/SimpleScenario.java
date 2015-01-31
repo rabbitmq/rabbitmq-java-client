@@ -21,10 +21,10 @@ import com.rabbitmq.client.ConnectionFactory;
 import java.io.IOException;
 
 public class SimpleScenario implements Scenario {
-    private String name;
-    private ConnectionFactory factory;
-    private MulticastParams[] params;
-    private long interval;
+    private final String name;
+    private final ConnectionFactory factory;
+    private final MulticastParams[] params;
+    private final long interval;
     private SimpleScenarioStats stats;
 
     public SimpleScenario(String name, ConnectionFactory factory, MulticastParams... params) {
