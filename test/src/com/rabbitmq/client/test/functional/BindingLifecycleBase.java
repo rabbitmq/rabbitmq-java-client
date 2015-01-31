@@ -77,7 +77,7 @@ public class BindingLifecycleBase extends ClusteredTestBase {
     if (durable) {
       restart();
     }
-    if (queues > 1) {
+    if (queues > 1 && queueNames != null) {
       for (String s : queueNames) {
         channel.basicConsume(s, true, new QueueingConsumer(channel));
         Binding tmp = new Binding(s, binding.x, binding.k);
@@ -101,7 +101,7 @@ public class BindingLifecycleBase extends ClusteredTestBase {
       fail("Queue bind should have failed");
     }
     // Do some cleanup
-    if (queues > 1) {
+    if (queues > 1 && queueNames != null) {
       for (String q : queueNames) {
         channel.queueDelete(q);
       }
