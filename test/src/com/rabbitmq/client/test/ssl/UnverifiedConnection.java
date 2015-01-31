@@ -28,11 +28,6 @@ import com.rabbitmq.client.test.BrokerTestCase;
  *
  */
 public class UnverifiedConnection extends BrokerTestCase {
-
-    public Exception caughtException = null;
-    public boolean completed = false;
-    public final boolean created = false;
-
     public void openConnection()
         throws IOException
     {
@@ -44,17 +39,8 @@ public class UnverifiedConnection extends BrokerTestCase {
             throw new IOException(ex.toString());
         }
 
-
         if (connection == null) {
             connection = connectionFactory.newConnection();
-        }
-    }
-
-    protected void releaseResources()
-        throws IOException
-    {
-        if (created) {
-            channel.queueDelete("Bug19356Test");
         }
     }
 
