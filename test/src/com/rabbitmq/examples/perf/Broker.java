@@ -64,6 +64,7 @@ public class Broker {
 
         } catch (IOException e) {
             System.out.println("Broker start failed!");
+            assert pr != null;
             String stdout = capture(pr.getInputStream());
             String stderr = capture(pr.getErrorStream());
             System.out.println(stdout);
