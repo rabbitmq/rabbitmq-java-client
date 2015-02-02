@@ -71,7 +71,9 @@ public class BindingLifecycle extends BindingLifecycleBase {
         response = channel.basicGet(binding.q, true);
         assertNull("The response SHOULD BE null", response);
 
+        channel.basicRecover();
         response = channel.basicGet(binding.q, false);
+        channel.basicRecover();
         assertTrue(response.getEnvelope().isRedeliver());
         assertNotNull("The response SHOULD NOT BE null", response);
 
