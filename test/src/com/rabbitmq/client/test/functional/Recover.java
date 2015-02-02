@@ -71,8 +71,6 @@ public class Recover extends BrokerTestCase {
         assertTrue("consumed message body not as sent",
                    Arrays.equals(body, delivery.getBody()));
         call.recover(channel);
-        // there's a race here between our recover finishing and the basic.get;
-        Thread.sleep(500);
         assertNull("should be no message available", channel.basicGet(queue, true));
     }
 
