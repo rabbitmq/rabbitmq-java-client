@@ -14,7 +14,6 @@ import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.impl.AMQImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -381,12 +380,6 @@ public class AutorecoveringChannel implements Channel, Recoverable {
 
     public AMQP.Basic.RecoverOk basicRecover(boolean requeue) throws IOException {
         return delegate.basicRecover(requeue);
-    }
-
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public void basicRecoverAsync(boolean requeue) throws IOException {
-        delegate.basicRecoverAsync(requeue);
     }
 
     public AMQP.Tx.SelectOk txSelect() throws IOException {

@@ -76,13 +76,6 @@ public class Recover extends BrokerTestCase {
         assertNull("should be no message available", channel.basicGet(queue, true));
     }
 
-    final RecoverCallback recoverAsync = new RecoverCallback() {
-            @SuppressWarnings("deprecation")
-            public void recover(Channel channel) throws IOException {
-                channel.basicRecoverAsync(true);
-            }
-        };
-
     final RecoverCallback recoverSync = new RecoverCallback() {
             public void recover(Channel channel) throws IOException {
                 channel.basicRecover(true);
@@ -94,10 +87,6 @@ public class Recover extends BrokerTestCase {
                 channel.basicRecover();
             }
         };
-            
-    public void testRedeliverOnRecoverAsync() throws IOException, InterruptedException {
-        verifyRedeliverOnRecover(recoverAsync);
-    }
 
     public void testRedeliveryOnRecover() throws IOException, InterruptedException {
         verifyRedeliverOnRecover(recoverSync);
@@ -106,11 +95,6 @@ public class Recover extends BrokerTestCase {
     public void testRedeliverOnRecoverConvenience() 
         throws IOException, InterruptedException {
         verifyRedeliverOnRecover(recoverSyncConvenience);
-    }
-
-    public void testNoRedeliveryWithAutoAckAsync()
-        throws IOException, InterruptedException {
-        verifyNoRedeliveryWithAutoAck(recoverAsync);
     }
 
     public void testNoRedeliveryWithAutoAck()
