@@ -521,7 +521,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         } catch (IOException _e) { /* ignored */ }
     }
 
-    // TODO: method should be private
     /**
      * Protected API - Close channel with code and message, indicating
      * the source of the closure and a causing exception (null if
@@ -533,7 +532,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @param abort true if we should close and ignore errors
      * @throws IOException if an error is encountered
      */
-    public void close(int closeCode,
+    protected void close(int closeCode,
                       String closeMessage,
                       boolean initiatedByApplication,
                       Throwable cause,
