@@ -516,7 +516,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void abort(int closeCode, String closeMessage)
         throws IOException
     {
-        close(closeCode, closeMessage, true, null, true);
+        try {
+            close(closeCode, closeMessage, true, null, true);
+        } catch (IOException _e) { /* ignored */ }
     }
 
     // TODO: method should be private
