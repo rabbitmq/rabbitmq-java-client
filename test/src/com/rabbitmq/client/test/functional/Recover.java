@@ -71,17 +71,8 @@ public class Recover extends BrokerTestCase {
         assertTrue("consumed message body not as sent",
                    Arrays.equals(body, delivery.getBody()));
         call.recover(channel);
-        // there's a race here between our recover finishing and the basic.get;
-        Thread.sleep(500);
         assertNull("should be no message available", channel.basicGet(queue, true));
     }
-
-    final RecoverCallback recoverAsync = new RecoverCallback() {
-            @SuppressWarnings("deprecation")
-            public void recover(Channel channel) throws IOException {
-                channel.basicRecoverAsync(true);
-            }
-        };
 
     final RecoverCallback recoverSync = new RecoverCallback() {
             public void recover(Channel channel) throws IOException {
@@ -94,10 +85,6 @@ public class Recover extends BrokerTestCase {
                 channel.basicRecover();
             }
         };
-            
-    public void testRedeliverOnRecoverAsync() throws IOException, InterruptedException {
-        verifyRedeliverOnRecover(recoverAsync);
-    }
 
     public void testRedeliveryOnRecover() throws IOException, InterruptedException {
         verifyRedeliverOnRecover(recoverSync);
@@ -106,11 +93,6 @@ public class Recover extends BrokerTestCase {
     public void testRedeliverOnRecoverConvenience() 
         throws IOException, InterruptedException {
         verifyRedeliverOnRecover(recoverSyncConvenience);
-    }
-
-    public void testNoRedeliveryWithAutoAckAsync()
-        throws IOException, InterruptedException {
-        verifyNoRedeliveryWithAutoAck(recoverAsync);
     }
 
     public void testNoRedeliveryWithAutoAck()

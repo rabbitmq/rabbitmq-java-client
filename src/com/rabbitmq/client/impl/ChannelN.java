@@ -1132,13 +1132,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
 
     /** Public API - {@inheritDoc} */
-    public void basicRecoverAsync(boolean requeue)
-        throws IOException
-    {
-        transmit(new Basic.RecoverAsync(requeue));
-    }
-
-    /** Public API - {@inheritDoc} */
     public Tx.SelectOk txSelect()
         throws IOException
     {

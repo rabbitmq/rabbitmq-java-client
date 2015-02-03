@@ -71,13 +71,13 @@ public class BindingLifecycle extends BindingLifecycleBase {
         response = channel.basicGet(binding.q, true);
         assertNull("The response SHOULD BE null", response);
 
-        channel.basicRecoverAsync(true);
+        channel.basicRecover();
         response = channel.basicGet(binding.q, false);
+        channel.basicRecover();
         assertTrue(response.getEnvelope().isRedeliver());
         assertNotNull("The response SHOULD NOT BE null", response);
 
         // If we recover then purge the message should go away
-        channel.basicRecoverAsync(true);
         channel.queuePurge(binding.q);
         response = channel.basicGet(binding.q, true);
         assertNull("The response SHOULD BE null", response);
