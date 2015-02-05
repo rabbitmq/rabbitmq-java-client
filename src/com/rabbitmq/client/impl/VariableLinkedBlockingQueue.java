@@ -72,7 +72,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /** The capacity bound, or Integer.MAX_VALUE if none */
-    private final int capacity;
+    private int capacity;
 
     /** Current number of elements */
     private final AtomicInteger count = new AtomicInteger(0);
@@ -207,6 +207,15 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
         return count.get();
     }
 
+    public void setCapacity(int capacity) {
+        final int oldCapacity = this.capacity;
+        this.capacity = capacity;
+        final int size = count.get();
+        if (capacity > size && size >= oldCapacity) {
+            signalNotFull();
+        }
+    }
+
     // this doc comment is a modified copy of the inherited doc comment,
     // without the reference to unlimited queues.
     /**
@@ -250,7 +259,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
              * other wait guards.
              */
             try {
-                while (count.get() == capacity)
+                while (count.get() >= capacity)
                     notFull.await();
             } catch (InterruptedException ie) {
                 notFull.signal(); // propagate to a non-interrupted thread
@@ -327,7 +336,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
     public boolean offer(E o) {
         if (o == null) throw new NullPointerException();
         final AtomicInteger count = this.count;
-        if (count.get() == capacity)
+        if (count.get() >= capacity)
             return false;
         int c = -1;
         final ReentrantLock putLock = this.putLock;
@@ -370,7 +379,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
         } finally {
             takeLock.unlock();
         }
-        if (c == capacity)
+        if (c >= capacity)
             signalNotFull();
         return x;
     }
@@ -403,7 +412,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
         } finally {
             takeLock.unlock();
         }
-        if (c == capacity)
+        if (c >= capacity)
             signalNotFull();
         return x;
     }
@@ -426,7 +435,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
         } finally {
             takeLock.unlock();
         }
-        if (c == capacity)
+        if (c >= capacity)
             signalNotFull();
         return x;
     }
@@ -466,7 +475,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
             if (removed) {
                 p.item = null;
                 trail.next = p.next;
-                if (count.getAndDecrement() == capacity)
+                if (count.getAndDecrement() >= capacity)
                     notFull.signalAll();
             }
         } finally {
@@ -519,7 +528,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
         fullyLock();
         try {
             head.next = null;
-            if (count.getAndSet(0) == capacity)
+            if (count.getAndSet(0) >= capacity)
                 notFull.signalAll();
         } finally {
             fullyUnlock();
@@ -536,7 +545,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
         try {
             first = head.next;
             head.next = null;
-            if (count.getAndSet(0) == capacity)
+            if (count.getAndSet(0) >= capacity)
                 notFull.signalAll();
         } finally {
             fullyUnlock();
@@ -570,7 +579,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
             }
             if (n != 0) {
                 head.next = p;
-                if (count.getAndAdd(-n) == capacity)
+                if (count.getAndAdd(-n) >= capacity)
                     notFull.signalAll();
             }
             return n;
@@ -662,7 +671,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
                     p.item = null;
                     trail.next = p.next;
                     int c = count.getAndDecrement();
-                    if (c == capacity)
+                    if (c >= capacity)
                         notFull.signalAll();
                 }
             } finally {
