@@ -63,7 +63,7 @@ final class ConsumerDispatcher {
     }
 
     public void setUnlimited(boolean unlimited) {
-        this.workService.unlimit(channel, unlimited);
+        this.workService.setUnlimited(channel, unlimited);
     }
 
     public void handleConsumeOk(final Consumer delegate,
