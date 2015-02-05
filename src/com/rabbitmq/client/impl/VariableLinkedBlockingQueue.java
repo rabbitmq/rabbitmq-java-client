@@ -1,4 +1,9 @@
 /*
+ * Modifications Copyright 2014 GoPivotal, Inc and licenced as per
+ * the rest of the RabbitMQ Java client.
+ */
+
+/*
  * Written by Doug Lea with assistance from members of JCP JSR-166
  * Expert Group and released to the public domain, as explained at
  * http://creativecommons.org/licenses/publicdomain
@@ -13,6 +18,12 @@ import java.util.concurrent.locks.*;
 import java.util.*;
 
 /**
+ * A clone of {@linkplain java.util.concurrent.LinkedBlockingQueue}
+ * with the addition of a {@link setCapacity(int)} method, allowing us to
+ * change the capacity of the queue while it is in use.<p>
+ *
+ * The documentation for LinkedBlockingQueue follows...<p>
+ *
  * An optionally-bounded {@linkplain BlockingQueue blocking queue} based on
  * linked nodes.
  * This queue orders elements FIFO (first-in-first-out).
@@ -207,6 +218,12 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
         return count.get();
     }
 
+    /**
+     * Set a new capacity for the queue. Increasing the capacity can
+     * cause any waiting {@link put(E)} invocations to succeed if the new
+     * capacity is larger than the queue.
+     * @param capacity the new capacity for the queue
+     */
     public void setCapacity(int capacity) {
         final int oldCapacity = this.capacity;
         this.capacity = capacity;
