@@ -19,7 +19,7 @@ import java.util.*;
 
 /**
  * A clone of {@linkplain java.util.concurrent.LinkedBlockingQueue}
- * with the addition of a {@link setCapacity(int)} method, allowing us to
+ * with the addition of a {@link #setCapacity(int)} method, allowing us to
  * change the capacity of the queue while it is in use.<p>
  *
  * The documentation for LinkedBlockingQueue follows...<p>
@@ -220,7 +220,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
 
     /**
      * Set a new capacity for the queue. Increasing the capacity can
-     * cause any waiting {@link put(E)} invocations to succeed if the new
+     * cause any waiting {@link #put(E)} invocations to succeed if the new
      * capacity is larger than the queue.
      * @param capacity the new capacity for the queue
      */
@@ -515,6 +515,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         fullyLock();
         try {
@@ -557,7 +558,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
             throw new NullPointerException();
         if (c == this)
             throw new IllegalArgumentException();
-        Node first;
+        Node<E> first;
         fullyLock();
         try {
             first = head.next;
@@ -740,6 +741,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
 
         // Read in all elements and place in queue
         for (;;) {
+            @SuppressWarnings("unchecked")
             E item = (E)s.readObject();
             if (item == null)
                 break;
