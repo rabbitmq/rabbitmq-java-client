@@ -145,6 +145,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             // The filter decided not to handle/consume the command,
             // so it must be some reply to an earlier RPC.
             nextOutstandingRpc().handleCommand(command);
+            markRpcFinished();
         }
     }
 
@@ -181,6 +182,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             _channelMutex.notifyAll();
             return result;
         }
+    }
+
+    protected void markRpcFinished() {
+        // no-op
     }
 
     public void ensureIsOpen()

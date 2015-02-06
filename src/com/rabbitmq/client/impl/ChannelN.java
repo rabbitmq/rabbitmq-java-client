@@ -1195,11 +1195,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     @Override
-    public RpcContinuation nextOutstandingRpc() {
+    protected void markRpcFinished() {
         synchronized (_channelMutex) {
-            RpcContinuation res = super.nextOutstandingRpc();
-            if (res != null) dispatcher.setUnlimited(false);
-            return res;
+            dispatcher.setUnlimited(false);
         }
     }
 
