@@ -71,13 +71,13 @@ public class BindingLifecycle extends BindingLifecycleBase {
         response = channel.basicGet(binding.q, true);
         assertNull("The response SHOULD BE null", response);
 
-        channel.basicRecoverAsync(true);
+        channel.basicRecover();
         response = channel.basicGet(binding.q, false);
+        channel.basicRecover();
         assertTrue(response.getEnvelope().isRedeliver());
         assertNotNull("The response SHOULD NOT BE null", response);
 
         // If we recover then purge the message should go away
-        channel.basicRecoverAsync(true);
         channel.queuePurge(binding.q);
         response = channel.basicGet(binding.q, true);
         assertNull("The response SHOULD BE null", response);
@@ -92,7 +92,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
     public void testExchangeDelete() throws IOException {
 
         boolean durable = true;
-        Binding binding = setupExchangeAndRouteMessage(durable);
+        Binding binding = setupExchangeAndRouteMessage(true);
 
         // Nuke the exchange and repeat this test, this time you
         // expect nothing to get routed
@@ -116,7 +116,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
     public void testExchangeIfUnused() throws IOException {
 
         boolean durable = true;
-        Binding binding = setupExchangeBindings(durable);
+        Binding binding = setupExchangeBindings(true);
 
         try {
             channel.exchangeDelete(binding.x, true);

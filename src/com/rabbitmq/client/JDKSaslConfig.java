@@ -83,7 +83,7 @@ public class JDKSaslConfig implements SaslConfig {
     }
 
     private class JDKSaslMechanism implements SaslMechanism {
-        private SaslClient client;
+        private final SaslClient client;
 
         public JDKSaslMechanism(SaslClient client) {
             this.client = client;
@@ -103,7 +103,7 @@ public class JDKSaslConfig implements SaslConfig {
     }
 
     private class UsernamePasswordCallbackHandler implements CallbackHandler {
-        private ConnectionFactory factory;
+        private final ConnectionFactory factory;
         public UsernamePasswordCallbackHandler(ConnectionFactory factory) {
             this.factory = factory;
         }

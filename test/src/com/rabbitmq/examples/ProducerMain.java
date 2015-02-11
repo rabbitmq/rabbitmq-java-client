@@ -91,19 +91,19 @@ public class ProducerMain implements Runnable {
         }
     }
 
-    public Connection _connection;
+    public final Connection _connection;
 
     public Channel _channel;
 
-    public int _rateLimit;
+    public final int _rateLimit;
 
-    public int _messageCount;
+    public final int _messageCount;
 
-    public boolean _sendCompletion;
+    public final boolean _sendCompletion;
 
-    public int _commitEvery;
+    public final int _commitEvery;
 
-    public boolean _sendLatencyInfo;
+    public final boolean _sendLatencyInfo;
 
     public ProducerMain(Connection connection, int rateLimit, int messageCount, boolean sendCompletion, int commitEvery, boolean sendLatencyInfo) {
         _connection = connection;

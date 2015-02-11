@@ -108,18 +108,6 @@ public class ConnectionFactory implements Cloneable {
     // to use recovery intervals > Integer.MAX_VALUE in practice.
     private long networkRecoveryInterval          = 5000;
 
-    /** @return number of consumer threads in default {@link ExecutorService} */
-    @Deprecated
-    public int getNumConsumerThreads() {
-        return DEFAULT_NUM_CONSUMER_THREADS;
-    }
-
-    /** @param numConsumerThreads threads in created private executor service */
-    @Deprecated
-    public void setNumConsumerThreads(int numConsumerThreads) {
-        throw new IllegalArgumentException("setNumConsumerThreads not supported -- create explicit ExecutorService instead.");
-    }
-
     /** @return the default host to use for connections */
     public String getHost() {
         return host;

@@ -50,7 +50,7 @@ public class ValueOrExceptionTest extends TestCase {
         Integer value = new Integer(3);
 
         ValueOrException<Integer, InsufficientMagicException> valueOrEx = 
-            ValueOrException.<Integer, InsufficientMagicException>makeValue(value);
+            ValueOrException.makeValue(value);
         
         Integer returnedValue = valueOrEx.getValue();
         assertTrue(returnedValue == value);

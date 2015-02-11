@@ -238,7 +238,7 @@ public class Confirm extends BrokerTestCase
         try {
             channel.waitForConfirms();
             fail("waitForConfirms without confirms selected succeeded");
-        } catch (IllegalStateException _) {}
+        } catch (IllegalStateException _e) {}
     }
 
     public void testWaitForConfirmsException()

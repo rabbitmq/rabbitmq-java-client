@@ -42,7 +42,7 @@ public class ConfirmBase extends BrokerTestCase {
                             channel.waitForConfirmsOrDie();
                         } catch (IOException e) {
                             throw (ShutdownSignalException)e.getCause();
-                        } catch (InterruptedException _) {
+                        } catch (InterruptedException _e) {
                             fail(testTitle + ": interrupted");
                         }
                     }
@@ -54,7 +54,7 @@ public class ConfirmBase extends BrokerTestCase {
             if (t instanceof ShutdownSignalException) throw (ShutdownSignalException) t;
             if (t instanceof AssertionFailedError) throw (AssertionFailedError) t;
             throw (Exception)t;
-        } catch (TimeoutException _) {
+        } catch (TimeoutException _e) {
             fail(testTitle + ": timeout");
         }
     }

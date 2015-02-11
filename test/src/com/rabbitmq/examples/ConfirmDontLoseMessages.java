@@ -45,6 +45,7 @@ public class ConfirmDontLoseMessages {
         (new Thread(new Publisher())).start();
     }
 
+    @SuppressWarnings("ThrowablePrintedToSystemOut")
     static class Publisher implements Runnable {
         public void run() {
             try {

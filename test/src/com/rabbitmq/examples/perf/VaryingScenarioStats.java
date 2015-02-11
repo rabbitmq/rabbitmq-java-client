@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 public class VaryingScenarioStats implements ScenarioStats {
-    private Map<List<VariableValue>, SimpleScenarioStats> stats = new HashMap<List<VariableValue>, SimpleScenarioStats>();
-    private List<List<VariableValue>> keys = new ArrayList<List<VariableValue>>();
+    private final Map<List<VariableValue>, SimpleScenarioStats> stats = new HashMap<List<VariableValue>, SimpleScenarioStats>();
+    private final List<List<VariableValue>> keys = new ArrayList<List<VariableValue>>();
 
     public VaryingScenarioStats() {}
 
@@ -34,6 +34,7 @@ public class VaryingScenarioStats implements ScenarioStats {
         return stats;
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> results() {
         Map<String, Object> map = new HashMap<String, Object>();
 

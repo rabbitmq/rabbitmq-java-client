@@ -24,7 +24,7 @@ import java.io.IOException;
 import com.rabbitmq.client.test.functional.ExchangeEquivalenceBase;
 
 public class AlternateExchangeEquivalence extends ExchangeEquivalenceBase {
-    static Map<String, Object> args = new HashMap<String, Object>();
+    static final Map<String, Object> args = new HashMap<String, Object>();
     {
         args.put("alternate-exchange", "UME");
     }

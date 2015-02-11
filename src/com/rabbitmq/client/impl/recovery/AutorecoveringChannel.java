@@ -14,7 +14,6 @@ import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.impl.AMQImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,11 +30,11 @@ import java.util.concurrent.TimeoutException;
 public class AutorecoveringChannel implements Channel, Recoverable {
     private RecoveryAwareChannelN delegate;
     private AutorecoveringConnection connection;
-    private List<ShutdownListener> shutdownHooks  = new ArrayList<ShutdownListener>();
-    private List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
-    private List<ReturnListener> returnListeners = new ArrayList<ReturnListener>();
-    private List<ConfirmListener> confirmListeners = new ArrayList<ConfirmListener>();
-    private List<FlowListener> flowListeners = new ArrayList<FlowListener>();
+    private final List<ShutdownListener> shutdownHooks  = new ArrayList<ShutdownListener>();
+    private final List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
+    private final List<ReturnListener> returnListeners = new ArrayList<ReturnListener>();
+    private final List<ConfirmListener> confirmListeners = new ArrayList<ConfirmListener>();
+    private final List<FlowListener> flowListeners = new ArrayList<FlowListener>();
     private int prefetchCountConsumer;
     private int prefetchCountGlobal;
     private boolean usesPublisherConfirms;
@@ -381,12 +380,6 @@ public class AutorecoveringChannel implements Channel, Recoverable {
 
     public AMQP.Basic.RecoverOk basicRecover(boolean requeue) throws IOException {
         return delegate.basicRecover(requeue);
-    }
-
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public void basicRecoverAsync(boolean requeue) throws IOException {
-        delegate.basicRecoverAsync(requeue);
     }
 
     public AMQP.Tx.SelectOk txSelect() throws IOException {

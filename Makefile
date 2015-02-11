@@ -26,6 +26,9 @@ dist: distclean srcdist dist_all maven-bundle
 
 dist_all: dist1.5 javadoc-archive
 
+jar:
+	ant jar
+
 maven-bundle:
 	ant -Dimpl.version=$(VERSION) maven-bundle
 

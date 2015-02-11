@@ -37,7 +37,7 @@ public class LongStringHelper
     private static class ByteArrayLongString
         implements LongString
     {
-        private byte [] bytes;
+        private final byte [] bytes;
 
         public ByteArrayLongString(byte[] bytes)
         {

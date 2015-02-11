@@ -173,7 +173,7 @@ public class Policies extends BrokerTestCase {
         channel.exchangeDelete("has-ae-args");
     }
 
-    private Set<String> policies = new HashSet<String>();
+    private final Set<String> policies = new HashSet<String>();
 
     private void setPolicy(String name, String pattern, String definition) throws IOException {
         // We need to override the HA policy that we use in HATests, so

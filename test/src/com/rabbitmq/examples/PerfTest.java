@@ -188,10 +188,10 @@ public class PerfTest {
     }
 
     private static class PrintlnStats extends Stats {
-        private boolean sendStatsEnabled;
-        private boolean recvStatsEnabled;
-        private boolean returnStatsEnabled;
-        private boolean confirmStatsEnabled;
+        private final boolean sendStatsEnabled;
+        private final boolean recvStatsEnabled;
+        private final boolean returnStatsEnabled;
+        private final boolean confirmStatsEnabled;
 
         public PrintlnStats(long interval,
                             boolean sendStatsEnabled, boolean recvStatsEnabled,

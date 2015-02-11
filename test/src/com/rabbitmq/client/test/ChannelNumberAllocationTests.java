@@ -28,8 +28,8 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
 public class ChannelNumberAllocationTests extends TestCase{
-  static int CHANNEL_COUNT = 100;
-  static Comparator<Channel> COMPARATOR = new Comparator<Channel>(){
+  static final int CHANNEL_COUNT = 100;
+  static final Comparator<Channel> COMPARATOR = new Comparator<Channel>(){
     public int compare(Channel x, Channel y){
       if(x.getChannelNumber() < y.getChannelNumber()) return -1;
       if(x.getChannelNumber() == y.getChannelNumber()) return 0;

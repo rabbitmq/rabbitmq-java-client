@@ -42,7 +42,7 @@ public class ValueReader
      * Protected API - Cast an int to a long without extending the
      * sign bit of the int out into the high half of the long.
      */
-    private static final long unsignedExtend(int value)
+    private static long unsignedExtend(int value)
     {
         long extended = value;
         return extended & INT_MASK;
@@ -62,7 +62,7 @@ public class ValueReader
     /** Convenience method - reads a short string from a DataInput
      * Stream.
      */
-    private static final String readShortstr(DataInputStream in)
+    private static String readShortstr(DataInputStream in)
         throws IOException
     {
         byte [] b = new byte[in.readUnsignedByte()];
@@ -80,7 +80,7 @@ public class ValueReader
     /** Convenience method - reads a 32-bit-length-prefix
      * byte vector from a DataInputStream.
      */
-    private static final byte[] readBytes(final DataInputStream in)
+    private static byte[] readBytes(final DataInputStream in)
         throws IOException
     {
         final long contentLength = unsignedExtend(in.readInt());
@@ -97,7 +97,7 @@ public class ValueReader
     /** Convenience method - reads a long string argument
      * from a DataInputStream.
      */
-    private static final LongString readLongstr(final DataInputStream in)
+    private static LongString readLongstr(final DataInputStream in)
         throws IOException
     {
         return LongStringHelper.asLongString(readBytes(in));
@@ -136,7 +136,7 @@ public class ValueReader
      * Reads a table argument from a given stream. Also
      * called by {@link ContentHeaderPropertyReader}.
      */
-    private static final Map<String, Object> readTable(DataInputStream in)
+    private static Map<String, Object> readTable(DataInputStream in)
         throws IOException
     {
         long tableLength = unsignedExtend(in.readInt());
@@ -154,7 +154,7 @@ public class ValueReader
         return table;
     }
 
-    private static final Object readFieldValue(DataInputStream in)
+    private static Object readFieldValue(DataInputStream in)
         throws IOException {
         Object value = null;
         switch(in.readUnsignedByte()) {
@@ -211,7 +211,7 @@ public class ValueReader
     }
 
     /** Read a field-array */
-    private static final List<Object> readArray(DataInputStream in)
+    private static List<Object> readArray(DataInputStream in)
         throws IOException
     {
         long length = unsignedExtend(in.readInt());
@@ -240,7 +240,7 @@ public class ValueReader
     }
 
     /** Convenience method - reads a timestamp argument from the DataInputStream. */
-    private static final Date readTimestamp(DataInputStream in)
+    private static Date readTimestamp(DataInputStream in)
         throws IOException
     {
         return new Date(in.readLong()*1000);

@@ -29,11 +29,11 @@ import com.rabbitmq.client.test.BrokerTestCase;
 // Test queue auto-delete and exclusive semantics.
 public class QueueExclusivity extends BrokerTestCase {
 
-    HashMap<String, Object> noArgs = new HashMap<String, Object>();
+    final HashMap<String, Object> noArgs = new HashMap<String, Object>();
 
     public Connection altConnection;
     public Channel altChannel;
-    String q = "exclusiveQ";
+    final String q = "exclusiveQ";
 
     protected void createResources() throws IOException {
         altConnection = connectionFactory.newConnection();

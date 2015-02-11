@@ -24,7 +24,7 @@ import java.util.Map;
 class SimpleScenarioStats extends Stats implements ScenarioStats {
     private static final int IGNORE_FIRST = 3;
 
-    private List<Map<String, Object>> samples = new ArrayList<Map<String, Object>>();
+    private final List<Map<String, Object>> samples = new ArrayList<Map<String, Object>>();
     private long elapsedTotalToIgnore;
     private long minMsgSize;
 
