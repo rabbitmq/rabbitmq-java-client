@@ -13,9 +13,10 @@ The suites are:
   SSL tests
 
 The Server test suite cannot be launched from the public umbrella
-( http://hg.rabbitmq.com/rabbitmq-public-umbrella ). Attempting to launch
-this suite by executing the "test-server" ant target will fail, because
-test necessary prerequisites are not present in the public umbrella.
+( https://github.com/rabbitmq/rabbitmq-public-umbrella.git ). Attempting
+to launch this suite by executing the "test-server" ant target will fail,
+because test necessary prerequisites are not present in the public
+umbrella.
 
 All other tests require a conforming server listening on localhost:5672
 (the default settings). SSL tests require a broker listening on the default
