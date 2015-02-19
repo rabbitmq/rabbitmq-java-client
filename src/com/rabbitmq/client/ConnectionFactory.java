@@ -46,9 +46,6 @@ import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 
 public class ConnectionFactory implements Cloneable {
 
-    /** Default Executor threads */
-    @Deprecated
-    public static final int    DEFAULT_NUM_CONSUMER_THREADS = 5;
     /** Default user name */
     public static final String DEFAULT_USER = "guest";
     /** Default password */
