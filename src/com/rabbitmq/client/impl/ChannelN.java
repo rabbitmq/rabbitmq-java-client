@@ -516,10 +516,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void abort(int closeCode, String closeMessage)
         throws IOException
     {
-        close(closeCode, closeMessage, true, null, true);
+        try {
+            close(closeCode, closeMessage, true, null, true);
+        } catch (IOException _e) { /* ignored */ }
     }
 
-    // TODO: method should be private
     /**
      * Protected API - Close channel with code and message, indicating
      * the source of the closure and a causing exception (null if
@@ -531,7 +532,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @param abort true if we should close and ignore errors
      * @throws IOException if an error is encountered
      */
-    public void close(int closeCode,
+    protected void close(int closeCode,
                       String closeMessage,
                       boolean initiatedByApplication,
                       Throwable cause,
@@ -1188,11 +1189,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     @Override
-    public RpcContinuation nextOutstandingRpc() {
+    protected void markRpcFinished() {
         synchronized (_channelMutex) {
-            RpcContinuation res = super.nextOutstandingRpc();
-            if (res != null) dispatcher.setUnlimited(false);
-            return res;
+            dispatcher.setUnlimited(false);
         }
     }
 

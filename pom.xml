@@ -8,7 +8,7 @@
     <name>RabbitMQ Java Client</name>
     <description>RabbitMQ AMQP Java Client</description>
     <url>http://www.rabbitmq.com</url>
-    
+
     <licenses>
       <license>
         <name>ASL 2.0</name>
@@ -28,8 +28,8 @@
     </licenses>
 
     <scm>
-      <url>http://hg.rabbitmq.com/rabbitmq-java-client</url>
-      <connection>scm:hg:http://hg.rabbitmq.com/rabbitmq-java-client</connection> 
+      <url>https://github.com/rabbitmq/rabbitmq-java-client.git</url>
+      <connection>scm:git:https://github.com/rabbitmq/rabbitmq-java-client.git</connection>
     </scm>
 
     <developers>
