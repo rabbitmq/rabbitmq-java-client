@@ -27,7 +27,7 @@ compile 'com.rabbitmq:amqp-client:3.4.4'
 
 ## Contributing
 
-See [Contributing](./CONTRIBUTING.md).
+See [Contributing](./CONTRIBUTING.md) and [How to Run Tests](./RUNNING_TESTS.md).
 
 
 ## License
