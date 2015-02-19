@@ -1,7 +1,7 @@
 ## Overview
 
 There are multiple test suites in the RabbitMQ Java client library;
-the source for all of the suites can be found in the test/src
+the source for all of the suites can be found in the [test/src](./test/src)
 directory.
 
 The suites are:
