@@ -1,0 +1,17 @@
+*~
+.sw?
+.*.sw?
+*.beam
+*.class
+*.dat
+*.dump
+*.iml
+*.ipr
+*.iws
+/.idea/
+/build/
+/cover/
+/dist/
+/ebin/
+/out/
+/tmp/
