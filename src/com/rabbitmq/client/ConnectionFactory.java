@@ -343,8 +343,9 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Set the requested heartbeat.
-     * @param requestedHeartbeat the initially requested heartbeat interval, in seconds; zero for none
+     * Set the requested heartbeat timeout. Heartbeat frames will be sent at about 1/2 the timeout interval.
+     * @param requestedHeartbeat the initially requested heartbeat timeout, in seconds; zero for none
+     * @see <a href="http://rabbitmq.com/heartbeats.html">RabbitMQ Heartbeats Guide</a>
      */
     public void setRequestedHeartbeat(int requestedHeartbeat) {
         this.requestedHeartbeat = requestedHeartbeat;
