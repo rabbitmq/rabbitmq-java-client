@@ -25,7 +25,7 @@ import com.rabbitmq.client.Channel;
 
 final public class ConsumerWorkService {
     private static final int MAX_RUNNABLE_BLOCK_SIZE = 16;
-    private static final int DEFAULT_NUM_THREADS = 5;
+    private static final int DEFAULT_NUM_THREADS = Runtime.getRuntime().availableProcessors() * 2;
     private final ExecutorService executor;
     private final boolean privateExecutor;
     private final WorkPool<Channel, Runnable> workPool;
