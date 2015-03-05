@@ -4,9 +4,9 @@ This repository contains source code of the [RabbitMQ Java client](http://www.ra
 The client is maintained by the [RabbitMQ team at Pivotal](http://github.com/rabbitmq/).
 
 
-## Dependency (Maven Artefact)
+## Dependency (Maven Artifact)
 
-Maven artefacts are [released to Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.rabbitmq%20a%3Aamqp-client).
+Maven artifacts are [released to Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.rabbitmq%20a%3Aamqp-client).
 
 ### Maven
 
