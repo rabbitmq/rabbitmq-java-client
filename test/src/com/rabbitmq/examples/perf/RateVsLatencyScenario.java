@@ -19,9 +19,9 @@ package com.rabbitmq.examples.perf;
 import com.rabbitmq.client.ConnectionFactory;
 
 public class RateVsLatencyScenario implements Scenario {
-    private String name;
-    private ConnectionFactory factory;
-    private MulticastParams params;
+    private final String name;
+    private final ConnectionFactory factory;
+    private final MulticastParams params;
     private VaryingScenario impl;
 
     public RateVsLatencyScenario(String name, ConnectionFactory factory, MulticastParams params) {

@@ -211,19 +211,20 @@ public class RpcClient {
      * @throws IOException if an error is encountered
      * @throws TimeoutException if a timeout occurs before the response is received
      */
+    @SuppressWarnings("unused")
     public String stringCall(String message)
         throws IOException, ShutdownSignalException, TimeoutException
     {
         byte[] request;
         try {
             request = message.getBytes(StringRpcServer.STRING_ENCODING);
-        } catch (IOException _) {
+        } catch (IOException _e) {
             request = message.getBytes();
         }
         byte[] reply = primitiveCall(request);
         try {
             return new String(reply, StringRpcServer.STRING_ENCODING);
-        } catch (IOException _) {
+        } catch (IOException _e) {
            return new String(reply);
         }
     }

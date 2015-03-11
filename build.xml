@@ -93,6 +93,8 @@
 	   debug="${javac.debug}">
       <src path="src"/>
       <src path="${src.generated}"/>
+      <compilerarg value="-Xlint:deprecation" />
+      <compilerarg value="-Xlint:unchecked" />
     </javac>
     <mkdir dir="build/doc/api"/>
   </target>
@@ -208,6 +210,9 @@
       debug="true"
       source="${javac.source}"
       target="${javac.target}">
+
+      <compilerarg value="-Xlint:deprecation" />
+      <compilerarg value="-Xlint:unchecked" />
 
       <classpath>
         <path refid="test.javac.classpath"/>

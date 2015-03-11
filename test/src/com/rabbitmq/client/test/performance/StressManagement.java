@@ -28,10 +28,10 @@ import java.io.IOException;
 
 public class StressManagement {
     protected static class Parameters {
-        String host;
-        int port;
-        int queueCount;
-        int channelCount;
+        final String host;
+        final int port;
+        final int queueCount;
+        final int channelCount;
 
         public static CommandLine parseCommandLine(String[] args) {
             CLIHelper helper = CLIHelper.defaultHelper();

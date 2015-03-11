@@ -30,12 +30,12 @@ import java.util.HashMap;
 public class AlternateExchange extends BrokerTestCase
 {
 
-    static private String[] resources = new String[]{"x","u","v"};
-    static private String[] keys      = new String[]{"x","u","v","z"};
+    static private final String[] resources = new String[]{"x","u","v"};
+    static private final String[] keys      = new String[]{"x","u","v","z"};
 
-    static private boolean unrouted[] = new boolean[] {false, false, false};
+    static private final boolean[] unrouted = new boolean[] {false, false, false};
 
-    private AtomicBoolean gotReturn = new AtomicBoolean();
+    private final AtomicBoolean gotReturn = new AtomicBoolean();
 
     /**
      * Determine which of the queues in our test configuration we

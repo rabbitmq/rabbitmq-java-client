@@ -32,7 +32,7 @@ import org.apache.commons.cli.ParseException;
  */
 public class CLIHelper {
 
-    private Options options = new Options();
+    private final Options options = new Options();
 
     public static CLIHelper defaultHelper() {
         Options opts = new Options();

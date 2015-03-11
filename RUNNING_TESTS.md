@@ -1,41 +1,42 @@
-Overview
-========
+## Overview
 
 There are multiple test suites in the RabbitMQ Java client library;
-the source for all of the suites can be found in the test/src
+the source for all of the suites can be found in the [test/src](./test/src)
 directory.
 
 The suites are:
 
-  Client tests
-  Functional tests
-  Server tests
-  SSL tests
+  * Client tests
+  * Functional tests
+  * Server tests
+  * SSL tests
 
-The Server test suite cannot be launched from the public umbrella
-( https://github.com/rabbitmq/rabbitmq-public-umbrella.git ). Attempting
-to launch this suite by executing the "test-server" ant target will fail,
-because test necessary prerequisites are not present in the public
-umbrella.
-
-All other tests require a conforming server listening on localhost:5672
+All of them assume a RabbitMQ node listening on localhost:5672
 (the default settings). SSL tests require a broker listening on the default
-SSL port. For details on running specific tests, see below.
+SSL port. Connection recovery tests assume `rabbitmqctl` at `../rabbitmq-server/scripts/rabbitmqctl`
+can control the running node: this is the case when all repositories are cloned using
+the [umbrella repository](https://github.com/rabbitmq/rabbitmq-public-umbrella).
+
+For details on running specific tests, see below.
 
 
-Running a Specific Test Suite
-=============================
+## Running a Specific Test Suite
 
 To run a specific test suite you should execute one of the following in the
 top-level directory of the source tree:
 
-  ant test-client
-  ant test-functional
-  ant test-ssl
-
+    # runs unit tests
+    ant test-client
+    # runs integration/functional tests
+    ant test-functional
+    # runs TLS tests
+    ant test-ssl
+    # run all test suites
+    ant test-suite
 
 For example, to run the client tests:
 
+```
 ----------------- Example shell session -------------------------------------
 rabbitmq-java-client$ ant test-client
 Buildfile: build.xml
@@ -58,19 +59,19 @@ test-client:
 
 BUILD SUCCESSFUL
 -----------------------------------------------------------------------------
+```
 
-If any tests are broken details can be found by viewing this file:
-	build/TEST-com.rabbitmq.client.test.ClientTests.txt
+Test failures and errors are logged to `build/TEST-*`.
 
 
-SSL Test Setup
---------------
+## SSL Test Setup
 
 To run the SSL tests, the RabbitMQ server and Java client should be configured
-as per the SSL instructions on the RabbitMQ website. The SSL_CERTS_DIR
+as per the SSL instructions on the RabbitMQ website. The `SSL_CERTS_DIR`
 environment variable must point to a certificate folder with the following
 minimal structure:
 
+```
    $SSL_CERTS_DIR
    |-- client
    |   |-- keycert.p12
@@ -81,12 +82,14 @@ minimal structure:
    |   \-- key.pem
    \-- testca
        \-- cacert.pem
+```
 
-The PASSWORD environment variable must be set to the password of the keycert.p12
+The `PASSWORD` environment variable must be set to the password of the keycert.p12
 PKCS12 keystore. The broker must be configured to validate client certificates.
-This will become minimal broker configuration file if $SSL_CERTS_DIR is replaced
+This will become minimal broker configuration file if `$SSL_CERTS_DIR` is replaced
 with the certificate folder:
 
+``` erlang
 %%%%% begin sample test broker configuration
 [{rabbit, [{ssl_listeners, [5671]},
            {ssl_options,   [{cacertfile,"$SSL_CERTS_DIR/testca/cacert.pem"},
@@ -95,5 +98,4 @@ with the certificate folder:
                             {verify,verify_peer},
                             {fail_if_no_peer_cert, false}]}]}].
 %%%%% end sample test broker configuration
-
-
+```

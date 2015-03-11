@@ -29,12 +29,12 @@ class ChannelCreationPerformance {
           {{setRequestedChannelMax(CHANNEL_MAX);}}.newConnection();
     }
 
-    static int CHANNEL_MAX = 10000;
-    static int STEP = 1000;
-    static int START = STEP;
+    static final int CHANNEL_MAX = 10000;
+    static final int STEP = 1000;
+    static final int START = STEP;
 
     abstract static class PerformanceTest{
-      String name;
+      final String name;
       Connection c;
       int i;
 

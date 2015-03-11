@@ -370,7 +370,7 @@ public class Transactions extends BrokerTestCase
         }
     }
 
-    private NackMethod basicNack = new NackMethod() {
+    private final NackMethod basicNack = new NackMethod() {
             public void nack(long tag, boolean requeue)
                 throws IOException
             {
@@ -378,7 +378,7 @@ public class Transactions extends BrokerTestCase
             }
         };
 
-    private NackMethod basicReject = new NackMethod() {
+    private final NackMethod basicReject = new NackMethod() {
             public void nack(long tag, boolean requeue)
                 throws IOException
             {

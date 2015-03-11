@@ -34,6 +34,6 @@ public abstract class AMQBasicProperties
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-        return (AMQBasicProperties) super.clone();
+        return super.clone();
     }
 }

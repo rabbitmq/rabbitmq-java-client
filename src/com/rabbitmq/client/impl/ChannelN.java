@@ -94,7 +94,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Set of currently unconfirmed messages (i.e. messages that have
      *  not been ack'd or nack'd by the server yet. */
-    private volatile SortedSet<Long> unconfirmedSet =
+    private final SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
     /** Whether any nacks have been received since the last waitForConfirms(). */
@@ -516,10 +516,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void abort(int closeCode, String closeMessage)
         throws IOException
     {
-        close(closeCode, closeMessage, true, null, true);
+        try {
+            close(closeCode, closeMessage, true, null, true);
+        } catch (IOException _e) { /* ignored */ }
     }
 
-    // TODO: method should be private
     /**
      * Protected API - Close channel with code and message, indicating
      * the source of the closure and a causing exception (null if
@@ -531,7 +532,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @param abort true if we should close and ignore errors
      * @throws IOException if an error is encountered
      */
-    public void close(int closeCode,
+    protected void close(int closeCode,
                       String closeMessage,
                       boolean initiatedByApplication,
                       Throwable cause,
@@ -1129,13 +1130,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return (Basic.RecoverOk) exnWrappingRpc(new Basic.Recover(requeue)).getMethod();
     }
 
-
-    /** Public API - {@inheritDoc} */
-    public void basicRecoverAsync(boolean requeue)
-        throws IOException
-    {
-        transmit(new Basic.RecoverAsync(requeue));
-    }
 
     /** Public API - {@inheritDoc} */
     public Tx.SelectOk txSelect()

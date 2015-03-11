@@ -60,8 +60,8 @@ public class ScalabilityTest {
 
     private abstract static class Measurements {
 
-        protected long[] times;
-        private long start;
+        protected final long[] times;
+        private final long start;
 
         public Measurements(final int count) {
             times = new long[count];
@@ -120,9 +120,9 @@ public class ScalabilityTest {
 
     private static class Results {
 
-        float[][] creationTimes;
-        float[][] deletionTimes;
-        float[][] routingTimes;
+        final float[][] creationTimes;
+        final float[][] deletionTimes;
+        final float[][] routingTimes;
 
         public Results(final int y) {
             creationTimes = new float[y][];
@@ -189,7 +189,7 @@ public class ScalabilityTest {
         }
     }
 
-    private static NumberFormat format = new DecimalFormat("0.00");
+    private static final NumberFormat format = new DecimalFormat("0.00");
 
     private final Parameters params;
 
@@ -308,7 +308,7 @@ public class ScalabilityTest {
         int size = routingKeys.length;
         for (int n = 0; n < params.messageCount; n ++) {
             String key = routingKeys[r.nextInt(size)];
-            channel.basicPublish("amq.direct", key, mandatory, immdediate,
+            channel.basicPublish("amq.direct", key, true, false,
                                  MessageProperties.MINIMAL_BASIC, null);
         }
 

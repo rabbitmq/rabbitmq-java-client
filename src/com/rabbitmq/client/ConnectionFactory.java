@@ -46,9 +46,6 @@ import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 
 public class ConnectionFactory implements Cloneable {
 
-    /** Default Executor threads */
-    @Deprecated
-    public static final int    DEFAULT_NUM_CONSUMER_THREADS = 5;
     /** Default user name */
     public static final String DEFAULT_USER = "guest";
     /** Default password */
@@ -107,18 +104,6 @@ public class ConnectionFactory implements Cloneable {
     // and longs safely. It is unlikely that anybody'd need
     // to use recovery intervals > Integer.MAX_VALUE in practice.
     private long networkRecoveryInterval          = 5000;
-
-    /** @return number of consumer threads in default {@link ExecutorService} */
-    @Deprecated
-    public int getNumConsumerThreads() {
-        return DEFAULT_NUM_CONSUMER_THREADS;
-    }
-
-    /** @param numConsumerThreads threads in created private executor service */
-    @Deprecated
-    public void setNumConsumerThreads(int numConsumerThreads) {
-        throw new IllegalArgumentException("setNumConsumerThreads not supported -- create explicit ExecutorService instead.");
-    }
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -358,8 +343,9 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Set the requested heartbeat.
-     * @param requestedHeartbeat the initially requested heartbeat interval, in seconds; zero for none
+     * Set the requested heartbeat timeout. Heartbeat frames will be sent at about 1/2 the timeout interval.
+     * @param requestedHeartbeat the initially requested heartbeat timeout, in seconds; zero for none
+     * @see <a href="http://rabbitmq.com/heartbeats.html">RabbitMQ Heartbeats Guide</a>
      */
     public void setRequestedHeartbeat(int requestedHeartbeat) {
         this.requestedHeartbeat = requestedHeartbeat;

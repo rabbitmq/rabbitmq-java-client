@@ -194,7 +194,7 @@ public class TestMain {
         // Test what happens when we just kill the connection
         conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
         ch = conn.createChannel();
-        ((SocketFrameHandler)((AMQConnection)conn).getFrameHandler()).close();
+        ((AMQConnection)conn).getFrameHandler().close();
     }
 
     public static void runProducerConsumerTest(String uri, int commitEvery)
@@ -215,10 +215,10 @@ public class TestMain {
     public static void sleep(int ms) {
         try {
             Thread.sleep(ms);
-        } catch (InterruptedException _) { } // ignore
+        } catch (InterruptedException _e) { } // ignore
     }
 
-    private Connection _connection;
+    private final Connection _connection;
 
     private Channel _ch1;
 

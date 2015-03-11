@@ -81,7 +81,7 @@ public class DirectReplyToPerformance {
     }
 
     public static class SharedReplyQueue implements ReplyQueueStrategy {
-        private String queue;
+        private final String queue;
         private String ctag;
 
         public SharedReplyQueue() {
@@ -115,7 +115,7 @@ public class DirectReplyToPerformance {
         }
     }
     private static class Server implements Task {
-        private String uri;
+        private final String uri;
 
         public Server(String uri) {
             this.uri = uri;
@@ -138,10 +138,10 @@ public class DirectReplyToPerformance {
     }
 
     private static class Client implements Task {
-        private String uri;
-        private CountDownLatch globalLatch;
-        private ReplyQueueStrategy strategy;
-        private boolean reuseConnection;
+        private final String uri;
+        private final CountDownLatch globalLatch;
+        private final ReplyQueueStrategy strategy;
+        private final boolean reuseConnection;
 
         public Client(String uri, CountDownLatch latch, ReplyQueueStrategy strategy, boolean reuseConnection) {
             this.uri = uri;
@@ -187,7 +187,7 @@ public class DirectReplyToPerformance {
     }
 
     private static class ClientConsumer implements Consumer {
-        private CountDownLatch[] latch;
+        private final CountDownLatch[] latch;
 
         public ClientConsumer(CountDownLatch[] latch) {
             this.latch = latch;
@@ -203,6 +203,6 @@ public class DirectReplyToPerformance {
         public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
             latch[0].countDown();
         }
-    };
+    }
 
 }

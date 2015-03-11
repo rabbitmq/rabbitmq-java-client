@@ -35,23 +35,23 @@ import java.util.concurrent.Semaphore;
 public class Producer extends ProducerConsumerBase implements Runnable, ReturnListener,
         ConfirmListener
 {
-    private Channel channel;
-    private String  exchangeName;
-    private String  id;
-    private boolean randomRoutingKey;
-    private boolean mandatory;
-    private boolean immediate;
-    private boolean persistent;
-    private int     txSize;
-    private int     msgLimit;
-    private long    timeLimit;
+    private final Channel channel;
+    private final String  exchangeName;
+    private final String  id;
+    private final boolean randomRoutingKey;
+    private final boolean mandatory;
+    private final boolean immediate;
+    private final boolean persistent;
+    private final int     txSize;
+    private final int     msgLimit;
+    private final long    timeLimit;
 
-    private Stats   stats;
+    private final Stats   stats;
 
-    private byte[]  message;
+    private final byte[]  message;
 
     private Semaphore confirmPool;
-    private volatile SortedSet<Long> unconfirmedSet =
+    private final SortedSet<Long> unconfirmedSet =
         Collections.synchronizedSortedSet(new TreeSet<Long>());
 
     public Producer(Channel channel, String exchangeName, String id, boolean randomRoutingKey,

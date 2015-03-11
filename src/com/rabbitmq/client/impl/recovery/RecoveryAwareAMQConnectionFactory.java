@@ -12,9 +12,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class RecoveryAwareAMQConnectionFactory {
-    private ConnectionParams params;
-    private FrameHandlerFactory factory;
-    private Address[] addrs;
+    private final ConnectionParams params;
+    private final FrameHandlerFactory factory;
+    private final Address[] addrs;
 
     public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, Address[] addrs) {
         this.params = params;
@@ -44,7 +44,7 @@ public class RecoveryAwareAMQConnectionFactory {
     }
 
     private Address[] shuffle(Address[] addrs) {
-        List list = new ArrayList<Address>(Arrays.asList(addrs));
+        List<Address> list = new ArrayList<Address>(Arrays.asList(addrs));
         Collections.shuffle(list);
         Address[] result = new Address[addrs.length];
         list.toArray(result);

@@ -247,8 +247,8 @@ public abstract class RequeueOnClose
     private class PartialConsumer extends DefaultConsumer {
 
         private volatile int count;
-        private Channel channel;
-        private CountDownLatch latch;
+        private final Channel channel;
+        private final CountDownLatch latch;
         private volatile boolean acknowledge;
         private final boolean cancelBeforeFinish;
 

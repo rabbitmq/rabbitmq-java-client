@@ -40,7 +40,6 @@ public abstract class ExchangeEquivalenceBase extends BrokerTestCase {
             fail("Exchange was supposed to be not equivalent");
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
-            return;
         }
     }
 }

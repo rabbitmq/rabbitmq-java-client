@@ -36,8 +36,9 @@ import java.util.Map;
 public class PerfTestMulti {
     private static final ConnectionFactory factory = new ConnectionFactory();
 
-    private static Map<String, Object> results = new HashMap<String, Object>();
+    private static final Map<String, Object> results = new HashMap<String, Object>();
 
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {
             System.out.println("Usage: PerfTestMulti input-json-file output-json-file");
@@ -87,10 +88,7 @@ public class PerfTestMulti {
     }
 
     private static void runStaticBrokerTests(Scenario[] scenarios) throws Exception {
-//        Broker broker = Broker.HIPE_COARSE;
-//        broker.start();
         runTests(scenarios);
-//        broker.stop();
     }
 
     private static void runTests(Scenario[] scenarios) throws Exception {

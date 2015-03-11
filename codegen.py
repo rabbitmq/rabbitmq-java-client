@@ -325,14 +325,6 @@ def genJavaApi(spec):
         def printGetter(fieldType, fieldName):
             capFieldName = fieldName[0].upper() + fieldName[1:]
             print "        public %s get%s() { return this.%s; }" % (java_boxed_type(fieldType), capFieldName, fieldName)
-        def printSetter(fieldType, fieldName):
-            capFieldName = fieldName[0].upper() + fieldName[1:]
-            print "        @Deprecated"
-            if fieldType == "Map<String,Object>":
-                print "        public void set%s(%s %s)" % (capFieldName, fieldType, fieldName)
-                print "        { this.%s = %s==null ? null : Collections.unmodifiableMap(new HashMap<String,Object>(%s)); }" % (fieldName, fieldName, fieldName)
-            else:
-                print "        public void set%s(%s %s) { this.%s = %s; }" % (capFieldName, java_boxed_type(fieldType), fieldName, fieldName, fieldName)
 
         jClassName = java_class_name(c.name)
 
@@ -383,7 +375,6 @@ def genJavaApi(spec):
         for f in c.fields:
             (jType, jName) = (java_field_type(spec, f.domain), java_field_name(f.name))
             printGetter(jType, jName)
-            printSetter(jType, jName)
 
         printWritePropertiesTo(c)
         printAppendPropertyDebugStringTo(c)

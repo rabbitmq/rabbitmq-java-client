@@ -35,7 +35,7 @@ final class CommandAssembler {
 
     /** Current state, used to decide how to handle each incoming frame. */
     private enum CAState {
-        EXPECTING_METHOD, EXPECTING_CONTENT_HEADER, EXPECTING_CONTENT_BODY, COMPLETE;
+        EXPECTING_METHOD, EXPECTING_CONTENT_HEADER, EXPECTING_CONTENT_BODY, COMPLETE
     }
     private CAState state;
 

@@ -28,8 +28,8 @@ public class ProtocolVersionMismatchException extends ProtocolException
 {
     /** Default serialVersionUID for serializability without version checking. */
     private static final long serialVersionUID = 1L;
-    private Version clientVersion;
-    private Version serverVersion;
+    private final Version clientVersion;
+    private final Version serverVersion;
 
     public ProtocolVersionMismatchException(Version clientVersion,
                                             Version serverVersion) {

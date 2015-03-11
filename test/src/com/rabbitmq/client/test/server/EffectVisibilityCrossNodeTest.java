@@ -25,7 +25,7 @@ import java.io.IOException;
  * happen out of order
  */
 public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
-    private String[] queues = new String[QUEUES];
+    private final String[] queues = new String[QUEUES];
 
     @Override
     protected void createResources() throws IOException {

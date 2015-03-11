@@ -83,7 +83,7 @@ public class TracerConcurrencyTest {
      *
      * @return connection
      */
-    private static final Connection createConnectionAndResources() throws Exception {
+    private static Connection createConnectionAndResources() throws Exception {
         ConnectionFactory cf = new ConnectionFactory();
         cf.setUri(uri);
         Connection conn = cf.newConnection();

@@ -41,7 +41,7 @@ public class BufferPerformanceMetrics {
     public static final int REPEATS        = 1000000;
     public static final int PEAK_SIZE      = 20 * 1024;
 
-    public static double NANOSECONDS_PER_SECOND = 1000 * 1000 * 1000;
+    public static final double NANOSECONDS_PER_SECOND = 1000 * 1000 * 1000;
 
     public static void main(String[] args) throws Exception {
         final String uri = args.length > 0 ? args[0] : "amqp://localhost";

@@ -36,7 +36,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
                                                          { "q1", "e1" },
                                                          { "q2", "e2" } };
 
-    private QueueingConsumer[] consumers = new QueueingConsumer[] { null, null,
+    private final QueueingConsumer[] consumers = new QueueingConsumer[] { null, null,
             null };
 
     protected void publishWithMarker(String x, String rk) throws IOException {
