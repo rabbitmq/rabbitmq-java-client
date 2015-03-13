@@ -5,12 +5,19 @@ import com.rabbitmq.client.impl.ChannelManager;
 import com.rabbitmq.client.impl.ChannelN;
 import com.rabbitmq.client.impl.ConsumerWorkService;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+
 /**
  * @since 3.3.0
  */
 public class RecoveryAwareChannelManager extends ChannelManager {
     public RecoveryAwareChannelManager(ConsumerWorkService workService, int channelMax) {
-        super(workService, channelMax);
+        this(workService, channelMax, Executors.defaultThreadFactory());
+    }
+
+    public RecoveryAwareChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory) {
+        super(workService, channelMax, threadFactory);
     }
 
     @Override
