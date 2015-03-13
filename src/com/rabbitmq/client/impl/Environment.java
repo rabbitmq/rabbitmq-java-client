@@ -9,9 +9,11 @@ import java.util.concurrent.ThreadFactory;
 class Environment {
     public static boolean isAllowedToModifyThreads() {
         try {
-            SecurityManager sm = new SecurityManager();
-            sm.checkPermission(new RuntimePermission("modifyThread"));
-            sm.checkPermission(new RuntimePermission("modifyThreadGroup"));
+            SecurityManager sm = System.getSecurityManager();
+            if(sm != null) {
+                sm.checkPermission(new RuntimePermission("modifyThread"));
+                sm.checkPermission(new RuntimePermission("modifyThreadGroup"));
+            }
             return true;
         } catch (SecurityException se) {
             return false;
