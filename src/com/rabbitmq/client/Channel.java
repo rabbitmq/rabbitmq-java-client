@@ -564,6 +564,17 @@ public interface Channel extends ShutdownNotifier {
     void queueDeleteNoWait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException;
 
     /**
+     * Bind a queue to an exchange, with a blank routing key and no extra arguments.
+     * @see com.rabbitmq.client.AMQP.Queue.Bind
+     * @see com.rabbitmq.client.AMQP.Queue.BindOk
+     * @param queue the name of the queue
+     * @param exchange the name of the exchange
+     * @return a binding-confirm method if the binding was successfully created
+     * @throws java.io.IOException if an error is encountered
+     */
+    Queue.BindOk queueBind(String queue, String exchange) throws IOException;
+
+    /**
      * Bind a queue to an exchange, with no extra arguments.
      * @see com.rabbitmq.client.AMQP.Queue.Bind
      * @see com.rabbitmq.client.AMQP.Queue.BindOk

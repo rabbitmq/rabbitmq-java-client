@@ -14,6 +14,7 @@ import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.AMQImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -299,6 +300,12 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     public void queueDeleteNoWait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
         deleteRecordedQueue(queue);
         delegate.queueDeleteNoWait(queue, ifUnused, ifEmpty);
+    }
+
+    public AMQP.Queue.BindOk queueBind(String queue, String exchange)
+        throws IOException
+    {
+        return queueBind(queue, exchange, "", null);
     }
 
     public AMQP.Queue.BindOk queueBind(String queue, String exchange, String routingKey) throws IOException {

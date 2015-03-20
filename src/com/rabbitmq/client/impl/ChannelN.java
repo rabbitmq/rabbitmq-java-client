@@ -926,6 +926,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public Queue.BindOk queueBind(String queue, String exchange)
+        throws IOException
+    {
+        return queueBind(queue, exchange, "", null);
+    }
+
+    /** Public API - {@inheritDoc} */
     public Queue.BindOk queueBind(String queue, String exchange, String routingKey)
         throws IOException
     {
