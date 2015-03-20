@@ -302,12 +302,6 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         delegate.queueDeleteNoWait(queue, ifUnused, ifEmpty);
     }
 
-    public AMQP.Queue.BindOk queueBind(String queue, String exchange)
-        throws IOException
-    {
-        return queueBind(queue, exchange, "", null);
-    }
-
     public AMQP.Queue.BindOk queueBind(String queue, String exchange, String routingKey) throws IOException {
         return queueBind(queue, exchange, routingKey, null);
     }

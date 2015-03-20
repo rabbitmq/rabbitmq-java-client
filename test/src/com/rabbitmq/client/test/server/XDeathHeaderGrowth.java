@@ -2,7 +2,6 @@ package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -60,17 +59,17 @@ public class XDeathHeaderGrowth extends BrokerTestCase {
         final String q2 = "issues.rabbitmq-server-78.queue2";
         Map<String, Object> args2 = argumentsForDeadLetteringTo(x2);
         declareTransientQueue(q2, args2);
-        this.channel.queueBind(q2, x1);
+        this.channel.queueBind(q2, x1, "");
 
         final String q3 = "issues.rabbitmq-server-78.queue3";
         Map<String, Object> args3 = argumentsForDeadLetteringTo(x3);
         declareTransientQueue(q3, args3);
-        this.channel.queueBind(q3, x2);
+        this.channel.queueBind(q3, x2, "");
 
         final String qz = "issues.rabbitmq-server-78.destination";
         Map<String, Object> args4 = argumentsForDeadLetteringTo(x3);
         declareTransientQueue(qz, args4);
-        this.channel.queueBind(qz, x3);
+        this.channel.queueBind(qz, x3, "");
 
         CountDownLatch latch = new CountDownLatch(5);
         RejectingConsumer cons = new RejectingConsumer(this.channel, latch);
