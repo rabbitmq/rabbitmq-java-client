@@ -32,7 +32,9 @@ class RejectingConsumer extends DefaultConsumer {
         if(this.latch.getCount() > 0) {
             this.getChannel().basicReject(envelope.getDeliveryTag(), false);
         } else {
-            this.getChannel().basicAck(envelope.getDeliveryTag(), false);
+            if(this.getChannel().isOpen()) {
+                this.getChannel().basicAck(envelope.getDeliveryTag(), false);
+            }
         }
         this.headers = properties.getHeaders();
         latch.countDown();
@@ -44,6 +46,7 @@ class RejectingConsumer extends DefaultConsumer {
 }
 
 public class XDeathHeaderGrowth extends BrokerTestCase {
+    @SuppressWarnings("unchecked")
     public void testBoundedXDeathHeaderGrowth() throws IOException, InterruptedException {
         final String x1 = "issues.rabbitmq-server-78.fanout1";
         declareTransientFanoutExchange(x1);
@@ -71,7 +74,7 @@ public class XDeathHeaderGrowth extends BrokerTestCase {
         declareTransientQueue(qz, args4);
         this.channel.queueBind(qz, x3, "");
 
-        CountDownLatch latch = new CountDownLatch(5);
+        CountDownLatch latch = new CountDownLatch(10);
         RejectingConsumer cons = new RejectingConsumer(this.channel, latch);
         this.channel.basicConsume(qz, cons);
 
@@ -86,6 +89,12 @@ public class XDeathHeaderGrowth extends BrokerTestCase {
         }
         Collections.sort(qs);
         assertEquals(Arrays.asList(qz, q1, q2, q3), qs);
+        List<Long> cs = new ArrayList<Long>();
+        for (Map<String, Object> evt : events) {
+            cs.add((Long)evt.get("counter"));
+        }
+        Collections.sort(cs);
+        assertEquals(Arrays.asList(1L, 1L, 1L, 9L), cs);
     }
 
     private Map<String, Object> argumentsForDeadLetteringTo(String dlx) {
