@@ -14,7 +14,6 @@ import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.impl.AMQImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
