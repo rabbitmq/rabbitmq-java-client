@@ -91,7 +91,7 @@ public class XDeathHeaderGrowth extends BrokerTestCase {
         assertEquals(Arrays.asList(qz, q1, q2, q3), qs);
         List<Long> cs = new ArrayList<Long>();
         for (Map<String, Object> evt : events) {
-            cs.add((Long)evt.get("counter"));
+            cs.add((Long)evt.get("count"));
         }
         Collections.sort(cs);
         assertEquals(Arrays.asList(1L, 1L, 1L, 9L), cs);
