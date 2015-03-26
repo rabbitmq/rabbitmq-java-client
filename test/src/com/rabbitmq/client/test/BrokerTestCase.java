@@ -18,6 +18,7 @@
 package com.rabbitmq.client.test;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.UUID;
 
 import junit.framework.TestCase;
@@ -226,12 +227,24 @@ public class BrokerTestCase extends TestCase {
         channel.queueDeclare(q, true, false, false, null);
     }
 
+    protected void declareTransientQueue(String q) throws IOException {
+        channel.queueDeclare(q, false, false, false, null);
+    }
+
+    protected void declareTransientQueue(String q, Map<String, Object> args) throws IOException {
+        channel.queueDeclare(q, false, false, false, args);
+    }
+
     protected void declareDurableTopicExchange(String x) throws IOException {
         channel.exchangeDeclare(x, "topic", true);
     }
 
     protected void declareTransientTopicExchange(String x) throws IOException {
         channel.exchangeDeclare(x, "topic", false);
+    }
+
+    protected void declareTransientFanoutExchange(String x) throws IOException {
+        channel.exchangeDeclare(x, "fanout", false);
     }
 
     protected void deleteExchange(String x) throws IOException {
