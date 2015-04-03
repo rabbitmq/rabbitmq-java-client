@@ -21,7 +21,7 @@ import java.io.IOException;
 
 /**
  * Implement this interface in order to be notified of Confirm events.
- * Acks represent messages handled succesfully; Nacks represent
+ * Acks represent messages handled successfully; Nacks represent
  * messages lost by the broker.  Note, the lost messages could still
  * have been delivered to consumers, but the broker cannot guarantee
  * this.
