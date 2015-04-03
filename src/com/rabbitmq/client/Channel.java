@@ -630,7 +630,7 @@ public interface Channel extends ShutdownNotifier {
      * @see com.rabbitmq.client.AMQP.Queue.Purge
      * @see com.rabbitmq.client.AMQP.Queue.PurgeOk
      * @param queue the name of the queue
-     * @return a purge-confirm method if the purge was executed succesfully
+     * @return a purge-confirm method if the purge was executed successfully
      * @throws java.io.IOException if an error is encountered
      */
     Queue.PurgeOk queuePurge(String queue) throws IOException;
