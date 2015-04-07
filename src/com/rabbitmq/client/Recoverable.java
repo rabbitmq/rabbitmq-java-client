@@ -8,7 +8,7 @@ public interface Recoverable {
     /**
      * Registers a connection recovery callback.
      *
-     * @param f Callback function
+     * @param listener Callback function
      */
     public void addRecoveryListener(RecoveryListener listener);
 
