@@ -571,7 +571,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             // we wait for the reply. We ignore the result.
             // (It's NOT always close-ok.)
             notify = true;
-            k.getReply(-1);
+			// Should not wait indefinately, since if the server is congested
+			// the call will lock and never return. This stalls and kills the current thread.
+            k.getReply(10000);
         } catch (TimeoutException ise) {
             // Will never happen since we wait infinitely
         } catch (ShutdownSignalException sse) {
