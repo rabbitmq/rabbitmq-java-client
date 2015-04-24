@@ -422,10 +422,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                            command.getContentBody());
         } catch (Throwable ex) {
             getConnection().getExceptionHandler().handleConsumerException(this,
-                                                                          ex,
-                                                                          callback,
-                                                                          m.getConsumerTag(),
-                                                                          "handleDelivery");
+                ex,
+                callback,
+                m.getConsumerTag(),
+                "handleDelivery");
         }
     }
 
@@ -433,11 +433,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         try {
             for (ReturnListener l : this.returnListeners) {
                 l.handleReturn(basicReturn.getReplyCode(),
-                               basicReturn.getReplyText(),
-                               basicReturn.getExchange(),
-                               basicReturn.getRoutingKey(),
-             (BasicProperties) command.getContentHeader(),
-                               command.getContentBody());
+                    basicReturn.getReplyText(),
+                    basicReturn.getExchange(),
+                    basicReturn.getRoutingKey(),
+                    (BasicProperties) command.getContentHeader(),
+                    command.getContentBody());
             }
         } catch (Throwable ex) {
             getConnection().getExceptionHandler().handleReturnListenerException(this, ex);
@@ -493,15 +493,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Public API - {@inheritDoc} */
     public void close()
-        throws IOException
-    {
+        throws IOException, TimeoutException {
         close(AMQP.REPLY_SUCCESS, "OK");
     }
 
     /** Public API - {@inheritDoc} */
     public void close(int closeCode, String closeMessage)
-        throws IOException
-    {
+        throws IOException, TimeoutException {
         close(closeCode, closeMessage, true, null, false);
     }
 
@@ -517,8 +515,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         try {
-            close(closeCode, closeMessage, true, null, true);
-        } catch (IOException _e) { /* ignored */ }
+          close(closeCode, closeMessage, true, null, true);
+        } catch (IOException _e) {
+        /* ignored */
+        } catch (TimeoutException _e) {
+          /* ignored */
+        }
     }
 
     /**
