@@ -77,7 +77,7 @@ public interface Channel extends ShutdownNotifier {
      *
      * @throws java.io.IOException if an error is encountered
      */
-    void close() throws IOException;
+    void close() throws IOException, TimeoutException;
 
     /**
      * Close this channel.
@@ -86,7 +86,7 @@ public interface Channel extends ShutdownNotifier {
      * @param closeMessage a message indicating the reason for closing the connection
      * @throws java.io.IOException if an error is encountered
      */
-    void close(int closeCode, String closeMessage) throws IOException;
+    void close(int closeCode, String closeMessage) throws IOException, TimeoutException;
 
     /**
      * Indicates whether the server has asked this client to stop
