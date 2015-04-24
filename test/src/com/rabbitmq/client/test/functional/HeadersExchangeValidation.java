@@ -43,6 +43,6 @@ public class HeadersExchangeValidation extends BrokerTestCase {
     private void succeedBind(String queue, HashMap<String, Object> arguments) throws IOException {
         Channel ch = connection.createChannel();
         ch.queueBind(queue, "amq.headers", "", arguments);
-        ch.close();
+        ch.abort();
     }
 }

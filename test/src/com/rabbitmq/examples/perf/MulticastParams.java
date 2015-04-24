@@ -217,7 +217,7 @@ public class MulticastParams {
                                          null).getQueue();
         }
         channel.queueBind(qName, exchangeName, id);
-        channel.close();
+        channel.abort();
         return qName;
     }
 
@@ -245,7 +245,7 @@ public class MulticastParams {
         try {
             Channel ch = connection.createChannel();
             checker.check(ch);
-            ch.close();
+            ch.abort();
             return true;
         }
         catch (IOException e) {

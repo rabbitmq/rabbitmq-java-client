@@ -5,6 +5,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 public class BasicGet extends BrokerTestCase {
   public void testBasicGetWithEnqueuedMessages() throws IOException, InterruptedException {
@@ -28,7 +29,7 @@ public class BasicGet extends BrokerTestCase {
     channel.queueDelete(q);
   }
 
-  public void testBasicGetWithClosedChannel() throws IOException, InterruptedException {
+  public void testBasicGetWithClosedChannel() throws IOException, InterruptedException, TimeoutException {
     assertTrue(channel.isOpen());
     String q = channel.queueDeclare().getQueue();
 

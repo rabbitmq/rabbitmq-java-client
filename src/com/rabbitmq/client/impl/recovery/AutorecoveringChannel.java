@@ -57,7 +57,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return delegate;
     }
 
-    public void close() throws IOException {
+    public void close() throws IOException, TimeoutException {
         try {
           delegate.close();
         } finally {
@@ -65,7 +65,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         }
     }
 
-    public void close(int closeCode, String closeMessage) throws IOException {
+    public void close(int closeCode, String closeMessage) throws IOException, TimeoutException {
         try {
           delegate.close(closeCode, closeMessage);
         } finally {

@@ -22,6 +22,7 @@ import java.io.DataInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -93,10 +94,14 @@ public class ConsumerMain implements Runnable {
             System.err.println("hit IOException in ConsumerMain: trace follows");
             ex.printStackTrace();
             throw new RuntimeException(ex);
+        } catch (TimeoutException ex) {
+            System.err.println("hit IOException in ConsumerMain: trace follows");
+            ex.printStackTrace();
+            throw new RuntimeException(ex);
         }
     }
 
-    private void runIt() throws IOException {
+    private void runIt() throws IOException, TimeoutException {
         Channel channel = _connection.createChannel();
 
         String queueName = "test queue";

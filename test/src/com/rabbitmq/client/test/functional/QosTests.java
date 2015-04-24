@@ -316,8 +316,8 @@ public class QosTests extends BrokerTestCase
         ackDelivery(ch2, d2.remove(0), true);
         drain(c1, 1);
         drain(c2, 1);
-        ch1.close();
-        ch2.close();
+        ch1.abort();
+        ch2.abort();
     }
 
     public void testLimitInheritsUnackedCount()

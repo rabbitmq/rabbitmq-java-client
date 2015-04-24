@@ -19,6 +19,7 @@ package com.rabbitmq.examples;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -128,9 +129,12 @@ public class ProducerMain implements Runnable {
         } catch (IOException ex) {
             throw new RuntimeException(ex); // wrap and re-throw
         }
+         catch (TimeoutException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
-    private void runIt() throws IOException {
+    private void runIt() throws IOException, TimeoutException {
         _channel = _connection.createChannel();
 
         String queueName = "test queue";

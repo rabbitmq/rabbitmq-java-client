@@ -112,7 +112,7 @@ public class Bug19219Test extends BrokerTestCase {
         //notifications timing out.
         boolean success = false;
         try {
-            channel.close();
+            channel.abort();
             success = true;
         } catch (ShutdownSignalException e) {
         } finally {

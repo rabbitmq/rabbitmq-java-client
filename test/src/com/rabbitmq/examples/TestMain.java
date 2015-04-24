@@ -270,7 +270,7 @@ public class TestMain {
         sendLotsOfTrivialMessages(batchSize, queueName);
         expect(batchSize, drain(batchSize, queueName, true));
 
-        _ch1.close();
+        _ch1.abort();
 
         log("Closing.");
         try {

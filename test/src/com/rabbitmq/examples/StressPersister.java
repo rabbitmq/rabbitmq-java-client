@@ -204,7 +204,7 @@ public class StressPersister {
         redeclare(q, chan);
 
         trace("Closing connection");
-        chan.close();
+        chan.abort();
         conn.close();
 
         trace("Sample results (timestamp in milliseconds since epoch; microseconds/roundtrip)");

@@ -276,7 +276,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.exchangeDelete(x);
     }
 
-    public void testDeclarationOfManyAutoDeleteQueuesWithTransientConsumer() throws IOException {
+    public void testDeclarationOfManyAutoDeleteQueuesWithTransientConsumer() throws IOException, TimeoutException {
         Channel ch = connection.createChannel();
         assertRecordedQueues(connection, 0);
         for(int i = 0; i < 5000; i++) {
@@ -290,7 +290,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.close();
     }
 
-    public void testDeclarationOfManyAutoDeleteExchangesWithTransientQueuesThatAreUnbound() throws IOException {
+    public void testDeclarationOfManyAutoDeleteExchangesWithTransientQueuesThatAreUnbound() throws IOException, TimeoutException {
         Channel ch = connection.createChannel();
         assertRecordedExchanges(connection, 0);
         for(int i = 0; i < 5000; i++) {
@@ -306,7 +306,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.close();
     }
 
-    public void testDeclarationOfManyAutoDeleteExchangesWithTransientQueuesThatAreDeleted() throws IOException {
+    public void testDeclarationOfManyAutoDeleteExchangesWithTransientQueuesThatAreDeleted() throws IOException, TimeoutException {
         Channel ch = connection.createChannel();
         assertRecordedExchanges(connection, 0);
         for(int i = 0; i < 5000; i++) {
@@ -320,7 +320,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.close();
     }
 
-    public void testDeclarationOfManyAutoDeleteExchangesWithTransientExchangesThatAreUnbound() throws IOException {
+    public void testDeclarationOfManyAutoDeleteExchangesWithTransientExchangesThatAreUnbound() throws IOException, TimeoutException {
         Channel ch = connection.createChannel();
         assertRecordedExchanges(connection, 0);
         for(int i = 0; i < 5000; i++) {
@@ -337,7 +337,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.close();
     }
 
-    public void testDeclarationOfManyAutoDeleteExchangesWithTransientExchangesThatAreDeleted() throws IOException {
+    public void testDeclarationOfManyAutoDeleteExchangesWithTransientExchangesThatAreDeleted() throws IOException, TimeoutException {
         Channel ch = connection.createChannel();
         assertRecordedExchanges(connection, 0);
         for(int i = 0; i < 5000; i++) {
