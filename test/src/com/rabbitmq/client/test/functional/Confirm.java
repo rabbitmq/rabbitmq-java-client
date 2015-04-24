@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.TimeoutException;
 
 public class Confirm extends BrokerTestCase
 {
@@ -242,8 +243,7 @@ public class Confirm extends BrokerTestCase
     }
 
     public void testWaitForConfirmsException()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         publishN("", "confirm-test", true, false);
         channel.close();
         try {

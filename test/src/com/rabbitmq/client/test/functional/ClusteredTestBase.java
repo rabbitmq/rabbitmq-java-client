@@ -97,8 +97,8 @@ public class ClusteredTestBase extends BrokerTestCase {
         }
 
         ch1.queueDelete(q);
-        ch1.close();
-        ch2.close();
+        ch1.abort();
+        ch2.abort();
 
         return true;
     }

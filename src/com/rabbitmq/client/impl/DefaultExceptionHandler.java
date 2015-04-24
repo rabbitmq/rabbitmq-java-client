@@ -18,6 +18,7 @@ package com.rabbitmq.client.impl;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AlreadyClosedException;
@@ -105,6 +106,8 @@ public class DefaultExceptionHandler implements ExceptionHandler {
         try {
             channel.close(AMQP.REPLY_SUCCESS, "Closed due to exception from " + what);
         } catch (AlreadyClosedException ace) {
+            // noop
+        } catch (TimeoutException ace) {
             // noop
         } catch (IOException ioe) {
             // TODO: log the failure
