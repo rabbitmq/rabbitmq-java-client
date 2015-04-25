@@ -16,6 +16,7 @@
 
 package com.rabbitmq.client;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -58,7 +59,7 @@ import com.rabbitmq.client.AMQP.Confirm;
  *
  */
 
-public interface Channel extends ShutdownNotifier {
+public interface Channel extends ShutdownNotifier, Closeable {
     /**
      * Retrieve this channel's channel number.
      * @return the channel number
@@ -77,6 +78,7 @@ public interface Channel extends ShutdownNotifier {
      *
      * @throws java.io.IOException if an error is encountered
      */
+    @Override
     void close() throws IOException, TimeoutException;
 
     /**
