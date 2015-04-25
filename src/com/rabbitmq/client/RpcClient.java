@@ -19,6 +19,7 @@ package com.rabbitmq.client;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -41,7 +42,7 @@ import com.rabbitmq.utility.BlockingCell;
  * It simply provides a mechanism for sending a message to an exchange with a given routing key,
  * and waiting for a response.
 */
-public class RpcClient {
+public class RpcClient extends Closeable {
     /** Channel we are communicating on */
     private final Channel _channel;
     /** Exchange to send requests to */
@@ -113,6 +114,7 @@ public class RpcClient {
      * Public API - cancels the consumer, thus deleting the temporary queue, and marks the RpcClient as closed.
      * @throws IOException if an error is encountered
      */
+    @Override
     public void close() throws IOException {
         if (_consumer != null) {
             _channel.basicCancel(_consumer.getConsumerTag());

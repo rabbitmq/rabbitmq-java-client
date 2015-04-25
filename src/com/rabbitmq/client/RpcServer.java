@@ -17,13 +17,14 @@
 
 package com.rabbitmq.client;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 /**
  * Class which manages a request queue for a simple RPC-style service.
  * The class is agnostic about the format of RPC arguments / return values.
 */
-public class RpcServer {
+public class RpcServer extends Closeable {
     /** Channel we are communicating on */
     private final Channel _channel;
     /** Queue to receive requests from */
@@ -66,6 +67,7 @@ public class RpcServer {
      * it was a temporary queue, and marks the RpcServer as closed.
      * @throws IOException if an error is encountered
      */
+    @Override
     public void close()
         throws IOException
     {
