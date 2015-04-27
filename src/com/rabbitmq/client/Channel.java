@@ -909,4 +909,14 @@ public interface Channel extends ShutdownNotifier {
      * @throws IOException Problem transmitting method.
      */
     long messageCount(String queue) throws IOException;
+
+    /**
+     * Returns the number of consumers on a queue.
+     * This method assumes the queue exists. If it doesn't,
+     * an exception will be closed with an exception.
+     * @param queue the name of the queue
+     * @return the number of consumers
+     * @throws IOException Problem transmitting method.
+     */
+    long consumerCount(String queue) throws IOException;
 }

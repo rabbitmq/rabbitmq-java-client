@@ -890,6 +890,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public long consumerCount(String queue) throws IOException {
+        Queue.DeclareOk ok = queueDeclarePassive(queue);
+        return ok.getConsumerCount();
+    }
+
+    /** Public API - {@inheritDoc} */
     public Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty)
         throws IOException
     {
