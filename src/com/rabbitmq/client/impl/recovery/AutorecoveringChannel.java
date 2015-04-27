@@ -287,6 +287,10 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return delegate.queueDeclarePassive(queue);
     }
 
+    public long messageCount(String queue) throws IOException {
+        return delegate.messageCount(queue);
+    }
+
     public AMQP.Queue.DeleteOk queueDelete(String queue) throws IOException {
         return queueDelete(queue, false, false);
     }
