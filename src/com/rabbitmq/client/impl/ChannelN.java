@@ -649,12 +649,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             useProps = MessageProperties.MINIMAL_BASIC;
         }
         transmit(new AMQCommand(new Basic.Publish.Builder()
-                                    .exchange(exchange)
-                                    .routingKey(routingKey)
-                                    .mandatory(mandatory)
-                                    .immediate(immediate)
-                                .build(),
-                                useProps, body));
+                                        .exchange(exchange)
+                                        .routingKey(routingKey)
+                                        .mandatory(mandatory)
+                                        .immediate(immediate)
+                                        .build(),
+                                       useProps, body));
     }
 
     /** Public API - {@inheritDoc} */
@@ -881,6 +881,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                .autoDelete()
                               .build())
                .getMethod();
+    }
+
+    /** Public API - {@inheritDoc} */
+    public long messageCount(String queue) throws IOException {
+        Queue.DeclareOk ok = queueDeclarePassive(queue);
+        return ok.getMessageCount();
     }
 
     /** Public API - {@inheritDoc} */
