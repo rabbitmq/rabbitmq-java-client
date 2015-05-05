@@ -58,7 +58,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     private RpcContinuation _activeRpc = null;
 
     /** Whether transmission of content-bearing methods should be blocked */
-    public boolean _blockContent = false;
+    public volatile boolean _blockContent = false;
 
     /**
      * Construct a channel on the given connection, with the given channel number.
