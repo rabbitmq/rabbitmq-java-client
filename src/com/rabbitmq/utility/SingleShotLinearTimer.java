@@ -80,7 +80,7 @@ public class SingleShotLinearTimer {
                             wait(_runTime - now);
                         }
                     } catch (InterruptedException e) {
-                        // Don't care
+                        Thread.currentThread().interrupt();
                     }
                 }
                 
