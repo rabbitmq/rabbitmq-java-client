@@ -216,8 +216,8 @@ public class Tracer implements Runnable {
         }
     }
 
-    private void waitAndLogException(BlockingCell<Exception> bc) {
-        reportAndLogNonNullException(bc.uninterruptibleGet());
+    private void waitAndLogException(BlockingCell<Exception> bc) throws InterruptedException {
+        reportAndLogNonNullException(bc.get());
     }
 
     private void reportAndLogNonNullException(Exception e) {

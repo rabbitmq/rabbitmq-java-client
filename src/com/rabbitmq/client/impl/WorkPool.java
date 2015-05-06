@@ -196,7 +196,7 @@ public class WorkPool<K, W> {
             try {
                 queue.put(item);
             } catch (InterruptedException e) {
-                // ok
+                Thread.currentThread().interrupt();
             }
 
             synchronized (this) {

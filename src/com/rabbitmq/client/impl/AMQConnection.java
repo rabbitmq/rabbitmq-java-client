@@ -682,7 +682,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         public void run() {
             try {
-                _appContinuation.uninterruptibleGet();
+                _appContinuation.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             } finally {
                 _running = false;
                 _channel0.notifyOutstandingRpc(cause);
