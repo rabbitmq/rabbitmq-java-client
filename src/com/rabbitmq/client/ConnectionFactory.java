@@ -27,6 +27,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeoutException;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
@@ -583,7 +584,7 @@ public class ConnectionFactory implements Cloneable {
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(Address[] addrs) throws IOException {
+    public Connection newConnection(Address[] addrs) throws IOException, TimeoutException {
         return newConnection(this.sharedExecutor, addrs);
     }
 
@@ -602,8 +603,7 @@ public class ConnectionFactory implements Cloneable {
      * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
     public Connection newConnection(ExecutorService executor, Address[] addrs)
-        throws IOException
-    {
+            throws IOException, TimeoutException {
         FrameHandlerFactory fhFactory = createFrameHandlerFactory();
         ConnectionParams params = params(executor);
 
@@ -644,7 +644,7 @@ public class ConnectionFactory implements Cloneable {
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection() throws IOException {
+    public Connection newConnection() throws IOException, TimeoutException {
         return newConnection(this.sharedExecutor,
                              new Address[] {new Address(getHost(), getPort())}
                             );
@@ -661,7 +661,7 @@ public class ConnectionFactory implements Cloneable {
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(ExecutorService executor) throws IOException {
+    public Connection newConnection(ExecutorService executor) throws IOException, TimeoutException {
         return newConnection(executor,
                              new Address[] {new Address(getHost(), getPort())}
                             );

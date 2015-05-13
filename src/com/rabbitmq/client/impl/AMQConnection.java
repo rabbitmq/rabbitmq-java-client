@@ -255,8 +255,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * garbage collected when the connection object is no longer referenced.
      */
     public void start()
-        throws IOException
-    {
+            throws IOException, TimeoutException {
         initializeConsumerWorkService();
         initializeHeartbeatSender();
         this._running = true;
@@ -292,24 +291,24 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         AMQP.Connection.Tune connTune = null;
         try {
             connStart =
-                (AMQP.Connection.Start) connStartBlocker.getReply().getMethod();
+                    (AMQP.Connection.Start) connStartBlocker.getReply(HANDSHAKE_TIMEOUT/2).getMethod();
 
             _serverProperties = Collections.unmodifiableMap(connStart.getServerProperties());
 
             Version serverVersion =
-                new Version(connStart.getVersionMajor(),
-                            connStart.getVersionMinor());
+                    new Version(connStart.getVersionMajor(),
+                                       connStart.getVersionMinor());
 
             if (!Version.checkVersion(clientVersion, serverVersion)) {
                 throw new ProtocolVersionMismatchException(clientVersion,
-                                                           serverVersion);
+                                                                  serverVersion);
             }
 
             String[] mechanisms = connStart.getMechanisms().toString().split(" ");
             SaslMechanism sm = this.saslConfig.getSaslMechanism(mechanisms);
             if (sm == null) {
                 throw new IOException("No compatible authentication mechanism found - " +
-                        "server offered [" + connStart.getMechanisms() + "]");
+                                              "server offered [" + connStart.getMechanisms() + "]");
             }
 
             LongString challenge = null;
@@ -317,15 +316,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
             do {
                 Method method = (challenge == null)
-                    ? new AMQP.Connection.StartOk.Builder()
-                                    .clientProperties(_clientProperties)
-                                    .mechanism(sm.getName())
-                                    .response(response)
-                          .build()
-                    : new AMQP.Connection.SecureOk.Builder().response(response).build();
+                                        ? new AMQP.Connection.StartOk.Builder()
+                                                  .clientProperties(_clientProperties)
+                                                  .mechanism(sm.getName())
+                                                  .response(response)
+                                                  .build()
+                                        : new AMQP.Connection.SecureOk.Builder().response(response).build();
 
                 try {
-                    Method serverResponse = _channel0.rpc(method).getMethod();
+                    Method serverResponse = _channel0.rpc(method, HANDSHAKE_TIMEOUT/2).getMethod();
                     if (serverResponse instanceof AMQP.Connection.Tune) {
                         connTune = (AMQP.Connection.Tune) serverResponse;
                     } else {
@@ -335,7 +334,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 } catch (ShutdownSignalException e) {
                     Method shutdownMethod = e.getReason();
                     if (shutdownMethod instanceof AMQP.Connection.Close) {
-                        AMQP.Connection.Close shutdownClose =  (AMQP.Connection.Close) shutdownMethod;
+                        AMQP.Connection.Close shutdownClose = (AMQP.Connection.Close) shutdownMethod;
                         if (shutdownClose.getReplyCode() == AMQP.ACCESS_REFUSED) {
                             throw new AuthenticationFailureException(shutdownClose.getReplyText());
                         }
@@ -343,6 +342,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     throw new PossibleAuthenticationFailureException(e);
                 }
             } while (connTune == null);
+        } catch (TimeoutException te) {
+            _frameHandler.close();
+            throw te;
         } catch (ShutdownSignalException sse) {
             _frameHandler.close();
             throw AMQChannel.wrap(sse);
