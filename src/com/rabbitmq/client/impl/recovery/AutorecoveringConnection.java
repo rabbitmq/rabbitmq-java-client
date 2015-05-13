@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Connection implementation that performs automatic recovery when
@@ -79,7 +80,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @throws IOException
      * @see com.rabbitmq.client.ConnectionFactory#newConnection(java.util.concurrent.ExecutorService)
      */
-    public void init() throws IOException {
+    public void init() throws IOException, TimeoutException {
         this.delegate = this.cf.newConnection();
         this.addAutomaticRecoveryListener();
     }
