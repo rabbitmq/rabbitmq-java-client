@@ -36,7 +36,7 @@ import com.rabbitmq.client.AMQP.Confirm;
  * key methods of this interface are used.
  *
  * <h2>User Guide</h2>
- * See <a href="http://www.rabbitmq.com/api-guide.html"></a>
+ * See <a href="http://www.rabbitmq.com/api-guide.html">Java Client User Guide</a>.
  *
  * <h2>Concurrency Considerations</h2>
  * <p>
