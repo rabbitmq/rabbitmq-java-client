@@ -28,36 +28,33 @@ import com.rabbitmq.client.AMQP.Basic;
 import com.rabbitmq.client.AMQP.Confirm;
 
 /**
- * Public API: Interface to an AMQ channel. See the <a href="http://www.amqp.org/">spec</a> for details.
+ * Interface to a channel. All non-deprecated methods of
+ * this interface are part of the public API.
  *
- * <p>
- * To open a channel,
- * <pre>
- * {@link Connection} conn = ...;
- * {@link Channel} channel = conn.{@link Connection#createChannel createChannel}();
- * </pre>
- * <p>
- * Public API:
- * <ul>
- *  <li> getChannelNumber
- *  <li> close
- * </ul>
- * <p>
+ * <h2>Tutorials</h2>
+ * <a href="http://www.rabbitmq.com/getstarted.html">RabbitMQ tutorials</a> demonstrate how
+ * key methods of this interface are used.
  *
+ * <h2>User Guide</h2>
+ * See <a href="http://www.rabbitmq.com/api-guide.html"></a>
+ *
+ * <h2>Concurrency Considerations</h2>
  * <p>
- * {@link Channel} instances are safe for use by multiple
- * threads. Requests into a {@link Channel} are serialized, with only one
- * thread running commands at a time.
- * As such, applications may prefer using a {@link Channel} per thread
- * instead of sharing the same <code>Channel</code> across multiple threads.
+ * {@link Channel} instances must not be shared between
+ * threads. Applications
+ * should prefer using a {@link Channel} per thread
+ * instead of sharing the same {@link Channel} across
+ * multiple threads. While some operations on channels are safe to invoke
+ * concurrently, some are not and will result in incorrect frame interleaving
+ * on the wire. Sharing channels between threads will also interfere with
+ * <a href="http://www.rabbitmq.com/confirms.html">Publisher Confirms</a>.
  *
- * An <b>important caveat</b> to this is that confirms are <b>not</b> handled
- * properly when a {@link Channel} is shared between multiple threads. In that
- * scenario, it is therefore important to ensure that the {@link Channel}
- * instance is <b>not</b> accessed concurrently by multiple threads.
+ * As such, applications need to use a {@link Channel} per thread.
+ * </p>
  *
+ * @see <a href="http://www.rabbitmq.com/getstarted.html">RabbitMQ tutorials</a>
+ * @see <a href="http://www.rabbitmq.com/api-guide.html">RabbitMQ Java Client User Guide</a>
  */
-
 public interface Channel extends ShutdownNotifier {
     /**
      * Retrieve this channel's channel number.
