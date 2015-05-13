@@ -101,6 +101,9 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
 
     /**
      * Create a new channel, using an internally allocated channel number.
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the channel returned by this method will be {@link Recoverable}.
+     *
      * @return a new channel descriptor, or null if none is available
      * @throws IOException if an I/O problem is encountered
      */

@@ -530,16 +530,19 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Returns true if automatic connection recovery is enabled, false otherwise
+     * Returns true if <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, false otherwise
      * @return true if automatic connection recovery is enabled, false otherwise
+     * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
     public boolean isAutomaticRecoveryEnabled() {
         return automaticRecovery;
     }
 
     /**
-     * Enables or disables automatic connection recovery
+     * Enables or disables <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>.
      * @param automaticRecovery if true, enables connection recovery
+     * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
     public void setAutomaticRecoveryEnabled(boolean automaticRecovery) {
         this.automaticRecovery = automaticRecovery;
@@ -548,6 +551,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Returns true if topology recovery is enabled, false otherwise
      * @return true if topology recovery is enabled, false otherwise
+     * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
     @SuppressWarnings("unused")
     public boolean isTopologyRecoveryEnabled() {
@@ -557,6 +561,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Enables or disables topology recovery
      * @param topologyRecovery if true, enables topology recovery
+     * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
     public void setTopologyRecoveryEnabled(boolean topologyRecovery) {
         this.topologyRecovery = topologyRecovery;
@@ -567,7 +572,13 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Create a new broker connection
+     * Create a new broker connection, picking the first available address from
+     * the list.
+     *
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the connection returned by this method will be {@link Recoverable}. Future
+     * reconnection attempts will pick a random accessible address from the provided list.
+     *
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
@@ -577,11 +588,18 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Create a new broker connection
+     * Create a new broker connection, picking the first available address from
+     * the list.
+     *
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the connection returned by this method will be {@link Recoverable}. Future
+     * reconnection attempts will pick a random accessible address from the provided list.
+     *
      * @param executor thread execution service for consumers on the connection
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
      * @return an interface to the connection
      * @throws java.io.IOException if it encounters a problem
+     * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
     public Connection newConnection(ExecutorService executor, Address[] addrs)
         throws IOException
@@ -617,7 +635,12 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Create a new broker connection
+     * Create a new broker connection.
+     *
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the connection returned by this method will be {@link Recoverable}. Reconnection
+     * attempts will always use the address configured on {@link ConnectionFactory}.
+     *
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
@@ -628,7 +651,12 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Create a new broker connection
+     * Create a new broker connection.
+     *
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the connection returned by this method will be {@link Recoverable}. Reconnection
+     * attempts will always use the address configured on {@link ConnectionFactory}.
+     *
      * @param executor thread execution service for consumers on the connection
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
