@@ -245,8 +245,16 @@ public interface Channel extends ShutdownNotifier {
     void basicQos(int prefetchCount) throws IOException;
 
     /**
-     * Publish a message
+     * Publish a message.
+     *
+     * Publishing to a non-existent exchange will result in a channel-level
+     * protocol exception, which closes the channel.
+     *
+     * Invocations of <code>Channel#basicPublish</code> will eventually block if a
+     * <a href="http://www.rabbitmq.com/alarms.html">resource-driven alarm</a> is in effect.
+     *
      * @see com.rabbitmq.client.AMQP.Basic.Publish
+     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>.
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
      * @param props other properties for the message - routing headers etc
@@ -256,8 +264,13 @@ public interface Channel extends ShutdownNotifier {
     void basicPublish(String exchange, String routingKey, BasicProperties props, byte[] body) throws IOException;
 
     /**
-     * Publish a message
+     * Publish a message.
+     *
+     * Invocations of <code>Channel#basicPublish</code> will eventually block if a
+     * <a href="http://www.rabbitmq.com/alarms.html">resource-driven alarm</a> is in effect.
+     *
      * @see com.rabbitmq.client.AMQP.Basic.Publish
+     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>.
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
      * @param mandatory true if the 'mandatory' flag is to be set
@@ -269,8 +282,16 @@ public interface Channel extends ShutdownNotifier {
             throws IOException;
 
     /**
-     * Publish a message
+     * Publish a message.
+     *
+     * Publishing to a non-existent exchange will result in a channel-level
+     * protocol exception, which closes the channel.
+     *
+     * Invocations of <code>Channel#basicPublish</code> will eventually block if a
+     * <a href="http://www.rabbitmq.com/alarms.html">resource-driven alarm</a> is in effect.
+     *
      * @see com.rabbitmq.client.AMQP.Basic.Publish
+     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>.
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
      * @param mandatory true if the 'mandatory' flag is to be set
