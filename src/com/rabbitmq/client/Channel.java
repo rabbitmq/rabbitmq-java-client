@@ -86,9 +86,9 @@ public interface Channel extends ShutdownNotifier {
     void close(int closeCode, String closeMessage) throws IOException, TimeoutException;
 
     /**
-     * Indicates whether the server has asked this client to stop
-     * sending content-bearing commands (such as basic.publish) by
-     * issueing a channel.flow{active=false}.
+     * Deprecated, superseded by TCP back pressure.
+     * @deprecated
+     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      */
     boolean flowBlocked();
 
@@ -130,12 +130,18 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Add a {@link FlowListener}.
+     * Deprecated, superseded by TCP back pressure.
+     * @deprecated
+     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      * @param listener the listener to add
      */
     void addFlowListener(FlowListener listener);
 
     /**
      * Remove a {@link FlowListener}.
+     * Deprecated, superseded by TCP back pressure.
+     * @deprecated
+     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      * @param listener the listener to remove
      * @return <code><b>true</b></code> if the listener was found and removed,
      * <code><b>false</b></code> otherwise
@@ -144,6 +150,9 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Remove all {@link FlowListener}s.
+     * Deprecated, superseded by TCP back pressure.
+     * @deprecated
+     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      */
     void clearFlowListeners();
 
