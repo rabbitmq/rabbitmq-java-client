@@ -207,6 +207,11 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         return privateRpc(m);
     }
 
+    public AMQCommand rpc(Method m, int timeout)
+            throws IOException, ShutdownSignalException, TimeoutException {
+        return privateRpc(m, timeout);
+    }
+
     private AMQCommand privateRpc(Method m)
         throws IOException, ShutdownSignalException
     {
@@ -219,6 +224,14 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         // until the connection's reader-thread throws the reply over
         // the fence.
         return k.getReply();
+    }
+
+    private AMQCommand privateRpc(Method m, int timeout)
+            throws IOException, ShutdownSignalException, TimeoutException {
+        SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
+        rpc(m, k);
+
+        return k.getReply(timeout);
     }
 
     public void rpc(Method m, RpcContinuation k)

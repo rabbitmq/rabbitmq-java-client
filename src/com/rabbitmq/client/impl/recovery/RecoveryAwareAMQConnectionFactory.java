@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 public class RecoveryAwareAMQConnectionFactory {
     private final ConnectionParams params;
@@ -26,8 +27,7 @@ public class RecoveryAwareAMQConnectionFactory {
      * @return an interface to the connection
      * @throws java.io.IOException if it encounters a problem
      */
-    RecoveryAwareAMQConnection newConnection() throws IOException
-    {
+    RecoveryAwareAMQConnection newConnection() throws IOException, TimeoutException {
         IOException lastException = null;
         for (Address addr : shuffle(addrs)) {
             try {
