@@ -17,6 +17,7 @@
 package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -32,7 +33,7 @@ public class MemoryAlarms extends BrokerTestCase {
     private Channel channel2;
 
     @Override
-    protected void setUp() throws IOException {
+    protected void setUp() throws IOException, TimeoutException {
         connectionFactory.setRequestedHeartbeat(1);
         super.setUp();
         if (connection2 == null) {
@@ -42,7 +43,7 @@ public class MemoryAlarms extends BrokerTestCase {
     }
 
     @Override
-    protected void tearDown() throws IOException {
+    protected void tearDown() throws IOException, TimeoutException {
         if (channel2 != null) {
             channel2.abort();
             channel2 = null;

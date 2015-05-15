@@ -29,6 +29,7 @@ import org.apache.commons.cli.Option;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.TimeoutException;
 
 public class QosScaling {
 
@@ -121,7 +122,7 @@ public class QosScaling {
         return finish - start;
     }
 
-    public long run() throws IOException {
+    public long run() throws IOException, TimeoutException {
         connectionFactory.setHost(params.host);
         connectionFactory.setPort(params.port);
         connection = connectionFactory.newConnection();

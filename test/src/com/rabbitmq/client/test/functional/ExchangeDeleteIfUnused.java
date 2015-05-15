@@ -18,6 +18,7 @@
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -29,8 +30,7 @@ public class ExchangeDeleteIfUnused extends BrokerTestCase {
     private final static String ROUTING_KEY = "something";
 
     protected void createResources()
-        throws IOException
-    {
+            throws IOException, TimeoutException {
         super.createResources();
         channel.exchangeDeclare(EXCHANGE_NAME, "direct");
         String queueName = channel.queueDeclare().getQueue();

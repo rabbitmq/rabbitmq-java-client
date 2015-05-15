@@ -22,6 +22,7 @@ import com.rabbitmq.client.ConnectionFactory;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
 public class MulticastSet {
     private final String id;
@@ -41,11 +42,11 @@ public class MulticastSet {
         this.params = params;
     }
 
-    public void run() throws IOException, InterruptedException {
+    public void run() throws IOException, InterruptedException, TimeoutException {
         run(false);
     }
 
-    public void run(boolean announceStartup) throws IOException, InterruptedException {
+    public void run(boolean announceStartup) throws IOException, InterruptedException, TimeoutException {
         Thread[] consumerThreads = new Thread[params.getConsumerCount()];
         Connection[] consumerConnections = new Connection[consumerThreads.length];
         for (int i = 0; i < consumerConnections.length; i++) {

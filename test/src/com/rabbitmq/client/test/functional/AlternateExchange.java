@@ -23,6 +23,7 @@ import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.GetResponse;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Map;
 import java.util.HashMap;
@@ -55,7 +56,7 @@ public class AlternateExchange extends BrokerTestCase
         return expected;
     }
 
-    @Override protected void setUp() throws IOException {
+    @Override protected void setUp() throws IOException, TimeoutException {
         super.setUp();
         channel.addReturnListener(new ReturnListener() {
                 public void handleReturn(int replyCode,

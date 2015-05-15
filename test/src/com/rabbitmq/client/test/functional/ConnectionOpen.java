@@ -20,6 +20,7 @@ package com.rabbitmq.client.test.functional;
 import java.io.IOException;
 import java.io.DataInputStream;
 import java.net.Socket;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.MalformedFrameException;
@@ -84,7 +85,7 @@ public class ConnectionOpen extends TestCase {
         }
     }
 
-    public void testFrameMaxLessThanFrameMinSize() throws IOException {
+    public void testFrameMaxLessThanFrameMinSize() throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setRequestedFrameMax(100);
         try {

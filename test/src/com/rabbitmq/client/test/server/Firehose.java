@@ -7,13 +7,14 @@ import com.rabbitmq.tools.Host;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 public class Firehose extends BrokerTestCase {
     private String q;
     private String firehose;
 
     @Override
-    protected void createResources() throws IOException {
+    protected void createResources() throws IOException, TimeoutException {
         super.createResources();
         channel.exchangeDeclare("test", "fanout", false, true, null);
         q = channel.queueDeclare().getQueue();

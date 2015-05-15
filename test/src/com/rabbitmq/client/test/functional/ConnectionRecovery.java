@@ -35,7 +35,8 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(connection.isOpen());
     }
 
-    public void testConnectionRecoveryWithMultipleAddresses() throws IOException, InterruptedException {
+    public void testConnectionRecoveryWithMultipleAddresses()
+            throws IOException, InterruptedException, TimeoutException {
         final Address[] addresses = {new Address("127.0.0.1"), new Address("127.0.0.1", 5672)};
         AutorecoveringConnection c = newRecoveringConnection(addresses);
         try {
@@ -48,7 +49,8 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     }
 
-    public void testConnectionRecoveryWithDisabledTopologyRecovery() throws IOException, InterruptedException {
+    public void testConnectionRecoveryWithDisabledTopologyRecovery()
+            throws IOException, InterruptedException, TimeoutException {
         AutorecoveringConnection c = newRecoveringConnection(true);
         Channel ch = c.createChannel();
         String q = "java-client.test.recovery.q2";
@@ -550,7 +552,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         wait(latch);
     }
 
-    public void testBasicAckAfterChannelRecovery() throws IOException, InterruptedException {
+    public void testBasicAckAfterChannelRecovery() throws IOException, InterruptedException, TimeoutException {
         final AtomicInteger consumed = new AtomicInteger(0);
         int n = 5;
         final CountDownLatch latch = new CountDownLatch(n);
@@ -697,16 +699,19 @@ public class ConnectionRecovery extends BrokerTestCase {
         return buildConnectionFactoryWithRecoveryEnabled(false);
     }
 
-    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery) throws IOException {
+    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery)
+            throws IOException, TimeoutException {
         ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
         return (AutorecoveringConnection) cf.newConnection();
     }
 
-    private AutorecoveringConnection newRecoveringConnection(Address[] addresses) throws IOException {
+    private AutorecoveringConnection newRecoveringConnection(Address[] addresses)
+            throws IOException, TimeoutException {
         return newRecoveringConnection(false, addresses);
     }
 
-    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery, Address[] addresses) throws IOException {
+    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery, Address[] addresses)
+            throws IOException, TimeoutException {
         ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
         return (AutorecoveringConnection) cf.newConnection(addresses);
     }

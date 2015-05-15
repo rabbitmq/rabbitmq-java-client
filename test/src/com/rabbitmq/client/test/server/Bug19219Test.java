@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.server;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeoutException;
 
 import junit.framework.TestSuite;
 
@@ -89,6 +90,8 @@ public class Bug19219Test extends BrokerTestCase {
                         startPublisher();
                     } catch (IOException e) {
                     } catch (InterruptedException e) {
+                    } catch (TimeoutException e) {
+                        e.printStackTrace();
                     }
                 }
             };
@@ -126,7 +129,7 @@ public class Bug19219Test extends BrokerTestCase {
         }
     }
 
-    private void startPublisher() throws IOException, InterruptedException {
+    private void startPublisher() throws IOException, InterruptedException, TimeoutException {
 
         final Connection conn = connectionFactory.newConnection();
         final Channel pubCh = conn.createChannel();

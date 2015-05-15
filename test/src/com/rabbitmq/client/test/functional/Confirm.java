@@ -40,7 +40,7 @@ public class Confirm extends BrokerTestCase
     private static final String TTL_ARG = "x-message-ttl";
 
     @Override
-    protected void setUp() throws IOException {
+    protected void setUp() throws IOException, TimeoutException {
         super.setUp();
         channel.confirmSelect();
         channel.queueDeclare("confirm-test", true, true, false, null);

@@ -25,6 +25,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 public class StressManagement {
     protected static class Parameters {
@@ -69,7 +70,7 @@ public class StressManagement {
         params = p;
     }
 
-    public long run() throws IOException {
+    public long run() throws IOException, TimeoutException {
         connectionFactory.setHost(params.host);
         connectionFactory.setPort(params.port);
         connection = connectionFactory.newConnection();
@@ -97,7 +98,7 @@ public class StressManagement {
                         try {
                             Thread.sleep(10);
                         } catch (InterruptedException e) {
-
+                            Thread.currentThread().interrupt();
                         }
                     }
                 }

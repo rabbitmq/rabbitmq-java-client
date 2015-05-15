@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
@@ -147,7 +148,7 @@ public class QueueLifecycle extends BrokerTestCase {
         verifyQueueExists(name);
     }
 
-    public void testExclusiveGoesWithConnection() throws IOException {
+    public void testExclusiveGoesWithConnection() throws IOException, TimeoutException {
         String name = "exclusivequeue2";
         channel.queueDeclare(name, false, true, false, null);
         // now it's there

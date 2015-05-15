@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
+import java.util.concurrent.TimeoutException;
 
 public class LoopbackUsers extends TestCase {
     @Override
@@ -24,7 +25,7 @@ public class LoopbackUsers extends TestCase {
         Host.rabbitmqctl("delete_user test");
     }
 
-    public void testLoopback() throws IOException {
+    public void testLoopback() throws IOException, TimeoutException {
         String addr = findRealIPAddress().getHostAddress();
         assertGuestFail(addr);
         Host.rabbitmqctl("eval 'application:set_env(rabbit, loopback_users, []).'");
@@ -33,25 +34,25 @@ public class LoopbackUsers extends TestCase {
         assertGuestFail(addr);
     }
 
-    private void assertGuestSucceed(String addr) throws IOException {
+    private void assertGuestSucceed(String addr) throws IOException, TimeoutException {
         succeedConnect("guest", addr);
         succeedConnect("guest", "localhost");
         succeedConnect("test", addr);
         succeedConnect("test", "localhost");
     }
 
-    private void assertGuestFail(String addr) throws IOException {
+    private void assertGuestFail(String addr) throws IOException, TimeoutException {
         failConnect("guest", addr);
         succeedConnect("guest", "localhost");
         succeedConnect("test", addr);
         succeedConnect("test", "localhost");
     }
 
-    private void succeedConnect(String name, String addr) throws IOException {
+    private void succeedConnect(String name, String addr) throws IOException, TimeoutException {
         getFactory(name, addr).newConnection().close();
     }
 
-    private void failConnect(String name, String addr) throws IOException {
+    private void failConnect(String name, String addr) throws IOException, TimeoutException {
         try {
             getFactory(name, addr).newConnection();
             fail();
