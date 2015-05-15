@@ -22,6 +22,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 public class UserIDHeader extends BrokerTestCase {
     private static final AMQP.BasicProperties GOOD = new AMQP.BasicProperties.Builder().userId("guest").build();
@@ -42,7 +43,7 @@ public class UserIDHeader extends BrokerTestCase {
         }
     }
 
-    public void testImpersonatedUserId() throws IOException {
+    public void testImpersonatedUserId() throws IOException, TimeoutException {
         Host.rabbitmqctl("set_user_tags guest administrator impersonator");
         connection = null;
         channel = null;

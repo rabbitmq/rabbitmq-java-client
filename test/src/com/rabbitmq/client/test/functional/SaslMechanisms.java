@@ -30,6 +30,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 public class SaslMechanisms extends BrokerTestCase {
     private String[] mechanisms;
@@ -71,19 +72,19 @@ public class SaslMechanisms extends BrokerTestCase {
 
     // TODO test gibberish examples. ATM the server is not very robust.
 
-    public void testPlainLogin() throws IOException {
+    public void testPlainLogin() throws IOException, TimeoutException {
         loginOk("PLAIN", new byte[][] {"\0guest\0guest".getBytes()} );
         loginBad("PLAIN", new byte[][] {"\0guest\0wrong".getBytes()} );
     }
 
-    public void testAMQPlainLogin() throws IOException {
+    public void testAMQPlainLogin() throws IOException, TimeoutException {
         // guest / guest
         loginOk("AMQPLAIN", new byte[][] {{5,76,79,71,73,78,83,0,0,0,5,103,117,101,115,116,8,80,65,83,83,87,79,82,68,83,0,0,0,5,103,117,101,115,116}} );
         // guest / wrong
         loginBad("AMQPLAIN", new byte[][] {{5,76,79,71,73,78,83,0,0,0,5,103,117,101,115,116,8,80,65,83,83,87,79,82,68,83,0,0,0,5,119,114,111,110,103}} );
     }
 
-    public void testCRLogin() throws IOException {
+    public void testCRLogin() throws IOException, TimeoutException {
         // Make sure mechanisms is populated
         loginOk("PLAIN", new byte[][] {"\0guest\0guest".getBytes()} );
 
@@ -94,15 +95,15 @@ public class SaslMechanisms extends BrokerTestCase {
         }
     }
 
-    public void testConnectionCloseAuthFailureUsername() throws IOException {
+    public void testConnectionCloseAuthFailureUsername() throws IOException, TimeoutException {
         connectionCloseAuthFailure("incorrect-username", "incorrect-password");
     }
 
-    public void testConnectionCloseAuthFailurePassword() throws IOException {
+    public void testConnectionCloseAuthFailurePassword() throws IOException, TimeoutException {
         connectionCloseAuthFailure(connectionFactory.getUsername(), "incorrect-password");
     }
 
-    public void connectionCloseAuthFailure(String username, String password) throws IOException {
+    public void connectionCloseAuthFailure(String username, String password) throws IOException, TimeoutException {
         String failDetail =  "for username " + username + " and password " + password;
         try {
             Connection conn = connectionWithoutCapabilities(username, password);
@@ -117,7 +118,8 @@ public class SaslMechanisms extends BrokerTestCase {
 
     // start a connection without capabilities, causing authentication failures
     // to be reported by the broker by closing the connection
-    private Connection connectionWithoutCapabilities(String username, String password) throws IOException {
+    private Connection connectionWithoutCapabilities(String username, String password)
+            throws IOException, TimeoutException {
         ConnectionFactory customFactory = connectionFactory.clone();
         customFactory.setUsername(username);
         customFactory.setPassword(password);
@@ -127,14 +129,14 @@ public class SaslMechanisms extends BrokerTestCase {
         return customFactory.newConnection();
     }
 
-    private void loginOk(String name, byte[][] responses) throws IOException {
+    private void loginOk(String name, byte[][] responses) throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setSaslConfig(new Config(name, responses));
         Connection connection = factory.newConnection();
         connection.close();
     }
 
-    private void loginBad(String name, byte[][] responses) throws IOException {
+    private void loginBad(String name, byte[][] responses) throws IOException, TimeoutException {
         try {
             loginOk(name, responses);
             fail("Login succeeded!");

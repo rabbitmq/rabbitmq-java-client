@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -35,7 +36,7 @@ public class QueueExclusivity extends BrokerTestCase {
     public Channel altChannel;
     final String q = "exclusiveQ";
 
-    protected void createResources() throws IOException {
+    protected void createResources() throws IOException, TimeoutException {
         altConnection = connectionFactory.newConnection();
         altChannel = altConnection.createChannel();
         altChannel.queueDeclare(q,

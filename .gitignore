@@ -16,3 +16,4 @@
 /ebin/
 /out/
 /tmp/
+junit*.properties

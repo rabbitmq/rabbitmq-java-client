@@ -21,6 +21,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 /**
  * This tests whether bindings are created and nuked properly.
@@ -57,7 +58,7 @@ public class BindingLifecycleBase extends ClusteredTestBase {
     channel.exchangeDelete(binding.x);
   }
 
-  protected void doAutoDelete(boolean durable, int queues) throws IOException {
+  protected void doAutoDelete(boolean durable, int queues) throws IOException, TimeoutException {
     String[] queueNames = null;
     Binding binding = Binding.randomBinding();
     channel.exchangeDeclare(binding.x, "direct", durable, true, null);
@@ -109,7 +110,7 @@ public class BindingLifecycleBase extends ClusteredTestBase {
   }
 
   @Override
-  protected void restart() throws IOException {
+  protected void restart() throws IOException, TimeoutException {
   }
 
   protected void sendRoutable(Binding binding) throws IOException {
@@ -171,7 +172,7 @@ public class BindingLifecycleBase extends ClusteredTestBase {
    * Main difference is restarting the broker to make sure that the
    * durable queues are blasted away.
    */
-  public void testExchangeAutoDeleteDurable() throws IOException {
+  public void testExchangeAutoDeleteDurable() throws IOException, TimeoutException {
     doAutoDelete(true, 1);
   }
 
@@ -179,7 +180,7 @@ public class BindingLifecycleBase extends ClusteredTestBase {
    * The same thing as testExchangeAutoDeleteManyBindings, but with
    * durable queues.
    */
-  public void testExchangeAutoDeleteDurableManyBindings() throws IOException {
+  public void testExchangeAutoDeleteDurableManyBindings() throws IOException, TimeoutException {
     doAutoDelete(true, 10);
   }
 }

@@ -20,6 +20,7 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.GetResponse;
 
@@ -323,8 +324,7 @@ public class Transactions extends BrokerTestCase
     }
 
     public void testCommitWithDeletedQueue()
-        throws IOException
-    {
+            throws IOException, TimeoutException {
         txSelect();
         basicPublish();
         releaseResources();

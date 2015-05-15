@@ -6,9 +6,10 @@ import com.rabbitmq.client.impl.AMQConnection;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 
 public class SharedThreadPoolTest extends BrokerTestCase {
-    public void testWillShutDownExecutor() throws IOException {
+    public void testWillShutDownExecutor() throws IOException, TimeoutException {
         ConnectionFactory cf = new ConnectionFactory();
         ExecutorService executor = Executors.newFixedThreadPool(8);
         cf.setSharedExecutor(executor);

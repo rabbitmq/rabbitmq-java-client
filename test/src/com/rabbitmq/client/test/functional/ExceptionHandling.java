@@ -14,6 +14,7 @@ import junit.framework.TestCase;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class ExceptionHandling extends TestCase {
     private ConnectionFactory newConnectionFactory(ExceptionHandler eh) {
@@ -22,7 +23,7 @@ public class ExceptionHandling extends TestCase {
         return cf;
     }
 
-    public void testHandleConsumerException() throws IOException, InterruptedException {
+    public void testHandleConsumerException() throws IOException, InterruptedException, TimeoutException {
         final CountDownLatch latch = new CountDownLatch(1);
         final DefaultExceptionHandler eh = new DefaultExceptionHandler() {
             @Override
@@ -38,7 +39,8 @@ public class ExceptionHandling extends TestCase {
         String q = ch.queueDeclare().getQueue();
         ch.basicConsume(q, new DefaultConsumer(ch) {
             @Override
-            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+            public void handleDelivery(String consumerTag, Envelope envelope,
+                                       AMQP.BasicProperties properties, byte[] body) throws IOException {
                 throw new RuntimeException("oops");
             }
         });

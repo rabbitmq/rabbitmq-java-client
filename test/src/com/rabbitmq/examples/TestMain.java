@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.net.URISyntaxException;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
@@ -115,8 +116,7 @@ public class TestMain {
     }
 
     public static void runConnectionNegotiationTest(final String uri)
-        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
-    {
+            throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException, TimeoutException {
 
         Connection conn;
 
@@ -124,7 +124,7 @@ public class TestMain {
             conn = new TestConnectionFactory(0, 1, uri).newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
-        } catch (IOException e) {}
+        } catch (IOException ignored) {}
 
         ConnectionFactory factory;
         factory = new ConnectionFactory();
@@ -135,7 +135,7 @@ public class TestMain {
             conn = factory.newConnection();
             conn.close();
             throw new RuntimeException("expected socket close");
-        } catch (IOException e) {}
+        } catch (IOException ignored) {}
 
         factory = new ConnectionFactory();
         factory.setRequestedChannelMax(10);
@@ -174,8 +174,7 @@ public class TestMain {
     }
 
     public static void runConnectionShutdownTests(final String uri)
-        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
-    {
+            throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException, TimeoutException {
         Connection conn;
         Channel ch;
         // Test what happens when a connection is shut down w/o first
@@ -189,7 +188,7 @@ public class TestMain {
         try {
             ch.exchangeDeclare("mumble", "invalid");
             throw new RuntimeException("expected shutdown");
-        } catch (IOException e) {
+        } catch (IOException ignored) {
         }
         // Test what happens when we just kill the connection
         conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
@@ -198,8 +197,7 @@ public class TestMain {
     }
 
     public static void runProducerConsumerTest(String uri, int commitEvery)
-        throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException
-    {
+            throws IOException, URISyntaxException, NoSuchAlgorithmException, KeyManagementException, TimeoutException {
         ConnectionFactory cfconnp = new ConnectionFactory();
         cfconnp.setUri(uri);
         Connection connp = cfconnp.newConnection();
@@ -215,7 +213,9 @@ public class TestMain {
     public static void sleep(int ms) {
         try {
             Thread.sleep(ms);
-        } catch (InterruptedException _e) { } // ignore
+        } catch (InterruptedException _e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private final Connection _connection;

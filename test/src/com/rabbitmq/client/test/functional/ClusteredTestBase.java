@@ -24,6 +24,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 /**
  *  Base class for tests which would like a second, clustered node.
@@ -52,7 +53,7 @@ public class ClusteredTestBase extends BrokerTestCase {
     private static boolean nonClusteredWarningPrinted;
 
     @Override
-    public void openConnection() throws IOException {
+    public void openConnection() throws IOException, TimeoutException {
         super.openConnection();
         if (clusteredConnection == null) {
             try {

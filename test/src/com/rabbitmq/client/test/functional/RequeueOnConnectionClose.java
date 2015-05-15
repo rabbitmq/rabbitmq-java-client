@@ -18,12 +18,12 @@
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 public class RequeueOnConnectionClose extends RequeueOnClose
 {
 
-    protected void open() throws IOException
-    {
+    protected void open() throws IOException, TimeoutException {
         openConnection();
         openChannel();
     }

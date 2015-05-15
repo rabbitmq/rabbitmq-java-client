@@ -73,6 +73,8 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    @Deprecated
     public boolean flowBlocked() {
         return delegate.flowBlocked();
     }
@@ -100,16 +102,22 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         delegate.clearReturnListeners();
     }
 
+    @SuppressWarnings("deprecation")
+    @Deprecated
     public void addFlowListener(FlowListener listener) {
         this.flowListeners.add(listener);
         delegate.addFlowListener(listener);
     }
 
+    @SuppressWarnings("deprecation")
+    @Deprecated
     public boolean removeFlowListener(FlowListener listener) {
         this.flowListeners.remove(listener);
         return delegate.removeFlowListener(listener);
     }
 
+    @SuppressWarnings("deprecation")
+    @Deprecated
     public void clearFlowListeners() {
         this.flowListeners.clear();
         delegate.clearFlowListeners();
@@ -505,6 +513,8 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         }
     }
 
+    @Deprecated
+    @SuppressWarnings("deprecation")
     private void recoverFlowListeners() {
         for(FlowListener fl : this.flowListeners) {
             this.delegate.addFlowListener(fl);

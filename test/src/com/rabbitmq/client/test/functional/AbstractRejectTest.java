@@ -25,6 +25,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.TimeoutException;
 
 abstract class AbstractRejectTest extends BrokerTestCase {
 
@@ -32,8 +33,7 @@ abstract class AbstractRejectTest extends BrokerTestCase {
 
     @Override
     protected void setUp()
-        throws IOException
-    {
+            throws IOException, TimeoutException {
         super.setUp();
         secondaryChannel = connection.createChannel();
 
@@ -41,8 +41,7 @@ abstract class AbstractRejectTest extends BrokerTestCase {
 
     @Override
     protected void tearDown()
-        throws IOException
-    {
+            throws IOException, TimeoutException {
         if (secondaryChannel != null) {
             secondaryChannel.abort();
             secondaryChannel = null;

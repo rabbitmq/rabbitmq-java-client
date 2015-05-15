@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -38,8 +39,7 @@ public class QosTests extends BrokerTestCase
 {
 
     protected void setUp()
-        throws IOException
-    {
+            throws IOException, TimeoutException {
         openConnection();
         openChannel();
     }

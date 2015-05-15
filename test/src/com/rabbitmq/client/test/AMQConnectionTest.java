@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.TopologyRecoveryException;
@@ -86,7 +87,7 @@ public class AMQConnectionTest extends TestCase {
     /** Check the AMQConnection does send exactly 1 initial header, and deal correctly with
      * the frame handler throwing an exception when we try to read data
      */
-    public void testConnectionSendsSingleHeaderAndTimesOut() {
+    public void testConnectionSendsSingleHeaderAndTimesOut() throws TimeoutException {
         IOException exception = new SocketTimeoutException();
         _mockFrameHandler.setExceptionOnReadingFrames(exception);
         assertEquals(0, _mockFrameHandler.countHeadersSent());
@@ -127,10 +128,11 @@ public class AMQConnectionTest extends TestCase {
             new AMQConnection(params, this._mockFrameHandler).start();
             fail("Connection should have thrown exception");
         } catch(IOException signal) {
-           // As expected
+            // expected
+        } catch(TimeoutException te) {
+            // also fine: continuation timed out first
         }
         assertEquals(1, this._mockFrameHandler.countHeadersSent());
-        // _connection.close(0, CLOSE_MESSAGE);
         List<Throwable> exceptionList = exceptionHandler.getHandledExceptions();
         assertEquals("Only one exception expected", 1, exceptionList.size());
         assertEquals("Wrong type of exception returned.", SocketTimeoutException.class, exceptionList.get(0).getClass());

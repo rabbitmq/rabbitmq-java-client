@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -38,7 +39,7 @@ public abstract class RequeueOnClose
     private static final String Q = "RequeueOnClose";
     private static final int MESSAGE_COUNT = 2000;
 
-    protected abstract void open() throws IOException;
+    protected abstract void open() throws IOException, TimeoutException;
 
     protected abstract void close() throws IOException;
 
@@ -70,8 +71,7 @@ public abstract class RequeueOnClose
     }
 
     private void publishAndGet(int count, boolean doAck)
-        throws IOException, InterruptedException
-    {
+            throws IOException, InterruptedException, TimeoutException {
         openConnection();
         for (int repeat = 0; repeat < count; repeat++) {
             open();
@@ -128,8 +128,7 @@ public abstract class RequeueOnClose
     }
 
     private void publishLotsAndGet()
-        throws IOException, InterruptedException, ShutdownSignalException
-    {
+            throws IOException, InterruptedException, ShutdownSignalException, TimeoutException {
         openConnection();
         open();
         channel.queueDeclare(Q, false, false, false, null);
@@ -211,8 +210,7 @@ public abstract class RequeueOnClose
     private static final int MESSAGES_TO_CONSUME = 20;
 
     private void publishLotsAndConsumeSome(boolean ack, boolean cancelBeforeFinish)
-        throws IOException, InterruptedException, ShutdownSignalException
-    {
+            throws IOException, InterruptedException, ShutdownSignalException, TimeoutException {
         openConnection();
         open();
         channel.queueDeclare(Q, false, false, false, null);

@@ -18,6 +18,7 @@
 package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -48,7 +49,7 @@ public class ExclusiveQueueDurability extends BrokerTestCase {
         verifyQueueMissing(channel, "scenario1");
     }
 
-    private void restartPrimaryAbruptly() throws IOException {
+    private void restartPrimaryAbruptly() throws IOException, TimeoutException {
         connection = null;
         channel = null;
         bareRestart();

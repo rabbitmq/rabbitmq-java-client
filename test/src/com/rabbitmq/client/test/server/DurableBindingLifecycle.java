@@ -24,6 +24,7 @@ import com.rabbitmq.client.test.functional.BindingLifecycleBase;
 import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 /**
  * This tests whether bindings are created and nuked properly.
@@ -36,7 +37,7 @@ import java.io.IOException;
  */
 public class DurableBindingLifecycle extends BindingLifecycleBase {
     @Override
-    protected void restart() throws IOException {
+    protected void restart() throws IOException, TimeoutException {
         if (clusteredConnection != null) {
             clusteredConnection.abort();
             clusteredConnection = null;
@@ -49,7 +50,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
         restartPrimary();
     }
 
-    private void restartPrimary() throws IOException {
+    private void restartPrimary() throws IOException, TimeoutException {
         tearDown();
         bareRestart();
         setUp();
@@ -58,7 +59,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
     /**
      *   Tests whether durable bindings are correctly recovered.
      */
-    public void testDurableBindingRecovery() throws IOException {
+    public void testDurableBindingRecovery() throws IOException, TimeoutException {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q, X, K);
 
@@ -91,7 +92,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
      * main difference is that the broker has to be restarted to
      * verify that the durable routes have been turfed.
      */
-    public void testDurableBindingsDeletion() throws IOException {
+    public void testDurableBindingsDeletion() throws IOException, TimeoutException {
         declareDurableTopicExchange(X);
         declareAndBindDurableQueue(Q, X, K);
 
@@ -120,7 +121,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
      * The idea is to create a durable queue, nuke the server and then
      * publish a message to it using the queue name as a routing key
      */
-    public void testDefaultBindingRecovery() throws IOException {
+    public void testDefaultBindingRecovery() throws IOException, TimeoutException {
         declareDurableQueue(Q);
 
         restart();
@@ -138,7 +139,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
      * queue and the durable queue is on a cluster node that restarts,
      * we do not lose the binding.  See bug 24009.
      */
-    public void testTransientExchangeDurableQueue() throws IOException {
+    public void testTransientExchangeDurableQueue() throws IOException, TimeoutException {
         // This test depends on the second node in the cluster to keep
         // the transient X alive
         if (clusteredConnection != null) {

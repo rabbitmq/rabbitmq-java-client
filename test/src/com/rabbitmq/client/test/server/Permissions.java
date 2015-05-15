@@ -23,6 +23,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -47,16 +48,14 @@ public class Permissions extends BrokerTestCase
     }
 
     protected void setUp()
-        throws IOException
-    {
+            throws IOException, TimeoutException {
         deleteRestrictedAccount();
         addRestrictedAccount();
         super.setUp();
     }
 
     protected void tearDown()
-        throws IOException
-    {
+            throws IOException, TimeoutException {
         super.tearDown();
         deleteRestrictedAccount();
     }
@@ -82,8 +81,7 @@ public class Permissions extends BrokerTestCase
     }
 
     protected void createResources()
-        throws IOException
-    {
+            throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setUsername("testadmin");
         factory.setPassword("test");
@@ -117,8 +115,7 @@ public class Permissions extends BrokerTestCase
         action.with("none");
     }
 
-    public void testAuth()
-    {
+    public void testAuth() throws TimeoutException {
         ConnectionFactory unAuthFactory = new ConnectionFactory();
         unAuthFactory.setUsername("test");
         unAuthFactory.setPassword("tset");

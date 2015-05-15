@@ -22,6 +22,7 @@ import com.rabbitmq.client.test.functional.ClusteredTestBase;
 import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 /**
  * This tests whether 'absent' queues - durable queues whose home node
@@ -31,13 +32,13 @@ public class AbsentQueue extends ClusteredTestBase {
 
     private static final String Q = "absent-queue";
 
-    @Override protected void setUp() throws IOException {
+    @Override protected void setUp() throws IOException, TimeoutException {
         super.setUp();
         if (clusteredConnection != null)
             stopSecondary();
     }
 
-    @Override protected void tearDown() throws IOException {
+    @Override protected void tearDown() throws IOException, TimeoutException {
         if (clusteredConnection != null)
             startSecondary();
         super.tearDown();

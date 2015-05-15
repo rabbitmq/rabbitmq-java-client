@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 public class CcRoutes extends BrokerTestCase  {
 
@@ -38,7 +39,7 @@ public class CcRoutes extends BrokerTestCase  {
     protected List<String> ccList;
     protected List<String> bccList;
 
-    @Override protected void setUp() throws IOException {
+    @Override protected void setUp() throws IOException, TimeoutException {
         super.setUp();
         propsBuilder = new BasicProperties.Builder();
         headers = new HashMap<String, Object>();
@@ -46,7 +47,7 @@ public class CcRoutes extends BrokerTestCase  {
         bccList = new ArrayList<String>();
     }
 
-    @Override protected void createResources() throws IOException {
+    @Override protected void createResources() throws IOException, TimeoutException {
         super.createResources();
         for (String q : queues) {
             channel.queueDeclare(q, false, true, true, null);

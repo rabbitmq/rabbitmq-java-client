@@ -18,6 +18,7 @@
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
@@ -150,7 +151,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * Because the exchange has been auto-deleted, the bind operation
      * should fail.
      */
-    public void testExchangeAutoDelete() throws IOException {
+    public void testExchangeAutoDelete() throws IOException, TimeoutException {
         doAutoDelete(false, 1);
     }
 
@@ -161,7 +162,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * The difference should be that the original exchange should not
      * get auto-deleted
      */
-    public void testExchangeAutoDeleteManyBindings() throws IOException {
+    public void testExchangeAutoDeleteManyBindings() throws IOException, TimeoutException {
         doAutoDelete(false, 10);
     }
 
