@@ -18,8 +18,11 @@
 package com.rabbitmq.client.test;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
 import junit.framework.TestCase;
 
@@ -36,6 +39,8 @@ import com.rabbitmq.client.impl.ShutdownNotifierComponent;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.tools.Host;
 
+import javax.net.ssl.SSLContext;
+
 public class BrokerTestCase extends TestCase {
     protected ConnectionFactory connectionFactory = newConnectionFactory();
 
@@ -47,7 +52,7 @@ public class BrokerTestCase extends TestCase {
     protected Channel channel;
 
     protected void setUp()
-            throws IOException {
+            throws IOException, TimeoutException {
         openConnection();
         openChannel();
 
@@ -55,7 +60,7 @@ public class BrokerTestCase extends TestCase {
     }
 
     protected void tearDown()
-            throws IOException {
+            throws IOException, TimeoutException {
         closeChannel();
         closeConnection();
 
@@ -72,7 +77,7 @@ public class BrokerTestCase extends TestCase {
      * connection and channel have been opened.
      */
     protected void createResources()
-            throws IOException {
+            throws IOException, TimeoutException {
     }
 
     /**
@@ -87,7 +92,7 @@ public class BrokerTestCase extends TestCase {
     }
 
     protected void restart()
-            throws IOException {
+            throws IOException, TimeoutException {
         tearDown();
         bareRestart();
         setUp();
@@ -99,7 +104,7 @@ public class BrokerTestCase extends TestCase {
     }
 
     public void openConnection()
-            throws IOException {
+            throws IOException, TimeoutException {
         if (connection == null) {
             connection = connectionFactory.newConnection();
         }
@@ -284,5 +289,21 @@ public class BrokerTestCase extends TestCase {
 
     protected String generateExchangeName() {
         return "exchange" + UUID.randomUUID().toString();
+    }
+
+    protected SSLContext getSSLContext() throws NoSuchAlgorithmException {
+        SSLContext c = null;
+
+        // pick the first protocol available, preferring TLSv1.2, then TLSv1,
+        // falling back to SSLv3 if running on an ancient/crippled JDK
+        for(String proto : Arrays.asList("TLSv1.2", "TLSv1", "SSLv3")) {
+            try {
+                c = SSLContext.getInstance(proto);
+                return c;
+            } catch (NoSuchAlgorithmException x) {
+                // keep trying
+            }
+        }
+        throw new NoSuchAlgorithmException();
     }
 }

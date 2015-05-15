@@ -24,6 +24,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -38,8 +39,7 @@ import com.rabbitmq.client.ConnectionFactory;
  */
 public class BadVerifiedConnection extends UnverifiedConnection {
     public void openConnection()
-        throws IOException
-    {
+            throws IOException, TimeoutException {
         try {
             String keystorePath = System.getProperty("keystore.empty.path");
             assertNotNull(keystorePath);
@@ -64,7 +64,7 @@ public class BadVerifiedConnection extends UnverifiedConnection {
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ks, p12Password);
             
-            SSLContext c = SSLContext.getInstance("SSLv3");
+            SSLContext c = getSSLContext();
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
             connectionFactory = new ConnectionFactory();
@@ -85,7 +85,7 @@ public class BadVerifiedConnection extends UnverifiedConnection {
             try {
                 connection = connectionFactory.newConnection();
                 fail();
-            } catch (SSLHandshakeException e) {
+            } catch (SSLHandshakeException ignored) {
             } catch (IOException e) {
                 fail();
             }

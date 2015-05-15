@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.ssl;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -29,8 +30,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
  */
 public class UnverifiedConnection extends BrokerTestCase {
     public void openConnection()
-        throws IOException
-    {
+            throws IOException, TimeoutException {
         try {
             connectionFactory.useSslProtocol();
         } catch (NoSuchAlgorithmException ex) {
