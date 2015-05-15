@@ -137,14 +137,20 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         returnListeners.clear();
     }
 
+    @SuppressWarnings("deprecation")
+    @Deprecated
     public void addFlowListener(FlowListener listener) {
         flowListeners.add(listener);
     }
 
+    @SuppressWarnings("deprecation")
+    @Deprecated
     public boolean removeFlowListener(FlowListener listener) {
         return flowListeners.remove(listener);
     }
 
+    @SuppressWarnings("deprecation")
+    @Deprecated
     public void clearFlowListeners() {
         flowListeners.clear();
     }
@@ -1166,6 +1172,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @SuppressWarnings("deprecation")
+    @Deprecated
     public boolean flowBlocked() {
         return _blockContent;
     }
