@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2014 GoPivotal, Inc and licenced as per
+ * Modifications Copyright 2015 Pivotal Software, Inc and licenced as per
  * the rest of the RabbitMQ Java client.
  */
 
