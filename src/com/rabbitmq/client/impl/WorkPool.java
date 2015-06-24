@@ -123,6 +123,7 @@ public class WorkPool<K, W> {
             this.pool.remove(key);
             this.ready.remove(key);
             this.inProgress.remove(key);
+            this.unlimited.remove(key);
         }
     }
 
@@ -134,6 +135,7 @@ public class WorkPool<K, W> {
             this.pool.clear();
             this.ready.clear();
             this.inProgress.clear();
+            this.unlimited.clear();
         }
     }
 
