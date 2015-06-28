@@ -840,6 +840,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                         boolean autoDelete, Map<String, Object> arguments)
         throws IOException
     {
+        validateQueueNameLength(queue);
         return (Queue.DeclareOk)
                exnWrappingRpc(new Queue.Declare.Builder()
                                .queue(queue)
@@ -864,6 +865,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                    boolean exclusive,
                                    boolean autoDelete,
                                    Map<String, Object> arguments) throws IOException {
+        validateQueueNameLength(queue);
         transmit(new AMQCommand(new Queue.Declare.Builder()
                                 .queue(queue)
                                 .durable(durable)
@@ -879,6 +881,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Queue.DeclareOk queueDeclarePassive(String queue)
         throws IOException
     {
+        validateQueueNameLength(queue);
         return (Queue.DeclareOk)
                exnWrappingRpc(new Queue.Declare.Builder()
                                .queue(queue)
@@ -905,6 +908,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty)
         throws IOException
     {
+        validateQueueNameLength(queue);
         return (Queue.DeleteOk)
                exnWrappingRpc(new Queue.Delete.Builder()
                                .queue(queue)
@@ -916,6 +920,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     @Override
     public void queueDeleteNoWait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
+        validateQueueNameLength(queue);
         transmit(new AMQCommand(new Queue.Delete.Builder()
                                         .queue(queue)
                                         .ifUnused(ifUnused)
@@ -936,6 +941,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                   String routingKey, Map<String, Object> arguments)
         throws IOException
     {
+        validateQueueNameLength(queue);
         return (Queue.BindOk)
                exnWrappingRpc(new Queue.Bind.Builder()
                                .queue(queue)
@@ -950,7 +956,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Queue.BindOk queueBind(String queue, String exchange, String routingKey)
         throws IOException
     {
-
         return queueBind(queue, exchange, routingKey, null);
     }
 
@@ -959,6 +964,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                 String exchange,
                                 String routingKey,
                                 Map<String, Object> arguments) throws IOException {
+        validateQueueNameLength(queue);
         transmit(new AMQCommand(new Queue.Bind.Builder()
                                 .queue(queue)
                                 .exchange(exchange)
@@ -972,6 +978,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                       Map<String, Object> arguments)
         throws IOException
     {
+        validateQueueNameLength(queue);
         return (Queue.UnbindOk)
                exnWrappingRpc(new Queue.Unbind.Builder()
                                .queue(queue)
@@ -986,6 +993,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Queue.PurgeOk queuePurge(String queue)
         throws IOException
     {
+        validateQueueNameLength(queue);
         return (Queue.PurgeOk)
                exnWrappingRpc(new Queue.Purge.Builder()
                                .queue(queue)
@@ -1004,6 +1012,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public GetResponse basicGet(String queue, boolean autoAck)
         throws IOException
     {
+        validateQueueNameLength(queue);
         AMQCommand replyCommand = exnWrappingRpc(new Basic.Get.Builder()
                                                   .queue(queue)
                                                   .noAck(autoAck)
@@ -1228,6 +1237,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             onlyAcksReceived = onlyAcksReceived && !nack;
             if (unconfirmedSet.isEmpty())
                 unconfirmedSet.notifyAll();
+        }
+    }
+
+    private void validateQueueNameLength(String queue) {
+        if(queue.length() > 255) {
+           throw new IllegalArgumentException("queue name must be no more than 255 characters long");
         }
     }
 }
