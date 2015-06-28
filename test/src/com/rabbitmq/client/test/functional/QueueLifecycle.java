@@ -167,4 +167,14 @@ public class QueueLifecycle extends BrokerTestCase {
         channel.queueDeclare(queueName, true, true, false, args);
         verifyQueue(queueName, true, true, false, args);
     }
+
+    public void testQueueNamesLongerThan255Characters() throws IOException {
+        String q = new String(new byte[300]).replace('\u0000', 'x');
+        try {
+            channel.queueDeclare(q, false, false, false, null);
+            fail("queueDeclare should have failed");
+        } catch (IllegalArgumentException ignored) {
+            // expected
+        }
+    }
 }
