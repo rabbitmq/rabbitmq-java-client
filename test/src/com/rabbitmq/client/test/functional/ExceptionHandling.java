@@ -9,6 +9,7 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.impl.DefaultExceptionHandler;
+import com.rabbitmq.client.impl.ForgivingExceptionHandler;
 import junit.framework.TestCase;
 
 import java.io.IOException;
@@ -23,15 +24,34 @@ public class ExceptionHandling extends TestCase {
         return cf;
     }
 
-    public void testHandleConsumerException() throws IOException, InterruptedException, TimeoutException {
+    public void testDefaultConsumerHandleConsumerException() throws IOException, InterruptedException, TimeoutException {
         final CountDownLatch latch = new CountDownLatch(1);
-        final DefaultExceptionHandler eh = new DefaultExceptionHandler() {
+        final ExceptionHandler eh = new DefaultExceptionHandler() {
             @Override
             public void handleConsumerException(Channel channel, Throwable exception, Consumer consumer, String consumerTag, String methodName) {
                 super.handleConsumerException(channel, exception, consumer, consumerTag, methodName);
                 latch.countDown();
             }
         };
+
+        testConsumerHandleConsumerException(eh, latch, true);
+    }
+
+    public void testForgivingConsumerHandleConsumerException() throws IOException, InterruptedException, TimeoutException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ExceptionHandler eh = new ForgivingExceptionHandler() {
+            @Override
+            public void handleConsumerException(Channel channel, Throwable exception, Consumer consumer, String consumerTag, String methodName) {
+                super.handleConsumerException(channel, exception, consumer, consumerTag, methodName);
+                latch.countDown();
+            }
+        };
+
+        testConsumerHandleConsumerException(eh, latch, false);
+    }
+
+    protected void testConsumerHandleConsumerException(ExceptionHandler eh, CountDownLatch latch, boolean expectChannelClose)
+            throws InterruptedException, TimeoutException, IOException {
         ConnectionFactory cf = newConnectionFactory(eh);
         assertEquals(cf.getExceptionHandler(), eh);
         Connection conn = cf.newConnection();
@@ -47,7 +67,8 @@ public class ExceptionHandling extends TestCase {
         });
         ch.basicPublish("", q, null, "".getBytes());
         wait(latch);
-        assertFalse(ch.isOpen());
+
+        assertEquals(!expectChannelClose, ch.isOpen());
     }
 
     public void testNullExceptionHandler() {
