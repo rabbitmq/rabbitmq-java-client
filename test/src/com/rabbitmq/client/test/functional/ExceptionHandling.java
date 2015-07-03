@@ -28,6 +28,7 @@ public class ExceptionHandling extends TestCase {
         final DefaultExceptionHandler eh = new DefaultExceptionHandler() {
             @Override
             public void handleConsumerException(Channel channel, Throwable exception, Consumer consumer, String consumerTag, String methodName) {
+                super.handleConsumerException(channel, exception, consumer, consumerTag, methodName);
                 latch.countDown();
             }
         };
@@ -41,11 +42,12 @@ public class ExceptionHandling extends TestCase {
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope,
                                        AMQP.BasicProperties properties, byte[] body) throws IOException {
-                throw new RuntimeException("oops");
+                throw new RuntimeException("exception expected here, don't freak out");
             }
         });
         ch.basicPublish("", q, null, "".getBytes());
         wait(latch);
+        assertFalse(ch.isOpen());
     }
 
     public void testNullExceptionHandler() {
