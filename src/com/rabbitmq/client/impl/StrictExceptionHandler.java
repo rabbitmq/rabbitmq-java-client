@@ -29,7 +29,7 @@ import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.TopologyRecoveryException;
 
 /**
- * An implementation of {@link com.rabbitmq.client.ExceptionHandler} that does not
+ * An implementation of {@link com.rabbitmq.client.ExceptionHandler} that does
  * close channels on unhandled consumer exception.
  *
  * Used by {@link AMQConnection}.
