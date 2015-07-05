@@ -92,5 +92,7 @@ public class TableTest
         table.put("d", LongStringHelper.asLongString("d"));
         assertEquals(table, unmarshal(marshal(table)));
 
+        table.put("e", -126);
+        assertEquals(table, unmarshal(marshal(table)));
     }
 }
