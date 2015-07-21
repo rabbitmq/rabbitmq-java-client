@@ -68,11 +68,11 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     private final List<ConsumerRecoveryListener> consumerRecoveryListeners = new ArrayList<ConsumerRecoveryListener>();
     private final List<QueueRecoveryListener> queueRecoveryListeners = new ArrayList<QueueRecoveryListener>();
 	
-	//Used to block connection recovery attempts after close() is invoked.
+	// Used to block connection recovery attempts after close() is invoked.
 	private volatile boolean manuallyClosed = false;
 	
-	//This lock guards the manuallyClosed flag and the delegate connection.  Guarding these two ensures that a new connection can never
-	//be created after application code has initiated shutdown.  
+	// This lock guards the manuallyClosed flag and the delegate connection.  Guarding these two ensures that a new connection can never
+	// be created after application code has initiated shutdown.  
 	private Object recoveryLock = new Object();
 	
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, Address[] addrs) {
@@ -188,8 +188,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see com.rabbitmq.client.Connection#close()
      */
     public void close() throws IOException {
-		synchronized(recoveryLock)
-		{
+		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
 		}
         delegate.close();
@@ -199,8 +198,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see Connection#close(int)
      */
     public void close(int timeout) throws IOException {
-		synchronized(recoveryLock)
-		{
+		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
 		}
         delegate.close(timeout);
@@ -210,8 +208,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see Connection#close(int, String, int)
      */
     public void close(int closeCode, String closeMessage, int timeout) throws IOException {
-		synchronized(recoveryLock)
-		{
+		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
 		}
         delegate.close(closeCode, closeMessage, timeout);
@@ -221,8 +218,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see com.rabbitmq.client.Connection#abort()
      */
     public void abort() {
-		synchronized(recoveryLock)
-		{
+		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
 		}
         delegate.abort();
@@ -232,8 +228,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see Connection#abort(int, String, int)
      */
     public void abort(int closeCode, String closeMessage, int timeout) {
-		synchronized(recoveryLock)
-		{
+		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
 		}
         delegate.abort(closeCode, closeMessage, timeout);
@@ -243,8 +238,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see Connection#abort(int, String)
      */
     public void abort(int closeCode, String closeMessage) {
-		synchronized(recoveryLock)
-		{
+		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
 		}
         delegate.abort(closeCode, closeMessage);
@@ -254,8 +248,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see Connection#abort(int)
      */
     public void abort(int timeout) {
-		synchronized(recoveryLock)
-		{
+		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
 		}
         delegate.abort(timeout);
@@ -296,8 +289,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see com.rabbitmq.client.Connection#close(int, String)
      */
     public void close(int closeCode, String closeMessage) throws IOException {
-		synchronized(recoveryLock)
-		{
+		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
 		}
 		delegate.close(closeCode, closeMessage);
@@ -441,11 +433,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.consumerRecoveryListeners.remove(listener);
     }
 
-    synchronized private void beginAutomaticRecovery() throws InterruptedException, IOException, TopologyRecoveryException 
-	{
+    synchronized private void beginAutomaticRecovery() throws InterruptedException, IOException, TopologyRecoveryException {
         Thread.sleep(this.params.getNetworkRecoveryInterval());
         if (!this.recoverConnection())
-			return; //Application initiated a shutdown during automatic recovery, don't attempt further recovery
+			return; 
 		
 		this.recoverShutdownListeners();
 		this.recoverBlockedListeners();
@@ -455,7 +446,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 			this.recoverConsumers();
 		}
 
-		this.notifyRecoveryListeners();		
+		this.notifyRecoveryListeners();
     }
 
     private void recoverShutdownListeners() {
@@ -470,34 +461,24 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-	//Returns true if the connection was recovered, 
-	//false if application initiated shutdown while attempting recovery.  
+	// Returns true if the connection was recovered, 
+	// false if application initiated shutdown while attempting recovery.  
     private boolean recoverConnection() throws IOException, InterruptedException {
-        while (!manuallyClosed) //manuallyClosed marked volatile -ensures thread cannot cache value of manuallyClosed.
+        while (!manuallyClosed)
 		{
             try {
 				RecoveryAwareAMQConnection newConn = this.cf.newConnection();
-				synchronized(recoveryLock)
-				{
-					if (!manuallyClosed)
-					{
-						//This is the standard case.
+				synchronized(recoveryLock) {
+					if (!manuallyClosed) {
+						// This is the standard case.
 						this.delegate = newConn;					
 						return true;
 					}
 				}
-
-				//This is the once in a blue moon case.  
-				//Application code just called close as the connection
-				//was being re-established.  So we attempt to close the newly created connection.
-				try
-				{
-					newConn.close(); //Is there a standard error code/shutdown message to use here? 
-				}
-				catch (Exception e)
-				{
-					//Ugh, we just leaked the new connection object, hopefully some kind of heartbeat/expiration timeout will take care of it.
-				}
+				// This is the once in a blue moon case.  
+				// Application code just called close as the connection
+				// was being re-established.  So we attempt to close the newly created connection.
+				newConn.abort();
 				return false;
             } catch (Exception e) {
                 // TODO: exponential back-off
