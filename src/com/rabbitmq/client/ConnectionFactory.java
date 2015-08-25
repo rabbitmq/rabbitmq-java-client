@@ -315,10 +315,17 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Set the TCP connection timeout.
-     * @param connectionTimeout connection TCP establishment timeout in milliseconds; zero for infinite
+     * @param timeout connection TCP establishment timeout in milliseconds; zero for infinite
      */
-    public void setConnectionTimeout(int connectionTimeout) {
-        this.connectionTimeout = connectionTimeout;
+    public void setConnectionTimeout(int timeout) {
+        if(timeout < 0) {
+            throw new IllegalArgumentException("TCP connection timeout cannot be negative");
+        }
+        if(timeout > handshakeTimeout) {
+            throw new IllegalArgumentException("TCP connection timeout cannot be greater than handshake timeout");
+        } else {
+            this.connectionTimeout = timeout;
+        }
     }
 
     /**
@@ -339,13 +346,16 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Set the AMQP0-9-1 protocol handshake timeout.
-     * @param handshakeTimeout the AMQP0-9-1 protocol handshake timeout, in milliseconds
+     * @param timeout the AMQP0-9-1 protocol handshake timeout, in milliseconds
      */
-    public void setHandshakeTimeout(int handshakeTimeout) {
-        if(handshakeTimeout < connectionTimeout) {
-            this.handshakeTimeout = handshakeTimeout;
-        } else {
+    public void setHandshakeTimeout(int timeout) {
+        if(timeout < 0) {
+            throw new IllegalArgumentException("handshake timeout cannot be negative");
+        }
+        if(connectionTimeout != 0 && timeout < connectionTimeout) {
             throw new IllegalArgumentException("handshake timeout cannot be lower than TCP connection timeout");
+        } else {
+            this.handshakeTimeout = timeout;
         }
     }
 
