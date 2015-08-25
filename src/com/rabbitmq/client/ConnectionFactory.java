@@ -70,9 +70,14 @@ public class ConnectionFactory implements Cloneable {
     public static final int    DEFAULT_AMQP_PORT = AMQP.PROTOCOL.PORT;
     /** The default ssl port */
     public static final int    DEFAULT_AMQP_OVER_SSL_PORT = 5671;
-    /** The default connection timeout;
+    /** The default TCP connection timeout;
      *  zero means wait indefinitely */
     public static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
+    /**
+     * The default AMQP 0-9-1 connection handshake timeout. See DEFAULT_CONNECTION_TIMEOUT
+     * for TCP (socket) connection timeout.
+     */
+    public static final int    DEFAULT_HANDSHAKE_TIMEOUT = 10000;
     /** The default shutdown timeout;
      *  zero means wait indefinitely */
     public static final int    DEFAULT_SHUTDOWN_TIMEOUT = 10000;
@@ -89,6 +94,7 @@ public class ConnectionFactory implements Cloneable {
     private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
     private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
     private int connectionTimeout                 = DEFAULT_CONNECTION_TIMEOUT;
+    private int handshakeTimeout                  = DEFAULT_HANDSHAKE_TIMEOUT;
     private int shutdownTimeout                   = DEFAULT_SHUTDOWN_TIMEOUT;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory factory                 = SocketFactory.getDefault();
@@ -308,19 +314,39 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Set the connection timeout.
-     * @param connectionTimeout connection establishment timeout in milliseconds; zero for infinite
+     * Set the TCP connection timeout.
+     * @param connectionTimeout connection TCP establishment timeout in milliseconds; zero for infinite
      */
     public void setConnectionTimeout(int connectionTimeout) {
         this.connectionTimeout = connectionTimeout;
     }
 
     /**
-     * Retrieve the connection timeout.
-     * @return the connection timeout, in milliseconds; zero for infinite
+     * Retrieve the TCP connection timeout.
+     * @return the TCP connection timeout, in milliseconds; zero for infinite
      */
     public int getConnectionTimeout() {
         return this.connectionTimeout;
+    }
+
+    /**
+     * Retrieve the AMQP 0-9-1 protocol handshake timeout.
+     * @return the AMQP0-9-1 protocol handshake timeout, in milliseconds
+     */
+    public int getHandshakeTimeout() {
+        return handshakeTimeout;
+    }
+
+    /**
+     * Set the AMQP0-9-1 protocol handshake timeout.
+     * @param handshakeTimeout the AMQP0-9-1 protocol handshake timeout, in milliseconds
+     */
+    public void setHandshakeTimeout(int handshakeTimeout) {
+        if(handshakeTimeout < connectionTimeout) {
+            this.handshakeTimeout = handshakeTimeout;
+        } else {
+            throw new IllegalArgumentException("handshake timeout cannot be lower than TCP connection timeout");
+        }
     }
 
     /**
@@ -629,9 +655,12 @@ public class ConnectionFactory implements Cloneable {
     }
 
     public ConnectionParams params(ExecutorService executor) {
-        return new ConnectionParams(username, password, executor, virtualHost, getClientProperties(),
-                                    requestedFrameMax, requestedChannelMax, requestedHeartbeat, shutdownTimeout, saslConfig,
-                                    networkRecoveryInterval, topologyRecovery, exceptionHandler, threadFactory);
+        // TODO: switch to use setters for all fields
+        ConnectionParams result = new ConnectionParams(username, password, executor, virtualHost, getClientProperties(),
+            requestedFrameMax, requestedChannelMax, requestedHeartbeat, shutdownTimeout, saslConfig,
+            networkRecoveryInterval, topologyRecovery, exceptionHandler, threadFactory);
+        result.setHandshakeTimeout(handshakeTimeout);
+        return result;
     }
 
     /**

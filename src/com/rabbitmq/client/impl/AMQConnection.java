@@ -63,8 +63,6 @@ final class Copyright {
  * for an example.
  */
 public class AMQConnection extends ShutdownNotifierComponent implements Connection, NetworkConnection {
-    /** Timeout used while waiting for AMQP handshaking to complete (milliseconds) */
-    public static final int HANDSHAKE_TIMEOUT = 10000;
     private final ExecutorService executor;
     private Thread mainLoopThread;
     private ThreadFactory threadFactory = Executors.defaultThreadFactory();
@@ -139,6 +137,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final int requestedHeartbeat;
     private final int requestedChannelMax;
     private final int requestedFrameMax;
+    private final int handshakeTimeout;
     private final int shutdownTimeout;
     private final String username;
     private final String password;
@@ -218,6 +217,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.requestedFrameMax = params.getRequestedFrameMax();
         this.requestedChannelMax = params.getRequestedChannelMax();
         this.requestedHeartbeat = params.getRequestedHeartbeat();
+        this.handshakeTimeout = params.getHandshakeTimeout();
         this.shutdownTimeout = params.getShutdownTimeout();
         this.saslConfig = params.getSaslConfig();
         this.executor = params.getExecutor();
@@ -273,7 +273,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         try {
             // The following two lines are akin to AMQChannel's
             // transmit() method for this pseudo-RPC.
-            _frameHandler.setTimeout(HANDSHAKE_TIMEOUT);
+            _frameHandler.setTimeout(handshakeTimeout);
             _frameHandler.sendHeader();
         } catch (IOException ioe) {
             _frameHandler.close();
@@ -291,7 +291,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         AMQP.Connection.Tune connTune = null;
         try {
             connStart =
-                    (AMQP.Connection.Start) connStartBlocker.getReply(HANDSHAKE_TIMEOUT/2).getMethod();
+                    (AMQP.Connection.Start) connStartBlocker.getReply(handshakeTimeout/2).getMethod();
 
             _serverProperties = Collections.unmodifiableMap(connStart.getServerProperties());
 
@@ -324,7 +324,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                         : new AMQP.Connection.SecureOk.Builder().response(response).build();
 
                 try {
-                    Method serverResponse = _channel0.rpc(method, HANDSHAKE_TIMEOUT/2).getMethod();
+                    Method serverResponse = _channel0.rpc(method, handshakeTimeout/2).getMethod();
                     if (serverResponse instanceof AMQP.Connection.Tune) {
                         connTune = (AMQP.Connection.Tune) serverResponse;
                     } else {
