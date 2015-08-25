@@ -84,6 +84,47 @@ public class AMQConnectionTest extends TestCase {
         super.tearDown();
     }
 
+    public void testNegativeTCPConnectionTimeout() {
+        ConnectionFactory cf = new ConnectionFactory();
+        try {
+            cf.setConnectionTimeout(-10);
+            fail("expected an exception");
+        } catch (IllegalArgumentException _ignored) {
+            // expected
+        }
+    }
+
+    public void testNegativeProtocolHandshakeTimeout() {
+        ConnectionFactory cf = new ConnectionFactory();
+        try {
+            cf.setHandshakeTimeout(-10);
+            fail("expected an exception");
+        } catch (IllegalArgumentException _ignored) {
+            // expected
+        }
+    }
+
+    public void testTCPConnectionTimeoutGreaterThanHandShakeTimeout() {
+        ConnectionFactory cf = new ConnectionFactory();
+        try {
+            cf.setHandshakeTimeout(3000);
+            cf.setConnectionTimeout(5000);
+            fail("expected an exception");
+        } catch (IllegalArgumentException _ignored) {
+            // expected
+        }
+    }
+
+    public void testProtocolHandshakeTimeoutGreaterThanTCPConnectionTimeout() {
+        ConnectionFactory cf = new ConnectionFactory();
+
+        cf.setConnectionTimeout(5000);
+        cf.setHandshakeTimeout(7000);
+
+        cf.setConnectionTimeout(0);
+        cf.setHandshakeTimeout(7000);
+    }
+
     /** Check the AMQConnection does send exactly 1 initial header, and deal correctly with
      * the frame handler throwing an exception when we try to read data
      */
