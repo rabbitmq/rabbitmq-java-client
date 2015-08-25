@@ -16,6 +16,7 @@ public class ConnectionParams {
     private final int requestedFrameMax;
     private final int requestedChannelMax;
     private final int requestedHeartbeat;
+    private int handshakeTimeout;
     private final int shutdownTimeout;
     private final SaslConfig saslConfig;
     private final long networkRecoveryInterval;
@@ -36,8 +37,8 @@ public class ConnectionParams {
      * @param saslConfig sasl configuration hook
      * @param networkRecoveryInterval interval used when recovering from network failure
      * @param topologyRecovery should topology (queues, exchanges, bindings, consumers) recovery be performed?
-     * @param threadFactory
-     * @param exceptionHandler
+     * @param threadFactory factory that instantiates threads used by the client
+     * @param exceptionHandler handles unhandled consumer exceptions
      */
     public ConnectionParams(String username, String password, ExecutorService executor,
                             String virtualHost, Map<String, Object> clientProperties,
@@ -90,6 +91,14 @@ public class ConnectionParams {
 
     public int getRequestedHeartbeat() {
         return requestedHeartbeat;
+    }
+
+    public int getHandshakeTimeout() {
+        return handshakeTimeout;
+    }
+
+    public void setHandshakeTimeout(int timeout) {
+      this.handshakeTimeout = timeout;
     }
 
     public int getShutdownTimeout() {
