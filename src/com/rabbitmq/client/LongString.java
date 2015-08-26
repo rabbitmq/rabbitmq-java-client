@@ -53,4 +53,10 @@ public interface LongString
      * @return the array of bytes containing the content of the {@link LongString}
      */
     public byte [] getBytes();
+
+    /**
+     * Get the content as a String. Uses UTF-8 as encoding.
+     * @return he content of the {@link LongString} as a string
+     */
+    public String toString();
 }
