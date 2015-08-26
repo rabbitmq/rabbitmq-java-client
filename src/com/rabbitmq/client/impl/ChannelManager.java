@@ -21,10 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.IntAllocator;
@@ -45,7 +42,7 @@ public class ChannelManager {
 
     /** Maximum channel number available on this connection. */
     private final int _channelMax;
-    private final ThreadFactory threadFactory;
+    private final ThreadPoolExecutor threadPoolExecutor;
 
     public int getChannelMax(){
       return _channelMax;
@@ -55,7 +52,7 @@ public class ChannelManager {
         this(workService, channelMax, Executors.defaultThreadFactory());
     }
 
-    public ChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory) {
+    public ChannelManager(ConsumerWorkService workService, int channelMax, final ThreadFactory threadFactory) {
         if (channelMax == 0) {
             // The framing encoding only allows for unsigned 16-bit integers
             // for the channel number
@@ -65,7 +62,13 @@ public class ChannelManager {
         channelNumberAllocator = new IntAllocator(1, channelMax);
 
         this.workService = workService;
-        this.threadFactory = threadFactory;
+        this.threadPoolExecutor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            public Thread newThread(Runnable r) {
+                return Environment.newThread(threadFactory, r, "ConsumerWorkService shutdown monitor", true);
+            }
+        });
+
+        threadPoolExecutor.prestartAllCoreThreads();
     }
 
     /**
@@ -117,8 +120,7 @@ public class ChannelManager {
                 ssWorkService.shutdown();
             }
         };
-        Thread shutdownThread = Environment.newThread(threadFactory, target, "ConsumerWorkService shutdown monitor", true);
-        shutdownThread.start();
+        threadPoolExecutor.execute(target);
     }
 
     public ChannelN createChannel(AMQConnection connection) throws IOException {
