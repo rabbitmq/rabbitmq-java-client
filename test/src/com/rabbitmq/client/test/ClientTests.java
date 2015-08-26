@@ -24,6 +24,7 @@ public class ClientTests extends TestCase {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("client");
         suite.addTest(TableTest.suite());
+        suite.addTest(LongStringTest.suite());
         suite.addTest(BlockingCellTest.suite());
         suite.addTest(TruncatedInputStreamTest.suite());
         suite.addTest(AMQConnectionTest.suite());
