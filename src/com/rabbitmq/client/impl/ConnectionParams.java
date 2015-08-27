@@ -6,6 +6,7 @@ import com.rabbitmq.client.SaslConfig;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class ConnectionParams {
     private final String username;
@@ -23,6 +24,7 @@ public class ConnectionParams {
 
     private final ExceptionHandler exceptionHandler;
     private final ThreadFactory threadFactory;
+    private final ThreadPoolExecutor shutdownThreadPoolExecutor;
 
   /**
      * @param username name used to establish connection
@@ -43,7 +45,7 @@ public class ConnectionParams {
                             String virtualHost, Map<String, Object> clientProperties,
                             int requestedFrameMax, int requestedChannelMax, int requestedHeartbeat,
                             int shutdownTimeout, SaslConfig saslConfig, long networkRecoveryInterval,
-                            boolean topologyRecovery, ExceptionHandler exceptionHandler, ThreadFactory threadFactory) {
+                            boolean topologyRecovery, ExceptionHandler exceptionHandler, ThreadFactory threadFactory, ThreadPoolExecutor shutdownThreadPoolExecutor) {
         this.username = username;
         this.password = password;
         this.executor = executor;
@@ -58,6 +60,7 @@ public class ConnectionParams {
         this.topologyRecovery = topologyRecovery;
         this.exceptionHandler = exceptionHandler;
         this.threadFactory = threadFactory;
+        this.shutdownThreadPoolExecutor = shutdownThreadPoolExecutor;
     }
 
     public String getUsername() {
@@ -115,4 +118,8 @@ public class ConnectionParams {
   public ThreadFactory getThreadFactory() {
     return threadFactory;
   }
+
+    public ThreadPoolExecutor getShutdownThreadPoolExecutor() {
+        return shutdownThreadPoolExecutor;
+    }
 }

@@ -25,11 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AuthenticationFailureException;
@@ -67,7 +63,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public static final int HANDSHAKE_TIMEOUT = 10000;
     private final ExecutorService executor;
     private Thread mainLoopThread;
-    private ThreadFactory threadFactory = Executors.defaultThreadFactory();
+    private ThreadFactory threadFactory;
+    private final ThreadPoolExecutor shutdownThreadPoolExecutor;
+    private ChannelManagerFactory channelManagerFactory = new ChannelManagerFactory() {
+        public ChannelManager instantiateChannelManager(int channelMax) {
+            return new ChannelManager(_workService, channelMax, getShutdownThreadPoolExecutor(), new DefaultChannelNFactory());
+        }
+    };
 
     /**
      * Retrieve a copy of the default table of client properties that
@@ -222,6 +224,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.saslConfig = params.getSaslConfig();
         this.executor = params.getExecutor();
         this.threadFactory = params.getThreadFactory();
+        this.shutdownThreadPoolExecutor = params.getShutdownThreadPoolExecutor();
 
         this._channelManager = null;
 
@@ -357,7 +360,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             int channelMax =
                 negotiateChannelMax(this.requestedChannelMax,
                                     connTune.getChannelMax());
-            _channelManager = instantiateChannelManager(channelMax, threadFactory);
+            _channelManager = channelManagerFactory.instantiateChannelManager(channelMax);
 
             int frameMax =
                 negotiatedMaxValue(this.requestedFrameMax,
@@ -392,10 +395,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = false;
 
         return;
-    }
-
-    protected ChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
-        return new ChannelManager(this._workService, channelMax, threadFactory);
     }
 
     /**
@@ -462,6 +461,17 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      */
     public ThreadFactory getThreadFactory() {
         return threadFactory;
+    }
+
+    /**
+     * @return Thread factory used by this connection.
+     */
+    public ThreadPoolExecutor getShutdownThreadPoolExecutor() {
+        return shutdownThreadPoolExecutor;
+    }
+    
+    protected void setChannelManagerFactory(ChannelManagerFactory channelManagerFactory) {
+        this.channelManagerFactory = channelManagerFactory;
     }
 
     public Map<String, Object> getClientProperties() {

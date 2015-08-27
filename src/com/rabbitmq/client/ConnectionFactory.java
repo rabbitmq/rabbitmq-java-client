@@ -20,25 +20,18 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeoutException;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ConnectionParams;
-import com.rabbitmq.client.impl.DefaultExceptionHandler;
-import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.FrameHandlerFactory;
+import com.rabbitmq.client.impl.*;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 
 /**
@@ -95,6 +88,11 @@ public class ConnectionFactory implements Cloneable {
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
     private ThreadFactory threadFactory           = Executors.defaultThreadFactory();
+    private final ThreadPoolExecutor shutdownThreadPoolExecutor = new ShutdownThreadPoolExecutorFactory().create(new ThreadFactory() {
+        public Thread newThread(Runnable r) {
+            return threadFactory.newThread(r);
+        }
+    });
     private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
     private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
 
@@ -631,7 +629,7 @@ public class ConnectionFactory implements Cloneable {
     public ConnectionParams params(ExecutorService executor) {
         return new ConnectionParams(username, password, executor, virtualHost, getClientProperties(),
                                     requestedFrameMax, requestedChannelMax, requestedHeartbeat, shutdownTimeout, saslConfig,
-                                    networkRecoveryInterval, topologyRecovery, exceptionHandler, threadFactory);
+                                    networkRecoveryInterval, topologyRecovery, exceptionHandler, threadFactory, shutdownThreadPoolExecutor);
     }
 
     /**

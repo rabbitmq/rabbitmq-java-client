@@ -37,22 +37,19 @@ public class ChannelManager {
         private final IntAllocator channelNumberAllocator;
 
     private final ConsumerWorkService workService;
+    private final ChannelNFactory channelNFactory;
 
     private final Set<CountDownLatch> shutdownSet = new HashSet<CountDownLatch>();
 
     /** Maximum channel number available on this connection. */
     private final int _channelMax;
-    private final ThreadPoolExecutor threadPoolExecutor;
+    private final ThreadPoolExecutor shutdownThreadPoolExecutor;
 
     public int getChannelMax(){
       return _channelMax;
     }
 
-    public ChannelManager(ConsumerWorkService workService, int channelMax) {
-        this(workService, channelMax, Executors.defaultThreadFactory());
-    }
-
-    public ChannelManager(ConsumerWorkService workService, int channelMax, final ThreadFactory threadFactory) {
+    public ChannelManager(ConsumerWorkService workService, int channelMax, ThreadPoolExecutor shutdownThreadPoolExecutor, ChannelNFactory channelNFactory) {
         if (channelMax == 0) {
             // The framing encoding only allows for unsigned 16-bit integers
             // for the channel number
@@ -61,14 +58,11 @@ public class ChannelManager {
         _channelMax = channelMax;
         channelNumberAllocator = new IntAllocator(1, channelMax);
 
+        shutdownThreadPoolExecutor.prestartAllCoreThreads();
+        
         this.workService = workService;
-        this.threadPoolExecutor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            public Thread newThread(Runnable r) {
-                return Environment.newThread(threadFactory, r, "ConsumerWorkService shutdown monitor", true);
-            }
-        });
-
-        threadPoolExecutor.prestartAllCoreThreads();
+        this.shutdownThreadPoolExecutor = shutdownThreadPoolExecutor;
+        this.channelNFactory = channelNFactory;
     }
 
     /**
@@ -120,7 +114,7 @@ public class ChannelManager {
                 ssWorkService.shutdown();
             }
         };
-        threadPoolExecutor.execute(target);
+        shutdownThreadPoolExecutor.execute(target);
     }
 
     public ChannelN createChannel(AMQConnection connection) throws IOException {
@@ -160,14 +154,12 @@ public class ChannelManager {
                     + "use. This should never happen. "
                     + "Please report this as a bug.");
         }
-        ChannelN ch = instantiateChannel(connection, channelNumber, this.workService);
+        ChannelN ch = channelNFactory.instanciate(connection, channelNumber, this.workService);
         _channelMap.put(ch.getChannelNumber(), ch);
         return ch;
     }
 
-    protected ChannelN instantiateChannel(AMQConnection connection, int channelNumber, ConsumerWorkService workService) {
-        return new ChannelN(connection, channelNumber, workService);
-    }
+
 
     /**
      * Remove the channel from the channel map and free the number for re-use.

@@ -20,7 +20,7 @@ public class ChannelManagerTest {
         ConsumerWorkService consumerWorkService = new ConsumerWorkService(null, consumerWorkServiceThreadFactory, 10 * 1000);
         int channelMax = 10;
 
-        ChannelManager channelManager = new ChannelManager(consumerWorkService, channelMax, channelManagerThreadFactory);
+        ChannelManager channelManager = new ChannelManager(consumerWorkService, channelMax, new ShutdownThreadPoolExecutorFactory().create(channelManagerThreadFactory), new DefaultChannelNFactory());
 
         assertEquals(0, consumerWorkServiceThreadFactory.newThreadsRequestedCount.get());
         assertEquals(1, channelManagerThreadFactory.newThreadsRequestedCount.get());
