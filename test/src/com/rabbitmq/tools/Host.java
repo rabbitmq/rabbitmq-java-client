@@ -93,15 +93,15 @@ public class Host {
     }
 
     public static Process rabbitmqctl(String command) throws IOException {
-        return executeCommand("../rabbitmq-server/scripts/rabbitmqctl " + command);
+        return executeCommand(rabbitmqctlCommand() + " " + command);
     }
 
     public static Process rabbitmqctlIgnoreErrors(String command) throws IOException {
-        return executeCommandIgnoringErrors("../rabbitmq-server/scripts/rabbitmqctl " + command);
+        return executeCommandIgnoringErrors(rabbitmqctlCommand() + " " + command);
     }
 
     public static Process invokeMakeTarget(String command) throws IOException {
-        return executeCommand("cd ../rabbitmq-test; " + makeCommand() + " " + command);
+        return executeCommand("cd " + rabbitmqTestDir() + "; " + makeCommand() + " " + command);
     }
 
     private static String makeCommand()
@@ -116,6 +116,32 @@ public class Host {
         }
 
         return makecmd;
+    }
+
+    private static String rabbitmqctlCommand()
+    {
+        // Get the rabbitmqctl(1) executable to use from the environment.
+        String cmd = System.getenv("RABBITMQCTL");
+
+        // Default to "make" if the environment variable is unset.
+        if (cmd == null) {
+            cmd = "../rabbitmq-server/scripts/rabbitmqctl";
+        }
+
+        return cmd;
+    }
+
+    private static String rabbitmqTestDir()
+    {
+        // Get the rabbitmq-test directory to use from the environment.
+        String dir = System.getenv("RABBITMQ_TEST_DIR");
+
+        // Default to "make" if the environment variable is unset.
+        if (dir == null) {
+            dir = "../rabbitmq-test";
+        }
+
+        return dir;
     }
 
     public static void closeConnection(String pid) throws IOException {
