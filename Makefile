@@ -13,11 +13,14 @@ AMQP_CODEGEN_DIR=$(shell fgrep sibling.codegen.dir build.properties | sed -e 's:
 
 MAVEN_RSYNC_DESTINATION=maven@195.224.125.254:/home/maven/rabbitmq-java-client/
 
+ANT ?= ant
+ANT_FLAGS ?=
+
 all:
-	ant build
+	$(ANT) $(ANT_FLAGS) build
 
 clean:
-	ant clean
+	$(ANT) $(ANT_FLAGS) clean
 
 distclean: clean
 	make -C $(AMQP_CODEGEN_DIR) clean
@@ -27,17 +30,17 @@ dist: distclean srcdist dist_all maven-bundle
 dist_all: dist1.5 javadoc-archive
 
 jar:
-	ant jar
+	$(ANT) $(ANT_FLAGS) jar
 
 maven-bundle:
-	ant -Dimpl.version=$(VERSION) maven-bundle
+	$(ANT) $(ANT_FLAGS) -Dimpl.version=$(VERSION) maven-bundle
 
 dist1.5:
-	ant -Ddist.out=build/$(PACKAGE_NAME)-bin-$(VERSION) -Dimpl.version=$(VERSION) dist
+	$(ANT) $(ANT_FLAGS) -Ddist.out=build/$(PACKAGE_NAME)-bin-$(VERSION) -Dimpl.version=$(VERSION) dist
 	$(MAKE) post-dist TARBALL_NAME=$(PACKAGE_NAME)-bin-$(VERSION)
 
 javadoc-archive:
-	ant javadoc
+	$(ANT) $(ANT_FLAGS) javadoc
 	cp -Rp build/doc/api build/$(JAVADOC_ARCHIVE)
 	(cd build; tar -zcf $(JAVADOC_ARCHIVE).tar.gz $(JAVADOC_ARCHIVE))
 	(cd build; zip -q -r $(JAVADOC_ARCHIVE).zip $(JAVADOC_ARCHIVE))
