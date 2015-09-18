@@ -10,7 +10,7 @@ import java.util.concurrent.ThreadFactory;
 public class ConnectionParams {
     private String username;
     private String password;
-    private ExecutorService executor;
+    private ExecutorService consumerWorkServiceExecutor;
     private String virtualHost;
     private Map<String, Object> clientProperties;
     private int requestedFrameMax;
@@ -35,8 +35,8 @@ public class ConnectionParams {
         return password;
     }
 
-    public ExecutorService getExecutor() {
-        return executor;
+    public ExecutorService getConsumerWorkServiceExecutor() {
+        return consumerWorkServiceExecutor;
     }
 
     public String getVirtualHost() {
@@ -99,8 +99,8 @@ public class ConnectionParams {
         this.password = password;
     }
 
-    public void setExecutor(ExecutorService executor) {
-        this.executor = executor;
+    public void setConsumerWorkServiceExecutor(ExecutorService consumerWorkServiceExecutor) {
+        this.consumerWorkServiceExecutor = consumerWorkServiceExecutor;
     }
 
     public void setVirtualHost(String virtualHost) {

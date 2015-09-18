@@ -664,12 +664,12 @@ public class ConnectionFactory implements Cloneable {
         }
     }
 
-    public ConnectionParams params(ExecutorService executor) {
+    public ConnectionParams params(ExecutorService consumerWorkServiceExecutor) {
         ConnectionParams result = new ConnectionParams();
 
         result.setUsername(username);
         result.setPassword(password);
-        result.setExecutor(executor);
+        result.setConsumerWorkServiceExecutor(consumerWorkServiceExecutor);
         result.setVirtualHost(virtualHost);
         result.setClientProperties(getClientProperties());
         result.setRequestedFrameMax(requestedFrameMax);
