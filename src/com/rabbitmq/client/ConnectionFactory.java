@@ -681,6 +681,7 @@ public class ConnectionFactory implements Cloneable {
         result.setExceptionHandler(exceptionHandler);
         result.setThreadFactory(threadFactory);
         result.setHandshakeTimeout(handshakeTimeout);
+        result.setRequestedHeartbeat(requestedHeartbeat);
         return result;
     }
 
