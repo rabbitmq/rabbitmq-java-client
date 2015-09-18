@@ -8,58 +8,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 public class ConnectionParams {
-    private final String username;
-    private final String password;
-    private final ExecutorService executor;
-    private final String virtualHost;
-    private final Map<String, Object> clientProperties;
-    private final int requestedFrameMax;
-    private final int requestedChannelMax;
-    private final int requestedHeartbeat;
+    private String username;
+    private String password;
+    private ExecutorService executor;
+    private String virtualHost;
+    private Map<String, Object> clientProperties;
+    private int requestedFrameMax;
+    private int requestedChannelMax;
+    private int requestedHeartbeat;
     private int handshakeTimeout;
-    private final int shutdownTimeout;
-    private final SaslConfig saslConfig;
-    private final long networkRecoveryInterval;
-    private final boolean topologyRecovery;
+    private int shutdownTimeout;
+    private SaslConfig saslConfig;
+    private long networkRecoveryInterval;
+    private boolean topologyRecovery;
 
-    private final ExceptionHandler exceptionHandler;
-    private final ThreadFactory threadFactory;
+    private ExceptionHandler exceptionHandler;
+    private ThreadFactory threadFactory;
 
-  /**
-     * @param username name used to establish connection
-     * @param password for <code><b>username</b></code>
-     * @param executor thread pool service for consumer threads for channels on this connection
-     * @param virtualHost virtual host of this connection
-     * @param clientProperties client info used in negotiating with the server
-     * @param requestedFrameMax max size of frame offered
-     * @param requestedChannelMax max number of channels offered
-     * @param requestedHeartbeat heart-beat in seconds offered
-     * @param saslConfig sasl configuration hook
-     * @param networkRecoveryInterval interval used when recovering from network failure
-     * @param topologyRecovery should topology (queues, exchanges, bindings, consumers) recovery be performed?
-     * @param threadFactory factory that instantiates threads used by the client
-     * @param exceptionHandler handles unhandled consumer exceptions
-     */
-    public ConnectionParams(String username, String password, ExecutorService executor,
-                            String virtualHost, Map<String, Object> clientProperties,
-                            int requestedFrameMax, int requestedChannelMax, int requestedHeartbeat,
-                            int shutdownTimeout, SaslConfig saslConfig, long networkRecoveryInterval,
-                            boolean topologyRecovery, ExceptionHandler exceptionHandler, ThreadFactory threadFactory) {
-        this.username = username;
-        this.password = password;
-        this.executor = executor;
-        this.virtualHost = virtualHost;
-        this.clientProperties = clientProperties;
-        this.requestedFrameMax = requestedFrameMax;
-        this.requestedChannelMax = requestedChannelMax;
-        this.requestedHeartbeat = requestedHeartbeat;
-        this.shutdownTimeout = shutdownTimeout;
-        this.saslConfig = saslConfig;
-        this.networkRecoveryInterval = networkRecoveryInterval;
-        this.topologyRecovery = topologyRecovery;
-        this.exceptionHandler = exceptionHandler;
-        this.threadFactory = threadFactory;
-    }
+    public ConnectionParams() {}
 
     public String getUsername() {
         return username;
@@ -121,7 +87,63 @@ public class ConnectionParams {
         return topologyRecovery;
     }
 
-  public ThreadFactory getThreadFactory() {
+    public ThreadFactory getThreadFactory() {
     return threadFactory;
   }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setExecutor(ExecutorService executor) {
+        this.executor = executor;
+    }
+
+    public void setVirtualHost(String virtualHost) {
+        this.virtualHost = virtualHost;
+    }
+
+    public void setClientProperties(Map<String, Object> clientProperties) {
+        this.clientProperties = clientProperties;
+    }
+
+    public void setRequestedFrameMax(int requestedFrameMax) {
+        this.requestedFrameMax = requestedFrameMax;
+    }
+
+    public void setRequestedChannelMax(int requestedChannelMax) {
+        this.requestedChannelMax = requestedChannelMax;
+    }
+
+    public void setRequestedHeartbeat(int requestedHeartbeat) {
+        this.requestedHeartbeat = requestedHeartbeat;
+    }
+
+    public void setShutdownTimeout(int shutdownTimeout) {
+        this.shutdownTimeout = shutdownTimeout;
+    }
+
+    public void setSaslConfig(SaslConfig saslConfig) {
+        this.saslConfig = saslConfig;
+    }
+
+    public void setNetworkRecoveryInterval(long networkRecoveryInterval) {
+        this.networkRecoveryInterval = networkRecoveryInterval;
+    }
+
+    public void setTopologyRecovery(boolean topologyRecovery) {
+        this.topologyRecovery = topologyRecovery;
+    }
+
+    public void setExceptionHandler(ExceptionHandler exceptionHandler) {
+        this.exceptionHandler = exceptionHandler;
+    }
+
+    public void setThreadFactory(ThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
+    }
 }

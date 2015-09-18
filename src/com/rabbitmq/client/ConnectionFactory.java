@@ -665,10 +665,21 @@ public class ConnectionFactory implements Cloneable {
     }
 
     public ConnectionParams params(ExecutorService executor) {
-        // TODO: switch to use setters for all fields
-        ConnectionParams result = new ConnectionParams(username, password, executor, virtualHost, getClientProperties(),
-            requestedFrameMax, requestedChannelMax, requestedHeartbeat, shutdownTimeout, saslConfig,
-            networkRecoveryInterval, topologyRecovery, exceptionHandler, threadFactory);
+        ConnectionParams result = new ConnectionParams();
+
+        result.setUsername(username);
+        result.setPassword(password);
+        result.setExecutor(executor);
+        result.setVirtualHost(virtualHost);
+        result.setClientProperties(getClientProperties());
+        result.setRequestedFrameMax(requestedFrameMax);
+        result.setRequestedChannelMax(requestedChannelMax);
+        result.setShutdownTimeout(shutdownTimeout);
+        result.setSaslConfig(saslConfig);
+        result.setNetworkRecoveryInterval(networkRecoveryInterval);
+        result.setTopologyRecovery(topologyRecovery);
+        result.setExceptionHandler(exceptionHandler);
+        result.setThreadFactory(threadFactory);
         result.setHandshakeTimeout(handshakeTimeout);
         return result;
     }
