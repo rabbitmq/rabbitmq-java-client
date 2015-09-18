@@ -63,7 +63,8 @@ final class Copyright {
  * for an example.
  */
 public class AMQConnection extends ShutdownNotifierComponent implements Connection, NetworkConnection {
-    private final ExecutorService executor;
+    private final ExecutorService consumerWorkServiceExecutor;
+    private final ExecutorService shutdownExecutor;
     private Thread mainLoopThread;
     private ThreadFactory threadFactory = Executors.defaultThreadFactory();
 
@@ -220,7 +221,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.handshakeTimeout = params.getHandshakeTimeout();
         this.shutdownTimeout = params.getShutdownTimeout();
         this.saslConfig = params.getSaslConfig();
-        this.executor = params.getConsumerWorkServiceExecutor();
+        this.consumerWorkServiceExecutor = params.getConsumerWorkServiceExecutor();
+        this.shutdownExecutor = params.getShutdownExecutor();
         this.threadFactory = params.getThreadFactory();
 
         this._channelManager = null;
@@ -231,7 +233,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     private void initializeConsumerWorkService() {
-        this._workService  = new ConsumerWorkService(executor, threadFactory, shutdownTimeout);
+        this._workService  = new ConsumerWorkService(consumerWorkServiceExecutor, threadFactory, shutdownTimeout);
     }
 
     private void initializeHeartbeatSender() {
@@ -478,7 +480,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /** Public API
      *
-     * @return true if this work service instance uses its own executor (as opposed to a shared one)
+     * @return true if this work service instance uses its own consumerWorkServiceExecutor (as opposed to a shared one)
      */
     public boolean willShutDownConsumerExecutor() {
         return this._workService.usesPrivateExecutor();
@@ -669,11 +671,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (IOException ignored) { } // ignore
         _brokerInitiatedShutdown = true;
         SocketCloseWait scw = new SocketCloseWait(sse);
-        final String name = "AMQP Connection Closing Monitor " +
-                                    getHostAddress() + ":" + getPort();
-        Thread waiter = Environment.newThread(threadFactory, scw, name);
-        waiter.start();
+        shutdownExecutor.execute(scw);
     }
+
+    // same as ConnectionFactory.DEFAULT_SHUTDOWN_TIMEOUT
+    private static long SOCKET_CLOSE_TIMEOUT = 10000;
 
     private class SocketCloseWait implements Runnable {
         private final ShutdownSignalException cause;
@@ -684,9 +686,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         public void run() {
             try {
-                _appContinuation.get();
+                // TODO: use a sensible timeout here
+                _appContinuation.get(SOCKET_CLOSE_TIMEOUT);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+            } catch (TimeoutException ignored) {
+                // this releases the thread
             } finally {
                 _running = false;
                 _channel0.notifyOutstandingRpc(cause);

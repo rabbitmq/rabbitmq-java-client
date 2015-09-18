@@ -101,6 +101,9 @@ public class ConnectionFactory implements Cloneable {
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
     private ThreadFactory threadFactory           = Executors.defaultThreadFactory();
+    // minimises the number of threads rapid closure of many
+    // connections uses, see rabbitmq/rabbitmq-java-client#86
+    private ExecutorService shutdownExecutor;
     private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
     private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
 
@@ -469,16 +472,32 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Set the executor to use by default for newly created connections.
+     * Set the executor to use for consumer operation dispatch
+     * by default for newly created connections.
      * All connections that use this executor share it.
      *
      * It's developer's responsibility to shut down the executor
      * when it is no longer needed.
      *
-     * @param executor
+     * @param executor executor service to be used for
+     *                 consumer operation
      */
     public void setSharedExecutor(ExecutorService executor) {
         this.sharedExecutor = executor;
+    }
+
+    /**
+     * Set the executor to use for connection shutdown.
+     * All connections that use this executor share it.
+     *
+     * It's developer's responsibility to shut down the executor
+     * when it is no longer needed.
+     *
+     * @param executor executor service to be used for
+     *                 connection shutdown
+     */
+    public void setShutdownExecutor(ExecutorService executor) {
+        this.shutdownExecutor = executor;
     }
 
     /**
@@ -640,6 +659,8 @@ public class ConnectionFactory implements Cloneable {
      */
     public Connection newConnection(ExecutorService executor, Address[] addrs)
             throws IOException, TimeoutException {
+        // make sure we respect the provided thread factory
+        maybeInitializeShutdownExecutor();
         FrameHandlerFactory fhFactory = createFrameHandlerFactory();
         ConnectionParams params = params(executor);
 
@@ -682,6 +703,7 @@ public class ConnectionFactory implements Cloneable {
         result.setThreadFactory(threadFactory);
         result.setHandshakeTimeout(handshakeTimeout);
         result.setRequestedHeartbeat(requestedHeartbeat);
+        result.setShutdownExecutor(shutdownExecutor);
         return result;
     }
 
@@ -716,6 +738,18 @@ public class ConnectionFactory implements Cloneable {
         return newConnection(executor,
                              new Address[] {new Address(getHost(), getPort())}
                             );
+    }
+
+    /**
+     * Lazily initializes shutdown executor service. This is necessary
+     * to make sure the default executor uses the thread factory that
+     * may be user-provided and crucially important in certain environments,
+     * e.g. Google App Engine or JEE application servers.
+     */
+    protected void maybeInitializeShutdownExecutor() {
+        if(shutdownExecutor == null) {
+            shutdownExecutor = Executors.newFixedThreadPool(4, threadFactory);
+        }
     }
 
     @Override public ConnectionFactory clone(){

@@ -11,6 +11,7 @@ public class ConnectionParams {
     private String username;
     private String password;
     private ExecutorService consumerWorkServiceExecutor;
+    private ExecutorService shutdownExecutor;
     private String virtualHost;
     private Map<String, Object> clientProperties;
     private int requestedFrameMax;
@@ -145,5 +146,13 @@ public class ConnectionParams {
 
     public void setThreadFactory(ThreadFactory threadFactory) {
         this.threadFactory = threadFactory;
+    }
+
+    public ExecutorService getShutdownExecutor() {
+        return shutdownExecutor;
+    }
+
+    public void setShutdownExecutor(ExecutorService shutdownExecutor) {
+        this.shutdownExecutor = shutdownExecutor;
     }
 }
