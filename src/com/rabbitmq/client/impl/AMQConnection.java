@@ -75,7 +75,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @return a map of client properties
      * @see Connection#getClientProperties
      */
-    public static final Map<String, Object> defaultClientProperties() {
+    public static Map<String, Object> defaultClientProperties() {
         Map<String,Object> props = new HashMap<String, Object>();
         props.put("product", LongStringHelper.asLongString("RabbitMQ"));
         props.put("version", LongStringHelper.asLongString(ClientVersion.VERSION));
@@ -166,7 +166,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             cm.releaseChannelNumber(channel);
     }
 
-    private final void ensureIsOpen()
+    private void ensureIsOpen()
         throws AlreadyClosedException
     {
         if (!isOpen()) {
@@ -287,7 +287,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         mainLoopThread.start();
         // after this point clear-up of MainLoop is triggered by closing the frameHandler.
 
-        AMQP.Connection.Start connStart = null;
+        AMQP.Connection.Start connStart;
         AMQP.Connection.Tune connTune = null;
         try {
             connStart =
@@ -390,8 +390,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         // We can now respond to errors having finished tailoring the connection
         this._inConnectionNegotiation = false;
-
-        return;
     }
 
     protected ChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
@@ -408,7 +406,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * Private API - check required preconditions and protocol invariants
      */
-    private static final void checkPreconditions() {
+    private static void checkPreconditions() {
         AMQCommand.checkPreconditions();
     }
 
@@ -451,8 +449,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Makes it possible to override thread factory that is used
      * to instantiate connection network I/O loop. Only necessary
      * in the environments with restricted
-     * @param threadFactory
+     * @param threadFactory thread factory to use
      */
+    @SuppressWarnings("unused")
     public void setThreadFactory(ThreadFactory threadFactory) {
         this.threadFactory = threadFactory;
     }
@@ -460,6 +459,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * @return Thread factory used by this connection.
      */
+    @SuppressWarnings("unused")
     public ThreadFactory getThreadFactory() {
         return threadFactory;
     }
@@ -516,7 +516,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _frameHandler.flush();
     }
 
-    private static final int negotiatedMaxValue(int clientValue, int serverValue) {
+    private static int negotiatedMaxValue(int clientValue, int serverValue) {
         return (clientValue == 0 || serverValue == 0) ?
             Math.max(clientValue, serverValue) :
             Math.min(clientValue, serverValue);
@@ -646,7 +646,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 // Already shutting down, so just send back a CloseOk.
                 try {
                     _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
-                } catch (IOException _e) { } // ignore
+                } catch (IOException ignored) { } // ignore
                 return true;
             } else if (method instanceof AMQP.Connection.CloseOk) {
                 // It's our final "RPC". Time to shut down.
@@ -666,7 +666,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ShutdownSignalException sse = shutdown(closeCommand.getMethod(), false, null, _inConnectionNegotiation);
         try {
             _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
-        } catch (IOException _e) { } // ignore
+        } catch (IOException ignored) { } // ignore
         _brokerInitiatedShutdown = true;
         SocketCloseWait scw = new SocketCloseWait(sse);
         final String name = "AMQP Connection Closing Monitor " +
@@ -793,7 +793,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     {
         try {
             close(closeCode, closeMessage, true, null, timeout, true);
-        } catch (IOException _e) { } // ignore
+        } catch (IOException ignored) { } // ignore
     }
 
     /**
