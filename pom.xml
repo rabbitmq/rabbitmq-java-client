@@ -6,7 +6,7 @@
     <version>VERSION</version>
     <packaging>jar</packaging>
     <name>RabbitMQ Java Client</name>
-    <description>RabbitMQ AMQP Java Client</description>
+    <description>RabbitMQ Java client</description>
     <url>http://www.rabbitmq.com</url>
 
     <licenses>
@@ -61,7 +61,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>3.8.2</version>
+            <version>4.12.0</version>
             <scope>test</scope>
         </dependency>
 
