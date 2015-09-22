@@ -43,6 +43,7 @@ final class HeartbeatSender {
     private final ThreadFactory threadFactory;
 
     private ScheduledExecutorService executor;
+    private final boolean privateExecutor;
 
     private ScheduledFuture<?> future;
 
@@ -50,8 +51,10 @@ final class HeartbeatSender {
 
     private volatile long lastActivityTime;
 
-    HeartbeatSender(FrameHandler frameHandler, ThreadFactory threadFactory) {
+    HeartbeatSender(FrameHandler frameHandler, ScheduledExecutorService heartbeatExecutor, ThreadFactory threadFactory) {
         this.frameHandler = frameHandler;
+        this.privateExecutor = (heartbeatExecutor == null);
+        this.executor = heartbeatExecutor;
         this.threadFactory = threadFactory;
     }
 
@@ -106,14 +109,14 @@ final class HeartbeatSender {
                 this.future = null;
             }
 
-            if (this.executor != null) {
+            if (this.privateExecutor) {
                 // to be safe, we shouldn't call shutdown holding the
                 // monitor.
                 executorToShutdown = this.executor;
-
-                this.shutdown = true;
-                this.executor = null;
             }
+
+            this.executor = null;
+            this.shutdown = true;
         }
         if(executorToShutdown != null) {
             executorToShutdown.shutdown();

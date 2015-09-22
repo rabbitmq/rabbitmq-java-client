@@ -25,11 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AuthenticationFailureException;
@@ -64,6 +60,7 @@ final class Copyright {
  */
 public class AMQConnection extends ShutdownNotifierComponent implements Connection, NetworkConnection {
     private final ExecutorService consumerWorkServiceExecutor;
+    private final ScheduledExecutorService heartbeatExecutor;
     private final ExecutorService shutdownExecutor;
     private Thread mainLoopThread;
     private ThreadFactory threadFactory = Executors.defaultThreadFactory();
@@ -222,6 +219,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.shutdownTimeout = params.getShutdownTimeout();
         this.saslConfig = params.getSaslConfig();
         this.consumerWorkServiceExecutor = params.getConsumerWorkServiceExecutor();
+        this.heartbeatExecutor = params.getHeartbeatExecutor();
         this.shutdownExecutor = params.getShutdownExecutor();
         this.threadFactory = params.getThreadFactory();
 
@@ -237,7 +235,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     private void initializeHeartbeatSender() {
-        this._heartbeatSender = new HeartbeatSender(_frameHandler, threadFactory);
+        this._heartbeatSender = new HeartbeatSender(_frameHandler, heartbeatExecutor, threadFactory);
     }
 
     /**

@@ -5,12 +5,14 @@ import com.rabbitmq.client.SaslConfig;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 public class ConnectionParams {
     private String username;
     private String password;
     private ExecutorService consumerWorkServiceExecutor;
+    private ScheduledExecutorService heartbeatExecutor;
     private ExecutorService shutdownExecutor;
     private String virtualHost;
     private Map<String, Object> clientProperties;
@@ -154,5 +156,13 @@ public class ConnectionParams {
 
     public void setShutdownExecutor(ExecutorService shutdownExecutor) {
         this.shutdownExecutor = shutdownExecutor;
+    }
+
+    public ScheduledExecutorService getHeartbeatExecutor() {
+        return heartbeatExecutor;
+    }
+
+    public void setHeartbeatExecutor(ScheduledExecutorService heartbeatExecutor) {
+        this.heartbeatExecutor = heartbeatExecutor;
     }
 }
