@@ -321,11 +321,7 @@ public class ConnectionFactory implements Cloneable {
         if(timeout < 0) {
             throw new IllegalArgumentException("TCP connection timeout cannot be negative");
         }
-        if(timeout > handshakeTimeout) {
-            throw new IllegalArgumentException("TCP connection timeout cannot be greater than handshake timeout");
-        } else {
-            this.connectionTimeout = timeout;
-        }
+        this.connectionTimeout = timeout;
     }
 
     /**
@@ -352,11 +348,7 @@ public class ConnectionFactory implements Cloneable {
         if(timeout < 0) {
             throw new IllegalArgumentException("handshake timeout cannot be negative");
         }
-        if(connectionTimeout != 0 && timeout < connectionTimeout) {
-            throw new IllegalArgumentException("handshake timeout cannot be lower than TCP connection timeout");
-        } else {
-            this.handshakeTimeout = timeout;
-        }
+        this.handshakeTimeout = timeout;
     }
 
     /**
@@ -561,8 +553,7 @@ public class ConnectionFactory implements Cloneable {
      *
      * @param context An initialized SSLContext
      */
-    public void useSslProtocol(SSLContext context)
-    {
+    public void useSslProtocol(SSLContext context) {
         setSocketFactory(context.getSocketFactory());
     }
 
