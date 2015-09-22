@@ -671,7 +671,18 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         } catch (IOException ignored) { } // ignore
         _brokerInitiatedShutdown = true;
         SocketCloseWait scw = new SocketCloseWait(sse);
-        shutdownExecutor.execute(scw);
+
+        // if shutdown executor is configured, use it. Otherwise
+        // execut socket close monitor the old fashioned way.
+        // see rabbitmq/rabbitmq-java-client#91
+        if(shutdownExecutor != null) {
+            shutdownExecutor.execute(scw);
+        } else {
+            final String name = "RabbitMQ connection shutdown monitor " +
+                                    getHostAddress() + ":" + getPort();
+            Thread waiter = Environment.newThread(threadFactory, scw, name);
+            waiter.start();
+        }
     }
 
     // same as ConnectionFactory.DEFAULT_SHUTDOWN_TIMEOUT
