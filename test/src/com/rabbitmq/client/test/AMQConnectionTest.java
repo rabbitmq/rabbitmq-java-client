@@ -106,13 +106,8 @@ public class AMQConnectionTest extends TestCase {
 
     public void testTCPConnectionTimeoutGreaterThanHandShakeTimeout() {
         ConnectionFactory cf = new ConnectionFactory();
-        try {
-            cf.setHandshakeTimeout(3000);
-            cf.setConnectionTimeout(5000);
-            fail("expected an exception");
-        } catch (IllegalArgumentException _ignored) {
-            // expected
-        }
+        cf.setHandshakeTimeout(3000);
+        cf.setConnectionTimeout(5000);
     }
 
     public void testProtocolHandshakeTimeoutGreaterThanTCPConnectionTimeout() {
