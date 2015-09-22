@@ -20,14 +20,11 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeoutException;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
@@ -104,6 +101,7 @@ public class ConnectionFactory implements Cloneable {
     // minimises the number of threads rapid closure of many
     // connections uses, see rabbitmq/rabbitmq-java-client#86
     private ExecutorService shutdownExecutor;
+    private ScheduledExecutorService heartbeatExecutor;
     private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
     private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
 
@@ -493,6 +491,19 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
+     * Set the executor to use to send the heartbeat
+     * All connections that use this executor share it.
+     *
+     * It's developer's responsibility to shut down the executor
+     * when it is no longer needed.
+     *
+     * @param executor executor service to be used to send heartbeat 
+     */
+    public void setHeartbeatExecutor(ScheduledExecutorService executor) {
+        this.heartbeatExecutor = executor;
+    }
+    
+    /**
      * Retrieve the thread factory used to instantiate new threads.
      * @see ThreadFactory
      */
@@ -694,6 +705,7 @@ public class ConnectionFactory implements Cloneable {
         result.setHandshakeTimeout(handshakeTimeout);
         result.setRequestedHeartbeat(requestedHeartbeat);
         result.setShutdownExecutor(shutdownExecutor);
+        result.setHeartbeatExecutor(heartbeatExecutor);
         return result;
     }
 
