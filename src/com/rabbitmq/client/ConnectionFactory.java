@@ -651,7 +651,6 @@ public class ConnectionFactory implements Cloneable {
     public Connection newConnection(ExecutorService executor, Address[] addrs)
             throws IOException, TimeoutException {
         // make sure we respect the provided thread factory
-        maybeInitializeShutdownExecutor();
         FrameHandlerFactory fhFactory = createFrameHandlerFactory();
         ConnectionParams params = params(executor);
 
@@ -729,18 +728,6 @@ public class ConnectionFactory implements Cloneable {
         return newConnection(executor,
                              new Address[] {new Address(getHost(), getPort())}
                             );
-    }
-
-    /**
-     * Lazily initializes shutdown executor service. This is necessary
-     * to make sure the default executor uses the thread factory that
-     * may be user-provided and crucially important in certain environments,
-     * e.g. Google App Engine or JEE application servers.
-     */
-    protected void maybeInitializeShutdownExecutor() {
-        if(shutdownExecutor == null) {
-            shutdownExecutor = Executors.newFixedThreadPool(4, threadFactory);
-        }
     }
 
     @Override public ConnectionFactory clone(){
