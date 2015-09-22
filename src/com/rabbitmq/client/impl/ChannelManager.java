@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +46,7 @@ public class ChannelManager {
 
     /** Maximum channel number available on this connection. */
     private final int _channelMax;
+    private ExecutorService shutdownExecutor;
     private final ThreadFactory threadFactory;
 
     public int getChannelMax(){
@@ -117,8 +119,15 @@ public class ChannelManager {
                 ssWorkService.shutdown();
             }
         };
-        Thread shutdownThread = Environment.newThread(threadFactory, target, "ConsumerWorkService shutdown monitor", true);
-        shutdownThread.start();
+        if(this.shutdownExecutor != null) {
+            shutdownExecutor.submit(target);
+        } else {
+            Thread shutdownThread = Environment.newThread(threadFactory,
+                                                          target,
+                                                          "ConsumerWorkService shutdown monitor",
+                                                          true);
+            shutdownThread.start();
+        }
     }
 
     public ChannelN createChannel(AMQConnection connection) throws IOException {
@@ -198,5 +207,13 @@ public class ChannelManager {
             }
             channelNumberAllocator.free(channelNumber);
         }
+    }
+
+    public ExecutorService getShutdownExecutor() {
+        return shutdownExecutor;
+    }
+
+    public void setShutdownExecutor(ExecutorService shutdownExecutor) {
+        this.shutdownExecutor = shutdownExecutor;
     }
 }
