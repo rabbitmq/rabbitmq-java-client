@@ -491,7 +491,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Set the executor to use to send the heartbeat
+     * Set the executor to use to send heartbeat frames.
      * All connections that use this executor share it.
      *
      * It's developer's responsibility to shut down the executor
