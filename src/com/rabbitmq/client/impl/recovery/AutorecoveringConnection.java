@@ -16,7 +16,6 @@ import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,7 +72,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 	
 	// This lock guards the manuallyClosed flag and the delegate connection.  Guarding these two ensures that a new connection can never
 	// be created after application code has initiated shutdown.  
-	private Object recoveryLock = new Object();
+	private final Object recoveryLock = new Object();
 	
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, Address[] addrs) {
         this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addrs);
@@ -410,6 +409,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see com.rabbitmq.client.impl.recovery.AutorecoveringConnection#addQueueRecoveryListener
      * @param listener listener to be removed
      */
+    @SuppressWarnings("unused")
     public void removeQueueRecoveryListener(QueueRecoveryListener listener) {
         this.queueRecoveryListeners.remove(listener);
     }
@@ -429,6 +429,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see com.rabbitmq.client.impl.recovery.AutorecoveringConnection#addConsumerRecoveryListener(ConsumerRecoveryListener)
      * @param listener listener to be removed
      */
+    @SuppressWarnings("unused")
     public void removeConsumerRecoveryListener(ConsumerRecoveryListener listener) {
         this.consumerRecoveryListeners.remove(listener);
     }
