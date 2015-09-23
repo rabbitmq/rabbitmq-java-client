@@ -12,6 +12,7 @@
 /.idea/
 /build/
 /cover/
+/debug/
 /dist/
 /ebin/
 /out/
