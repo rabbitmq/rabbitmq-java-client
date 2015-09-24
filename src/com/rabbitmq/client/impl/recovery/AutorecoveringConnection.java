@@ -5,6 +5,7 @@ import com.rabbitmq.client.Address;
 import com.rabbitmq.client.BlockedListener;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.Recoverable;
 import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.ShutdownListener;
@@ -378,7 +379,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         ShutdownListener automaticRecoveryListener = new ShutdownListener() {
             public void shutdownCompleted(ShutdownSignalException cause) {
                 try {
-                    if (!cause.isInitiatedByApplication()) {
+                    if (shouldTriggerConnectionRecovery(cause)) {
                         c.beginAutomaticRecovery();
                     }
                 } catch (Exception e) {
@@ -392,6 +393,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             }
             this.delegate.addShutdownListener(automaticRecoveryListener);
         }
+    }
+
+    protected boolean shouldTriggerConnectionRecovery(ShutdownSignalException cause) {
+        return !cause.isInitiatedByApplication() || (cause.getCause() instanceof MissedHeartbeatException);
     }
 
     /**
