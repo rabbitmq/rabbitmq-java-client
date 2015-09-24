@@ -120,7 +120,7 @@ public class ChannelManager {
             }
         };
         if(this.shutdownExecutor != null) {
-            shutdownExecutor.submit(target);
+            shutdownExecutor.execute(target);
         } else {
             Thread shutdownThread = Environment.newThread(threadFactory,
                                                           target,
