@@ -14,14 +14,14 @@ Maven artifacts are [released to Maven Central](http://search.maven.org/#search%
 <dependency>
     <groupId>com.rabbitmq</groupId>
     <artifactId>amqp-client</artifactId>
-    <version>3.5.1</version>
+    <version>3.5.5</version>
 </dependency>
 ```
 
 ### Gradle
 
 ``` groovy
-compile 'com.rabbitmq:amqp-client:3.5.1'
+compile 'com.rabbitmq:amqp-client:3.5.5'
 ```
 
 
