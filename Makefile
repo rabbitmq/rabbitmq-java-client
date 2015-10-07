@@ -80,15 +80,6 @@ stage-and-promote-maven-bundle:
 	    amqp-client-$(VERSION).pom \
 	    amqp-client-$(VERSION).jar \
 	    amqp-client-$(VERSION)-javadoc.jar \
-	    amqp-client-$(VERSION)-sources.jar && \
-	  mvn org.sonatype.plugins:nexus-maven-plugin:$(MAVEN_NEXUS_VERSION):staging-close \
-	      org.sonatype.plugins:nexus-maven-plugin:$(MAVEN_NEXUS_VERSION):staging-promote \
-	    -Dnexus.url=http://oss.sonatype.org \
-	    -Dnexus.username=$$NEXUS_USERNAME \
-	    -Dnexus.password=$$NEXUS_PASSWORD \
-	    -Dnexus.promote.autoSelectOverride=true \
-	    -DtargetRepositoryId=releases \
-	    -B \
-	    -Dnexus.description="Public release of $$VERSION" \
+	    amqp-client-$(VERSION)-sources.jar \
 	)
 
