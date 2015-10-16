@@ -120,7 +120,7 @@
   </target>
 
   <target  name="detect-umbrella">
-    <available property="UMBRELLA_AVAILABLE" file="../rabbitmq-test"/>
+    <available property="UMBRELLA_AVAILABLE" file="../../UMBRELLA.md"/>
   </target>
 
   <target name="detect-tmpdir">
