@@ -98,6 +98,7 @@ public class AlternateExchange extends BrokerTestCase
     protected void setupRouting(String name, String ae) throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         if (ae != null) args.put("alternate-exchange", ae);
+        channel.exchangeDelete(name);
         channel.exchangeDeclare(name, "direct", false, false, args);
         channel.queueBind(name, name, name);
     }
