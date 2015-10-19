@@ -24,8 +24,8 @@ import com.rabbitmq.client.MessageProperties;
 
 public class DurableOnTransient extends ClusteredTestBase
 {
-    protected static final String Q = "DurableQueue";
-    protected static final String X = "TransientExchange";
+    protected static final String Q = "SemiDurableBindings.DurableQueue";
+    protected static final String X = "SemiDurableBindings.TransientExchange";
 
     private GetResponse basicGet()
         throws IOException
@@ -42,8 +42,11 @@ public class DurableOnTransient extends ClusteredTestBase
     }
 
     protected void createResources() throws IOException {
-        // Transient exchange
+        channel.exchangeDelete(X);
+        // transient exchange
         channel.exchangeDeclare(X, "direct", false);
+
+        channel.queueDelete(Q);
         // durable queue
         channel.queueDeclare(Q, true, false, false, null);
     }
