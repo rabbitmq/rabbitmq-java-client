@@ -78,8 +78,10 @@ public class AlternateExchange extends BrokerTestCase
     }
 
     @Override protected void releaseResources() throws IOException {
-        for (String q : resources) {
-            channel.queueDelete(q);
+        for (String r : resources) {
+            channel.queueDelete(r);
+            // declared by setupRouting
+            channel.exchangeDelete(r);
         }
     }
 
