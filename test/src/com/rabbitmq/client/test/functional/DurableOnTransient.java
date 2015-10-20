@@ -66,7 +66,9 @@ public class DurableOnTransient extends ClusteredTestBase
 
     public void testSemiDurableBindingRemoval() throws IOException {
         if (clusteredConnection != null) {
+            deleteExchange("x");
             declareTransientTopicExchange("x");
+            clusteredChannel.queueDelete("q");
             clusteredChannel.queueDeclare("q", true, false, false, null);
             channel.queueBind("q", "x", "k");
 
