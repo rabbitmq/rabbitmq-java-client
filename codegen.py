@@ -18,7 +18,7 @@ from __future__ import nested_scopes
 import re
 import sys
 
-sys.path.append("../rabbitmq-codegen")  # in case we're next to an experimental revision
+sys.path.append("../rabbitmq_codegen")  # in case we're next to an experimental revision
 sys.path.append("codegen")              # in case we're building from a distribution package
 
 from amqp_codegen import *
