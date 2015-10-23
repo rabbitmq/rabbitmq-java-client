@@ -4,6 +4,7 @@
 
   <property file="build.properties"/>
   <property file="config.properties"/>
+  <property environment="env"/>
 
   <path id="javac.classpath">
     <!-- cf dist target, infra -->
@@ -111,7 +112,6 @@
   </target>
 
   <target name="detect-ssl">
-    <property environment="env"/>
     <property name="SSL_CERTS_DIR" value="${env.SSL_CERTS_DIR}"/>
     <available property="SSL_AVAILABLE" file="${SSL_CERTS_DIR}/client"/>
     <property name="CLIENT_KEYSTORE_PHRASE" value="bunnies"/>
@@ -120,11 +120,10 @@
   </target>
 
   <target  name="detect-umbrella">
-    <available property="UMBRELLA_AVAILABLE" file="../rabbitmq-test"/>
+    <available property="UMBRELLA_AVAILABLE" file="../../UMBRELLA.md"/>
   </target>
 
   <target name="detect-tmpdir">
-    <property environment="env"/>
     <condition property="TMPDIR" value="${env.TMPDIR}" else="/tmp">
       <available file="${env.TMPDIR}" type="dir"/>
     </condition>
@@ -183,6 +182,10 @@
   <target name="test-prepare">
 	<property name="haltOnFailureJunit" value="yes" />
   	<property name="haltOnFailureJava" value="true" />
+
+        <condition property="make.bin" value="${env.MAKE}" else="make">
+          <isset property="env.MAKE"/>
+        </condition>
   </target>
 
   <target name="test-build" depends="test-prepare">
@@ -334,6 +337,10 @@
         failureproperty="test.failure"
         fork="yes">
       <classpath refid="test.classpath"/>
+      <jvmarg value="-Dmake.bin=${make.bin}"/>
+      <jvmarg value="-Drabbitmqctl.bin=${rabbitmqctl.bin}"/>
+      <jvmarg value="-Dsibling.rabbitmq_test.dir=${sibling.rabbitmq_test.dir}"/>
+
       <jvmarg value="-Dkeystore.path=${CLIENT_KEYSTORE}"/>
       <jvmarg value="-Dkeystore.empty.path=${CLIENT_KEYSTORE_EMPTY}"/>
       <jvmarg value="-Dkeystore.passwd=${CLIENT_KEYSTORE_PHRASE}"/>
@@ -354,6 +361,9 @@
         failureproperty="test.failure"
         fork="yes">
       <classpath refid="test.classpath"/>
+      <jvmarg value="-Dmake.bin=${make.bin}"/>
+      <jvmarg value="-Drabbitmqctl.bin=${rabbitmqctl.bin}"/>
+      <jvmarg value="-Dsibling.rabbitmq_test.dir=${sibling.rabbitmq_test.dir}"/>
 
       <formatter type="plain"/>
       <formatter type="xml"/>
@@ -367,6 +377,10 @@
         failureproperty="test.failure"
         fork="yes">
       <classpath refid="test.classpath"/>
+      <jvmarg value="-Dmake.bin=${make.bin}"/>
+      <jvmarg value="-Drabbitmqctl.bin=${rabbitmqctl.bin}"/>
+      <jvmarg value="-Dsibling.rabbitmq_test.dir=${sibling.rabbitmq_test.dir}"/>
+
       <formatter type="plain"/>
       <formatter type="xml"/>
       <test todir="${build.out}"
@@ -381,6 +395,10 @@
         failureproperty="test.failure"
         fork="yes">
       <classpath refid="test.classpath"/>
+      <jvmarg value="-Dmake.bin=${make.bin}"/>
+      <jvmarg value="-Drabbitmqctl.bin=${rabbitmqctl.bin}"/>
+      <jvmarg value="-Dsibling.rabbitmq_test.dir=${sibling.rabbitmq_test.dir}"/>
+
       <formatter type="plain"/>
       <formatter type="xml"/>
       <test todir="${build.out}" name="com.rabbitmq.client.test.server.HATests"/>

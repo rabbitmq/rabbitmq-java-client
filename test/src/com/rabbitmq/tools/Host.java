@@ -106,42 +106,17 @@ public class Host {
 
     private static String makeCommand()
     {
-        // Get the make(1) executable to use from the environment:
-        // make(1) provides the path to itself in $MAKE.
-        String makecmd = System.getenv("MAKE");
-
-        // Default to "make" if the environment variable is unset.
-        if (makecmd == null) {
-            makecmd = "make";
-        }
-
-        return makecmd;
+        return System.getProperty("make.bin");
     }
 
     private static String rabbitmqctlCommand()
     {
-        // Get the rabbitmqctl(1) executable to use from the environment.
-        String cmd = System.getenv("RABBITMQCTL");
-
-        // Default to "make" if the environment variable is unset.
-        if (cmd == null) {
-            cmd = "../rabbitmq-server/scripts/rabbitmqctl";
-        }
-
-        return cmd;
+        return System.getProperty("rabbitmqctl.bin");
     }
 
     private static String rabbitmqTestDir()
     {
-        // Get the rabbitmq-test directory to use from the environment.
-        String dir = System.getenv("RABBITMQ_TEST_DIR");
-
-        // Default to "make" if the environment variable is unset.
-        if (dir == null) {
-            dir = "../rabbitmq-test";
-        }
-
-        return dir;
+        return System.getProperty("sibling.rabbitmq_test.dir");
     }
 
     public static void closeConnection(String pid) throws IOException {
