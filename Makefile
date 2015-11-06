@@ -23,7 +23,7 @@ clean:
 	$(ANT) $(ANT_FLAGS) clean
 
 distclean: clean
-	make -C $(AMQP_CODEGEN_DIR) clean
+	$(MAKE) -C $(AMQP_CODEGEN_DIR) clean
 
 dist: distclean srcdist dist_all maven-bundle
 
