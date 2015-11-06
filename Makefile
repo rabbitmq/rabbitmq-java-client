@@ -63,8 +63,8 @@ srcdist: distclean
 
 	if [ -f README.in ]; then \
 		cp README.in build/$(SRC_ARCHIVE)/README; \
-		if [ -f build-java-client.txt ]; then \
-			cat build-java-client.txt \
+		if [ -f "$(BUILD_DOC)" ]; then \
+			cat "$(BUILD_DOC)" \
 			 >> build/$(SRC_ARCHIVE)/README; \
 		else \
 			elinks -dump -no-references -no-numbering \
