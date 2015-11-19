@@ -70,8 +70,6 @@ public class SaslMechanisms extends BrokerTestCase {
         }
     }
 
-    // TODO test gibberish examples. ATM the server is not very robust.
-
     public void testPlainLogin() throws IOException, TimeoutException {
         loginOk("PLAIN", new byte[][] {"\0guest\0guest".getBytes()} );
         loginBad("PLAIN", new byte[][] {"\0guest\0wrong".getBytes()} );
