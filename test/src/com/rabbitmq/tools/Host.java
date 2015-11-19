@@ -20,6 +20,7 @@ package com.rabbitmq.tools;
 import com.rabbitmq.client.impl.NetworkConnection;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -101,7 +102,11 @@ public class Host {
     }
 
     public static Process invokeMakeTarget(String command) throws IOException {
-        return executeCommand("cd " + rabbitmqTestDir() + "; " + makeCommand() + " " + command);
+        File rabbitmqctl = new File(rabbitmqctlCommand());
+        return executeCommand(makeCommand() +
+                              " -C \'" + rabbitmqTestDir() + "\'" +
+                              " RABBITMQCTL=\'" + rabbitmqctl.getAbsolutePath() + "\'" +
+                              " " + command);
     }
 
     private static String makeCommand()
