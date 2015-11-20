@@ -378,7 +378,9 @@ public class AutorecoveringChannel implements Channel, Recoverable {
 
     public void basicCancel(String consumerTag) throws IOException {
         RecordedConsumer c = this.deleteRecordedConsumer(consumerTag);
-        this.maybeDeleteRecordedAutoDeleteQueue(c.getQueue());
+        if(c != null) {
+            this.maybeDeleteRecordedAutoDeleteQueue(c.getQueue());
+        }
         delegate.basicCancel(consumerTag);
     }
 
