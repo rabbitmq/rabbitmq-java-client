@@ -136,13 +136,13 @@ public class PerfTest {
     private static Options getOptions() {
         Options options = new Options();
         options.addOption(new Option("?", "help",             false,"show usage"));
-        options.addOption(new Option("h", "uri",              true, "AMQP URI"));
+        options.addOption(new Option("h", "uri",              true, "connection URI"));
         options.addOption(new Option("t", "type",             true, "exchange type"));
         options.addOption(new Option("e", "exchange",         true, "exchange name"));
         options.addOption(new Option("u", "queue",            true, "queue name"));
         options.addOption(new Option("k", "routingKey",       true, "routing key"));
         options.addOption(new Option("K", "randomRoutingKey", false,"use random routing key per message"));
-        options.addOption(new Option("i", "interval",         true, "sampling interval"));
+        options.addOption(new Option("i", "interval",         true, "sampling interval in seconds"));
         options.addOption(new Option("r", "rate",             true, "producer rate limit"));
         options.addOption(new Option("R", "consumerRate",     true, "consumer rate limit"));
         options.addOption(new Option("x", "producers",        true, "producer count"));
@@ -154,8 +154,8 @@ public class PerfTest {
         options.addOption(new Option("A", "multiAckEvery",    true, "multi ack every"));
         options.addOption(new Option("q", "qos",              true, "consumer prefetch count"));
         options.addOption(new Option("Q", "globalQos",        true, "channel prefetch count"));
-        options.addOption(new Option("s", "size",             true, "message size"));
-        options.addOption(new Option("z", "time",             true, "time limit"));
+        options.addOption(new Option("s", "size",             true, "message size in bytes"));
+        options.addOption(new Option("z", "time",             true, "run duration in seconds (unlimited by default)"));
         options.addOption(new Option("C", "pmessages",        true, "producer message count"));
         options.addOption(new Option("D", "cmessages",        true, "consumer message count"));
         Option flag =     new Option("f", "flag",             true, "message flag");
