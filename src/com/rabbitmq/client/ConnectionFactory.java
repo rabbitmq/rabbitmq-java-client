@@ -60,8 +60,8 @@ public class ConnectionFactory implements Cloneable {
      *  zero means no limit */
     public static final int    DEFAULT_FRAME_MAX = 0;
     /** Default heart-beat interval;
-     *  zero means no heart-beats */
-    public static final int    DEFAULT_HEARTBEAT = 0;
+     *  60 seconds */
+    public static final int    DEFAULT_HEARTBEAT = 60;
     /** The default host */
     public static final String DEFAULT_HOST = "localhost";
     /** 'Use the default port' port */
