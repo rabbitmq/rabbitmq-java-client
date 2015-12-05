@@ -67,9 +67,8 @@ public class ConnectionFactory implements Cloneable {
     public static final int    DEFAULT_AMQP_PORT = AMQP.PROTOCOL.PORT;
     /** The default ssl port */
     public static final int    DEFAULT_AMQP_OVER_SSL_PORT = 5671;
-    /** The default TCP connection timeout;
-     *  zero means wait indefinitely */
-    public static final int    DEFAULT_CONNECTION_TIMEOUT = 0;
+    /** The default TCP connection timeout: 60 seconds */
+    public static final int    DEFAULT_CONNECTION_TIMEOUT = 60000;
     /**
      * The default AMQP 0-9-1 connection handshake timeout. See DEFAULT_CONNECTION_TIMEOUT
      * for TCP (socket) connection timeout.
