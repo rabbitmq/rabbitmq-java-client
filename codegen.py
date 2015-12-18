@@ -435,7 +435,8 @@ def genJavaImpl(spec):
                 argList = [ "%s %s" % (java_field_type(spec,a.domain),java_field_name(a.name)) for a in m.arguments ]
                 print("            public %s(%s) {" % (java_class_name(m.name), ", ".join(argList)))
 
-                fieldsToNullCheckInCons = nullCheckedFields(spec, m)
+                fieldsToNullCheckInCons = [f for f in nullCheckedFields(spec, m)]
+                fieldsToNullCheckInCons.sort()
 
                 for f in fieldsToNullCheckInCons:
                     print("                if (%s == null)" % (f))
