@@ -16,17 +16,21 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.functional.FunctionalTests;
-import com.rabbitmq.tools.Host;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-public class HATests extends TestSuite {
+import com.rabbitmq.client.test.AbstractRMQTestSuite;
+import com.rabbitmq.client.test.functional.FunctionalTests;
+import com.rabbitmq.tools.Host;
+
+public class HATests extends AbstractRMQTestSuite {
     // this is horrific
     public static boolean HA_TESTS_RUNNING = false;
 
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("server-tests");
+        if (!requiredProperties()) return suite;
+        if (!isUnderUmbrella()) return suite;
         suite.addTestSuite(SetUp.class);
         FunctionalTests.add(suite);
         ServerTests.add(suite);

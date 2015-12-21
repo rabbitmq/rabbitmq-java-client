@@ -24,22 +24,20 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
+import javax.net.ssl.SSLContext;
+
 import junit.framework.TestCase;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.impl.ShutdownNotifierComponent;
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.tools.Host;
-
-import javax.net.ssl.SSLContext;
 
 public class BrokerTestCase extends TestCase {
     protected ConnectionFactory connectionFactory = newConnectionFactory();
