@@ -42,11 +42,19 @@ import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.SocketFrameHandler;
+import com.rabbitmq.client.test.AbstractRMQTestSuite;
 import com.rabbitmq.utility.BlockingCell;
 
 import javax.net.SocketFactory;
-
+//FIXME needs to get the arguments from System.getProperty
+//FIXME this test needs to be transform into Junit
 public class TestMain {
+  //Ugly patch to initialize system properties 
+  static{
+    new AbstractRMQTestSuite(){
+      
+    };
+  }
     public static void main(String[] args) throws IOException, URISyntaxException {
         // Show what version this class was compiled with, to check conformance testing
         Class<?> clazz = TestMain.class;

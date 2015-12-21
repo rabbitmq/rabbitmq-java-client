@@ -17,18 +17,32 @@
 
 package com.rabbitmq.tools;
 
-import com.rabbitmq.client.impl.NetworkConnection;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
+
+import com.rabbitmq.client.impl.NetworkConnection;
 
 public class Host {
+  
+  static {
+    Properties TESTS_PROPS = new Properties(System.getProperties());
+    TESTS_PROPS.setProperty("make.bin", System.getenv("MAKE") == null ? "make" : System.getenv("MAKE"));
+    try {
+      TESTS_PROPS.load(Host.class.getClassLoader().getResourceAsStream("build.properties"));
+      TESTS_PROPS.load(Host.class.getClassLoader().getResourceAsStream("config.properties"));
+      System.setProperties(TESTS_PROPS);
+    } catch (IOException e) {
+      System.err
+          .println("build.properties or config.properties not found in classpath, copy build.properties and config.properties into src/test/resources");
+    }
+  }
+
 
     private static String capture(InputStream is)
         throws IOException

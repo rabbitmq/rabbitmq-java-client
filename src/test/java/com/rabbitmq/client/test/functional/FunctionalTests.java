@@ -18,12 +18,13 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.impl.WorkPoolTests;
+import com.rabbitmq.client.test.AbstractRMQTestSuite;
 import com.rabbitmq.client.test.Bug20004Test;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-public class FunctionalTests extends TestCase {
+public class FunctionalTests extends AbstractRMQTestSuite {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("functional");
         add(suite);

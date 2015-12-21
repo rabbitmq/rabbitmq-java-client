@@ -17,12 +17,15 @@
 
 package com.rabbitmq.client.test.ssl;
 
-import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-public class SSLTests extends TestCase {
+import com.rabbitmq.client.test.AbstractRMQTestSuite;
+
+public class SSLTests extends AbstractRMQTestSuite {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("ssl");
+        //Skip the tests if not under umbrella and not SSL available
+        if(!(isUnderUmbrella() && isSSlAvailable())) return suite;
         suite.addTestSuite(UnverifiedConnection.class);
         suite.addTestSuite(VerifiedConnection.class);
         suite.addTestSuite(BadVerifiedConnection.class);

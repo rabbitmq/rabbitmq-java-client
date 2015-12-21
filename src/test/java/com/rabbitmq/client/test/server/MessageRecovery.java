@@ -15,12 +15,11 @@
 
 package com.rabbitmq.client.test.server;
 
+import java.io.IOException;
+
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.ConfirmBase;
-
-import java.io.IOException;
 
 public class MessageRecovery extends ConfirmBase
 {
