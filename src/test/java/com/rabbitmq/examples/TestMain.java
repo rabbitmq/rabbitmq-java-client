@@ -46,30 +46,43 @@ import com.rabbitmq.client.test.AbstractRMQTestSuite;
 import com.rabbitmq.utility.BlockingCell;
 
 import javax.net.SocketFactory;
+
+import org.junit.Test;
 //FIXME needs to get the arguments from System.getProperty
 //FIXME this test needs to be transform into Junit
 public class TestMain {
   //Ugly patch to initialize system properties 
   static{
-    new AbstractRMQTestSuite(){
-      
-    };
+    new AbstractRMQTestSuite(){};
   }
-    public static void main(String[] args) throws IOException, URISyntaxException {
+  
+  static String URI = "amqp://localhost";
+
+  public static void main(String[] args) throws IOException, URISyntaxException {
+      if (args.length > 0) URI = args[0];
+      new TestMain().test();
+  }
+  
+  
+    @Test
+    public void test() throws IOException, URISyntaxException {
         // Show what version this class was compiled with, to check conformance testing
         Class<?> clazz = TestMain.class;
         String javaVersion = System.getProperty("java.version");
         System.out.println(clazz.getName() + " : javac v" + getCompilerVersion(clazz) + " on " + javaVersion);
         try {
             boolean silent = Boolean.getBoolean("silent");
-            final String uri = (args.length > 0) ? args[0] : "amqp://localhost";
+            final String uri = URI;
             runConnectionNegotiationTest(uri);
             final Connection conn = new ConnectionFactory(){{setUri(uri);}}.newConnection();
             if (!silent) {
                 System.out.println("Channel 0 fully open.");
             }
 
-            new TestMain(conn, silent).run();
+            TestMain testMain = new TestMain();
+            testMain.set_connection(conn);
+            testMain.set_silent(silent);
+            testMain.run();
 
             runProducerConsumerTest(uri, 500);
             runProducerConsumerTest(uri, 0);
@@ -226,19 +239,29 @@ public class TestMain {
         }
     }
 
-    private final Connection _connection;
+    private Connection _connection;
 
     private Channel _ch1;
 
     private int _messageId = 0;
 
-    private final boolean _silent;
+    private boolean _silent;
 
     private volatile BlockingCell<Object> returnCell;
 
-    public TestMain(Connection connection, boolean silent) {
-        _connection = connection;
-        _silent = silent;
+    public TestMain() {
+    }
+//    public TestMain(Connection connection, boolean silent) {
+//      _connection = connection;
+//      _silent = silent;
+//    }
+
+    public void set_connection(Connection _connection) {
+      this._connection = _connection;
+    }
+
+    public void set_silent(boolean _silent) {
+      this._silent = _silent;
     }
 
     public Channel createChannel() throws IOException {
