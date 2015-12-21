@@ -18,3 +18,8 @@
 /out/
 /tmp/
 junit*.properties
+/target/
+/.DS_Store
+/.classpath
+/.project
+/.settings

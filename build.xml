@@ -2,8 +2,8 @@
 <project name="RabbitMQ Java client" default="build"
     xmlns:bundlor="antlib:com.springsource.bundlor.ant">
 
-  <property file="build.properties"/>
-  <property file="config.properties"/>
+  <property file="src/test/properties/build.properties"/>
+  <property file="src/test/properties/config.properties"/>
   <property environment="env"/>
 
   <path id="javac.classpath">
@@ -81,15 +81,16 @@
 
   <target name="build" depends="amqp-generate" description="Build the client library.">
     <mkdir dir="${javac.out}"/>
-    <copy file="src/com/rabbitmq/client/impl/ClientVersion.java.in"
+<!--    <copy file="src/com/rabbitmq/client/impl/ClientVersion.java.in"
 	  tofile="${src.generated}/com/rabbitmq/client/impl/ClientVersion.java">
       <filterset>
 	<filter token="VERSION" value="${impl.version}"/>
       </filterset>
     </copy>
+    -->
     <javac destdir="${javac.out}"
 	   classpathref="javac.classpath"
-	   source="${standard.javac.source}"
+	   source="${maven.javac.source}"
 	   target="${standard.javac.target}"
 	   debug="${javac.debug}">
       <src path="src"/>
@@ -190,7 +191,7 @@
 
   <target name="test-build" depends="test-prepare">
 	<antcall target="test-build-param">
-    	<param name="javac.source" value="${standard.javac.source}"/>
+    	<param name="javac.source" value="${maven.javac.source}"/>
     	<param name="javac.target" value="${standard.javac.target}"/>
 	</antcall>
   </target>
