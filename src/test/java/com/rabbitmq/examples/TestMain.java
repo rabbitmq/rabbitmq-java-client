@@ -79,10 +79,9 @@ public class TestMain {
                 System.out.println("Channel 0 fully open.");
             }
 
-            TestMain testMain = new TestMain();
-            testMain.set_connection(conn);
-            testMain.set_silent(silent);
-            testMain.run();
+            set_connection(conn);
+            set_silent(silent);
+            run();
 
             runProducerConsumerTest(uri, 500);
             runProducerConsumerTest(uri, 0);
