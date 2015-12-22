@@ -2,8 +2,8 @@
 <project name="RabbitMQ Java client" default="build"
     xmlns:bundlor="antlib:com.springsource.bundlor.ant">
 
-  <property file="src/test/properties/build.properties"/>
-  <property file="src/test/properties/config.properties"/>
+  <property file="${basedir}/src/test/resources/build.properties"/>
+  <property file="${basedir}/src/test/resources/config.properties"/>
   <property environment="env"/>
 
   <path id="javac.classpath">
@@ -90,7 +90,7 @@
     -->
     <javac destdir="${javac.out}"
 	   classpathref="javac.classpath"
-	   source="${maven.javac.source}"
+	   source="${standard.javac.source}"
 	   target="${standard.javac.target}"
 	   debug="${javac.debug}">
       <src path="src"/>
@@ -191,7 +191,7 @@
 
   <target name="test-build" depends="test-prepare">
 	<antcall target="test-build-param">
-    	<param name="javac.source" value="${maven.javac.source}"/>
+    	<param name="javac.source" value="${standard.javac.source}"/>
     	<param name="javac.target" value="${standard.javac.target}"/>
 	</antcall>
   </target>
@@ -212,7 +212,7 @@
       srcdir="${test.src.home}"
       destdir="${test.javac.out}"
       debug="true"
-      source="${javac.source}"
+      source="${maven.src.home}"
       target="${javac.target}">
 
       <compilerarg value="-Xlint:deprecation" />
