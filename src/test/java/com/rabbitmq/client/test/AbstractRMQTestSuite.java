@@ -1,7 +1,6 @@
 package com.rabbitmq.client.test;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.Socket;
 import java.nio.file.FileSystems;
 import java.util.Properties;
@@ -24,9 +23,9 @@ public abstract class AbstractRMQTestSuite extends TestSuite {
       TESTS_PROPS.load(AbstractRMQTestSuite.class.getClassLoader().getResourceAsStream("build.properties"));
       TESTS_PROPS.load(AbstractRMQTestSuite.class.getClassLoader().getResourceAsStream("config.properties"));
       buildPropertiesFound = true;
-    } catch (IOException e) {
-      System.err
-          .println("build.properties or config.properties not found in classpath,copy build.properties and config.properties into src/test/resources");
+    } catch (Exception e) {
+      System.out
+          .println("build.properties or config.properties not found in classpath,copy build.properties and config.properties into src/test/resources, ignore this message if running with ant");
     }
   }
 

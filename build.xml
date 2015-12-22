@@ -212,7 +212,7 @@
       srcdir="${test.src.home}"
       destdir="${test.javac.out}"
       debug="true"
-      source="${maven.src.home}"
+      source="${javac.source}"
       target="${javac.target}">
 
       <compilerarg value="-Xlint:deprecation" />
