@@ -75,20 +75,3 @@ srcdist: distclean
 	(cd build; tar -zcf $(SRC_ARCHIVE).tar.gz $(SRC_ARCHIVE))
 	(cd build; zip -q -r $(SRC_ARCHIVE).zip $(SRC_ARCHIVE))
 	(cd build; rm -rf $(SRC_ARCHIVE))
-
-stage-and-promote-maven-bundle:
-	( \
-	  cd build/bundle; \
-	  NEXUS_USERNAME=`cat $(GNUPG_PATH)/../nexus/username`; \
-	  NEXUS_PASSWORD=`cat $(GNUPG_PATH)/../nexus/password`; \
-	  VERSION=$(VERSION) \
-	  SIGNING_KEY=$(SIGNING_KEY) \
-	  GNUPG_PATH=$(GNUPG_PATH) \
-	  CREDS="$$NEXUS_USERNAME:$$NEXUS_PASSWORD" \
-	  ../../nexus-upload.sh \
-	    amqp-client-$(VERSION).pom \
-	    amqp-client-$(VERSION).jar \
-	    amqp-client-$(VERSION)-javadoc.jar \
-	    amqp-client-$(VERSION)-sources.jar \
-	)
-
