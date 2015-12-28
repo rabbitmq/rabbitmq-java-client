@@ -17,15 +17,10 @@
 
 package com.rabbitmq.client.test;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
-import com.rabbitmq.tools.json.JSONWriter;
-import com.rabbitmq.tools.json.JSONReader;
-
 import junit.framework.TestCase;
+
+import com.rabbitmq.tools.json.JSONReader;
+import com.rabbitmq.tools.json.JSONWriter;
 
 public class JSONReadWriteTest extends TestCase {
 

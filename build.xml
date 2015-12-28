@@ -2,8 +2,8 @@
 <project name="RabbitMQ Java client" default="build"
     xmlns:bundlor="antlib:com.springsource.bundlor.ant">
 
-  <property file="build.properties"/>
-  <property file="config.properties"/>
+  <property file="${basedir}/src/test/resources/build.properties"/>
+  <property file="${basedir}/src/test/resources/config.properties"/>
   <property environment="env"/>
 
   <path id="javac.classpath">
