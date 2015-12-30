@@ -766,7 +766,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         return result;
     }
 
-    Set<RecordedBinding> removeBindingsWithDestination(String s) {
+    synchronized Set<RecordedBinding> removeBindingsWithDestination(String s) {
         Set<RecordedBinding> result = new HashSet<RecordedBinding>();
         for (Iterator<RecordedBinding> it = this.recordedBindings.iterator(); it.hasNext(); ) {
             RecordedBinding b = it.next();
