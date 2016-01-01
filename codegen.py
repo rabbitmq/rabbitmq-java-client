@@ -13,7 +13,7 @@
 ##  The Original Code is RabbitMQ.
 ##
 ##  The Initial Developer of the Original Code is GoPivotal, Inc.
-##  Copyright (c) 2007-2015 Pivotal Software, Inc.  All rights reserved.
+##  Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
 ##
 
 from __future__ import nested_scopes
@@ -147,7 +147,7 @@ def printFileHeader():
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2015 Pivotal Software, Inc.  All rights reserved.
+//  Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
 //
 """)
 
