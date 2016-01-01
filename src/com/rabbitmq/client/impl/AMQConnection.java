@@ -11,7 +11,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2015 Pivotal Software, Inc.  All rights reserved.
+//  Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
 //
 
 package com.rabbitmq.client.impl;
@@ -48,7 +48,7 @@ import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.utility.BlockingCell;
 
 final class Copyright {
-    final static String COPYRIGHT="Copyright (C) 2007-2015 Pivotal Software, Inc.";
+    final static String COPYRIGHT="Copyright (c) 2007-2016 Pivotal Software, Inc.";
     final static String LICENSE="Licensed under the MPL. See http://www.rabbitmq.com/";
 }
 
