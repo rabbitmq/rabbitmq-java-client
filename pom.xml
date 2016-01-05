@@ -5,7 +5,7 @@
  
  <groupId>com.rabbitmq</groupId>
  <artifactId>amqp-client</artifactId>
- <version>VERSION</version>
+ <version>3.6.1-SNAPSHOT</version>
  <packaging>jar</packaging>
  
  <name>RabbitMQ Java Client</name>
@@ -79,15 +79,60 @@
      <execution>
       <phase>generate-sources</phase>
       <configuration>
-       <tasks>
-        <ant antfile="${basedir}/build.xml" target="amqp-generate"/>
+       <target name="amqp-generate-check" description="check if codegen needs to be run">
+        <uptodate property="amqp.generate.notRequired">
+         <srcfiles file="codegen.py"/>
+         <srcfiles dir="${codegen.dir}">
+          <include name="*"/>
+         </srcfiles>
+         <compositemapper>
+          <mapper type="merge" to="${basedir}/${src.generated}/com/rabbitmq/client/impl/AMQImpl.java"/>
+          <mapper type="merge" to="${basedir}/${src.generated}/com/rabbitmq/client/AMQP.java"/>
+         </compositemapper>
+        </uptodate>
+       </target>
+       <target name="amqp-generate" depends="amqp-generate-check" unless="amqp.generate.notRequired"
+        description="generate AMQP.java and AMQImpl.java from AMQP spec">
+        <property name="AMQP_SPEC_JSON_PATH" value="${codegen.dir}/amqp-rabbitmq-${spec.version}.json"/>
+        <mkdir dir="${src.generated}/com/rabbitmq/client/"/>
+        <exec dir="." executable="${python.bin}" errorproperty="amqp.generate.error1" resultproperty="amqp.generate.result1">
+         <arg line="codegen.py"/>
+         <arg line="header"/>
+         <arg line="${AMQP_SPEC_JSON_PATH}"/>
+         <arg line="${src.generated}/com/rabbitmq/client/AMQP.java"/>
+        </exec>
+        <fail message="Generation of AMQP.java failed with message:${line.separator}${amqp.generate.error1}">
+         <condition>
+          <not>
+           <equals arg1="${amqp.generate.result1}" arg2="0"/>
+          </not>
+         </condition>
+        </fail>
+        <mkdir dir="${src.generated}/com/rabbitmq/client/impl"/>
+        <exec dir="." executable="${python.bin}" errorproperty="amqp.generate.error2" resultproperty="amqp.generate.result2">
+         <arg line="codegen.py"/>
+         <arg line="body"/>
+         <arg line="${AMQP_SPEC_JSON_PATH}"/>
+         <arg line="${src.generated}/com/rabbitmq/client/impl/AMQImpl.java"/>
+        </exec>
+        <fail message="Generation of AMQPImpl.java failed with message:${line.separator}${amqp.generate.error2}">
+         <condition>
+          <not>
+           <equals arg1="${amqp.generate.result2}" arg2="0"/>
+          </not>
+         </condition>
+        </fail>
+       </target>
+       <target>
         <property file="${basedir}/src/test/resources/build.properties"/>
+        <ant target="amqp-generate"/>
         <copy file="${maven.src.home}/com/rabbitmq/client/impl/ClientVersion.java.in" tofile="${src.generated}/com/rabbitmq/client/impl/ClientVersion.java">
          <filterset>
           <filter token="VERSION" value="${impl.version}"/>
+<!--           <filter token="VERSION" value="${project.version}"/> -->
          </filterset>
         </copy>
-       </tasks>
+       </target>
       </configuration>
       <goals>
        <goal>run</goal>
