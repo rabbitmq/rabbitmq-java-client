@@ -81,7 +81,7 @@
 
   <target name="build" depends="amqp-generate" description="Build the client library.">
     <mkdir dir="${javac.out}"/>
-    <copy file="src/com/rabbitmq/client/impl/ClientVersion.java.in"
+    <copy file="${maven.src.home}/com/rabbitmq/client/impl/ClientVersion.java.in"
 	  tofile="${src.generated}/com/rabbitmq/client/impl/ClientVersion.java">
       <filterset>
 	<filter token="VERSION" value="${impl.version}"/>
