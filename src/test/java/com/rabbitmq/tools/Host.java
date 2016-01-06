@@ -36,10 +36,11 @@ public class Host {
     try {
       TESTS_PROPS.load(Host.class.getClassLoader().getResourceAsStream("build.properties"));
       TESTS_PROPS.load(Host.class.getClassLoader().getResourceAsStream("config.properties"));
-      System.setProperties(TESTS_PROPS);
-    } catch (IOException e) {
-      System.err
-          .println("build.properties or config.properties not found in classpath, copy build.properties and config.properties into src/test/resources");
+    } catch (Exception e) {
+      System.out
+      .println("build.properties or config.properties not found in classpath,copy build.properties and config.properties into src/test/resources, ignore this message if running with ant");
+    }finally {
+    	System.setProperties(TESTS_PROPS);    	
     }
   }
 

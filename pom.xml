@@ -72,6 +72,22 @@
  
  <build>
   <plugins>
+   <!-- Clean generated sources at clean phase -->
+   <plugin>
+    <artifactId>maven-clean-plugin</artifactId>
+    <version>3.0.0</version>
+    <configuration>
+     <filesets>
+      <fileset>
+       <directory>${basedir}/build</directory>
+       <includes>
+        <include>**/*</include>
+       </includes>
+       <followSymlinks>false</followSymlinks>
+      </fileset>
+     </filesets>
+    </configuration>
+   </plugin>
    <plugin>
     <artifactId>maven-antrun-plugin</artifactId>
     <version>1.7</version>
