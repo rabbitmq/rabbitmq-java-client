@@ -2,8 +2,8 @@
 <project name="RabbitMQ Java client" default="build"
     xmlns:bundlor="antlib:com.springsource.bundlor.ant">
 
-  <property file="build.properties"/>
-  <property file="config.properties"/>
+  <property file="${basedir}/src/test/resources/build.properties"/>
+  <property file="${basedir}/src/test/resources/config.properties"/>
   <property environment="env"/>
 
   <path id="javac.classpath">
@@ -81,7 +81,7 @@
 
   <target name="build" depends="amqp-generate" description="Build the client library.">
     <mkdir dir="${javac.out}"/>
-    <copy file="src/com/rabbitmq/client/impl/ClientVersion.java.in"
+    <copy file="${maven.src.home}/com/rabbitmq/client/impl/ClientVersion.java.in"
 	  tofile="${src.generated}/com/rabbitmq/client/impl/ClientVersion.java">
       <filterset>
 	<filter token="VERSION" value="${impl.version}"/>
@@ -340,6 +340,9 @@
       <jvmarg value="-Dmake.bin=${make.bin}"/>
       <jvmarg value="-Drabbitmqctl.bin=${rabbitmqctl.bin}"/>
       <jvmarg value="-Dsibling.rabbitmq_test.dir=${sibling.rabbitmq_test.dir}"/>
+      <jvmarg value="-Dbroker.hostname=${broker.hostname}"/>
+      <jvmarg value="-Dbroker.port=${broker.port}"/>
+      <jvmarg value="-Dbroker.sslport=${broker.sslport}"/>
 
       <jvmarg value="-Dkeystore.path=${CLIENT_KEYSTORE}"/>
       <jvmarg value="-Dkeystore.empty.path=${CLIENT_KEYSTORE_EMPTY}"/>
@@ -364,6 +367,9 @@
       <jvmarg value="-Dmake.bin=${make.bin}"/>
       <jvmarg value="-Drabbitmqctl.bin=${rabbitmqctl.bin}"/>
       <jvmarg value="-Dsibling.rabbitmq_test.dir=${sibling.rabbitmq_test.dir}"/>
+      <jvmarg value="-Dbroker.hostname=${broker.hostname}"/>
+      <jvmarg value="-Dbroker.port=${broker.port}"/>
+      <jvmarg value="-Dbroker.sslport=${broker.sslport}"/>
 
       <formatter type="plain"/>
       <formatter type="xml"/>
@@ -380,6 +386,9 @@
       <jvmarg value="-Dmake.bin=${make.bin}"/>
       <jvmarg value="-Drabbitmqctl.bin=${rabbitmqctl.bin}"/>
       <jvmarg value="-Dsibling.rabbitmq_test.dir=${sibling.rabbitmq_test.dir}"/>
+      <jvmarg value="-Dbroker.hostname=${broker.hostname}"/>
+      <jvmarg value="-Dbroker.port=${broker.port}"/>
+      <jvmarg value="-Dbroker.sslport=${broker.sslport}"/>
 
       <formatter type="plain"/>
       <formatter type="xml"/>
@@ -398,6 +407,9 @@
       <jvmarg value="-Dmake.bin=${make.bin}"/>
       <jvmarg value="-Drabbitmqctl.bin=${rabbitmqctl.bin}"/>
       <jvmarg value="-Dsibling.rabbitmq_test.dir=${sibling.rabbitmq_test.dir}"/>
+      <jvmarg value="-Dbroker.hostname=${broker.hostname}"/>
+      <jvmarg value="-Dbroker.port=${broker.port}"/>
+      <jvmarg value="-Dbroker.sslport=${broker.sslport}"/>
 
       <formatter type="plain"/>
       <formatter type="xml"/>

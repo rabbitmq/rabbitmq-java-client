@@ -17,12 +17,11 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.test.functional.ClusteredTestBase;
-import com.rabbitmq.tools.Host;
-
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.test.functional.ClusteredTestBase;
 
 /**
  * This tests whether 'absent' queues - durable queues whose home node

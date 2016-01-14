@@ -17,20 +17,19 @@
 
 package com.rabbitmq.tools;
 
-import com.rabbitmq.client.impl.NetworkConnection;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+
+import com.rabbitmq.client.impl.NetworkConnection;
 
 public class Host {
 
-    private static String capture(InputStream is)
+    public static String capture(InputStream is)
         throws IOException
     {
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
@@ -109,17 +108,17 @@ public class Host {
                               " " + command);
     }
 
-    private static String makeCommand()
+    public static String makeCommand()
     {
         return System.getProperty("make.bin");
     }
 
-    private static String rabbitmqctlCommand()
+    public static String rabbitmqctlCommand()
     {
         return System.getProperty("rabbitmqctl.bin");
     }
 
-    private static String rabbitmqTestDir()
+    public static String rabbitmqTestDir()
     {
         return System.getProperty("sibling.rabbitmq_test.dir");
     }

@@ -17,11 +17,11 @@
 
 package com.rabbitmq.client.test;
 
-import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-public class ClientTests extends TestCase {
-    public static TestSuite suite() {
+public class ClientTests extends AbstractRMQTestSuite {
+
+  public static TestSuite suite() {
         TestSuite suite = new TestSuite("client");
         suite.addTest(TableTest.suite());
         suite.addTest(LongStringTest.suite());
