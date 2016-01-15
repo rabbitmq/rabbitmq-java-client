@@ -3,7 +3,6 @@ package com.rabbitmq.client.test;
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
-import java.nio.file.FileSystems;
 import java.util.Properties;
 
 import junit.framework.Test;
@@ -86,8 +85,7 @@ public abstract class AbstractRMQTestSuite extends TestSuite {
     if (SSL_CERTS_DIR == null || hostname == null || port == null)
       return false;
 
-    String sslClientCertsDir = SSL_CERTS_DIR +
-      FileSystems.getDefault().getSeparator() + "client";
+    String sslClientCertsDir = SSL_CERTS_DIR + File.separator + "client";
     // If certificate is present and some server is listening on port 5671
     if (new File(sslClientCertsDir).exists() &&
         checkServerListening(hostname, Integer.parseInt(port))) {
