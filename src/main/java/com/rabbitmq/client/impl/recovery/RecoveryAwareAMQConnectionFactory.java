@@ -29,7 +29,8 @@ public class RecoveryAwareAMQConnectionFactory {
      */
     RecoveryAwareAMQConnection newConnection() throws IOException, TimeoutException {
         IOException lastException = null;
-        for (Address addr : shuffle(addrs)) {
+        Address[] shuffled = shuffle(addrs);
+        for (Address addr : shuffled) {
             try {
                 FrameHandler frameHandler = factory.create(addr);
                 RecoveryAwareAMQConnection conn = new RecoveryAwareAMQConnection(params, frameHandler);
