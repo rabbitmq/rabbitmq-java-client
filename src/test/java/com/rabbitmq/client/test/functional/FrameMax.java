@@ -17,25 +17,15 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.impl.ConnectionParams;
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.*;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
-
-import com.rabbitmq.client.Address;
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.AMQCommand;
-import com.rabbitmq.client.impl.Frame;
-import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.LongStringHelper;
-import com.rabbitmq.client.impl.SocketFrameHandler;
 
 public class FrameMax extends BrokerTestCase {
     /* This value for FrameMax is larger than the minimum and less
@@ -147,7 +137,7 @@ public class FrameMax extends BrokerTestCase {
 
     private static class GenerousConnectionFactory extends ConnectionFactory {
 
-        @Override public Connection newConnection(ExecutorService executor, Address[] addrs)
+        @Override public Connection newConnection(ExecutorService executor, List<Address> addrs)
                 throws IOException, TimeoutException {
             IOException lastException = null;
             for (Address addr : addrs) {
