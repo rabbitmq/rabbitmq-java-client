@@ -66,7 +66,7 @@ public class RpcClient {
     /**
      * Construct a new RpcClient that will communicate on the given channel, sending
      * requests to the given exchange with the given routing key.
-     * <p/>
+     *
      * Causes the creation of a temporary private autodelete queue. The name of this queue can be specified.
      * @param channel the channel to use for communication
      * @param exchange the exchange to connect to
@@ -91,9 +91,11 @@ public class RpcClient {
     /**
      * Construct a new RpcClient that will communicate on the given channel, sending
      * requests to the given exchange with the given routing key.
-     * <p/>
-     * Causes the creation of a temporary private autodelete queue. The name of the queue can be provided
-     * <p/>
+     *
+     * Causes the creation of a temporary private autodelete queue.
+     * The name of the queue can be provided (only relevant for RabbitMQ servers
+     * that do not support <a href="https://www.rabbitmq.com/direct-reply-to.html">Direct Reply-to</a>.
+     *
      * Waits forever for responses (that is, no timeout).
      * @param channel the channel to use for communication
      * @param exchange the exchange to connect to
