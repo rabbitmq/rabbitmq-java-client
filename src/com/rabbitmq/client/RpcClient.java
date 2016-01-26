@@ -138,7 +138,7 @@ public class RpcClient {
      * @throws IOException if an error is encountered
      */
     public RpcClient(Channel channel, String exchange, String routingKey, int timeout) throws IOException {
-        this(channel, exchange, routingKey, "amq.rabbitmq.reply-to", timeout)
+        this(channel, exchange, routingKey, "amq.rabbitmq.reply-to", timeout);
     }
 
 
