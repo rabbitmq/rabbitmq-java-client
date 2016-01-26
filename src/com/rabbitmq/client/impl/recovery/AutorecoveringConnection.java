@@ -74,8 +74,8 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 	// This lock guards the manuallyClosed flag and the delegate connection.  Guarding these two ensures that a new connection can never
 	// be created after application code has initiated shutdown.  
 	private final Object recoveryLock = new Object();
-	
-    public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, Address[] addrs) {
+
+    public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, List<Address> addrs) {
         this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addrs);
         this.params = params;
 

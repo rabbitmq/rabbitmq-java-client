@@ -11,6 +11,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -35,7 +36,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(connection.isOpen());
     }
 
-    public void testConnectionRecoveryWithMultipleAddresses()
+    public void testConnectionRecoveryWithArrayOfAddresses()
             throws IOException, InterruptedException, TimeoutException {
         final Address[] addresses = {new Address("127.0.0.1"), new Address("127.0.0.1", 5672)};
         AutorecoveringConnection c = newRecoveringConnection(addresses);
@@ -47,6 +48,21 @@ public class ConnectionRecovery extends BrokerTestCase {
             c.abort();
         }
 
+    }
+
+    public void testConnectionRecoveryWithListOfAddresses()
+            throws IOException, InterruptedException, TimeoutException {
+
+        final List<Address> addresses = Arrays.asList(new Address("127.0.0.1"), new Address("127.0.0.1", 5672));
+
+        AutorecoveringConnection c = newRecoveringConnection(addresses);
+        try {
+            assertTrue(c.isOpen());
+            closeAndWaitForRecovery(c);
+            assertTrue(c.isOpen());
+        } finally {
+            c.abort();
+        }
     }
 
     public void testConnectionRecoveryWithDisabledTopologyRecovery()
@@ -707,13 +723,20 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     private AutorecoveringConnection newRecoveringConnection(Address[] addresses)
             throws IOException, TimeoutException {
-        return newRecoveringConnection(false, addresses);
+        ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(false);
+        // specifically use the Address[] overload
+        return (AutorecoveringConnection) cf.newConnection(addresses);
     }
 
-    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery, Address[] addresses)
+    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery, List<Address> addresses)
             throws IOException, TimeoutException {
         ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
         return (AutorecoveringConnection) cf.newConnection(addresses);
+    }
+
+    private AutorecoveringConnection newRecoveringConnection(List<Address> addresses)
+            throws IOException, TimeoutException {
+        return newRecoveringConnection(false, addresses);
     }
 
     private ConnectionFactory buildConnectionFactoryWithRecoveryEnabled(boolean disableTopologyRecovery) {

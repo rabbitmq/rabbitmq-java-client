@@ -7,7 +7,6 @@ import com.rabbitmq.client.impl.FrameHandlerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -15,9 +14,9 @@ import java.util.concurrent.TimeoutException;
 public class RecoveryAwareAMQConnectionFactory {
     private final ConnectionParams params;
     private final FrameHandlerFactory factory;
-    private final Address[] addrs;
+    private final List<Address> addrs;
 
-    public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, Address[] addrs) {
+    public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, List<Address> addrs) {
         this.params = params;
         this.factory = factory;
         this.addrs = addrs;
@@ -29,7 +28,8 @@ public class RecoveryAwareAMQConnectionFactory {
      */
     RecoveryAwareAMQConnection newConnection() throws IOException, TimeoutException {
         IOException lastException = null;
-        Address[] shuffled = shuffle(addrs);
+        List<Address> shuffled = shuffle(addrs);
+
         for (Address addr : shuffled) {
             try {
                 FrameHandler frameHandler = factory.create(addr);
@@ -44,11 +44,9 @@ public class RecoveryAwareAMQConnectionFactory {
         throw (lastException != null) ? lastException : new IOException("failed to connect");
     }
 
-    private Address[] shuffle(Address[] addrs) {
-        List<Address> list = new ArrayList<Address>(Arrays.asList(addrs));
+    private List<Address> shuffle(List<Address> addrs) {
+        List<Address> list = new ArrayList<Address>(addrs);
         Collections.shuffle(list);
-        Address[] result = new Address[addrs.length];
-        list.toArray(result);
-        return result;
+        return list;
     }
 }

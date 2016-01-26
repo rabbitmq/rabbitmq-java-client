@@ -87,7 +87,8 @@
 	<filter token="VERSION" value="${impl.version}"/>
       </filterset>
     </copy>
-    <javac destdir="${javac.out}"
+    <javac
+           destdir="${javac.out}"
 	   classpathref="javac.classpath"
 	   source="${standard.javac.source}"
 	   target="${standard.javac.target}"
