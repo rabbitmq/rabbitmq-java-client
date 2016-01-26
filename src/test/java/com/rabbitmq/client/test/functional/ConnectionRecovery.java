@@ -721,15 +721,11 @@ public class ConnectionRecovery extends BrokerTestCase {
         return (AutorecoveringConnection) cf.newConnection();
     }
 
-    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery, Address[] addresses)
-            throws IOException, TimeoutException {
-        ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
-        return (AutorecoveringConnection) cf.newConnection(addresses);
-    }
-
     private AutorecoveringConnection newRecoveringConnection(Address[] addresses)
             throws IOException, TimeoutException {
-        return newRecoveringConnection(false, Arrays.asList(addresses));
+        ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(false);
+        // specifically use the Address[] overload
+        return (AutorecoveringConnection) cf.newConnection(addresses);
     }
 
     private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery, List<Address> addresses)
