@@ -48,6 +48,8 @@ public class RpcClient {
     private final String _exchange;
     /** Routing key to use for requests */
     private final String _routingKey;
+    /** Queue where the server should put the reply */
+    private final String _replyTo;
     /** timeout to use on call responses */
     private final int _timeout;
     /** NO_TIMEOUT value must match convention on {@link BlockingCell#uninterruptibleGet(int)} */
@@ -64,18 +66,21 @@ public class RpcClient {
     /**
      * Construct a new RpcClient that will communicate on the given channel, sending
      * requests to the given exchange with the given routing key.
-     * <p/>
-     * Causes the creation of a temporary private autodelete queue.
+     *
+     * Causes the creation of a temporary private autodelete queue. The name of this queue can be specified.
      * @param channel the channel to use for communication
      * @param exchange the exchange to connect to
      * @param routingKey the routing key
+     * @param replyTo the queue where the server should put the reply
      * @param timeout milliseconds before timing out on wait for response
      * @throws IOException if an error is encountered
      */
-    public RpcClient(Channel channel, String exchange, String routingKey, int timeout) throws IOException {
+    public RpcClient(Channel channel, String exchange, String routingKey, String replyTo, int timeout) throws
+            IOException {
         _channel = channel;
         _exchange = exchange;
         _routingKey = routingKey;
+        _replyTo = replyTo;
         if (timeout < NO_TIMEOUT) throw new IllegalArgumentException("Timeout arguument must be NO_TIMEOUT(-1) or non-negative.");
         _timeout = timeout;
         _correlationId = 0;
@@ -86,9 +91,29 @@ public class RpcClient {
     /**
      * Construct a new RpcClient that will communicate on the given channel, sending
      * requests to the given exchange with the given routing key.
-     * <p/>
+     *
      * Causes the creation of a temporary private autodelete queue.
-     * <p/>
+     * The name of the queue can be provided (only relevant for RabbitMQ servers
+     * that do not support <a href="https://www.rabbitmq.com/direct-reply-to.html">Direct Reply-to</a>.
+     *
+     * Waits forever for responses (that is, no timeout).
+     * @param channel the channel to use for communication
+     * @param exchange the exchange to connect to
+     * @param routingKey the routing key
+     * @param replyTo the queue where the server should put the reply
+     * @throws IOException if an error is encountered
+     */
+    public RpcClient(Channel channel, String exchange, String routingKey, String replyTo) throws IOException {
+        this(channel, exchange, routingKey, replyTo, NO_TIMEOUT);
+    }
+
+    /**
+     * Construct a new RpcClient that will communicate on the given channel, sending
+     * requests to the given exchange with the given routing key.
+     *
+     * <a href="https://www.rabbitmq.com/direct-reply-to.html">Direct Reply-to</a> will be used
+     * for response propagation.
+     *
      * Waits forever for responses (that is, no timeout).
      * @param channel the channel to use for communication
      * @param exchange the exchange to connect to
@@ -96,8 +121,26 @@ public class RpcClient {
      * @throws IOException if an error is encountered
      */
     public RpcClient(Channel channel, String exchange, String routingKey) throws IOException {
-        this(channel, exchange, routingKey, NO_TIMEOUT);
+        this(channel, exchange, routingKey, "amq.rabbitmq.reply-to", NO_TIMEOUT);
     }
+
+
+    /**
+     * Construct a new RpcClient that will communicate on the given channel, sending
+     * requests to the given exchange with the given routing key.
+     * <p/>
+     * Causes the creation of a temporary private autodelete queue. The name of this queue will be
+     * "amq.rabbitmq.reply-to".
+     * @param channel the channel to use for communication
+     * @param exchange the exchange to connect to
+     * @param routingKey the routing key
+     * @param timeout milliseconds before timing out on wait for response
+     * @throws IOException if an error is encountered
+     */
+    public RpcClient(Channel channel, String exchange, String routingKey, int timeout) throws IOException {
+        this(channel, exchange, routingKey, "amq.rabbitmq.reply-to", timeout);
+    }
+
 
     /**
      * Private API - ensures the RpcClient is correctly open.
@@ -152,7 +195,7 @@ public class RpcClient {
                 }
             }
         };
-        _channel.basicConsume("amq.rabbitmq.reply-to", true, consumer);
+        _channel.basicConsume(_replyTo, true, consumer);
         return consumer;
     }
 
@@ -171,7 +214,7 @@ public class RpcClient {
             _correlationId++;
             String replyId = "" + _correlationId;
             props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
-                    .correlationId(replyId).replyTo("amq.rabbitmq.reply-to").build();
+                    .correlationId(replyId).replyTo(_replyTo).build();
             _continuationMap.put(replyId, k);
         }
         publish(props, message);
