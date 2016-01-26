@@ -19,6 +19,7 @@ package com.rabbitmq.client;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.List;
@@ -756,7 +757,7 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection() throws IOException, TimeoutException {
-        return newConnection(this.sharedExecutor, Arrays.asList(new Address(getHost(), getPort())));
+        return newConnection(this.sharedExecutor, Collections.singletonList(new Address(getHost(), getPort())));
     }
 
     /**
@@ -771,7 +772,7 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection(ExecutorService executor) throws IOException, TimeoutException {
-        return newConnection(executor, Arrays.asList(new Address(getHost(), getPort())));
+        return newConnection(executor, Collections.singletonList(new Address(getHost(), getPort())));
     }
 
     @Override public ConnectionFactory clone(){
