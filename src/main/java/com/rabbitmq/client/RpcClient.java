@@ -108,9 +108,10 @@ public class RpcClient {
     /**
      * Construct a new RpcClient that will communicate on the given channel, sending
      * requests to the given exchange with the given routing key.
-     * <p/>
-     * Causes the creation of a temporary private autodelete queue. This queue will be named "amq.rabbitmq.reply-to".
-     * <p/>
+     *
+     * <a href="https://www.rabbitmq.com/direct-reply-to.html">Direct Reply-to</a> will be used
+     * for response propagation.
+     *
      * Waits forever for responses (that is, no timeout).
      * @param channel the channel to use for communication
      * @param exchange the exchange to connect to
