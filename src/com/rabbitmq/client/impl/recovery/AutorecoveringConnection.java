@@ -638,9 +638,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                                          destination(queue).
                                          routingKey(routingKey).
                                          arguments(arguments);
-        if (!this.recordedBindings.contains(binding)) {
-            this.recordedBindings.add(binding);
+        if (this.recordedBindings.contains(binding)) {
+            this.recordedBindings.remove(binding);
         }
+        this.recordedBindings.add(binding);
     }
 
     synchronized boolean deleteRecordedQueueBinding(AutorecoveringChannel ch,
@@ -666,6 +667,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                                           destination(destination).
                                           routingKey(routingKey).
                                           arguments(arguments);
+        if (this.recordedBindings.contains(binding)) {
+            this.recordedBindings.remove(binding);
+        }
         this.recordedBindings.add(binding);
     }
 
