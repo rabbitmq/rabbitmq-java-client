@@ -191,7 +191,7 @@ public class RpcClient {
                     String replyId = properties.getCorrelationId();
                     BlockingCell<Object> blocker = _continuationMap.get(replyId);
                     _continuationMap.remove(replyId);
-                    blocker.set(body);
+                    blocker.set(new Response(consumerTag, envelope, properties, body));
                 }
             }
         };
@@ -205,16 +205,15 @@ public class RpcClient {
         _channel.basicPublish(_exchange, _routingKey, props, message);
     }
 
-    public byte[] primitiveCall(AMQP.BasicProperties props, byte[] message)
-        throws IOException, ShutdownSignalException, TimeoutException
-    {
+    public Response doCall(AMQP.BasicProperties props, byte[] message)
+        throws IOException, ShutdownSignalException, TimeoutException {
         checkConsumer();
         BlockingCell<Object> k = new BlockingCell<Object>();
         synchronized (_continuationMap) {
             _correlationId++;
             String replyId = "" + _correlationId;
             props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
-                    .correlationId(replyId).replyTo(_replyTo).build();
+                .correlationId(replyId).replyTo(_replyTo).build();
             _continuationMap.put(replyId, k);
         }
         publish(props, message);
@@ -229,8 +228,14 @@ public class RpcClient {
             wrapper.initCause(sig);
             throw wrapper;
         } else {
-            return (byte[]) reply;
+            return (Response) reply;
         }
+    }
+
+    public byte[] primitiveCall(AMQP.BasicProperties props, byte[] message)
+        throws IOException, ShutdownSignalException, TimeoutException
+    {
+        return doCall(props, message).getBody();
     }
 
     /**
@@ -244,6 +249,21 @@ public class RpcClient {
     public byte[] primitiveCall(byte[] message)
         throws IOException, ShutdownSignalException, TimeoutException {
         return primitiveCall(null, message);
+    }
+
+    /**
+     * Perform a simple byte-array-based RPC roundtrip
+     *
+     * Useful if you need to get at more than just the body of the message
+     *
+     * @param message the byte array request message to send
+     * @return The response object is an envelope that contains all of the data provided to the `handleDelivery` consumer
+     * @throws ShutdownSignalException if the connection dies during our wait
+     * @throws IOException if an error is encountered
+     * @throws TimeoutException if a response is not received within the configured timeout
+     */
+    public Response responseCall(byte[] message) throws IOException, ShutdownSignalException, TimeoutException {
+        return doCall(null, message);
     }
 
     /**
@@ -367,6 +387,44 @@ public class RpcClient {
      */
     public Consumer getConsumer() {
         return _consumer;
+    }
+
+    /**
+     * The response object is an envelope that contains all of the data provided to the `handleDelivery` consumer
+     */
+    public static class Response {
+        protected String consumerTag;
+        protected Envelope envelope;
+        protected AMQP.BasicProperties properties;
+        protected byte[] body;
+
+        public Response() {
+        }
+
+        public Response(
+            final String consumerTag, final Envelope envelope, final AMQP.BasicProperties properties,
+            final byte[] body) {
+            this.consumerTag = consumerTag;
+            this.envelope = envelope;
+            this.properties = properties;
+            this.body = body;
+        }
+
+        public String getConsumerTag() {
+            return consumerTag;
+        }
+
+        public Envelope getEnvelope() {
+            return envelope;
+        }
+
+        public AMQP.BasicProperties getProperties() {
+            return properties;
+        }
+
+        public byte[] getBody() {
+            return body;
+        }
     }
 }
 
