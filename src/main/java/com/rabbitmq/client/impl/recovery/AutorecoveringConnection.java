@@ -448,6 +448,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     synchronized private void beginAutomaticRecovery() throws InterruptedException, IOException, TopologyRecoveryException {
         Thread.sleep(this.params.getNetworkRecoveryInterval());
+
+        this.notifyRecoveryListenersStarted();
+
         if (!this.recoverConnection()) {
             return;
         }
@@ -461,7 +464,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 			      this.recoverConsumers();
 		    }
 
-		    this.notifyRecoveryListeners();
+		this.notifyRecoveryListeners();
     }
 
     private void recoverShutdownListeners() {
@@ -515,9 +518,15 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    private void notifyRecoveryListeners() {
+    private void notifyRecoveryListenersComplete() {
         for (RecoveryListener f : this.recoveryListeners) {
             f.handleRecovery(this);
+        }
+    }
+
+    private void notifyRecoveryListenersStarted() {
+        for (RecoveryListener f : this.recoveryListeners) {
+            f.handleRecoveryStarted(this);
         }
     }
 

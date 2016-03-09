@@ -8,4 +8,5 @@ package com.rabbitmq.client;
  */
 public interface RecoveryListener {
     public void handleRecovery(Recoverable recoverable);
+    public void handleRecoveryStarted(Recoverable recoverable);
 }
