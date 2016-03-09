@@ -9,7 +9,7 @@ WEB_URL=http://www.rabbitmq.com/
 NEXUS_STAGE_URL=http://oss.sonatype.org/service/local/staging/deploy/maven2
 MAVEN_NEXUS_VERSION=1.7
 
-AMQP_CODEGEN_DIR=$(shell fgrep sibling.codegen.dir build.properties | sed -e 's:sibling\.codegen\.dir=::')
+AMQP_CODEGEN_DIR=$(shell fgrep sibling.codegen.dir src/test/resources/build.properties | sed -e 's:sibling\.codegen\.dir=::')
 
 MAVEN_RSYNC_DESTINATION=maven@195.224.125.254:/home/maven/rabbitmq-java-client/
 
