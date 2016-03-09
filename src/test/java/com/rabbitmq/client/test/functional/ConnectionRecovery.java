@@ -550,9 +550,13 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     public void testChannelRecoveryCallback() throws IOException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch startLatch = new CountDownLatch(2);
         final RecoveryListener listener = new RecoveryListener() {
             public void handleRecovery(Recoverable recoverable) {
                 latch.countDown();
+            }
+            public void handleRecoveryStarted(Recoverable recoverable) {
+                startLatch.countDown();
             }
         };
         AutorecoveringChannel ch1 = (AutorecoveringChannel) connection.createChannel();
@@ -566,6 +570,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         expectChannelRecovery(ch1);
         expectChannelRecovery(ch2);
         wait(latch);
+        wait(startLatch);
     }
 
     public void testBasicAckAfterChannelRecovery() throws IOException, InterruptedException, TimeoutException {
@@ -669,6 +674,9 @@ public class ConnectionRecovery extends BrokerTestCase {
         ((AutorecoveringConnection)conn).addRecoveryListener(new RecoveryListener() {
             public void handleRecovery(Recoverable recoverable) {
                 latch.countDown();
+            }
+            public void handleRecoveryStarted(Recoverable recoverable) {
+                // No-op
             }
         });
         return latch;
