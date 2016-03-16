@@ -38,6 +38,8 @@ public class BlockedConnection extends BrokerTestCase {
             e.printStackTrace();
         }
     }
+    // this test first opens a connection, then triggers
+    // and alarm and blocks
     public void testBlock() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -48,6 +50,8 @@ public class BlockedConnection extends BrokerTestCase {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
+    // this test first triggers an alarm, then opens a
+    // connection
     public void testInitialBlock() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
 
