@@ -616,7 +616,7 @@ public interface Channel extends ShutdownNotifier {
     Queue.BindOk queueBind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException;
 
     /**
-     * Same as {@link Channel#queueDeclare(String, boolean, boolean, boolean, java.util.Map)} but sets nowait
+     * Same as {@link Channel#queueBind(String, String, String, java.util.Map)} but sets nowait
      * parameter to true and returns void (as there will be no response
      * from the server).
      * @param queue the name of the queue
