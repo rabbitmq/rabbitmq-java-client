@@ -970,6 +970,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                 .exchange(exchange)
                                 .routingKey(routingKey)
                                 .arguments(arguments)
+                                .nowait(true)
                                 .build()));
     }
 
