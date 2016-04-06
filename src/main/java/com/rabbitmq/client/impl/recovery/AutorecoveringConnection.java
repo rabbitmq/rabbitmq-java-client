@@ -7,15 +7,19 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.Recoverable;
+import com.rabbitmq.client.RecoverableConnection;
+import com.rabbitmq.client.RecoverableShutdownSignalException;
 import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.TopologyRecoveryException;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.ExceptionHandler;
+import com.rabbitmq.client.impl.ForwardingShutdownNotifier;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -44,19 +48,18 @@ import java.util.concurrent.TimeoutException;
  *  <li>Consumers</li>
  * </ol>
  *
- * @see com.rabbitmq.client.Connection
- * @see com.rabbitmq.client.Recoverable
+ * @see com.rabbitmq.client.RecoverableConnection
  * @see com.rabbitmq.client.ConnectionFactory#setAutomaticRecoveryEnabled(boolean)
  * @see com.rabbitmq.client.ConnectionFactory#setTopologyRecoveryEnabled(boolean)
  * @since 3.3.0
  */
-public class AutorecoveringConnection implements Connection, Recoverable, NetworkConnection {
+public class AutorecoveringConnection implements RecoverableConnection, NetworkConnection, Closeable {
     private final RecoveryAwareAMQConnectionFactory cf;
     private final Map<Integer, AutorecoveringChannel> channels;
     private final ConnectionParams params;
     private RecoveryAwareAMQConnection delegate;
 
-    private final List<ShutdownListener> shutdownHooks  = new ArrayList<ShutdownListener>();
+    private final ForwardingShutdownNotifier shutdownHooks  = new ForwardingShutdownNotifier();
     private final List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
     private final List<BlockedListener> blockedListeners = new ArrayList<BlockedListener>();
 
@@ -299,16 +302,16 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see Connection#addShutdownListener(com.rabbitmq.client.ShutdownListener)
      */
     public void addShutdownListener(ShutdownListener listener) {
-        this.shutdownHooks.add(listener);
-        delegate.addShutdownListener(listener);
+        this.shutdownHooks.addShutdownListener(listener);
+        //delegate.addShutdownListener(listener);
     }
 
     /**
      * @see com.rabbitmq.client.ShutdownNotifier#removeShutdownListener(com.rabbitmq.client.ShutdownListener)
      */
     public void removeShutdownListener(ShutdownListener listener) {
-        this.shutdownHooks.remove(listener);
-        delegate.removeShutdownListener(listener);
+        this.shutdownHooks.removeShutdownListener(listener);
+        //delegate.removeShutdownListener(listener);
     }
 
     /**
@@ -378,8 +381,12 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         final AutorecoveringConnection c = this;
         ShutdownListener automaticRecoveryListener = new ShutdownListener() {
             public void shutdownCompleted(ShutdownSignalException cause) {
+            	boolean attemptRecovery = shouldTriggerConnectionRecovery(cause);
+            	//Send a notice to user added hooks.
+            	c.shutdownHooks.notifyListeners(new RecoverableShutdownSignalException(cause, attemptRecovery));
+            	
                 try {
-                    if (shouldTriggerConnectionRecovery(cause)) {
+                    if (attemptRecovery) {
                         c.beginAutomaticRecovery();
                     }
                 } catch (Exception e) {
@@ -387,12 +394,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                 }
             }
         };
-        synchronized (this) {
-            if(!this.shutdownHooks.contains(automaticRecoveryListener)) {
-                this.shutdownHooks.add(automaticRecoveryListener);
-            }
-            this.delegate.addShutdownListener(automaticRecoveryListener);
-        }
+        this.delegate.addShutdownListener(automaticRecoveryListener);
     }
 
     protected boolean shouldTriggerConnectionRecovery(ShutdownSignalException cause) {
@@ -456,9 +458,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     private void recoverShutdownListeners() {
-        for (ShutdownListener sh : this.shutdownHooks) {
-            this.delegate.addShutdownListener(sh);
-        }
+    	addAutomaticRecoveryListener();
     }
 
     private void recoverBlockedListeners() {
