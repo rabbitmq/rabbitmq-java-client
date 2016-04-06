@@ -45,6 +45,8 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
 
     /** Either Channel or Connection instance, depending on _hardError */
     private final Object _ref;
+    
+    private final String _messagePrefix;
 
     /**
      * Construct a ShutdownSignalException from the arguments.
@@ -78,6 +80,7 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
         this._reason = reason;
         // Depending on hardError what we got is either Connection or Channel reference
         this._ref = ref;
+        this._messagePrefix = messagePrefix;
     }
 
     private static String composeMessage(boolean hardError, boolean initiatedByApplication,
@@ -112,6 +115,9 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
     /** @return Reference to Connection or Channel object that fired the signal **/
     public Object getReference() { return _ref; }
 
+    /** @return The original message prefix used to create this exception **/
+    protected String getMessagePrefix() { return _messagePrefix; }
+    
     public ShutdownSignalException sensibleClone() {
         try {
             return (ShutdownSignalException)super.clone();
