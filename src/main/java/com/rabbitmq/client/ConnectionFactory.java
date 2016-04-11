@@ -644,7 +644,11 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection(Address[] addrs) throws IOException, TimeoutException {
-        return newConnection(this.sharedExecutor, Arrays.asList(addrs));
+        return newConnection(this.sharedExecutor, Arrays.asList(addrs), null);
+    }
+
+    public Connection newConnection(Address[] addrs, String connectionName) throws IOException, TimeoutException {
+        return newConnection(this.sharedExecutor, Arrays.asList(addrs), connectionName);
     }
 
     /**
@@ -660,7 +664,11 @@ public class ConnectionFactory implements Cloneable {
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection(List<Address> addrs) throws IOException, TimeoutException {
-        return newConnection(this.sharedExecutor, addrs);
+        return newConnection(this.sharedExecutor, addrs, null);
+    }
+
+    public Connection newConnection(List<Address> addrs, String connectionName) throws IOException, TimeoutException {
+        return newConnection(this.sharedExecutor, addrs, connectionName);
     }
 
     /**
@@ -678,7 +686,11 @@ public class ConnectionFactory implements Cloneable {
      * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
     public Connection newConnection(ExecutorService executor, Address[] addrs) throws IOException, TimeoutException {
-        return newConnection(executor, Arrays.asList(addrs));
+        return newConnection(executor, Arrays.asList(addrs), null);
+    }
+
+    public Connection newConnection(ExecutorService executor, Address[] addrs, String connectionName) throws IOException, TimeoutException {
+        return newConnection(executor, Arrays.asList(addrs), connectionName);
     }
 
     /**
@@ -695,11 +707,16 @@ public class ConnectionFactory implements Cloneable {
      * @throws java.io.IOException if it encounters a problem
      * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
-    public Connection newConnection(ExecutorService executor, List<Address> addrs)
+    public Connection newConnection(ExecutorService executor, List<Address> addrs, String connectionName)
             throws IOException, TimeoutException {
         // make sure we respect the provided thread factory
         FrameHandlerFactory fhFactory = createFrameHandlerFactory();
         ConnectionParams params = params(executor);
+        if (connectionName != null) {
+            Map<String, Object> properties = params.getClientProperties().clone();
+            properties.put("connection_name", connectionName);
+            params.setClientProperties(properties);
+        }
 
         if (isAutomaticRecoveryEnabled()) {
             // see com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnectionFactory#newConnection
