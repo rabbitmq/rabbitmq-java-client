@@ -470,6 +470,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return new HashMap<String, Object>(_clientProperties);
     }
 
+    public String getConnectionName() {
+        Object connectionName = _clientProperties.get("connection_name");
+        if (connectionName == null){
+            return null;
+        } else {
+            return connectionName.toString();
+        }
+    }
+
     /**
      * Protected API - retrieve the current ExceptionHandler
      */

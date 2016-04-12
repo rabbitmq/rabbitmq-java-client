@@ -21,6 +21,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.*;
 import java.util.List;
 import java.util.Arrays;
@@ -647,6 +648,20 @@ public class ConnectionFactory implements Cloneable {
         return newConnection(this.sharedExecutor, Arrays.asList(addrs), null);
     }
 
+
+    /**
+     * Create a new broker connection, picking the first available address from
+     * the list.
+     *
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the connection returned by this method will be {@link Recoverable}. Future
+     * reconnection attempts will pick a random accessible address from the provided list.
+     *
+     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
+     * @param connectionName arbitrary sring for connection name client property
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
     public Connection newConnection(Address[] addrs, String connectionName) throws IOException, TimeoutException {
         return newConnection(this.sharedExecutor, Arrays.asList(addrs), connectionName);
     }
@@ -667,6 +682,19 @@ public class ConnectionFactory implements Cloneable {
         return newConnection(this.sharedExecutor, addrs, null);
     }
 
+    /**
+     * Create a new broker connection, picking the first available address from
+     * the list.
+     *
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the connection returned by this method will be {@link Recoverable}. Future
+     * reconnection attempts will pick a random accessible address from the provided list.
+     *
+     * @param addrs a List of known broker addresses (hostname/port pairs) to try in order
+     * @param connectionName arbitrary sring for connection name client property
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
     public Connection newConnection(List<Address> addrs, String connectionName) throws IOException, TimeoutException {
         return newConnection(this.sharedExecutor, addrs, connectionName);
     }
@@ -689,6 +717,22 @@ public class ConnectionFactory implements Cloneable {
         return newConnection(executor, Arrays.asList(addrs), null);
     }
 
+
+    /**
+     * Create a new broker connection, picking the first available address from
+     * the list.
+     *
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the connection returned by this method will be {@link Recoverable}. Future
+     * reconnection attempts will pick a random accessible address from the provided list.
+     *
+     * @param executor thread execution service for consumers on the connection
+     * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
+     * @param connectionName arbitrary sring for connection name client property
+     * @return an interface to the connection
+     * @throws java.io.IOException if it encounters a problem
+     * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
+     */
     public Connection newConnection(ExecutorService executor, Address[] addrs, String connectionName) throws IOException, TimeoutException {
         return newConnection(executor, Arrays.asList(addrs), connectionName);
     }
@@ -707,13 +751,33 @@ public class ConnectionFactory implements Cloneable {
      * @throws java.io.IOException if it encounters a problem
      * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
+    public Connection newConnection(ExecutorService executor, List<Address> addrs) throws IOException, TimeoutException {
+        return newConnection(executor, addrs, null);
+    }
+
+    /**
+     * Create a new broker connection, picking the first available address from
+     * the list.
+     *
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the connection returned by this method will be {@link Recoverable}. Future
+     * reconnection attempts will pick a random accessible address from the provided list.
+     *
+     * @param executor thread execution service for consumers on the connection
+     * @param addrs a List of known broker addrs (hostname/port pairs) to try in order
+     * @param connectionName arbitrary sring for connection name client property
+     * @return an interface to the connection
+     * @throws java.io.IOException if it encounters a problem
+     * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
+     */
     public Connection newConnection(ExecutorService executor, List<Address> addrs, String connectionName)
             throws IOException, TimeoutException {
         // make sure we respect the provided thread factory
         FrameHandlerFactory fhFactory = createFrameHandlerFactory();
         ConnectionParams params = params(executor);
+        // set connection name client property
         if (connectionName != null) {
-            Map<String, Object> properties = params.getClientProperties().clone();
+            Map<String, Object> properties = new HashMap<String, Object>(params.getClientProperties());
             properties.put("connection_name", connectionName);
             params.setClientProperties(properties);
         }
