@@ -95,6 +95,13 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
     Map<String, Object> getClientProperties();
 
     /**
+     * Get connection name client property value
+     *
+     * @return string connection name from client properties, or null if there is not such property.
+     */
+    String getConnectionName();
+
+    /**
      * Retrieve the server properties.
      * @return a map of the server properties. This typically includes the product name and version of the server.
      */

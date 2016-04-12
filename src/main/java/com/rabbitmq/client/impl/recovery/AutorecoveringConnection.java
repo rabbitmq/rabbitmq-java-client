@@ -157,6 +157,13 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     /**
+     * @see com.rabbitmq.client.Connection#getConnectionName()
+     */
+    public String getConnectionName() {
+        return delegate.getConnectionName();
+    }
+
+    /**
      * @see com.rabbitmq.client.Connection#getFrameMax()
      */
     public int getFrameMax() {
