@@ -21,8 +21,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+@SuppressWarnings("ThrowFromFinallyBlock")
 public class ConnectionRecovery extends BrokerTestCase {
-    public static final long RECOVERY_INTERVAL = 2000;
+    private static final long RECOVERY_INTERVAL = 2000;
 
     public void testConnectionRecovery() throws IOException, InterruptedException {
         assertTrue(connection.isOpen());
@@ -226,7 +227,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         testClientNamedQueueRecoveryWith("java-client.test.recovery.q1-nowait", true);
     }
 
-    protected void testClientNamedQueueRecoveryWith(String q, boolean noWait) throws IOException, InterruptedException, TimeoutException {
+    private void testClientNamedQueueRecoveryWith(String q, boolean noWait) throws IOException, InterruptedException, TimeoutException {
         Channel ch = connection.createChannel();
         if(noWait) {
             declareClientNamedQueueNoWait(ch, q);
@@ -793,11 +794,11 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.waitForConfirms(30 * 60 * 1000);
     }
 
-    protected void assertRecordedQueues(Connection conn, int size) {
+    private void assertRecordedQueues(Connection conn, int size) {
         assertEquals(size, ((AutorecoveringConnection)conn).getRecordedQueues().size());
     }
 
-    protected void assertRecordedExchanges(Connection conn, int size) {
+    private void assertRecordedExchanges(Connection conn, int size) {
         assertEquals(size, ((AutorecoveringConnection)conn).getRecordedExchanges().size());
     }
 }
