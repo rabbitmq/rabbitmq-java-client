@@ -1,12 +1,10 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
-import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.recovery.*;
 import com.rabbitmq.client.Recoverable;
 import com.rabbitmq.client.RecoveryListener;
-import com.rabbitmq.client.impl.recovery.ConsumerRecoveryListener;
-import com.rabbitmq.client.impl.recovery.QueueRecoveryListener;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
@@ -103,6 +101,44 @@ public class ConnectionRecovery extends BrokerTestCase {
         } finally {
             c.abort();
         }
+    }
+
+    // see https://github.com/rabbitmq/rabbitmq-java-client/issues/135
+    public void testThatShutdownHooksOnConnectionFireBeforeRecoveryStarts() throws IOException, InterruptedException {
+        final List<String> events = new ArrayList<String>();
+        final CountDownLatch latch = new CountDownLatch(1);
+        connection.addShutdownListener(new ShutdownListener() {
+            public void shutdownCompleted(ShutdownSignalException cause) {
+                events.add("shutdown hook 1");
+            }
+        });
+        connection.addShutdownListener(new ShutdownListener() {
+            public void shutdownCompleted(ShutdownSignalException cause) {
+                events.add("shutdown hook 2");
+            }
+        });
+        // note: we do not want to expose RecoveryCanBeginListener so this
+        // test does not use it
+        ((AutorecoveringConnection)connection).getDelegate().addRecoveryCanBeginListener(new RecoveryCanBeginListener() {
+            @Override
+            public void recoveryCanBegin(ShutdownSignalException cause) {
+                events.add("recovery start hook 1");
+            }
+        });
+        ((AutorecoveringConnection)connection).addRecoveryListener(new RecoveryListener() {
+            @Override
+            public void handleRecovery(Recoverable recoverable) {
+                latch.countDown();
+            }
+        });
+        assertTrue(connection.isOpen());
+        closeAndWaitForRecovery();
+        assertTrue(connection.isOpen());
+        assertEquals("shutdown hook 1", events.get(0));
+        assertEquals("shutdown hook 2", events.get(1));
+        assertEquals("recovery start hook 1", events.get(2));
+        connection.close();
+        wait(latch);
     }
 
     public void testShutdownHooksRecoveryOnConnection() throws IOException, InterruptedException {
