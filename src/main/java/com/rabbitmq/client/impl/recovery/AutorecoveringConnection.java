@@ -11,6 +11,7 @@ import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.TopologyRecoveryException;
+import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
@@ -252,6 +253,13 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 			this.manuallyClosed = true;
 		}
         delegate.abort(timeout);
+    }
+
+    /**
+    * Not supposed to be used outside of automated tests.
+    */
+    public AMQConnection getDelegate() {
+        return delegate;
     }
 
     /**
