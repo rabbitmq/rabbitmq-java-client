@@ -25,6 +25,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ExecutorService;
+import com.rabbitmq.client.Address;
+import java.util.Arrays;
 
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.TopologyRecoveryException;
@@ -172,6 +175,36 @@ public class AMQConnectionTest extends TestCase {
         List<Throwable> exceptionList = exceptionHandler.getHandledExceptions();
         assertEquals("Only one exception expected", 1, exceptionList.size());
         assertEquals("Wrong type of exception returned.", SocketTimeoutException.class, exceptionList.get(0).getClass());
+    }
+
+    public void testConnectionName() throws IOException, TimeoutException {
+        String connectionName = "custom name";
+        Connection connection = factory.newConnection(connectionName);
+        assertEquals(connectionName, connection.getConnectionName());
+        connection.close();
+
+        List<Address> addresses_list = Arrays.asList(new Address("127.0.0.1"), new Address("127.0.0.1", 5672));
+        connection = factory.newConnection(addresses_list, connectionName);
+        assertEquals(connectionName, connection.getConnectionName());
+        connection.close();
+
+        Address[] addresses_arr = {new Address("127.0.0.1"), new Address("127.0.0.1", 5672)};
+        connection = factory.newConnection(addresses_arr, connectionName);
+        assertEquals(connectionName, connection.getConnectionName());
+        connection.close();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        connection = factory.newConnection(executor, connectionName);
+        assertEquals(connectionName, connection.getConnectionName());
+        connection.close();
+
+        connection = factory.newConnection(executor, addresses_list, connectionName);
+        assertEquals(connectionName, connection.getConnectionName());
+        connection.close();
+
+        connection = factory.newConnection(executor, addresses_arr, connectionName);
+        assertEquals(connectionName, connection.getConnectionName());
+        connection.close();
     }
 
     /** Mock frame handler to facilitate testing. */

@@ -848,12 +848,43 @@ public class ConnectionFactory implements Cloneable {
      * is enabled, the connection returned by this method will be {@link Recoverable}. Reconnection
      * attempts will always use the address configured on {@link ConnectionFactory}.
      *
+     * @param connectionName arbitrary sring for connection name client property
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newConnection(String connectionName) throws IOException, TimeoutException {
+        return newConnection(this.sharedExecutor, Collections.singletonList(new Address(getHost(), getPort())), connectionName);
+    }
+
+    /**
+     * Create a new broker connection.
+     *
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the connection returned by this method will be {@link Recoverable}. Reconnection
+     * attempts will always use the address configured on {@link ConnectionFactory}.
+     *
      * @param executor thread execution service for consumers on the connection
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
     public Connection newConnection(ExecutorService executor) throws IOException, TimeoutException {
         return newConnection(executor, Collections.singletonList(new Address(getHost(), getPort())));
+    }
+
+    /**
+     * Create a new broker connection.
+     *
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the connection returned by this method will be {@link Recoverable}. Reconnection
+     * attempts will always use the address configured on {@link ConnectionFactory}.
+     *
+     * @param executor thread execution service for consumers on the connection
+     * @param connectionName arbitrary sring for connection name client property
+     * @return an interface to the connection
+     * @throws IOException if it encounters a problem
+     */
+    public Connection newConnection(ExecutorService executor, String connectionName) throws IOException, TimeoutException {
+        return newConnection(executor, Collections.singletonList(new Address(getHost(), getPort())), connectionName);
     }
 
     @Override public ConnectionFactory clone(){
