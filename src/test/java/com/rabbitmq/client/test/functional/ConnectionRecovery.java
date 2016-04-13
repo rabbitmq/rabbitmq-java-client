@@ -1,12 +1,10 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
-import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.recovery.*;
 import com.rabbitmq.client.Recoverable;
 import com.rabbitmq.client.RecoveryListener;
-import com.rabbitmq.client.impl.recovery.ConsumerRecoveryListener;
-import com.rabbitmq.client.impl.recovery.QueueRecoveryListener;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
@@ -21,8 +19,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+@SuppressWarnings("ThrowFromFinallyBlock")
 public class ConnectionRecovery extends BrokerTestCase {
-    public static final long RECOVERY_INTERVAL = 2000;
+    private static final long RECOVERY_INTERVAL = 2000;
 
     public void testConnectionRecovery() throws IOException, InterruptedException {
         assertTrue(connection.isOpen());
@@ -87,6 +86,44 @@ public class ConnectionRecovery extends BrokerTestCase {
         } finally {
             c.abort();
         }
+    }
+
+    // see https://github.com/rabbitmq/rabbitmq-java-client/issues/135
+    public void testThatShutdownHooksOnConnectionFireBeforeRecoveryStarts() throws IOException, InterruptedException {
+        final List<String> events = new ArrayList<String>();
+        final CountDownLatch latch = new CountDownLatch(1);
+        connection.addShutdownListener(new ShutdownListener() {
+            public void shutdownCompleted(ShutdownSignalException cause) {
+                events.add("shutdown hook 1");
+            }
+        });
+        connection.addShutdownListener(new ShutdownListener() {
+            public void shutdownCompleted(ShutdownSignalException cause) {
+                events.add("shutdown hook 2");
+            }
+        });
+        // note: we do not want to expose RecoveryCanBeginListener so this
+        // test does not use it
+        ((AutorecoveringConnection)connection).getDelegate().addRecoveryCanBeginListener(new RecoveryCanBeginListener() {
+            @Override
+            public void recoveryCanBegin(ShutdownSignalException cause) {
+                events.add("recovery start hook 1");
+            }
+        });
+        ((AutorecoveringConnection)connection).addRecoveryListener(new RecoveryListener() {
+            @Override
+            public void handleRecovery(Recoverable recoverable) {
+                latch.countDown();
+            }
+        });
+        assertTrue(connection.isOpen());
+        closeAndWaitForRecovery();
+        assertTrue(connection.isOpen());
+        assertEquals("shutdown hook 1", events.get(0));
+        assertEquals("shutdown hook 2", events.get(1));
+        assertEquals("recovery start hook 1", events.get(2));
+        connection.close();
+        wait(latch);
     }
 
     public void testShutdownHooksRecoveryOnConnection() throws IOException, InterruptedException {
@@ -211,7 +248,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         testClientNamedQueueRecoveryWith("java-client.test.recovery.q1-nowait", true);
     }
 
-    protected void testClientNamedQueueRecoveryWith(String q, boolean noWait) throws IOException, InterruptedException, TimeoutException {
+    private void testClientNamedQueueRecoveryWith(String q, boolean noWait) throws IOException, InterruptedException, TimeoutException {
         Channel ch = connection.createChannel();
         if(noWait) {
             declareClientNamedQueueNoWait(ch, q);
@@ -750,20 +787,20 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     private static void wait(CountDownLatch latch) throws InterruptedException {
-        // Very very generous amount of time to wait, just make sure we never
-        // hang forever
-        assertTrue(latch.await(1800, TimeUnit.SECONDS));
+        // we want to wait for recovery to complete for a reasonable amount of time
+        // but still make recovery failures easy to notice in development environments
+        assertTrue(latch.await(90, TimeUnit.SECONDS));
     }
 
     private void waitForConfirms(Channel ch) throws InterruptedException, TimeoutException {
         ch.waitForConfirms(30 * 60 * 1000);
     }
 
-    protected void assertRecordedQueues(Connection conn, int size) {
+    private void assertRecordedQueues(Connection conn, int size) {
         assertEquals(size, ((AutorecoveringConnection)conn).getRecordedQueues().size());
     }
 
-    protected void assertRecordedExchanges(Connection conn, int size) {
+    private void assertRecordedExchanges(Connection conn, int size) {
         assertEquals(size, ((AutorecoveringConnection)conn).getRecordedExchanges().size());
     }
 }
