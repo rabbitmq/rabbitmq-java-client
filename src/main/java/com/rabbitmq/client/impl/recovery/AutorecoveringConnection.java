@@ -376,8 +376,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     private void addAutomaticRecoveryListener() {
         final AutorecoveringConnection c = this;
-        ShutdownListener automaticRecoveryListener = new ShutdownListener() {
-            public void shutdownCompleted(ShutdownSignalException cause) {
+        // this listener will run after shutdown listeners,
+        // see https://github.com/rabbitmq/rabbitmq-java-client/issues/135
+        RecoveryCanBeginListener starter = new RecoveryCanBeginListener() {
+            public void recoveryCanBegin(ShutdownSignalException cause) {
                 try {
                     if (shouldTriggerConnectionRecovery(cause)) {
                         c.beginAutomaticRecovery();
@@ -388,10 +390,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             }
         };
         synchronized (this) {
-            if(!this.shutdownHooks.contains(automaticRecoveryListener)) {
-                this.shutdownHooks.add(automaticRecoveryListener);
-            }
-            this.delegate.addShutdownListener(automaticRecoveryListener);
+            this.delegate.addRecoveryCanBeginListener(starter);
         }
     }
 
@@ -441,18 +440,20 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     synchronized private void beginAutomaticRecovery() throws InterruptedException, IOException, TopologyRecoveryException {
         Thread.sleep(this.params.getNetworkRecoveryInterval());
-        if (!this.recoverConnection())
-			return; 
-		
-		this.recoverShutdownListeners();
-		this.recoverBlockedListeners();
-		this.recoverChannels();
-		if(this.params.isTopologyRecoveryEnabled()) {
-			this.recoverEntities();
-			this.recoverConsumers();
-		}
+        if (!this.recoverConnection()) {
+            return;
+        }
 
-		this.notifyRecoveryListeners();
+        this.addAutomaticRecoveryListener();
+		    this.recoverShutdownListeners();
+		    this.recoverBlockedListeners();
+		    this.recoverChannels();
+		    if(this.params.isTopologyRecoveryEnabled()) {
+			      this.recoverEntities();
+			      this.recoverConsumers();
+		    }
+
+		    this.notifyRecoveryListeners();
     }
 
     private void recoverShutdownListeners() {

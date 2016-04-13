@@ -21,10 +21,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 import com.rabbitmq.client.AMQP;
@@ -45,6 +42,7 @@ import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
+import com.rabbitmq.client.impl.recovery.RecoveryCanBeginListener;
 import com.rabbitmq.utility.BlockingCell;
 
 final class Copyright {
@@ -64,6 +62,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final ExecutorService shutdownExecutor;
     private Thread mainLoopThread;
     private ThreadFactory threadFactory = Executors.defaultThreadFactory();
+
+    private final List<RecoveryCanBeginListener> recoveryCanBeginListeners =
+            new ArrayList<RecoveryCanBeginListener>();
 
     /**
      * Retrieve a copy of the default table of client properties that
@@ -576,8 +577,29 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 _frameHandler.close();
                 _appContinuation.set(null);
                 notifyListeners();
+                // assuming that shutdown listeners do not do anything
+                // asynchronously, e.g. start new threads, this effectively
+                // guarantees that we only begin recovery when all shutdown
+                // listeners have executed
+                notifyRecoveryCanBeginListeners();
             }
         }
+    }
+
+    private void notifyRecoveryCanBeginListeners() {
+        ShutdownSignalException sse = this.getCloseReason();
+        for(RecoveryCanBeginListener fn : this.recoveryCanBeginListeners) {
+            fn.recoveryCanBegin(sse);
+        }
+    }
+
+    public void addRecoveryCanBeginListener(RecoveryCanBeginListener fn) {
+        this.recoveryCanBeginListeners.add(fn);
+    }
+
+    @SuppressWarnings(value = "unused")
+    public void removeRecoveryCanBeginListener(RecoveryCanBeginListener fn) {
+        this.recoveryCanBeginListeners.remove(fn);
     }
 
     /**
