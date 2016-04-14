@@ -130,6 +130,10 @@ public class ConnectionRecovery extends BrokerTestCase {
             public void handleRecovery(Recoverable recoverable) {
                 latch.countDown();
             }
+            @Override
+            public void handleRecoveryStarted(Recoverable recoverable) {
+                // todo
+            }
         });
         assertTrue(connection.isOpen());
         closeAndWaitForRecovery();
