@@ -464,7 +464,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 			      this.recoverConsumers();
 		    }
 
-		this.notifyRecoveryListeners();
+		this.notifyRecoveryListenersComplete();
     }
 
     private void recoverShutdownListeners() {
