@@ -591,7 +591,7 @@ public class ConnectionFactory implements Cloneable {
         setSocketFactory(context.getSocketFactory());
     }
 
-    public String computeDefaultTlsProcotol(String [] supportedProtocols) {
+    public static String computeDefaultTlsProcotol(String[] supportedProtocols) {
         if(supportedProtocols != null) {
             for (String supportedProtocol : supportedProtocols) {
                 if(PREFERED_TLS_PROTOCOL.equalsIgnoreCase(supportedProtocol)) {
