@@ -17,15 +17,14 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeoutException;
-
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Test queue auto-delete and exclusive semantics.
@@ -176,5 +175,27 @@ public class QueueLifecycle extends BrokerTestCase {
         } catch (IllegalArgumentException ignored) {
             // expected
         }
+    }
+
+    public void testSingleLineFeedStrippedFromQueueName() throws IOException {
+        channel.queueDeclare("que\nue_test", false, false, true, null);
+        verifyQueue(NAME_STRIPPED, false, false, true, null);
+    }
+
+    public void testMultipleLineFeedsStrippedFromQueueName() throws IOException {
+        channel.queueDeclare("que\nue_\ntest\n", false, false, true, null);
+        verifyQueue(NAME_STRIPPED, false, false, true, null);
+    }
+
+    public void testMultipleLineFeedAndCarriageReturnsStrippedFromQueueName() throws IOException {
+        channel.queueDeclare("q\ru\ne\r\nue_\ntest\n\r", false, false, true, null);
+        verifyQueue(NAME_STRIPPED, false, false, true, null);
+    }
+
+    static final String NAME_STRIPPED = "queue_test";
+
+    @Override
+    protected void releaseResources() throws IOException {
+        channel.queueDelete(NAME_STRIPPED);
     }
 }
