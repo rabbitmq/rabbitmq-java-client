@@ -81,8 +81,9 @@ public class ConnectionFactory implements Cloneable {
      *  zero means wait indefinitely */
     public static final int    DEFAULT_SHUTDOWN_TIMEOUT = 10000;
 
-    /** The default SSL protocol */
-    private static final String DEFAULT_SSL_PROTOCOL = "TLSv1";
+    private static final String PREFERED_TLS_PROTOCOL = "TLSv1.2";
+
+    private static final String FALLBACK_TLS_PROTOCOL = "TLSv1";
 
     private String username                       = DEFAULT_USER;
     private String password                       = DEFAULT_PASS;
@@ -552,7 +553,7 @@ public class ConnectionFactory implements Cloneable {
     public void useSslProtocol()
         throws NoSuchAlgorithmException, KeyManagementException
     {
-        useSslProtocol(DEFAULT_SSL_PROTOCOL);
+        useSslProtocol(computeDefaultTlsProcotol(SSLContext.getDefault().getSupportedSSLParameters().getProtocols()));
     }
 
     /**
@@ -587,6 +588,17 @@ public class ConnectionFactory implements Cloneable {
      */
     public void useSslProtocol(SSLContext context) {
         setSocketFactory(context.getSocketFactory());
+    }
+
+    public String computeDefaultTlsProcotol(String [] supportedProtocols) {
+        if(supportedProtocols != null) {
+            for (String supportedProtocol : supportedProtocols) {
+                if(PREFERED_TLS_PROTOCOL.equalsIgnoreCase(supportedProtocol)) {
+                    return supportedProtocol;
+                }
+            }
+        }
+        return FALLBACK_TLS_PROTOCOL;
     }
 
     /**
