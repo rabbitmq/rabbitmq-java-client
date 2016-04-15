@@ -10,19 +10,19 @@ public class ConnectionFactoryDefaultTlsVersion extends TestCase {
 
     public void testDefaultTlsVersionJdk16ShouldTakeFallback() {
         String [] supportedProtocols = {"SSLv2Hello", "SSLv3", "TLSv1"};
-        String tlsProtocol = connectionFactory.computeDefaultTlsProcotol(supportedProtocols);
+        String tlsProtocol = ConnectionFactory.computeDefaultTlsProcotol(supportedProtocols);
         Assert.assertEquals("TLSv1",tlsProtocol);
     }
 
     public void testDefaultTlsVersionJdk17ShouldTakePrefered() {
         String [] supportedProtocols = {"SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"};
-        String tlsProtocol = connectionFactory.computeDefaultTlsProcotol(supportedProtocols);
+        String tlsProtocol = ConnectionFactory.computeDefaultTlsProcotol(supportedProtocols);
         Assert.assertEquals("TLSv1.2",tlsProtocol);
     }
 
     public void testDefaultTlsVersionJdk18ShouldTakePrefered() {
         String [] supportedProtocols = {"SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"};
-        String tlsProtocol = connectionFactory.computeDefaultTlsProcotol(supportedProtocols);
+        String tlsProtocol = ConnectionFactory.computeDefaultTlsProcotol(supportedProtocols);
         Assert.assertEquals("TLSv1.2",tlsProtocol);
     }
 
