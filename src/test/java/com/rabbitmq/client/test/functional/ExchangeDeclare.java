@@ -36,6 +36,21 @@ public class ExchangeDeclare extends ExchangeEquivalenceBase {
         verifyEquivalent(NAME, TYPE, false, false, null);
     }
 
+    public void testSingleLineFeedStrippedFromExchangeName() throws IOException {
+        channel.exchangeDeclare("exchange_test\n", TYPE, false, false, null);
+        verifyEquivalent(NAME, TYPE, false, false, null);
+    }
+
+    public void testMultipleLineFeedsStrippedFromExchangeName() throws IOException {
+        channel.exchangeDeclare("exchange\n_test\n", TYPE, false, false, null);
+        verifyEquivalent(NAME, TYPE, false, false, null);
+    }
+
+    public void testMultipleLineFeedAndCarriageReturnsStrippedFromExchangeName() throws IOException {
+        channel.exchangeDeclare("e\nxc\rhange\n\r_test\n\r", TYPE, false, false, null);
+        verifyEquivalent(NAME, TYPE, false, false, null);
+    }
+
     public void testExchangeNonsenseArgsEquivalent() throws IOException {
         channel.exchangeDeclare(NAME, TYPE, false, false, null);
         Map<String, Object> args = new HashMap<String, Object>();
