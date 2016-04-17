@@ -471,6 +471,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return new HashMap<String, Object>(_clientProperties);
     }
 
+    public String getClientProvidedName() {
+        return (String) _clientProperties.get("connection_name");
+    }
+
     /**
      * Protected API - retrieve the current ExceptionHandler
      */
