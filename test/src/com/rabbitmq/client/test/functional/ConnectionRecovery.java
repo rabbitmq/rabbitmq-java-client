@@ -30,6 +30,21 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(connection.isOpen());
     }
 
+    public void testNamedConnectionRecovery()
+            throws IOException, InterruptedException, TimeoutException  {
+        String connectionName = "custom name";
+        AutorecoveringConnection c = newRecoveringConnection(connectionName);
+        try {
+            assertTrue(c.isOpen());
+            assertEquals(connectionName, c.getClientProvidedName());
+            closeAndWaitForRecovery(c);
+            assertTrue(c.isOpen());
+            assertEquals(connectionName, c.getClientProvidedName());
+        } finally {
+            c.abort();
+        }
+    }
+
     public void testConnectionRecoveryWithServerRestart() throws IOException, InterruptedException {
         assertTrue(connection.isOpen());
         restartPrimaryAndWaitForRecovery();
@@ -737,6 +752,17 @@ public class ConnectionRecovery extends BrokerTestCase {
     private AutorecoveringConnection newRecoveringConnection(List<Address> addresses)
             throws IOException, TimeoutException {
         return newRecoveringConnection(false, addresses);
+    }
+
+    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery, String connectionName)
+            throws IOException, TimeoutException {
+        ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
+        return (AutorecoveringConnection) cf.newConnection(connectionName);
+    }
+
+    private AutorecoveringConnection newRecoveringConnection(String connectionName)
+            throws IOException, TimeoutException {
+        return newRecoveringConnection(false, connectionName);
     }
 
     private ConnectionFactory buildConnectionFactoryWithRecoveryEnabled(boolean disableTopologyRecovery) {
