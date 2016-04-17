@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Public API: Interface to an AMQ connection. See the see the <a href="http://www.amqp.org/">spec</a> for details.
@@ -95,11 +96,17 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
     Map<String, Object> getClientProperties();
 
     /**
-     * Get connection name client property value
+     * Returns client-provided connection name, if any. Note that the value
+     * returned does not uniquely identify a connection and cannot be used
+     * as a connection identifier in HTTP API requests.
      *
-     * @return string connection name from client properties, or null if there is not such property.
+     *
+     *
+     * @return client-provided connection name, if any
+     * @see ConnectionFactory#newConnection(Address[], String)
+     * @see ConnectionFactory#newConnection(ExecutorService, Address[], String)
      */
-    String getConnectionName();
+    String getClientProvidedName();
 
     /**
      * Retrieve the server properties.

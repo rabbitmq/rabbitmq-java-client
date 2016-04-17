@@ -5,6 +5,7 @@ import com.rabbitmq.client.Address;
 import com.rabbitmq.client.BlockedListener;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MissedHeartbeatException;
 import com.rabbitmq.client.Recoverable;
 import com.rabbitmq.client.RecoveryListener;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -158,10 +160,12 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     /**
-     * @see com.rabbitmq.client.Connection#getConnectionName()
+     * @see com.rabbitmq.client.Connection#getClientProvidedName()
+     * @see ConnectionFactory#newConnection(Address[], String)
+     * @see ConnectionFactory#newConnection(ExecutorService, Address[], String)
      */
-    public String getConnectionName() {
-        return delegate.getConnectionName();
+    public String getClientProvidedName() {
+        return delegate.getClientProvidedName();
     }
 
     /**

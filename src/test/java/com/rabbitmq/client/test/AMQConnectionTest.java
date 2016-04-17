@@ -177,33 +177,33 @@ public class AMQConnectionTest extends TestCase {
         assertEquals("Wrong type of exception returned.", SocketTimeoutException.class, exceptionList.get(0).getClass());
     }
 
-    public void testConnectionName() throws IOException, TimeoutException {
-        String connectionName = "custom name";
-        Connection connection = factory.newConnection(connectionName);
-        assertEquals(connectionName, connection.getConnectionName());
+    public void testClientProvidedConnectionName() throws IOException, TimeoutException {
+        String providedName = "event consumers connection";
+        Connection connection = factory.newConnection(providedName);
+        assertEquals(providedName, connection.getClientProvidedName());
         connection.close();
 
-        List<Address> addresses_list = Arrays.asList(new Address("127.0.0.1"), new Address("127.0.0.1", 5672));
-        connection = factory.newConnection(addresses_list, connectionName);
-        assertEquals(connectionName, connection.getConnectionName());
+        List<Address> addrs1 = Arrays.asList(new Address("127.0.0.1"), new Address("127.0.0.1", 5672));
+        connection = factory.newConnection(addrs1, providedName);
+        assertEquals(providedName, connection.getClientProvidedName());
         connection.close();
 
-        Address[] addresses_arr = {new Address("127.0.0.1"), new Address("127.0.0.1", 5672)};
-        connection = factory.newConnection(addresses_arr, connectionName);
-        assertEquals(connectionName, connection.getConnectionName());
+        Address[] addrs2 = {new Address("127.0.0.1"), new Address("127.0.0.1", 5672)};
+        connection = factory.newConnection(addrs2, providedName);
+        assertEquals(providedName, connection.getClientProvidedName());
         connection.close();
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        connection = factory.newConnection(executor, connectionName);
-        assertEquals(connectionName, connection.getConnectionName());
+        ExecutorService xs = Executors.newSingleThreadExecutor();
+        connection = factory.newConnection(xs, providedName);
+        assertEquals(providedName, connection.getClientProvidedName());
         connection.close();
 
-        connection = factory.newConnection(executor, addresses_list, connectionName);
-        assertEquals(connectionName, connection.getConnectionName());
+        connection = factory.newConnection(xs, addrs1, providedName);
+        assertEquals(providedName, connection.getClientProvidedName());
         connection.close();
 
-        connection = factory.newConnection(executor, addresses_arr, connectionName);
-        assertEquals(connectionName, connection.getConnectionName());
+        connection = factory.newConnection(xs, addrs2, providedName);
+        assertEquals(providedName, connection.getClientProvidedName());
         connection.close();
     }
 
