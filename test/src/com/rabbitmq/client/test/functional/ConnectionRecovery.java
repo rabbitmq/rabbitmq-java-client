@@ -36,10 +36,10 @@ public class ConnectionRecovery extends BrokerTestCase {
         AutorecoveringConnection c = newRecoveringConnection(connectionName);
         try {
             assertTrue(c.isOpen());
-            assertEquals(connectionName, c.getConnectionName());
+            assertEquals(connectionName, c.getClientProvidedName());
             closeAndWaitForRecovery(c);
             assertTrue(c.isOpen());
-            assertEquals(connectionName, c.getConnectionName());
+            assertEquals(connectionName, c.getClientProvidedName());
         } finally {
             c.abort();
         }

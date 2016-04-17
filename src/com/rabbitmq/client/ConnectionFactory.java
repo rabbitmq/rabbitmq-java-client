@@ -650,7 +650,7 @@ public class ConnectionFactory implements Cloneable {
 
 
     /**
-     * Create a new broker connection, picking the first available address from
+     * Create a new broker connection with a client-provided name, picking the first available address from
      * the list.
      *
      * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
@@ -658,12 +658,16 @@ public class ConnectionFactory implements Cloneable {
      * reconnection attempts will pick a random accessible address from the provided list.
      *
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @param connectionName arbitrary sring for connection name client property
+     * @param clientProvidedName application-specific connection name, will be displayed
+     *                           in the management UI if RabbitMQ server supports it.
+     *                           This value doesn't have to be unique and cannot be used
+     *                           as a connection identifier e.g. in HTTP API requests.
+     *                           This value is supposed to be human-readable.
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(Address[] addrs, String connectionName) throws IOException, TimeoutException {
-        return newConnection(this.sharedExecutor, Arrays.asList(addrs), connectionName);
+    public Connection newConnection(Address[] addrs, String clientProvidedName) throws IOException, TimeoutException {
+        return newConnection(this.sharedExecutor, Arrays.asList(addrs), clientProvidedName);
     }
 
     /**
@@ -683,7 +687,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Create a new broker connection, picking the first available address from
+     * Create a new broker connection with a client-provided name, picking the first available address from
      * the list.
      *
      * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
@@ -691,12 +695,16 @@ public class ConnectionFactory implements Cloneable {
      * reconnection attempts will pick a random accessible address from the provided list.
      *
      * @param addrs a List of known broker addresses (hostname/port pairs) to try in order
-     * @param connectionName arbitrary sring for connection name client property
+     * @param clientProvidedName application-specific connection name, will be displayed
+     *                           in the management UI if RabbitMQ server supports it.
+     *                           This value doesn't have to be unique and cannot be used
+     *                           as a connection identifier e.g. in HTTP API requests.
+     *                           This value is supposed to be human-readable.
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
-    public Connection newConnection(List<Address> addrs, String connectionName) throws IOException, TimeoutException {
-        return newConnection(this.sharedExecutor, addrs, connectionName);
+    public Connection newConnection(List<Address> addrs, String clientProvidedName) throws IOException, TimeoutException {
+        return newConnection(this.sharedExecutor, addrs, clientProvidedName);
     }
 
     /**
@@ -719,7 +727,7 @@ public class ConnectionFactory implements Cloneable {
 
 
     /**
-     * Create a new broker connection, picking the first available address from
+     * Create a new broker connection with a client-provided name, picking the first available address from
      * the list.
      *
      * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
@@ -728,13 +736,17 @@ public class ConnectionFactory implements Cloneable {
      *
      * @param executor thread execution service for consumers on the connection
      * @param addrs an array of known broker addresses (hostname/port pairs) to try in order
-     * @param connectionName arbitrary sring for connection name client property
+     * @param clientProvidedName application-specific connection name, will be displayed
+     *                           in the management UI if RabbitMQ server supports it.
+     *                           This value doesn't have to be unique and cannot be used
+     *                           as a connection identifier e.g. in HTTP API requests.
+     *                           This value is supposed to be human-readable.
      * @return an interface to the connection
      * @throws java.io.IOException if it encounters a problem
      * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
-    public Connection newConnection(ExecutorService executor, Address[] addrs, String connectionName) throws IOException, TimeoutException {
-        return newConnection(executor, Arrays.asList(addrs), connectionName);
+    public Connection newConnection(ExecutorService executor, Address[] addrs, String clientProvidedName) throws IOException, TimeoutException {
+        return newConnection(executor, Arrays.asList(addrs), clientProvidedName);
     }
 
     /**
@@ -756,7 +768,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Create a new broker connection, picking the first available address from
+     * Create a new broker connection with a client-provided name, picking the first available address from
      * the list.
      *
      * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
@@ -765,20 +777,24 @@ public class ConnectionFactory implements Cloneable {
      *
      * @param executor thread execution service for consumers on the connection
      * @param addrs a List of known broker addrs (hostname/port pairs) to try in order
-     * @param connectionName arbitrary sring for connection name client property
+     * @param clientProvidedName application-specific connection name, will be displayed
+     *                           in the management UI if RabbitMQ server supports it.
+     *                           This value doesn't have to be unique and cannot be used
+     *                           as a connection identifier e.g. in HTTP API requests.
+     *                           This value is supposed to be human-readable.
      * @return an interface to the connection
      * @throws java.io.IOException if it encounters a problem
      * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
-    public Connection newConnection(ExecutorService executor, List<Address> addrs, String connectionName)
+    public Connection newConnection(ExecutorService executor, List<Address> addrs, String clientProvidedName)
             throws IOException, TimeoutException {
         // make sure we respect the provided thread factory
         FrameHandlerFactory fhFactory = createFrameHandlerFactory();
         ConnectionParams params = params(executor);
-        // set connection name client property
-        if (connectionName != null) {
+        // set client-provided via a client property
+        if (clientProvidedName != null) {
             Map<String, Object> properties = new HashMap<String, Object>(params.getClientProperties());
-            properties.put("connection_name", connectionName);
+            properties.put("connection_name", clientProvidedName);
             params.setClientProperties(properties);
         }
 
