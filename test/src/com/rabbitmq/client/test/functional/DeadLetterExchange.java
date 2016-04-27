@@ -400,6 +400,79 @@ public class DeadLetterExchange extends BrokerTestCase {
             });
     }
 
+    public void testRepublish() throws Exception {
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("x-message-ttl", 100);
+        declareQueue(TEST_QUEUE_NAME, DLX, null, args);
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+        channel.queueBind(DLQ, DLX, "test");
+        publishN(1);
+
+        sleep(100);
+
+        GetResponse getResponse = channel.basicGet(DLQ, true);
+        assertNotNull("Message not dead-lettered",
+            getResponse);
+        assertEquals("test message", new String(getResponse.getBody()));
+        BasicProperties props = getResponse.getProps();
+        Map<String, Object> headers = props.getHeaders();
+        assertNotNull(headers);
+        ArrayList<Object> death = (ArrayList<Object>) headers.get("x-death");
+        assertNotNull(death);
+        assertEquals(1, death.size());
+        assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired", "amq.direct",
+            Arrays.asList("test"));
+
+        // Make queue zero length
+        args = new HashMap<String, Object>();
+        args.put("x-max-length", 0);
+        channel.queueDelete(TEST_QUEUE_NAME);
+        declareQueue(TEST_QUEUE_NAME, DLX, null, args);
+        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+
+        sleep(100);
+        //Queueing second time with same props
+        channel.basicPublish("amq.direct", "test",
+            new AMQP.BasicProperties.Builder()
+               .headers(headers)
+               .build(), "test message".getBytes());
+
+        sleep(100);
+
+        getResponse = channel.basicGet(DLQ, true);
+        assertNotNull("Message not dead-lettered", getResponse);
+        assertEquals("test message", new String(getResponse.getBody()));
+        headers = getResponse.getProps().getHeaders();
+        assertNotNull(headers);
+        death = (ArrayList<Object>) headers.get("x-death");
+        assertNotNull(death);
+        assertEquals(2, death.size());
+        assertDeathReason(death, 0, TEST_QUEUE_NAME, "maxlen", "amq.direct",
+            Arrays.asList("test"));
+        assertDeathReason(death, 1, TEST_QUEUE_NAME, "expired", "amq.direct",
+            Arrays.asList("test"));
+
+        //Set invalid headers
+        headers.put("x-death", "[I, am, not, array]");
+        channel.basicPublish("amq.direct", "test",
+            new AMQP.BasicProperties.Builder()
+               .headers(headers)
+               .build(), "test message".getBytes());
+        sleep(100);
+
+        getResponse = channel.basicGet(DLQ, true);
+        assertNotNull("Message not dead-lettered", getResponse);
+        assertEquals("test message", new String(getResponse.getBody()));
+        headers = getResponse.getProps().getHeaders();
+        assertNotNull(headers);
+        death = (ArrayList<Object>) headers.get("x-death");
+        assertNotNull(death);
+        assertEquals(1, death.size());
+        assertDeathReason(death, 0, TEST_QUEUE_NAME, "maxlen", "amq.direct",
+            Arrays.asList("test"));
+
+    }
+
     public void rejectionTest(final boolean useNack) throws Exception {
         deadLetterTest(new Callable<Void>() {
                 public Void call() throws Exception {
