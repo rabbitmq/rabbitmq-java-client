@@ -400,6 +400,7 @@ public class DeadLetterExchange extends BrokerTestCase {
             });
     }
 
+    @SuppressWarnings("unchecked")
     public void testRepublish() throws Exception {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-message-ttl", 100);
