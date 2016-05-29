@@ -34,11 +34,10 @@
 
     <developers>
       <developer>
-        <id>rabbitmq.team</id>
-        <name>The RabbitMQ Team</name>
-        <roles>
-          <role>Developer</role>
-        </roles>
+        <email>info@rabbitmq.com</email>
+        <name>Team RabbitMQ</name>
+        <organization>Pivotal Software, Inc.</organization>
+        <organizationUrl>https://rabbitmq.com</organizationUrl>
       </developer>
     </developers>
 
