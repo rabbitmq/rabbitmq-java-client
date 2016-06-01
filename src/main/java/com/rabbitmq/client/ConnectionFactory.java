@@ -82,7 +82,7 @@ public class ConnectionFactory implements Cloneable {
      *  zero means wait indefinitely */
     public static final int    DEFAULT_SHUTDOWN_TIMEOUT = 10000;
 
-    private static final String PREFERED_TLS_PROTOCOL = "TLSv1.2";
+    private static final String PREFERRED_TLS_PROTOCOL = "TLSv1.2";
 
     private static final String FALLBACK_TLS_PROTOCOL = "TLSv1";
 
@@ -594,7 +594,7 @@ public class ConnectionFactory implements Cloneable {
     public static String computeDefaultTlsProcotol(String[] supportedProtocols) {
         if(supportedProtocols != null) {
             for (String supportedProtocol : supportedProtocols) {
-                if(PREFERED_TLS_PROTOCOL.equalsIgnoreCase(supportedProtocol)) {
+                if(PREFERRED_TLS_PROTOCOL.equalsIgnoreCase(supportedProtocol)) {
                     return supportedProtocol;
                 }
             }
