@@ -34,6 +34,8 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     @Override
     protected void createResources() throws IOException {
+        channel.exchangeDelete(DLX);
+        channel.queueDelete(DLQ);
         channel.exchangeDeclare(DLX, "direct");
         channel.queueDeclare(DLQ, false, true, false, null);
     }
