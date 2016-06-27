@@ -97,13 +97,12 @@ public class Confirm extends BrokerTestCase
      * internal_sync that notifies the clients. */
 
     public void testQueueDelete()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         publishN("","confirm-test-noconsumer", true, false);
 
         channel.queueDelete("confirm-test-noconsumer");
 
-        channel.waitForConfirmsOrDie();
+        channel.waitForConfirmsOrDie(60000);
     }
 
     public void testQueuePurge()
@@ -113,7 +112,7 @@ public class Confirm extends BrokerTestCase
 
         channel.queuePurge("confirm-test-noconsumer");
 
-        channel.waitForConfirmsOrDie();
+        channel.waitForConfirmsOrDie(60000);
     }
 
     public void testBasicReject()
@@ -121,7 +120,7 @@ public class Confirm extends BrokerTestCase
     {
         basicRejectCommon(false);
 
-        channel.waitForConfirmsOrDie();
+        channel.waitForConfirmsOrDie(60000);
     }
 
     public void testQueueTTL()
@@ -133,7 +132,7 @@ public class Confirm extends BrokerTestCase
             channel.queueDeclare("confirm-ttl", true, true, false, argMap);
 
             publishN("", "confirm-ttl", true, false);
-            channel.waitForConfirmsOrDie();
+            channel.waitForConfirmsOrDie(60000);
 
             channel.queueDelete("confirm-ttl");
         }
@@ -150,7 +149,7 @@ public class Confirm extends BrokerTestCase
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
-        channel.waitForConfirmsOrDie();
+        channel.waitForConfirmsOrDie(60000);
     }
 
     public void testBasicRecover()
@@ -172,7 +171,7 @@ public class Confirm extends BrokerTestCase
         channel.basicConsume("confirm-test-noconsumer", true,
                              new DefaultConsumer(channel));
 
-        channel.waitForConfirmsOrDie();
+        channel.waitForConfirmsOrDie(60000);
     }
 
     public void testSelect()
@@ -224,7 +223,7 @@ public class Confirm extends BrokerTestCase
             publish("", "confirm-test", true, false);
         }
 
-        channel.waitForConfirmsOrDie();
+        channel.waitForConfirmsOrDie(60000);
         if (!unconfirmedSet.isEmpty()) {
             fail("waitForConfirms returned with unconfirmed messages");
         }
@@ -237,7 +236,7 @@ public class Confirm extends BrokerTestCase
         // Don't enable Confirm mode
         publish("", "confirm-test", true, false);
         try {
-            channel.waitForConfirms();
+            channel.waitForConfirms(60000);
             fail("waitForConfirms without confirms selected succeeded");
         } catch (IllegalStateException _e) {}
     }
@@ -247,7 +246,7 @@ public class Confirm extends BrokerTestCase
         publishN("", "confirm-test", true, false);
         channel.close();
         try {
-            channel.waitForConfirmsOrDie();
+            channel.waitForConfirmsOrDie(60000);
             fail("waitAcks worked on a closed channel");
         } catch (ShutdownSignalException sse) {
             if (!(sse.getReason() instanceof AMQP.Channel.Close))
@@ -265,7 +264,7 @@ public class Confirm extends BrokerTestCase
     {
         publishN(exchange, queueName, persistent, mandatory);
 
-        channel.waitForConfirmsOrDie();
+        channel.waitForConfirmsOrDie(60000);
     }
 
     private void publishN(String exchangeName, String queueName,
