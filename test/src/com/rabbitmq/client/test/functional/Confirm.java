@@ -62,8 +62,7 @@ public class Confirm extends BrokerTestCase
     }
 
     public void testPersistentMandatoryCombinations()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         boolean b[] = { false, true };
         for (boolean persistent : b) {
             for (boolean mandatory : b) {
@@ -73,21 +72,18 @@ public class Confirm extends BrokerTestCase
     }
 
     public void testNonDurable()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         confirmTest("", "confirm-test-nondurable", true, false);
     }
 
     public void testMandatoryNoRoute()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         confirmTest("", "confirm-test-doesnotexist", false, true);
         confirmTest("", "confirm-test-doesnotexist",  true, true);
     }
 
     public void testMultipleQueues()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         confirmTest("amq.direct", "confirm-multiple-queues", true, false);
     }
 
@@ -106,8 +102,7 @@ public class Confirm extends BrokerTestCase
     }
 
     public void testQueuePurge()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         publishN("", "confirm-test-noconsumer", true, false);
 
         channel.queuePurge("confirm-test-noconsumer");
@@ -116,16 +111,14 @@ public class Confirm extends BrokerTestCase
     }
 
     public void testBasicReject()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         basicRejectCommon(false);
 
         channel.waitForConfirmsOrDie(60000);
     }
 
     public void testQueueTTL()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         for (int ttl : new int[]{ 1, 0 }) {
             Map<String, Object> argMap =
                 Collections.singletonMap(TTL_ARG, (Object)ttl);
@@ -139,8 +132,7 @@ public class Confirm extends BrokerTestCase
     }
 
     public void testBasicRejectRequeue()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         basicRejectCommon(true);
 
         /* wait confirms to go through the broker */
@@ -153,8 +145,7 @@ public class Confirm extends BrokerTestCase
     }
 
     public void testBasicRecover()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         publishN("", "confirm-test-noconsumer", true, false);
 
         for (long i = 0; i < NUM_MESSAGES; i++) {
@@ -197,8 +188,7 @@ public class Confirm extends BrokerTestCase
     }
 
     public void testWaitForConfirms()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         final SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
         channel.addConfirmListener(new ConfirmListener() {
@@ -238,7 +228,9 @@ public class Confirm extends BrokerTestCase
         try {
             channel.waitForConfirms(60000);
             fail("waitForConfirms without confirms selected succeeded");
-        } catch (IllegalStateException _e) {}
+        } catch (IllegalStateException _e) {} catch (TimeoutException e) {
+            e.printStackTrace();
+        }
     }
 
     public void testWaitForConfirmsException()
@@ -260,8 +252,7 @@ public class Confirm extends BrokerTestCase
     /* Publish NUM_MESSAGES messages and wait for confirmations. */
     public void confirmTest(String exchange, String queueName,
                             boolean persistent, boolean mandatory)
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException, TimeoutException {
         publishN(exchange, queueName, persistent, mandatory);
 
         channel.waitForConfirmsOrDie(60000);
