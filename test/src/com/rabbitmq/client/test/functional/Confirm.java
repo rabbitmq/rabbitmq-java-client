@@ -44,6 +44,8 @@ public class Confirm extends BrokerTestCase
         super.setUp();
         channel.confirmSelect();
         channel.queueDeclare("confirm-test", true, true, false, null);
+        channel.queueDeclare("confirm-durable-nonexclusive", true, false,
+                             false, null);
         channel.basicConsume("confirm-test", true,
                              new DefaultConsumer(channel));
         channel.queueDeclare("confirm-test-nondurable", false, true,
@@ -113,6 +115,20 @@ public class Confirm extends BrokerTestCase
 
         channel.queuePurge("confirm-test-noconsumer");
 
+        channel.waitForConfirmsOrDie();
+    }
+
+    /* Tests rabbitmq-server #854 */
+    public void testConfirmQueuePurge()
+        throws IOException, InterruptedException
+    {
+        channel.basicQos(1);
+        for (int i = 0; i < 20000; i++) {
+            publish("", "confirm-durable-nonexclusive", true, false);
+            if (i % 100 == 0) {
+                channel.queuePurge("confirm-durable-nonexclusive");
+            }
+        }
         channel.waitForConfirmsOrDie();
     }
 
