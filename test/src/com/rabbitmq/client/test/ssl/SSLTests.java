@@ -24,9 +24,6 @@ public class SSLTests extends TestCase {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("ssl");
         suite.addTestSuite(ConnectionFactoryDefaultTlsVersion.class);
-        // Skip the tests if not under umbrella and no TLS setup available
-        if (!requiredProperties()) return suite;
-        if (!(isUnderUmbrella() && isSSLAvailable())) return suite;
         suite.addTestSuite(UnverifiedConnection.class);
         suite.addTestSuite(VerifiedConnection.class);
         suite.addTestSuite(BadVerifiedConnection.class);
