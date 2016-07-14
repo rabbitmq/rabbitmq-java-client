@@ -30,6 +30,8 @@ public class MessageRecovery extends ConfirmBase
     public void testMessageRecovery()
         throws Exception
     {
+        channel.queueDelete(Q);
+        channel.queueDelete(Q2);
         channel.confirmSelect();
         channel.queueDeclare(Q, true, false, false, null);
         channel.basicPublish("", Q, false, false,
@@ -45,11 +47,13 @@ public class MessageRecovery extends ConfirmBase
         // a promoted slave and will have its redelivered flag
         // set. But that only happens if there actually *is* a
         // slave. We test that by passively declaring, and
-        // subsequently deletign, the secondary, non-durable queue,
+        // subsequently deleting, the secondary, non-durable queue,
         // which only succeeds if the queue survived the restart,
         // which in turn implies that it must have been a HA queue
         // with slave(s).
-        boolean expectDelivered = false;
+        // NB: this wont work when running against a single node broker
+        // and running the test individually outside of the HA suite
+        boolean expectDelivered = HATests.HA_TESTS_RUNNING;
         try {
             channel.queueDeclarePassive(Q2);
             channel.queueDelete(Q2);
@@ -60,6 +64,7 @@ public class MessageRecovery extends ConfirmBase
         }
         assertDelivered(Q, 1, expectDelivered);
         channel.queueDelete(Q);
+        channel.queueDelete(Q2);
     }
 
 }

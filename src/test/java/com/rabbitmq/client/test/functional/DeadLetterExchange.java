@@ -411,7 +411,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(DLQ, DLX, "test");
         publishN(1);
 
-        sleep(100);
+        sleep(200);
 
         GetResponse getResponse = channel.basicGet(DLQ, true);
         assertNotNull("Message not dead-lettered",
