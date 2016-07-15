@@ -27,7 +27,6 @@ public class ServerTests extends AbstractRMQTestSuite {
   public static TestSuite suite() {
         TestSuite suite = new TestSuite("server-tests");
         if (!requiredProperties()) return suite;
-        if (!isUnderUmbrella()) return suite;
         add(suite);
         return suite;
     }

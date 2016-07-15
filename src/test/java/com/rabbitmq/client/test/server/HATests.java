@@ -30,7 +30,6 @@ public class HATests extends AbstractRMQTestSuite {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("server-tests");
         if (!requiredProperties()) return suite;
-        if (!isUnderUmbrella()) return suite;
         suite.addTestSuite(SetUp.class);
         FunctionalTests.add(suite);
         ServerTests.add(suite);

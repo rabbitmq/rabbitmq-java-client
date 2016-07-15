@@ -28,7 +28,6 @@ public class FunctionalTests extends AbstractRMQTestSuite {
   public static TestSuite suite() {
     TestSuite suite = new TestSuite("functional");
     if (!requiredProperties()) return suite;
-    if (!isUnderUmbrella()) return suite;
     add(suite);
     return suite;
   }
@@ -67,25 +66,17 @@ public class FunctionalTests extends AbstractRMQTestSuite {
     suite.addTestSuite(ConsumerCancelNotification.class);
     suite.addTestSuite(UnexpectedFrames.class);
     suite.addTestSuite(PerQueueTTL.class);
-    //needs rabbitmqctl
-    if (isUnderUmbrella()) {
-      suite.addTestSuite(PerMessageTTL.class);
-      suite.addTestSuite(PerQueueVsPerMessageTTL.class);
-    }
+    suite.addTestSuite(PerMessageTTL.class);
+    suite.addTestSuite(PerQueueVsPerMessageTTL.class);
     suite.addTestSuite(DeadLetterExchange.class);
     suite.addTestSuite(SaslMechanisms.class);
-    //needs rabbitmqctl
-    if (isUnderUmbrella()) suite.addTestSuite(UserIDHeader.class);
     suite.addTestSuite(InternalExchange.class);
     suite.addTestSuite(CcRoutes.class);
     suite.addTestSuite(WorkPoolTests.class);
     suite.addTestSuite(HeadersExchangeValidation.class);
     suite.addTestSuite(ConsumerPriorities.class);
-    //needs rabbitmqctl
-    if (isUnderUmbrella()) {
-      suite.addTestSuite(Policies.class);
-      suite.addTestSuite(ConnectionRecovery.class);
-    }
+    suite.addTestSuite(Policies.class);
+    suite.addTestSuite(ConnectionRecovery.class);
     suite.addTestSuite(ExceptionHandling.class);
     suite.addTestSuite(PerConsumerPrefetch.class);
     suite.addTestSuite(DirectReplyTo.class);
