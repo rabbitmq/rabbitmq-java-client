@@ -24,10 +24,10 @@ import com.rabbitmq.client.test.AbstractRMQTestSuite;
 public class SSLTests extends AbstractRMQTestSuite {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("ssl");
+        suite.addTestSuite(ConnectionFactoryDefaultTlsVersion.class);
         // Skip the tests if not under umbrella and no TLS setup available
         if (!requiredProperties()) return suite;
-        if (!(isUnderUmbrella() && isSSLAvailable())) return suite;
-        suite.addTestSuite(ConnectionFactoryDefaultTlsVersion.class);
+        if (!isSSLAvailable()) return suite;
         suite.addTestSuite(UnverifiedConnection.class);
         suite.addTestSuite(VerifiedConnection.class);
         suite.addTestSuite(BadVerifiedConnection.class);
