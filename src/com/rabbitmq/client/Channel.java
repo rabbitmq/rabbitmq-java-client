@@ -259,7 +259,7 @@ public interface Channel extends ShutdownNotifier {
      * <a href="http://www.rabbitmq.com/alarms.html">resource-driven alarm</a> is in effect.
      *
      * @see com.rabbitmq.client.AMQP.Basic.Publish
-     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>.
+     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
      * @param props other properties for the message - routing headers etc
@@ -275,7 +275,7 @@ public interface Channel extends ShutdownNotifier {
      * <a href="http://www.rabbitmq.com/alarms.html">resource-driven alarm</a> is in effect.
      *
      * @see com.rabbitmq.client.AMQP.Basic.Publish
-     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>.
+     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
      * @param mandatory true if the 'mandatory' flag is to be set
@@ -296,7 +296,7 @@ public interface Channel extends ShutdownNotifier {
      * <a href="http://www.rabbitmq.com/alarms.html">resource-driven alarm</a> is in effect.
      *
      * @see com.rabbitmq.client.AMQP.Basic.Publish
-     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>.
+     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
      * @param mandatory true if the 'mandatory' flag is to be set
@@ -381,7 +381,6 @@ public interface Channel extends ShutdownNotifier {
      * @param internal true if the exchange is internal, i.e. can't be directly
      * published to by a client.
      * @param arguments other properties (construction arguments) for the exchange
-     * @return a declaration-confirm method to indicate the exchange was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
     void exchangeDeclareNoWait(String exchange,
