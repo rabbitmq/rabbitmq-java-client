@@ -97,7 +97,8 @@ public class BrokerTestCase extends TestCase {
 
     protected void bareRestart()
             throws IOException {
-        Host.invokeMakeTarget("restart-app");
+        Host.invokeMakeTarget(
+          "stop-rabbit-on-node start-rabbit-on-node");
     }
 
     public void openConnection()
