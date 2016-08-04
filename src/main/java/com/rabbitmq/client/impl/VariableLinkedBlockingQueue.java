@@ -235,7 +235,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
 
     /**
      * Set a new capacity for the queue. Increasing the capacity can
-     * cause any waiting {@link #put(E)} invocations to succeed if the new
+     * cause any waiting {@link #put(Object)} invocations to succeed if the new
      * capacity is larger than the queue.
      * @param capacity the new capacity for the queue
      */
