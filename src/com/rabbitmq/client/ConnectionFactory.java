@@ -377,6 +377,8 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Set the requested heartbeat timeout. Heartbeat frames will be sent at about 1/2 the timeout interval.
+     * If server heartbeat timeout is configured to a non-zero value, this method can only be used
+     * to lower the value; otherwise any value provided by the client will be used.
      * @param requestedHeartbeat the initially requested heartbeat timeout, in seconds; zero for none
      * @see <a href="http://rabbitmq.com/heartbeats.html">RabbitMQ Heartbeats Guide</a>
      */
