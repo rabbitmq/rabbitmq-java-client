@@ -34,10 +34,10 @@ public abstract class AbstractRMQTestSuite extends TestSuite {
 
   static {
     Properties TESTS_PROPS = new Properties(System.getProperties());
-    TESTS_PROPS.setProperty("make.bin",
-        System.getenv("MAKE") == null ? "make" : System.getenv("MAKE"));
+    String make = System.getenv("MAKE");
+    if (make != null)
+      TESTS_PROPS.setProperty("make.bin", make);
     try {
-      TESTS_PROPS.load(Host.class.getClassLoader().getResourceAsStream("build.properties"));
       TESTS_PROPS.load(Host.class.getClassLoader().getResourceAsStream("config.properties"));
     } catch (Exception e) {
       System.out.println(
@@ -68,11 +68,11 @@ public abstract class AbstractRMQTestSuite extends TestSuite {
       return false;
     }
 
-    /* Path to rabbitmq_test. */
-    String rabbitmq_test = Host.rabbitmqTestDir();
-    if (rabbitmq_test == null || !new File(rabbitmq_test).isDirectory()) {
+    /* Path to RabbitMQ. */
+    String rabbitmq = Host.rabbitmqDir();
+    if (rabbitmq == null || !new File(rabbitmq).isDirectory()) {
       System.err.println(
-          "rabbitmq_test required; please set \"sibling.rabbitmq_test.dir\" system" +
+          "RabbitMQ required; please set \"rabbitmq.dir\" system" +
           " property");
       return false;
     }
@@ -94,13 +94,12 @@ public abstract class AbstractRMQTestSuite extends TestSuite {
   }
 
   public static boolean isSSLAvailable() {
-    String SSL_CERTS_DIR = System.getenv("SSL_CERTS_DIR");
+    String sslClientCertsDir = System.getProperty("test-client-cert.path");
     String hostname = System.getProperty("broker.hostname");
     String port = System.getProperty("broker.sslport");
-    if (SSL_CERTS_DIR == null || hostname == null || port == null)
+    if (sslClientCertsDir == null || hostname == null || port == null)
       return false;
 
-    String sslClientCertsDir = SSL_CERTS_DIR + File.separator + "client";
     // If certificate is present and some server is listening on port 5671
     if (new File(sslClientCertsDir).exists() &&
         checkServerListening(hostname, Integer.parseInt(port))) {

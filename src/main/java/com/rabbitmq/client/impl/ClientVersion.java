@@ -15,10 +15,26 @@
 
 package com.rabbitmq.client.impl;
 
+import java.io.IOException;
+import java.util.Properties;
+
 /**
  * Publicly available Client Version information
  */
 public class ClientVersion {
     /** Full version string */
-    public static final String VERSION = "@VERSION@";
+    private static final Properties version;
+    public static final String VERSION;
+
+    static {
+        version = new Properties();
+        try {
+            version.load(ClientVersion.class.getClassLoader()
+              .getResourceAsStream("version.properties"));
+        } catch (IOException e) {
+        }
+
+        VERSION = version.getProperty("com.rabbitmq.client.version",
+          ClientVersion.class.getPackage().getImplementationVersion());
+    }
 }

@@ -42,7 +42,7 @@ public class HATests extends AbstractRMQTestSuite {
     public static class SetUp extends TestCase {
         @Override
         protected void setUp() throws Exception {
-            Host.invokeMakeTarget("enable-ha");
+            Host.rabbitmqctl("set_policy HA '.*' '{\"ha-mode\":\"all\"}'");
             HA_TESTS_RUNNING = true;
         }
 
@@ -52,7 +52,7 @@ public class HATests extends AbstractRMQTestSuite {
     public static class TearDown extends TestCase {
         @Override
         protected void tearDown() throws Exception {
-            Host.invokeMakeTarget("disable-ha");
+            Host.rabbitmqctl("clear_policy HA");
             HA_TESTS_RUNNING = false;
         }
 

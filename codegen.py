@@ -21,9 +21,6 @@ from __future__ import print_function
 import re
 import sys
 
-sys.path.append("../rabbitmq_codegen")  # in case we're next to an experimental revision
-sys.path.append("codegen")              # in case we're building from a distribution package
-
 from amqp_codegen import *
 
 class BogusDefaultValue(Exception):

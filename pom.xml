@@ -1,34 +1,34 @@
 <?xml version="1.0"?>
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
- xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
- <modelVersion>4.0.0</modelVersion>
+  xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
 
- <groupId>com.rabbitmq</groupId>
- <artifactId>amqp-client</artifactId>
- <version>3.7.0-SNAPSHOT</version>
- <packaging>jar</packaging>
+  <groupId>com.rabbitmq</groupId>
+  <artifactId>amqp-client</artifactId>
+  <version>3.7.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
 
- <name>RabbitMQ Java Client</name>
- <description>RabbitMQ Java client</description>
- <url>http://www.rabbitmq.com</url>
+  <name>RabbitMQ Java Client</name>
+  <description>RabbitMQ Java client</description>
+  <url>http://www.rabbitmq.com</url>
 
- <licenses>
-  <license>
-   <name>ASL 2.0</name>
-   <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
-   <distribution>repo</distribution>
-  </license>
-  <license>
-   <name>GPL v2</name>
-   <url>http://www.gnu.org/licenses/gpl-2.0.txt</url>
-   <distribution>repo</distribution>
-  </license>
-  <license>
-   <name>MPL 1.1</name>
-   <url>http://www.mozilla.org/MPL/MPL-1.1.txt</url>
-   <distribution>repo</distribution>
-  </license>
- </licenses>
+  <licenses>
+    <license>
+      <name>ASL 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+      <distribution>repo</distribution>
+    </license>
+    <license>
+      <name>GPL v2</name>
+      <url>http://www.gnu.org/licenses/gpl-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+    <license>
+      <name>MPL 1.1</name>
+      <url>http://www.mozilla.org/MPL/MPL-1.1.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 
   <developers>
     <developer>
@@ -40,237 +40,474 @@
   </developers>
 
   <scm>
-  <url>https://github.com/rabbitmq/rabbitmq-java-client.git</url>
-  <connection>scm:git:https://github.com/rabbitmq/rabbitmq-java-client.git</connection>
- </scm>
+    <url>https://github.com/rabbitmq/rabbitmq-java-client.git</url>
+    <connection>scm:git:https://github.com/rabbitmq/rabbitmq-java-client.git</connection>
+  </scm>
 
- <properties>
-  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
- </properties>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
- <dependencies>
-  <dependency>
-   <groupId>commons-cli</groupId>
-   <artifactId>commons-cli</artifactId>
-   <version>1.1</version>
-   <scope>test</scope>
-  </dependency>
-  <dependency>
-   <groupId>commons-io</groupId>
-   <artifactId>commons-io</artifactId>
-   <version>1.2</version>
-   <scope>test</scope>
-  </dependency>
-  <dependency>
-   <groupId>junit</groupId>
-   <artifactId>junit</artifactId>
-   <version>4.12</version>
-   <scope>test</scope>
-  </dependency>
- </dependencies>
+    <groovy-scripts.dir>${basedir}/src/main/scripts</groovy-scripts.dir>
+    <deps.dir>${basedir}/..</deps.dir>
+    <codegen.dir>${deps.dir}/rabbitmq_codegen</codegen.dir>
+    <codegen.spec_version>0.9.1</codegen.spec_version>
 
- <build>
-  <plugins>
-   <!-- Clean generated sources at clean phase -->
-   <plugin>
-    <artifactId>maven-clean-plugin</artifactId>
-    <version>3.0.0</version>
-    <configuration>
-     <filesets>
-      <fileset>
-       <directory>${basedir}/build</directory>
-       <includes>
-        <include>**/*</include>
-       </includes>
-       <followSymlinks>false</followSymlinks>
-      </fileset>
-     </filesets>
-    </configuration>
-   </plugin>
-   <plugin>
-    <artifactId>maven-antrun-plugin</artifactId>
-    <version>1.7</version>
-    <executions>
-     <execution>
-      <phase>generate-sources</phase>
-      <configuration>
-       <target name="amqp-generate-check" description="check if codegen needs to be run">
-        <uptodate property="amqp.generate.notRequired">
-         <srcfiles file="codegen.py"/>
-         <srcfiles dir="${codegen.dir}">
-          <include name="*"/>
-         </srcfiles>
-         <compositemapper>
-          <mapper type="merge" to="${basedir}/${src.generated}/com/rabbitmq/client/impl/AMQImpl.java"/>
-          <mapper type="merge" to="${basedir}/${src.generated}/com/rabbitmq/client/AMQP.java"/>
-         </compositemapper>
-        </uptodate>
-       </target>
-       <target name="amqp-generate" depends="amqp-generate-check" unless="amqp.generate.notRequired"
-        description="generate AMQP.java and AMQImpl.java from AMQP spec">
-        <property name="AMQP_SPEC_JSON_PATH" value="${codegen.dir}/amqp-rabbitmq-${spec.version}.json"/>
-        <mkdir dir="${src.generated}/com/rabbitmq/client/"/>
-        <exec dir="." executable="${python.bin}" errorproperty="amqp.generate.error1" resultproperty="amqp.generate.result1">
-         <arg line="codegen.py"/>
-         <arg line="header"/>
-         <arg line="${AMQP_SPEC_JSON_PATH}"/>
-         <arg line="${src.generated}/com/rabbitmq/client/AMQP.java"/>
-        </exec>
-        <fail message="Generation of AMQP.java failed with message:${line.separator}${amqp.generate.error1}">
-         <condition>
-          <not>
-           <equals arg1="${amqp.generate.result1}" arg2="0"/>
-          </not>
-         </condition>
-        </fail>
-        <mkdir dir="${src.generated}/com/rabbitmq/client/impl"/>
-        <exec dir="." executable="${python.bin}" errorproperty="amqp.generate.error2" resultproperty="amqp.generate.result2">
-         <arg line="codegen.py"/>
-         <arg line="body"/>
-         <arg line="${AMQP_SPEC_JSON_PATH}"/>
-         <arg line="${src.generated}/com/rabbitmq/client/impl/AMQImpl.java"/>
-        </exec>
-        <fail message="Generation of AMQPImpl.java failed with message:${line.separator}${amqp.generate.error2}">
-         <condition>
-          <not>
-           <equals arg1="${amqp.generate.result2}" arg2="0"/>
-          </not>
-         </condition>
-        </fail>
-       </target>
-       <target>
-        <property file="${basedir}/src/test/resources/build.properties"/>
-        <ant target="amqp-generate"/>
-        <copy file="${maven.src.home}/com/rabbitmq/client/impl/ClientVersion.java.in" tofile="${src.generated}/com/rabbitmq/client/impl/ClientVersion.java">
-         <filterset>
-          <filter token="VERSION" value="${impl.version}"/>
-<!--           <filter token="VERSION" value="${project.version}"/> -->
-         </filterset>
-        </copy>
-       </target>
-      </configuration>
-      <goals>
-       <goal>run</goal>
-      </goals>
-     </execution>
-    </executions>
-   </plugin>
-   <plugin>
-    <groupId>org.codehaus.mojo</groupId>
-    <artifactId>build-helper-maven-plugin</artifactId>
-    <version>1.10</version>
-    <executions>
-     <execution>
-      <id>add-source</id>
-      <phase>generate-sources</phase>
-      <goals>
-       <goal>add-source</goal>
-      </goals>
-      <configuration>
-       <sources>
-        <source>build/gensrc</source>
-       </sources>
-      </configuration>
-     </execution>
-    </executions>
-   </plugin>
-   <plugin>
-    <artifactId>maven-compiler-plugin</artifactId>
-    <version>3.2</version>
-    <configuration>
-     <source>1.6</source>
-     <target>1.6</target>
-     <compilerArgs>
-      <arg>-Xlint:deprecation</arg>
-      <arg>-Xlint:unchecked</arg>
-     </compilerArgs>
-    </configuration>
-   </plugin>
-   <plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-surefire-plugin</artifactId>
-    <version>2.9</version>
-    <configuration>
-     <systemPropertyVariables>
-      <buildDirectory>${project.build.directory}</buildDirectory>
-     </systemPropertyVariables>
-     <failIfNoTests>true</failIfNoTests>
-     <includes>
-      <include>**/ClientTests.*</include>
-      <include>**/FunctionalTests.*</include>
-      <include>**/SSLTests.*</include>
-      <include>**/ServerTests.*</include>
-      <include>**/FunctionalTests.*</include>
-      <include>**/HATests.*</include>
-      <include>**/TestMain.*</include>
-     </includes>
-    </configuration>
-   </plugin>
-   <plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-jar-plugin</artifactId>
-    <version>2.6</version>
-    <configuration>
-     <useDefaultManifestFile>true</useDefaultManifestFile>
-     <archive>
-      <addMavenDescriptor>true</addMavenDescriptor>
-      <index>true</index>
-      <manifest>
-       <addClasspath>true</addClasspath>
-      </manifest>
-     </archive>
-    </configuration>
-    <executions>
-     <execution>
-      <goals>
-       <goal>jar</goal>
-       <goal>test-jar</goal>
-      </goals>
-     </execution>
-    </executions>
-   </plugin>
-   <plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-source-plugin</artifactId>
-    <version>2.4</version>
-    <executions>
-     <execution>
-      <goals>
-       <goal>jar</goal>
-       <goal>test-jar</goal>
-      </goals>
-     </execution>
-    </executions>
-   </plugin>
-   <plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-javadoc-plugin</artifactId>
-    <version>2.10.3</version>
-    <configuration>
-     <additionalparam>-Xdoclint:none</additionalparam>
-    </configuration>
-    <executions>
-     <execution>
-      <goals>
-       <goal>jar</goal>
-       <goal>test-jar</goal>
-      </goals>
-     </execution>
-    </executions>
-   </plugin>
-   <plugin>
-    <groupId>org.codehaus.mojo</groupId>
-    <artifactId>versions-maven-plugin</artifactId>
-    <version>2.2</version>
-   </plugin>
-  </plugins>
- </build>
+    <!-- For testing only -->
+    <make.bin>make</make.bin>
+    <rabbitmq.dir>${deps.dir}/rabbit</rabbitmq.dir>
+    <rabbitmqctl.bin>${rabbitmq.dir}/scripts/rabbitmqctl</rabbitmqctl.bin>
 
- <distributionManagement>
-  <repository>
-   <id>sonatype-nexus-staging</id>
-   <name>Nexus Release Repository</name>
-   <url>http://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-  </repository>
- </distributionManagement>
+    <test-keystore.ca>${project.build.directory}/ca.keystore</test-keystore.ca>
+    <test-keystore.empty>${project.build.directory}/empty.keystore</test-keystore.empty>
+    <test-keystore.password>bunnies</test-keystore.password>
+
+    <test-broker.A.nodename>rabbit@localhost</test-broker.A.nodename>
+    <test-broker.A.node_port>5672</test-broker.A.node_port>
+    <test-broker.A.config_file>${project.build.directory}/test-classes/${test-broker.A.nodename}</test-broker.A.config_file>
+    <test-broker.B.nodename>hare@localhost</test-broker.B.nodename>
+    <test-broker.B.node_port>5673</test-broker.B.node_port>
+    <test-broker.B.config_file>${project.build.directory}/test-classes/${test-broker.B.nodename}</test-broker.B.config_file>
+  </properties>
+
+  <profiles>
+    <profile>
+      <id>use-gmake</id>
+      <activation>
+        <os><name>FreeBSD</name></os>
+      </activation>
+      <properties>
+        <make.bin>gmake</make.bin>
+      </properties>
+    </profile>
+    <profile>
+      <id>use-rabbitmqctl.bat</id>
+      <activation>
+        <os><family>Windows</family></os>
+      </activation>
+      <properties>
+        <rabbitmqctl.bin>${rabbitmq.dir}/scripts/rabbitmqctl.bat</rabbitmqctl.bin>
+      </properties>
+    </profile>
+    <profile>
+      <id>disable-java8-doclint</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+      <properties>
+        <javadoc.opts>-Xdoclint:none</javadoc.opts>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>integration-tests</id>
+      <activation>
+        <property>
+          <name>!skipTests</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.gmaven</groupId>
+            <artifactId>groovy-maven-plugin</artifactId>
+            <version>2.0</version>
+            <executions>
+              <execution>
+                <phase>generate-test-resources</phase>
+                <id>remove-old-test-keystores</id>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <source>
+                    ${groovy-scripts.dir}/remove_old_test_keystores.groovy
+                  </source>
+                </configuration>
+              </execution>
+              <execution>
+                <phase>generate-test-resources</phase>
+                <id>query-test-tls-certs-dir</id>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <source>
+                    ${groovy-scripts.dir}/query_test_tls_certs_dir.groovy
+                  </source>
+                </configuration>
+              </execution>
+
+              <execution>
+                <phase>pre-integration-test</phase>
+                <id>start-test-broker-A</id>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <properties>
+                    <nodename>${test-broker.A.nodename}</nodename>
+                    <node_port>${test-broker.A.node_port}</node_port>
+                  </properties>
+                  <source>
+                    ${groovy-scripts.dir}/manage_test_broker.groovy
+                  </source>
+                </configuration>
+              </execution>
+              <execution>
+                <phase>pre-integration-test</phase>
+                <id>start-test-broker-B</id>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <properties>
+                    <nodename>${test-broker.B.nodename}</nodename>
+                    <node_port>${test-broker.B.node_port}</node_port>
+                  </properties>
+                  <source>
+                    ${groovy-scripts.dir}/manage_test_broker.groovy
+                  </source>
+                </configuration>
+              </execution>
+              <execution>
+                <phase>pre-integration-test</phase>
+                <id>create-test-cluster</id>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <properties>
+                    <nodename>${test-broker.B.nodename}</nodename>
+                    <target>${test-broker.A.nodename}</target>
+                  </properties>
+                  <source>
+                    ${groovy-scripts.dir}/manage_test_broker.groovy
+                  </source>
+                </configuration>
+              </execution>
+
+              <execution>
+                <phase>post-integration-test</phase>
+                <id>stop-test-broker-B</id>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <properties>
+                    <nodename>${test-broker.B.nodename}</nodename>
+                  </properties>
+                  <source>
+                    ${groovy-scripts.dir}/manage_test_broker.groovy
+                  </source>
+                </configuration>
+              </execution>
+              <execution>
+                <phase>post-integration-test</phase>
+                <id>stop-test-broker-A</id>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <properties>
+                    <nodename>${test-broker.A.nodename}</nodename>
+                  </properties>
+                  <source>
+                    ${groovy-scripts.dir}/manage_test_broker.groovy
+                  </source>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>keytool-maven-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>generate-test-ca-keystore</id>
+                <phase>generate-test-resources</phase>
+                <goals>
+                  <goal>importCertificate</goal>
+                </goals>
+                <configuration>
+                  <file>${test-tls-certs.dir}/testca/cacert.pem</file>
+                  <keystore>${test-keystore.ca}</keystore>
+                  <storepass>${test-keystore.password}</storepass>
+                  <noprompt>true</noprompt>
+                  <alias>server1</alias>
+                </configuration>
+              </execution>
+              <execution>
+                <id>generate-test-empty-keystore</id>
+                <phase>generate-test-resources</phase>
+                <goals>
+                  <goal>importCertificate</goal>
+                  <goal>deleteAlias</goal>
+                </goals>
+                <configuration>
+                  <file>${test-tls-certs.dir}/testca/cacert.pem</file>
+                  <keystore>${test-keystore.empty}</keystore>
+                  <storepass>${test-keystore.password}</storepass>
+                  <noprompt>true</noprompt>
+                  <alias>server1</alias>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <version>2.19.1</version>
+            <configuration>
+              <systemPropertyVariables>
+                <make.bin>${make.bin}</make.bin>
+                <rabbitmq.dir>${rabbitmq.dir}</rabbitmq.dir>
+                <rabbitmqctl.bin>${rabbitmqctl.bin}</rabbitmqctl.bin>
+
+                <test-keystore.ca>${test-keystore.ca}</test-keystore.ca>
+                <test-keystore.empty>${test-keystore.empty}</test-keystore.empty>
+                <test-keystore.password>${test-keystore.password}</test-keystore.password>
+                <test-client-cert.path>${test-tls-certs.dir}/client/keycert.p12</test-client-cert.path>
+                <test-client-cert.password>changeme</test-client-cert.password>
+
+                <test-broker.A.nodename>${test-broker.A.nodename}</test-broker.A.nodename>
+                <test-broker.A.node_port>${test-broker.A.node_port}</test-broker.A.node_port>
+                <test-broker.A.config_file>${test-broker.A.config_file}</test-broker.A.config_file>
+                <test-broker.B.nodename>${test-broker.B.nodename}</test-broker.B.nodename>
+                <test-broker.B.node_port>${test-broker.B.node_port}</test-broker.B.node_port>
+                <test-broker.B.config_file>${test-broker.B.config_file}</test-broker.B.config_file>
+              </systemPropertyVariables>
+              <environmentVariables>
+                <DEPS_DIR>${deps.dir}</DEPS_DIR>
+              </environmentVariables>
+              <failIfNoTests>true</failIfNoTests>
+              <includes>
+                <include>**/ClientTests.*</include>
+                <include>**/FunctionalTests.*</include>
+                <include>**/SSLTests.*</include>
+                <include>**/ServerTests.*</include>
+                <include>**/HATests.*</include>
+                <include>**/TestMain.*</include>
+              </includes>
+            </configuration>
+            <executions>
+              <execution>
+                <id>integration-test</id>
+                <goals>
+                  <goal>integration-test</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>verify</id>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.0.1</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.10.4</version>
+            <configuration>
+              <additionalparam>${javadoc.opts}</additionalparam>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <dependencies>
+    <dependency>
+      <groupId>commons-cli</groupId>
+      <artifactId>commons-cli</artifactId>
+      <version>1.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>1.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>${basedir}/src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+    <testResources>
+      <testResource>
+        <directory>${basedir}/src/test/resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+    </testResources>
+
+    <plugins>
+
+      <plugin>
+        <groupId>org.codehaus.gmaven</groupId>
+        <artifactId>groovy-maven-plugin</artifactId>
+        <version>2.0</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <id>generate-amqp-sources</id>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <properties>
+                <script>${basedir}/codegen.py</script>
+                <spec>
+                  ${codegen.dir}/amqp-rabbitmq-${codegen.spec_version}.json
+                </spec>
+                <header>
+                  ${project.build.directory}/generated-sources/src/main/java/com/rabbitmq/client/AMQP.java
+                </header>
+                <body>
+                  ${project.build.directory}/generated-sources/src/main/java/com/rabbitmq/client/impl/AMQImpl.java
+                </body>
+              </properties>
+              <source>
+                ${groovy-scripts.dir}/generate_amqp_sources.groovy
+              </source>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.12</version>
+        <executions>
+          <execution>
+            <id>add-generated-sources-dir</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/src/main/java</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+          <compilerArgs>
+            <arg>-Xlint:deprecation</arg>
+            <arg>-Xlint:unchecked</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.19.1</version>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.0.2</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.7</version>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>false</autoReleaseAfterClose>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>2.3</version>
+      </plugin>
+    </plugins>
+  </build>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
 </project>

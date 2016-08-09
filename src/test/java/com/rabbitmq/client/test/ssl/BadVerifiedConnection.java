@@ -40,9 +40,9 @@ public class BadVerifiedConnection extends UnverifiedConnection {
     public void openConnection()
             throws IOException, TimeoutException {
         try {
-            String keystorePath = System.getProperty("keystore.empty.path");
+            String keystorePath = System.getProperty("test-keystore.empty");
             assertNotNull(keystorePath);
-            String keystorePasswd = System.getProperty("keystore.passwd");
+            String keystorePasswd = System.getProperty("test-keystore.password");
             assertNotNull(keystorePasswd);
             char [] keystorePassword = keystorePasswd.toCharArray();
 
@@ -52,9 +52,9 @@ public class BadVerifiedConnection extends UnverifiedConnection {
             TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
             tmf.init(tks);
 
-            String p12Path = System.getProperty("p12.path");
+            String p12Path = System.getProperty("test-client-cert.path");
             assertNotNull(p12Path);
-            String p12Passwd = System.getProperty("p12.passwd");
+            String p12Passwd = System.getProperty("test-client-cert.password");
             assertNotNull(p12Passwd);
             KeyStore ks = KeyStore.getInstance("PKCS12");
             char [] p12Password = p12Passwd.toCharArray();

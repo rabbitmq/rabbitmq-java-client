@@ -92,24 +92,61 @@ public class Host {
     }
 
     public static Process rabbitmqctl(String command) throws IOException {
-        return executeCommand(rabbitmqctlCommand() + " " + command);
+        return executeCommand(rabbitmqctlCommand() +
+                              " -n \'" + nodenameA() + "\'" +
+                              " " + command);
     }
 
     public static Process rabbitmqctlIgnoreErrors(String command) throws IOException {
-        return executeCommandIgnoringErrors(rabbitmqctlCommand() + " " + command);
+        return executeCommandIgnoringErrors(rabbitmqctlCommand() +
+                                            " -n \'" + nodenameA() + "\'" +
+			                    " " + command);
     }
 
     public static Process invokeMakeTarget(String command) throws IOException {
         File rabbitmqctl = new File(rabbitmqctlCommand());
         return executeCommand(makeCommand() +
-                              " -C \'" + rabbitmqTestDir() + "\'" +
+                              " -C \'" + rabbitmqDir() + "\'" +
                               " RABBITMQCTL=\'" + rabbitmqctl.getAbsolutePath() + "\'" +
+                              " RABBITMQ_NODENAME=\'" + nodenameA() + "\'" +
+			      " RABBITMQ_NODE_PORT=" + node_portA() +
+			      " RABBITMQ_CONFIG_FILE=\'" + config_fileA() + "\'" +
                               " " + command);
     }
 
     public static String makeCommand()
     {
-        return System.getProperty("make.bin");
+        return System.getProperty("make.bin", "make");
+    }
+
+    public static String nodenameA()
+    {
+        return System.getProperty("test-broker.A.nodename");
+    }
+
+    public static String node_portA()
+    {
+        return System.getProperty("test-broker.A.node_port");
+    }
+
+    public static String config_fileA()
+    {
+        return System.getProperty("test-broker.A.config_file");
+    }
+
+    public static String nodenameB()
+    {
+        return System.getProperty("test-broker.B.nodename");
+    }
+
+    public static String node_portB()
+    {
+        return System.getProperty("test-broker.B.node_port");
+    }
+
+    public static String config_fileB()
+    {
+        return System.getProperty("test-broker.B.config_file");
     }
 
     public static String rabbitmqctlCommand()
@@ -117,9 +154,9 @@ public class Host {
         return System.getProperty("rabbitmqctl.bin");
     }
 
-    public static String rabbitmqTestDir()
+    public static String rabbitmqDir()
     {
-        return System.getProperty("sibling.rabbitmq_test.dir");
+        return System.getProperty("rabbitmq.dir");
     }
 
     public static void closeConnection(String pid) throws IOException {

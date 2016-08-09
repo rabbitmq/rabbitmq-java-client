@@ -44,7 +44,13 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
             alternateConnection = null;
             alternateChannel = null;
 
-            Host.invokeMakeTarget("restart-secondary-node");
+            Host.invokeMakeTarget(
+              "stop-node" +
+              " start-background-broker" +
+              " RABBITMQ_NODENAME=\'" + Host.nodenameB() + "\'" +
+              " RABBITMQ_NODE_PORT=" + Host.node_portB() +
+              " RABBITMQ_CONFIG_FILE=\'" + Host.config_fileB() + "\'"
+            );
         }
         restartPrimary();
     }
