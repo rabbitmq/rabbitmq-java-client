@@ -53,7 +53,24 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
+    <!--
+    These groovy scripts are used later in this POM file to generate
+    source files and resources for the library itself and for the
+    testsuite.
+    -->
     <groovy-scripts.dir>${basedir}/src/main/scripts</groovy-scripts.dir>
+
+    <!--
+    ${deps.dir} should point to a directory containing a working copy of
+    rabbitmq-codegen and rabbitmq-server, named "rabbitmq_codegen" and
+    "rabbit" respectively.
+
+    "rabbitmq_codegen" is used to generate required Java source files.
+    Its path can be specified with the ${codegen.dir} property instead.
+
+    "rabbit" is used to automatically setup a RabbitMQ cluster for the
+    testsuite.
+    -->
     <deps.dir>${basedir}/..</deps.dir>
     <codegen.dir>${deps.dir}/rabbitmq_codegen</codegen.dir>
     <codegen.spec_version>0.9.1</codegen.spec_version>
@@ -77,6 +94,7 @@
 
   <profiles>
     <profile>
+      <!-- On FreeBSD, GNU Make is installed as "gmake". -->
       <id>use-gmake</id>
       <activation>
         <os><name>FreeBSD</name></os>
@@ -85,7 +103,9 @@
         <make.bin>gmake</make.bin>
       </properties>
     </profile>
+
     <profile>
+      <!-- On Windows, use the Batch version of rabbitmqctl. -->
       <id>use-rabbitmqctl.bat</id>
       <activation>
         <os><family>Windows</family></os>
@@ -94,7 +114,12 @@
         <rabbitmqctl.bin>${rabbitmq.dir}/scripts/rabbitmqctl.bat</rabbitmqctl.bin>
       </properties>
     </profile>
+
     <profile>
+      <!--
+      Java 8's Javadoc is way more sensible to documentation
+      correctness. For now, disable all those errors until we fix them.
+      -->
       <id>disable-java8-doclint</id>
       <activation>
         <jdk>[1.8,)</jdk>
@@ -105,11 +130,29 @@
     </profile>
 
     <profile>
-      <id>integration-tests</id>
+      <!--
+      To ease testing of the Java client, this POM can setup a RabbitMQ
+      cluster automatically, including TLS support.
+
+      It depends on the presence of ${rabbitmq.dir} which points to
+      a working copy of the rabbitmq-server Git repository. If it
+      is missing, nothing is setup and the testsuite relies on an
+      externally provided broker/cluster.
+
+      If you want to explicitely disable the automatic cluster setup,
+      you must disable this profile:
+
+          mvn verify -P '!setup-test-cluster'
+
+      -->
+      <id>setup-test-cluster</id>
       <activation>
         <property>
           <name>!skipTests</name>
         </property>
+        <file>
+          <exists>${rabbitmq.dir}</exists>
+        </file>
       </activation>
       <build>
         <plugins>
@@ -118,18 +161,10 @@
             <artifactId>groovy-maven-plugin</artifactId>
             <version>2.0</version>
             <executions>
-              <execution>
-                <phase>generate-test-resources</phase>
-                <id>remove-old-test-keystores</id>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <source>
-                    ${groovy-scripts.dir}/remove_old_test_keystores.groovy
-                  </source>
-                </configuration>
-              </execution>
+              <!--
+              We use "${rabbitmq.dir}/Makefile" to query the location of
+              the test TLS certificates.
+              -->
               <execution>
                 <phase>generate-test-resources</phase>
                 <id>query-test-tls-certs-dir</id>
@@ -143,6 +178,14 @@
                 </configuration>
               </execution>
 
+              <!--
+              Start two brokers and cluster them.
+
+              Currently, those test brokers will listen to the default
+              TCP ports of 5672 and 5673 for AMQP and 5671 and 5670
+              for AMQP+TLS. Unforunately, this means no other standard
+              RabbitMQ can run on the same host at the same time.
+              -->
               <execution>
                 <phase>pre-integration-test</phase>
                 <id>start-test-broker-A</id>
@@ -192,6 +235,9 @@
                 </configuration>
               </execution>
 
+              <!--
+              After the testsuite, no matter the result, stop both test brokers.
+              -->
               <execution>
                 <phase>post-integration-test</phase>
                 <id>stop-test-broker-B</id>
@@ -225,43 +271,70 @@
             </executions>
           </plugin>
 
+          <!--
+          Generate two Java keystores from the test TLS certificates.
+          Here, we only enable the plugin. The actual configuration is
+          in the main <build/> element.
+          -->
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>keytool-maven-plugin</artifactId>
-            <version>1.5</version>
-            <executions>
-              <execution>
-                <id>generate-test-ca-keystore</id>
-                <phase>generate-test-resources</phase>
-                <goals>
-                  <goal>importCertificate</goal>
-                </goals>
-                <configuration>
-                  <file>${test-tls-certs.dir}/testca/cacert.pem</file>
-                  <keystore>${test-keystore.ca}</keystore>
-                  <storepass>${test-keystore.password}</storepass>
-                  <noprompt>true</noprompt>
-                  <alias>server1</alias>
-                </configuration>
-              </execution>
-              <execution>
-                <id>generate-test-empty-keystore</id>
-                <phase>generate-test-resources</phase>
-                <goals>
-                  <goal>importCertificate</goal>
-                  <goal>deleteAlias</goal>
-                </goals>
-                <configuration>
-                  <file>${test-tls-certs.dir}/testca/cacert.pem</file>
-                  <keystore>${test-keystore.empty}</keystore>
-                  <storepass>${test-keystore.password}</storepass>
-                  <noprompt>true</noprompt>
-                  <alias>server1</alias>
-                </configuration>
-              </execution>
-            </executions>
+            <configuration>
+              <skip>false</skip>
+            </configuration>
           </plugin>
+        </plugins>
+      </build>
+    </profile>
 
+    <profile>
+      <!--
+      If the caller decided to provide an external RabbitMQ
+      broker/cluster, he can specify the path to his test TLS
+      certificates with the ${test-tls-certs.dir} property.
+
+      Thus, if the CA certificate exists, we also enable the generation
+      of the two Java keystores.
+      -->
+      <id>use-provided-test-keystores</id>
+      <activation>
+        <file>
+          <exists>${test-tls-certs.dir}/testca/cacert.pem</exists>
+        </file>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>keytool-maven-plugin</artifactId>
+            <configuration>
+              <skip>false</skip>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <!--
+      Tests are integration tests, not unit tests, because they depend
+      on a running broker which can be automatically started by this
+      POM.
+
+      To skip those tests, you can run use the usual ${skipTests}
+      property:
+
+          mvn verify -DskipTests
+
+      -->
+      <id>integration-tests</id>
+      <activation>
+        <property>
+          <name>!skipTests</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
@@ -318,6 +391,10 @@
     </profile>
 
     <profile>
+      <!--
+      The "release" Maven profile is used to push release artifacts to a
+      Sonatype staging repository.
+      -->
       <id>release</id>
       <build>
         <plugins>
@@ -390,12 +467,18 @@
   </dependencies>
 
   <build>
+    <!-- We store the client version in a Java properties file. -->
     <resources>
       <resource>
         <directory>${basedir}/src/main/resources</directory>
         <filtering>true</filtering>
       </resource>
     </resources>
+
+    <!--
+    Those resources are a Java properties file and RabbitMQ
+    configuration files for the test brokers.
+    -->
     <testResources>
       <testResource>
         <directory>${basedir}/src/test/resources</directory>
@@ -404,12 +487,17 @@
     </testResources>
 
     <plugins>
-
       <plugin>
         <groupId>org.codehaus.gmaven</groupId>
         <artifactId>groovy-maven-plugin</artifactId>
         <version>2.0</version>
         <executions>
+          <!--
+          Generate Java source files from specifications found in
+          ${codegen.dir}. The groovy script is used as a "proxy"
+          to execute a Python script with the proper arguments and
+          environment.
+          -->
           <execution>
             <phase>generate-sources</phase>
             <id>generate-amqp-sources</id>
@@ -431,6 +519,24 @@
               </properties>
               <source>
                 ${groovy-scripts.dir}/generate_amqp_sources.groovy
+              </source>
+            </configuration>
+          </execution>
+
+          <!--
+          We always remove the generated Java keystores because
+          keytool(1) complains if the destination file already exists
+          with the content we want to import.
+          -->
+          <execution>
+            <phase>generate-test-resources</phase>
+            <id>remove-old-test-keystores</id>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <source>
+                ${groovy-scripts.dir}/remove_old_test_keystores.groovy
               </source>
             </configuration>
           </execution>
@@ -470,6 +576,10 @@
         </configuration>
       </plugin>
 
+      <!--
+      Disable the unit tests plugin because we only have integration
+      tests.
+      -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -477,6 +587,47 @@
         <configuration>
           <skip>true</skip>
         </configuration>
+      </plugin>
+
+      <!-- Generate two Java keystores for the SSLTests testsuite. -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>keytool-maven-plugin</artifactId>
+        <version>1.5</version>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+        <executions>
+          <execution>
+            <id>generate-test-ca-keystore</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>importCertificate</goal>
+            </goals>
+            <configuration>
+              <file>${test-tls-certs.dir}/testca/cacert.pem</file>
+              <keystore>${test-keystore.ca}</keystore>
+              <storepass>${test-keystore.password}</storepass>
+              <noprompt>true</noprompt>
+              <alias>server1</alias>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-test-empty-keystore</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>importCertificate</goal>
+              <goal>deleteAlias</goal>
+            </goals>
+            <configuration>
+              <file>${test-tls-certs.dir}/testca/cacert.pem</file>
+              <keystore>${test-keystore.empty}</keystore>
+              <storepass>${test-keystore.password}</storepass>
+              <noprompt>true</noprompt>
+              <alias>server1</alias>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
