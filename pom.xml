@@ -9,7 +9,7 @@
   <packaging>jar</packaging>
 
   <name>RabbitMQ Java Client</name>
-  <description>The RabbitMQ Java client library allows Java code to interface to RabbitMQ.</description>
+  <description>The RabbitMQ Java client library allows Java applications to interface with RabbitMQ.</description>
   <url>http://www.rabbitmq.com</url>
 
   <licenses>
@@ -43,7 +43,7 @@
     <url>https://github.com/rabbitmq/rabbitmq-java-client.git</url>
     <connection>scm:git:https://github.com/rabbitmq/rabbitmq-java-client.git</connection>
   </scm>
-  
+
   <organization>
     <name>Pivotal Software, Inc.</name>
     <url>http://www.rabbitmq.com</url>
