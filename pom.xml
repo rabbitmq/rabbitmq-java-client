@@ -9,7 +9,7 @@
   <packaging>jar</packaging>
 
   <name>RabbitMQ Java Client</name>
-  <description>RabbitMQ Java client</description>
+  <description>The RabbitMQ Java client library allows Java code to interface to RabbitMQ.</description>
   <url>http://www.rabbitmq.com</url>
 
   <licenses>
@@ -43,6 +43,11 @@
     <url>https://github.com/rabbitmq/rabbitmq-java-client.git</url>
     <connection>scm:git:https://github.com/rabbitmq/rabbitmq-java-client.git</connection>
   </scm>
+  
+  <organization>
+    <name>Pivotal Software, Inc.</name>
+    <url>http://www.rabbitmq.com</url>
+  </organization>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -478,6 +483,39 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <version>3.0.2</version>
+        <configuration>
+          <archive>
+            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+          </archive>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>2.3.7</version>
+        <executions>
+          <execution>
+            <id>bundle-manifest</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>manifest</goal>
+            </goals>
+            <configuration>
+              <instructions>
+                <Export-Package>com.rabbitmq*</Export-Package>
+                <Bundle-SymbolicName>com.rabbitmq.client</Bundle-SymbolicName>
+                <Specification-Title>AMQP</Specification-Title>
+                <Specification-Version>0.9.1</Specification-Version>
+                <Specification-Vendor>AMQP Working Group (www.amqp.org)</Specification-Vendor>
+                <Implementation-Title>${project.name}</Implementation-Title>
+                <Implementation-Version>${project.version}</Implementation-Version>
+                <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
+                <Implementation-URL>${project.url}</Implementation-URL>
+              </instructions>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
