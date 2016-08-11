@@ -148,3 +148,18 @@ Tests run: 50, Failures: 0, Errors: 0, Skipped: 0
 ```
 
 Test reports can be found in `target/failsafe-reports`.
+
+
+## Running tests against an externally provided broker or cluster
+
+By default, if the RabbitMQ broker sources are available, the testsuite
+starts automatically a cluster of two RabbitMQ nodes and runs the tests
+against it.
+
+You can also provide your own broker or cluster. To disable the
+automatic test cluster setup, disable the `setup-test-cluster` Maven
+profile:
+
+```
+mvn verify -P '!setup-test-cluster'
+```
