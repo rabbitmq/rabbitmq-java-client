@@ -71,7 +71,7 @@
     "rabbit" is used to automatically setup a RabbitMQ cluster for the
     testsuite.
     -->
-    <deps.dir>${basedir}/..</deps.dir>
+    <deps.dir>${basedir}/deps</deps.dir>
     <codegen.dir>${deps.dir}/rabbitmq_codegen</codegen.dir>
     <codegen.spec_version>0.9.1</codegen.spec_version>
 
@@ -93,6 +93,22 @@
   </properties>
 
   <profiles>
+    <profile>
+      <!--
+      If we detect the RabbitMQ Umbrella project, use its dependencies
+      directory.
+      -->
+      <id>in-umbrella</id>
+      <activation>
+        <file>
+          <exists>../../UMBRELLA.md</exists>
+        </file>
+      </activation>
+      <properties>
+        <deps.dir>${basedir}/..</deps.dir>
+      </properties>
+    </profile>
+
     <profile>
       <!-- On FreeBSD, GNU Make is installed as "gmake". -->
       <id>use-gmake</id>
