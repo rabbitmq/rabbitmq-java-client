@@ -24,7 +24,7 @@ public class SSLTests extends AbstractRMQTestSuite {
     public static TestSuite suite() {
         TestSuite suite = new TestSuite("ssl");
         suite.addTestSuite(ConnectionFactoryDefaultTlsVersion.class);
-        // Skip the tests if not under umbrella
+        // Skip the tests if not under umbrella and no TLS setup available
         if (!requiredProperties()) return suite;
         if (!isSSLAvailable()) return suite;
         suite.addTestSuite(UnverifiedConnection.class);
