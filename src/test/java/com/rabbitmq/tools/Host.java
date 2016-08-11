@@ -100,7 +100,7 @@ public class Host {
     public static Process rabbitmqctlIgnoreErrors(String command) throws IOException {
         return executeCommandIgnoringErrors(rabbitmqctlCommand() +
                                             " -n \'" + nodenameA() + "\'" +
-			                    " " + command);
+                                            " " + command);
     }
 
     public static Process invokeMakeTarget(String command) throws IOException {
@@ -109,8 +109,8 @@ public class Host {
                               " -C \'" + rabbitmqDir() + "\'" +
                               " RABBITMQCTL=\'" + rabbitmqctl.getAbsolutePath() + "\'" +
                               " RABBITMQ_NODENAME=\'" + nodenameA() + "\'" +
-			      " RABBITMQ_NODE_PORT=" + node_portA() +
-			      " RABBITMQ_CONFIG_FILE=\'" + config_fileA() + "\'" +
+                              " RABBITMQ_NODE_PORT=" + node_portA() +
+                              " RABBITMQ_CONFIG_FILE=\'" + config_fileA() + "\'" +
                               " " + command);
     }
 
