@@ -19,6 +19,9 @@ all: deps
 deps: $(DEPS_DIR)/rabbit
 	@:
 
+dist:
+	$(MVN) $(MVN_FLAGS) -DskipTests=true package
+
 $(DEPS_DIR)/rabbit:
 	git clone https://github.com/rabbitmq/rabbitmq-server.git $@
 	$(MAKE) -C $@ fetch-deps DEPS_DIR="$(abspath $(DEPS_DIR))"
