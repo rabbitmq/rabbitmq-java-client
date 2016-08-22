@@ -15,7 +15,9 @@
 
 package com.rabbitmq.examples;
 
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
 import com.rabbitmq.examples.perf.MulticastParams;
@@ -33,6 +35,9 @@ import com.rabbitmq.client.ConnectionFactory;
 
 
 public class PerfTest {
+	
+    private static String testID;
+	
     public static void main(String[] args) {
         Options options = getOptions();
         CommandLineParser parser = new GnuParser();
@@ -43,7 +48,9 @@ public class PerfTest {
                 usage(options);
                 System.exit(0);
             }
-
+            testID = new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.
+            		getInstance().getTime());
+            testID                   = strArg(cmd, 'd', "test-" + testID);
             String exchangeType      = strArg(cmd, 't', "direct");
             String exchangeName      = strArg(cmd, 'e', exchangeType);
             String queueName         = strArg(cmd, 'u', "");
@@ -135,6 +142,7 @@ public class PerfTest {
     private static Options getOptions() {
         Options options = new Options();
         options.addOption(new Option("?", "help",             false,"show usage"));
+        options.addOption(new Option("d", "id",               true, "Test ID"));
         options.addOption(new Option("h", "uri",              true, "connection URI"));
         options.addOption(new Option("t", "type",             true, "exchange type"));
         options.addOption(new Option("e", "exchange",         true, "exchange name"));
@@ -204,6 +212,7 @@ public class PerfTest {
 
         @Override
         protected void report(long now) {
+            System.out.print("id: " + testID + ", ");
             System.out.print("time: " + String.format("%.3f", (now - startTime)/1000.0) + "s");
 
             showRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval);
