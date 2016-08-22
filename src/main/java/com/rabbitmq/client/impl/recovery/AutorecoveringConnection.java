@@ -15,20 +15,9 @@
 
 package com.rabbitmq.client.impl.recovery;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Address;
-import com.rabbitmq.client.BlockedListener;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.MissedHeartbeatException;
-import com.rabbitmq.client.Recoverable;
-import com.rabbitmq.client.RecoveryListener;
-import com.rabbitmq.client.ShutdownListener;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.TopologyRecoveryException;
+import com.rabbitmq.client.*;
+
 import com.rabbitmq.client.impl.ConnectionParams;
-import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
 
@@ -93,7 +82,11 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 	private final Object recoveryLock = new Object();
 
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, List<Address> addrs) {
-        this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addrs);
+        this(params, f, new ListAddressResolver(addrs));
+    }
+
+    public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, AddressResolver addressResolver) {
+        this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addressResolver);
         this.params = params;
 
         this.channels = new ConcurrentHashMap<Integer, AutorecoveringChannel>();

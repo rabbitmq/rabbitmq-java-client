@@ -16,6 +16,8 @@
 package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.AddressResolver;
+import com.rabbitmq.client.ListAddressResolver;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
@@ -29,12 +31,16 @@ import java.util.concurrent.TimeoutException;
 public class RecoveryAwareAMQConnectionFactory {
     private final ConnectionParams params;
     private final FrameHandlerFactory factory;
-    private final List<Address> addrs;
+    private final AddressResolver addressResolver;
 
     public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, List<Address> addrs) {
+        this(params, factory, new ListAddressResolver(addrs));
+    }
+
+    public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, AddressResolver addressResolver) {
         this.params = params;
         this.factory = factory;
-        this.addrs = addrs;
+        this.addressResolver = addressResolver;
     }
 
     /**
@@ -43,7 +49,7 @@ public class RecoveryAwareAMQConnectionFactory {
      */
     RecoveryAwareAMQConnection newConnection() throws IOException, TimeoutException {
         IOException lastException = null;
-        List<Address> shuffled = shuffle(addrs);
+        List<Address> shuffled = shuffle(addressResolver.getAddresses());
 
         for (Address addr : shuffled) {
             try {

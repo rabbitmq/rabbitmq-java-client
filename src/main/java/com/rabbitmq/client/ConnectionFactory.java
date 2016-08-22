@@ -801,6 +801,30 @@ public class ConnectionFactory implements Cloneable {
      */
     public Connection newConnection(ExecutorService executor, List<Address> addrs, String clientProvidedName)
             throws IOException, TimeoutException {
+        return newConnection(executor, new ListAddressResolver(addrs), clientProvidedName);
+    }
+
+    /**
+     * Create a new broker connection with a client-provided name, picking the first available address from
+     * the list provided by the {@link AddressResolver}.
+     *
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the connection returned by this method will be {@link Recoverable}. Future
+     * reconnection attempts will pick a random accessible address provided by the {@link AddressResolver}.
+     *
+     * @param executor thread execution service for consumers on the connection
+     * @param addressResolver discovery service to list potential addresses (hostname/port pairs) to connect to
+     * @param clientProvidedName application-specific connection name, will be displayed
+     *                           in the management UI if RabbitMQ server supports it.
+     *                           This value doesn't have to be unique and cannot be used
+     *                           as a connection identifier e.g. in HTTP API requests.
+     *                           This value is supposed to be human-readable.
+     * @return
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    public Connection newConnection(ExecutorService executor, AddressResolver addressResolver, String clientProvidedName)
+        throws IOException, TimeoutException {
         // make sure we respect the provided thread factory
         FrameHandlerFactory fhFactory = createFrameHandlerFactory();
         ConnectionParams params = params(executor);
@@ -813,11 +837,12 @@ public class ConnectionFactory implements Cloneable {
 
         if (isAutomaticRecoveryEnabled()) {
             // see com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnectionFactory#newConnection
-            AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addrs);
+            AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addressResolver);
 
             conn.init();
             return conn;
         } else {
+            List<Address> addrs = addressResolver.getAddresses();
             IOException lastException = null;
             for (Address addr : addrs) {
                 try {
