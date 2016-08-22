@@ -214,31 +214,32 @@ public class PerfTest {
 
         @Override
         protected void report(long now) {
-            System.out.print("id: " + testID + ", ");
+            String output = "id: " + testID + ", ";
             
-            System.out.print("time: " + String.format("%.3f", (now - startTime)/1000.0) + "s");
+            output += "time: " + String.format("%.3f", (now - startTime)/1000.0) + "s";
+            output +=
+                    showRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval) +
+                    showRate("returned",  returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsedInterval) +
+                    showRate("confirmed", confirmCountInterval, sendStatsEnabled && confirmStatsEnabled, elapsedInterval) +
+                    showRate("nacked",    nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsedInterval) +
+                    showRate("received",  recvCountInterval,    recvStatsEnabled,                        elapsedInterval);
 
-            showRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval);
-            showRate("returned",  returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsedInterval);
-            showRate("confirmed", confirmCountInterval, sendStatsEnabled && confirmStatsEnabled, elapsedInterval);
-            showRate("nacked",    nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsedInterval);
-            showRate("received",  recvCountInterval,    recvStatsEnabled,                        elapsedInterval);
-
-            System.out.print((latencyCountInterval > 0 ?
+            output += (latencyCountInterval > 0 ?
                               ", min/avg/max latency: " +
                               minLatency/1000L + "/" +
                               cumulativeLatencyInterval / (1000L * latencyCountInterval) + "/" +
                               maxLatency/1000L + " microseconds" :
-                              ""));
+                              "");
 
-            System.out.println();
+            System.out.println(output);
         }
 
-        private void showRate(String descr, long count, boolean display,
+        private String showRate(String descr, long count, boolean display,
                               long elapsed) {
-            if (display) {
-                System.out.print(", " + descr + ": " + formatRate(1000.0 * count / elapsed) + " msg/s");
-            }
+            if (display)
+                return ", " + descr + ": " + formatRate(1000.0 * count / elapsed) + " msg/s";
+            else
+                return "";
         }
 
         public void printFinal() {
