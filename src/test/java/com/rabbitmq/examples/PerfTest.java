@@ -36,8 +36,6 @@ import com.rabbitmq.client.ConnectionFactory;
 
 public class PerfTest {
 	
-    private static String testID;
-	
     public static void main(String[] args) {
         Options options = getOptions();
         CommandLineParser parser = new GnuParser();
@@ -48,9 +46,9 @@ public class PerfTest {
                 usage(options);
                 System.exit(0);
             }
-            testID = new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.
+            String testID = new SimpleDateFormat("HHmmss-SSS").format(Calendar.
             		getInstance().getTime());
-            testID                   = strArg(cmd, 'd', "test-" + testID);
+            testID            = strArg(cmd, 'd', "test-"+testID);
             String exchangeType      = strArg(cmd, 't', "direct");
             String exchangeName      = strArg(cmd, 'e', exchangeType);
             String queueName         = strArg(cmd, 'u', "");
@@ -80,12 +78,13 @@ public class PerfTest {
             String uri               = strArg(cmd, 'h', "amqp://localhost");
 
             //setup
-            PrintlnStats stats = new PrintlnStats(1000L * samplingInterval,
-                                    producerCount > 0,
-                                    consumerCount > 0,
-                                    (flags.contains("mandatory") ||
-                                     flags.contains("immediate")),
-                                    confirm != -1);
+            PrintlnStats stats = new PrintlnStats(testID,
+            		1000L * samplingInterval,
+            		producerCount > 0,
+            		consumerCount > 0,
+            		(flags.contains("mandatory") || 
+            				flags.contains("immediate")),
+    				confirm != -1);
 
             ConnectionFactory factory = new ConnectionFactory();
             factory.setShutdownTimeout(0); // So we still shut down even with slow consumers
@@ -199,8 +198,10 @@ public class PerfTest {
         private final boolean recvStatsEnabled;
         private final boolean returnStatsEnabled;
         private final boolean confirmStatsEnabled;
+        
+        private final String testID;
 
-        public PrintlnStats(long interval,
+        public PrintlnStats(String testID, long interval,
                             boolean sendStatsEnabled, boolean recvStatsEnabled,
                             boolean returnStatsEnabled, boolean confirmStatsEnabled) {
             super(interval);
@@ -208,11 +209,13 @@ public class PerfTest {
             this.recvStatsEnabled = recvStatsEnabled;
             this.returnStatsEnabled = returnStatsEnabled;
             this.confirmStatsEnabled = confirmStatsEnabled;
+            this.testID = testID;
         }
 
         @Override
         protected void report(long now) {
             System.out.print("id: " + testID + ", ");
+            
             System.out.print("time: " + String.format("%.3f", (now - startTime)/1000.0) + "s");
 
             showRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval);
