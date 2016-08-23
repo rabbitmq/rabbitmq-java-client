@@ -218,11 +218,11 @@ public class PerfTest {
             
             output += "time: " + String.format("%.3f", (now - startTime)/1000.0) + "s";
             output +=
-                    showRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval) +
-                    showRate("returned",  returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsedInterval) +
-                    showRate("confirmed", confirmCountInterval, sendStatsEnabled && confirmStatsEnabled, elapsedInterval) +
-                    showRate("nacked",    nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsedInterval) +
-                    showRate("received",  recvCountInterval,    recvStatsEnabled,                        elapsedInterval);
+            		getRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval) +
+                    getRate("returned",  returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsedInterval) +
+                    getRate("confirmed", confirmCountInterval, sendStatsEnabled && confirmStatsEnabled, elapsedInterval) +
+                    getRate("nacked",    nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsedInterval) +
+                    getRate("received",  recvCountInterval,    recvStatsEnabled,                        elapsedInterval);
 
             output += (latencyCountInterval > 0 ?
                               ", min/avg/max latency: " +
@@ -234,7 +234,7 @@ public class PerfTest {
             System.out.println(output);
         }
 
-        private String showRate(String descr, long count, boolean display,
+        private String getRate(String descr, long count, boolean display,
                               long elapsed) {
             if (display)
                 return ", " + descr + ": " + formatRate(1000.0 * count / elapsed) + " msg/s";
