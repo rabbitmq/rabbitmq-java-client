@@ -166,9 +166,6 @@
         <property>
           <name>!skipTests</name>
         </property>
-        <file>
-          <exists>${rabbitmq.dir}</exists>
-        </file>
       </activation>
       <build>
         <plugins>
