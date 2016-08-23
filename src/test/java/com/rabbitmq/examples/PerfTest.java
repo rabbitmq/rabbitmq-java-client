@@ -218,7 +218,7 @@ public class PerfTest {
             
             output += "time: " + String.format("%.3f", (now - startTime)/1000.0) + "s";
             output +=
-            		getRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval) +
+                    getRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval) +
                     getRate("returned",  returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsedInterval) +
                     getRate("confirmed", confirmCountInterval, sendStatsEnabled && confirmStatsEnabled, elapsedInterval) +
                     getRate("nacked",    nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsedInterval) +
