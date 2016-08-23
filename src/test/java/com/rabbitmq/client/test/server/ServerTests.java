@@ -13,38 +13,37 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
+
 package com.rabbitmq.client.test.server;
 
 import junit.framework.TestSuite;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
 
 import com.rabbitmq.client.test.AbstractRMQTestSuite;
 
 public class ServerTests extends AbstractRMQTestSuite {
 
-  public static TestSuite suite() {
+    public static TestSuite suite() {
         TestSuite suite = new TestSuite("server-tests");
-        if (!requiredProperties()) return suite;
+	if (!requiredProperties()) return suite;
         add(suite);
         return suite;
     }
 
-  public static void add(TestSuite suite) {
-    suite.addTestSuite(Permissions.class);
-    suite.addTestSuite(DurableBindingLifecycle.class);
-    suite.addTestSuite(DeadLetterExchangeDurable.class);
-    suite.addTestSuite(EffectVisibilityCrossNodeTest.class);
-    suite.addTestSuite(ExclusiveQueueDurability.class);
-    suite.addTestSuite(AbsentQueue.class);
-    suite.addTestSuite(AlternateExchangeEquivalence.class);
-    suite.addTestSuite(MemoryAlarms.class);
-    suite.addTestSuite(MessageRecovery.class);
-    suite.addTestSuite(Firehose.class);
-    suite.addTestSuite(PersistenceGuarantees.class);
-    suite.addTestSuite(Shutdown.class);
-    suite.addTestSuite(BlockedConnection.class);
-    suite.addTestSuite(ChannelLimitNegotiation.class);
-    suite.addTestSuite(LoopbackUsers.class);
-  }
+    public static void add(TestSuite suite) {
+        suite.addTestSuite(Permissions.class);
+        suite.addTestSuite(DurableBindingLifecycle.class);
+        suite.addTestSuite(DeadLetterExchangeDurable.class);
+        suite.addTestSuite(EffectVisibilityCrossNodeTest.class);
+        suite.addTestSuite(ExclusiveQueueDurability.class);
+        suite.addTestSuite(AbsentQueue.class);
+        suite.addTestSuite(AlternateExchangeEquivalence.class);
+        suite.addTestSuite(MemoryAlarms.class);
+        suite.addTestSuite(MessageRecovery.class);
+        suite.addTestSuite(Firehose.class);
+        suite.addTestSuite(PersistenceGuarantees.class);
+        suite.addTestSuite(Shutdown.class);
+        suite.addTestSuite(BlockedConnection.class);
+        suite.addTestSuite(ChannelLimitNegotiation.class);
+        suite.addTestSuite(LoopbackUsers.class);
+    }
 }

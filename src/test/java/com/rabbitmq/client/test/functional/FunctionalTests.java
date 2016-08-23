@@ -24,60 +24,61 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 public class FunctionalTests extends AbstractRMQTestSuite {
-  public static TestSuite suite() {
-    TestSuite suite = new TestSuite("functional");
-    if (!requiredProperties()) return suite;
-    add(suite);
-    return suite;
-  }
+    public static TestSuite suite() {
+        TestSuite suite = new TestSuite("functional");
+	if (!requiredProperties()) return suite;
+        add(suite);
+        return suite;
+    }
 
-  public static void add(TestSuite suite) {
-    suite.addTestSuite(ConnectionOpen.class);
-    suite.addTestSuite(Heartbeat.class);
-    suite.addTestSuite(Tables.class);
-    suite.addTestSuite(DoubleDeletion.class);
-    suite.addTestSuite(Routing.class);
-    suite.addTestSuite(BindingLifecycle.class);
-    suite.addTestSuite(Recover.class);
-    suite.addTestSuite(Reject.class);
-    suite.addTestSuite(Transactions.class);
-    suite.addTestSuite(RequeueOnConnectionClose.class);
-    suite.addTestSuite(RequeueOnChannelClose.class);
-    suite.addTestSuite(DurableOnTransient.class);
-    suite.addTestSuite(NoRequeueOnCancel.class);
-    suite.addTestSuite(Bug20004Test.class);
-    suite.addTestSuite(ExchangeDeleteIfUnused.class);
-    suite.addTestSuite(QosTests.class);
-    suite.addTestSuite(AlternateExchange.class);
-    suite.addTestSuite(ExchangeExchangeBindings.class);
-    suite.addTestSuite(ExchangeExchangeBindingsAutoDelete.class);
-    suite.addTestSuite(ExchangeDeclare.class);
-    suite.addTestSuite(FrameMax.class);
-    suite.addTestSuite(QueueLifecycle.class);
-    suite.addTestSuite(QueueLease.class);
-    suite.addTestSuite(QueueExclusivity.class);
-    suite.addTestSuite(QueueSizeLimit.class);
-    suite.addTestSuite(InvalidAcks.class);
-    suite.addTestSuite(InvalidAcksTx.class);
-    suite.addTestSuite(DefaultExchange.class);
-    suite.addTestSuite(UnbindAutoDeleteExchange.class);
-    suite.addTestSuite(Confirm.class);
-    suite.addTestSuite(ConsumerCancelNotification.class);
-    suite.addTestSuite(UnexpectedFrames.class);
-    suite.addTestSuite(PerQueueTTL.class);
-    suite.addTestSuite(PerMessageTTL.class);
-    suite.addTestSuite(PerQueueVsPerMessageTTL.class);
-    suite.addTestSuite(DeadLetterExchange.class);
-    suite.addTestSuite(SaslMechanisms.class);
-    suite.addTestSuite(InternalExchange.class);
-    suite.addTestSuite(CcRoutes.class);
-    suite.addTestSuite(WorkPoolTests.class);
-    suite.addTestSuite(HeadersExchangeValidation.class);
-    suite.addTestSuite(ConsumerPriorities.class);
-    suite.addTestSuite(Policies.class);
-    suite.addTestSuite(ConnectionRecovery.class);
-    suite.addTestSuite(ExceptionHandling.class);
-    suite.addTestSuite(PerConsumerPrefetch.class);
-    suite.addTestSuite(DirectReplyTo.class);
-  }
+    public static void add(TestSuite suite) {
+        suite.addTestSuite(ConnectionOpen.class);
+        suite.addTestSuite(Heartbeat.class);
+        suite.addTestSuite(Tables.class);
+        suite.addTestSuite(DoubleDeletion.class);
+        suite.addTestSuite(Routing.class);
+        suite.addTestSuite(BindingLifecycle.class);
+        suite.addTestSuite(Recover.class);
+        suite.addTestSuite(Reject.class);
+        suite.addTestSuite(Transactions.class);
+        suite.addTestSuite(RequeueOnConnectionClose.class);
+        suite.addTestSuite(RequeueOnChannelClose.class);
+        suite.addTestSuite(DurableOnTransient.class);
+        suite.addTestSuite(NoRequeueOnCancel.class);
+        suite.addTestSuite(Bug20004Test.class);
+        suite.addTestSuite(ExchangeDeleteIfUnused.class);
+        suite.addTestSuite(QosTests.class);
+        suite.addTestSuite(AlternateExchange.class);
+        suite.addTestSuite(ExchangeExchangeBindings.class);
+        suite.addTestSuite(ExchangeExchangeBindingsAutoDelete.class);
+        suite.addTestSuite(ExchangeDeclare.class);
+        suite.addTestSuite(FrameMax.class);
+        suite.addTestSuite(QueueLifecycle.class);
+        suite.addTestSuite(QueueLease.class);
+        suite.addTestSuite(QueueExclusivity.class);
+        suite.addTestSuite(QueueSizeLimit.class);
+        suite.addTestSuite(InvalidAcks.class);
+        suite.addTestSuite(InvalidAcksTx.class);
+        suite.addTestSuite(DefaultExchange.class);
+        suite.addTestSuite(UnbindAutoDeleteExchange.class);
+        suite.addTestSuite(Confirm.class);
+        suite.addTestSuite(ConsumerCancelNotification.class);
+        suite.addTestSuite(UnexpectedFrames.class);
+        suite.addTestSuite(PerQueueTTL.class);
+        suite.addTestSuite(PerMessageTTL.class);
+        suite.addTestSuite(PerQueueVsPerMessageTTL.class);
+        suite.addTestSuite(DeadLetterExchange.class);
+        suite.addTestSuite(SaslMechanisms.class);
+        suite.addTestSuite(UserIDHeader.class);
+        suite.addTestSuite(InternalExchange.class);
+        suite.addTestSuite(CcRoutes.class);
+        suite.addTestSuite(WorkPoolTests.class);
+        suite.addTestSuite(HeadersExchangeValidation.class);
+        suite.addTestSuite(ConsumerPriorities.class);
+        suite.addTestSuite(Policies.class);
+        suite.addTestSuite(ConnectionRecovery.class);
+        suite.addTestSuite(ExceptionHandling.class);
+        suite.addTestSuite(PerConsumerPrefetch.class);
+        suite.addTestSuite(DirectReplyTo.class);
+    }
 }
