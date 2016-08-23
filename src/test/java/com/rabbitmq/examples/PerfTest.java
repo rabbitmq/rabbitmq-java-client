@@ -48,7 +48,7 @@ public class PerfTest {
             }
             String testID = new SimpleDateFormat("HHmmss-SSS").format(Calendar.
             		getInstance().getTime());
-            testID            = strArg(cmd, 'd', "test-"+testID);
+            testID                   = strArg(cmd, 'd', "test-"+testID);
             String exchangeType      = strArg(cmd, 't', "direct");
             String exchangeName      = strArg(cmd, 'e', exchangeType);
             String queueName         = strArg(cmd, 'u', "");
