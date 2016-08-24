@@ -16,9 +16,15 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.util.Map;
-import java.util.HashMap;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ExchangeType;
+
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 public class ExchangeDeclare extends ExchangeEquivalenceBase {
 
@@ -55,5 +61,47 @@ public class ExchangeDeclare extends ExchangeEquivalenceBase {
     public void testExchangeAutoDeleteNotEquivalent() throws IOException {
         channel.exchangeDeclare(NAME, "direct", false, false, null);
         verifyNotEquivalent(NAME, "direct", false, true, null);
+    }
+
+    public void testExchangeDeclaredWithEnumerationEquivalentOnNonRecoverableConnection() throws IOException, InterruptedException {
+        doTestExchangeDeclaredWithEnumerationEquivalent(channel);
+    }
+
+    public void testExchangeDeclaredWithEnumerationEquivalentOnRecoverableConnection() throws IOException, TimeoutException, InterruptedException {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setAutomaticRecoveryEnabled(true);
+        connectionFactory.setTopologyRecoveryEnabled(false);
+        Connection c = connectionFactory.newConnection();
+        try {
+            doTestExchangeDeclaredWithEnumerationEquivalent(c.createChannel());
+        } finally {
+            c.abort();
+        }
+
+    }
+
+    private void doTestExchangeDeclaredWithEnumerationEquivalent(Channel channel) throws IOException, InterruptedException {
+        assertEquals("There are 4 standard exchange types", 4, ExchangeType.values().length);
+        for (ExchangeType exchangeType : ExchangeType.values()) {
+            channel.exchangeDeclare(NAME, exchangeType);
+            verifyEquivalent(NAME, exchangeType.getType(), false, false, null);
+            channel.exchangeDelete(NAME);
+
+            channel.exchangeDeclare(NAME, exchangeType, false);
+            verifyEquivalent(NAME, exchangeType.getType(), false, false, null);
+            channel.exchangeDelete(NAME);
+
+            channel.exchangeDeclare(NAME, exchangeType, false, false, null);
+            verifyEquivalent(NAME, exchangeType.getType(), false, false, null);
+            channel.exchangeDelete(NAME);
+
+            channel.exchangeDeclare(NAME, exchangeType, false, false, false, null);
+            verifyEquivalent(NAME, exchangeType.getType(), false, false, null);
+            channel.exchangeDelete(NAME);
+
+            channel.exchangeDeclareNoWait(NAME, exchangeType, false, false, false, null);
+            // no check, this one is asynchronous
+            channel.exchangeDelete(NAME);
+        }
     }
 }
