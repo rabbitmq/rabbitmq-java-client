@@ -15,20 +15,7 @@
 
 package com.rabbitmq.client.impl.recovery;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Command;
-import com.rabbitmq.client.ConfirmListener;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.FlowListener;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.Method;
-import com.rabbitmq.client.Recoverable;
-import com.rabbitmq.client.RecoveryListener;
-import com.rabbitmq.client.ReturnListener;
-import com.rabbitmq.client.ShutdownListener;
-import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -195,12 +182,24 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return exchangeDeclare(exchange, type, false, false, null);
     }
 
+    public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type) throws IOException {
+        return exchangeDeclare(exchange, type.getType());
+    }
+
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable) throws IOException {
         return exchangeDeclare(exchange, type, durable, false, null);
     }
 
+    public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type, boolean durable) throws IOException {
+        return exchangeDeclare(exchange, type.getType(), durable);
+    }
+
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable, boolean autoDelete, Map<String, Object> arguments) throws IOException {
         return exchangeDeclare(exchange, type, durable, autoDelete, false, arguments);
+    }
+
+    public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type, boolean durable, boolean autoDelete, Map<String, Object> arguments) throws IOException {
+        return exchangeDeclare(exchange, type.getType(), durable, autoDelete, arguments);
     }
 
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
@@ -214,6 +213,10 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return ok;
     }
 
+    public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
+        return exchangeDeclare(exchange, type.getType(), durable, autoDelete, internal, arguments);
+    }
+
     @Override
     public void exchangeDeclareNoWait(String exchange, String type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
         RecordedExchange x = new RecordedExchange(this, exchange).
@@ -223,6 +226,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
           arguments(arguments);
         recordExchange(exchange, x);
         delegate.exchangeDeclareNoWait(exchange, type, durable, autoDelete, internal, arguments);
+    }
+
+    @Override
+    public void exchangeDeclareNoWait(String exchange, BuiltinExchangeType type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
+        exchangeDeclareNoWait(exchange, type.getType(), durable, autoDelete, internal, arguments);
     }
 
     public AMQP.Exchange.DeclareOk exchangeDeclarePassive(String name) throws IOException {

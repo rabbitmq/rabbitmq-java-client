@@ -25,20 +25,10 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
-import com.rabbitmq.client.AMQP;
+
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.Command;
-import com.rabbitmq.client.ConfirmListener;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.FlowListener;
-import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.Method;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.ReturnListener;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.UnexpectedMethodError;
 import com.rabbitmq.client.impl.AMQImpl.Basic;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
 import com.rabbitmq.client.impl.AMQImpl.Confirm;
@@ -662,6 +652,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                        useProps, body));
     }
 
+
+
     /** Public API - {@inheritDoc} */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
                                               boolean durable, boolean autoDelete,
@@ -671,6 +663,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return exchangeDeclare(exchange, type,
                                durable, autoDelete, false,
                                arguments);
+    }
+
+    /** Public API - {@inheritDoc} */
+    public Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type,
+        boolean durable, boolean autoDelete,
+        Map<String, Object> arguments)
+        throws IOException
+    {
+        return exchangeDeclare(exchange, type.getType(),
+            durable, autoDelete,
+            arguments);
     }
 
     public void exchangeDeclareNoWait(String exchange,
@@ -689,6 +692,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                 .passive(false)
                                 .nowait(true)
                                 .build()));
+    }
+
+    public void exchangeDeclareNoWait(String exchange,
+        BuiltinExchangeType type,
+        boolean durable,
+        boolean autoDelete,
+        boolean internal,
+        Map<String, Object> arguments) throws IOException {
+        exchangeDeclareNoWait(exchange, type.getType(),
+            durable, autoDelete, internal,
+            arguments);
     }
 
     /** Public API - {@inheritDoc} */
@@ -712,6 +726,19 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type,
+        boolean durable,
+        boolean autoDelete,
+        boolean internal,
+        Map<String, Object> arguments)
+        throws IOException
+    {
+        return exchangeDeclare(exchange, type.getType(),
+            durable, autoDelete, internal,
+            arguments);
+    }
+
+    /** Public API - {@inheritDoc} */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
                                               boolean durable)
         throws IOException
@@ -720,10 +747,25 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    public Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type,
+        boolean durable)
+        throws IOException
+    {
+        return exchangeDeclare(exchange, type.getType(), durable);
+    }
+
+    /** Public API - {@inheritDoc} */
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type)
         throws IOException
     {
         return exchangeDeclare(exchange, type, false, false, null);
+    }
+
+    /** Public API - {@inheritDoc} */
+    public Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type)
+        throws IOException
+    {
+        return exchangeDeclare(exchange, type.getType());
     }
 
     /** Public API - {@inheritDoc} */
