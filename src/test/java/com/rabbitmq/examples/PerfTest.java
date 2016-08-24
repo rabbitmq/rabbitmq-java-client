@@ -15,7 +15,9 @@
 
 package com.rabbitmq.examples;
 
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
 import com.rabbitmq.examples.perf.MulticastParams;
@@ -33,6 +35,7 @@ import com.rabbitmq.client.ConnectionFactory;
 
 
 public class PerfTest {
+	
     public static void main(String[] args) {
         Options options = getOptions();
         CommandLineParser parser = new GnuParser();
@@ -43,7 +46,9 @@ public class PerfTest {
                 usage(options);
                 System.exit(0);
             }
-
+            String testID = new SimpleDateFormat("HHmmss-SSS").format(Calendar.
+            		getInstance().getTime());
+            testID                   = strArg(cmd, 'd', "test-"+testID);
             String exchangeType      = strArg(cmd, 't', "direct");
             String exchangeName      = strArg(cmd, 'e', exchangeType);
             String queueName         = strArg(cmd, 'u', "");
@@ -73,12 +78,13 @@ public class PerfTest {
             String uri               = strArg(cmd, 'h', "amqp://localhost");
 
             //setup
-            PrintlnStats stats = new PrintlnStats(1000L * samplingInterval,
-                                    producerCount > 0,
-                                    consumerCount > 0,
-                                    (flags.contains("mandatory") ||
-                                     flags.contains("immediate")),
-                                    confirm != -1);
+            PrintlnStats stats = new PrintlnStats(testID,
+            		1000L * samplingInterval,
+            		producerCount > 0,
+            		consumerCount > 0,
+            		(flags.contains("mandatory") || 
+            				flags.contains("immediate")),
+    				confirm != -1);
 
             ConnectionFactory factory = new ConnectionFactory();
             factory.setShutdownTimeout(0); // So we still shut down even with slow consumers
@@ -135,6 +141,7 @@ public class PerfTest {
     private static Options getOptions() {
         Options options = new Options();
         options.addOption(new Option("?", "help",             false,"show usage"));
+        options.addOption(new Option("d", "id",               true, "Test ID"));
         options.addOption(new Option("h", "uri",              true, "connection URI"));
         options.addOption(new Option("t", "type",             true, "exchange type"));
         options.addOption(new Option("e", "exchange",         true, "exchange name"));
@@ -191,8 +198,10 @@ public class PerfTest {
         private final boolean recvStatsEnabled;
         private final boolean returnStatsEnabled;
         private final boolean confirmStatsEnabled;
+        
+        private final String testID;
 
-        public PrintlnStats(long interval,
+        public PrintlnStats(String testID, long interval,
                             boolean sendStatsEnabled, boolean recvStatsEnabled,
                             boolean returnStatsEnabled, boolean confirmStatsEnabled) {
             super(interval);
@@ -200,33 +209,37 @@ public class PerfTest {
             this.recvStatsEnabled = recvStatsEnabled;
             this.returnStatsEnabled = returnStatsEnabled;
             this.confirmStatsEnabled = confirmStatsEnabled;
+            this.testID = testID;
         }
 
         @Override
         protected void report(long now) {
-            System.out.print("time: " + String.format("%.3f", (now - startTime)/1000.0) + "s");
+            String output = "id: " + testID + ", ";
+            
+            output += "time: " + String.format("%.3f", (now - startTime)/1000.0) + "s";
+            output +=
+                    getRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval) +
+                    getRate("returned",  returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsedInterval) +
+                    getRate("confirmed", confirmCountInterval, sendStatsEnabled && confirmStatsEnabled, elapsedInterval) +
+                    getRate("nacked",    nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsedInterval) +
+                    getRate("received",  recvCountInterval,    recvStatsEnabled,                        elapsedInterval);
 
-            showRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval);
-            showRate("returned",  returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsedInterval);
-            showRate("confirmed", confirmCountInterval, sendStatsEnabled && confirmStatsEnabled, elapsedInterval);
-            showRate("nacked",    nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsedInterval);
-            showRate("received",  recvCountInterval,    recvStatsEnabled,                        elapsedInterval);
-
-            System.out.print((latencyCountInterval > 0 ?
+            output += (latencyCountInterval > 0 ?
                               ", min/avg/max latency: " +
                               minLatency/1000L + "/" +
                               cumulativeLatencyInterval / (1000L * latencyCountInterval) + "/" +
                               maxLatency/1000L + " microseconds" :
-                              ""));
+                              "");
 
-            System.out.println();
+            System.out.println(output);
         }
 
-        private void showRate(String descr, long count, boolean display,
+        private String getRate(String descr, long count, boolean display,
                               long elapsed) {
-            if (display) {
-                System.out.print(", " + descr + ": " + formatRate(1000.0 * count / elapsed) + " msg/s");
-            }
+            if (display)
+                return ", " + descr + ": " + formatRate(1000.0 * count / elapsed) + " msg/s";
+            else
+                return "";
         }
 
         public void printFinal() {
