@@ -8,6 +8,11 @@ import java.util.List;
  */
 public interface AddressResolver {
 
+    /**
+     * Get the potential {@link Address}es to connect to.
+     * @return candidate {@link Address}es
+     * @throws IOException if it encounters a problem
+     */
     List<Address> getAddresses() throws IOException;
 
 }
