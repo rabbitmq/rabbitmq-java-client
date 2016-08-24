@@ -1,15 +1,15 @@
 package com.rabbitmq.client;
 
 /**
- *
+ * Enum for built-in exchange types.
  */
-public enum ExchangeType {
+public enum BuiltinExchangeType {
 
     DIRECT("direct"), FANOUT("fanout"), TOPIC("topic"), HEADERS("headers");
 
     private final String type;
 
-    ExchangeType(String type) {
+    BuiltinExchangeType(String type) {
         this.type = type;
     }
 
