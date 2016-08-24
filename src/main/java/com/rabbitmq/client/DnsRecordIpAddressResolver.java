@@ -7,7 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * {@link AddressResolver} that resolves DNS record IPs.
+ * Uses {@link InetAddress} internally.
+ * The first returned address is used when automatic recovery is NOT enabled
+ * at the {@link ConnectionFactory} level.
+ * When automatic recovery is enabled, a random address will be picked up
+ * from the returned list of {@link Address}es.
  */
 public class DnsRecordIpAddressResolver implements AddressResolver {
 
@@ -40,6 +45,11 @@ public class DnsRecordIpAddressResolver implements AddressResolver {
         this.ssl = ssl;
     }
 
+    /**
+     * Get the IP addresses from a DNS query
+     * @return candidate {@link Address}es
+     * @throws IOException if DNS resolution fails
+     */
     @Override
     public List<Address> getAddresses() throws IOException {
         String hostName = address.getHost();
