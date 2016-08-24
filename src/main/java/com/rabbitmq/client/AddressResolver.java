@@ -1,5 +1,6 @@
 package com.rabbitmq.client;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -7,6 +8,6 @@ import java.util.List;
  */
 public interface AddressResolver {
 
-    List<Address> getAddresses();
+    List<Address> getAddresses() throws IOException;
 
 }
