@@ -321,6 +321,17 @@ public interface Channel extends ShutdownNotifier {
     Exchange.DeclareOk exchangeDeclare(String exchange, String type) throws IOException;
 
     /**
+     * Actively declare a non-autodelete, non-durable exchange with no extra arguments
+     * @see com.rabbitmq.client.AMQP.Exchange.Declare
+     * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
+     * @param exchange the name of the exchange
+     * @param type the exchange type
+     * @return a declaration-confirm method to indicate the exchange was successfully declared
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type) throws IOException;
+
+    /**
      * Actively declare a non-autodelete exchange with no extra arguments
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
@@ -331,6 +342,18 @@ public interface Channel extends ShutdownNotifier {
      * @return a declaration-confirm method to indicate the exchange was successfully declared
      */
     Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable) throws IOException;
+
+    /**
+     * Actively declare a non-autodelete exchange with no extra arguments
+     * @see com.rabbitmq.client.AMQP.Exchange.Declare
+     * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
+     * @param exchange the name of the exchange
+     * @param type the exchange type
+     * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
+     * @throws java.io.IOException if an error is encountered
+     * @return a declaration-confirm method to indicate the exchange was successfully declared
+     */
+    Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type, boolean durable) throws IOException;
 
     /**
      * Declare an exchange.
@@ -346,6 +369,21 @@ public interface Channel extends ShutdownNotifier {
      */
     Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable, boolean autoDelete,
                                        Map<String, Object> arguments) throws IOException;
+
+    /**
+     * Declare an exchange.
+     * @see com.rabbitmq.client.AMQP.Exchange.Declare
+     * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
+     * @param exchange the name of the exchange
+     * @param type the exchange type
+     * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
+     * @param autoDelete true if the server should delete the exchange when it is no longer in use
+     * @param arguments other properties (construction arguments) for the exchange
+     * @return a declaration-confirm method to indicate the exchange was successfully declared
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type, boolean durable, boolean autoDelete,
+        Map<String, Object> arguments) throws IOException;
 
     /**
      * Declare an exchange, via an interface that allows the complete set of
@@ -370,6 +408,28 @@ public interface Channel extends ShutdownNotifier {
                                               Map<String, Object> arguments) throws IOException;
 
     /**
+     * Declare an exchange, via an interface that allows the complete set of
+     * arguments.
+     * @see com.rabbitmq.client.AMQP.Exchange.Declare
+     * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
+     * @param exchange the name of the exchange
+     * @param type the exchange type
+     * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
+     * @param autoDelete true if the server should delete the exchange when it is no longer in use
+     * @param internal true if the exchange is internal, i.e. can't be directly
+     * published to by a client.
+     * @param arguments other properties (construction arguments) for the exchange
+     * @return a declaration-confirm method to indicate the exchange was successfully declared
+     * @throws java.io.IOException if an error is encountered
+     */
+    Exchange.DeclareOk exchangeDeclare(String exchange,
+        ExchangeType type,
+        boolean durable,
+        boolean autoDelete,
+        boolean internal,
+        Map<String, Object> arguments) throws IOException;
+
+    /**
      * Like {@link Channel#exchangeDeclare(String, String, boolean, boolean, java.util.Map)} but
      * sets nowait parameter to true and returns nothing (as there will be no response from
      * the server).
@@ -389,6 +449,27 @@ public interface Channel extends ShutdownNotifier {
                                boolean autoDelete,
                                boolean internal,
                                Map<String, Object> arguments) throws IOException;
+
+    /**
+     * Like {@link Channel#exchangeDeclare(String, String, boolean, boolean, java.util.Map)} but
+     * sets nowait parameter to true and returns nothing (as there will be no response from
+     * the server).
+     *
+     * @param exchange the name of the exchange
+     * @param type the exchange type
+     * @param durable true if we are declaring a durable exchange (the exchange will survive a server restart)
+     * @param autoDelete true if the server should delete the exchange when it is no longer in use
+     * @param internal true if the exchange is internal, i.e. can't be directly
+     * published to by a client.
+     * @param arguments other properties (construction arguments) for the exchange
+     * @throws java.io.IOException if an error is encountered
+     */
+    void exchangeDeclareNoWait(String exchange,
+        ExchangeType type,
+        boolean durable,
+        boolean autoDelete,
+        boolean internal,
+        Map<String, Object> arguments) throws IOException;
 
     /**
      * Declare an exchange passively; that is, check if the named exchange exists.
