@@ -15,31 +15,21 @@
 
 package com.rabbitmq.client;
 
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.concurrent.*;
-import java.util.List;
-import java.util.Arrays;
+import com.rabbitmq.client.impl.*;
+import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ConnectionParams;
-import com.rabbitmq.client.impl.DefaultExceptionHandler;
-import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.FrameHandlerFactory;
-import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
@@ -836,7 +826,7 @@ public class ConnectionFactory implements Cloneable {
      */
     public Connection newConnection(ExecutorService executor, List<Address> addrs, String clientProvidedName)
             throws IOException, TimeoutException {
-        return newConnection(executor, new ListAddressResolver(addrs), clientProvidedName);
+        return newConnection(executor, createAddressResolver(addrs), clientProvidedName);
     }
 
     /**
@@ -974,6 +964,14 @@ public class ConnectionFactory implements Cloneable {
      */
     public Connection newConnection(ExecutorService executor, String connectionName) throws IOException, TimeoutException {
         return newConnection(executor, Collections.singletonList(new Address(getHost(), getPort())), connectionName);
+    }
+
+    protected AddressResolver createAddressResolver(List<Address> addresses) {
+        if(addresses.size() == 1) {
+            return new DnsRecordIpAddressResolver(addresses.get(0), isSSL());
+        } else {
+            return new ListAddressResolver(addresses);
+        }
     }
 
     @Override public ConnectionFactory clone(){
