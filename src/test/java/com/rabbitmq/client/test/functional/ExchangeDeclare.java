@@ -19,7 +19,7 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ExchangeType;
+import com.rabbitmq.client.BuiltinExchangeType;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -96,8 +96,8 @@ public class ExchangeDeclare extends ExchangeEquivalenceBase {
     }
 
     private void doTestExchangeDeclaredWithEnumerationEquivalent(Channel channel) throws IOException, InterruptedException {
-        assertEquals("There are 4 standard exchange types", 4, ExchangeType.values().length);
-        for (ExchangeType exchangeType : ExchangeType.values()) {
+        assertEquals("There are 4 standard exchange types", 4, BuiltinExchangeType.values().length);
+        for (BuiltinExchangeType exchangeType : BuiltinExchangeType.values()) {
             channel.exchangeDeclare(NAME, exchangeType);
             verifyEquivalent(NAME, exchangeType.getType(), false, false, null);
             channel.exchangeDelete(NAME);

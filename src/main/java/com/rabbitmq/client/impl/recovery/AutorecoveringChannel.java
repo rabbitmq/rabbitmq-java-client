@@ -182,7 +182,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return exchangeDeclare(exchange, type, false, false, null);
     }
 
-    public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type) throws IOException {
+    public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type) throws IOException {
         return exchangeDeclare(exchange, type.getType());
     }
 
@@ -190,7 +190,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return exchangeDeclare(exchange, type, durable, false, null);
     }
 
-    public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type, boolean durable) throws IOException {
+    public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type, boolean durable) throws IOException {
         return exchangeDeclare(exchange, type.getType(), durable);
     }
 
@@ -198,7 +198,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return exchangeDeclare(exchange, type, durable, autoDelete, false, arguments);
     }
 
-    public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type, boolean durable, boolean autoDelete, Map<String, Object> arguments) throws IOException {
+    public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type, boolean durable, boolean autoDelete, Map<String, Object> arguments) throws IOException {
         return exchangeDeclare(exchange, type.getType(), durable, autoDelete, arguments);
     }
 
@@ -213,7 +213,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return ok;
     }
 
-    public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
+    public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
         return exchangeDeclare(exchange, type.getType(), durable, autoDelete, internal, arguments);
     }
 
@@ -229,7 +229,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     }
 
     @Override
-    public void exchangeDeclareNoWait(String exchange, ExchangeType type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
+    public void exchangeDeclareNoWait(String exchange, BuiltinExchangeType type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
         exchangeDeclareNoWait(exchange, type.getType(), durable, autoDelete, internal, arguments);
     }
 

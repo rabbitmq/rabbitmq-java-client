@@ -329,7 +329,7 @@ public interface Channel extends ShutdownNotifier {
      * @return a declaration-confirm method to indicate the exchange was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
-    Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type) throws IOException;
+    Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type) throws IOException;
 
     /**
      * Actively declare a non-autodelete exchange with no extra arguments
@@ -353,7 +353,7 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      * @return a declaration-confirm method to indicate the exchange was successfully declared
      */
-    Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type, boolean durable) throws IOException;
+    Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type, boolean durable) throws IOException;
 
     /**
      * Declare an exchange.
@@ -382,7 +382,7 @@ public interface Channel extends ShutdownNotifier {
      * @return a declaration-confirm method to indicate the exchange was successfully declared
      * @throws java.io.IOException if an error is encountered
      */
-    Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type, boolean durable, boolean autoDelete,
+    Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type, boolean durable, boolean autoDelete,
         Map<String, Object> arguments) throws IOException;
 
     /**
@@ -423,7 +423,7 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      */
     Exchange.DeclareOk exchangeDeclare(String exchange,
-        ExchangeType type,
+        BuiltinExchangeType type,
         boolean durable,
         boolean autoDelete,
         boolean internal,
@@ -465,7 +465,7 @@ public interface Channel extends ShutdownNotifier {
      * @throws java.io.IOException if an error is encountered
      */
     void exchangeDeclareNoWait(String exchange,
-        ExchangeType type,
+        BuiltinExchangeType type,
         boolean durable,
         boolean autoDelete,
         boolean internal,

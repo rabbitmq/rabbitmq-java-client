@@ -666,7 +666,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type,
+    public Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type,
         boolean durable, boolean autoDelete,
         Map<String, Object> arguments)
         throws IOException
@@ -695,7 +695,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     public void exchangeDeclareNoWait(String exchange,
-        ExchangeType type,
+        BuiltinExchangeType type,
         boolean durable,
         boolean autoDelete,
         boolean internal,
@@ -726,7 +726,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type,
+    public Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type,
         boolean durable,
         boolean autoDelete,
         boolean internal,
@@ -747,7 +747,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type,
+    public Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type,
         boolean durable)
         throws IOException
     {
@@ -762,7 +762,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public Exchange.DeclareOk exchangeDeclare(String exchange, ExchangeType type)
+    public Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type)
         throws IOException
     {
         return exchangeDeclare(exchange, type.getType());
