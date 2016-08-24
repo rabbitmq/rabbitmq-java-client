@@ -39,6 +39,7 @@ public class ClientTests extends AbstractRMQTestSuite {
         suite.addTestSuite(AmqpUriTest.class);
         suite.addTestSuite(JSONReadWriteTest.class);
         suite.addTestSuite(SharedThreadPoolTest.class);
+        suite.addTestSuite(DnsRecordIpAddressResolverTests.class);
         return suite;
     }
 }
