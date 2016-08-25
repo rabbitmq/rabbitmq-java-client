@@ -15,18 +15,21 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-
-public class ChannelNumberAllocationTests extends TestCase{
+public class ChannelNumberAllocationTests {
   static final int CHANNEL_COUNT = 100;
   static final Comparator<Channel> COMPARATOR = new Comparator<Channel>(){
     public int compare(Channel x, Channel y){
@@ -38,21 +41,21 @@ public class ChannelNumberAllocationTests extends TestCase{
 
   Connection connection;
 
-  public void setUp() throws Exception{
+  @Before public void setUp() throws Exception{
     connection = new ConnectionFactory().newConnection();
   }
 
-  public void tearDown() throws Exception{
+  @After public void tearDown() throws Exception{
     connection.close();
     connection = null;
   }
 
-  public void testAllocateInOrder() throws Exception{
+  @Test public void allocateInOrder() throws Exception{
     for(int i = 1; i <= CHANNEL_COUNT; i++)
       assertEquals(i, connection.createChannel().getChannelNumber());
   }
 
-  public void testAllocateAfterFreeingLast() throws Exception{
+  @Test public void allocateAfterFreeingLast() throws Exception{
     Channel ch = connection.createChannel();
     assertEquals(1, ch.getChannelNumber());
     ch.close();
@@ -60,7 +63,7 @@ public class ChannelNumberAllocationTests extends TestCase{
     assertEquals(1, ch.getChannelNumber());
   }
 
-  public void testAllocateAfterFreeingMany() throws Exception{
+  @Test public void allocateAfterFreeingMany() throws Exception{
     List<Channel> channels = new ArrayList<Channel>();
 
     for(int i = 1; i <= CHANNEL_COUNT; i++)
@@ -80,36 +83,36 @@ public class ChannelNumberAllocationTests extends TestCase{
 
     assertEquals("Didn't create the right number of channels!", CHANNEL_COUNT, channels.size());
     for(int i = 1; i < CHANNEL_COUNT; ++i) {
-        assertTrue("Channel numbers should be distinct."
-                  , channels.get(i-1).getChannelNumber() < channels.get(i).getChannelNumber()
-                  );
+      assertTrue("Channel numbers should be distinct."
+          , channels.get(i-1).getChannelNumber() < channels.get(i).getChannelNumber()
+      );
     }
   }
 
-  public void testAllocateAfterManualAssign() throws Exception{
+  @Test public void allocateAfterManualAssign() throws Exception{
     connection.createChannel(10);
 
     for(int i = 0; i < 20; i++)
-        assertTrue(10 != connection.createChannel().getChannelNumber());
+      assertTrue(10 != connection.createChannel().getChannelNumber());
   }
 
-  public void testManualAllocationDoesntBreakThings() throws Exception{
+  @Test public void manualAllocationDoesntBreakThings() throws Exception{
     connection.createChannel((1 << 16) - 1);
     Channel ch = connection.createChannel();
     assertNotNull(ch);
   }
 
-  public void testReuseManuallyAllocatedChannelNumber1() throws Exception{
+  @Test public void reuseManuallyAllocatedChannelNumber1() throws Exception{
     connection.createChannel(1).close();
     assertNotNull(connection.createChannel(1));
   }
 
-  public void testReuseManuallyAllocatedChannelNumber2() throws Exception{
+  @Test public void reuseManuallyAllocatedChannelNumber2() throws Exception{
     connection.createChannel(2).close();
     assertNotNull(connection.createChannel(3));
   }
 
-  public void testReserveOnBoundaries() throws Exception{
+  @Test public void reserveOnBoundaries() throws Exception{
     assertNotNull(connection.createChannel(3));
     assertNotNull(connection.createChannel(4));
     assertNotNull(connection.createChannel(2));
