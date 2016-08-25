@@ -72,7 +72,11 @@ import org.junit.runners.Suite;
     ConnectionRecovery.class,
     ExceptionHandling.class,
     PerConsumerPrefetch.class,
-    DirectReplyTo.class
+    DirectReplyTo.class,
+	ConsumerCount.class,
+	BasicGet.class,
+	Nack.class,
+	ExceptionMessages.class
 })
 public class FunctionalTests {
 

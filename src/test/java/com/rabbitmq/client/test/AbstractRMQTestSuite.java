@@ -24,11 +24,6 @@ import java.util.Properties;
 
 public abstract class AbstractRMQTestSuite {
 
-  private static final String DEFAULT_SSL_HOSTNAME = "localhost";
-  private static final int DEFAULT_SSL_PORT = 5671;
-
-  private static boolean buildSSLPropertiesFound = false;
-
   static {
     Properties TESTS_PROPS = new Properties(System.getProperties());
     String make = System.getenv("MAKE");
@@ -84,10 +79,6 @@ public abstract class AbstractRMQTestSuite {
     }
 
     return true;
-  }
-
-  public static boolean isUnderUmbrella() {
-    return new File("../../UMBRELLA.md").isFile();
   }
 
   public static boolean isSSLAvailable() {

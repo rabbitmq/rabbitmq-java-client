@@ -37,7 +37,10 @@ import org.junit.runners.Suite;
     Shutdown.class,
     BlockedConnection.class,
     ChannelLimitNegotiation.class,
-    LoopbackUsers.class
+    LoopbackUsers.class,
+	XDeathHeaderGrowth.class,
+	PriorityQueues.class,
+
 })
 public class ServerTests {
 
