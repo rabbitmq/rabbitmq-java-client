@@ -15,6 +15,16 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import org.junit.Test;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -25,21 +35,15 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.impl.DefaultExceptionHandler;
 import com.rabbitmq.client.impl.ForgivingExceptionHandler;
-import junit.framework.TestCase;
 
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-public class ExceptionHandling extends TestCase {
+public class ExceptionHandling {
     private ConnectionFactory newConnectionFactory(ExceptionHandler eh) {
         ConnectionFactory cf = new ConnectionFactory();
         cf.setExceptionHandler(eh);
         return cf;
     }
 
-    public void testDefaultConsumerHandleConsumerException() throws IOException, InterruptedException, TimeoutException {
+    @Test public void defaultConsumerHandleConsumerException() throws IOException, InterruptedException, TimeoutException {
         final CountDownLatch latch = new CountDownLatch(1);
         final ExceptionHandler eh = new DefaultExceptionHandler() {
             @Override
@@ -52,7 +56,7 @@ public class ExceptionHandling extends TestCase {
         testConsumerHandleConsumerException(eh, latch, true);
     }
 
-    public void testForgivingConsumerHandleConsumerException() throws IOException, InterruptedException, TimeoutException {
+    @Test public void forgivingConsumerHandleConsumerException() throws IOException, InterruptedException, TimeoutException {
         final CountDownLatch latch = new CountDownLatch(1);
         final ExceptionHandler eh = new ForgivingExceptionHandler() {
             @Override
@@ -86,7 +90,7 @@ public class ExceptionHandling extends TestCase {
         assertEquals(!expectChannelClose, ch.isOpen());
     }
 
-    public void testNullExceptionHandler() {
+    @Test public void nullExceptionHandler() {
       ConnectionFactory cf = new ConnectionFactory();
       try {
         cf.setExceptionHandler(null);

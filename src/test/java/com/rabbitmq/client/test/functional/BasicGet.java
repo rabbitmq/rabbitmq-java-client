@@ -15,15 +15,23 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.Test;
+
+import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.test.BrokerTestCase;
+
 public class BasicGet extends BrokerTestCase {
-  public void testBasicGetWithEnqueuedMessages() throws IOException, InterruptedException {
+  @Test public void basicGetWithEnqueuedMessages() throws IOException, InterruptedException {
     assertTrue(channel.isOpen());
     String q = channel.queueDeclare().getQueue();
 
@@ -36,7 +44,7 @@ public class BasicGet extends BrokerTestCase {
     channel.queueDelete(q);
   }
 
-  public void testBasicGetWithEmptyQueue() throws IOException, InterruptedException {
+  @Test public void basicGetWithEmptyQueue() throws IOException, InterruptedException {
     assertTrue(channel.isOpen());
     String q = channel.queueDeclare().getQueue();
 
@@ -44,7 +52,7 @@ public class BasicGet extends BrokerTestCase {
     channel.queueDelete(q);
   }
 
-  public void testBasicGetWithClosedChannel() throws IOException, InterruptedException, TimeoutException {
+  @Test public void basicGetWithClosedChannel() throws IOException, InterruptedException, TimeoutException {
     assertTrue(channel.isOpen());
     String q = channel.queueDeclare().getQueue();
 

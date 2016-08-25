@@ -42,6 +42,11 @@ import org.junit.runners.Suite;
     SharedThreadPoolTest.class,
     DnsRecordIpAddressResolverTests.class
 })
-public class ClientTests extends AbstractRMQTestSuite {
+public class ClientTests {
+
+    // initialize system properties
+    static{
+        new AbstractRMQTestSuite(){};
+    }
 
 }

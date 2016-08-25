@@ -15,16 +15,18 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.QueueingConsumer.Delivery;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static com.rabbitmq.client.test.functional.QosTests.drain;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.rabbitmq.client.test.functional.QosTests.drain;
+import org.junit.Test;
+
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public class PerConsumerPrefetch extends BrokerTestCase {
     private String q;
@@ -38,7 +40,7 @@ public class PerConsumerPrefetch extends BrokerTestCase {
         public void makeMore(List<Delivery> deliveries) throws IOException;
     }
 
-    public void testSingleAck() throws IOException {
+    @Test public void singleAck() throws IOException {
         testPrefetch(new Closure() {
             public void makeMore(List<Delivery> deliveries) throws IOException {
                 for (Delivery del : deliveries) {
@@ -48,7 +50,7 @@ public class PerConsumerPrefetch extends BrokerTestCase {
         });
     }
 
-    public void testMultiAck() throws IOException {
+    @Test public void multiAck() throws IOException {
         testPrefetch(new Closure() {
             public void makeMore(List<Delivery> deliveries) throws IOException {
                 ack(deliveries.get(deliveries.size() - 1), true);
@@ -56,7 +58,7 @@ public class PerConsumerPrefetch extends BrokerTestCase {
         });
     }
 
-    public void testSingleNack() throws IOException {
+    @Test public void singleNack() throws IOException {
         for (final boolean requeue: Arrays.asList(false, true)) {
             testPrefetch(new Closure() {
                 public void makeMore(List<Delivery> deliveries) throws IOException {
@@ -68,7 +70,7 @@ public class PerConsumerPrefetch extends BrokerTestCase {
         }
     }
 
-    public void testMultiNack() throws IOException {
+    @Test public void multiNack() throws IOException {
         for (final boolean requeue: Arrays.asList(false, true)) {
             testPrefetch(new Closure() {
                 public void makeMore(List<Delivery> deliveries) throws IOException {
@@ -78,7 +80,7 @@ public class PerConsumerPrefetch extends BrokerTestCase {
         }
     }
 
-    public void testRecover() throws IOException {
+    @Test public void recover() throws IOException {
         testPrefetch(new Closure() {
             public void makeMore(List<Delivery> deliveries) throws IOException {
                 channel.basicRecover();
@@ -99,7 +101,7 @@ public class PerConsumerPrefetch extends BrokerTestCase {
         drain(c, 5);
     }
 
-    public void testPrefetchOnEmpty() throws IOException {
+    @Test public void prefetchOnEmpty() throws IOException {
         QueueingConsumer c = new QueueingConsumer(channel);
         publish(q, 5);
         consume(c, 10, false);
@@ -108,14 +110,14 @@ public class PerConsumerPrefetch extends BrokerTestCase {
         drain(c, 5);
     }
 
-    public void testAutoAckIgnoresPrefetch() throws IOException {
+    @Test public void autoAckIgnoresPrefetch() throws IOException {
         QueueingConsumer c = new QueueingConsumer(channel);
         publish(q, 10);
         consume(c, 1, true);
         drain(c, 10);
     }
 
-    public void testPrefetchZeroMeansInfinity() throws IOException {
+    @Test public void prefetchZeroMeansInfinity() throws IOException {
         QueueingConsumer c = new QueueingConsumer(channel);
         publish(q, 10);
         consume(c, 0, false);

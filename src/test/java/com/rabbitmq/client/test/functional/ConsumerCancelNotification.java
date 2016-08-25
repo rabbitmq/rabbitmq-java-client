@@ -15,13 +15,8 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.ConsumerCancelledException;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -29,11 +24,21 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Test;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.test.BrokerTestCase;
+
 public class ConsumerCancelNotification extends BrokerTestCase {
 
     private final String queue = "cancel_notification_queue";
 
-    public void testConsumerCancellationNotification() throws IOException,
+    @Test public void consumerCancellationNotification() throws IOException,
             InterruptedException {
         final BlockingQueue<Boolean> result = new ArrayBlockingQueue<Boolean>(1);
 
@@ -53,7 +58,7 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         assertTrue(result.take());
     }
 
-    public void testConsumerCancellationInterruptsQueuingConsumerWait()
+    @Test public void consumerCancellationInterruptsQueuingConsumerWait()
             throws IOException, InterruptedException {
         final BlockingQueue<Boolean> result = new ArrayBlockingQueue<Boolean>(1);
         channel.queueDeclare(queue, false, true, false, null);
@@ -112,7 +117,7 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         }
     }
 
-    public void testConsumerCancellationHandlerUsesBlockingOperations()
+    @Test public void consumerCancellationHandlerUsesBlockingOperations()
             throws IOException, InterruptedException {
         final String altQueue = "basic.cancel.fallback";
         channel.queueDeclare(queue, false, true, false, null);

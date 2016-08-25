@@ -15,11 +15,13 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Map;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public abstract class ExchangeEquivalenceBase extends BrokerTestCase {
     public void verifyEquivalent(String name,

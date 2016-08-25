@@ -16,12 +16,18 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public class Transactions extends BrokerTestCase
 {
@@ -108,7 +114,7 @@ public class Transactions extends BrokerTestCase
     /*
       publishes are embargoed until commit
      */
-    public void testCommitPublish()
+    @Test public void commitPublish()
         throws IOException
     {
         txSelect();
@@ -122,7 +128,7 @@ public class Transactions extends BrokerTestCase
     /*
       rollback rolls back publishes
     */
-    public void testRollbackPublish()
+    @Test public void rollbackPublish()
         throws IOException
     {
         txSelect();
@@ -134,7 +140,7 @@ public class Transactions extends BrokerTestCase
     /*
       closing a channel rolls back publishes
     */
-    public void testRollbackPublishOnClose()
+    @Test public void rollbackPublishOnClose()
         throws IOException
     {
         txSelect();
@@ -147,7 +153,7 @@ public class Transactions extends BrokerTestCase
     /*
       closing a channel requeues both ack'ed and un-ack'ed messages
     */
-    public void testRequeueOnClose()
+    @Test public void requeueOnClose()
         throws IOException
     {
         basicPublish();
@@ -168,7 +174,7 @@ public class Transactions extends BrokerTestCase
       messages with committed acks are not requeued on channel close,
       messages that weren't ack'ed are requeued on close, but not before then.
     */
-    public void testCommitAcks()
+    @Test public void commitAcks()
         throws IOException
     {
         basicPublish();
@@ -188,7 +194,7 @@ public class Transactions extends BrokerTestCase
 
     /*
     */
-    public void testCommitAcksOutOfOrder()
+    @Test public void commitAcksOutOfOrder()
         throws IOException
     {
         long tags[] = publishSelectAndGet(4);
@@ -203,7 +209,7 @@ public class Transactions extends BrokerTestCase
       rollback rolls back acks
       and a rolled back ack can be re-issued
     */
-    public void testRollbackAcksAndReAck()
+    @Test public void rollbackAcksAndReAck()
         throws IOException
     {
         basicPublish();
@@ -222,7 +228,7 @@ public class Transactions extends BrokerTestCase
     /*
       it is illegal to ack with an unknown delivery tag
     */
-    public void testUnknownTagAck()
+    @Test public void unknownTagAck()
         throws IOException
     {
         basicPublish();
@@ -238,7 +244,7 @@ public class Transactions extends BrokerTestCase
     /*
       rollback does not requeue delivered ack'ed or un-ack'ed messages
     */
-    public void testNoRequeueOnRollback()
+    @Test public void noRequeueOnRollback()
         throws IOException
     {
         basicPublish();
@@ -254,7 +260,7 @@ public class Transactions extends BrokerTestCase
     /*
       auto-acks are not part of tx
     */
-    public void testAutoAck()
+    @Test public void autoAck()
         throws IOException
     {
         basicPublish();
@@ -268,7 +274,7 @@ public class Transactions extends BrokerTestCase
     /*
       "ack all", once committed, acks all delivered messages
     */
-    public void testAckAll()
+    @Test public void ackAll()
         throws IOException
     {
         basicPublish();
@@ -283,7 +289,7 @@ public class Transactions extends BrokerTestCase
         assertNull(basicGet());
     }
 
-    public void testNonTransactedCommit()
+    @Test public void nonTransactedCommit()
         throws IOException
     {
         try {
@@ -294,7 +300,7 @@ public class Transactions extends BrokerTestCase
         }
     }
 
-    public void testNonTransactedRollback()
+    @Test public void nonTransactedRollback()
         throws IOException
     {
         try {
@@ -305,7 +311,7 @@ public class Transactions extends BrokerTestCase
         }
     }
 
-    public void testRedeliverAckedUncommitted()
+    @Test public void redeliverAckedUncommitted()
         throws IOException
     {
         txSelect();
@@ -322,7 +328,7 @@ public class Transactions extends BrokerTestCase
                    basicGet(true));
     }
 
-    public void testCommitWithDeletedQueue()
+    @Test public void commitWithDeletedQueue()
             throws IOException, TimeoutException {
         txSelect();
         basicPublish();
@@ -339,7 +345,7 @@ public class Transactions extends BrokerTestCase
         }
     }
 
-    public void testShuffleAcksBeforeRollback()
+    @Test public void shuffleAcksBeforeRollback()
         throws IOException
     {
         long tags[] = publishSelectAndGet(3);
@@ -432,37 +438,37 @@ public class Transactions extends BrokerTestCase
         assertNull(basicGet());
     }
 
-    public void testCommitNacks()
+    @Test public void commitNacks()
         throws IOException
     {
         commitNacks(basicNack);
     }
 
-    public void testRollbackNacks()
+    @Test public void rollbackNacks()
         throws IOException
     {
         rollbackNacks(basicNack);
     }
 
-    public void testCommitAcksAndNacks()
+    @Test public void commitAcksAndNacks()
         throws IOException
     {
         commitAcksAndNacks(basicNack);
     }
 
-    public void testCommitRejects()
+    @Test public void commitRejects()
         throws IOException
     {
         commitNacks(basicReject);
     }
 
-    public void testRollbackRejects()
+    @Test public void rollbackRejects()
         throws IOException
     {
         rollbackNacks(basicReject);
     }
 
-    public void testCommitAcksAndRejects()
+    @Test public void commitAcksAndRejects()
         throws IOException
     {
         commitAcksAndNacks(basicReject);

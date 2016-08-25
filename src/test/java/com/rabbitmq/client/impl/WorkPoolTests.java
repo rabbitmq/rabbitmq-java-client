@@ -15,15 +15,20 @@
 
 package com.rabbitmq.client.impl;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Test;
+
 /**
  * Unit tests for {@link WorkPool}
  */
-public class WorkPoolTests extends TestCase {
+public class WorkPoolTests {
 
     private final WorkPool<String, Object> pool = new WorkPool<String, Object>();
 
@@ -31,7 +36,7 @@ public class WorkPoolTests extends TestCase {
      * Test unknown key tolerated silently
      * @throws Exception untested
      */
-    public void testUnknownKey() throws Exception{
+    @Test public void unknownKey() throws Exception{
         assertFalse(this.pool.addWorkItem("test", new Object()));
     }
 
@@ -39,7 +44,7 @@ public class WorkPoolTests extends TestCase {
      * Test add work and remove work
      * @throws Exception untested
      */
-    public void testBasicInOut() throws Exception {
+    @Test public void basicInOut() throws Exception {
         Object one = new Object();
         Object two = new Object();
 
@@ -69,7 +74,7 @@ public class WorkPoolTests extends TestCase {
      * Test add work when work in progress.
      * @throws Exception untested
      */
-    public void testWorkInWhileInProgress() throws Exception {
+    @Test public void workInWhileInProgress() throws Exception {
         Object one = new Object();
         Object two = new Object();
 
@@ -97,7 +102,7 @@ public class WorkPoolTests extends TestCase {
      * Test multiple work keys.
      * @throws Exception untested
      */
-    public void testInterleavingKeys() throws Exception {
+    @Test public void interleavingKeys() throws Exception {
         Object one = new Object();
         Object two = new Object();
         Object three = new Object();
@@ -128,7 +133,7 @@ public class WorkPoolTests extends TestCase {
      * Test removal of key (with work)
      * @throws Exception untested
      */
-    public void testUnregisterKey() throws Exception {
+    @Test public void unregisterKey() throws Exception {
         Object one = new Object();
         Object two = new Object();
         Object three = new Object();
@@ -153,7 +158,7 @@ public class WorkPoolTests extends TestCase {
      * Test removal of all keys (with work).
      * @throws Exception untested
      */
-    public void testUnregisterAllKeys() throws Exception {
+    @Test public void unregisterAllKeys() throws Exception {
         Object one = new Object();
         Object two = new Object();
         Object three = new Object();

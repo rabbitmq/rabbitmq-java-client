@@ -15,14 +15,16 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.ShutdownSignalException;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import com.rabbitmq.client.ShutdownSignalException;
 
 import junit.framework.AssertionFailedError;
 

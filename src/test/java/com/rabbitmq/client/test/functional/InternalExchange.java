@@ -16,8 +16,12 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.Arrays;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
@@ -69,7 +73,7 @@ public class InternalExchange extends BrokerTestCase
     }
 
 
-    public void testTryPublishingToInternalExchange()
+    @Test public void tryPublishingToInternalExchange()
             throws IOException
     {
         byte[] testDataBody = "test-data".getBytes();

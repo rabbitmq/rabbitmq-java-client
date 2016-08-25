@@ -16,19 +16,26 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.ReturnListener;
-import com.rabbitmq.utility.BlockingCell;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.ReturnListener;
+import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.utility.BlockingCell;
 
 public class Routing extends BrokerTestCase
 {
@@ -81,7 +88,7 @@ public class Routing extends BrokerTestCase
      * of the spec. See the doc for the "queue" and "routing key"
      * fields of queue.bind.
      */
-    public void testMRDQRouting()
+    @Test public void mRDQRouting()
         throws IOException
     {
         bind(Q1, "baz");        //Q1, "baz"
@@ -99,7 +106,7 @@ public class Routing extends BrokerTestCase
      * NOT receive duplicate copies of a message that matches both
      * bindings.
      */
-    public void testDoubleBinding()
+    @Test public void doubleBinding()
         throws IOException
     {
         channel.queueBind(Q1, "amq.topic", "x.#");
@@ -115,7 +122,7 @@ public class Routing extends BrokerTestCase
         checkGet(Q1, false);
     }
 
-    public void testFanoutRouting() throws Exception {
+    @Test public void fanoutRouting() throws Exception {
 
         List<String> queues = new ArrayList<String>();
 
@@ -138,7 +145,7 @@ public class Routing extends BrokerTestCase
         }
     }
 
-    public void testTopicRouting() throws Exception {
+    @Test public void topicRouting() throws Exception {
 
         List<String> queues = new ArrayList<String>();
 
@@ -158,7 +165,7 @@ public class Routing extends BrokerTestCase
         }
     }
 
-    public void testHeadersRouting() throws Exception {
+    @Test public void headersRouting() throws Exception {
         Map<String, Object> spec = new HashMap<String, Object>();
         spec.put("h1", "12345");
         spec.put("h2", "bar");
@@ -233,7 +240,7 @@ public class Routing extends BrokerTestCase
         checkGet(Q2, false);
     }
 
-    public void testBasicReturn() throws IOException {
+    @Test public void basicReturn() throws IOException {
         channel.addReturnListener(makeReturnListener());
         returnCell = new BlockingCell<Integer>();
 
@@ -257,7 +264,7 @@ public class Routing extends BrokerTestCase
         }
     }
 
-    public void testBasicReturnTransactional() throws IOException {
+    @Test public void basicReturnTransactional() throws IOException {
         channel.txSelect();
         channel.addReturnListener(makeReturnListener());
         returnCell = new BlockingCell<Integer>();

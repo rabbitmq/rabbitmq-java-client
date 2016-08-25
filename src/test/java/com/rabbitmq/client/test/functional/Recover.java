@@ -16,15 +16,19 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.util.Arrays;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
+import java.util.Arrays;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Command;
-import com.rabbitmq.client.ShutdownSignalException;
-
+import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class Recover extends BrokerTestCase {
@@ -85,21 +89,21 @@ public class Recover extends BrokerTestCase {
             }
         };
 
-    public void testRedeliveryOnRecover() throws IOException, InterruptedException {
+    @Test public void redeliveryOnRecover() throws IOException, InterruptedException {
         verifyRedeliverOnRecover(recoverSync);
     }
     
-    public void testRedeliverOnRecoverConvenience() 
+    @Test public void redeliverOnRecoverConvenience() 
         throws IOException, InterruptedException {
         verifyRedeliverOnRecover(recoverSyncConvenience);
     }
 
-    public void testNoRedeliveryWithAutoAck()
+    @Test public void noRedeliveryWithAutoAck()
         throws IOException, InterruptedException {
         verifyNoRedeliveryWithAutoAck(recoverSync);
     }
 
-    public void testRequeueFalseNotSupported() throws Exception {
+    @Test public void requeueFalseNotSupported() throws Exception {
         try {
             channel.basicRecover(false);
             fail("basicRecover(false) should not be supported");

@@ -16,20 +16,59 @@
 
 package com.rabbitmq.client.test.ssl;
 
-import junit.framework.TestSuite;
-
 import com.rabbitmq.client.test.AbstractRMQTestSuite;
+import org.junit.runner.RunWith;
+import org.junit.runner.Runner;
+import org.junit.runners.Suite;
+import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.RunnerBuilder;
 
-public class SSLTests extends AbstractRMQTestSuite {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("ssl");
-        suite.addTestSuite(ConnectionFactoryDefaultTlsVersion.class);
-        // Skip the tests if not under umbrella and no TLS setup available
-        if (!requiredProperties()) return suite;
-        if (!isSSLAvailable()) return suite;
-        suite.addTestSuite(UnverifiedConnection.class);
-        suite.addTestSuite(VerifiedConnection.class);
-        suite.addTestSuite(BadVerifiedConnection.class);
-        return suite;
-    }
+import java.util.ArrayList;
+import java.util.List;
+
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+	UnverifiedConnection.class,
+	VerifiedConnection.class,
+	BadVerifiedConnection.class
+})
+public class SSLTests {
+
+	// initialize system properties
+	static{
+		new AbstractRMQTestSuite(){};
+	}
+
+	public static class SslSuite extends Suite {
+
+		public SslSuite(Class<?> klass, RunnerBuilder builder) throws InitializationError {
+			super(klass, builder);
+		}
+
+		public SslSuite(RunnerBuilder builder, Class<?>[] classes) throws InitializationError {
+			super(builder, classes);
+		}
+
+		protected SslSuite(Class<?> klass, Class<?>[] suiteClasses) throws InitializationError {
+			super(klass, suiteClasses);
+		}
+
+		protected SslSuite(RunnerBuilder builder, Class<?> klass, Class<?>[] suiteClasses) throws InitializationError {
+			super(builder, klass, suiteClasses);
+		}
+
+		protected SslSuite(Class<?> klass, List<Runner> runners) throws InitializationError {
+			super(klass, runners);
+		}
+
+		@Override
+		protected List<Runner> getChildren() {
+			if(!AbstractRMQTestSuite.requiredProperties() && !AbstractRMQTestSuite.isSSLAvailable()) {
+				return new ArrayList<Runner>();
+			} else {
+				return super.getChildren();
+			}
+		}
+	}
+
 }

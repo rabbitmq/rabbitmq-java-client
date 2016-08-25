@@ -15,10 +15,14 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public class DefaultExchange extends BrokerTestCase {
     String queueName;
@@ -31,12 +35,12 @@ public class DefaultExchange extends BrokerTestCase {
     // See bug 22101: publish and declare are the only operations
     // permitted on the default exchange
 
-    public void testDefaultExchangePublish() throws IOException {
+    @Test public void defaultExchangePublish() throws IOException {
         basicPublishVolatile("", queueName); // Implicit binding
         assertDelivered(queueName, 1);
     }
 
-    public void testBindToDefaultExchange() throws IOException {
+    @Test public void bindToDefaultExchange() throws IOException {
         try {
             channel.queueBind(queueName, "", "foobar");
             fail();
@@ -45,7 +49,7 @@ public class DefaultExchange extends BrokerTestCase {
         }
     }
 
-    public void testUnbindFromDefaultExchange() throws IOException {
+    @Test public void unbindFromDefaultExchange() throws IOException {
         try {
             channel.queueUnbind(queueName, "", queueName);
             fail();
@@ -54,7 +58,7 @@ public class DefaultExchange extends BrokerTestCase {
         }
     }
 
-    public void testDeclareDefaultExchange() throws IOException {
+    @Test public void declareDefaultExchange() throws IOException {
         try {
             channel.exchangeDeclare("", "direct", true);
             fail();
@@ -63,7 +67,7 @@ public class DefaultExchange extends BrokerTestCase {
         }
     }
 
-    public void testDeleteDefaultExchange() throws IOException {
+    @Test public void deleteDefaultExchange() throws IOException {
         try {
             channel.exchangeDelete("");
             fail();

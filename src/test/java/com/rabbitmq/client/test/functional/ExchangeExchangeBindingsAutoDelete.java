@@ -16,7 +16,11 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -48,7 +52,7 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
      * build (A -> B) and (B -> A) and then delete one binding and both
      * exchanges should autodelete
      */
-    public void testAutoDeleteExchangesSimpleLoop() throws IOException {
+    @Test public void autoDeleteExchangesSimpleLoop() throws IOException {
         String[] exchanges = new String[] {"A", "B"};
         declareExchanges(exchanges);
         channel.exchangeBind("A", "B", "");
@@ -61,7 +65,7 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
     /*
      * build (A -> B) (B -> C) (C -> D) and then delete D. All should autodelete
      */
-    public void testTransientAutoDelete() throws IOException {
+    @Test public void transientAutoDelete() throws IOException {
         String[] exchanges = new String[] {"A", "B", "C", "D"};
         declareExchanges(exchanges);
         channel.exchangeBind("B", "A", "");
@@ -76,7 +80,7 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
      * build (A -> B) (B -> C) (C -> D) (Source -> A) (Source -> B) (Source ->
      * C) (Source -> D) On removal of D, all should autodelete
      */
-    public void testRepeatedTargetAutoDelete() throws IOException {
+    @Test public void repeatedTargetAutoDelete() throws IOException {
         String[] exchanges = new String[] {"A", "B", "C", "D"};
         declareExchanges(exchanges);
         channel.exchangeDeclare("Source", "fanout", false, true, null);
@@ -102,7 +106,7 @@ public class ExchangeExchangeBindingsAutoDelete extends BrokerTestCase {
     /*
      * build (A -> B) (B -> C) (A -> C). Delete C and they should all vanish
      */
-    public void testAutoDeleteBindingToVanishedExchange() throws IOException {
+    @Test public void autoDeleteBindingToVanishedExchange() throws IOException {
         String[] exchanges = new String[] {"A", "B", "C"};
         declareExchanges(exchanges);
         channel.exchangeBind("C", "B", "");

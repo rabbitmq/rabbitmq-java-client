@@ -14,16 +14,21 @@
 // info@rabbitmq.com.
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Method;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Method;
 
 public class AMQBuilderApiTest extends BrokerTestCase
 {
     private static final String XCHG_NAME = "builder_test_xchg";
 
-    public void testParticularBuilderForBasicSanityWithRpc() throws IOException
+    @Test public void particularBuilderForBasicSanityWithRpc() throws IOException
     {
         Method retVal =
                 channel.rpc(new AMQP.Exchange.Declare.Builder()
@@ -45,7 +50,7 @@ public class AMQBuilderApiTest extends BrokerTestCase
         assertTrue(retVal instanceof AMQP.Exchange.DeleteOk);
     }
 
-    public void testParticularBuilderForBasicSanityWithAsyncRpc() throws IOException
+    @Test public void particularBuilderForBasicSanityWithAsyncRpc() throws IOException
     {
         channel.asyncRpc(new AMQP.Exchange.Declare.Builder()
                         .exchange(XCHG_NAME)
@@ -64,7 +69,7 @@ public class AMQBuilderApiTest extends BrokerTestCase
         assertTrue("Channel should still be open.", channel.isOpen());
     }
 
-    public void testIllFormedBuilder()
+    @Test public void illFormedBuilder()
     {
         try
         {

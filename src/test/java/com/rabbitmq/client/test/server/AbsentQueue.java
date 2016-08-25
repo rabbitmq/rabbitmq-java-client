@@ -16,8 +16,13 @@
 
 package com.rabbitmq.client.test.server;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.test.functional.ClusteredTestBase;
@@ -30,13 +35,13 @@ public class AbsentQueue extends ClusteredTestBase {
 
     private static final String Q = "absent-queue";
 
-    @Override protected void setUp() throws IOException, TimeoutException {
+    @Override public void setUp() throws IOException, TimeoutException {
         super.setUp();
         if (clusteredConnection != null)
             stopSecondary();
     }
 
-    @Override protected void tearDown() throws IOException, TimeoutException {
+    @Override public void tearDown() throws IOException, TimeoutException {
         if (clusteredConnection != null)
             startSecondary();
         super.tearDown();
@@ -50,7 +55,7 @@ public class AbsentQueue extends ClusteredTestBase {
         alternateChannel.queueDelete(Q);
     }
 
-    public void testNotFound() throws IOException {
+    @Test public void notFound() throws IOException {
         assertNotFound(new Task() {
                 public void run() throws IOException {
                     channel.queueDeclare(Q, true, false, false, null);

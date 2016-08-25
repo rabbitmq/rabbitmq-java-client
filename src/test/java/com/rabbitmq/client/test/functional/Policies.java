@@ -15,17 +15,23 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.test.server.HATests;
-import com.rabbitmq.tools.Host;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.server.HATests;
+import com.rabbitmq.tools.Host;
 
 public class Policies extends BrokerTestCase {
     private static final int DELAY = 100; // MILLIS
@@ -42,7 +48,7 @@ public class Policies extends BrokerTestCase {
         channel.exchangeDeclare("has-ae-args", "fanout", false, false, args);
     }
 
-    public void testAlternateExchange() throws IOException, InterruptedException {
+    @Test public void alternateExchange() throws IOException, InterruptedException {
         String q = declareQueue();
         channel.exchangeDeclare("ae", "fanout", false, true, null);
         channel.queueBind(q, "ae", "");
@@ -55,7 +61,7 @@ public class Policies extends BrokerTestCase {
     }
 
     // i.e. the argument takes priority over the policy
-    public void testAlternateExchangeArgs() throws IOException {
+    @Test public void alternateExchangeArgs() throws IOException {
         String q = declareQueue();
         channel.exchangeDeclare("ae2", "fanout", false, true, null);
         channel.queueBind(q, "ae2", "");
@@ -63,7 +69,7 @@ public class Policies extends BrokerTestCase {
         assertDelivered(q, 1);
     }
 
-    public void testDeadLetterExchange() throws IOException, InterruptedException {
+    @Test public void deadLetterExchange() throws IOException, InterruptedException {
         Map<String, Object> args = ttlArgs(0);
         String src = declareQueue("has-dlx", args);
         String dest = declareQueue();
@@ -81,7 +87,7 @@ public class Policies extends BrokerTestCase {
     }
 
     // again the argument takes priority over the policy
-    public void testDeadLetterExchangeArgs() throws IOException, InterruptedException {
+    @Test public void deadLetterExchangeArgs() throws IOException, InterruptedException {
         Map<String, Object> args = ttlArgs(0);
         args.put("x-dead-letter-exchange", "dlx2");
         args.put("x-dead-letter-routing-key", "rk2");
@@ -95,7 +101,7 @@ public class Policies extends BrokerTestCase {
         assertEquals("rk2", resp.getEnvelope().getRoutingKey());
     }
 
-    public void testTTL() throws IOException, InterruptedException {
+    @Test public void tTL() throws IOException, InterruptedException {
         String q = declareQueue("has-ttl", null);
         basicPublishVolatile(q);
         Thread.sleep(2 * DELAY);
@@ -108,7 +114,7 @@ public class Policies extends BrokerTestCase {
     }
 
     // Test that we get lower of args and policy
-    public void testTTLArgs() throws IOException, InterruptedException {
+    @Test public void tTLArgs() throws IOException, InterruptedException {
         String q = declareQueue("has-ttl", ttlArgs(3 * DELAY));
         basicPublishVolatile(q);
         Thread.sleep(2 * DELAY);
@@ -123,7 +129,7 @@ public class Policies extends BrokerTestCase {
         assertDelivered(q, 0);
     }
 
-    public void testExpires() throws IOException, InterruptedException {
+    @Test public void expires() throws IOException, InterruptedException {
         String q = declareQueue("has-expires", null);
         Thread.sleep(2 * DELAY);
         assertFalse(queueExists(q));
@@ -135,7 +141,7 @@ public class Policies extends BrokerTestCase {
     }
 
     // Test that we get lower of args and policy
-    public void testExpiresArgs() throws IOException, InterruptedException {
+    @Test public void expiresArgs() throws IOException, InterruptedException {
         String q = declareQueue("has-expires", args("x-expires", 3 * DELAY));
         Thread.sleep(2 * DELAY);
         assertFalse(queueExists(q));
@@ -146,7 +152,7 @@ public class Policies extends BrokerTestCase {
         assertTrue(queueExists(q));
     }
 
-    public void testMaxLength() throws IOException, InterruptedException {
+    @Test public void maxLength() throws IOException, InterruptedException {
         String q = declareQueue("has-max-length", null);
         basicPublishVolatileN(q, 3);
         assertDelivered(q, 1);
@@ -156,7 +162,7 @@ public class Policies extends BrokerTestCase {
         assertDelivered(q, 3);
     }
 
-    public void testMaxLengthArgs() throws IOException, InterruptedException {
+    @Test public void maxLengthArgs() throws IOException, InterruptedException {
         String q = declareQueue("has-max-length", args("x-max-length", 2));
         basicPublishVolatileN(q, 3);
         assertDelivered(q, 1);

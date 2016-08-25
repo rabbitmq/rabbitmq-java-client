@@ -16,15 +16,28 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.*;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Address;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.impl.AMQCommand;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.Frame;
+import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.LongStringHelper;
+import com.rabbitmq.client.impl.SocketFrameHandler;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public class FrameMax extends BrokerTestCase {
     /* This value for FrameMax is larger than the minimum and less
@@ -40,7 +53,7 @@ public class FrameMax extends BrokerTestCase {
     /* Publish a message of size FRAME_MAX.  The broker should split
      * this into two frames before sending back.  Frame content should
      * be less or equal to frame-max - 8. */
-    public void testFrameSizes()
+    @Test public void frameSizes()
         throws IOException, InterruptedException
     {
         String queueName = channel.queueDeclare().getQueue();
@@ -61,7 +74,7 @@ public class FrameMax extends BrokerTestCase {
 
     /* server should reject frames larger than AMQP.FRAME_MIN_SIZE
      * during connection negotiation */
-    public void testRejectLargeFramesDuringConnectionNegotiation()
+    @Test public void rejectLargeFramesDuringConnectionNegotiation()
             throws IOException, TimeoutException {
         ConnectionFactory cf = new ConnectionFactory();
         cf.getClientProperties().put("too_long", LongStringHelper.asLongString(new byte[AMQP.FRAME_MIN_SIZE]));
@@ -74,7 +87,7 @@ public class FrameMax extends BrokerTestCase {
 
     /* server should reject frames larger than the negotiated frame
      * size */
-    public void testRejectExceedingFrameMax()
+    @Test public void rejectExceedingFrameMax()
             throws IOException, TimeoutException {
         closeChannel();
         closeConnection();

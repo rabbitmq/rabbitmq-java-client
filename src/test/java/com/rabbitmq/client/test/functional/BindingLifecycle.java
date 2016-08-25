@@ -16,8 +16,16 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
@@ -36,7 +44,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
     /**
      * This tests that when you purge a queue, all of its messages go.
      */
-    public void testQueuePurge() throws IOException {
+    @Test public void queuePurge() throws IOException {
 
         Binding binding = setupExchangeBindings(false);
         channel.basicPublish(binding.x, binding.k, null, payload);
@@ -57,7 +65,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * (Tx-)transacted."
      */
     @SuppressWarnings("deprecation")
-    public void testUnackedPurge() throws IOException {
+    @Test public void unackedPurge() throws IOException {
         Binding binding = setupExchangeBindings(false);
         channel.basicPublish(binding.x, binding.k, null, payload);
 
@@ -89,7 +97,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * This tests whether when you delete an exchange, that any
      * bindings attached to it are deleted as well.
      */
-    public void testExchangeDelete() throws IOException {
+    @Test public void exchangeDelete() throws IOException {
 
         boolean durable = true;
         Binding binding = setupExchangeAndRouteMessage(true);
@@ -113,7 +121,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * To test this, you try to delete an exchange with a queue still
      * bound to it and expect the delete operation to fail.
      */
-    public void testExchangeIfUnused() throws IOException {
+    @Test public void exchangeIfUnused() throws IOException {
 
         boolean durable = true;
         Binding binding = setupExchangeBindings(true);
@@ -150,7 +158,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * Because the exchange has been auto-deleted, the bind operation
      * should fail.
      */
-    public void testExchangeAutoDelete() throws IOException, TimeoutException {
+    @Test public void exchangeAutoDelete() throws IOException, TimeoutException {
         doAutoDelete(false, 1);
     }
 
@@ -161,14 +169,14 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * The difference should be that the original exchange should not
      * get auto-deleted
      */
-    public void testExchangeAutoDeleteManyBindings() throws IOException, TimeoutException {
+    @Test public void exchangeAutoDeleteManyBindings() throws IOException, TimeoutException {
         doAutoDelete(false, 10);
     }
 
     /**
      *
      */
-    public void testExchangePassiveDeclare() throws IOException {
+    @Test public void exchangePassiveDeclare() throws IOException {
         channel.exchangeDeclare("testPassive", "direct");
         channel.exchangeDeclarePassive("testPassive");
 
@@ -184,7 +192,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
     /**
      * Test the behaviour of queue.unbind
      */
-    public void testUnbind() throws Exception {
+    @Test public void unbind() throws Exception {
         for (String exchange: new String[]{"amq.fanout", "amq.direct", "amq.topic", "amq.headers"}) {
             testUnbind(exchange);
         }
