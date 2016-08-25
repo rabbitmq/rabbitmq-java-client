@@ -16,30 +16,32 @@
 
 package com.rabbitmq.client.test;
 
-import junit.framework.TestSuite;
+import com.rabbitmq.utility.IntAllocatorTests;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+    TableTest.class,
+    LongStringTest.class,
+    BlockingCellTest.class,
+    TruncatedInputStreamTest.class,
+    AMQConnectionTest.class,
+    ValueOrExceptionTest.class,
+    BrokenFramesTest.class,
+    ClonePropertiesTest.class,
+    Bug20004Test.class,
+    CloseInMainLoop.class,
+    ChannelNumberAllocationTests.class,
+    QueueingConsumerShutdownTests.class,
+    MultiThreadedChannel.class,
+    IntAllocatorTests.class,
+    AMQBuilderApiTest.class,
+    AmqpUriTest.class,
+    JSONReadWriteTest.class,
+    SharedThreadPoolTest.class,
+    DnsRecordIpAddressResolverTests.class
+})
 public class ClientTests extends AbstractRMQTestSuite {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("client");
-        suite.addTest(TableTest.suite());
-        suite.addTest(LongStringTest.suite());
-        suite.addTest(BlockingCellTest.suite());
-        suite.addTest(TruncatedInputStreamTest.suite());
-        suite.addTest(AMQConnectionTest.suite());
-        suite.addTest(ValueOrExceptionTest.suite());
-        suite.addTest(BrokenFramesTest.suite());
-        suite.addTest(ClonePropertiesTest.suite());
-        suite.addTestSuite(Bug20004Test.class);
-        suite.addTestSuite(CloseInMainLoop.class);
-        suite.addTestSuite(ChannelNumberAllocationTests.class);
-        suite.addTestSuite(QueueingConsumerShutdownTests.class);
-        suite.addTestSuite(MultiThreadedChannel.class);
-        suite.addTestSuite(com.rabbitmq.utility.IntAllocatorTests.class);
-        suite.addTestSuite(AMQBuilderApiTest.class);
-        suite.addTestSuite(AmqpUriTest.class);
-        suite.addTestSuite(JSONReadWriteTest.class);
-        suite.addTestSuite(SharedThreadPoolTest.class);
-        suite.addTestSuite(DnsRecordIpAddressResolverTests.class);
-        return suite;
-    }
+
 }

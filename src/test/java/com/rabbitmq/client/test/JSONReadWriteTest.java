@@ -16,14 +16,16 @@
 
 package com.rabbitmq.client.test;
 
-import junit.framework.TestCase;
-
 import com.rabbitmq.tools.json.JSONReader;
 import com.rabbitmq.tools.json.JSONWriter;
+import org.junit.Test;
 
-public class JSONReadWriteTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-    public void testReadWriteSimple() throws Exception {
+public class JSONReadWriteTest {
+
+    @Test public void readWriteSimple() throws Exception {
 
         Object myRet;
         String myJson;
@@ -62,7 +64,7 @@ public class JSONReadWriteTest extends TestCase {
 
     }
 
-    public void testMoreComplicated() throws Exception {
+    @Test public void moreComplicated() throws Exception {
 
         String v, s;
         Object t;
@@ -90,7 +92,7 @@ public class JSONReadWriteTest extends TestCase {
 
     }
 
-    public void testBadJSON() throws Exception {
+    @Test public void badJSON() throws Exception {
 
         try {
             new JSONReader().read("[\"foo\",{\"bar\":[\"b\"az\",null,1.0,2]}]");

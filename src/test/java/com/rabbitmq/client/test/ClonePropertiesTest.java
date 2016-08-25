@@ -15,36 +15,31 @@
 
 package com.rabbitmq.client.test;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.MessageProperties;
+import org.junit.Test;
 
-public class ClonePropertiesTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-    public static TestSuite suite()
-    {
-        TestSuite suite = new TestSuite("cloneProperties");
-        suite.addTestSuite(ClonePropertiesTest.class);
-        return suite;
-    }
+public class ClonePropertiesTest {
 
-    public void testPropertyCloneIsDistinct()
+
+    @Test public void propertyCloneIsDistinct()
         throws CloneNotSupportedException
     {
         assertTrue(MessageProperties.MINIMAL_PERSISTENT_BASIC !=
-                   MessageProperties.MINIMAL_PERSISTENT_BASIC.clone());
+            MessageProperties.MINIMAL_PERSISTENT_BASIC.clone());
     }
 
-    public void testPropertyClonePreservesValues()
+    @Test public void propertyClonePreservesValues()
         throws CloneNotSupportedException
     {
         assertEquals(MessageProperties.MINIMAL_PERSISTENT_BASIC.getDeliveryMode(),
-                     ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
-                       .getDeliveryMode());
+            ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
+                .getDeliveryMode());
         assertEquals(new Integer(2),
-                     ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
-                       .getDeliveryMode());
+            ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
+                .getDeliveryMode());
     }
 }

@@ -16,35 +16,19 @@
 
 package com.rabbitmq.client.test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import com.rabbitmq.client.impl.*;
+import org.junit.Test;
+
+import java.io.*;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-import com.rabbitmq.client.impl.Frame;
-import com.rabbitmq.client.impl.LongStringHelper;
-import com.rabbitmq.client.impl.MethodArgumentReader;
-import com.rabbitmq.client.impl.MethodArgumentWriter;
-import com.rabbitmq.client.impl.ValueReader;
-import com.rabbitmq.client.impl.ValueWriter;
+import static org.junit.Assert.assertEquals;
 
 public class TableTest
-    extends TestCase
 {
-    public static TestSuite suite()
-    {
-        TestSuite suite = new TestSuite("tables");
-        suite.addTestSuite(TableTest.class);
-        return suite;
-    }
 
     public byte [] marshal(Map<String, Object> table) 
         throws IOException
@@ -75,7 +59,7 @@ public class TableTest
         return new Date((System.currentTimeMillis()/1000)*1000);
     }
 
-    public void testLoop() 
+    @Test public void loop()
         throws IOException
     {
         Map<String, Object> table = new HashMap<String, Object>();

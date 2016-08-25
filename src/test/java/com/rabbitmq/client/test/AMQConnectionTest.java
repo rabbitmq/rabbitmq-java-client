@@ -15,78 +15,55 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.ConnectionParams;
+import com.rabbitmq.client.impl.Frame;
+import com.rabbitmq.client.impl.FrameHandler;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.ExecutorService;
-import com.rabbitmq.client.Address;
-import java.util.Arrays;
 
-import com.rabbitmq.client.impl.ConnectionParams;
-import com.rabbitmq.client.TopologyRecoveryException;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.ExceptionHandler;
-import com.rabbitmq.client.impl.Frame;
-import com.rabbitmq.client.impl.FrameHandler;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Test suite for AMQConnection.
  */
 
-public class AMQConnectionTest extends TestCase {
+public class AMQConnectionTest {
     // private static final String CLOSE_MESSAGE = "terminated by test";
-
-    /**
-     * Build a suite of tests
-     * @return the test suite for this class
-     */
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("connection");
-        suite.addTestSuite(AMQConnectionTest.class);
-        return suite;
-    }
 
     /** The mock frame handler used to test connection behaviour. */
     private MockFrameHandler _mockFrameHandler;
     private ConnectionFactory factory;
     private MyExceptionHandler exceptionHandler;
 
-    /** Setup the environment for this test
-     * @see junit.framework.TestCase#setUp()
-     * @throws Exception if anything goes wrong
-     */
-    @Override protected void setUp() throws Exception {
-        super.setUp();
+    @Before public void setUp() throws Exception {
         _mockFrameHandler = new MockFrameHandler();
         factory = new ConnectionFactory();
         exceptionHandler = new MyExceptionHandler();
         factory.setExceptionHandler(exceptionHandler);
     }
 
-    /** Tear down the environment for this test
-     * @see junit.framework.TestCase#tearDown()
-     * @throws Exception if anything goes wrong
-     */
-    @Override protected void tearDown() throws Exception {
+    @After public void tearDown() throws Exception {
         factory = null;
         _mockFrameHandler = null;
-        super.tearDown();
     }
 
-    public void testNegativeTCPConnectionTimeout() {
+    @Test public void negativeTCPConnectionTimeout() {
         ConnectionFactory cf = new ConnectionFactory();
         try {
             cf.setConnectionTimeout(-10);
@@ -96,7 +73,7 @@ public class AMQConnectionTest extends TestCase {
         }
     }
 
-    public void testNegativeProtocolHandshakeTimeout() {
+    @Test public void negativeProtocolHandshakeTimeout() {
         ConnectionFactory cf = new ConnectionFactory();
         try {
             cf.setHandshakeTimeout(-10);
@@ -106,13 +83,13 @@ public class AMQConnectionTest extends TestCase {
         }
     }
 
-    public void testTCPConnectionTimeoutGreaterThanHandShakeTimeout() {
+    @Test public void tcpConnectionTimeoutGreaterThanHandShakeTimeout() {
         ConnectionFactory cf = new ConnectionFactory();
         cf.setHandshakeTimeout(3000);
         cf.setConnectionTimeout(5000);
     }
 
-    public void testProtocolHandshakeTimeoutGreaterThanTCPConnectionTimeout() {
+    @Test public void protocolHandshakeTimeoutGreaterThanTCPConnectionTimeout() {
         ConnectionFactory cf = new ConnectionFactory();
 
         cf.setConnectionTimeout(5000);
@@ -125,7 +102,7 @@ public class AMQConnectionTest extends TestCase {
     /** Check the AMQConnection does send exactly 1 initial header, and deal correctly with
      * the frame handler throwing an exception when we try to read data
      */
-    public void testConnectionSendsSingleHeaderAndTimesOut() throws TimeoutException {
+    @Test public void connectionSendsSingleHeaderAndTimesOut() throws TimeoutException {
         IOException exception = new SocketTimeoutException();
         _mockFrameHandler.setExceptionOnReadingFrames(exception);
         assertEquals(0, _mockFrameHandler.countHeadersSent());
@@ -158,7 +135,7 @@ public class AMQConnectionTest extends TestCase {
     /**
      * Test that we catch timeout between connect and negotiation of the connection being finished.
      */
-    public void testConnectionHangInNegotiation() {
+    @Test public void connectionHangInNegotiation() {
         this._mockFrameHandler.setTimeoutCount(10); // to limit hang
         assertEquals(0, this._mockFrameHandler.countHeadersSent());
         try {
@@ -176,7 +153,7 @@ public class AMQConnectionTest extends TestCase {
         assertEquals("Wrong type of exception returned.", SocketTimeoutException.class, exceptionList.get(0).getClass());
     }
 
-    public void testClientProvidedConnectionName() throws IOException, TimeoutException {
+    @Test public void clientProvidedConnectionName() throws IOException, TimeoutException {
         String providedName = "event consumers connection";
         Connection connection = factory.newConnection(providedName);
         assertEquals(providedName, connection.getClientProvidedName());
