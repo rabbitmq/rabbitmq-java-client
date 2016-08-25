@@ -16,7 +16,11 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertNotNull;
+
 import java.io.IOException;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
@@ -55,7 +59,7 @@ public class DurableOnTransient extends ClusteredTestBase
         channel.exchangeDelete(X);
     }
 
-    public void testBindDurableToTransient()
+    @Test public void bindDurableToTransient()
         throws IOException
     {
         channel.queueBind(Q, X, "");
@@ -63,7 +67,7 @@ public class DurableOnTransient extends ClusteredTestBase
         assertNotNull(basicGet());
     }
 
-    public void testSemiDurableBindingRemoval() throws IOException {
+    @Test public void semiDurableBindingRemoval() throws IOException {
         if (clusteredConnection != null) {
             deleteExchange("x");
             declareTransientTopicExchange("x");

@@ -15,6 +15,15 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
+
+import org.junit.Test;
+
 import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -25,11 +34,6 @@ import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.LongStringHelper;
 import com.rabbitmq.client.test.BrokerTestCase;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 public class SaslMechanisms extends BrokerTestCase {
     private String[] mechanisms;
@@ -69,19 +73,19 @@ public class SaslMechanisms extends BrokerTestCase {
         }
     }
 
-    public void testPlainLogin() throws IOException, TimeoutException {
+    @Test public void plainLogin() throws IOException, TimeoutException {
         loginOk("PLAIN", new byte[][] {"\0guest\0guest".getBytes()} );
         loginBad("PLAIN", new byte[][] {"\0guest\0wrong".getBytes()} );
     }
 
-    public void testAMQPlainLogin() throws IOException, TimeoutException {
+    @Test public void aMQPlainLogin() throws IOException, TimeoutException {
         // guest / guest
         loginOk("AMQPLAIN", new byte[][] {{5,76,79,71,73,78,83,0,0,0,5,103,117,101,115,116,8,80,65,83,83,87,79,82,68,83,0,0,0,5,103,117,101,115,116}} );
         // guest / wrong
         loginBad("AMQPLAIN", new byte[][] {{5,76,79,71,73,78,83,0,0,0,5,103,117,101,115,116,8,80,65,83,83,87,79,82,68,83,0,0,0,5,119,114,111,110,103}} );
     }
 
-    public void testCRLogin() throws IOException, TimeoutException {
+    @Test public void cRLogin() throws IOException, TimeoutException {
         // Make sure mechanisms is populated
         loginOk("PLAIN", new byte[][] {"\0guest\0guest".getBytes()} );
 
@@ -92,11 +96,11 @@ public class SaslMechanisms extends BrokerTestCase {
         }
     }
 
-    public void testConnectionCloseAuthFailureUsername() throws IOException, TimeoutException {
+    @Test public void connectionCloseAuthFailureUsername() throws IOException, TimeoutException {
         connectionCloseAuthFailure("incorrect-username", "incorrect-password");
     }
 
-    public void testConnectionCloseAuthFailurePassword() throws IOException, TimeoutException {
+    @Test public void connectionCloseAuthFailurePassword() throws IOException, TimeoutException {
         connectionCloseAuthFailure(connectionFactory.getUsername(), "incorrect-password");
     }
 

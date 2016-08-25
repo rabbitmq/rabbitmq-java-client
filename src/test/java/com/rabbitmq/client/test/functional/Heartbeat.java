@@ -16,7 +16,13 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -29,7 +35,7 @@ public class Heartbeat extends BrokerTestCase {
         connectionFactory.setRequestedHeartbeat(1);
     }
 
-    public void testHeartbeat()
+    @Test public void heartbeat()
         throws IOException, InterruptedException
     {
         assertEquals(1, connection.getHeartbeat());

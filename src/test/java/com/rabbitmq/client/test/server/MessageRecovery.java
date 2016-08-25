@@ -17,6 +17,8 @@ package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
+import org.junit.Test;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.ConfirmBase;
@@ -27,7 +29,7 @@ public class MessageRecovery extends ConfirmBase
     private final static String Q = "recovery-test";
     private final static String Q2 = "recovery-test-ha-check";
 
-    public void testMessageRecovery()
+    @Test public void messageRecovery()
         throws Exception
     {
         channel.queueDelete(Q);

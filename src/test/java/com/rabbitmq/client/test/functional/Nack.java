@@ -16,15 +16,20 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.HashSet;
 import java.util.Set;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
 
 public class Nack extends AbstractRejectTest {
 
-    public void testSingleNack() throws Exception {
+    @Test public void singleNack() throws Exception {
         String q =
             channel.queueDeclare("", false, true, false, null).getQueue();
 
@@ -56,7 +61,7 @@ public class Nack extends AbstractRejectTest {
         expectError(AMQP.PRECONDITION_FAILED);
     }
 
-    public void testMultiNack() throws Exception {
+    @Test public void multiNack() throws Exception {
         String q =
             channel.queueDeclare("", false, true, false, null).getQueue();
 
@@ -98,7 +103,7 @@ public class Nack extends AbstractRejectTest {
         expectError(AMQP.PRECONDITION_FAILED);
     }
 
-    public void testNackAll() throws Exception {
+    @Test public void nackAll() throws Exception {
         String q =
             channel.queueDeclare("", false, true, false, null).getQueue();
 

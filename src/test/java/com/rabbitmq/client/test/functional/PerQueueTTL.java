@@ -16,12 +16,16 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.MessageProperties;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.MessageProperties;
 
 public class PerQueueTTL extends TTLHandling {
 
@@ -33,7 +37,7 @@ public class PerQueueTTL extends TTLHandling {
         return this.channel.queueDeclare(name, false, true, false, argMap);
     }
 
-    public void testQueueReDeclareEquivalence() throws Exception {
+    @Test public void queueReDeclareEquivalence() throws Exception {
         declareQueue(10);
         try {
             declareQueue(20);
@@ -43,14 +47,14 @@ public class PerQueueTTL extends TTLHandling {
         }
     }
 
-    public void testQueueReDeclareSemanticEquivalence() throws Exception {
+    @Test public void queueReDeclareSemanticEquivalence() throws Exception {
         declareQueue((byte)10);
         declareQueue(10);
         declareQueue((short)10);
         declareQueue(10L);
     }
 
-    public void testQueueReDeclareSemanticNonEquivalence() throws Exception {
+    @Test public void queueReDeclareSemanticNonEquivalence() throws Exception {
         declareQueue(10);
         try {
             declareQueue(10.0);

@@ -15,6 +15,8 @@
 
 package com.rabbitmq.client.test.ssl;
 
+import static org.junit.Assert.assertNotNull;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyManagementException;
@@ -23,7 +25,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.KeyManagerFactory;

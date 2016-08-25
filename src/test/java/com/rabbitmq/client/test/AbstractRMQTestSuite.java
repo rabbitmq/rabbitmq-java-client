@@ -26,7 +26,7 @@ import junit.framework.TestSuite;
 
 import com.rabbitmq.tools.Host;
 
-public abstract class AbstractRMQTestSuite { //extends TestSuite {
+public abstract class AbstractRMQTestSuite { 
   private static final String DEFAULT_SSL_HOSTNAME = "localhost";
   private static final int DEFAULT_SSL_PORT = 5671;
 

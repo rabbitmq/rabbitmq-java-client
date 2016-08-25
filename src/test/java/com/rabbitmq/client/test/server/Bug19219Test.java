@@ -15,12 +15,14 @@
 
 package com.rabbitmq.client.test.server;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeoutException;
 
-import junit.framework.TestSuite;
+import org.junit.Test;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -55,12 +57,6 @@ public class Bug19219Test extends BrokerTestCase {
     private static final Semaphore init = new Semaphore(0);
     private static final CountDownLatch resume = new CountDownLatch(1);
 
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("Bug19219");
-        suite.addTestSuite(Bug19219Test.class);
-        return suite;
-    }
-
     private static void publish(final Channel ch)
         throws IOException {
         ch.basicPublish("amq.fanout", "",
@@ -68,7 +64,7 @@ public class Bug19219Test extends BrokerTestCase {
                         new byte[0]);
     }
 
-    public void testIt() throws IOException, InterruptedException {
+    @Test public void it() throws IOException, InterruptedException {
 
         final Consumer c = new DefaultConsumer(channel);
 

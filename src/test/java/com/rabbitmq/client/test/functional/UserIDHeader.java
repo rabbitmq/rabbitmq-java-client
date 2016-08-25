@@ -15,23 +15,27 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
+import org.junit.Test;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
 public class UserIDHeader extends BrokerTestCase {
     private static final AMQP.BasicProperties GOOD = new AMQP.BasicProperties.Builder().userId("guest").build();
     private static final AMQP.BasicProperties BAD = new AMQP.BasicProperties.Builder().userId("not the guest, honest").build();
 
-    public void testValidUserId() throws IOException {
+    @Test public void validUserId() throws IOException {
         publish(GOOD);
     }
 
-    public void testInvalidUserId() {
+    @Test public void invalidUserId() {
         try {
             publish(BAD);
             fail("Accepted publish with incorrect user ID");
@@ -42,7 +46,7 @@ public class UserIDHeader extends BrokerTestCase {
         }
     }
 
-    public void testImpersonatedUserId() throws IOException, TimeoutException {
+    @Test public void impersonatedUserId() throws IOException, TimeoutException {
         Host.rabbitmqctl("set_user_tags guest administrator impersonator");
         connection = null;
         channel = null;

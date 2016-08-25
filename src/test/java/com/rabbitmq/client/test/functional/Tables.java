@@ -16,25 +16,30 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.impl.LongStringHelper;
-import com.rabbitmq.client.AMQP.BasicProperties;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.HashMap;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.impl.LongStringHelper;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public class Tables extends BrokerTestCase
 {
 
-    public void testTypes() throws IOException {
+    @Test public void types() throws IOException {
 
         Map<String, Object> table = new HashMap<String, Object>();
         Map<String, Object> subTable = new HashMap<String, Object>();

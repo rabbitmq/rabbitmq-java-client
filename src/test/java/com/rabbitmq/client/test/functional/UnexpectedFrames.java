@@ -18,6 +18,10 @@ package com.rabbitmq.client.test.functional;
 import java.io.IOException;
 import java.net.Socket;
 
+import javax.net.SocketFactory;
+
+import org.junit.Test;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultSocketConfigurator;
@@ -27,8 +31,6 @@ import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.test.BrokerTestCase;
-
-import javax.net.SocketFactory;
 
 /**
  * Test that the server correctly handles us when we send it bad frames
@@ -90,7 +92,7 @@ public class UnexpectedFrames extends BrokerTestCase {
         connectionFactory = new ConfusedConnectionFactory();
     }
 
-    public void testMissingHeader() throws IOException {
+    @Test public void missingHeader() throws IOException {
         expectUnexpectedFrameError(new Confuser() {
             public Frame confuse(Frame frame) {
                 if (frame.type == AMQP.FRAME_HEADER) {
@@ -101,7 +103,7 @@ public class UnexpectedFrames extends BrokerTestCase {
         });
     }
 
-    public void testMissingMethod() throws IOException {
+    @Test public void missingMethod() throws IOException {
         expectUnexpectedFrameError(new Confuser() {
             public Frame confuse(Frame frame) {
                 if (frame.type == AMQP.FRAME_METHOD) {
@@ -115,7 +117,7 @@ public class UnexpectedFrames extends BrokerTestCase {
         });
     }
 
-    public void testMissingBody() throws IOException {
+    @Test public void missingBody() throws IOException {
         expectUnexpectedFrameError(new Confuser() {
             public Frame confuse(Frame frame) {
                 if (frame.type == AMQP.FRAME_BODY) {
@@ -126,7 +128,7 @@ public class UnexpectedFrames extends BrokerTestCase {
         });
     }
 
-    public void testWrongClassInHeader() throws IOException {
+    @Test public void wrongClassInHeader() throws IOException {
         expectUnexpectedFrameError(new Confuser() {
             public Frame confuse(Frame frame) {
                 if (frame.type == AMQP.FRAME_HEADER) {
@@ -144,7 +146,7 @@ public class UnexpectedFrames extends BrokerTestCase {
         });
     }
 
-    public void testHeartbeatOnChannel() throws IOException {
+    @Test public void heartbeatOnChannel() throws IOException {
         expectUnexpectedFrameError(new Confuser() {
             public Frame confuse(Frame frame) {
                 if (frame.type == AMQP.FRAME_METHOD) {
@@ -155,7 +157,7 @@ public class UnexpectedFrames extends BrokerTestCase {
         });
     }
 
-    public void testUnknownFrameType() throws IOException {
+    @Test public void unknownFrameType() throws IOException {
         expectError(AMQP.FRAME_ERROR, new Confuser() {
             public Frame confuse(Frame frame) {
                 if (frame.type == AMQP.FRAME_METHOD) {

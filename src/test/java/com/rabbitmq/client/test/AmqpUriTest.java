@@ -14,15 +14,20 @@
 // info@rabbitmq.com.
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.ConnectionFactory;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
+import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.net.URISyntaxException;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.ConnectionFactory;
 
 public class AmqpUriTest extends BrokerTestCase
 {
-    public void testUriParsing()
+    @Test public void uriParsing()
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
         /* From the spec (subset of the tests) */

@@ -15,16 +15,20 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.HashMap;
 
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.test.BrokerTestCase;
+
 public class HeadersExchangeValidation extends BrokerTestCase {
 
-    public void testHeadersValidation() throws IOException
+    @Test public void headersValidation() throws IOException
     {
         AMQP.Queue.DeclareOk ok = channel.queueDeclare();
         String queue = ok.getQueue();

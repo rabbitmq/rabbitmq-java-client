@@ -15,10 +15,14 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public class PersistenceGuarantees extends BrokerTestCase {
     private static final int COUNT = 10000;
@@ -28,7 +32,7 @@ public class PersistenceGuarantees extends BrokerTestCase {
         queue = channel.queueDeclare("", true, false, false, null).getQueue();
     }
 
-    public void testTxPersistence() throws Exception {
+    @Test public void txPersistence() throws Exception {
         declareQueue();
         channel.txSelect();
         publish();
@@ -37,7 +41,7 @@ public class PersistenceGuarantees extends BrokerTestCase {
         assertPersisted();
     }
 
-    public void testConfirmPersistence() throws Exception {
+    @Test public void confirmPersistence() throws Exception {
         declareQueue();
         channel.confirmSelect();
         publish();

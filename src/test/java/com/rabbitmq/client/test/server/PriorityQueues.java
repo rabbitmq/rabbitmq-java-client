@@ -15,10 +15,7 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,8 +26,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.test.BrokerTestCase;
+
 public class PriorityQueues extends BrokerTestCase {
-    public void testPrioritisingBasics() throws IOException, TimeoutException, InterruptedException {
+    @Test public void prioritisingBasics() throws IOException, TimeoutException, InterruptedException {
         String q = "with-3-priorities";
         int n = 3;
         channel.queueDeclare(q, true, false, false, argsWithPriorities(n));

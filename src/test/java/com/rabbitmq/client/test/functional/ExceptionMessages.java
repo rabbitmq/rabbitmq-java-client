@@ -15,14 +15,19 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.UUID;
 
+import org.junit.Test;
+
+import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.test.BrokerTestCase;
+
 public class ExceptionMessages extends BrokerTestCase {
-    public void testAlreadyClosedExceptionMessageWithChannelError() throws IOException {
+    @Test public void alreadyClosedExceptionMessageWithChannelError() throws IOException {
         String uuid = UUID.randomUUID().toString();
         try {
             channel.queueDeclarePassive(uuid);
@@ -39,7 +44,7 @@ public class ExceptionMessages extends BrokerTestCase {
         }
     }
 
-    public void testAlreadyClosedExceptionMessageWithCleanClose() throws IOException {
+    @Test public void alreadyClosedExceptionMessageWithCleanClose() throws IOException {
         String uuid = UUID.randomUUID().toString();
 
         try {

@@ -16,34 +16,34 @@
 
 package com.rabbitmq.client.test.server;
 
-import junit.framework.TestSuite;
-
 import com.rabbitmq.client.test.AbstractRMQTestSuite;
+import com.rabbitmq.client.test.RequiredPropertiesSuite;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
-public class ServerTests extends AbstractRMQTestSuite {
+@RunWith(RequiredPropertiesSuite.class)
+@Suite.SuiteClasses({
+	Permissions.class,
+    DurableBindingLifecycle.class,
+    DeadLetterExchangeDurable.class,
+    EffectVisibilityCrossNodeTest.class,
+    ExclusiveQueueDurability.class,
+    AbsentQueue.class,
+    AlternateExchangeEquivalence.class,
+    MemoryAlarms.class,
+    MessageRecovery.class,
+    Firehose.class,
+    PersistenceGuarantees.class,
+    Shutdown.class,
+    BlockedConnection.class,
+    ChannelLimitNegotiation.class,
+    LoopbackUsers.class
+})
+public class ServerTests {
 
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("server-tests");
-	if (!requiredProperties()) return suite;
-        add(suite);
-        return suite;
-    }
+	// initialize system properties
+	static{
+		new AbstractRMQTestSuite(){};
+	}
 
-    public static void add(TestSuite suite) {
-        suite.addTestSuite(Permissions.class);
-        suite.addTestSuite(DurableBindingLifecycle.class);
-        suite.addTestSuite(DeadLetterExchangeDurable.class);
-        suite.addTestSuite(EffectVisibilityCrossNodeTest.class);
-        suite.addTestSuite(ExclusiveQueueDurability.class);
-        suite.addTestSuite(AbsentQueue.class);
-        suite.addTestSuite(AlternateExchangeEquivalence.class);
-        suite.addTestSuite(MemoryAlarms.class);
-        suite.addTestSuite(MessageRecovery.class);
-        suite.addTestSuite(Firehose.class);
-        suite.addTestSuite(PersistenceGuarantees.class);
-        suite.addTestSuite(Shutdown.class);
-        suite.addTestSuite(BlockedConnection.class);
-        suite.addTestSuite(ChannelLimitNegotiation.class);
-        suite.addTestSuite(LoopbackUsers.class);
-    }
 }
