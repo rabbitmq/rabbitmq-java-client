@@ -15,14 +15,14 @@
 
 package com.rabbitmq.client.test;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-import com.rabbitmq.utility.ValueOrException;
 import com.rabbitmq.utility.SensibleClone;
+import com.rabbitmq.utility.ValueOrException;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 
-public class ValueOrExceptionTest extends TestCase {
+public class ValueOrExceptionTest {
     public static class InsufficientMagicException extends Exception 
       implements SensibleClone<InsufficientMagicException> {
       /** Default for no check. */
@@ -37,15 +37,7 @@ public class ValueOrExceptionTest extends TestCase {
       }
     }
 
-
-    public static TestSuite suite()
-    {
-        TestSuite suite = new TestSuite("valueOrEx");
-        suite.addTestSuite(ValueOrExceptionTest.class);
-        return suite;
-    }
-
-    public void testStoresValue() throws InsufficientMagicException {
+    @Test public void storesValue() throws InsufficientMagicException {
         Integer value = new Integer(3);
 
         ValueOrException<Integer, InsufficientMagicException> valueOrEx = 
@@ -55,7 +47,7 @@ public class ValueOrExceptionTest extends TestCase {
         assertTrue(returnedValue == value);
     }
 
-    public void testClonesException() {
+    @Test public void clonesException() {
         InsufficientMagicException exception = 
             new InsufficientMagicException("dummy message");
         ValueOrException<Integer, InsufficientMagicException> valueOrEx 

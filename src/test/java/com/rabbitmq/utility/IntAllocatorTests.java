@@ -15,14 +15,16 @@
 
 package com.rabbitmq.utility;
 
+import org.junit.Test;
+
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-public class IntAllocatorTests extends TestCase {
+public class IntAllocatorTests {
 
     private static final int TEST_ITERATIONS = 50000;
     private static final int HI_RANGE = 100000;
@@ -31,7 +33,7 @@ public class IntAllocatorTests extends TestCase {
 
     private final Random rand = new Random(70608L);
 
-    public void testReserveAndFree() throws Exception {
+    @Test public void reserveAndFree() throws Exception {
         Set<Integer> set = new HashSet<Integer>();
         for (int i = 0; i < TEST_ITERATIONS; ++i) {
             int trial = getTrial(rand);
@@ -49,7 +51,7 @@ public class IntAllocatorTests extends TestCase {
         }
     }
 
-    public void testAllocateAndFree() throws Exception {
+    @Test public void allocateAndFree() throws Exception {
         Set<Integer> set = new HashSet<Integer>();
         for (int i=0; i < TEST_ITERATIONS; ++i) {
             if (getBool(rand)) {
@@ -70,7 +72,7 @@ public class IntAllocatorTests extends TestCase {
         }
     }
 
-    public void testToString() throws Exception {
+    @Test public void testToString() throws Exception {
         IntAllocator ibs = new IntAllocator(LO_RANGE, HI_RANGE);
         assertEquals("IntAllocator{allocated = []}", ibs.toString());
         ibs.allocate();
@@ -81,7 +83,7 @@ public class IntAllocatorTests extends TestCase {
             ibs.reserve(i+2);
         }
         assertEquals("IntAllocator{allocated = [100, 200..202, 204..206, 208..210]}"
-                    , ibs.toString());
+            , ibs.toString());
     }
 
     private static int extractOne(Set<Integer> set) {
