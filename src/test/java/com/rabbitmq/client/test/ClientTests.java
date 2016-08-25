@@ -39,7 +39,8 @@ import org.junit.runners.Suite;
     AMQBuilderApiTest.class,
     AmqpUriTest.class,
     JSONReadWriteTest.class,
-    SharedThreadPoolTest.class
+    SharedThreadPoolTest.class,
+    DnsRecordIpAddressResolverTests.class
 })
 public class ClientTests extends AbstractRMQTestSuite {
 

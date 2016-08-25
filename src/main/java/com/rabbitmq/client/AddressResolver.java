@@ -1,5 +1,6 @@
 package com.rabbitmq.client;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -7,6 +8,11 @@ import java.util.List;
  */
 public interface AddressResolver {
 
-    List<Address> getAddresses();
+    /**
+     * Get the potential {@link Address}es to connect to.
+     * @return candidate {@link Address}es
+     * @throws IOException if it encounters a problem
+     */
+    List<Address> getAddresses() throws IOException;
 
 }
