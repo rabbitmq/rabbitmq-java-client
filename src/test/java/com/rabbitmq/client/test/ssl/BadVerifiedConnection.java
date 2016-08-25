@@ -15,6 +15,9 @@
 
 package com.rabbitmq.client.test.ssl;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyManagementException;
@@ -29,6 +32,8 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.ConnectionFactory;
 
@@ -92,5 +97,5 @@ public class BadVerifiedConnection extends UnverifiedConnection {
     }
 
     public void openChannel() {}
-    public void testSSL() {}
+    @Test public void sSL() {}
 }

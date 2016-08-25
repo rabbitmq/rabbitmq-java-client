@@ -16,7 +16,11 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,23 +31,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.Test;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public class QosTests extends BrokerTestCase
 {
 
-    protected void setUp()
+    public void setUp()
             throws IOException, TimeoutException {
         openConnection();
         openChannel();
     }
 
-    protected void tearDown()
+    public void tearDown()
         throws IOException
     {
         closeChannel();
@@ -83,7 +90,7 @@ public class QosTests extends BrokerTestCase
         return res;
     }
 
-    public void testMessageLimitPrefetchSizeFails()
+    @Test public void messageLimitPrefetchSizeFails()
         throws IOException
     {
         try {
@@ -94,7 +101,7 @@ public class QosTests extends BrokerTestCase
         }
     }
 
-    public void testMessageLimitUnlimited()
+    @Test public void messageLimitUnlimited()
         throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
@@ -102,7 +109,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 2);
     }
 
-    public void testNoAckNoAlterLimit()
+    @Test public void noAckNoAlterLimit()
         throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
@@ -112,7 +119,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 2);
     }
 
-    public void testNoAckObeysLimit()
+    @Test public void noAckObeysLimit()
         throws IOException
     {
         channel.basicQos(1, true);
@@ -135,7 +142,7 @@ public class QosTests extends BrokerTestCase
         drain(c2, 1);
     }
 
-    public void testPermutations()
+    @Test public void permutations()
         throws IOException
     {
         closeChannel();
@@ -152,7 +159,7 @@ public class QosTests extends BrokerTestCase
         }
     }
 
-    public void testFairness()
+    @Test public void fairness()
         throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
@@ -181,7 +188,7 @@ public class QosTests extends BrokerTestCase
 
     }
 
-    public void testSingleChannelAndQueueFairness()
+    @Test public void singleChannelAndQueueFairness()
         throws IOException
     {
         //check that when we have multiple consumers on the same
@@ -230,7 +237,7 @@ public class QosTests extends BrokerTestCase
         assertTrue(counts.get("c2").intValue() > 0);
     }
 
-    public void testConsumerLifecycle()
+    @Test public void consumerLifecycle()
         throws IOException
     {
         channel.basicQos(1, true);
@@ -251,7 +258,7 @@ public class QosTests extends BrokerTestCase
         channel.queueDelete(queue);
     }
 
-    public void testSetLimitAfterConsume()
+    @Test public void setLimitAfterConsume()
         throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
@@ -266,7 +273,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
-    public void testLimitIncrease()
+    @Test public void limitIncrease()
         throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
@@ -275,7 +282,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
-    public void testLimitDecrease()
+    @Test public void limitDecrease()
         throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
@@ -286,7 +293,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
-    public void testLimitedToUnlimited()
+    @Test public void limitedToUnlimited()
         throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
@@ -295,7 +302,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 2);
     }
 
-    public void testLimitingMultipleChannels()
+    @Test public void limitingMultipleChannels()
         throws IOException
     {
         Channel ch1 = connection.createChannel();
@@ -319,7 +326,7 @@ public class QosTests extends BrokerTestCase
         ch2.abort();
     }
 
-    public void testLimitInheritsUnackedCount()
+    @Test public void limitInheritsUnackedCount()
         throws IOException
     {
         QueueingConsumer c = new QueueingConsumer(channel);
@@ -331,7 +338,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
-    public void testRecoverReducesLimit() throws Exception {
+    @Test public void recoverReducesLimit() throws Exception {
         channel.basicQos(2, true);
         QueueingConsumer c = new QueueingConsumer(channel);
         declareBindConsume(c);

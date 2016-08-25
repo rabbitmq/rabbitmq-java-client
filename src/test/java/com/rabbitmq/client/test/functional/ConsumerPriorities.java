@@ -15,21 +15,26 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.test.BrokerTestCase;
+
 public class ConsumerPriorities extends BrokerTestCase {
-    public void testValidation() throws IOException {
+    @Test public void validation() throws IOException {
         assertFailValidation(args("banana"));
-        assertFailValidation(args(new HashMap()));
+        assertFailValidation(args(new HashMap<Object, Object>()));
         assertFailValidation(args(null));
         assertFailValidation(args(Arrays.asList(1, 2, 3)));
     }
@@ -47,7 +52,7 @@ public class ConsumerPriorities extends BrokerTestCase {
 
     private static final int COUNT = 10;
 
-    public void testConsumerPriorities() throws Exception {
+    @Test public void consumerPriorities() throws Exception {
         String queue = channel.queueDeclare().getQueue();
         QueueingConsumer highConsumer = new QueueingConsumer(channel);
         QueueingConsumer medConsumer = new QueueingConsumer(channel);

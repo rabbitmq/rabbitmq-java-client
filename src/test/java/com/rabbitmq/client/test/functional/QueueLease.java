@@ -16,9 +16,13 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Consumer;
@@ -40,19 +44,19 @@ public class QueueLease extends BrokerTestCase {
      * Verify that a queue with the 'x-expires` flag is actually deleted within
      * a sensible period of time after expiry.
      */
-    public void testQueueExpires() throws IOException, InterruptedException {
+    @Test public void queueExpires() throws IOException, InterruptedException {
         verifyQueueExpires(TEST_EXPIRE_QUEUE, true);
     }
 
     /**
      * Verify that the server does not delete normal queues... ;)
      */
-    public void testDoesNotExpireOthers() throws IOException,
+    @Test public void doesNotExpireOthers() throws IOException,
             InterruptedException {
         verifyQueueExpires(TEST_NORMAL_QUEUE, false);
     }
 
-    public void testExpireMayBeByte() throws IOException {
+    @Test public void expireMayBeByte() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-expires", (byte)100);
 
@@ -63,7 +67,7 @@ public class QueueLease extends BrokerTestCase {
         }
     }
 
-    public void testExpireMayBeShort() throws IOException {
+    @Test public void expireMayBeShort() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-expires", (short)100);
 
@@ -74,7 +78,7 @@ public class QueueLease extends BrokerTestCase {
         }
     }
 
-    public void testExpireMayBeLong() throws IOException {
+    @Test public void expireMayBeLong() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-expires", 100L);
 
@@ -85,7 +89,7 @@ public class QueueLease extends BrokerTestCase {
         }
     }
 
-    public void testExpireMustBeGtZero() throws IOException {
+    @Test public void expireMustBeGtZero() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-expires", 0);
 
@@ -98,7 +102,7 @@ public class QueueLease extends BrokerTestCase {
         }
     }
 
-    public void testExpireMustBePositive() throws IOException {
+    @Test public void expireMustBePositive() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-expires", -10);
 
@@ -115,7 +119,7 @@ public class QueueLease extends BrokerTestCase {
      * Verify that the server throws an error if the client redeclares a queue
      * with mismatching 'x-expires' values.
      */
-    public void testQueueRedeclareEquivalence() throws IOException {
+    @Test public void queueRedeclareEquivalence() throws IOException {
         Map<String, Object> args1 = new HashMap<String, Object>();
         args1.put("x-expires", 10000);
         Map<String, Object> args2 = new HashMap<String, Object>();
@@ -133,7 +137,7 @@ public class QueueLease extends BrokerTestCase {
         }
     }
 
-    public void testActiveQueueDeclareExtendsLease()
+    @Test public void activeQueueDeclareExtendsLease()
             throws InterruptedException, IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-expires", QUEUE_EXPIRES);
@@ -156,7 +160,7 @@ public class QueueLease extends BrokerTestCase {
         }
     }
 
-    public void testPassiveQueueDeclareExtendsLease()
+    @Test public void passiveQueueDeclareExtendsLease()
             throws InterruptedException, IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-expires", QUEUE_EXPIRES);
@@ -179,7 +183,7 @@ public class QueueLease extends BrokerTestCase {
         }
     }
 
-    public void testExpiresWithConsumers()
+    @Test public void expiresWithConsumers()
             throws InterruptedException, IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-expires", QUEUE_EXPIRES);

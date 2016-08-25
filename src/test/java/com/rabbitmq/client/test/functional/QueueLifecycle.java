@@ -16,15 +16,17 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.test.BrokerTestCase;
+import org.junit.Test;
+
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.fail;
 
 /**
  * Test queue auto-delete and exclusive semantics.
@@ -87,7 +89,7 @@ public class QueueLifecycle extends BrokerTestCase {
      * Declare-Ok if the requested queue matches these fields, and MUST
      * raise a channel exception if not."
      */
-    public void testQueueEquivalence() throws IOException {
+    @Test public void queueEquivalence() throws IOException {
         String q = "queue";
         channel.queueDeclare(q, false, false, false, null);
         // equivalent
@@ -102,22 +104,22 @@ public class QueueLifecycle extends BrokerTestCase {
     }
 
     // not equivalent in various ways
-    public void testQueueNonEquivalenceDurable() throws IOException {
+    @Test public void queueNonEquivalenceDurable() throws IOException {
         verifyNotEquivalent(true, false, false);
     }
 
-    public void testQueueNonEquivalenceExclusive() throws IOException {
+    @Test public void queueNonEquivalenceExclusive() throws IOException {
         verifyNotEquivalent(false, true, false);
     }
 
-    public void testQueueNonEquivalenceAutoDelete() throws IOException {
+    @Test public void queueNonEquivalenceAutoDelete() throws IOException {
         verifyNotEquivalent(false, false, true);
     }
 
     // Note that this assumes that auto-deletion is synchronous with
     // basic.cancel,
     // which is not actually in the spec. (If it isn't, there's a race here).
-    public void testQueueAutoDelete() throws IOException {
+    @Test public void queueAutoDelete() throws IOException {
         String name = "tempqueue";
         channel.queueDeclare(name, false, false, true, null);
         // now it's there
@@ -135,7 +137,7 @@ public class QueueLifecycle extends BrokerTestCase {
         fail("Queue should have been auto-deleted after we removed its only consumer");
     }
 
-    public void testExclusiveNotAutoDelete() throws IOException {
+    @Test public void exclusiveNotAutoDelete() throws IOException {
         String name = "exclusivequeue";
         channel.queueDeclare(name, false, true, false, null);
         // now it's there
@@ -147,7 +149,7 @@ public class QueueLifecycle extends BrokerTestCase {
         verifyQueueExists(name);
     }
 
-    public void testExclusiveGoesWithConnection() throws IOException, TimeoutException {
+    @Test public void exclusiveGoesWithConnection() throws IOException, TimeoutException {
         String name = "exclusivequeue2";
         channel.queueDeclare(name, false, true, false, null);
         // now it's there
@@ -158,7 +160,7 @@ public class QueueLifecycle extends BrokerTestCase {
         verifyQueueMissing(name);
     }
 
-    public void testArgumentArrays() throws IOException {
+    @Test public void argumentArrays() throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
         String[] arr = new String[]{"foo", "bar", "baz"};
         args.put("my-key", arr);
@@ -167,7 +169,7 @@ public class QueueLifecycle extends BrokerTestCase {
         verifyQueue(queueName, true, true, false, args);
     }
 
-    public void testQueueNamesLongerThan255Characters() throws IOException {
+    @Test public void queueNamesLongerThan255Characters() throws IOException {
         String q = new String(new byte[300]).replace('\u0000', 'x');
         try {
             channel.queueDeclare(q, false, false, false, null);
@@ -176,4 +178,5 @@ public class QueueLifecycle extends BrokerTestCase {
             // expected
         }
     }
+
 }

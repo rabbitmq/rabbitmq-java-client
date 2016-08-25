@@ -15,18 +15,26 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
+
+import org.junit.Test;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 public class CcRoutes extends BrokerTestCase  {
 
@@ -38,7 +46,7 @@ public class CcRoutes extends BrokerTestCase  {
     protected List<String> ccList;
     protected List<String> bccList;
 
-    @Override protected void setUp() throws IOException, TimeoutException {
+    @Override public void setUp() throws IOException, TimeoutException {
         super.setUp();
         propsBuilder = new BasicProperties.Builder();
         headers = new HashMap<String, Object>();
@@ -55,26 +63,26 @@ public class CcRoutes extends BrokerTestCase  {
         channel.exchangeDeclare(exTopic, "topic", false, true, null);
     }
 
-    public void testCcList() throws IOException {
+    @Test public void ccList() throws IOException {
         ccList.add("queue2");
         ccList.add("queue3");
         headerPublish("", "queue1", ccList, null);
         expect(new String []{"queue1", "queue2", "queue3"}, true);
      }
 
-    public void testCcIgnoreEmptyAndInvalidRoutes() throws IOException {
+    @Test public void ccIgnoreEmptyAndInvalidRoutes() throws IOException {
         bccList.add("frob");
         headerPublish("", "queue1", ccList, bccList);
         expect(new String []{"queue1"}, true);
      }
 
-    public void testBcc() throws IOException {
+    @Test public void bcc() throws IOException {
         bccList.add("queue2");
         headerPublish("", "queue1", null, bccList);
         expect(new String []{"queue1", "queue2"}, false);
      }
 
-    public void testNoDuplicates() throws IOException {
+    @Test public void noDuplicates() throws IOException {
         ccList.add("queue1");
         ccList.add("queue1");
         bccList.add("queue1");
@@ -82,20 +90,20 @@ public class CcRoutes extends BrokerTestCase  {
         expect(new String[] {"queue1"}, true);
      }
 
-    public void testDirectExchangeWithoutBindings() throws IOException {
+    @Test public void directExchangeWithoutBindings() throws IOException {
         ccList.add("queue1");
         headerPublish(exDirect, "queue2", ccList, null);
         expect(new String[] {}, true);
     }
 
-    public void testTopicExchange() throws IOException {
+    @Test public void topicExchange() throws IOException {
         ccList.add("routing_key");
         channel.queueBind("queue2", exTopic, "routing_key");
         headerPublish(exTopic, "", ccList, null);
         expect(new String[] {"queue2"}, true);
     }
 
-    public void testBoundExchanges() throws IOException {
+    @Test public void boundExchanges() throws IOException {
         ccList.add("routing_key1");
         bccList.add("routing_key2");
         channel.exchangeBind(exTopic, exDirect, "routing_key1");
@@ -104,7 +112,7 @@ public class CcRoutes extends BrokerTestCase  {
         expect(new String[] {"queue2"}, true);
     }
 
-    public void testNonArray() throws IOException {
+    @Test public void nonArray() throws IOException {
         headers.put("CC", 0);
         propsBuilder.headers(headers);
         channel.basicPublish("", "queue1", propsBuilder.build(), new byte[0]);

@@ -15,16 +15,21 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.impl.AMQConnection;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.Test;
+
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.impl.AMQConnection;
+
 public class SharedThreadPoolTest extends BrokerTestCase {
-    public void testWillShutDownExecutor() throws IOException, TimeoutException {
+    @Test public void willShutDownExecutor() throws IOException, TimeoutException {
         ConnectionFactory cf = new ConnectionFactory();
         ExecutorService executor = Executors.newFixedThreadPool(8);
         cf.setSharedExecutor(executor);

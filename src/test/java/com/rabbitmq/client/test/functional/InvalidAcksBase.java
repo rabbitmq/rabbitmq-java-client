@@ -20,6 +20,8 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
 
+import org.junit.Test;
+
 /**
  * See bug 21846:
  * Basic.Ack is now required to signal a channel error immediately upon
@@ -31,7 +33,7 @@ public abstract class InvalidAcksBase extends BrokerTestCase {
     protected abstract void select() throws IOException;
     protected abstract void commit() throws IOException;
 
-    public void testDoubleAck()
+    @Test public void doubleAck()
         throws IOException
     {
         select();
@@ -46,7 +48,7 @@ public abstract class InvalidAcksBase extends BrokerTestCase {
         expectError(AMQP.PRECONDITION_FAILED);
     }
 
-    public void testCrazyAck()
+    @Test public void crazyAck()
         throws IOException
     {
         select();

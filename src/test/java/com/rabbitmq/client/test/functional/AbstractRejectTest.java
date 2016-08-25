@@ -16,22 +16,26 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.concurrent.TimeoutException;
+
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.concurrent.TimeoutException;
-
 abstract class AbstractRejectTest extends BrokerTestCase {
 
     protected Channel secondaryChannel;
 
     @Override
-    protected void setUp()
+    public void setUp()
             throws IOException, TimeoutException {
         super.setUp();
         secondaryChannel = connection.createChannel();
@@ -39,7 +43,7 @@ abstract class AbstractRejectTest extends BrokerTestCase {
     }
 
     @Override
-    protected void tearDown()
+    public void tearDown()
             throws IOException, TimeoutException {
         if (secondaryChannel != null) {
             secondaryChannel.abort();

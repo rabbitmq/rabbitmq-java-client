@@ -16,10 +16,15 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import java.io.IOException;
 
+import org.junit.Test;
+
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public class NoRequeueOnCancel extends BrokerTestCase
 {
@@ -33,7 +38,7 @@ public class NoRequeueOnCancel extends BrokerTestCase
         channel.queueDelete(Q);
     }
 
-    public void testNoRequeueOnCancel()
+    @Test public void noRequeueOnCancel()
         throws IOException, InterruptedException
     {
         channel.basicPublish("", Q, null, "1".getBytes());

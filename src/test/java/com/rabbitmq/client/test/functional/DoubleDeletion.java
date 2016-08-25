@@ -18,6 +18,8 @@ package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 
+import org.junit.Test;
+
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class DoubleDeletion extends BrokerTestCase
@@ -25,7 +27,7 @@ public class DoubleDeletion extends BrokerTestCase
     protected static final String Q = "DoubleDeletionQueue";
     protected static final String X = "DoubleDeletionExchange";
 
-    public void testDoubleDeletionQueue()
+    @Test public void doubleDeletionQueue()
         throws IOException
     {
         channel.queueDelete(Q);
@@ -34,7 +36,7 @@ public class DoubleDeletion extends BrokerTestCase
         channel.queueDelete(Q);
     }
 
-    public void testDoubleDeletionExchange()
+    @Test public void doubleDeletionExchange()
         throws IOException
     {
         channel.exchangeDelete(X);

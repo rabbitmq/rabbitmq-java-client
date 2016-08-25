@@ -41,6 +41,11 @@ import org.junit.runners.Suite;
     JSONReadWriteTest.class,
     SharedThreadPoolTest.class
 })
-public class ClientTests extends AbstractRMQTestSuite {
+public class ClientTests {
+
+    // initialize system properties
+    static{
+        new AbstractRMQTestSuite(){};
+    }
 
 }

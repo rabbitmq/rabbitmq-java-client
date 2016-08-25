@@ -15,9 +15,9 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.test.BrokerTestCase;
-
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.junit.Test;
 
 /**
  * Tests whether a Channel is safe for multi-threaded access
@@ -28,7 +28,7 @@ public class MultiThreadedChannel extends BrokerTestCase {
 
     private static final String DUMMY_EXCHANGE_NAME = "dummy.exchange";
 
-    public void testInterleavedRpcs() throws Throwable {
+    @Test public void interleavedRpcs() throws Throwable {
 
         final AtomicReference<Throwable> throwableRef = new AtomicReference<Throwable>(null);
 

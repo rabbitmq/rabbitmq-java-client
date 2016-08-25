@@ -16,26 +16,30 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.Test;
+
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.Method;
-import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.impl.AMQCommand;
-import com.rabbitmq.client.ConnectionFactory;
-
-import junit.framework.TestCase;
+import com.rabbitmq.client.impl.SocketFrameHandler;
 
 
 /**
  * Check that protocol negotiation works
  */
-public class ConnectionOpen extends TestCase {
-    public void testCorrectProtocolHeader() throws IOException {
+public class ConnectionOpen {
+    @Test public void correctProtocolHeader() throws IOException {
         ConnectionFactory factory = new ConnectionFactory();
         SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
         fh.sendHeader();
@@ -52,7 +56,7 @@ public class ConnectionOpen extends TestCase {
                                 start.getVersionMinor() <= AMQP.PROTOCOL.MINOR));
     }
 
-    public void testCrazyProtocolHeader() throws IOException {
+    @Test public void crazyProtocolHeader() throws IOException {
         ConnectionFactory factory = new ConnectionFactory();
         // keep the frame handler's socket
         Socket fhSocket = factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT);
@@ -84,7 +88,7 @@ public class ConnectionOpen extends TestCase {
         }
     }
 
-    public void testFrameMaxLessThanFrameMinSize() throws IOException, TimeoutException {
+    @Test public void frameMaxLessThanFrameMinSize() throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setRequestedFrameMax(100);
         try {

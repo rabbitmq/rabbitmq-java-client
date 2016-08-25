@@ -16,18 +16,16 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.BlockedListener;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.tools.Host;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static org.junit.Assert.assertTrue;
 
 public class BlockedConnection extends BrokerTestCase {
     protected void releaseResources() throws IOException {
@@ -39,7 +37,7 @@ public class BlockedConnection extends BrokerTestCase {
     }
     // this test first opens a connection, then triggers
     // and alarm and blocks
-    public void testBlock() throws Exception {
+    @Test public void testBlock() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
 
         Connection connection = connection(latch);
@@ -51,7 +49,7 @@ public class BlockedConnection extends BrokerTestCase {
 
     // this test first triggers an alarm, then opens a
     // connection
-    public void testInitialBlock() throws Exception {
+    @Test public void initialBlock() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
 
         block();

@@ -16,9 +16,11 @@
 
 package com.rabbitmq.client.test.server;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.test.functional.ExchangeEquivalenceBase;
 
@@ -28,12 +30,12 @@ public class AlternateExchangeEquivalence extends ExchangeEquivalenceBase {
         args.put("alternate-exchange", "UME");
     }
 
-    public void testAlternateExchangeEquivalence() throws IOException {
+    @Test public void alternateExchangeEquivalence() throws IOException {
         channel.exchangeDeclare("alternate", "direct", false, false, args);
         verifyEquivalent("alternate", "direct", false, false, args);
     }
 
-    public void testAlternateExchangeNonEquivalence() throws IOException {
+    @Test public void alternateExchangeNonEquivalence() throws IOException {
         channel.exchangeDeclare("alternate", "direct", false, false, args);
         Map<String, Object> altargs = new HashMap<String, Object>();
         altargs.put("alternate-exchange", "somewhere");

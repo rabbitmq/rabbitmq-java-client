@@ -15,6 +15,8 @@
 
 package com.rabbitmq.client.test;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -22,6 +24,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.SocketFactory;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -87,7 +91,7 @@ public class CloseInMainLoop extends BrokerTestCase{
     }
   }
 
-  public void testCloseOKNormallyReceived() throws Exception{
+  @Test public void closeOKNormallyReceived() throws Exception{
     SpecialConnection connection = new SpecialConnection();
     connection.close();
     assertTrue(connection.hadValidShutdown());
@@ -95,7 +99,7 @@ public class CloseInMainLoop extends BrokerTestCase{
 
   // The thrown runtime exception should get intercepted by the
   // consumer exception handler, and result in a clean shut down.
-  public void testCloseWithFaultyConsumer() throws Exception{
+  @Test public void closeWithFaultyConsumer() throws Exception{
     SpecialConnection connection = new SpecialConnection();
     Channel channel = connection.createChannel();
     channel.exchangeDeclare("x", "direct");

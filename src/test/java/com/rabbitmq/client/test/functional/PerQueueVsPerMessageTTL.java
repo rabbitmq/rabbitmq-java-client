@@ -15,15 +15,19 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
+import static org.junit.Assert.assertNull;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+
 public class PerQueueVsPerMessageTTL extends PerMessageTTL {
 
-    public void testSmallerPerQueueExpiryWins() throws IOException, InterruptedException {
+    @Test public void smallerPerQueueExpiryWins() throws IOException, InterruptedException {
         declareAndBindQueue(10);
         this.sessionTTL = 1000;
 

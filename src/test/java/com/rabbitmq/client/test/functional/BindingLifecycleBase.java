@@ -16,11 +16,16 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
 /**
  * This tests whether bindings are created and nuked properly.

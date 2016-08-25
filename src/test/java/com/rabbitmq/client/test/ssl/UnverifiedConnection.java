@@ -15,6 +15,10 @@
 
 package com.rabbitmq.client.test.ssl;
 
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -43,7 +47,7 @@ public class UnverifiedConnection extends BrokerTestCase {
         }
     }
 
-    public void testSSL() throws IOException
+    @Test public void sSL() throws IOException
     {
         channel.queueDeclare("Bug19356Test", false, true, true, null);
         channel.basicPublish("", "Bug19356Test", null, "SSL".getBytes());

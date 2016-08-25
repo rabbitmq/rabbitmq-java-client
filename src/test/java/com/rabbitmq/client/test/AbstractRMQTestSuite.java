@@ -15,18 +15,15 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.tools.Host;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Properties;
 
-import junit.framework.Test;
-import junit.framework.TestResult;
-import junit.framework.TestSuite;
-
-import com.rabbitmq.tools.Host;
-
 public abstract class AbstractRMQTestSuite {
+
   private static final String DEFAULT_SSL_HOSTNAME = "localhost";
   private static final int DEFAULT_SSL_PORT = 5671;
 
