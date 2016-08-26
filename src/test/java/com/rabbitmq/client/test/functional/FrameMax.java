@@ -51,7 +51,7 @@ public class FrameMax extends BrokerTestCase {
         connectionFactory.setRequestedFrameMax(FRAME_MAX);
     }
 
-    @Test public void negociationOk() {
+    @Test public void negotiationOk() {
         assertEquals(FRAME_MAX, connection.getFrameMax());
     }
 
