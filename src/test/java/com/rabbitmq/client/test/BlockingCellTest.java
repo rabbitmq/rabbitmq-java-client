@@ -16,25 +16,19 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.utility.BlockingCell;
+import org.junit.Test;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-import com.rabbitmq.utility.BlockingCell;
+import static org.junit.Assert.*;
 
 public class BlockingCellTest
-    extends TestCase
 {
-    public static TestSuite suite()
-    {
-        TestSuite suite = new TestSuite("blockingCells");
-        suite.addTestSuite(BlockingCellTest.class);
-        return suite;
-    }
 
-    public void testDoubleSet() throws InterruptedException
+    @Test
+    public void doubleSet() throws InterruptedException
     {
         BlockingCell<String> cell = new BlockingCell<String>();
         cell.set("one");
@@ -47,7 +41,7 @@ public class BlockingCellTest
         fail("Expected AssertionError");
     }
 
-    public void testMultiGet()
+    @Test public void multiGet()
         throws InterruptedException
     {
         final BlockingCell<String> cell = new BlockingCell<String>();
@@ -56,7 +50,7 @@ public class BlockingCellTest
         assertEquals("one", cell.get());
     }
 
-    public void testNullSet()
+    @Test public void nullSet()
         throws InterruptedException
     {
         BlockingCell<Integer> c = new BlockingCell<Integer>();
@@ -64,7 +58,7 @@ public class BlockingCellTest
         assertNull(c.get());
     }
 
-    public void testEarlySet()
+    @Test public void earlySet()
         throws InterruptedException
     {
         final BlockingCell<String> cell = new BlockingCell<String>();
@@ -95,7 +89,7 @@ public class BlockingCellTest
         assertEquals("hello", holder.get());
     }
 
-    public void testLateSet()
+    @Test public void lateSet()
         throws InterruptedException
     {
         final BlockingCell<String> cell = new BlockingCell<String>();
@@ -129,8 +123,8 @@ public class BlockingCellTest
 
         assertEquals("hello", holder.get());
     }
-    
-    public void testGetWaitsUntilSet() throws InterruptedException {
+
+    @Test public void getWaitsUntilSet() throws InterruptedException {
         final BlockingCell<String> cell = new BlockingCell<String>();
         final String value = "foo";
         final AtomicReference<Object> valueHolder = new AtomicReference<Object>();
@@ -155,7 +149,7 @@ public class BlockingCellTest
         assertTrue(value == valueHolder.get());
     }
 
-    public void testSetIfUnset() throws InterruptedException {
+    @Test public void setIfUnset() throws InterruptedException {
         final BlockingCell<String> cell = new BlockingCell<String>();
         assertTrue(cell.setIfUnset("foo"));
         assertEquals("foo", cell.get());

@@ -15,19 +15,21 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.impl.TruncatedInputStream;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-import com.rabbitmq.client.impl.TruncatedInputStream;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Some basic (retroactive) tests for TruncatedInputStream.
  */
-public class TruncatedInputStreamTest extends TestCase {
+public class TruncatedInputStreamTest {
 
     /** a sample truncated stream to run tests on */
     private TruncatedInputStream _truncStream;
@@ -38,28 +40,20 @@ public class TruncatedInputStreamTest extends TestCase {
     /** what length to truncate it to */
     private static final int TRUNCATED_LENGTH = 3;
 
-    @Override protected void setUp() throws Exception {
-        super.setUp();
+    @Before public void setUp() throws Exception {
         InputStream baseStream = new ByteArrayInputStream(TEST_BYTES);
         _truncStream = new TruncatedInputStream(baseStream, TRUNCATED_LENGTH);
     }
 
-    @Override protected void tearDown() throws Exception {
+    @After public void tearDown() throws Exception {
         _truncStream = null;
-        super.tearDown();
-    }
-
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("truncStreams");
-        suite.addTestSuite(TruncatedInputStreamTest.class);
-        return suite;
     }
     
     /**
      * Check the amount of data initially available is as it should be
      * @throws IOException if there is an I/O problem
      */
-    public void testAmountInitiallyAvailable() throws IOException {
+    @Test public void amountInitiallyAvailable() throws IOException {
         assertEquals(TRUNCATED_LENGTH, _truncStream.available());
     }
 
@@ -67,7 +61,7 @@ public class TruncatedInputStreamTest extends TestCase {
      * Check the data read from the truncated stream is as it should be
      * @throws IOException if there is an I/O problem
      */
-    public void testReadTruncatedBytes() throws IOException {
+    @Test public void readTruncatedBytes() throws IOException {
         byte[] readBytes = new byte[TEST_BYTES.length];
         int numRead = _truncStream.read(readBytes);
         assertEquals(TRUNCATED_LENGTH, numRead);
@@ -81,7 +75,7 @@ public class TruncatedInputStreamTest extends TestCase {
      * @throws IOException 
      *
      */
-    public void testSingleByteReads() throws IOException {
+    @Test public void singleByteReads() throws IOException {
         for (int i = 0; i < TRUNCATED_LENGTH; i++) {
             assertEquals(TEST_BYTES[i], _truncStream.read());
         }
@@ -95,7 +89,7 @@ public class TruncatedInputStreamTest extends TestCase {
     /**
      * Check reading a specified number of bytes at an offset  gives the right result
      */
-    public void testOffsetMultipleByteReads() throws IOException {
+    @Test public void offsetMultipleByteReads() throws IOException {
         byte[] readBytes = new byte[TEST_OFFSET + TEST_LENGTH];
         _truncStream.read(readBytes, TEST_OFFSET, TEST_LENGTH);
         for (int i = 0; i < TEST_OFFSET; i++) { // check the array's initially blank...

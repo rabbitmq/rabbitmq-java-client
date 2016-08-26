@@ -15,9 +15,13 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.functional.ClusteredTestBase;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.test.functional.ClusteredTestBase;
 
 /**
  * From bug 19844 - we want to be sure that publish vs everything else can't
@@ -47,7 +51,7 @@ public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
 
     private static final byte[] msg = "".getBytes();
 
-    public void testEffectVisibility() throws Exception {
+    @Test public void effectVisibility() throws Exception {
 
         for (int i = 0; i < BATCHES; i++) {
             for (int j = 0; j < MESSAGES_PER_BATCH; j++) {

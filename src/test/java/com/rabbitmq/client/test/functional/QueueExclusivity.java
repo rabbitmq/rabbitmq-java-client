@@ -16,9 +16,13 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -49,7 +53,7 @@ public class QueueExclusivity extends BrokerTestCase {
         }
     }
 
-    public void testQueueExclusiveForPassiveDeclare() throws Exception {
+    @Test public void queueExclusiveForPassiveDeclare() throws Exception {
         try {
             channel.queueDeclarePassive(q);
         } catch (IOException ioe) {
@@ -61,7 +65,7 @@ public class QueueExclusivity extends BrokerTestCase {
 
     // This is a different scenario because active declare takes notice of
     // the all the arguments
-    public void testQueueExclusiveForDeclare() throws Exception {
+    @Test public void queueExclusiveForDeclare() throws Exception {
         try {
             channel.queueDeclare(q, false, true, false, noArgs);
         } catch (IOException ioe) {
@@ -71,7 +75,7 @@ public class QueueExclusivity extends BrokerTestCase {
         fail("Active queue declaration of an exclusive queue from another connection should fail");
     }
 
-    public void testQueueExclusiveForConsume() throws Exception {
+    @Test public void queueExclusiveForConsume() throws Exception {
         QueueingConsumer c = new QueueingConsumer(channel);
         try {
             channel.basicConsume(q, c);
@@ -82,7 +86,7 @@ public class QueueExclusivity extends BrokerTestCase {
         fail("Exclusive queue should be locked for basic consume from another connection");
     }
 
-    public void testQueueExclusiveForPurge() throws Exception {
+    @Test public void queueExclusiveForPurge() throws Exception {
         try {
             channel.queuePurge(q);
         } catch (IOException ioe) {
@@ -92,7 +96,7 @@ public class QueueExclusivity extends BrokerTestCase {
         fail("Exclusive queue should be locked for queue purge from another connection");
     }
 
-    public void testQueueExclusiveForDelete() throws Exception {
+    @Test public void queueExclusiveForDelete() throws Exception {
         try {
             channel.queueDelete(q);
         } catch (IOException ioe) {
@@ -102,7 +106,7 @@ public class QueueExclusivity extends BrokerTestCase {
         fail("Exclusive queue should be locked for queue delete from another connection");
     }
 
-    public void testQueueExclusiveForBind() throws Exception {
+    @Test public void queueExclusiveForBind() throws Exception {
         try {
             channel.queueBind(q, "amq.direct", "");
         } catch (IOException ioe) {
@@ -119,7 +123,7 @@ public class QueueExclusivity extends BrokerTestCase {
     // basic.cancel is inherently local to a channel, so it
     // *doesn't* make sense to include it.
 
-    public void testQueueExclusiveForUnbind() throws Exception {
+    @Test public void queueExclusiveForUnbind() throws Exception {
         altChannel.queueBind(q, "amq.direct", "");
         try {
             channel.queueUnbind(q, "amq.direct", "");
@@ -130,7 +134,7 @@ public class QueueExclusivity extends BrokerTestCase {
         fail("Exclusive queue should be locked for queue unbind from another connection");
     }
 
-    public void testQueueExclusiveForGet() throws Exception {
+    @Test public void queueExclusiveForGet() throws Exception {
         try {
             channel.basicGet(q, true);
         } catch (IOException ioe) {

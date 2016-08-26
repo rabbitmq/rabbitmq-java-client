@@ -16,15 +16,18 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.BuiltinExchangeType;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+
+import static org.junit.Assert.assertEquals;
 
 public class ExchangeDeclare extends ExchangeEquivalenceBase {
 
@@ -36,38 +39,38 @@ public class ExchangeDeclare extends ExchangeEquivalenceBase {
         channel.exchangeDelete(NAME);
     }
 
-    public void testExchangeNoArgsEquivalence() throws IOException {
+    @Test public void exchangeNoArgsEquivalence() throws IOException {
         channel.exchangeDeclare(NAME, TYPE, false, false, null);
         verifyEquivalent(NAME, TYPE, false, false, null);
     }
 
-    public void testExchangeNonsenseArgsEquivalent() throws IOException {
+    @Test public void exchangeNonsenseArgsEquivalent() throws IOException {
         channel.exchangeDeclare(NAME, TYPE, false, false, null);
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("nonsensical-argument-surely-not-in-use", "foo");
         verifyEquivalent(NAME, TYPE, false, false, args);
     }
 
-    public void testExchangeDurableNotEquivalent() throws IOException {
+    @Test public void exchangeDurableNotEquivalent() throws IOException {
         channel.exchangeDeclare(NAME, TYPE, false, false, null);
         verifyNotEquivalent(NAME, TYPE, true, false, null);
     }
 
-    public void testExchangeTypeNotEquivalent() throws IOException {
+    @Test public void exchangeTypeNotEquivalent() throws IOException {
         channel.exchangeDeclare(NAME, "direct", false, false, null);
         verifyNotEquivalent(NAME, "fanout", false, false, null);
     }
 
-    public void testExchangeAutoDeleteNotEquivalent() throws IOException {
+    @Test public void exchangeAutoDeleteNotEquivalent() throws IOException {
         channel.exchangeDeclare(NAME, "direct", false, false, null);
         verifyNotEquivalent(NAME, "direct", false, true, null);
     }
 
-    public void testExchangeDeclaredWithEnumerationEquivalentOnNonRecoverableConnection() throws IOException, InterruptedException {
+    @Test public void exchangeDeclaredWithEnumerationEquivalentOnNonRecoverableConnection() throws IOException, InterruptedException {
         doTestExchangeDeclaredWithEnumerationEquivalent(channel);
     }
 
-    public void testExchangeDeclaredWithEnumerationEquivalentOnRecoverableConnection() throws IOException, TimeoutException, InterruptedException {
+    @Test public void exchangeDeclaredWithEnumerationEquivalentOnRecoverableConnection() throws IOException, TimeoutException, InterruptedException {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
         connectionFactory.setTopologyRecoveryEnabled(false);

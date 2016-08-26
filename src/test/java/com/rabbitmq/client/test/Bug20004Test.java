@@ -15,7 +15,11 @@
 
 package com.rabbitmq.client.test;
 
+import org.junit.Test;
+
 import java.io.IOException;
+
+import static org.junit.Assert.*;
 
 /**
  * Test for bug 20004 - deadlock through internal synchronization on
@@ -40,7 +44,7 @@ public class Bug20004Test extends BrokerTestCase {
     }
 
     @SuppressWarnings("deprecation")
-    public void testBug20004() throws IOException
+    @Test public void bug20004() throws IOException
     {
         final Bug20004Test testInstance = this;
 

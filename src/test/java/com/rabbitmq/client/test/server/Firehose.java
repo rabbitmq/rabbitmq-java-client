@@ -15,14 +15,19 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.tools.Host;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.tools.Host;
 
 public class Firehose extends BrokerTestCase {
     private String q;
@@ -38,7 +43,7 @@ public class Firehose extends BrokerTestCase {
         channel.queueBind(firehose, "amq.rabbitmq.trace", "#");
     }
 
-    public void testFirehose() throws IOException {
+    @Test public void firehose() throws IOException {
         publishGet("not traced");
         enable();
         GetResponse msg = publishGet("traced");

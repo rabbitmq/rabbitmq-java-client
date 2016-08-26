@@ -16,14 +16,18 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.QueueingConsumer;
+import static org.junit.Assert.assertNull;
 
 import java.io.IOException;
 
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.QueueingConsumer;
+
 public class Reject extends AbstractRejectTest
 {
-    public void testReject()
+    @Test public void reject()
         throws IOException, InterruptedException
     {
         String q = channel.queueDeclare("", false, true, false, null).getQueue();

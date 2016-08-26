@@ -16,16 +16,20 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.ReturnListener;
-import com.rabbitmq.client.GetResponse;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.Map;
-import java.util.HashMap;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.ReturnListener;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 public class AlternateExchange extends BrokerTestCase
 {
@@ -55,7 +59,7 @@ public class AlternateExchange extends BrokerTestCase
         return expected;
     }
 
-    @Override protected void setUp() throws IOException, TimeoutException {
+    @Override public void setUp() throws IOException, TimeoutException {
         super.setUp();
         channel.addReturnListener(new ReturnListener() {
                 public void handleReturn(int replyCode,
@@ -177,7 +181,7 @@ public class AlternateExchange extends BrokerTestCase
      * check various cases of missing AEs - we expect to see some
      * warnings in the server logs
      */
-    public void testMissing() throws IOException {
+    @Test public void missing() throws IOException {
         setupRouting("x", "u");
         check("x", false);           //no warning
         check("u", unrouted, false); //warning
@@ -193,7 +197,7 @@ public class AlternateExchange extends BrokerTestCase
         cleanup();
     }
 
-    public void testAe() throws IOException {
+    @Test public void ae() throws IOException {
         setupRouting();
 
         for (String k : keys) {
@@ -206,7 +210,7 @@ public class AlternateExchange extends BrokerTestCase
         cleanup();
     }
 
-    public void testCycleBreaking() throws IOException {
+    @Test public void cycleBreaking() throws IOException {
         setupRouting();
         check("z", false);
         cleanup();

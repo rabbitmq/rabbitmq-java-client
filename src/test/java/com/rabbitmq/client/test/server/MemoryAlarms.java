@@ -15,8 +15,13 @@
 
 package com.rabbitmq.client.test.server;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -32,7 +37,7 @@ public class MemoryAlarms extends BrokerTestCase {
     private Channel channel2;
 
     @Override
-    protected void setUp() throws IOException, TimeoutException {
+    public void setUp() throws IOException, TimeoutException {
         connectionFactory.setRequestedHeartbeat(1);
         super.setUp();
         if (connection2 == null) {
@@ -42,7 +47,7 @@ public class MemoryAlarms extends BrokerTestCase {
     }
 
     @Override
-    protected void tearDown() throws IOException, TimeoutException {
+    public void tearDown() throws IOException, TimeoutException {
         if (channel2 != null) {
             channel2.abort();
             channel2 = null;
@@ -71,7 +76,7 @@ public class MemoryAlarms extends BrokerTestCase {
         }
     }
 
-    public void testFlowControl() throws IOException, InterruptedException {
+    @Test public void flowControl() throws IOException, InterruptedException {
         basicPublishVolatile(Q);
         setResourceAlarm("memory");
         // non-publish actions only after an alarm should be fine
@@ -93,7 +98,7 @@ public class MemoryAlarms extends BrokerTestCase {
     }
 
 
-    public void testOverlappingAlarmsFlowControl() throws IOException, InterruptedException {
+    @Test public void overlappingAlarmsFlowControl() throws IOException, InterruptedException {
         QueueingConsumer c = new QueueingConsumer(channel);
         String consumerTag = channel.basicConsume(Q, true, c);
 

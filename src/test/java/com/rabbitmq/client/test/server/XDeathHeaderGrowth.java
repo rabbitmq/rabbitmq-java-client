@@ -15,11 +15,8 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,6 +28,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.test.BrokerTestCase;
 
 class RejectingConsumer extends DefaultConsumer {
     private CountDownLatch latch;
@@ -63,7 +68,7 @@ class RejectingConsumer extends DefaultConsumer {
 
 public class XDeathHeaderGrowth extends BrokerTestCase {
     @SuppressWarnings("unchecked")
-    public void testBoundedXDeathHeaderGrowth() throws IOException, InterruptedException {
+    @Test public void boundedXDeathHeaderGrowth() throws IOException, InterruptedException {
         final String x1 = "issues.rabbitmq-server-78.fanout1";
         declareTransientFanoutExchange(x1);
         final String x2 = "issues.rabbitmq-server-78.fanout2";
@@ -124,7 +129,7 @@ public class XDeathHeaderGrowth extends BrokerTestCase {
     }
 
     @SuppressWarnings("unchecked")
-    public void testHandlingOfXDeathHeadersFromEarlierVersions() throws IOException, InterruptedException {
+    @Test public void handlingOfXDeathHeadersFromEarlierVersions() throws IOException, InterruptedException {
         final String x1 = "issues.rabbitmq-server-152.fanout1";
         declareTransientFanoutExchange(x1);
         final String x2 = "issues.rabbitmq-server-152.fanout2";

@@ -16,8 +16,12 @@
 
 package com.rabbitmq.client.test.server;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
+
+import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -42,7 +46,7 @@ public class ExclusiveQueueDurability extends BrokerTestCase {
 
     // 1) connection and queue are on same node, node restarts -> queue
     // should no longer exist
-    public void testConnectionQueueSameNode() throws Exception {
+    @Test public void connectionQueueSameNode() throws Exception {
         channel.queueDeclare("scenario1", true, true, false, null);
         restartPrimaryAbruptly();
         verifyQueueMissing(channel, "scenario1");

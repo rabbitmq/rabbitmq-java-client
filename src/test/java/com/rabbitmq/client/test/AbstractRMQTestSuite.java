@@ -15,22 +15,14 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.tools.Host;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Properties;
 
-import junit.framework.Test;
-import junit.framework.TestResult;
-import junit.framework.TestSuite;
-
-import com.rabbitmq.tools.Host;
-
-public abstract class AbstractRMQTestSuite extends TestSuite {
-  private static final String DEFAULT_SSL_HOSTNAME = "localhost";
-  private static final int DEFAULT_SSL_PORT = 5671;
-
-  private static boolean buildSSLPropertiesFound = false;
+public abstract class AbstractRMQTestSuite {
 
   static {
     Properties TESTS_PROPS = new Properties(System.getProperties());
@@ -87,10 +79,6 @@ public abstract class AbstractRMQTestSuite extends TestSuite {
     }
 
     return true;
-  }
-
-  public static boolean isUnderUmbrella() {
-    return new File("../../UMBRELLA.md").isFile();
   }
 
   public static boolean isSSLAvailable() {

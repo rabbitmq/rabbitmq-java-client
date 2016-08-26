@@ -16,6 +16,12 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.*;
+import com.rabbitmq.tools.Host;
+import org.junit.After;
+import org.junit.Before;
+
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -23,24 +29,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Command;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.Method;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.impl.ShutdownNotifierComponent;
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.tools.Host;
+public class BrokerTestCase {
 
-import javax.net.ssl.SSLContext;
-
-public class BrokerTestCase extends TestCase {
     protected ConnectionFactory connectionFactory = newConnectionFactory();
 
     protected ConnectionFactory newConnectionFactory() {
@@ -50,7 +42,7 @@ public class BrokerTestCase extends TestCase {
     protected Connection connection;
     protected Channel channel;
 
-    protected void setUp()
+    @Before public void setUp()
             throws IOException, TimeoutException {
         openConnection();
         openChannel();
@@ -58,7 +50,7 @@ public class BrokerTestCase extends TestCase {
         createResources();
     }
 
-    protected void tearDown()
+    @After public void tearDown()
             throws IOException, TimeoutException {
         closeChannel();
         closeConnection();

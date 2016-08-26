@@ -15,6 +15,16 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+
+import org.junit.Test;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -23,12 +33,10 @@ import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 
-import java.io.IOException;
-
 public class DirectReplyTo extends BrokerTestCase {
     private static final String QUEUE = "amq.rabbitmq.reply-to";
 
-    public void testRoundTrip() throws IOException, InterruptedException {
+    @Test public void roundTrip() throws IOException, InterruptedException {
         QueueingConsumer c = new QueueingConsumer(channel);
         String replyTo = rpcFirstHalf(c);
         declare(connection, replyTo, true);
@@ -40,7 +48,7 @@ public class DirectReplyTo extends BrokerTestCase {
         assertEquals("response", new String(del.getBody()));
     }
 
-    public void testHack() throws IOException, InterruptedException {
+    @Test public void hack() throws IOException, InterruptedException {
         QueueingConsumer c = new QueueingConsumer(channel);
         String replyTo = rpcFirstHalf(c);
         // 5 chars should overwrite part of the key but not the pid; aiming to prove
@@ -66,7 +74,7 @@ public class DirectReplyTo extends BrokerTestCase {
         }
     }
 
-    public void testConsumeFail() throws IOException, InterruptedException {
+    @Test public void consumeFail() throws IOException, InterruptedException {
         QueueingConsumer c = new QueueingConsumer(channel);
         Channel ch = connection.createChannel();
         try {
@@ -86,7 +94,7 @@ public class DirectReplyTo extends BrokerTestCase {
         }
     }
 
-    public void testConsumeSuccess() throws IOException, InterruptedException {
+    @Test public void consumeSuccess() throws IOException, InterruptedException {
         QueueingConsumer c = new QueueingConsumer(channel);
         String ctag = channel.basicConsume(QUEUE, true, c);
         channel.basicCancel(ctag);

@@ -15,10 +15,7 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.AuthenticationFailureException;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.tools.Host;
-import junit.framework.TestCase;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -28,19 +25,26 @@ import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.concurrent.TimeoutException;
 
-public class LoopbackUsers extends TestCase {
-    @Override
-    protected void setUp() throws IOException {
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.rabbitmq.client.AuthenticationFailureException;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.tools.Host;
+
+public class LoopbackUsers {
+    
+	@Before public void setUp() throws IOException {
         Host.rabbitmqctl("add_user test test");
         Host.rabbitmqctl("set_permissions test '.*' '.*' '.*'");
     }
 
-    @Override
-    protected void tearDown() throws IOException {
+    @After public void tearDown() throws IOException {
         Host.rabbitmqctl("delete_user test");
     }
 
-    public void testLoopback() throws IOException, TimeoutException {
+    @Test public void loopback() throws IOException, TimeoutException {
         String addr = findRealIPAddress().getHostAddress();
         assertGuestFail(addr);
         Host.rabbitmqctl("eval 'application:set_env(rabbit, loopback_users, []).'");

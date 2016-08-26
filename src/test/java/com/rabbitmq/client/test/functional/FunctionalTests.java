@@ -19,66 +19,70 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.impl.WorkPoolTests;
 import com.rabbitmq.client.test.AbstractRMQTestSuite;
 import com.rabbitmq.client.test.Bug20004Test;
+import com.rabbitmq.client.test.RequiredPropertiesSuite;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+@RunWith(RequiredPropertiesSuite.class)
+@Suite.SuiteClasses({
+	ConnectionOpen.class,
+	Heartbeat.class,
+	Tables.class,
+	DoubleDeletion.class,
+	Routing.class,
+	BindingLifecycle.class,
+	Recover.class,
+	Reject.class,
+	Transactions.class,
+	RequeueOnConnectionClose.class,
+	RequeueOnChannelClose.class,
+	DurableOnTransient.class,
+    NoRequeueOnCancel.class,
+    Bug20004Test.class,
+    ExchangeDeleteIfUnused.class,
+    QosTests.class,
+    AlternateExchange.class,
+    ExchangeExchangeBindings.class,
+    ExchangeExchangeBindingsAutoDelete.class,
+    ExchangeDeclare.class,
+    FrameMax.class,
+    QueueLifecycle.class,
+    QueueLease.class,
+    QueueExclusivity.class,
+    QueueSizeLimit.class,
+    InvalidAcks.class,
+    InvalidAcksTx.class,
+    DefaultExchange.class,
+    UnbindAutoDeleteExchange.class,
+    Confirm.class,
+    ConsumerCancelNotification.class,
+    UnexpectedFrames.class,
+    PerQueueTTL.class,
+    PerMessageTTL.class,
+    PerQueueVsPerMessageTTL.class,
+    DeadLetterExchange.class,
+    SaslMechanisms.class,
+    UserIDHeader.class,
+    InternalExchange.class,
+    CcRoutes.class,
+    WorkPoolTests.class,
+    HeadersExchangeValidation.class,
+    ConsumerPriorities.class,
+    Policies.class,
+    ConnectionRecovery.class,
+    ExceptionHandling.class,
+    PerConsumerPrefetch.class,
+    DirectReplyTo.class,
+	ConsumerCount.class,
+	BasicGet.class,
+	Nack.class,
+	ExceptionMessages.class
+})
+public class FunctionalTests {
 
-public class FunctionalTests extends AbstractRMQTestSuite {
-    public static TestSuite suite() {
-        TestSuite suite = new TestSuite("functional");
-	if (!requiredProperties()) return suite;
-        add(suite);
-        return suite;
-    }
+	// initialize system properties
+	static{
+		new AbstractRMQTestSuite(){};
+	}
 
-    public static void add(TestSuite suite) {
-        suite.addTestSuite(ConnectionOpen.class);
-        suite.addTestSuite(Heartbeat.class);
-        suite.addTestSuite(Tables.class);
-        suite.addTestSuite(DoubleDeletion.class);
-        suite.addTestSuite(Routing.class);
-        suite.addTestSuite(BindingLifecycle.class);
-        suite.addTestSuite(Recover.class);
-        suite.addTestSuite(Reject.class);
-        suite.addTestSuite(Transactions.class);
-        suite.addTestSuite(RequeueOnConnectionClose.class);
-        suite.addTestSuite(RequeueOnChannelClose.class);
-        suite.addTestSuite(DurableOnTransient.class);
-        suite.addTestSuite(NoRequeueOnCancel.class);
-        suite.addTestSuite(Bug20004Test.class);
-        suite.addTestSuite(ExchangeDeleteIfUnused.class);
-        suite.addTestSuite(QosTests.class);
-        suite.addTestSuite(AlternateExchange.class);
-        suite.addTestSuite(ExchangeExchangeBindings.class);
-        suite.addTestSuite(ExchangeExchangeBindingsAutoDelete.class);
-        suite.addTestSuite(ExchangeDeclare.class);
-        suite.addTestSuite(FrameMax.class);
-        suite.addTestSuite(QueueLifecycle.class);
-        suite.addTestSuite(QueueLease.class);
-        suite.addTestSuite(QueueExclusivity.class);
-        suite.addTestSuite(QueueSizeLimit.class);
-        suite.addTestSuite(InvalidAcks.class);
-        suite.addTestSuite(InvalidAcksTx.class);
-        suite.addTestSuite(DefaultExchange.class);
-        suite.addTestSuite(UnbindAutoDeleteExchange.class);
-        suite.addTestSuite(Confirm.class);
-        suite.addTestSuite(ConsumerCancelNotification.class);
-        suite.addTestSuite(UnexpectedFrames.class);
-        suite.addTestSuite(PerQueueTTL.class);
-        suite.addTestSuite(PerMessageTTL.class);
-        suite.addTestSuite(PerQueueVsPerMessageTTL.class);
-        suite.addTestSuite(DeadLetterExchange.class);
-        suite.addTestSuite(SaslMechanisms.class);
-        suite.addTestSuite(UserIDHeader.class);
-        suite.addTestSuite(InternalExchange.class);
-        suite.addTestSuite(CcRoutes.class);
-        suite.addTestSuite(WorkPoolTests.class);
-        suite.addTestSuite(HeadersExchangeValidation.class);
-        suite.addTestSuite(ConsumerPriorities.class);
-        suite.addTestSuite(Policies.class);
-        suite.addTestSuite(ConnectionRecovery.class);
-        suite.addTestSuite(ExceptionHandling.class);
-        suite.addTestSuite(PerConsumerPrefetch.class);
-        suite.addTestSuite(DirectReplyTo.class);
-    }
 }

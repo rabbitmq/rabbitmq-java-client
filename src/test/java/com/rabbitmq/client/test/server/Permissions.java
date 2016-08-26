@@ -16,20 +16,26 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.AuthenticationFailureException;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.Test;
+
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.impl.AMQChannel;
+import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
 public class Permissions extends BrokerTestCase
@@ -46,14 +52,14 @@ public class Permissions extends BrokerTestCase
         connectionFactory = factory;
     }
 
-    protected void setUp()
+    public void setUp()
             throws IOException, TimeoutException {
         deleteRestrictedAccount();
         addRestrictedAccount();
         super.setUp();
     }
 
-    protected void tearDown()
+    public void tearDown()
             throws IOException, TimeoutException {
         super.tearDown();
         deleteRestrictedAccount();
@@ -114,7 +120,7 @@ public class Permissions extends BrokerTestCase
         action.with("none");
     }
 
-    public void testAuth() throws TimeoutException {
+    @Test public void auth() throws TimeoutException {
         ConnectionFactory unAuthFactory = new ConnectionFactory();
         unAuthFactory.setUsername("test");
         unAuthFactory.setPassword("tset");
@@ -130,7 +136,7 @@ public class Permissions extends BrokerTestCase
         }
     }
 
-    public void testExchangeConfiguration()
+    @Test public void exchangeConfiguration()
         throws IOException
     {
         runConfigureTest(new WithName() {
@@ -143,7 +149,7 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testQueueConfiguration()
+    @Test public void queueConfiguration()
         throws IOException
     {
         runConfigureTest(new WithName() {
@@ -156,7 +162,7 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testPassiveDeclaration() throws IOException {
+    @Test public void passiveDeclaration() throws IOException {
         runTest(true, true, true, true, new WithName() {
                 public void with(String name) throws IOException {
                     channel.exchangeDeclarePassive(name);
@@ -167,7 +173,7 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testBinding()
+    @Test public void binding()
         throws IOException
     {
         runTest(false, true, false, false, new WithName() {
@@ -180,7 +186,7 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testPublish()
+    @Test public void publish()
         throws IOException
     {
         runTest(false, true, false, false, new WithName() {
@@ -192,7 +198,7 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testGet()
+    @Test public void get()
         throws IOException
     {
         runTest(false, false, true, false, new WithName() {
@@ -201,7 +207,7 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testConsume()
+    @Test public void consume()
         throws IOException
     {
         runTest(false, false, true, false, new WithName() {
@@ -210,7 +216,7 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testPurge()
+    @Test public void purge()
         throws IOException
     {
         runTest(false, false, true, false, new WithName() {
@@ -222,7 +228,7 @@ public class Permissions extends BrokerTestCase
                 }});
     }
 
-    public void testAltExchConfiguration()
+    @Test public void altExchConfiguration()
         throws IOException
     {
         runTest(false, false, false, false,
@@ -233,7 +239,7 @@ public class Permissions extends BrokerTestCase
                 createAltExchConfigTest("configure-and-read-me"));
     }
 
-    public void testDLXConfiguration()
+    @Test public void dLXConfiguration()
             throws IOException
     {
         runTest(false, false, false, false,
@@ -244,7 +250,7 @@ public class Permissions extends BrokerTestCase
                 createDLXConfigTest("configure-and-read-me"));
     }
 
-    public void testNoAccess()
+    @Test public void noAccess()
         throws IOException, InterruptedException
     {
         Host.rabbitmqctl("set_permissions -p /test test \"\" \"\" \"\"");

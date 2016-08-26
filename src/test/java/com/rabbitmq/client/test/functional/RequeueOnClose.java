@@ -15,6 +15,10 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+
 import com.rabbitmq.client.test.BrokerTestCase;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -42,13 +46,13 @@ public abstract class RequeueOnClose
 
     protected abstract void close() throws IOException;
 
-    protected void setUp()
+    public void setUp()
         throws IOException
     {
         // Override to disable the default behaviour from BrokerTestCase.
     }
 
-    protected void tearDown()
+    public void tearDown()
         throws IOException
     {
         // Override to disable the default behaviour from BrokerTestCase.
@@ -93,7 +97,7 @@ public abstract class RequeueOnClose
      * Test we don't requeue acknowledged messages (using get)
      * @throws Exception untested
      */
-    public void testNormal() throws Exception
+    @Test public void normal() throws Exception
     {
         publishAndGet(3, true);
     }
@@ -102,7 +106,7 @@ public abstract class RequeueOnClose
      * Test we requeue unacknowledged messages (using get)
      * @throws Exception untested
      */
-    public void testRequeueing() throws Exception
+    @Test public void requeueing() throws Exception
     {
         publishAndGet(3, false);
     }
@@ -111,7 +115,7 @@ public abstract class RequeueOnClose
      * Test we requeue unacknowledged message (using consumer)
      * @throws Exception untested
      */
-    public void testRequeueingConsumer() throws Exception
+    @Test public void requeueingConsumer() throws Exception
     {
         openConnection();
         open();
@@ -155,7 +159,7 @@ public abstract class RequeueOnClose
      * Test close while consuming many messages successfully requeues unacknowledged messages
      * @throws Exception untested
      */
-    public void testRequeueInFlight() throws Exception
+    @Test public void requeueInFlight() throws Exception
     {
         for (int i = 0; i < 5; i++) {
             publishLotsAndGet();
@@ -166,7 +170,7 @@ public abstract class RequeueOnClose
      * Test close while consuming partially not acked with cancel successfully requeues unacknowledged messages
      * @throws Exception untested
      */
-    public void testRequeueInFlightConsumerNoAck() throws Exception
+    @Test public void requeueInFlightConsumerNoAck() throws Exception
     {
         for (int i = 0; i < 5; i++) {
             publishLotsAndConsumeSome(false, true);
@@ -177,7 +181,7 @@ public abstract class RequeueOnClose
      * Test close while consuming partially acked with cancel successfully requeues unacknowledged messages
      * @throws Exception untested
      */
-    public void testRequeueInFlightConsumerAck() throws Exception
+    @Test public void requeueInFlightConsumerAck() throws Exception
     {
         for (int i = 0; i < 5; i++) {
             publishLotsAndConsumeSome(true, true);
@@ -188,7 +192,7 @@ public abstract class RequeueOnClose
      * Test close while consuming partially not acked without cancel successfully requeues unacknowledged messages
      * @throws Exception untested
      */
-    public void testRequeueInFlightConsumerNoAckNoCancel() throws Exception
+    @Test public void requeueInFlightConsumerNoAckNoCancel() throws Exception
     {
         for (int i = 0; i < 5; i++) {
             publishLotsAndConsumeSome(false, false);
@@ -199,7 +203,7 @@ public abstract class RequeueOnClose
      * Test close while consuming partially acked without cancel successfully requeues unacknowledged messages
      * @throws Exception untested
      */
-    public void testRequeueInFlightConsumerAckNoCancel() throws Exception
+    @Test public void requeueInFlightConsumerAckNoCancel() throws Exception
     {
         for (int i = 0; i < 5; i++) {
             publishLotsAndConsumeSome(true, false);

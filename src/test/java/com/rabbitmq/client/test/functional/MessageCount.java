@@ -15,12 +15,16 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 
+import org.junit.Test;
+
+import com.rabbitmq.client.test.BrokerTestCase;
+
 public class MessageCount extends BrokerTestCase {
-    public void testMessageCount() throws IOException {
+    @Test public void messageCount() throws IOException {
         String q = generateQueueName();
         channel.queueDeclare(q, false, true, false, null);
         assertEquals(0, channel.messageCount(q));

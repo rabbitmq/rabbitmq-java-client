@@ -15,14 +15,18 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.test.functional.DeadLetterExchange;
-import com.rabbitmq.tools.Host;
+import static org.junit.Assert.assertNull;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.junit.Test;
+
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.functional.DeadLetterExchange;
+import com.rabbitmq.tools.Host;
 
 public class DeadLetterExchangeDurable extends BrokerTestCase {
     @Override
@@ -45,7 +49,7 @@ public class DeadLetterExchangeDurable extends BrokerTestCase {
         channel.queueDelete(DeadLetterExchange.TEST_QUEUE_NAME);
     }
 
-    public void testDeadLetterQueueTTLExpiredWhileDown() throws Exception {
+    @Test public void deadLetterQueueTTLExpiredWhileDown() throws Exception {
         // This test is nonsensical (and often breaks) in HA mode.
         if (HATests.HA_TESTS_RUNNING) return;
 

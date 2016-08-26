@@ -15,6 +15,10 @@
 
 package com.rabbitmq.client.test;
 
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,7 +31,7 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
   static final String QUEUE = "some-queue";
   static final int THREADS = 5;
 
-  public void testNThreadShutdown() throws Exception{
+  @Test public void nThreadShutdown() throws Exception{
     Channel channel = connection.createChannel();
     final QueueingConsumer c = new QueueingConsumer(channel);
     channel.queueDeclare(QUEUE, false, true, true, null);

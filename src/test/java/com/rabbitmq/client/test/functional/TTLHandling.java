@@ -15,12 +15,19 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+
+import org.junit.Test;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
-
-import java.io.IOException;
 
 public abstract class TTLHandling extends BrokerTestCase {
 
@@ -40,7 +47,7 @@ public abstract class TTLHandling extends BrokerTestCase {
         this.channel.exchangeDelete(TTL_EXCHANGE);
     }
 
-    public void testMultipleTTLTypes() throws IOException {
+    @Test public void multipleTTLTypes() throws IOException {
         final Object[] args = { (((byte)200) & (0xff)), (short)200, 200, 200L };
         for (Object ttl : args) {
             try {
@@ -53,7 +60,7 @@ public abstract class TTLHandling extends BrokerTestCase {
         }
     }
 
-    public void testInvalidTypeUsedInTTL() throws Exception {
+    @Test public void invalidTypeUsedInTTL() throws Exception {
         try {
             declareAndBindQueue("foobar");
             publishAndSync(MSG[0]);
@@ -63,7 +70,7 @@ public abstract class TTLHandling extends BrokerTestCase {
         }
     }
 
-    public void testTrailingCharsUsedInTTL() throws Exception {
+    @Test public void trailingCharsUsedInTTL() throws Exception {
         try {
             declareAndBindQueue("10000foobar");
             publishAndSync(MSG[0]);
@@ -73,7 +80,7 @@ public abstract class TTLHandling extends BrokerTestCase {
         }
     }
 
-    public void testTTLMustBePositive() throws Exception {
+    @Test public void tTLMustBePositive() throws Exception {
         try {
             declareAndBindQueue(-10);
             publishAndSync(MSG[0]);
@@ -83,7 +90,7 @@ public abstract class TTLHandling extends BrokerTestCase {
         }
     }
 
-    public void testTTLAllowZero() throws Exception {
+    @Test public void tTLAllowZero() throws Exception {
         try {
             declareQueue(0);
             publishAndSync(MSG[0]);
@@ -92,7 +99,7 @@ public abstract class TTLHandling extends BrokerTestCase {
         }
     }
 
-    public void testMessagesExpireWhenUsingBasicGet() throws Exception {
+    @Test public void messagesExpireWhenUsingBasicGet() throws Exception {
         declareAndBindQueue(200);
         publish(MSG[0]);
         Thread.sleep(1000);
@@ -101,7 +108,7 @@ public abstract class TTLHandling extends BrokerTestCase {
         assertNull("expected message " + what + " to have been removed", what);
     }
 
-    public void testPublishAndGetWithExpiry() throws Exception {
+    @Test public void publishAndGetWithExpiry() throws Exception {
         declareAndBindQueue(200);
 
         publish(MSG[0]);
@@ -117,7 +124,7 @@ public abstract class TTLHandling extends BrokerTestCase {
         assertNull(get());
     }
 
-    public void testTransactionalPublishWithGet() throws Exception {
+    @Test public void transactionalPublishWithGet() throws Exception {
         declareAndBindQueue(100);
 
         this.channel.txSelect();
@@ -135,7 +142,7 @@ public abstract class TTLHandling extends BrokerTestCase {
         assertNull(get());
     }
 
-    public void testExpiryWithRequeue() throws Exception {
+    @Test public void expiryWithRequeue() throws Exception {
         declareAndBindQueue(200);
 
         publish(MSG[0]);
@@ -157,7 +164,7 @@ public abstract class TTLHandling extends BrokerTestCase {
     /*
     * Test expiry of re-queued messages after being consumed instantly
     */
-    public void testExpiryWithReQueueAfterConsume() throws Exception {
+    @Test public void expiryWithReQueueAfterConsume() throws Exception {
         declareAndBindQueue(100);
         QueueingConsumer c = new QueueingConsumer(channel);
         channel.basicConsume(TTL_QUEUE_NAME, c);
@@ -172,7 +179,7 @@ public abstract class TTLHandling extends BrokerTestCase {
         assertNull("Re-queued message not expired", get());
     }
 
-    public void testZeroTTLDelivery() throws Exception {
+    @Test public void zeroTTLDelivery() throws Exception {
         declareAndBindQueue(0);
 
         // when there is no consumer, message should expire

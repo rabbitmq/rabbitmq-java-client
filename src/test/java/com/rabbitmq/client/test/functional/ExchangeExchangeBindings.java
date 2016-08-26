@@ -16,12 +16,16 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.IOException;
 
-import com.rabbitmq.client.AMQP;
+import org.junit.Test;
+
 import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
+import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class ExchangeExchangeBindings extends BrokerTestCase {
@@ -78,7 +82,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
         assertEquals(new String(MARKER), new String(markerDelivery.getBody()));
     }
 
-    public void testBindingCreationDeletion() throws IOException {
+    @Test public void bindingCreationDeletion() throws IOException {
         channel.exchangeUnbind("e2", "e1", "");
         channel.exchangeBind("e2", "e1", "");
         channel.exchangeBind("e2", "e1", "");
@@ -93,7 +97,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
      * add binding (e2 --> e1)
      * test (e2 --> {q2, q1, q0})
      */
-    public void testSimpleChains() throws IOException, ShutdownSignalException,
+    @Test public void simpleChains() throws IOException, ShutdownSignalException,
             InterruptedException {
         publishWithMarker("e0", "");
         consumeNoDuplicates(consumers[0]);
@@ -120,7 +124,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
      * resulting in: (e1 --> {q1, e0 --> {q0, q1}})
      * test (e1 --> {q0, q1})
      */
-    public void testDuplicateQueueDestinations() throws IOException,
+    @Test public void duplicateQueueDestinations() throws IOException,
             ShutdownSignalException, InterruptedException {
         channel.queueBind("q1", "e0", "");
         publishWithMarker("e0", "");
@@ -142,7 +146,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
      * add binding (e0 --> e2)
      * test (eN --> {q0, q1, q2}) for N in [0..2]
      */
-    public void testExchangeRoutingLoop() throws IOException,
+    @Test public void exchangeRoutingLoop() throws IOException,
             ShutdownSignalException, InterruptedException {
         channel.exchangeBind("e0", "e1", "");
         channel.exchangeBind("e1", "e2", "");
@@ -171,7 +175,7 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
      * Then remove the first set of bindings from e --> eN for N in [0..2]
      * test publish with rk to e
      */
-    public void testTopicExchange() throws IOException, ShutdownSignalException,
+    @Test public void topicExchange() throws IOException, ShutdownSignalException,
             InterruptedException {
 
         channel.exchangeDeclare("e", "topic");

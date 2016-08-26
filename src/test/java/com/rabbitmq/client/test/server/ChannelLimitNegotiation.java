@@ -15,6 +15,18 @@
 
 package com.rabbitmq.client.test.server;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.util.concurrent.Executors;
+
+import javax.net.SocketFactory;
+
+import org.junit.Test;
+
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -22,14 +34,10 @@ import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ChannelN;
-import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.impl.ConsumerWorkService;
+import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
-
-import javax.net.SocketFactory;
-import java.io.IOException;
-import java.util.concurrent.Executors;
 
 public class ChannelLimitNegotiation extends BrokerTestCase {
     class SpecialConnection extends AMQConnection {
@@ -53,7 +61,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
         }
     }
 
-    public void testChannelMaxLowerThanServerMinimum() throws Exception {
+    @Test public void channelMaxLowerThanServerMinimum() throws Exception {
         int n = 64;
         ConnectionFactory cf = new ConnectionFactory();
         cf.setRequestedChannelMax(n);
@@ -62,7 +70,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
         assertEquals(n, conn.getChannelMax());
     }
 
-    public void testChannelMaxGreaterThanServerValue() throws Exception {
+    @Test public void channelMaxGreaterThanServerValue() throws Exception {
         try {
             Host.rabbitmqctl("eval 'application:set_env(rabbit, channel_max, 2048).'");
 
@@ -78,7 +86,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
         }
     }
 
-    public void testOpeningTooManyChannels() throws Exception {
+    @Test public void openingTooManyChannels() throws Exception {
         int n = 48;
 
         try {
