@@ -385,7 +385,6 @@
                 <include>**/SSLTests.*</include>
                 <include>**/ServerTests.*</include>
                 <include>**/HATests.*</include>
-                <include>**/TestMain.*</include>
               </includes>
             </configuration>
             <executions>

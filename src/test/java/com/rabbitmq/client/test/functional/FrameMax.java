@@ -16,6 +16,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -48,6 +49,10 @@ public class FrameMax extends BrokerTestCase {
     public FrameMax() {
         connectionFactory = new MyConnectionFactory();
         connectionFactory.setRequestedFrameMax(FRAME_MAX);
+    }
+
+    @Test public void negotiationOk() {
+        assertEquals(FRAME_MAX, connection.getFrameMax());
     }
 
     /* Publish a message of size FRAME_MAX.  The broker should split
