@@ -69,7 +69,12 @@ public class Utility {
       return throwable;
     }
 
-
+    /**
+     *
+     * @param throwable
+     * @return
+     * @deprecated use logging library instead for logging stack traces somewhere
+     */
     public static String makeStackTrace(Throwable throwable) {
         ByteArrayOutputStream baOutStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(baOutStream, false);

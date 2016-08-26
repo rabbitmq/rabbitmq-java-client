@@ -15,17 +15,11 @@
 
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.*;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.ConnectException;
-import java.util.concurrent.TimeoutException;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.ExceptionHandler;
-import com.rabbitmq.client.TopologyRecoveryException;
 
 /**
  * An implementation of {@link com.rabbitmq.client.ExceptionHandler} that does not
@@ -38,12 +32,7 @@ import com.rabbitmq.client.TopologyRecoveryException;
  */
 public class ForgivingExceptionHandler implements ExceptionHandler {
     public void handleUnexpectedConnectionDriverException(Connection conn, Throwable exception) {
-        // TODO: Log this somewhere, just in case we have a bug like
-        // 16272 where exceptions aren't being propagated properly
-        // again.
-
-        //System.err.println("DefaultExceptionHandler:");
-        //exception.printStackTrace();
+        log("An unexpected connection driver error occured", exception);
     }
 
     public void handleReturnListenerException(Channel channel, Throwable exception) {
@@ -82,8 +71,7 @@ public class ForgivingExceptionHandler implements ExceptionHandler {
         if (exception instanceof ConnectException) {
             // no-op
         } else {
-            System.err.println("Caught an exception during connection recovery!");
-            exception.printStackTrace(System.err);
+            log("Caught an exception during connection recovery!", exception);
         }
     }
 
@@ -91,39 +79,35 @@ public class ForgivingExceptionHandler implements ExceptionHandler {
      * @since 3.3.0
      */
     public void handleChannelRecoveryException(Channel ch, Throwable exception) {
-        System.err.println("Caught an exception when recovering channel " + ch.getChannelNumber());
-        exception.printStackTrace(System.err);
+        log("Caught an exception when recovering channel " + ch.getChannelNumber(), exception);
     }
 
     /**
      * @since 3.3.0
      */
     public void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException exception) {
-        System.err.println("Caught an exception when recovering topology " + exception.getMessage());
-        exception.printStackTrace(System.err);
+        log("Caught an exception when recovering topology " + exception.getMessage(), exception);
     }
 
     protected void handleChannelKiller(Channel channel, Throwable exception, String what) {
-        System.err.println(this.getClass().getName() + ": " + what + " threw an exception for channel "
-                + channel + ":");
-        exception.printStackTrace();
+        log(what + "threw an exception for channel "+channel, exception);
     }
 
     protected void handleConnectionKiller(Connection connection, Throwable exception, String what) {
-        // TODO: log the exception
-        System.err.println("DefaultExceptionHandler: " + what + " threw an exception for connection "
-                + connection + ":");
-        exception.printStackTrace();
+        log(what + " threw an exception for connection " + connection, exception);
         try {
             connection.close(AMQP.REPLY_SUCCESS, "Closed due to exception from " + what);
         } catch (AlreadyClosedException ace) {
             // noop
         } catch (IOException ioe) {
-            // TODO: log the failure
-            System.err.println("Failure during close of connection " + connection + " after " + exception
-                    + ":");
-            ioe.printStackTrace();
+            log("Failure during close of connection " + connection + " after " + exception, ioe);
             connection.abort(AMQP.INTERNAL_ERROR, "Internal error closing connection for " + what);
         }
+    }
+
+    protected void log(String message, Throwable e) {
+        LoggerFactory.getLogger(ForgivingExceptionHandler.class).error(
+            message, e
+        );
     }
 }
