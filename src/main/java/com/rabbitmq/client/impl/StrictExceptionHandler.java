@@ -16,7 +16,6 @@
 package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.*;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -71,9 +70,4 @@ public class StrictExceptionHandler extends ForgivingExceptionHandler implements
         }
     }
 
-    protected void log(String message, Throwable e) {
-        LoggerFactory.getLogger(StrictExceptionHandler.class).error(
-            message, e
-        );
-    }
 }

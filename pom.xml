@@ -54,6 +54,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <slf4j.version>1.7.21</slf4j.version>
+    <logback.version>1.1.7</logback.version>
     <commons-cli.version>1.1</commons-cli.version>
     <junit.version>4.12</junit.version>
 
@@ -480,9 +481,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>${slf4j.version}</version>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
