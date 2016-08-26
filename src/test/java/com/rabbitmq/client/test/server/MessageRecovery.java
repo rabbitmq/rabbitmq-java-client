@@ -22,6 +22,7 @@ import org.junit.Test;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.ConfirmBase;
+import org.junit.Test;
 
 public class MessageRecovery extends ConfirmBase
 {

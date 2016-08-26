@@ -15,6 +15,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -56,6 +57,7 @@ import com.rabbitmq.client.impl.recovery.QueueRecoveryListener;
 import com.rabbitmq.client.impl.recovery.RecoveryCanBeginListener;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
+
 
 @SuppressWarnings("ThrowFromFinallyBlock")
 public class ConnectionRecovery extends BrokerTestCase {

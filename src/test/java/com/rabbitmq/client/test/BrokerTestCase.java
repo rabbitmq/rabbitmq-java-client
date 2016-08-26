@@ -32,6 +32,7 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.*;
 
 public class BrokerTestCase {
+
     protected ConnectionFactory connectionFactory = newConnectionFactory();
 
     protected ConnectionFactory newConnectionFactory() {
