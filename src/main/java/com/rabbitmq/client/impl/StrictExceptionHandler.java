@@ -15,17 +15,11 @@
 
 package com.rabbitmq.client.impl;
 
-import java.io.IOException;
-import java.net.ConnectException;
-import java.util.concurrent.TimeoutException;
+import com.rabbitmq.client.*;
+import org.slf4j.LoggerFactory;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.ExceptionHandler;
-import com.rabbitmq.client.TopologyRecoveryException;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 /**
  * An implementation of {@link com.rabbitmq.client.ExceptionHandler} that does
@@ -64,9 +58,7 @@ public class StrictExceptionHandler extends ForgivingExceptionHandler implements
     }
 
     protected void handleChannelKiller(Channel channel, Throwable exception, String what) {
-        System.err.println(this.getClass().getName() + ": " + what + " threw an exception for channel "
-                + channel + ":");
-        exception.printStackTrace();
+        log(what + " threw an exception for channel " + channel, exception);
         try {
             channel.close(AMQP.REPLY_SUCCESS, "Closed due to exception from " + what);
         } catch (AlreadyClosedException ace) {
@@ -74,11 +66,14 @@ public class StrictExceptionHandler extends ForgivingExceptionHandler implements
         } catch (TimeoutException ace) {
             // noop
         } catch (IOException ioe) {
-            // TODO: log the failure
-            System.err.println("Failure during close of channel " + channel + " after " + exception
-                    + ":");
-            ioe.printStackTrace();
+            log("Failure during close of channel " + channel + " after " + exception, ioe);
             channel.getConnection().abort(AMQP.INTERNAL_ERROR, "Internal error closing channel for " + what);
         }
+    }
+
+    protected void log(String message, Throwable e) {
+        LoggerFactory.getLogger(StrictExceptionHandler.class).error(
+            message, e
+        );
     }
 }

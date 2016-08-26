@@ -16,6 +16,9 @@
 
 package com.rabbitmq.tools.json;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -30,6 +33,8 @@ import java.util.Map;
  * Utility methods for working with JSON objects in Java.
  */
 public class JSONUtil {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(JSONUtil.class);
     /**
      * Uses reflection to fill public fields and Bean properties of
      * the target object from the source Map.
@@ -90,11 +95,11 @@ public class JSONUtil {
 	try {
 	    fill(target, source);
 	} catch (IntrospectionException ie) {
-	    ie.printStackTrace();
+	    LOGGER.error("Error in tryFill", ie);
 	} catch (IllegalAccessException iae) {
-	    iae.printStackTrace();
+		LOGGER.error("Error in tryFill", iae);
 	} catch (InvocationTargetException ite) {
-	    ite.printStackTrace();
+	    LOGGER.error("Error in tryFill", ite);
 	}
     }
 }
