@@ -23,23 +23,8 @@ import java.net.SocketTimeoutException;
 import java.util.*;
 import java.util.concurrent.*;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AuthenticationFailureException;
-import com.rabbitmq.client.BlockedListener;
-import com.rabbitmq.client.ExceptionHandler;
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.Method;
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Command;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.LongString;
-import com.rabbitmq.client.MissedHeartbeatException;
-import com.rabbitmq.client.PossibleAuthenticationFailureException;
-import com.rabbitmq.client.ProtocolVersionMismatchException;
-import com.rabbitmq.client.SaslConfig;
-import com.rabbitmq.client.SaslMechanism;
-import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.client.impl.recovery.RecoveryCanBeginListener;
 import com.rabbitmq.utility.BlockingCell;
@@ -140,6 +125,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final String username;
     private final String password;
     private final Collection<BlockedListener> blockedListeners = new CopyOnWriteArrayList<BlockedListener>();
+    protected final StatisticsCollector statistics;
 
     /* State modified after start - all volatile */
 
@@ -199,10 +185,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _serverProperties;
     }
 
+    public AMQConnection(ConnectionParams params, FrameHandler frameHandler) {
+        this(params, frameHandler, new NoOpStatistics());
+    }
+
     /** Construct a new connection
      * @param params parameters for it
      */
-    public AMQConnection(ConnectionParams params, FrameHandler frameHandler)
+    public AMQConnection(ConnectionParams params, FrameHandler frameHandler, StatisticsCollector statistics)
     {
         checkPreconditions();
         this.username = params.getUsername();
@@ -228,6 +218,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._brokerInitiatedShutdown = false;
 
         this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
+
+        this.statistics = statistics;
     }
 
     private void initializeConsumerWorkService() {
@@ -393,7 +385,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     protected ChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
-        ChannelManager result = new ChannelManager(this._workService, channelMax, threadFactory);
+        ChannelManager result = new ChannelManager(this._workService, channelMax, threadFactory, this.statistics);
         result.setShutdownExecutor(this.shutdownExecutor);
         return result;
     }
@@ -496,7 +488,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ensureIsOpen();
         ChannelManager cm = _channelManager;
         if (cm == null) return null;
-        return cm.createChannel(this, channelNumber);
+        Channel channel = cm.createChannel(this, channelNumber);
+        statistics.newChannel(channel);
+        return channel;
     }
 
     /** Public API - {@inheritDoc} */
@@ -504,7 +498,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ensureIsOpen();
         ChannelManager cm = _channelManager;
         if (cm == null) return null;
-        return cm.createChannel(this);
+        Channel channel = cm.createChannel(this);
+        statistics.newChannel(channel);
+        return channel;
     }
 
     /**

@@ -106,6 +106,8 @@ public class ConnectionFactory implements Cloneable {
     // to use recovery intervals > Integer.MAX_VALUE in practice.
     private long networkRecoveryInterval          = 5000;
 
+    private StatisticsCollector statistics;
+
     /** @return the default host to use for connections */
     public String getHost() {
         return host;
@@ -631,6 +633,14 @@ public class ConnectionFactory implements Cloneable {
         this.topologyRecovery = topologyRecovery;
     }
 
+    public void setStatistics(StatisticsCollector statistics) {
+        this.statistics = statistics;
+    }
+
+    public Statistics getStatistics() {
+        return statistics;
+    }
+
     protected FrameHandlerFactory createFrameHandlerFactory() throws IOException {
         return new FrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL());
     }
@@ -850,6 +860,9 @@ public class ConnectionFactory implements Cloneable {
      */
     public Connection newConnection(ExecutorService executor, AddressResolver addressResolver, String clientProvidedName)
         throws IOException, TimeoutException {
+        if(this.statistics == null) {
+            this.statistics = new NoOpStatistics();
+        }
         // make sure we respect the provided thread factory
         FrameHandlerFactory fhFactory = createFrameHandlerFactory();
         ConnectionParams params = params(executor);
@@ -862,9 +875,10 @@ public class ConnectionFactory implements Cloneable {
 
         if (isAutomaticRecoveryEnabled()) {
             // see com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnectionFactory#newConnection
-            AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addressResolver);
+            AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addressResolver, statistics);
 
             conn.init();
+            this.statistics.newConnection(conn);
             return conn;
         } else {
             List<Address> addrs = addressResolver.getAddresses();
@@ -872,8 +886,9 @@ public class ConnectionFactory implements Cloneable {
             for (Address addr : addrs) {
                 try {
                     FrameHandler handler = fhFactory.create(addr);
-                    AMQConnection conn = new AMQConnection(params, handler);
+                    AMQConnection conn = new AMQConnection(params, handler, statistics);
                     conn.start();
+                    this.statistics.newConnection(conn);
                     return conn;
                 } catch (IOException e) {
                     lastException = e;

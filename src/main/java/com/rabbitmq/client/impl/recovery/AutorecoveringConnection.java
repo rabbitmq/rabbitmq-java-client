@@ -86,7 +86,11 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, AddressResolver addressResolver) {
-        this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addressResolver);
+        this(params, f, addressResolver, new NoOpStatistics());
+    }
+
+    public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, AddressResolver addressResolver, StatisticsCollector statistics) {
+        this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addressResolver, statistics);
         this.params = params;
 
         this.channels = new ConcurrentHashMap<Integer, AutorecoveringChannel>();

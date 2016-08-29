@@ -57,6 +57,7 @@
     <logback.version>1.1.7</logback.version>
     <commons-cli.version>1.1</commons-cli.version>
     <junit.version>4.12</junit.version>
+    <awaitility.version>2.0.0</awaitility.version>
 
     <!--
     These groovy scripts are used later in this POM file to generate
@@ -484,6 +485,12 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>${logback.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>${awaitility.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

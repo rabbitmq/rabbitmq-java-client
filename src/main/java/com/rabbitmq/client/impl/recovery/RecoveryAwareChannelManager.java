@@ -15,6 +15,9 @@
 
 package com.rabbitmq.client.impl.recovery;
 
+import com.rabbitmq.client.NoOpStatistics;
+import com.rabbitmq.client.Statistics;
+import com.rabbitmq.client.StatisticsCollector;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ChannelManager;
 import com.rabbitmq.client.impl.ChannelN;
@@ -32,11 +35,15 @@ public class RecoveryAwareChannelManager extends ChannelManager {
     }
 
     public RecoveryAwareChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory) {
-        super(workService, channelMax, threadFactory);
+        super(workService, channelMax, threadFactory, new NoOpStatistics());
+    }
+
+    public RecoveryAwareChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory, StatisticsCollector statistics) {
+        super(workService, channelMax, threadFactory, statistics);
     }
 
     @Override
     protected ChannelN instantiateChannel(AMQConnection connection, int channelNumber, ConsumerWorkService workService) {
-        return new RecoveryAwareChannelN(connection, channelNumber, workService);
+        return new RecoveryAwareChannelN(connection, channelNumber, workService, this.statistics);
     }
 }

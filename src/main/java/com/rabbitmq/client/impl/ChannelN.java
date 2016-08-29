@@ -89,6 +89,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Whether any nacks have been received since the last waitForConfirms(). */
     private volatile boolean onlyAcksReceived = true;
 
+    private final StatisticsCollector statistics;
+
     /**
      * Construct a new channel on the given connection with the given
      * channel number. Usually not called directly - call
@@ -100,8 +102,24 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public ChannelN(AMQConnection connection, int channelNumber,
                     ConsumerWorkService workService) {
+        this(connection, channelNumber, workService, new NoOpStatistics());
+    }
+
+    /**
+     * Construct a new channel on the given connection with the given
+     * channel number. Usually not called directly - call
+     * Connection.createChannel instead.
+     * @see Connection#createChannel
+     * @param connection The connection associated with this channel
+     * @param channelNumber The channel number to be associated with this channel
+     * @param workService service for managing this channel's consumer callbacks
+     * @param statistics service for managing statistics
+     */
+    public ChannelN(AMQConnection connection, int channelNumber,
+        ConsumerWorkService workService, StatisticsCollector statistics) {
         super(connection, channelNumber);
         this.dispatcher = new ConsumerDispatcher(connection, this, workService);
+        this.statistics = statistics;
     }
 
     /**
@@ -415,6 +433,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                            envelope,
                                            (BasicProperties) command.getContentHeader(),
                                            command.getContentBody());
+            statistics.consumedMessage(this);
         } catch (Throwable ex) {
             getConnection().getExceptionHandler().handleConsumerException(this,
                 ex,
@@ -650,6 +669,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                         .immediate(immediate)
                                         .build(),
                                        useProps, body));
+        statistics.basicPublish(this);
     }
 
 
@@ -1070,6 +1090,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             BasicProperties props = (BasicProperties)replyCommand.getContentHeader();
             byte[] body = replyCommand.getContentBody();
             int messageCount = getOk.getMessageCount();
+
+            statistics.consumedMessage(this);
+
             return new GetResponse(envelope, props, body, messageCount);
         } else if (method instanceof Basic.GetEmpty) {
             return null;
