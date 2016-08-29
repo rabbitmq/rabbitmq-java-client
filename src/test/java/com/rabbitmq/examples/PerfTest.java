@@ -83,8 +83,8 @@ public class PerfTest {
             		producerCount > 0,
             		consumerCount > 0,
             		(flags.contains("mandatory") || 
-            				flags.contains("immediate")),
-    				confirm != -1);
+            		flags.contains("immediate")),
+            		confirm != -1);
 
             ConnectionFactory factory = new ConnectionFactory();
             factory.setShutdownTimeout(0); // So we still shut down even with slow consumers
