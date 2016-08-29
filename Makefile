@@ -20,7 +20,7 @@ deps: $(DEPS_DIR)/rabbit
 	@:
 
 dist:
-	$(MVN) $(MVN_FLAGS) -DskipTests=true package
+	$(MVN) $(MVN_FLAGS) -DskipTests=true package javadoc:javadoc
 
 $(DEPS_DIR)/rabbit:
 	git clone https://github.com/rabbitmq/rabbitmq-server.git $@
