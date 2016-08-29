@@ -18,15 +18,16 @@ package com.rabbitmq.client;
 import java.io.IOException;
 
 /**
- * Interface for application callback objects to receive notifications and messages from
+ * <p>Interface for application callback objects to receive notifications and messages from
  * a queue by subscription.
  * Most implementations will subclass {@link DefaultConsumer}.
- * <p/>
+ * </p>
+ * <p>
  * The methods of this interface are invoked in a dispatch
  * thread which is separate from the {@link Connection}'s thread. This
  * allows {@link Consumer}s to call {@link Channel} or {@link
  * Connection} methods without causing a deadlock.
- * <p/>
+ * </p>
  * The {@link Consumer}s on a particular {@link Channel} are invoked serially on one or more
  * dispatch threads. {@link Consumer}s should avoid executing long-running code
  * because this will delay dispatch of messages to other {@link Consumer}s on the same

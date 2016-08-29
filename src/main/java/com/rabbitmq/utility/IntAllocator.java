@@ -18,17 +18,22 @@ package com.rabbitmq.utility;
 import java.util.BitSet;
 
 /**
- * A class for allocating integers from a given range that uses a
+ * <p>
+ *  A class for allocating integers from a given range that uses a
  * {@link BitSet} representation of the free integers.
+ * </p>
  *
- * <p/><strong>Concurrent Semantics:</strong><br />
+ * <h2>Concurrecy Semantics:</h2>
  * This class is <b><i>not</i></b> thread safe.
  *
- * <p/><b>Implementation notes:</b>
- * <br/>This was originally an ordered chain of non-overlapping Intervals,
+ * <h2>Implementation notes:</h2>
+ * <p>This was originally an ordered chain of non-overlapping Intervals,
  * together with a fixed size array cache for freed integers.
- * <br/>{@link #reserve(int)} was expensive in this scheme, whereas in the
+ * </p>
+ * <p>
+ * {@link #reserve(int)} was expensive in this scheme, whereas in the
  * present implementation it is O(1), as is {@link #free(int)}.
+ * </p>
  * <p>Although {@link #allocate()} is slightly slower than O(1) and in the
  * worst case could be O(N), the use of a "<code>lastIndex</code>" field
  * for starting the next scan for free integers means this is negligible.
@@ -83,7 +88,7 @@ public class IntAllocator {
     /**
      * Make the provided integer available for allocation again. This operation
      * runs in O(1) time.
-     * <br/>No error checking is performed, so if you double free or free an
+     * No error checking is performed, so if you double free or free an
      * integer that was not originally allocated the results are undefined.
      * @param reservation the previously allocated integer to free
      */
@@ -94,7 +99,6 @@ public class IntAllocator {
     /**
      * Attempt to reserve the provided ID as if it had been allocated. Returns
      * true if it is available, false otherwise.
-     * <br/>
      * This operation runs in O(1) time.
      * @param reservation the integer to be allocated, if possible
      * @return <code><b>true</b></code> if allocated, <code><b>false</b></code>

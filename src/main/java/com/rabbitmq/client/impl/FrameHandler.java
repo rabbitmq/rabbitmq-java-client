@@ -22,8 +22,7 @@ import java.net.SocketTimeoutException;
 
 /**
  * Interface to a frame handler.
- * <p/>
- * <b>Concurrency</b><br/>
+ * <h2>Concurrency</h2>
  * Implementations must be thread-safe, and not allow frames to be interleaved, either while reading or writing.
  */
 

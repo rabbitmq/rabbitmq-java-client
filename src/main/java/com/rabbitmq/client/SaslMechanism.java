@@ -34,7 +34,6 @@ public interface SaslMechanism {
      * @param username name of user
      * @param password for username
      * @return response
-     * @throws IOException
      */
     LongString handleChallenge(LongString challenge, String username, String password);
 }

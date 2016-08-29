@@ -40,40 +40,27 @@ import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 
 /**
- * AMQP Protocol Analyzer program. Listens on a port (in-port) and when a
+ * <p>AMQP 0-9-1 protocol traffic capture program. Listens on a port (in-port) and when a
  * connection arrives, makes an outbound connection to a host and
  * port (out-port). Relays frames from the in-port to the out-port.
  * Commands are decoded and printed to a supplied {@link Logger}.
- * <p/>
+ * </p>
+ * <p>
  * The stand-alone program ({@link #main(String[])}) prints to <code>System.out</code>,
  * using a private {@link AsyncLogger} instance.  When the connection closes
  * the program listens for a subsequent connection and traces that to the same {@link Logger}.
  * This continues until the program is interrupted.
- * <p/>
+ * </p>
+ * <p>
  * Options for controlling, for example, whether command bodies are decoded,
  * are obtained from <code>System.properties</code>, and are reported to the console
  * before starting the trace.
- * <p/>
- * A {@link Tracer} object may be instantiated, using one of the constructors
- * <ul>
- * <li><code>Tracer(int listenPort, String id, String host, int port, Logger logger, Properties props)</code></li>
- * <li><code>Tracer(String id)</code></li>
- * <li><code>Tracer(String id, Properties props)</code>
- * <p/>where the missing parameters default as follows:
- * <ul>
- * <li><code>listenPort</code> defaults to <code>5673</code></li>
- * <li><code>host</code> defaults to <q><code>localhost</code></q></li>
- * <li><code>port</code> defaults to <code>5672</code></li>
- * <li><code>logger</code> defaults to <code>new AsyncLogger(System.out)</code></li> and
- * <li><code>props</code> defaults to <code>System.getProperties()</code></li>
- * </ul>
- * </li>
- * </ul>
- * <p/>
+ * </p>
+ * <p>
  * These constructors block waiting for a connection to arrive on the listenPort.
  * Tracing does not begin until the tracer is {@link #start()}ed which {@link Logger#start()}s
  * the supplied logger and creates and starts a {@link Thread} for relaying and deconstructing the frames.
- * <p/>
+ * </p>
  * The properties specified in <code>props</code> are used at {@link Tracer#start()} time and may be modified
  * before this call.
  * @see Tracer.Logger
@@ -386,19 +373,19 @@ public class Tracer implements Runnable {
     /**
      * A {@link Tracer.Logger} designed to print {@link String}s to a designated {@link OutputStream}
      * on a private thread.
-     * <p/>{@link String}s are read from a private queue and <i>printed</i> to a buffered {@link PrintStream}
+     * {@link String}s are read from a private queue and <i>printed</i> to a buffered {@link PrintStream}
      * which is periodically flushed.
-     * <p/>
+     *
      * When instantiated the private queue is created (an in-memory {@link ArrayBlockingQueue} in this
      * implementation) and when {@link #start()}ed the private thread is created and started unless it is
      * already present.  An {@link AsyncLogger} may be started many times, but only one thread is created.
-     * <p/>
+     *
      * When {@link #stop()}ed either the number of starts is decremented, or, if this count reaches zero,
      * a special element is queued which causes the private thread to end when encountered.
-     * <p/>
+     *
      * If the private thread is interrupted, the thread will also end, and the count set to zero,
      * This will cause subsequent {@link #stop()}s to be ignored, and the next {@link #start()} will create a new thread.
-     * <p/>
+     *
      * {@link #log(String)} never blocks unless the private queue is full; this may never un-block if the {@link Logger} is stopped.
      */
     public static class AsyncLogger implements Logger {
@@ -433,10 +420,6 @@ public class Tracer implements Runnable {
         private final BlockingQueue<Pr<String, LogCmd> > queue = new ArrayBlockingQueue<Pr<String, LogCmd> >(
                 LOG_QUEUE_SIZE, true);
 
-        /**
-         * Same as {@link #Tracer.AsyncLogger(OutputStream, int)} with a one-second flush interval.
-         * @param os OutputStream to print to.
-         */
         public AsyncLogger(OutputStream os) {
             this(os, ONE_SECOND_INTERVAL);
         }

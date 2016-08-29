@@ -23,60 +23,30 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This is a generic implementation of the <q>Channels</q> specification
+ * <p>This is a generic implementation of the channels specification
  * in <i>Channeling Work</i>, Nov 2010 (<tt>channels.pdf</tt>).
- * <p/>
  * Objects of type <b>K</b> must be registered, with <code><b>registerKey(K)</b></code>,
  * and then they become <i>clients</i> and a queue of
  * items (type <b>W</b>) is stored for each client.
- * <p/>
+ * </p>
  * Each client has a <i>state</i> which is exactly one of <i>dormant</i>,
  * <i>in progress</i> or <i>ready</i>. Immediately after registration a client is <i>dormant</i>.
- * <p/>
- * Items may be (singly) added to (the end of) a client&apos;s queue with <code><b>addWorkItem(K,W)</b></code>.
+ * Items may be (singly) added to (the end of) a client's queue with {@link WorkPool#addWorkItem(Object, Object)}.
  * If the client is <i>dormant</i> it becomes <i>ready</i> thereby. All other states remain unchanged.
- * <p/>
  * The next <i>ready</i> client, together with a collection of its items,
  * may be retrieved with <code><b>nextWorkBlock(collection,max)</b></code>
  * (making that client <i>in progress</i>).
- * <p/>
  * An <i>in progress</i> client can finish (processing a batch of items) with <code><b>finishWorkBlock(K)</b></code>.
  * It then becomes either <i>dormant</i> or <i>ready</i>, depending if its queue of work items is empty or no.
- * <p/>
  * If a client has items queued, it is either <i>in progress</i> or <i>ready</i> but cannot be both.
  * When work is finished it may be marked <i>ready</i> if there is further work,
  * or <i>dormant</i> if there is not.
  * There is never any work for a <i>dormant</i> client.
- * <p/>
  * A client may be unregistered, with <code><b>unregisterKey(K)</b></code>, which removes the client from
  * all parts of the state, and any queue of items stored with it.
  * All clients may be unregistered with <code><b>unregisterAllKeys()</b></code>.
- * <p/>
- * <b>Concurrent Semantics</b><br/>
+ * <h2>Concurrent Semantics</h2>
  * This implementation is thread-safe.
- * <p/>
- * <b>Implementation Notes</b><br/>
- * The state is, roughly, as follows:
- * <pre> pool :: <i>map</i>(K, <i>seq</i> W)
- * inProgress :: <i>set</i> K
- * ready :: <i>iseq</i> K</pre>
- * <p/>
- * where a <code><i>seq</i></code> is a sequence (queue or list) and an <code><i>iseq</i></code>
- * (<i>i</i> for <i>i</i>njective) is a sequence with no duplicates.
- * <p/>
- * <b>State transitions</b><br/><pre>
- *      finish(k)            -------------
- *             -----------> | (dormant)   |
- *            |              -------------
- *  -------------  next()        | add(item)
- * | in progress | <---------    |
- *  -------------            |   V
- *            |              -------------
- *             -----------> | ready       |
- *      finish(k)            -------------
- * </pre>
- * <i>dormant</i> is not represented in the implementation state, and adding items
- * when the client is <i>in progress</i> or <i>ready</i> does not change its state.
  * @param <K> Key -- type of client
  * @param <W> Work -- type of work item
  */
@@ -95,7 +65,6 @@ public class WorkPool<K, W> {
     /**
      * Add client <code><b>key</b></code> to pool of item queues, with an empty queue.
      * A client is initially <i>dormant</i>.
-     * <p/>
      * No-op if <code><b>key</b></code> already present.
      * @param key client to add to pool
      */
@@ -158,7 +127,6 @@ public class WorkPool<K, W> {
      * Return the next <i>ready</i> client,
      * and transfer a collection of that client's items to process.
      * Mark client <i>in progress</i>.
-     * <p/>
      * If there is no <i>ready</i> client, return <code><b>null</b></code>.
      * @param to collection object in which to transfer items
      * @param size max number of items to transfer
