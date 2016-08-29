@@ -40,7 +40,8 @@ import org.junit.runners.Suite;
     AmqpUriTest.class,
     JSONReadWriteTest.class,
     SharedThreadPoolTest.class,
-    DnsRecordIpAddressResolverTests.class
+    DnsRecordIpAddressResolverTests.class,
+    ConcurrentStatisticsTest.class
 })
 public class ClientTests {
 

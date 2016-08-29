@@ -31,12 +31,27 @@ public class NoOpStatistics implements StatisticsCollector {
     }
 
     @Override
+    public void basicAck(Channel channel, long deliveryTag, boolean multiple) {
+
+    }
+
+    @Override
+    public void basicConsume(Channel channel, String consumerTag, boolean autoAck) {
+
+    }
+
+    @Override
     public void basicPublish(Channel channel) {
 
     }
 
     @Override
-    public void consumedMessage(Channel channel) {
+    public void consumedMessage(Channel channel, long deliveryTag, boolean autoAck) {
+
+    }
+
+    @Override
+    public void consumedMessage(Channel channel, long deliveryTag, String consumerTag) {
 
     }
 

@@ -58,6 +58,7 @@
     <commons-cli.version>1.1</commons-cli.version>
     <junit.version>4.12</junit.version>
     <awaitility.version>2.0.0</awaitility.version>
+    <mockito.version>1.10.19</mockito.version>
 
     <!--
     These groovy scripts are used later in this POM file to generate
@@ -491,6 +492,12 @@
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
       <version>${awaitility.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

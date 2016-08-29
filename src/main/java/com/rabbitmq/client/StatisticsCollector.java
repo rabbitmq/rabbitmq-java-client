@@ -15,8 +15,13 @@ public interface StatisticsCollector extends Statistics {
 
     void basicPublish(Channel channel);
 
-    void consumedMessage(Channel channel);
+    void consumedMessage(Channel channel, long deliveryTag, boolean autoAck);
+
+    void consumedMessage(Channel channel, long deliveryTag, String consumerTag);
 
     void command(Connection connection, Channel channel, Command command);
 
+    void basicAck(Channel channel, long deliveryTag, boolean multiple);
+
+    void basicConsume(Channel channel, String consumerTag, boolean autoAck);
 }

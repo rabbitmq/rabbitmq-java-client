@@ -1025,4 +1025,8 @@ public interface Channel extends ShutdownNotifier {
      * @throws IOException Problem transmitting method.
      */
     long consumerCount(String queue) throws IOException;
+
+    String getId();
+
+    void setId(String id);
 }

@@ -91,6 +91,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     private final StatisticsCollector statistics;
 
+    private String id;
+
     /**
      * Construct a new channel on the given connection with the given
      * channel number. Usually not called directly - call
@@ -428,12 +430,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                          m.getExchange(),
                                          m.getRoutingKey());
         try {
+            // call statistics before the dispatching (which is async anyway)
+            // this way, the message is inside the stats before it is handled
+            // in case a manual ack in the callback, the stats will be able to record the ack
+            statistics.consumedMessage(this, m.getDeliveryTag(), m.getConsumerTag());
             this.dispatcher.handleDelivery(callback,
                                            m.getConsumerTag(),
                                            envelope,
                                            (BasicProperties) command.getContentHeader(),
                                            command.getContentBody());
-            statistics.consumedMessage(this);
         } catch (Throwable ex) {
             getConnection().getExceptionHandler().handleConsumerException(this,
                 ex,
@@ -1091,7 +1096,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             byte[] body = replyCommand.getContentBody();
             int messageCount = getOk.getMessageCount();
 
-            statistics.consumedMessage(this);
+            statistics.consumedMessage(this, getOk.getDeliveryTag(), autoAck);
 
             return new GetResponse(envelope, props, body, messageCount);
         } else if (method instanceof Basic.GetEmpty) {
@@ -1106,6 +1111,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         transmit(new Basic.Ack(deliveryTag, multiple));
+        statistics.basicAck(this, deliveryTag, multiple);
     }
 
     /** Public API - {@inheritDoc} */
@@ -1179,7 +1185,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             k);
 
         try {
-            return k.getReply();
+            String actualConsumerTag = k.getReply();
+            statistics.basicConsume(this, actualConsumerTag, autoAck);
+            return actualConsumerTag;
         } catch(ShutdownSignalException ex) {
             throw wrap(ex);
         }
@@ -1309,5 +1317,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if(queue.length() > 255) {
            throw new IllegalArgumentException("queue name must be no more than 255 characters long");
         }
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    @Override
+    public String getId() {
+        return id;
     }
 }
