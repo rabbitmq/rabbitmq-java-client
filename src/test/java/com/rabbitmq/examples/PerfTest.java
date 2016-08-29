@@ -245,13 +245,13 @@ public class PerfTest {
         public void printFinal() {
             long now = System.currentTimeMillis();
 
-            System.out.println("id: " + testID + " - sending rate avg: " +
+            System.out.println("id: " + testID + ", sending rate avg: " +
                                formatRate(sendCountTotal * 1000.0 / (now - startTime)) +
                                " msg/s");
 
             long elapsed = now - startTime;
             if (elapsed > 0) {
-                System.out.println("id: " + testID + " - recving rate avg: " +
+                System.out.println("id: " + testID + ", recving rate avg: " +
                                    formatRate(recvCountTotal * 1000.0 / elapsed) +
                                    " msg/s");
             }
