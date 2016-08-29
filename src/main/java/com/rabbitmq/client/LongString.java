@@ -30,7 +30,7 @@ public interface LongString
     public static final long MAX_LENGTH = 0xffffffffL;
 
     /**
-     * @return the length of the {@link LongString} in bytes >= 0 <= MAX_LENGTH
+     * @return the length of the string in bytes between 0 and MAX_LENGTH (inclusive)
      */
     public long length();
 
@@ -38,16 +38,16 @@ public interface LongString
      * Get the content stream.
      * Repeated calls to this function return the same stream,
      * which may not support rewind.
-     * @return An input stream that reads the content of the {@link LongString}
+     * @return An input stream that reads the content of the string
      * @throws IOException if an error is encountered
      */
     public DataInputStream getStream() throws IOException;
 
     /**
      * Get the content as a byte array.  This need not be a copy. Updates to the
-     * returned array may change the value of the {@link LongString}.
+     * returned array may change the value of the string.
      * Repeated calls to this function may return the same array.
-     * This function will fail if <code><b>this</b>.length() > Integer.MAX_VALUE</code>,
+     * This function will fail if this string's length is greater than {@link Integer#MAX_VALUE},
      * throwing an {@link IllegalStateException}.
      * @return the array of bytes containing the content of the {@link LongString}
      */

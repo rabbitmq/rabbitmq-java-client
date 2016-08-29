@@ -23,10 +23,10 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
 
 /**
- * AMQ-specific implementation of {@link Command} which accumulates
+ * AMQP 0-9-1-specific implementation of {@link Command} which accumulates
  * method, header and body from a series of frames, unless these are
  * supplied at construction time.
- * <p/><b>Concurrency</b><br/>
+ * <h2>Concurrency</h2>
  * This class is thread-safe.
  */
 public class AMQCommand implements Command {

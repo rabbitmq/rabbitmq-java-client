@@ -307,7 +307,7 @@ public class Frame {
         return acc;
     }
 
-    /** Computes the AMQP wire-protocol length of an encoded field-array of type List<?> */
+    /** Computes the AMQP 0-9-1 wire-protocol length of an encoded field-array of type List */
     public static long arraySize(List<?> values)
         throws UnsupportedEncodingException
     {

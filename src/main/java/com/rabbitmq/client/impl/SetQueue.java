@@ -20,13 +20,14 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-/** A generic queue-like implementation (supporting operations <code>addIfNotPresent</code>,
+/**
+ * <p>A generic queue-like implementation (supporting operations <code>addIfNotPresent</code>,
  * <code>poll</code>, <code>contains</code>, and <code>isEmpty</code>)
  * which restricts a queue element to appear at most once.
  * If the element is already present {@link #addIfNotPresent} returns <code><b>false</b></code>.
- * <p/>
+ * </p>
  * Elements must not be <code><b>null</b></code>.
- * <p/><b>Concurrent Semantics</b><br/>
+ * <h2>Concurrent Semantics</h2>
  * This implementation is <i>not</i> thread-safe.
  * @param <T> type of elements in the queue
  */

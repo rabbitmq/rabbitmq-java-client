@@ -74,7 +74,7 @@ public class MapRpcServer extends RpcServer {
     }
 
     /**
-     * Delegates to handleMapCall(Map<String, Object>).
+     * Delegates to {@link MapRpcServer#handleMapCall(Map)}.
      */
     public Map<String, Object> handleMapCall(Map<String, Object> request,
                                              AMQP.BasicProperties replyProperties)
@@ -83,7 +83,7 @@ public class MapRpcServer extends RpcServer {
     }
 
     /**
-     * Default implementation - override in subclasses. Returns the empty string.
+     * Default implementation override in subclasses. Returns the empty string.
      */
     public Map<String, Object> handleMapCall(Map<String, Object> request)
     {
@@ -103,7 +103,7 @@ public class MapRpcServer extends RpcServer {
     }
 
     /**
-     * Default implementation - override in subclasses. Does nothing.
+     * Default implementation override in subclasses. Does nothing.
      */
     public void handleMapCast(Map<String, Object> requestBody) {
         // Do nothing.
