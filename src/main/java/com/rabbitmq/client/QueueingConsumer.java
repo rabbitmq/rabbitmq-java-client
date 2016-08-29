@@ -55,9 +55,8 @@ import com.rabbitmq.utility.Utility;
  *
  * <p>For a more complete example, see LogTail in the <code>test/src/com/rabbitmq/examples</code>
  * directory of the source distribution.</p>
- * <p/>
  *
- * <h4>Historical Perspective</h4>
+ * <h3>Historical Perspective</h3>
  *
  * <p><code>QueueingConsumer</code> was introduced to allow
  * applications to overcome a limitation in the way <code>Connection</code>
