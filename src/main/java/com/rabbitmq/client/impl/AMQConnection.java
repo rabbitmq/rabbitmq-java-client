@@ -46,6 +46,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final ExecutorService shutdownExecutor;
     private Thread mainLoopThread;
     private ThreadFactory threadFactory = Executors.defaultThreadFactory();
+    private String id;
 
     private final List<RecoveryCanBeginListener> recoveryCanBeginListeners =
             new ArrayList<RecoveryCanBeginListener>();
@@ -921,5 +922,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     public void clearBlockedListeners() {
         blockedListeners.clear();
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id;
     }
 }

@@ -257,4 +257,8 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
      * @see com.rabbitmq.client.ExceptionHandler
      */
     ExceptionHandler getExceptionHandler();
+
+    String getId();
+
+    void setId(String id);
 }

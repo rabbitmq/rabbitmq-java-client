@@ -91,8 +91,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     private final StatisticsCollector statistics;
 
-    private String id;
-
     /**
      * Construct a new channel on the given connection with the given
      * channel number. Usually not called directly - call
@@ -1119,6 +1117,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         transmit(new Basic.Nack(deliveryTag, multiple, requeue));
+        statistics.basicNack(this, deliveryTag);
     }
 
     /** Public API - {@inheritDoc} */
@@ -1126,6 +1125,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         transmit(new Basic.Reject(deliveryTag, requeue));
+        statistics.basicReject(this, deliveryTag);
     }
 
     /** Public API - {@inheritDoc} */
@@ -1159,7 +1159,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public String basicConsume(String queue, boolean autoAck, String consumerTag,
+    public String basicConsume(String queue, final boolean autoAck, String consumerTag,
                                boolean noLocal, boolean exclusive, Map<String, Object> arguments,
                                final Consumer callback)
         throws IOException
@@ -1168,6 +1168,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).getConsumerTag();
                 _consumers.put(actualConsumerTag, callback);
+
+                // need to register consumer in stats before it actually starts consuming
+                statistics.basicConsume(ChannelN.this, actualConsumerTag, autoAck);
 
                 dispatcher.handleConsumeOk(callback, actualConsumerTag);
                 return actualConsumerTag;
@@ -1185,9 +1188,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             k);
 
         try {
-            String actualConsumerTag = k.getReply();
-            statistics.basicConsume(this, actualConsumerTag, autoAck);
-            return actualConsumerTag;
+            return k.getReply();
         } catch(ShutdownSignalException ex) {
             throw wrap(ex);
         }
@@ -1319,12 +1320,4 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    @Override
-    public String getId() {
-        return id;
-    }
 }

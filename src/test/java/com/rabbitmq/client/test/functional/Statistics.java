@@ -219,6 +219,38 @@ public class Statistics extends BrokerTestCase {
         }
     }
 
+    @Test public void statisticsRejectStandardConnection() throws IOException, TimeoutException {
+        doStatisticsReject(new ConnectionFactory());
+    }
+
+    @Test public void statisticsRejectAutoRecoveryConnection() throws IOException, TimeoutException {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setAutomaticRecoveryEnabled(true);
+        doStatisticsReject(connectionFactory);
+    }
+
+    private void doStatisticsReject(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
+        StatisticsCollector statistics = new ConcurrentStatistics();
+        connectionFactory.setStatistics(statistics);
+
+        Connection connection = connectionFactory.newConnection();
+        Channel channel = connection.createChannel();
+
+        sendMessage(channel);
+        sendMessage(channel);
+        sendMessage(channel);
+
+        GetResponse response1 = channel.basicGet(QUEUE, false);
+        GetResponse response2 = channel.basicGet(QUEUE, false);
+        GetResponse response3 = channel.basicGet(QUEUE, false);
+
+        channel.basicReject(response2.getEnvelope().getDeliveryTag(), false);
+        assertEquals(1, statistics.getRejectedMessageCount());
+
+        channel.basicNack(response3.getEnvelope().getDeliveryTag(), true, false);
+        assertEquals(1+2, statistics.getRejectedMessageCount());
+    }
+
     @Test public void multiThreadedStatisticsStandardConnection() throws InterruptedException, TimeoutException, IOException {
         doMultiThreadedStatistics(new ConnectionFactory());
     }
@@ -236,7 +268,7 @@ public class Statistics extends BrokerTestCase {
         int nbChannelsPerConnection = 5;
         int nbChannels = nbConnections * nbChannelsPerConnection;
         long nbOfMessages = 100;
-        int nbTasks = 10;
+        int nbTasks = nbChannels; // channel are not thread-safe
 
         Random random = new Random();
 
@@ -246,7 +278,9 @@ public class Statistics extends BrokerTestCase {
         for(int i=0;i<nbConnections;i++) {
             connections[i] = connectionFactory.newConnection();
             for(int j=0;j<nbChannelsPerConnection;j++) {
-                channels[i*nbChannelsPerConnection+j] = connections[i].createChannel();
+                Channel channel = connections[i].createChannel();
+                channel.basicQos(1);
+                channels[i*nbChannelsPerConnection+j] = channel;
             }
         }
 
@@ -272,7 +306,9 @@ public class Statistics extends BrokerTestCase {
         // to remove the listeners
         for(int i=0;i<nbChannels;i++) {
             channels[i].close();
-            channels[i] = connections[random.nextInt(nbConnections)].createChannel();
+            Channel channel = connections[random.nextInt(nbConnections)].createChannel();
+            channel.basicQos(1);
+            channels[i] = channel;
         }
 
         // consume messages with ack
@@ -283,7 +319,7 @@ public class Statistics extends BrokerTestCase {
         executorService = Executors.newFixedThreadPool(nbTasks);
         tasks = new ArrayList<Callable<Void>>();
         for(int i=0;i<nbTasks;i++) {
-            Channel channelForConsuming = channels[random.nextInt(nbChannels)];
+            Channel channelForConsuming = channels[i];
             tasks.add(random.nextBoolean() ?
                 new BasicGetTask(channelForConsuming, false) :
                 new BasicConsumeTask(channelForConsuming, false));
@@ -292,7 +328,35 @@ public class Statistics extends BrokerTestCase {
 
         assertEquals(2*nbOfMessages, statistics.getPublishedMessageCount());
         waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics).getConsumedMessageCount(), equalTo(2*nbOfMessages));
-        waitAtMost(5, TimeUnit.SECONDS).untilCall(to(statistics).getAcknowledgedMessageCount(), equalTo(nbOfMessages));
+        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics).getAcknowledgedMessageCount(), equalTo(nbOfMessages));
+
+        // to remove the listeners
+        for(int i=0;i<nbChannels;i++) {
+            channels[i].close();
+            Channel channel = connections[random.nextInt(nbConnections)].createChannel();
+            channel.basicQos(1);
+            channels[i] = channel;
+        }
+
+        // consume messages and reject them
+        for(int i=0;i<nbOfMessages;i++) {
+            sendMessage(channels[random.nextInt(nbChannels)]);
+        }
+
+        executorService = Executors.newFixedThreadPool(nbTasks);
+        tasks = new ArrayList<Callable<Void>>();
+        for(int i=0;i<nbTasks;i++) {
+            Channel channelForConsuming = channels[i];
+            tasks.add(random.nextBoolean() ?
+                new BasicGetRejectTask(channelForConsuming) :
+                new BasicConsumeRejectTask(channelForConsuming));
+        }
+        executorService.invokeAll(tasks);
+
+        assertEquals(3*nbOfMessages, statistics.getPublishedMessageCount());
+        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics).getConsumedMessageCount(), equalTo(3*nbOfMessages));
+        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics).getAcknowledgedMessageCount(), equalTo(nbOfMessages));
+        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics).getRejectedMessageCount(), equalTo(nbOfMessages));
     }
 
     private static class BasicGetTask implements Callable<Void> {
@@ -335,6 +399,55 @@ public class Statistics extends BrokerTestCase {
                 public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
                     if(!autoAck) {
                         getChannel().basicAck(envelope.getDeliveryTag(), random.nextBoolean());
+                    }
+                }
+            });
+            return null;
+        }
+    }
+
+    private static class BasicGetRejectTask implements Callable<Void> {
+
+        final Channel channel;
+        final Random random = new Random();
+
+        private BasicGetRejectTask(Channel channel) {
+            this.channel = channel;
+        }
+
+        @Override
+        public Void call() throws Exception {
+            GetResponse response = channel.basicGet(QUEUE, false);
+            if(response != null) {
+                if(random.nextBoolean()) {
+                    channel.basicNack(response.getEnvelope().getDeliveryTag(), random.nextBoolean(), false);
+                } else {
+                    channel.basicReject(response.getEnvelope().getDeliveryTag(), false);
+                }
+            }
+            return null;
+        }
+    }
+
+    private static class BasicConsumeRejectTask implements Callable<Void> {
+
+        final Channel channel;
+        final Random random = new Random();
+
+        private BasicConsumeRejectTask(Channel channel) {
+            this.channel = channel;
+        }
+
+        @Override
+        public Void call() throws Exception {
+            this.channel.basicConsume(QUEUE, false, new DefaultConsumer(channel) {
+
+                @Override
+                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                    if(random.nextBoolean()) {
+                        channel.basicNack(envelope.getDeliveryTag(), random.nextBoolean(), false);
+                    } else {
+                        channel.basicReject(envelope.getDeliveryTag(), false);
                     }
                 }
             });

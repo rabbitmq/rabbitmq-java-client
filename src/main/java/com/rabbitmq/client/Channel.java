@@ -1027,7 +1027,4 @@ public interface Channel extends ShutdownNotifier {
      */
     long consumerCount(String queue) throws IOException;
 
-    String getId();
-
-    void setId(String id);
 }

@@ -36,6 +36,16 @@ public class NoOpStatistics implements StatisticsCollector {
     }
 
     @Override
+    public void basicNack(Channel channel, long deliveryTag) {
+
+    }
+
+    @Override
+    public void basicReject(Channel channel, long deliveryTag) {
+
+    }
+
+    @Override
     public void basicConsume(Channel channel, String consumerTag, boolean autoAck) {
 
     }

@@ -23,12 +23,17 @@ public class ConcurrentStatistics implements StatisticsCollector {
     private final AtomicLong publishedMessageCount = new AtomicLong(0);
     private final AtomicLong consumedMessageCount = new AtomicLong(0);
     private final AtomicLong acknowledgedMessageCount = new AtomicLong(0);
+    private final AtomicLong rejectedMessageCount = new AtomicLong(0);
 
-    private final ConcurrentMap<String, ChannelState> channelState = new ConcurrentHashMap<String, ChannelState>();
+    private final ConcurrentMap<String, ConnectionState> connectionState = new ConcurrentHashMap<String, ConnectionState>();
 
     @Override
     public void newConnection(final Connection connection) {
+        if(connection.getId() == null) {
+            connection.setId(UUID.randomUUID().toString());
+        }
         connectionCount.incrementAndGet();
+        connectionState.put(connection.getId(), new ConnectionState());
         connection.addShutdownListener(new ShutdownListener() {
             @Override
             public void shutdownCompleted(ShutdownSignalException cause) {
@@ -40,13 +45,11 @@ public class ConcurrentStatistics implements StatisticsCollector {
     @Override
     public void closeConnection(Connection connection) {
         connectionCount.decrementAndGet();
-        // TODO clean the channel states of this connection
+        connectionState.remove(connection.getId());
     }
 
     @Override
     public void newChannel(final Channel channel) {
-        // FIXME set an unique ID at the connection level and use channel number
-        channel.setId(UUID.randomUUID().toString());
         channelCount.incrementAndGet();
         channel.addShutdownListener(new ShutdownListener() {
             @Override
@@ -54,13 +57,13 @@ public class ConcurrentStatistics implements StatisticsCollector {
                 closeChannel(channel);
             }
         });
-        channelState.put(channel.getId(), new ChannelState());
+        connectionState(channel.getConnection()).channelState.put(channel.getChannelNumber(), new ChannelState());
     }
 
     @Override
     public void closeChannel(Channel channel) {
         channelCount.decrementAndGet();
-        channelState.remove(channel.getId());
+        connectionState(channel.getConnection()).channelState.remove(channel.getChannelNumber(), new ChannelState());
     }
 
     @Override
@@ -76,7 +79,14 @@ public class ConcurrentStatistics implements StatisticsCollector {
     @Override
     public void basicConsume(Channel channel, String consumerTag, boolean autoAck) {
         if(!autoAck) {
-            channelState(channel).consumersWithManualAck.add(consumerTag);
+            ChannelState channelState = channelState(channel);
+            channelState.lock.lock();
+            try {
+                channelState(channel).consumersWithManualAck.add(consumerTag);
+            } finally {
+                channelState.lock.unlock();
+            }
+
         }
     }
 
@@ -113,6 +123,20 @@ public class ConcurrentStatistics implements StatisticsCollector {
 
     @Override
     public void basicAck(Channel channel, long deliveryTag, boolean multiple) {
+        updateChannelStateAfterAckReject(channel, deliveryTag, multiple, acknowledgedMessageCount);
+    }
+
+    @Override
+    public void basicNack(Channel channel, long deliveryTag) {
+        updateChannelStateAfterAckReject(channel, deliveryTag, true, rejectedMessageCount);
+    }
+
+    @Override
+    public void basicReject(Channel channel, long deliveryTag) {
+        updateChannelStateAfterAckReject(channel, deliveryTag, false, rejectedMessageCount);
+    }
+
+    private void updateChannelStateAfterAckReject(Channel channel, long deliveryTag, boolean multiple, AtomicLong counter) {
         ChannelState channelState = channelState(channel);
         channelState.lock.lock();
         try {
@@ -122,12 +146,12 @@ public class ConcurrentStatistics implements StatisticsCollector {
                     long messageDeliveryTag = iterator.next();
                     if(messageDeliveryTag <= deliveryTag) {
                         iterator.remove();
-                        acknowledgedMessageCount.incrementAndGet();
+                        counter.incrementAndGet();
                     }
                 }
             } else {
                 channelState.unackedMessageDeliveryTags.remove(deliveryTag);
-                acknowledgedMessageCount.incrementAndGet();
+                counter.incrementAndGet();
             }
         } finally {
             channelState.lock.unlock();
@@ -141,8 +165,9 @@ public class ConcurrentStatistics implements StatisticsCollector {
         publishedMessageCount.set(0);
         consumedMessageCount.set(0);
         acknowledgedMessageCount.set(0);
+        rejectedMessageCount.set(0);
 
-        channelState.clear();
+        connectionState.clear();
     }
 
     @Override
@@ -172,11 +197,21 @@ public class ConcurrentStatistics implements StatisticsCollector {
 
     @Override
     public long getRejectedMessageCount() {
-        return 0;
+        return rejectedMessageCount.get();
+    }
+
+    private ConnectionState connectionState(Connection connection) {
+        return connectionState.get(connection.getId());
     }
 
     private ChannelState channelState(Channel channel) {
-        return channelState.get(channel.getId());
+        return connectionState(channel.getConnection()).channelState.get(channel.getChannelNumber());
+    }
+
+    private static class ConnectionState {
+
+        final ConcurrentMap<Integer, ChannelState> channelState = new ConcurrentHashMap<Integer, ChannelState>();
+
     }
 
     private static class ChannelState {

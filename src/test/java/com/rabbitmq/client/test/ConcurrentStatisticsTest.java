@@ -1,6 +1,7 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.impl.ConcurrentStatistics;
 import org.junit.Assert;
 import org.junit.Test;
@@ -17,9 +18,13 @@ public class ConcurrentStatisticsTest {
     @Test
     public void basicGetAndAck() {
         ConcurrentStatistics statistics = new ConcurrentStatistics();
+        Connection connection = mock(Connection.class);
+        when(connection.getId()).thenReturn("connection-1");
         Channel channel = mock(Channel.class);
-        when(channel.getId()).thenReturn("channel-1");
+        when(channel.getConnection()).thenReturn(connection);
+        when(channel.getChannelNumber()).thenReturn(1);
 
+        statistics.newConnection(connection);
         statistics.newChannel(channel);
 
         statistics.consumedMessage(channel, 1, true);
@@ -44,9 +49,13 @@ public class ConcurrentStatisticsTest {
 
     @Test public void basicConsumeAndAck() {
         ConcurrentStatistics statistics = new ConcurrentStatistics();
+        Connection connection = mock(Connection.class);
+        when(connection.getId()).thenReturn("connection-1");
         Channel channel = mock(Channel.class);
-        when(channel.getId()).thenReturn("channel-1");
+        when(channel.getConnection()).thenReturn(connection);
+        when(channel.getChannelNumber()).thenReturn(1);
 
+        statistics.newConnection(connection);
         statistics.newChannel(channel);
 
         String consumerTagWithAutoAck = "1";

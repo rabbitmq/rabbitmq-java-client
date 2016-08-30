@@ -23,5 +23,9 @@ public interface StatisticsCollector extends Statistics {
 
     void basicAck(Channel channel, long deliveryTag, boolean multiple);
 
+    void basicNack(Channel channel, long deliveryTag);
+
+    void basicReject(Channel channel, long deliveryTag);
+
     void basicConsume(Channel channel, String consumerTag, boolean autoAck);
 }

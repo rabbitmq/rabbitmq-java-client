@@ -41,7 +41,6 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     private int prefetchCountGlobal;
     private boolean usesPublisherConfirms;
     private boolean usesTransactions;
-    private String id;
 
     public AutorecoveringChannel(AutorecoveringConnection connection, RecoveryAwareChannelN delegate) {
         this.connection = connection;
@@ -631,12 +630,4 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         this.connection.maybeDeleteRecordedAutoDeleteExchange(exchange);
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    @Override
-    public String getId() {
-        return id;
-    }
 }
