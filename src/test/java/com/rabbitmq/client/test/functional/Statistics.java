@@ -2,6 +2,7 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.ConcurrentStatistics;
+import com.rabbitmq.client.impl.MetricsStatistics;
 import com.rabbitmq.client.test.BrokerTestCase;
 import org.awaitility.Duration;
 import org.junit.Test;
@@ -34,18 +35,27 @@ public class Statistics extends BrokerTestCase {
         channel.queueDelete(QUEUE);
     }
 
-    @Test public void statisticsStandardConnection() throws IOException, TimeoutException {
-        doStatistics(new ConnectionFactory());
+    @Test public void statisticsStandardConnectionConcurrentStatistics() throws IOException, TimeoutException {
+        doStatistics(new ConnectionFactory(), new ConcurrentStatistics());
     }
 
-    @Test public void statisticsAutoRecoveryConnection() throws IOException, TimeoutException {
+    @Test public void statisticsAutoRecoveryConnectionConcurrentStatistics() throws IOException, TimeoutException {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
-        doStatistics(connectionFactory);
+        doStatistics(connectionFactory, new ConcurrentStatistics());
     }
 
-    private void doStatistics(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
-        StatisticsCollector statistics = new ConcurrentStatistics();
+    @Test public void statisticsStandardConnectionMetricsStatistics() throws IOException, TimeoutException {
+        doStatistics(new ConnectionFactory(), new MetricsStatistics());
+    }
+
+    @Test public void statisticsAutoRecoveryConnectionMetricsStatistics() throws IOException, TimeoutException {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setAutomaticRecoveryEnabled(true);
+        doStatistics(connectionFactory, new MetricsStatistics());
+    }
+
+    private void doStatistics(ConnectionFactory connectionFactory, StatisticsCollector statistics) throws IOException, TimeoutException {
         connectionFactory.setStatistics(statistics);
         Connection connection1 = null;
         Connection connection2 = null;
@@ -126,30 +136,44 @@ public class Statistics extends BrokerTestCase {
             GetResponse getResponse = channel.basicGet(QUEUE, false);
             channel.basicAck(getResponse.getEnvelope().getDeliveryTag(), false);
 
+            sendMessage(channel);
+            getResponse = channel.basicGet(QUEUE, false);
+            channel.basicReject(getResponse.getEnvelope().getDeliveryTag(), false);
+
             statistics.clear();
             assertEquals(0, statistics.getConnectionCount());
             assertEquals(0, statistics.getChannelCount());
             assertEquals(0, statistics.getPublishedMessageCount());
             assertEquals(0, statistics.getConsumedMessageCount());
             assertEquals(0, statistics.getAcknowledgedMessageCount());
+            assertEquals(0, statistics.getRejectedMessageCount());
         } finally {
             safeClose(connection);
         }
 
     }
 
-    @Test public void statisticsAckStandardConnection() throws IOException, TimeoutException {
-        doStatisticsAck(new ConnectionFactory());
+    @Test public void statisticsAckStandardConnectionConcurrentStatistics() throws IOException, TimeoutException {
+        doStatisticsAck(new ConnectionFactory(), new ConcurrentStatistics());
     }
 
-    @Test public void statisticsAckAutoRecoveryConnection() throws IOException, TimeoutException {
+    @Test public void statisticsAckAutoRecoveryConnectionConcurrentStatistics() throws IOException, TimeoutException {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
-        doStatisticsAck(connectionFactory);
+        doStatisticsAck(connectionFactory, new ConcurrentStatistics());
     }
 
-    private void doStatisticsAck(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
-        StatisticsCollector statistics = new ConcurrentStatistics();
+    @Test public void statisticsAckStandardConnectionMetricsStatistics() throws IOException, TimeoutException {
+        doStatisticsAck(new ConnectionFactory(), new MetricsStatistics());
+    }
+
+    @Test public void statisticsAckAutoRecoveryConnectionMetricsStatistics() throws IOException, TimeoutException {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setAutomaticRecoveryEnabled(true);
+        doStatisticsAck(connectionFactory, new MetricsStatistics());
+    }
+
+    private void doStatisticsAck(ConnectionFactory connectionFactory, StatisticsCollector statistics) throws IOException, TimeoutException {
         connectionFactory.setStatistics(statistics);
 
         try {
@@ -219,18 +243,27 @@ public class Statistics extends BrokerTestCase {
         }
     }
 
-    @Test public void statisticsRejectStandardConnection() throws IOException, TimeoutException {
-        doStatisticsReject(new ConnectionFactory());
+    @Test public void statisticsRejectStandardConnectionConcurrentStatistics() throws IOException, TimeoutException {
+        doStatisticsReject(new ConnectionFactory(), new ConcurrentStatistics());
     }
 
-    @Test public void statisticsRejectAutoRecoveryConnection() throws IOException, TimeoutException {
+    @Test public void statisticsRejectAutoRecoveryConnectionConcurrentStatistics() throws IOException, TimeoutException {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
-        doStatisticsReject(connectionFactory);
+        doStatisticsReject(connectionFactory, new ConcurrentStatistics());
     }
 
-    private void doStatisticsReject(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
-        StatisticsCollector statistics = new ConcurrentStatistics();
+    @Test public void statisticsRejectStandardConnectionMetricsStatistics() throws IOException, TimeoutException {
+        doStatisticsReject(new ConnectionFactory(), new MetricsStatistics());
+    }
+
+    @Test public void statisticsRejectAutoRecoveryConnectionMetricsStatistics() throws IOException, TimeoutException {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setAutomaticRecoveryEnabled(true);
+        doStatisticsReject(connectionFactory, new MetricsStatistics());
+    }
+
+    private void doStatisticsReject(ConnectionFactory connectionFactory, StatisticsCollector statistics) throws IOException, TimeoutException {
         connectionFactory.setStatistics(statistics);
 
         Connection connection = connectionFactory.newConnection();
@@ -251,18 +284,27 @@ public class Statistics extends BrokerTestCase {
         assertEquals(1+2, statistics.getRejectedMessageCount());
     }
 
-    @Test public void multiThreadedStatisticsStandardConnection() throws InterruptedException, TimeoutException, IOException {
-        doMultiThreadedStatistics(new ConnectionFactory());
+    @Test public void multiThreadedStatisticsStandardConnectionConcurrentStatistics() throws InterruptedException, TimeoutException, IOException {
+        doMultiThreadedStatistics(new ConnectionFactory(), new ConcurrentStatistics());
     }
 
-    @Test public void multiThreadedStatisticsAutoRecoveryConnection() throws InterruptedException, TimeoutException, IOException {
+    @Test public void multiThreadedStatisticsAutoRecoveryConnectionConcurrentStatistics() throws InterruptedException, TimeoutException, IOException {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
-        doMultiThreadedStatistics(connectionFactory);
+        doMultiThreadedStatistics(connectionFactory, new ConcurrentStatistics());
     }
 
-    private void doMultiThreadedStatistics(ConnectionFactory connectionFactory) throws IOException, TimeoutException, InterruptedException {
-        StatisticsCollector statistics = new ConcurrentStatistics();
+    @Test public void multiThreadedStatisticsStandardConnectionMetricsStatistics() throws InterruptedException, TimeoutException, IOException {
+        doMultiThreadedStatistics(new ConnectionFactory(), new MetricsStatistics());
+    }
+
+    @Test public void multiThreadedStatisticsAutoRecoveryConnectionMetricsStatistics() throws InterruptedException, TimeoutException, IOException {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setAutomaticRecoveryEnabled(true);
+        doMultiThreadedStatistics(connectionFactory, new MetricsStatistics());
+    }
+
+    private void doMultiThreadedStatistics(ConnectionFactory connectionFactory, StatisticsCollector statistics) throws IOException, TimeoutException, InterruptedException {
         connectionFactory.setStatistics(statistics);
         int nbConnections = 3;
         int nbChannelsPerConnection = 5;
