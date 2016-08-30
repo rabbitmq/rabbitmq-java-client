@@ -1,6 +1,8 @@
 package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,6 +15,8 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  */
 public class ConcurrentStatistics implements StatisticsCollector {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConcurrentStatistics.class);
 
     // TODO keep track of Connections and wipe-out the state of closed connections in a separate thread
     // TODO protect each call in a try/catch block (for core features not to fail because of stats)
@@ -33,7 +37,7 @@ public class ConcurrentStatistics implements StatisticsCollector {
             connection.setId(UUID.randomUUID().toString());
         }
         connectionCount.incrementAndGet();
-        connectionState.put(connection.getId(), new ConnectionState());
+        connectionState.put(connection.getId(), new ConnectionState(connection));
         connection.addShutdownListener(new ShutdownListener() {
             @Override
             public void shutdownCompleted(ShutdownSignalException cause) {
@@ -44,8 +48,10 @@ public class ConcurrentStatistics implements StatisticsCollector {
 
     @Override
     public void closeConnection(Connection connection) {
-        connectionCount.decrementAndGet();
-        connectionState.remove(connection.getId());
+        ConnectionState removed = connectionState.remove(connection.getId());
+        if(removed != null) {
+            connectionCount.decrementAndGet();
+        }
     }
 
     @Override
@@ -57,18 +63,15 @@ public class ConcurrentStatistics implements StatisticsCollector {
                 closeChannel(channel);
             }
         });
-        connectionState(channel.getConnection()).channelState.put(channel.getChannelNumber(), new ChannelState());
+        connectionState(channel.getConnection()).channelState.put(channel.getChannelNumber(), new ChannelState(channel));
     }
 
     @Override
     public void closeChannel(Channel channel) {
-        channelCount.decrementAndGet();
-        connectionState(channel.getConnection()).channelState.remove(channel.getChannelNumber(), new ChannelState());
-    }
-
-    @Override
-    public void command(Connection connection, Channel channel, Command command) {
-
+        ChannelState removed = connectionState(channel.getConnection()).channelState.remove(channel.getChannelNumber());
+        if(removed != null) {
+            channelCount.decrementAndGet();
+        }
     }
 
     @Override
@@ -90,7 +93,16 @@ public class ConcurrentStatistics implements StatisticsCollector {
         }
     }
 
-    // TODO implement cancelConsume
+    @Override
+    public void basicCancel(Channel channel, String consumerTag) {
+        ChannelState channelState = channelState(channel);
+        channelState.lock.lock();
+        try {
+            channelState(channel).consumersWithManualAck.remove(consumerTag);
+        } finally {
+            channelState.lock.unlock();
+        }
+    }
 
     @Override
     public void consumedMessage(Channel channel, long deliveryTag, boolean autoAck) {
@@ -208,10 +220,45 @@ public class ConcurrentStatistics implements StatisticsCollector {
         return connectionState(channel.getConnection()).channelState.get(channel.getChannelNumber());
     }
 
+    public void cleanStaleState() {
+        try {
+            Iterator<Map.Entry<String, ConnectionState>> connectionStateIterator = connectionState.entrySet().iterator();
+            while(connectionStateIterator.hasNext()) {
+                Map.Entry<String, ConnectionState> connectionEntry = connectionStateIterator.next();
+                Connection connection = connectionEntry.getValue().connection;
+                if(connection.isOpen()) {
+                    Iterator<Map.Entry<Integer, ChannelState>> channelStateIterator = connectionEntry.getValue().channelState.entrySet().iterator();
+                    while(channelStateIterator.hasNext()) {
+                        Map.Entry<Integer, ChannelState> channelStateEntry = channelStateIterator.next();
+                        Channel channel = channelStateEntry.getValue().channel;
+                        if(!channel.isOpen()) {
+                            channelStateIterator.remove();
+                            channelCount.decrementAndGet();
+                            LOGGER.info("Ripped off state of channel {} of connection {}. This is abnormal, please report.",
+                                channel.getChannelNumber(), connection.getId());
+                        }
+                    }
+                } else {
+                    connectionStateIterator.remove();
+                    connectionCount.decrementAndGet();
+                    channelCount.addAndGet(-connectionEntry.getValue().channelState.size());
+                    LOGGER.info("Ripped off state of connection {}. This is abnormal, please report.",
+                        connection.getId());
+                }
+            }
+        } catch(Exception e) {
+            LOGGER.info("Error during periodic clean of statistics: "+e.getMessage());
+        }
+    }
+
     private static class ConnectionState {
 
         final ConcurrentMap<Integer, ChannelState> channelState = new ConcurrentHashMap<Integer, ChannelState>();
+        final Connection connection;
 
+        private ConnectionState(Connection connection) {
+            this.connection = connection;
+        }
     }
 
     private static class ChannelState {
@@ -221,7 +268,12 @@ public class ConcurrentStatistics implements StatisticsCollector {
         final Set<Long> unackedMessageDeliveryTags = new HashSet<Long>();
         final Set<String> consumersWithManualAck = new HashSet<String>();
 
-    }
+        final Channel channel;
 
+        private ChannelState(Channel channel) {
+            this.channel = channel;
+        }
+
+    }
 
 }

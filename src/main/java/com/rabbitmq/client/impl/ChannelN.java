@@ -1217,6 +1217,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         } catch(ShutdownSignalException ex) {
             throw wrap(ex);
         }
+        statistics.basicCancel(this, consumerTag);
     }
 
 

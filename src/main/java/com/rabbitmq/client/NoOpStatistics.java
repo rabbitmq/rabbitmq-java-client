@@ -26,11 +26,6 @@ public class NoOpStatistics implements StatisticsCollector {
     }
 
     @Override
-    public void command(Connection connection, Channel channel, Command command) {
-
-    }
-
-    @Override
     public void basicAck(Channel channel, long deliveryTag, boolean multiple) {
 
     }
@@ -47,6 +42,11 @@ public class NoOpStatistics implements StatisticsCollector {
 
     @Override
     public void basicConsume(Channel channel, String consumerTag, boolean autoAck) {
+
+    }
+
+    @Override
+    public void basicCancel(Channel channel, String consumerTag) {
 
     }
 

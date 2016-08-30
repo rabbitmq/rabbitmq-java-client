@@ -19,8 +19,6 @@ public interface StatisticsCollector extends Statistics {
 
     void consumedMessage(Channel channel, long deliveryTag, String consumerTag);
 
-    void command(Connection connection, Channel channel, Command command);
-
     void basicAck(Channel channel, long deliveryTag, boolean multiple);
 
     void basicNack(Channel channel, long deliveryTag);
@@ -28,4 +26,6 @@ public interface StatisticsCollector extends Statistics {
     void basicReject(Channel channel, long deliveryTag);
 
     void basicConsume(Channel channel, String consumerTag, boolean autoAck);
+
+    void basicCancel(Channel channel, String consumerTag);
 }

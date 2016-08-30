@@ -87,4 +87,44 @@ public class ConcurrentStatisticsTest {
 
     }
 
+    @Test public void cleanStaleState() {
+        ConcurrentStatistics statistics = new ConcurrentStatistics();
+        Connection openConnection = mock(Connection.class);
+        when(openConnection.getId()).thenReturn("connection-1");
+        when(openConnection.isOpen()).thenReturn(true);
+
+        Channel openChannel = mock(Channel.class);
+        when(openChannel.getConnection()).thenReturn(openConnection);
+        when(openChannel.getChannelNumber()).thenReturn(1);
+        when(openChannel.isOpen()).thenReturn(true);
+
+        Channel closedChannel = mock(Channel.class);
+        when(closedChannel.getConnection()).thenReturn(openConnection);
+        when(closedChannel.getChannelNumber()).thenReturn(2);
+        when(closedChannel.isOpen()).thenReturn(false);
+
+        Connection closedConnection = mock(Connection.class);
+        when(closedConnection.getId()).thenReturn("connection-2");
+        when(closedConnection.isOpen()).thenReturn(false);
+
+        Channel openChannelInClosedConnection = mock(Channel.class);
+        when(openChannelInClosedConnection.getConnection()).thenReturn(closedConnection);
+        when(openChannelInClosedConnection.getChannelNumber()).thenReturn(1);
+        when(openChannelInClosedConnection.isOpen()).thenReturn(true);
+
+        statistics.newConnection(openConnection);
+        statistics.newConnection(closedConnection);
+        statistics.newChannel(openChannel);
+        statistics.newChannel(closedChannel);
+        statistics.newChannel(openChannelInClosedConnection);
+
+        assertEquals(2, statistics.getConnectionCount());
+        assertEquals(2+1, statistics.getChannelCount());
+
+        statistics.cleanStaleState();
+
+        assertEquals(1, statistics.getConnectionCount());
+        assertEquals(1, statistics.getChannelCount());
+    }
+
 }

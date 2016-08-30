@@ -637,7 +637,7 @@ public class ConnectionFactory implements Cloneable {
         this.statistics = statistics;
     }
 
-    public Statistics getStatistics() {
+    public StatisticsCollector getStatistics() {
         return statistics;
     }
 
