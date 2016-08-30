@@ -83,8 +83,8 @@ public class PerfTest {
             		producerCount > 0,
             		consumerCount > 0,
             		(flags.contains("mandatory") || 
-            				flags.contains("immediate")),
-    				confirm != -1);
+            		flags.contains("immediate")),
+            		confirm != -1);
 
             ConnectionFactory factory = new ConnectionFactory();
             factory.setShutdownTimeout(0); // So we still shut down even with slow consumers
@@ -245,13 +245,13 @@ public class PerfTest {
         public void printFinal() {
             long now = System.currentTimeMillis();
 
-            System.out.println("sending rate avg: " +
+            System.out.println("id: " + testID + ", sending rate avg: " +
                                formatRate(sendCountTotal * 1000.0 / (now - startTime)) +
                                " msg/s");
 
             long elapsed = now - startTime;
             if (elapsed > 0) {
-                System.out.println("recving rate avg: " +
+                System.out.println("id: " + testID + ", recving rate avg: " +
                                    formatRate(recvCountTotal * 1000.0 / elapsed) +
                                    " msg/s");
             }
