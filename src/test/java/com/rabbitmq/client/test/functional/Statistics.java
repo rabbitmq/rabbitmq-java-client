@@ -17,12 +17,16 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.MetricsStatistics;
+import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.tools.Host;
 import org.awaitility.Duration;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
@@ -32,6 +36,7 @@ import static org.awaitility.Awaitility.waitAtMost;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -338,6 +343,76 @@ public class Statistics extends BrokerTestCase {
         waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics.getConsumedMessages()).getCount(), equalTo(3*nbOfMessages));
         waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics.getAcknowledgedMessages()).getCount(), equalTo(nbOfMessages));
         waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics.getRejectedMessages()).getCount(), equalTo(nbOfMessages));
+    }
+
+    @Test public void errorInChannelStandardConnection() throws IOException, TimeoutException {
+        errorInChannel(new ConnectionFactory());
+    }
+
+    @Test public void errorInChananelAutoRecoveryConnection() throws IOException, TimeoutException {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setAutomaticRecoveryEnabled(true);
+        errorInChannel(connectionFactory);
+    }
+
+    private void errorInChannel(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
+        MetricsStatistics statistics = new MetricsStatistics();
+        connectionFactory.setStatistics(statistics);
+
+        Connection connection = connectionFactory.newConnection();
+        Channel channel = connection.createChannel();
+
+        assertThat(statistics.getConnections().getCount(), is(1L));
+        assertThat(statistics.getChannels().getCount(), is(1L));
+
+        channel.basicPublish("unlikelynameforanexchange", "", null, "msg".getBytes("UTF-8"));
+
+        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics.getChannels()).getCount(), is(0L));
+        assertThat(statistics.getConnections().getCount(), is(1L));
+    }
+
+    @Test public void checkListenersWithAutoRecoveryConnection() throws Exception {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setNetworkRecoveryInterval(2000);
+        connectionFactory.setAutomaticRecoveryEnabled(true);
+        MetricsStatistics statistics = new MetricsStatistics();
+        connectionFactory.setStatistics(statistics);
+
+        Connection connection = connectionFactory.newConnection();
+
+        Collection<?> shutdownHooks = getShutdownHooks(connection);
+        assertThat(shutdownHooks.size(), is(0));
+
+        connection.createChannel();
+
+        assertThat(statistics.getConnections().getCount(), is(1L));
+        assertThat(statistics.getChannels().getCount(), is(1L));
+
+        closeAndWaitForRecovery((AutorecoveringConnection) connection);
+
+        assertThat(statistics.getConnections().getCount(), is(1L));
+        assertThat(statistics.getChannels().getCount(), is(1L));
+
+        assertThat(shutdownHooks.size(), is(0));
+    }
+
+
+
+    private void closeAndWaitForRecovery(AutorecoveringConnection connection) throws IOException, InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        connection.addRecoveryListener(new RecoveryListener() {
+            public void handleRecovery(Recoverable recoverable) {
+                latch.countDown();
+            }
+        });
+        Host.closeConnection(connection);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+    }
+
+    private Collection<?> getShutdownHooks(Connection connection) throws NoSuchFieldException, IllegalAccessException {
+        Field shutdownHooksField = connection.getClass().getDeclaredField("shutdownHooks");
+        shutdownHooksField.setAccessible(true);
+        return (Collection<?>) shutdownHooksField.get(connection);
     }
 
     private static class BasicGetTask implements Callable<Void> {

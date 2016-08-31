@@ -60,6 +60,7 @@ public class RecoveryAwareAMQConnectionFactory {
                 FrameHandler frameHandler = factory.create(addr);
                 RecoveryAwareAMQConnection conn = new RecoveryAwareAMQConnection(params, frameHandler, statistics);
                 conn.start();
+                statistics.newConnection(conn);
                 return conn;
             } catch (IOException e) {
                 lastException = e;

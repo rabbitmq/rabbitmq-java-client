@@ -878,7 +878,6 @@ public class ConnectionFactory implements Cloneable {
             AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addressResolver, statistics);
 
             conn.init();
-            this.statistics.newConnection(conn);
             return conn;
         } else {
             List<Address> addrs = addressResolver.getAddresses();
