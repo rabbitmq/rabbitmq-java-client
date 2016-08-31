@@ -41,7 +41,7 @@ import org.junit.runners.Suite;
     JSONReadWriteTest.class,
     SharedThreadPoolTest.class,
     DnsRecordIpAddressResolverTests.class,
-    MetricsStatisticsTest.class
+    StandardMetricsCollectorTest.class
 })
 public class ClientTests {
 

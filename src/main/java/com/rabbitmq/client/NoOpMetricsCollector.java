@@ -18,7 +18,7 @@ package com.rabbitmq.client;
 /**
  *
  */
-public class NoOpStatistics implements StatisticsCollector {
+public class NoOpMetricsCollector implements MetricsCollector {
 
     @Override
     public void newConnection(Connection connection) {

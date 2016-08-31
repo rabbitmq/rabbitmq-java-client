@@ -106,7 +106,7 @@ public class ConnectionFactory implements Cloneable {
     // to use recovery intervals > Integer.MAX_VALUE in practice.
     private long networkRecoveryInterval          = 5000;
 
-    private StatisticsCollector statistics;
+    private MetricsCollector metricsCollector;
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -633,12 +633,12 @@ public class ConnectionFactory implements Cloneable {
         this.topologyRecovery = topologyRecovery;
     }
 
-    public void setStatistics(StatisticsCollector statistics) {
-        this.statistics = statistics;
+    public void setMetricsCollector(MetricsCollector metricsCollector) {
+        this.metricsCollector = metricsCollector;
     }
 
-    public StatisticsCollector getStatistics() {
-        return statistics;
+    public MetricsCollector getMetricsCollector() {
+        return metricsCollector;
     }
 
     protected FrameHandlerFactory createFrameHandlerFactory() throws IOException {
@@ -860,8 +860,8 @@ public class ConnectionFactory implements Cloneable {
      */
     public Connection newConnection(ExecutorService executor, AddressResolver addressResolver, String clientProvidedName)
         throws IOException, TimeoutException {
-        if(this.statistics == null) {
-            this.statistics = new NoOpStatistics();
+        if(this.metricsCollector == null) {
+            this.metricsCollector = new NoOpMetricsCollector();
         }
         // make sure we respect the provided thread factory
         FrameHandlerFactory fhFactory = createFrameHandlerFactory();
@@ -875,7 +875,7 @@ public class ConnectionFactory implements Cloneable {
 
         if (isAutomaticRecoveryEnabled()) {
             // see com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnectionFactory#newConnection
-            AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addressResolver, statistics);
+            AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addressResolver, metricsCollector);
 
             conn.init();
             return conn;
@@ -885,9 +885,9 @@ public class ConnectionFactory implements Cloneable {
             for (Address addr : addrs) {
                 try {
                     FrameHandler handler = fhFactory.create(addr);
-                    AMQConnection conn = new AMQConnection(params, handler, statistics);
+                    AMQConnection conn = new AMQConnection(params, handler, metricsCollector);
                     conn.start();
-                    this.statistics.newConnection(conn);
+                    this.metricsCollector.newConnection(conn);
                     return conn;
                 } catch (IOException e) {
                     lastException = e;

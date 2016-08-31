@@ -77,7 +77,7 @@ import org.junit.runners.Suite;
 	BasicGet.class,
 	Nack.class,
 	ExceptionMessages.class,
-	Statistics.class
+	Metrics.class
 })
 public class FunctionalTests {
 

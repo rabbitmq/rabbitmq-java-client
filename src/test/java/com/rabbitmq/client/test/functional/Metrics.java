@@ -16,7 +16,7 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.MetricsStatistics;
+import com.rabbitmq.client.impl.StandardMetricsCollector;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
@@ -41,9 +41,9 @@ import static org.junit.Assert.assertTrue;
 /**
  *
  */
-public class Statistics extends BrokerTestCase {
+public class Metrics extends BrokerTestCase {
 
-    static final String QUEUE = "statistics.queue";
+    static final String QUEUE = "metrics.queue";
 
     @Override
     protected void createResources() throws IOException, TimeoutException {
@@ -55,68 +55,68 @@ public class Statistics extends BrokerTestCase {
         channel.queueDelete(QUEUE);
     }
 
-    @Test public void statisticsStandardConnection() throws IOException, TimeoutException {
-        doStatistics(new ConnectionFactory());
+    @Test public void metricsStandardConnection() throws IOException, TimeoutException {
+        doMetrics(new ConnectionFactory());
     }
 
-    @Test public void statisticsAutoRecoveryConnection() throws IOException, TimeoutException {
+    @Test public void metricsAutoRecoveryConnection() throws IOException, TimeoutException {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
-        doStatistics(connectionFactory);
+        doMetrics(connectionFactory);
     }
 
-    private void doStatistics(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
-        MetricsStatistics statistics = new MetricsStatistics();
-        connectionFactory.setStatistics(statistics);
+    private void doMetrics(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
+        StandardMetricsCollector metrics = new StandardMetricsCollector();
+        connectionFactory.setMetricsCollector(metrics);
         Connection connection1 = null;
         Connection connection2 = null;
         try {
             connection1 = connectionFactory.newConnection();
-            assertThat(statistics.getConnections().getCount(), is(1L));
+            assertThat(metrics.getConnections().getCount(), is(1L));
 
             connection1.createChannel();
             connection1.createChannel();
             Channel channel = connection1.createChannel();
-            assertThat(statistics.getChannels().getCount(), is(3L));
+            assertThat(metrics.getChannels().getCount(), is(3L));
 
             sendMessage(channel);
-            assertThat(statistics.getPublishedMessages().getCount(), is(1L));
+            assertThat(metrics.getPublishedMessages().getCount(), is(1L));
             sendMessage(channel);
-            assertThat(statistics.getPublishedMessages().getCount(), is(2L));
+            assertThat(metrics.getPublishedMessages().getCount(), is(2L));
 
             channel.basicGet(QUEUE, true);
-            assertThat(statistics.getConsumedMessages().getCount(), is(1L));
+            assertThat(metrics.getConsumedMessages().getCount(), is(1L));
             channel.basicGet(QUEUE, true);
-            assertThat(statistics.getConsumedMessages().getCount(), is(2L));
+            assertThat(metrics.getConsumedMessages().getCount(), is(2L));
             channel.basicGet(QUEUE, true);
-            assertThat(statistics.getConsumedMessages().getCount(), is(2L));
+            assertThat(metrics.getConsumedMessages().getCount(), is(2L));
 
             connection2 = connectionFactory.newConnection();
-            assertThat(statistics.getConnections().getCount(), is(2L));
+            assertThat(metrics.getConnections().getCount(), is(2L));
 
             connection2.createChannel();
             channel = connection2.createChannel();
-            assertThat(statistics.getChannels().getCount(), is(3L+2L));
+            assertThat(metrics.getChannels().getCount(), is(3L+2L));
             sendMessage(channel);
             sendMessage(channel);
-            assertThat(statistics.getPublishedMessages().getCount(), is(2L+2L));
+            assertThat(metrics.getPublishedMessages().getCount(), is(2L+2L));
 
             channel.basicGet(QUEUE, true);
-            assertThat(statistics.getConsumedMessages().getCount(), is(2L+1L));
+            assertThat(metrics.getConsumedMessages().getCount(), is(2L+1L));
 
             channel.basicConsume(QUEUE, true, new DefaultConsumer(channel));
-            waitAtMost(timeout()).untilCall(to(statistics.getConsumedMessages()).getCount(), equalTo(2L+1L+1L));
+            waitAtMost(timeout()).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(2L+1L+1L));
 
             safeClose(connection1);
-            waitAtMost(timeout()).untilCall(to(statistics.getConnections()).getCount(), equalTo(1L));
-            waitAtMost(timeout()).untilCall(to(statistics.getChannels()).getCount(), equalTo(2L));
+            waitAtMost(timeout()).untilCall(to(metrics.getConnections()).getCount(), equalTo(1L));
+            waitAtMost(timeout()).untilCall(to(metrics.getChannels()).getCount(), equalTo(2L));
 
             safeClose(connection2);
-            waitAtMost(timeout()).untilCall(to(statistics.getConnections()).getCount(), equalTo(0L));
-            waitAtMost(timeout()).untilCall(to(statistics.getChannels()).getCount(), equalTo(0L));
+            waitAtMost(timeout()).untilCall(to(metrics.getConnections()).getCount(), equalTo(0L));
+            waitAtMost(timeout()).untilCall(to(metrics.getChannels()).getCount(), equalTo(0L));
 
-            assertThat(statistics.getAcknowledgedMessages().getCount(), is(0L));
-            assertThat(statistics.getRejectedMessages().getCount(), is(0L));
+            assertThat(metrics.getAcknowledgedMessages().getCount(), is(0L));
+            assertThat(metrics.getRejectedMessages().getCount(), is(0L));
 
         } finally {
             safeClose(connection1);
@@ -124,19 +124,19 @@ public class Statistics extends BrokerTestCase {
         }
     }
 
-    @Test public void statisticsAckStandardConnection() throws IOException, TimeoutException {
-        doStatisticsAck(new ConnectionFactory());
+    @Test public void metricsAckStandardConnection() throws IOException, TimeoutException {
+        doMetricsAck(new ConnectionFactory());
     }
 
-    @Test public void statisticsAckAutoRecoveryConnection() throws IOException, TimeoutException {
+    @Test public void metricsAckAutoRecoveryConnection() throws IOException, TimeoutException {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
-        doStatisticsAck(connectionFactory);
+        doMetricsAck(connectionFactory);
     }
 
-    private void doStatisticsAck(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
-        MetricsStatistics statistics = new MetricsStatistics();
-        connectionFactory.setStatistics(statistics);
+    private void doMetricsAck(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
+        StandardMetricsCollector metrics = new StandardMetricsCollector();
+        connectionFactory.setMetricsCollector(metrics);
 
         try {
             Connection connection = connectionFactory.newConnection();
@@ -146,8 +146,8 @@ public class Statistics extends BrokerTestCase {
             sendMessage(channel1);
             GetResponse getResponse = channel1.basicGet(QUEUE, false);
             channel1.basicAck(getResponse.getEnvelope().getDeliveryTag(), false);
-            assertThat(statistics.getConsumedMessages().getCount(), is(1L));
-            assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L));
+            assertThat(metrics.getConsumedMessages().getCount(), is(1L));
+            assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L));
 
             // basicGet / basicAck
             sendMessage(channel1);
@@ -164,18 +164,18 @@ public class Statistics extends BrokerTestCase {
             GetResponse response5 = channel1.basicGet(QUEUE, false);
             GetResponse response6 = channel2.basicGet(QUEUE, false);
 
-            assertThat(statistics.getConsumedMessages().getCount(), is(1L+6L));
-            assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L));
+            assertThat(metrics.getConsumedMessages().getCount(), is(1L+6L));
+            assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L));
 
             channel1.basicAck(response5.getEnvelope().getDeliveryTag(), false);
-            assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L+1L));
+            assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L+1L));
             channel1.basicAck(response3.getEnvelope().getDeliveryTag(), true);
-            assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L+1L+2L));
+            assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L+1L+2L));
 
             channel2.basicAck(response2.getEnvelope().getDeliveryTag(), true);
-            assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L+(1L+2L)+1L));
+            assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L+(1L+2L)+1L));
             channel2.basicAck(response6.getEnvelope().getDeliveryTag(), true);
-            assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L+(1L+2L)+1L+2L));
+            assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L+(1L+2L)+1L+2L));
 
             long alreadySentMessages = 1+(1+2)+1+2;
 
@@ -186,17 +186,17 @@ public class Statistics extends BrokerTestCase {
             channel2.basicConsume(QUEUE, false, new MultipleAckConsumer(channel2, true));
 
             int nbMessages = 10;
-            for(int i=0;i<nbMessages;i++) {
+            for(int i = 0; i < nbMessages; i++) {
                 sendMessage(i%2 == 0 ? channel1 : channel2);
             }
 
             waitAtMost(1, TimeUnit.SECONDS).untilCall(
-                to(statistics.getConsumedMessages()).getCount(),
+                to(metrics.getConsumedMessages()).getCount(),
                 equalTo(alreadySentMessages+nbMessages)
             );
 
             waitAtMost(1, TimeUnit.SECONDS).untilCall(
-                to(statistics.getAcknowledgedMessages()).getCount(),
+                to(metrics.getAcknowledgedMessages()).getCount(),
                 equalTo(alreadySentMessages+nbMessages)
             );
 
@@ -205,19 +205,19 @@ public class Statistics extends BrokerTestCase {
         }
     }
 
-    @Test public void statisticsRejectStandardConnection() throws IOException, TimeoutException {
-        doStatisticsReject(new ConnectionFactory());
+    @Test public void metricsRejectStandardConnection() throws IOException, TimeoutException {
+        doMetricsReject(new ConnectionFactory());
     }
 
-    @Test public void statisticsRejectAutoRecoveryConnection() throws IOException, TimeoutException {
+    @Test public void metricsRejectAutoRecoveryConnection() throws IOException, TimeoutException {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
-        doStatisticsReject(connectionFactory);
+        doMetricsReject(connectionFactory);
     }
 
-    private void doStatisticsReject(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
-        MetricsStatistics statistics = new MetricsStatistics();
-        connectionFactory.setStatistics(statistics);
+    private void doMetricsReject(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
+        StandardMetricsCollector metrics = new StandardMetricsCollector();
+        connectionFactory.setMetricsCollector(metrics);
 
         Connection connection = connectionFactory.newConnection();
         Channel channel = connection.createChannel();
@@ -231,25 +231,25 @@ public class Statistics extends BrokerTestCase {
         GetResponse response3 = channel.basicGet(QUEUE, false);
 
         channel.basicReject(response2.getEnvelope().getDeliveryTag(), false);
-        assertThat(statistics.getRejectedMessages().getCount(), is(1L));
+        assertThat(metrics.getRejectedMessages().getCount(), is(1L));
 
         channel.basicNack(response3.getEnvelope().getDeliveryTag(), true, false);
-        assertThat(statistics.getRejectedMessages().getCount(), is(1L+2L));
+        assertThat(metrics.getRejectedMessages().getCount(), is(1L+2L));
     }
 
-    @Test public void multiThreadedStatisticsStandardConnection() throws InterruptedException, TimeoutException, IOException {
-        doMultiThreadedStatistics(new ConnectionFactory());
+    @Test public void multiThreadedMetricsStandardConnection() throws InterruptedException, TimeoutException, IOException {
+        doMultiThreadedMetrics(new ConnectionFactory());
     }
 
-    @Test public void multiThreadedStatisticsAutoRecoveryConnection() throws InterruptedException, TimeoutException, IOException {
+    @Test public void multiThreadedMetricsAutoRecoveryConnection() throws InterruptedException, TimeoutException, IOException {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
-        doMultiThreadedStatistics(connectionFactory);
+        doMultiThreadedMetrics(connectionFactory);
     }
 
-    private void doMultiThreadedStatistics(ConnectionFactory connectionFactory) throws IOException, TimeoutException, InterruptedException {
-        MetricsStatistics statistics = new MetricsStatistics();
-        connectionFactory.setStatistics(statistics);
+    private void doMultiThreadedMetrics(ConnectionFactory connectionFactory) throws IOException, TimeoutException, InterruptedException {
+        StandardMetricsCollector metrics = new StandardMetricsCollector();
+        connectionFactory.setMetricsCollector(metrics);
         int nbConnections = 3;
         int nbChannelsPerConnection = 5;
         int nbChannels = nbConnections * nbChannelsPerConnection;
@@ -261,23 +261,23 @@ public class Statistics extends BrokerTestCase {
         // create connections
         Connection [] connections = new Connection[nbConnections];
         Channel [] channels = new Channel[nbChannels];
-        for(int i=0;i<nbConnections;i++) {
+        for(int i = 0; i < nbConnections; i++) {
             connections[i] = connectionFactory.newConnection();
-            for(int j=0;j<nbChannelsPerConnection;j++) {
+            for(int j = 0; j < nbChannelsPerConnection; j++) {
                 Channel channel = connections[i].createChannel();
                 channel.basicQos(1);
-                channels[i*nbChannelsPerConnection+j] = channel;
+                channels[i * nbChannelsPerConnection + j] = channel;
             }
         }
 
         // consume messages without ack
-        for(int i=0;i<nbOfMessages;i++) {
+        for(int i = 0; i < nbOfMessages; i++) {
             sendMessage(channels[random.nextInt(nbChannels)]);
         }
 
         ExecutorService executorService = Executors.newFixedThreadPool(nbTasks);
         List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
-        for(int i=0;i<nbTasks;i++) {
+        for(int i = 0; i < nbTasks; i++) {
             Channel channelForConsuming = channels[random.nextInt(nbChannels)];
             tasks.add(random.nextInt(10)%2 == 0 ?
                 new BasicGetTask(channelForConsuming, true) :
@@ -285,12 +285,12 @@ public class Statistics extends BrokerTestCase {
         }
         executorService.invokeAll(tasks);
 
-        assertThat(statistics.getPublishedMessages().getCount(), is(nbOfMessages));
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics.getConsumedMessages()).getCount(), equalTo(nbOfMessages));
-        assertThat(statistics.getAcknowledgedMessages().getCount(), is(0L));
+        assertThat(metrics.getPublishedMessages().getCount(), is(nbOfMessages));
+        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(nbOfMessages));
+        assertThat(metrics.getAcknowledgedMessages().getCount(), is(0L));
 
         // to remove the listeners
-        for(int i=0;i<nbChannels;i++) {
+        for(int i = 0; i < nbChannels; i++) {
             channels[i].close();
             Channel channel = connections[random.nextInt(nbConnections)].createChannel();
             channel.basicQos(1);
@@ -298,13 +298,13 @@ public class Statistics extends BrokerTestCase {
         }
 
         // consume messages with ack
-        for(int i=0;i<nbOfMessages;i++) {
+        for(int i = 0; i < nbOfMessages; i++) {
             sendMessage(channels[random.nextInt(nbChannels)]);
         }
 
         executorService = Executors.newFixedThreadPool(nbTasks);
         tasks = new ArrayList<Callable<Void>>();
-        for(int i=0;i<nbTasks;i++) {
+        for(int i = 0; i < nbTasks; i++) {
             Channel channelForConsuming = channels[i];
             tasks.add(random.nextBoolean() ?
                 new BasicGetTask(channelForConsuming, false) :
@@ -312,12 +312,12 @@ public class Statistics extends BrokerTestCase {
         }
         executorService.invokeAll(tasks);
 
-        assertThat(statistics.getPublishedMessages().getCount(), is(2*nbOfMessages));
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics.getConsumedMessages()).getCount(), equalTo(2*nbOfMessages));
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics.getAcknowledgedMessages()).getCount(), equalTo(nbOfMessages));
+        assertThat(metrics.getPublishedMessages().getCount(), is(2*nbOfMessages));
+        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(2*nbOfMessages));
+        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getAcknowledgedMessages()).getCount(), equalTo(nbOfMessages));
 
         // to remove the listeners
-        for(int i=0;i<nbChannels;i++) {
+        for(int i = 0; i < nbChannels; i++) {
             channels[i].close();
             Channel channel = connections[random.nextInt(nbConnections)].createChannel();
             channel.basicQos(1);
@@ -325,13 +325,13 @@ public class Statistics extends BrokerTestCase {
         }
 
         // consume messages and reject them
-        for(int i=0;i<nbOfMessages;i++) {
+        for(int i = 0; i < nbOfMessages; i++) {
             sendMessage(channels[random.nextInt(nbChannels)]);
         }
 
         executorService = Executors.newFixedThreadPool(nbTasks);
         tasks = new ArrayList<Callable<Void>>();
-        for(int i=0;i<nbTasks;i++) {
+        for(int i = 0; i < nbTasks; i++) {
             Channel channelForConsuming = channels[i];
             tasks.add(random.nextBoolean() ?
                 new BasicGetRejectTask(channelForConsuming) :
@@ -339,10 +339,10 @@ public class Statistics extends BrokerTestCase {
         }
         executorService.invokeAll(tasks);
 
-        assertThat(statistics.getPublishedMessages().getCount(), is(3*nbOfMessages));
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics.getConsumedMessages()).getCount(), equalTo(3*nbOfMessages));
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics.getAcknowledgedMessages()).getCount(), equalTo(nbOfMessages));
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics.getRejectedMessages()).getCount(), equalTo(nbOfMessages));
+        assertThat(metrics.getPublishedMessages().getCount(), is(3*nbOfMessages));
+        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(3*nbOfMessages));
+        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getAcknowledgedMessages()).getCount(), equalTo(nbOfMessages));
+        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getRejectedMessages()).getCount(), equalTo(nbOfMessages));
     }
 
     @Test public void errorInChannelStandardConnection() throws IOException, TimeoutException {
@@ -356,27 +356,27 @@ public class Statistics extends BrokerTestCase {
     }
 
     private void errorInChannel(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
-        MetricsStatistics statistics = new MetricsStatistics();
-        connectionFactory.setStatistics(statistics);
+        StandardMetricsCollector metrics = new StandardMetricsCollector();
+        connectionFactory.setMetricsCollector(metrics);
 
         Connection connection = connectionFactory.newConnection();
         Channel channel = connection.createChannel();
 
-        assertThat(statistics.getConnections().getCount(), is(1L));
-        assertThat(statistics.getChannels().getCount(), is(1L));
+        assertThat(metrics.getConnections().getCount(), is(1L));
+        assertThat(metrics.getChannels().getCount(), is(1L));
 
         channel.basicPublish("unlikelynameforanexchange", "", null, "msg".getBytes("UTF-8"));
 
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(statistics.getChannels()).getCount(), is(0L));
-        assertThat(statistics.getConnections().getCount(), is(1L));
+        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getChannels()).getCount(), is(0L));
+        assertThat(metrics.getConnections().getCount(), is(1L));
     }
 
     @Test public void checkListenersWithAutoRecoveryConnection() throws Exception {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setNetworkRecoveryInterval(2000);
         connectionFactory.setAutomaticRecoveryEnabled(true);
-        MetricsStatistics statistics = new MetricsStatistics();
-        connectionFactory.setStatistics(statistics);
+        StandardMetricsCollector metrics = new StandardMetricsCollector();
+        connectionFactory.setMetricsCollector(metrics);
 
         Connection connection = connectionFactory.newConnection();
 
@@ -385,13 +385,13 @@ public class Statistics extends BrokerTestCase {
 
         connection.createChannel();
 
-        assertThat(statistics.getConnections().getCount(), is(1L));
-        assertThat(statistics.getChannels().getCount(), is(1L));
+        assertThat(metrics.getConnections().getCount(), is(1L));
+        assertThat(metrics.getChannels().getCount(), is(1L));
 
         closeAndWaitForRecovery((AutorecoveringConnection) connection);
 
-        assertThat(statistics.getConnections().getCount(), is(1L));
-        assertThat(statistics.getChannels().getCount(), is(1L));
+        assertThat(metrics.getConnections().getCount(), is(1L));
+        assertThat(metrics.getChannels().getCount(), is(1L));
 
         assertThat(shutdownHooks.size(), is(0));
     }

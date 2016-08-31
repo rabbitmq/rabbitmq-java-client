@@ -24,7 +24,7 @@ package com.rabbitmq.client;
  * transaction is rolled back.
  *
  */
-public interface StatisticsCollector {
+public interface MetricsCollector {
 
     void newConnection(Connection connection);
 

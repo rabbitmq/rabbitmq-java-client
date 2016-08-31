@@ -30,21 +30,21 @@ public class RecoveryAwareAMQConnectionFactory {
     private final ConnectionParams params;
     private final FrameHandlerFactory factory;
     private final AddressResolver addressResolver;
-    private final StatisticsCollector statistics;
+    private final MetricsCollector metricsCollector;
 
     public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, List<Address> addrs) {
-        this(params, factory, new ListAddressResolver(addrs), new NoOpStatistics());
+        this(params, factory, new ListAddressResolver(addrs), new NoOpMetricsCollector());
     }
 
     public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, AddressResolver addressResolver) {
-        this(params, factory, addressResolver, new NoOpStatistics());
+        this(params, factory, addressResolver, new NoOpMetricsCollector());
     }
 
-    public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, AddressResolver addressResolver, StatisticsCollector statistics) {
+    public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, AddressResolver addressResolver, MetricsCollector metricsCollector) {
         this.params = params;
         this.factory = factory;
         this.addressResolver = addressResolver;
-        this.statistics = statistics;
+        this.metricsCollector = metricsCollector;
     }
 
     /**
@@ -58,9 +58,9 @@ public class RecoveryAwareAMQConnectionFactory {
         for (Address addr : shuffled) {
             try {
                 FrameHandler frameHandler = factory.create(addr);
-                RecoveryAwareAMQConnection conn = new RecoveryAwareAMQConnection(params, frameHandler, statistics);
+                RecoveryAwareAMQConnection conn = new RecoveryAwareAMQConnection(params, frameHandler, metricsCollector);
                 conn.start();
-                statistics.newConnection(conn);
+                metricsCollector.newConnection(conn);
                 return conn;
             } catch (IOException e) {
                 lastException = e;

@@ -16,8 +16,8 @@
 package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.Command;
-import com.rabbitmq.client.NoOpStatistics;
-import com.rabbitmq.client.StatisticsCollector;
+import com.rabbitmq.client.NoOpMetricsCollector;
+import com.rabbitmq.client.MetricsCollector;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.client.impl.ChannelN;
@@ -46,7 +46,7 @@ public class RecoveryAwareChannelN extends ChannelN {
      * @param workService   service for managing this channel's consumer callbacks
      */
     public RecoveryAwareChannelN(AMQConnection connection, int channelNumber, ConsumerWorkService workService) {
-        this(connection, channelNumber, workService, new NoOpStatistics());
+        this(connection, channelNumber, workService, new NoOpMetricsCollector());
     }
 
     /**
@@ -57,10 +57,10 @@ public class RecoveryAwareChannelN extends ChannelN {
      * @param connection    The connection associated with this channel
      * @param channelNumber The channel number to be associated with this channel
      * @param workService   service for managing this channel's consumer callbacks
-     * @param statistics service for managing statistics
+     * @param metricsCollector service for managing metrics
      */
-    public RecoveryAwareChannelN(AMQConnection connection, int channelNumber, ConsumerWorkService workService, StatisticsCollector statistics) {
-        super(connection, channelNumber, workService, statistics);
+    public RecoveryAwareChannelN(AMQConnection connection, int channelNumber, ConsumerWorkService workService, MetricsCollector metricsCollector) {
+        super(connection, channelNumber, workService, metricsCollector);
     }
 
     @Override

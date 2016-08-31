@@ -29,17 +29,17 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Dropwizard Metrics implementation of {@link StatisticsCollector}.
- * Note transactions are not supported (see {@link StatisticsCollector}.
+ * Dropwizard Metrics implementation of {@link MetricsCollector}.
+ * Note transactions are not supported (see {@link MetricsCollector}.
  * Metrics provides out-of-the-box support for report backends like JMX,
  * Graphite, Ganglia, or plain HTTP. See Metrics documentation for
  * more details.
  *
- * @see com.rabbitmq.client.StatisticsCollector
+ * @see MetricsCollector
  */
-public class MetricsStatistics implements StatisticsCollector {
+public class StandardMetricsCollector implements MetricsCollector {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MetricsStatistics.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StandardMetricsCollector.class);
 
     private final ConcurrentMap<String, ConnectionState> connectionState = new ConcurrentHashMap<String, ConnectionState>();
 
@@ -53,7 +53,7 @@ public class MetricsStatistics implements StatisticsCollector {
     private final Meter rejectedMessages;
 
 
-    public MetricsStatistics(MetricRegistry registry, String metricsPrefix) {
+    public StandardMetricsCollector(MetricRegistry registry, String metricsPrefix) {
         this.registry = registry;
         this.connections = registry.counter(metricsPrefix+".connections");
         this.channels = registry.counter(metricsPrefix+".channels");
@@ -63,11 +63,11 @@ public class MetricsStatistics implements StatisticsCollector {
         this.rejectedMessages = registry.meter(metricsPrefix+".rejected");
     }
 
-    public MetricsStatistics() {
+    public StandardMetricsCollector() {
         this(new MetricRegistry());
     }
     
-    public MetricsStatistics(MetricRegistry metricRegistry) {
+    public StandardMetricsCollector(MetricRegistry metricRegistry) {
         this(metricRegistry, "rabbitmq");
     }
 
@@ -86,7 +86,7 @@ public class MetricsStatistics implements StatisticsCollector {
                 }
             });
         } catch(Exception e) {
-            LOGGER.info("Error while computing statistics in newConnection: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in newConnection: " + e.getMessage());
         }
     }
 
@@ -98,7 +98,7 @@ public class MetricsStatistics implements StatisticsCollector {
                 connections.dec();
             }
         } catch(Exception e) {
-            LOGGER.info("Error while computing statistics in closeConnection: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in closeConnection: " + e.getMessage());
         }
     }
 
@@ -114,7 +114,7 @@ public class MetricsStatistics implements StatisticsCollector {
             });
             connectionState(channel.getConnection()).channelState.put(channel.getChannelNumber(), new ChannelState(channel));
         } catch(Exception e) {
-            LOGGER.info("Error while computing statistics in newChannel: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in newChannel: " + e.getMessage());
         }
     }
 
@@ -126,7 +126,7 @@ public class MetricsStatistics implements StatisticsCollector {
                 channels.dec();
             }
         } catch(Exception e) {
-            LOGGER.info("Error while computing statistics in closeChannel: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in closeChannel: " + e.getMessage());
         }
     }
 
@@ -135,7 +135,7 @@ public class MetricsStatistics implements StatisticsCollector {
         try {
             publishedMessages.mark();
         } catch(Exception e) {
-            LOGGER.info("Error while computing statistics in basicPublish: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in basicPublish: " + e.getMessage());
         }
     }
 
@@ -152,7 +152,7 @@ public class MetricsStatistics implements StatisticsCollector {
                 }
             }
         } catch(Exception e) {
-            LOGGER.info("Error while computing statistics in basicConsume: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in basicConsume: " + e.getMessage());
         }
     }
 
@@ -167,7 +167,7 @@ public class MetricsStatistics implements StatisticsCollector {
                 channelState.lock.unlock();
             }
         } catch(Exception e) {
-            LOGGER.info("Error while computing statistics in basicCancel: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in basicCancel: " + e.getMessage());
         }
     }
 
@@ -185,7 +185,7 @@ public class MetricsStatistics implements StatisticsCollector {
                 }
             }
         } catch(Exception e) {
-            LOGGER.info("Error while computing statistics in consumedMessage: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in consumedMessage: " + e.getMessage());
         }
     }
 
@@ -203,7 +203,7 @@ public class MetricsStatistics implements StatisticsCollector {
                 channelState.lock.unlock();
             }
         } catch(Exception e) {
-            LOGGER.info("Error while computing statistics in consumedMessage: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in consumedMessage: " + e.getMessage());
         }
     }
 
@@ -212,7 +212,7 @@ public class MetricsStatistics implements StatisticsCollector {
         try {
             updateChannelStateAfterAckReject(channel, deliveryTag, multiple, acknowledgedMessages);
         } catch(Exception e) {
-            LOGGER.info("Error while computing statistics in basicAck: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in basicAck: " + e.getMessage());
         }
     }
 
@@ -221,7 +221,7 @@ public class MetricsStatistics implements StatisticsCollector {
         try {
             updateChannelStateAfterAckReject(channel, deliveryTag, true, rejectedMessages);
         } catch(Exception e) {
-            LOGGER.info("Error while computing statistics in basicNack: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in basicNack: " + e.getMessage());
         }
     }
 
@@ -230,7 +230,7 @@ public class MetricsStatistics implements StatisticsCollector {
         try {
             updateChannelStateAfterAckReject(channel, deliveryTag, false, rejectedMessages);
         } catch(Exception e) {
-            LOGGER.info("Error while computing statistics in basicReject: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in basicReject: " + e.getMessage());
         }
     }
 
@@ -299,7 +299,7 @@ public class MetricsStatistics implements StatisticsCollector {
                 }
             }
         } catch(Exception e) {
-            LOGGER.info("Error during periodic clean of statistics: "+e.getMessage());
+            LOGGER.info("Error during periodic clean of metricsCollector: "+e.getMessage());
         }
     }
     

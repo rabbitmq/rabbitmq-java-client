@@ -126,7 +126,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final String username;
     private final String password;
     private final Collection<BlockedListener> blockedListeners = new CopyOnWriteArrayList<BlockedListener>();
-    protected final StatisticsCollector statistics;
+    protected final MetricsCollector metricsCollector;
 
     /* State modified after start - all volatile */
 
@@ -187,13 +187,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     public AMQConnection(ConnectionParams params, FrameHandler frameHandler) {
-        this(params, frameHandler, new NoOpStatistics());
+        this(params, frameHandler, new NoOpMetricsCollector());
     }
 
     /** Construct a new connection
      * @param params parameters for it
      */
-    public AMQConnection(ConnectionParams params, FrameHandler frameHandler, StatisticsCollector statistics)
+    public AMQConnection(ConnectionParams params, FrameHandler frameHandler, MetricsCollector metricsCollector)
     {
         checkPreconditions();
         this.username = params.getUsername();
@@ -220,7 +220,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
 
-        this.statistics = statistics;
+        this.metricsCollector = metricsCollector;
     }
 
     private void initializeConsumerWorkService() {
@@ -386,7 +386,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     protected ChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
-        ChannelManager result = new ChannelManager(this._workService, channelMax, threadFactory, this.statistics);
+        ChannelManager result = new ChannelManager(this._workService, channelMax, threadFactory, this.metricsCollector);
         result.setShutdownExecutor(this.shutdownExecutor);
         return result;
     }
@@ -490,7 +490,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ChannelManager cm = _channelManager;
         if (cm == null) return null;
         Channel channel = cm.createChannel(this, channelNumber);
-        statistics.newChannel(channel);
+        metricsCollector.newChannel(channel);
         return channel;
     }
 
@@ -500,7 +500,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         ChannelManager cm = _channelManager;
         if (cm == null) return null;
         Channel channel = cm.createChannel(this);
-        statistics.newChannel(channel);
+        metricsCollector.newChannel(channel);
         return channel;
     }
 

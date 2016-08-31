@@ -261,7 +261,7 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
     /**
      * Unique ID for this connection.
      * This ID should be unique, otherwise some services
-     * like the statistics collector won't work properly.
+     * like the metrics collector won't work properly.
      * This ID doesn't have to be provided by the client,
      * services that require it will assign it automatically
      * if it's not set.
@@ -272,7 +272,7 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
     /**
      * Set the unique ID for this connection.
      * This ID should be unique, otherwise some services
-     * like the statistics collector won't work properly.
+     * like the metrics collector won't work properly.
      * This ID doesn't have to be provided by the client,
      * services that require it will assign it automatically
      * if it's not set.

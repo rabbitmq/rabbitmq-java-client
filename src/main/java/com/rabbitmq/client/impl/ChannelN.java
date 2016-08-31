@@ -89,7 +89,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Whether any nacks have been received since the last waitForConfirms(). */
     private volatile boolean onlyAcksReceived = true;
 
-    private final StatisticsCollector statistics;
+    private final MetricsCollector metricsCollector;
 
     /**
      * Construct a new channel on the given connection with the given
@@ -102,7 +102,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public ChannelN(AMQConnection connection, int channelNumber,
                     ConsumerWorkService workService) {
-        this(connection, channelNumber, workService, new NoOpStatistics());
+        this(connection, channelNumber, workService, new NoOpMetricsCollector());
     }
 
     /**
@@ -113,13 +113,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @param connection The connection associated with this channel
      * @param channelNumber The channel number to be associated with this channel
      * @param workService service for managing this channel's consumer callbacks
-     * @param statistics service for managing statistics
+     * @param metricsCollector service for managing metrics
      */
     public ChannelN(AMQConnection connection, int channelNumber,
-        ConsumerWorkService workService, StatisticsCollector statistics) {
+        ConsumerWorkService workService, MetricsCollector metricsCollector) {
         super(connection, channelNumber);
         this.dispatcher = new ConsumerDispatcher(connection, this, workService);
-        this.statistics = statistics;
+        this.metricsCollector = metricsCollector;
     }
 
     /**
@@ -428,10 +428,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                          m.getExchange(),
                                          m.getRoutingKey());
         try {
-            // call statistics before the dispatching (which is async anyway)
+            // call metricsCollector before the dispatching (which is async anyway)
             // this way, the message is inside the stats before it is handled
             // in case a manual ack in the callback, the stats will be able to record the ack
-            statistics.consumedMessage(this, m.getDeliveryTag(), m.getConsumerTag());
+            metricsCollector.consumedMessage(this, m.getDeliveryTag(), m.getConsumerTag());
             this.dispatcher.handleDelivery(callback,
                                            m.getConsumerTag(),
                                            envelope,
@@ -672,7 +672,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                         .immediate(immediate)
                                         .build(),
                                        useProps, body));
-        statistics.basicPublish(this);
+        metricsCollector.basicPublish(this);
     }
 
 
@@ -1094,7 +1094,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             byte[] body = replyCommand.getContentBody();
             int messageCount = getOk.getMessageCount();
 
-            statistics.consumedMessage(this, getOk.getDeliveryTag(), autoAck);
+            metricsCollector.consumedMessage(this, getOk.getDeliveryTag(), autoAck);
 
             return new GetResponse(envelope, props, body, messageCount);
         } else if (method instanceof Basic.GetEmpty) {
@@ -1109,7 +1109,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         transmit(new Basic.Ack(deliveryTag, multiple));
-        statistics.basicAck(this, deliveryTag, multiple);
+        metricsCollector.basicAck(this, deliveryTag, multiple);
     }
 
     /** Public API - {@inheritDoc} */
@@ -1117,7 +1117,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         transmit(new Basic.Nack(deliveryTag, multiple, requeue));
-        statistics.basicNack(this, deliveryTag);
+        metricsCollector.basicNack(this, deliveryTag);
     }
 
     /** Public API - {@inheritDoc} */
@@ -1125,7 +1125,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         transmit(new Basic.Reject(deliveryTag, requeue));
-        statistics.basicReject(this, deliveryTag);
+        metricsCollector.basicReject(this, deliveryTag);
     }
 
     /** Public API - {@inheritDoc} */
@@ -1170,7 +1170,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 _consumers.put(actualConsumerTag, callback);
 
                 // need to register consumer in stats before it actually starts consuming
-                statistics.basicConsume(ChannelN.this, actualConsumerTag, autoAck);
+                metricsCollector.basicConsume(ChannelN.this, actualConsumerTag, autoAck);
 
                 dispatcher.handleConsumeOk(callback, actualConsumerTag);
                 return actualConsumerTag;
@@ -1217,7 +1217,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         } catch(ShutdownSignalException ex) {
             throw wrap(ex);
         }
-        statistics.basicCancel(this, consumerTag);
+        metricsCollector.basicCancel(this, consumerTag);
     }
 
 
