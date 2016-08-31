@@ -257,4 +257,26 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
      * @see com.rabbitmq.client.ExceptionHandler
      */
     ExceptionHandler getExceptionHandler();
+
+    /**
+     * Unique ID for this connection.
+     * This ID should be unique, otherwise some services
+     * like the metrics collector won't work properly.
+     * This ID doesn't have to be provided by the client,
+     * services that require it will assign it automatically
+     * if it's not set.
+     * @return
+     */
+    String getId();
+
+    /**
+     * Set the unique ID for this connection.
+     * This ID should be unique, otherwise some services
+     * like the metrics collector won't work properly.
+     * This ID doesn't have to be provided by the client,
+     * services that require it will assign it automatically
+     * if it's not set.
+     * @return
+     */
+    void setId(String id);
 }

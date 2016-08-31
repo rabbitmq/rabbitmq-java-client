@@ -15,9 +15,7 @@
 
 package com.rabbitmq.client.impl.recovery;
 
-import com.rabbitmq.client.Address;
-import com.rabbitmq.client.AddressResolver;
-import com.rabbitmq.client.ListAddressResolver;
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
@@ -32,15 +30,21 @@ public class RecoveryAwareAMQConnectionFactory {
     private final ConnectionParams params;
     private final FrameHandlerFactory factory;
     private final AddressResolver addressResolver;
+    private final MetricsCollector metricsCollector;
 
     public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, List<Address> addrs) {
-        this(params, factory, new ListAddressResolver(addrs));
+        this(params, factory, new ListAddressResolver(addrs), new NoOpMetricsCollector());
     }
 
     public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, AddressResolver addressResolver) {
+        this(params, factory, addressResolver, new NoOpMetricsCollector());
+    }
+
+    public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, AddressResolver addressResolver, MetricsCollector metricsCollector) {
         this.params = params;
         this.factory = factory;
         this.addressResolver = addressResolver;
+        this.metricsCollector = metricsCollector;
     }
 
     /**
@@ -54,8 +58,9 @@ public class RecoveryAwareAMQConnectionFactory {
         for (Address addr : shuffled) {
             try {
                 FrameHandler frameHandler = factory.create(addr);
-                RecoveryAwareAMQConnection conn = new RecoveryAwareAMQConnection(params, frameHandler);
+                RecoveryAwareAMQConnection conn = new RecoveryAwareAMQConnection(params, frameHandler, metricsCollector);
                 conn.start();
+                metricsCollector.newConnection(conn);
                 return conn;
             } catch (IOException e) {
                 lastException = e;

@@ -629,4 +629,5 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     private void maybeDeleteRecordedAutoDeleteExchange(String exchange) {
         this.connection.maybeDeleteRecordedAutoDeleteExchange(exchange);
     }
+
 }

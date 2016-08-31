@@ -15,6 +15,7 @@
 
 package com.rabbitmq.client.impl.recovery;
 
+import com.rabbitmq.client.MetricsCollector;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandler;
@@ -26,12 +27,17 @@ import java.util.concurrent.ThreadFactory;
  * @since 3.3.0
  */
 public class RecoveryAwareAMQConnection extends AMQConnection {
+
+    public RecoveryAwareAMQConnection(ConnectionParams params, FrameHandler handler, MetricsCollector metricsCollector) {
+        super(params, handler, metricsCollector);
+    }
+
     public RecoveryAwareAMQConnection(ConnectionParams params, FrameHandler handler) {
         super(params, handler);
     }
 
     @Override
     protected RecoveryAwareChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
-        return new RecoveryAwareChannelManager(super._workService, channelMax, threadFactory);
+        return new RecoveryAwareChannelManager(super._workService, channelMax, threadFactory, this.metricsCollector);
     }
 }

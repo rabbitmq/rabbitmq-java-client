@@ -76,7 +76,8 @@ import org.junit.runners.Suite;
 	ConsumerCount.class,
 	BasicGet.class,
 	Nack.class,
-	ExceptionMessages.class
+	ExceptionMessages.class,
+	Metrics.class
 })
 public class FunctionalTests {
 

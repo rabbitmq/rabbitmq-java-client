@@ -26,7 +26,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import com.rabbitmq.client.NoOpMetricsCollector;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.MetricsCollector;
 import com.rabbitmq.utility.IntAllocator;
 
 /**
@@ -48,6 +50,8 @@ public class ChannelManager {
     private ExecutorService shutdownExecutor;
     private final ThreadFactory threadFactory;
 
+    protected final MetricsCollector metricsCollector;
+
     public int getChannelMax(){
       return _channelMax;
     }
@@ -57,6 +61,11 @@ public class ChannelManager {
     }
 
     public ChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory) {
+        this(workService, channelMax, threadFactory, new NoOpMetricsCollector());
+    }
+
+
+    public ChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory, MetricsCollector metricsCollector) {
         if (channelMax == 0) {
             // The framing encoding only allows for unsigned 16-bit integers
             // for the channel number
@@ -67,6 +76,7 @@ public class ChannelManager {
 
         this.workService = workService;
         this.threadFactory = threadFactory;
+        this.metricsCollector = metricsCollector;
     }
 
     /**
@@ -172,7 +182,7 @@ public class ChannelManager {
     }
 
     protected ChannelN instantiateChannel(AMQConnection connection, int channelNumber, ConsumerWorkService workService) {
-        return new ChannelN(connection, channelNumber, workService);
+        return new ChannelN(connection, channelNumber, workService, this.metricsCollector);
     }
 
     /**
