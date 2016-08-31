@@ -924,11 +924,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         blockedListeners.clear();
     }
 
+    /** Public API - {@inheritDoc} */
     @Override
     public String getId() {
         return id;
     }
 
+    /** Public API - {@inheritDoc} */
     @Override
     public void setId(String id) {
         this.id = id;

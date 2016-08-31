@@ -826,11 +826,13 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         return this.delegate.toString();
     }
 
+    /** Public API - {@inheritDoc} */
     @Override
     public String getId() {
         return this.delegate.getId();
     }
 
+    /** Public API - {@inheritDoc} */
     @Override
     public void setId(String id) {
         this.delegate.setId(id);

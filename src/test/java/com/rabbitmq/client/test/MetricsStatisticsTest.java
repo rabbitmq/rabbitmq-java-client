@@ -1,23 +1,38 @@
+// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+//
+// This software, the RabbitMQ Java client library, is triple-licensed under the
+// Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
+// ("GPL") and the Apache License version 2 ("ASL"). For the MPL, please see
+// LICENSE-MPL-RabbitMQ. For the GPL, please see LICENSE-GPL2.  For the ASL,
+// please see LICENSE-APACHE2.
+//
+// This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND,
+// either express or implied. See the LICENSE file for specific language governing
+// rights and limitations of this software.
+//
+// If you have any questions regarding licensing, please contact us at
+// info@rabbitmq.com.
+
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.impl.ConcurrentStatistics;
-import org.junit.Assert;
+import com.rabbitmq.client.impl.MetricsStatistics;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  *
  */
-public class ConcurrentStatisticsTest {
+public class MetricsStatisticsTest {
 
     @Test
     public void basicGetAndAck() {
-        ConcurrentStatistics statistics = new ConcurrentStatistics();
+        MetricsStatistics statistics = new MetricsStatistics();
         Connection connection = mock(Connection.class);
         when(connection.getId()).thenReturn("connection-1");
         Channel channel = mock(Channel.class);
@@ -35,20 +50,20 @@ public class ConcurrentStatisticsTest {
         statistics.consumedMessage(channel, 6, false);
 
         statistics.basicAck(channel, 6, false);
-        assertEquals(1, statistics.getAcknowledgedMessageCount());
+        assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L));
 
         statistics.basicAck(channel, 3, true);
-        assertEquals(1+2, statistics.getAcknowledgedMessageCount());
+        assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L+2L));
 
         statistics.basicAck(channel, 6, true);
-        assertEquals(1+2+1, statistics.getAcknowledgedMessageCount());
+        assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L+2L+1L));
 
         statistics.basicAck(channel, 10, true);
-        assertEquals(1+2+1, statistics.getAcknowledgedMessageCount());
+        assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L+2L+1L));
     }
 
     @Test public void basicConsumeAndAck() {
-        ConcurrentStatistics statistics = new ConcurrentStatistics();
+        MetricsStatistics statistics = new MetricsStatistics();
         Connection connection = mock(Connection.class);
         when(connection.getId()).thenReturn("connection-1");
         Channel channel = mock(Channel.class);
@@ -64,8 +79,8 @@ public class ConcurrentStatisticsTest {
         statistics.basicConsume(channel, consumerTagWithManualAck, false);
 
         statistics.consumedMessage(channel, 1, consumerTagWithAutoAck);
-        assertEquals(1, statistics.getConsumedMessageCount());
-        assertEquals(0, statistics.getAcknowledgedMessageCount());
+        assertThat(statistics.getConsumedMessages().getCount(), is(1L));
+        assertThat(statistics.getAcknowledgedMessages().getCount(), is(0L));
 
         statistics.consumedMessage(channel, 2, consumerTagWithManualAck);
         statistics.consumedMessage(channel, 3, consumerTagWithManualAck);
@@ -74,21 +89,21 @@ public class ConcurrentStatisticsTest {
         statistics.consumedMessage(channel, 6, consumerTagWithManualAck);
 
         statistics.basicAck(channel, 6, false);
-        assertEquals(1, statistics.getAcknowledgedMessageCount());
+        assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L));
 
         statistics.basicAck(channel, 3, true);
-        assertEquals(1+2, statistics.getAcknowledgedMessageCount());
+        assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L+2L));
 
         statistics.basicAck(channel, 6, true);
-        assertEquals(1+2+1, statistics.getAcknowledgedMessageCount());
+        assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L+2L+1L));
 
         statistics.basicAck(channel, 10, true);
-        assertEquals(1+2+1, statistics.getAcknowledgedMessageCount());
+        assertThat(statistics.getAcknowledgedMessages().getCount(), is(1L+2L+1L));
 
     }
 
     @Test public void cleanStaleState() {
-        ConcurrentStatistics statistics = new ConcurrentStatistics();
+        MetricsStatistics statistics = new MetricsStatistics();
         Connection openConnection = mock(Connection.class);
         when(openConnection.getId()).thenReturn("connection-1");
         when(openConnection.isOpen()).thenReturn(true);
@@ -118,13 +133,13 @@ public class ConcurrentStatisticsTest {
         statistics.newChannel(closedChannel);
         statistics.newChannel(openChannelInClosedConnection);
 
-        assertEquals(2, statistics.getConnectionCount());
-        assertEquals(2+1, statistics.getChannelCount());
+        assertThat(statistics.getConnections().getCount(), is(2L));
+        assertThat(statistics.getChannels().getCount(), is(2L+1L));
 
         statistics.cleanStaleState();
 
-        assertEquals(1, statistics.getConnectionCount());
-        assertEquals(1, statistics.getChannelCount());
+        assertThat(statistics.getConnections().getCount(), is(1L));
+        assertThat(statistics.getChannels().getCount(), is(1L));
     }
 
 }

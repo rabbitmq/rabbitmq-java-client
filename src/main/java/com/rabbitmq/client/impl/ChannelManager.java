@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.client.NoOpStatistics;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.Statistics;
 import com.rabbitmq.client.StatisticsCollector;
 import com.rabbitmq.utility.IntAllocator;
 

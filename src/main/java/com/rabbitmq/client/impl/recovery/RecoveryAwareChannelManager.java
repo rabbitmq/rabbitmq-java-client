@@ -16,7 +16,6 @@
 package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.NoOpStatistics;
-import com.rabbitmq.client.Statistics;
 import com.rabbitmq.client.StatisticsCollector;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ChannelManager;
