@@ -35,8 +35,8 @@ import com.rabbitmq.client.ConnectionFactory;
 
 
 public class PerfTest {
-	
-    public static void main(String[] args) {
+
+   public static void main(String[] args) {
         Options options = getOptions();
         CommandLineParser parser = new GnuParser();
         try {
@@ -82,7 +82,7 @@ public class PerfTest {
             		1000L * samplingInterval,
             		producerCount > 0,
             		consumerCount > 0,
-            		(flags.contains("mandatory") || 
+            		(flags.contains("mandatory") ||
             		flags.contains("immediate")),
             		confirm != -1);
 
@@ -118,7 +118,7 @@ public class PerfTest {
             p.setProducerRateLimit(producerRateLimit);
             p.setTimeLimit(        timeLimit);
 
-            MulticastSet set = new MulticastSet(stats, factory, p);
+            MulticastSet set = new MulticastSet(stats, factory, p, testID);
             set.run(true);
 
             stats.printFinal();
@@ -141,7 +141,7 @@ public class PerfTest {
     private static Options getOptions() {
         Options options = new Options();
         options.addOption(new Option("?", "help",             false,"show usage"));
-        options.addOption(new Option("d", "id",               true, "Test ID"));
+        options.addOption(new Option("d", "id",               true, "test ID"));
         options.addOption(new Option("h", "uri",              true, "connection URI"));
         options.addOption(new Option("t", "type",             true, "exchange type"));
         options.addOption(new Option("e", "exchange",         true, "exchange name"));
@@ -198,7 +198,7 @@ public class PerfTest {
         private final boolean recvStatsEnabled;
         private final boolean returnStatsEnabled;
         private final boolean confirmStatsEnabled;
-        
+
         private final String testID;
 
         public PrintlnStats(String testID, long interval,
@@ -215,7 +215,7 @@ public class PerfTest {
         @Override
         protected void report(long now) {
             String output = "id: " + testID + ", ";
-            
+
             output += "time: " + String.format("%.3f", (now - startTime)/1000.0) + "s";
             output +=
                     getRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval) +

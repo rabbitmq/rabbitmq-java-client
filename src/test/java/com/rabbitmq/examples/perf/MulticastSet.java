@@ -15,19 +15,19 @@
 
 package com.rabbitmq.examples.perf;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
+
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 
 public class MulticastSet {
     private final String id;
     private final Stats stats;
     private final ConnectionFactory factory;
     private final MulticastParams params;
+    private final String testID;
 
     public MulticastSet(Stats stats, ConnectionFactory factory,
                         MulticastParams params) {
@@ -39,6 +39,20 @@ public class MulticastSet {
         this.stats = stats;
         this.factory = factory;
         this.params = params;
+        this.testID = "perftest";
+    }
+
+    public MulticastSet(Stats stats, ConnectionFactory factory,
+    		MulticastParams params, String testID) {
+    	if (params.getRoutingKey() == null) {
+    		this.id = UUID.randomUUID().toString();
+    	} else {
+    		this.id = params.getRoutingKey();
+    	}
+    	this.stats = stats;
+    	this.factory = factory;
+    	this.params = params;
+    	this.testID = testID;
     }
 
     public void run() throws IOException, InterruptedException, TimeoutException {
@@ -50,7 +64,7 @@ public class MulticastSet {
         Connection[] consumerConnections = new Connection[consumerThreads.length];
         for (int i = 0; i < consumerConnections.length; i++) {
             if (announceStartup) {
-                System.out.println("starting consumer #" + i);
+                System.out.println("id: " + testID + ", starting consumer #" + i);
             }
             Connection conn = factory.newConnection();
             consumerConnections[i] = conn;
@@ -68,7 +82,7 @@ public class MulticastSet {
         Connection[] producerConnections = new Connection[producerThreads.length];
         for (int i = 0; i < producerThreads.length; i++) {
             if (announceStartup) {
-                System.out.println("starting producer #" + i);
+                System.out.println("id: " + testID + ", starting producer #" + i);
             }
             Connection conn = factory.newConnection();
             producerConnections[i] = conn;
