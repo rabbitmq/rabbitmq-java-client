@@ -15,26 +15,27 @@
 
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.MetricsCollector;
+import com.rabbitmq.client.NoOpMetricsCollector;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.utility.IntAllocator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
-import com.rabbitmq.client.NoOpMetricsCollector;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.MetricsCollector;
-import com.rabbitmq.utility.IntAllocator;
+import java.util.concurrent.*;
 
 /**
  * Manages a set of channels, indexed by channel number (<code><b>1.._channelMax</b></code>).
  */
 public class ChannelManager {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
+
     /** Monitor for <code>_channelMap</code> and <code>channelNumberAllocator</code> */
     private final Object monitor = new Object();
         /** Mapping from <code><b>1.._channelMax</b></code> to {@link ChannelN} instance */
@@ -97,16 +98,33 @@ public class ChannelManager {
      * Handle shutdown. All the managed {@link com.rabbitmq.client.Channel Channel}s are shutdown.
      * @param signal reason for shutdown
      */
-    public void handleSignal(ShutdownSignalException signal) {
+    public void handleSignal(final ShutdownSignalException signal) {
         Set<ChannelN> channels;
         synchronized(this.monitor) {
             channels = new HashSet<ChannelN>(_channelMap.values());
         }
-        for (ChannelN channel : channels) {
-            releaseChannelNumber(channel);
-            channel.processShutdownSignal(signal, true, true);
-            shutdownSet.add(channel.getShutdownLatch());
-            channel.notifyListeners();
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            for (final ChannelN channel : channels) {
+                releaseChannelNumber(channel);
+                Future<?> channelShutdownTask = executorService.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        channel.processShutdownSignal(signal, true, true);
+                        shutdownSet.add(channel.getShutdownLatch());
+                    }
+                });
+                try {
+                    // FIXME make the timeout configurable
+                    channelShutdownTask.get(1, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    LOGGER.warn("Couldn't properly close channel {}", channel.getChannelNumber());
+                } finally {
+                    channel.notifyListeners();
+                }
+            }
+        } finally {
+            executorService.shutdownNow();
         }
         scheduleShutdownProcessing();
     }

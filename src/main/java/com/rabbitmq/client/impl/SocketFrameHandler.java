@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.concurrent.*;
 
 import com.rabbitmq.client.AMQP;
 
@@ -152,7 +153,21 @@ public class SocketFrameHandler implements FrameHandler {
     @SuppressWarnings("unused")
     public void close() {
         try { _socket.setSoLinger(true, SOCKET_CLOSING_TIMEOUT); } catch (Exception _e) {}
-        try { flush();                                           } catch (Exception _e) {}
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            Future<Void> flushTask = executorService.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    flush();
+                    return null;
+                }
+            });
+            flushTask.get(SOCKET_CLOSING_TIMEOUT, TimeUnit.SECONDS);
+        } catch (Exception _e) {
+
+        } finally {
+            executorService.shutdownNow();
+        }
         try { _socket.close();                                   } catch (Exception _e) {}
     }
 }
