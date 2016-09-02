@@ -33,9 +33,9 @@ case ~/^create-test-cluster$/:
 
   command = [
     properties['make.bin'],
-    '-C', properties['rabbitmq.dir'],
     '--no-print-directory',
     'cluster-other-node',
+    "RABBITMQCTL=${properties['rabbitmqctl.bin']}",
     "DEPS_DIR=${properties['deps.dir']}",
     "OTHER_NODE=${nodename}",
     "MAIN_NODE=${target}"
