@@ -286,7 +286,7 @@ public class Metrics extends BrokerTestCase {
         executorService.invokeAll(tasks);
 
         assertThat(metrics.getPublishedMessages().getCount(), is(nbOfMessages));
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(nbOfMessages));
+        waitAtMost(3, TimeUnit.SECONDS).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(nbOfMessages));
         assertThat(metrics.getAcknowledgedMessages().getCount(), is(0L));
 
         // to remove the listeners
@@ -313,8 +313,8 @@ public class Metrics extends BrokerTestCase {
         executorService.invokeAll(tasks);
 
         assertThat(metrics.getPublishedMessages().getCount(), is(2*nbOfMessages));
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(2*nbOfMessages));
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getAcknowledgedMessages()).getCount(), equalTo(nbOfMessages));
+        waitAtMost(3, TimeUnit.SECONDS).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(2*nbOfMessages));
+        waitAtMost(3, TimeUnit.SECONDS).untilCall(to(metrics.getAcknowledgedMessages()).getCount(), equalTo(nbOfMessages));
 
         // to remove the listeners
         for(int i = 0; i < nbChannels; i++) {
@@ -340,9 +340,9 @@ public class Metrics extends BrokerTestCase {
         executorService.invokeAll(tasks);
 
         assertThat(metrics.getPublishedMessages().getCount(), is(3*nbOfMessages));
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(3*nbOfMessages));
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getAcknowledgedMessages()).getCount(), equalTo(nbOfMessages));
-        waitAtMost(1, TimeUnit.SECONDS).untilCall(to(metrics.getRejectedMessages()).getCount(), equalTo(nbOfMessages));
+        waitAtMost(3, TimeUnit.SECONDS).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(3*nbOfMessages));
+        waitAtMost(3, TimeUnit.SECONDS).untilCall(to(metrics.getAcknowledgedMessages()).getCount(), equalTo(nbOfMessages));
+        waitAtMost(3, TimeUnit.SECONDS).untilCall(to(metrics.getRejectedMessages()).getCount(), equalTo(nbOfMessages));
     }
 
     @Test public void errorInChannelStandardConnection() throws IOException, TimeoutException {
