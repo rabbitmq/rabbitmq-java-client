@@ -15,12 +15,12 @@
 
 package com.rabbitmq.examples.perf;
 
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
-
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 
 public class MulticastSet {
     private final String id;
@@ -30,7 +30,7 @@ public class MulticastSet {
     private final String testID;
 
     public MulticastSet(Stats stats, ConnectionFactory factory,
-                        MulticastParams params) {
+        MulticastParams params) {
         if (params.getRoutingKey() == null) {
             this.id = UUID.randomUUID().toString();
         } else {
@@ -43,16 +43,16 @@ public class MulticastSet {
     }
 
     public MulticastSet(Stats stats, ConnectionFactory factory,
-    		MulticastParams params, String testID) {
-    	if (params.getRoutingKey() == null) {
-    		this.id = UUID.randomUUID().toString();
-    	} else {
-    		this.id = params.getRoutingKey();
-    	}
-    	this.stats = stats;
-    	this.factory = factory;
-    	this.params = params;
-    	this.testID = testID;
+        MulticastParams params, String testID) {
+        if (params.getRoutingKey() == null) {
+            this.id = UUID.randomUUID().toString();
+        } else {
+            this.id = params.getRoutingKey();
+        }
+        this.stats = stats;
+        this.factory = factory;
+        this.params = params;
+        this.testID = testID;
     }
 
     public void run() throws IOException, InterruptedException, TimeoutException {
