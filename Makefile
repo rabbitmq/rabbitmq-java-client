@@ -37,3 +37,12 @@ clean:
 
 distclean: clean
 	$(MAKE) -C $(DEPS_DIR)/rabbitmq_codegen clean
+
+.PHONY: cluster-other-node
+
+cluster-other-node:
+	$(exec_verbose) $(RABBITMQCTL) -n $(OTHER_NODE) stop_app
+	$(verbose) $(RABBITMQCTL) -n $(OTHER_NODE) reset
+	$(verbose) $(RABBITMQCTL) -n $(OTHER_NODE) join_cluster \
+	  $(if $(MAIN_NODE),$(MAIN_NODE),$(RABBITMQ_NODENAME)@$$(hostname -s))
+	$(verbose) $(RABBITMQCTL) -n $(OTHER_NODE) start_app
