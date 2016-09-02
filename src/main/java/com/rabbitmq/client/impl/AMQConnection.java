@@ -15,14 +15,6 @@
 
 package com.rabbitmq.client.impl;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.util.*;
-import java.util.concurrent.*;
-
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
@@ -30,6 +22,14 @@ import com.rabbitmq.client.impl.recovery.RecoveryCanBeginListener;
 import com.rabbitmq.utility.BlockingCell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.*;
+import java.util.concurrent.*;
 
 final class Copyright {
     final static String COPYRIGHT="Copyright (c) 2007-2016 Pivotal Software, Inc.";
@@ -566,7 +566,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                             // this can happen if channel has been closed,
                                             // but there was e.g. an in-flight delivery.
                                             // just ignoring the frame to avoid closing the whole connection
-                                            LOGGER.info("Channel {} is unknown, ignoring frame", frame.channel);
+                                            LOGGER.info("Received a frame on an unknown channel, ignoring it");
                                             continue;
                                         }
                                         channel.handleFrame(frame);
