@@ -45,6 +45,9 @@ final class Copyright {
 public class AMQConnection extends ShutdownNotifierComponent implements Connection, NetworkConnection {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AMQConnection.class);
+    // we want socket write and channel shutdown timeouts to kick in after
+    // the heartbeat one, so we use a value of 105% of the effective heartbeat timeout
+    public static final double CHANNEL_SHUTDOWN_TIMEOUT_MULTIPLIER = 1.05;
 
     private final ExecutorService consumerWorkServiceExecutor;
     private final ScheduledExecutorService heartbeatExecutor;
@@ -393,7 +396,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     protected ChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
         ChannelManager result = new ChannelManager(this._workService, channelMax, threadFactory, this.metricsCollector);
         result.setShutdownExecutor(this.shutdownExecutor);
-        result.setChannelShutdownTimeout((int) ((requestedHeartbeat * 1.05) * 1000));
+        result.setChannelShutdownTimeout((int) ((requestedHeartbeat * CHANNEL_SHUTDOWN_TIMEOUT_MULTIPLIER) * 1000));
         return result;
     }
 
