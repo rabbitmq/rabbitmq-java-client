@@ -52,7 +52,7 @@ public class ChannelManager {
     private ExecutorService shutdownExecutor;
     private final ThreadFactory threadFactory;
 
-    private int channelShutdownTimeout = (int) (ConnectionFactory.DEFAULT_HEARTBEAT + ConnectionFactory.DEFAULT_HEARTBEAT * (5.0 / 100.0)) * 1000;
+    private int channelShutdownTimeout = (int) ((ConnectionFactory.DEFAULT_HEARTBEAT * 1.05) * 1000);
 
     protected final MetricsCollector metricsCollector;
 
