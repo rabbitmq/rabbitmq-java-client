@@ -15,6 +15,7 @@
 
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MetricsCollector;
 import com.rabbitmq.client.NoOpMetricsCollector;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -50,6 +51,8 @@ public class ChannelManager {
     private final int _channelMax;
     private ExecutorService shutdownExecutor;
     private final ThreadFactory threadFactory;
+
+    private int channelShutdownTimeout = (int) (ConnectionFactory.DEFAULT_HEARTBEAT + ConnectionFactory.DEFAULT_HEARTBEAT * (5.0 / 100.0)) * 1000;
 
     protected final MetricsCollector metricsCollector;
 
@@ -103,28 +106,30 @@ public class ChannelManager {
         synchronized(this.monitor) {
             channels = new HashSet<ChannelN>(_channelMap.values());
         }
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        try {
-            for (final ChannelN channel : channels) {
-                releaseChannelNumber(channel);
-                Future<?> channelShutdownTask = executorService.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        channel.processShutdownSignal(signal, true, true);
-                        shutdownSet.add(channel.getShutdownLatch());
-                    }
-                });
+
+        for (final ChannelN channel : channels) {
+            releaseChannelNumber(channel);
+            // async shutdown if possible
+            // see https://github.com/rabbitmq/rabbitmq-java-client/issues/194
+            Runnable channelShutdownRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    channel.processShutdownSignal(signal, true, true);
+                }
+            };
+            if(this.shutdownExecutor == null) {
+                channelShutdownRunnable.run();
+            } else {
+                Future<?> channelShutdownTask = this.shutdownExecutor.submit(channelShutdownRunnable);
                 try {
-                    // FIXME make the timeout configurable
-                    channelShutdownTask.get(1, TimeUnit.SECONDS);
+                    channelShutdownTask.get(channelShutdownTimeout, TimeUnit.MILLISECONDS);
                 } catch (Exception e) {
-                    LOGGER.warn("Couldn't properly close channel {}", channel.getChannelNumber());
-                } finally {
-                    channel.notifyListeners();
+                    LOGGER.warn("Couldn't properly close channel {} on shutdown after waiting for {} ms", channel.getChannelNumber(), channelShutdownTimeout);
+                    channelShutdownTask.cancel(true);
                 }
             }
-        } finally {
-            executorService.shutdownNow();
+            shutdownSet.add(channel.getShutdownLatch());
+            channel.notifyListeners();
         }
         scheduleShutdownProcessing();
     }
@@ -242,5 +247,17 @@ public class ChannelManager {
 
     public void setShutdownExecutor(ExecutorService shutdownExecutor) {
         this.shutdownExecutor = shutdownExecutor;
+    }
+
+    /**
+     * Set the shutdown timeout for channels.
+     * This is the amount of time the manager waits for a channel to
+     * shutdown before giving up.
+     * Works only when the {@code shutdownExecutor} property is set.
+     * Default to {@link com.rabbitmq.client.ConnectionFactory#DEFAULT_HEARTBEAT} + 5 % seconds
+     * @param channelShutdownTimeout shutdown timeout in milliseconds
+     */
+    public void setChannelShutdownTimeout(int channelShutdownTimeout) {
+        this.channelShutdownTimeout = channelShutdownTimeout;
     }
 }

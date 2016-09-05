@@ -23,18 +23,25 @@ import javax.net.SocketFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
 
 public class FrameHandlerFactory {
     private final int connectionTimeout;
     private final SocketFactory factory;
     private final SocketConfigurator configurator;
+    private final ExecutorService shutdownExecutor;
     private final boolean ssl;
 
     public FrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl) {
+        this(connectionTimeout, factory, configurator, ssl, null);
+    }
+
+    public FrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl, ExecutorService shutdownExecutor) {
         this.connectionTimeout = connectionTimeout;
         this.factory = factory;
         this.configurator = configurator;
         this.ssl = ssl;
+        this.shutdownExecutor = shutdownExecutor;
     }
 
     public FrameHandler create(Address addr) throws IOException {
@@ -55,7 +62,7 @@ public class FrameHandlerFactory {
 
     public FrameHandler create(Socket sock) throws IOException
     {
-        return new SocketFrameHandler(sock);
+        return new SocketFrameHandler(sock, this.shutdownExecutor);
     }
 
     private static void quietTrySocketClose(Socket socket) {
