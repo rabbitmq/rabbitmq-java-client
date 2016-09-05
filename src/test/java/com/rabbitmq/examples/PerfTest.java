@@ -36,7 +36,7 @@ import com.rabbitmq.client.ConnectionFactory;
 
 public class PerfTest {
 
-   public static void main(String[] args) {
+    public static void main(String[] args) {
         Options options = getOptions();
         CommandLineParser parser = new GnuParser();
         try {
@@ -47,7 +47,7 @@ public class PerfTest {
                 System.exit(0);
             }
             String testID = new SimpleDateFormat("HHmmss-SSS").format(Calendar.
-            		getInstance().getTime());
+                getInstance().getTime());
             testID                   = strArg(cmd, 'd', "test-"+testID);
             String exchangeType      = strArg(cmd, 't', "direct");
             String exchangeName      = strArg(cmd, 'e', exchangeType);
@@ -79,12 +79,12 @@ public class PerfTest {
 
             //setup
             PrintlnStats stats = new PrintlnStats(testID,
-            		1000L * samplingInterval,
-            		producerCount > 0,
-            		consumerCount > 0,
-            		(flags.contains("mandatory") ||
-            		flags.contains("immediate")),
-            		confirm != -1);
+                1000L * samplingInterval,
+                producerCount > 0,
+                consumerCount > 0,
+                (flags.contains("mandatory") ||
+                    flags.contains("immediate")),
+                confirm != -1);
 
             ConnectionFactory factory = new ConnectionFactory();
             factory.setShutdownTimeout(0); // So we still shut down even with slow consumers
@@ -202,8 +202,8 @@ public class PerfTest {
         private final String testID;
 
         public PrintlnStats(String testID, long interval,
-                            boolean sendStatsEnabled, boolean recvStatsEnabled,
-                            boolean returnStatsEnabled, boolean confirmStatsEnabled) {
+            boolean sendStatsEnabled, boolean recvStatsEnabled,
+            boolean returnStatsEnabled, boolean confirmStatsEnabled) {
             super(interval);
             this.sendStatsEnabled = sendStatsEnabled;
             this.recvStatsEnabled = recvStatsEnabled;
@@ -218,24 +218,24 @@ public class PerfTest {
 
             output += "time: " + String.format("%.3f", (now - startTime)/1000.0) + "s";
             output +=
-                    getRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval) +
+                getRate("sent",      sendCountInterval,    sendStatsEnabled,                        elapsedInterval) +
                     getRate("returned",  returnCountInterval,  sendStatsEnabled && returnStatsEnabled,  elapsedInterval) +
                     getRate("confirmed", confirmCountInterval, sendStatsEnabled && confirmStatsEnabled, elapsedInterval) +
                     getRate("nacked",    nackCountInterval,    sendStatsEnabled && confirmStatsEnabled, elapsedInterval) +
                     getRate("received",  recvCountInterval,    recvStatsEnabled,                        elapsedInterval);
 
             output += (latencyCountInterval > 0 ?
-                              ", min/avg/max latency: " +
-                              minLatency/1000L + "/" +
-                              cumulativeLatencyInterval / (1000L * latencyCountInterval) + "/" +
-                              maxLatency/1000L + " microseconds" :
-                              "");
+                ", min/avg/max latency: " +
+                    minLatency/1000L + "/" +
+                    cumulativeLatencyInterval / (1000L * latencyCountInterval) + "/" +
+                    maxLatency/1000L + " microseconds" :
+                "");
 
             System.out.println(output);
         }
 
         private String getRate(String descr, long count, boolean display,
-                              long elapsed) {
+            long elapsed) {
             if (display)
                 return ", " + descr + ": " + formatRate(1000.0 * count / elapsed) + " msg/s";
             else
@@ -246,14 +246,14 @@ public class PerfTest {
             long now = System.currentTimeMillis();
 
             System.out.println("id: " + testID + ", sending rate avg: " +
-                               formatRate(sendCountTotal * 1000.0 / (now - startTime)) +
-                               " msg/s");
+                formatRate(sendCountTotal * 1000.0 / (now - startTime)) +
+                " msg/s");
 
             long elapsed = now - startTime;
             if (elapsed > 0) {
                 System.out.println("id: " + testID + ", recving rate avg: " +
-                                   formatRate(recvCountTotal * 1000.0 / elapsed) +
-                                   " msg/s");
+                    formatRate(recvCountTotal * 1000.0 / elapsed) +
+                    " msg/s");
             }
         }
 
