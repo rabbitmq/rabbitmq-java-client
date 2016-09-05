@@ -15,26 +15,28 @@
 
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MetricsCollector;
+import com.rabbitmq.client.NoOpMetricsCollector;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.utility.IntAllocator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
-import com.rabbitmq.client.NoOpMetricsCollector;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.MetricsCollector;
-import com.rabbitmq.utility.IntAllocator;
+import java.util.concurrent.*;
 
 /**
  * Manages a set of channels, indexed by channel number (<code><b>1.._channelMax</b></code>).
  */
 public class ChannelManager {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
+
     /** Monitor for <code>_channelMap</code> and <code>channelNumberAllocator</code> */
     private final Object monitor = new Object();
         /** Mapping from <code><b>1.._channelMax</b></code> to {@link ChannelN} instance */
@@ -49,6 +51,8 @@ public class ChannelManager {
     private final int _channelMax;
     private ExecutorService shutdownExecutor;
     private final ThreadFactory threadFactory;
+
+    private int channelShutdownTimeout = (int) ((ConnectionFactory.DEFAULT_HEARTBEAT * 1.05) * 1000);
 
     protected final MetricsCollector metricsCollector;
 
@@ -97,14 +101,33 @@ public class ChannelManager {
      * Handle shutdown. All the managed {@link com.rabbitmq.client.Channel Channel}s are shutdown.
      * @param signal reason for shutdown
      */
-    public void handleSignal(ShutdownSignalException signal) {
+    public void handleSignal(final ShutdownSignalException signal) {
         Set<ChannelN> channels;
         synchronized(this.monitor) {
             channels = new HashSet<ChannelN>(_channelMap.values());
         }
-        for (ChannelN channel : channels) {
+
+        for (final ChannelN channel : channels) {
             releaseChannelNumber(channel);
-            channel.processShutdownSignal(signal, true, true);
+            // async shutdown if possible
+            // see https://github.com/rabbitmq/rabbitmq-java-client/issues/194
+            Runnable channelShutdownRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    channel.processShutdownSignal(signal, true, true);
+                }
+            };
+            if(this.shutdownExecutor == null) {
+                channelShutdownRunnable.run();
+            } else {
+                Future<?> channelShutdownTask = this.shutdownExecutor.submit(channelShutdownRunnable);
+                try {
+                    channelShutdownTask.get(channelShutdownTimeout, TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    LOGGER.warn("Couldn't properly close channel {} on shutdown after waiting for {} ms", channel.getChannelNumber(), channelShutdownTimeout);
+                    channelShutdownTask.cancel(true);
+                }
+            }
             shutdownSet.add(channel.getShutdownLatch());
             channel.notifyListeners();
         }
@@ -224,5 +247,17 @@ public class ChannelManager {
 
     public void setShutdownExecutor(ExecutorService shutdownExecutor) {
         this.shutdownExecutor = shutdownExecutor;
+    }
+
+    /**
+     * Set the shutdown timeout for channels.
+     * This is the amount of time the manager waits for a channel to
+     * shutdown before giving up.
+     * Works only when the {@code shutdownExecutor} property is set.
+     * Default to {@link com.rabbitmq.client.ConnectionFactory#DEFAULT_HEARTBEAT} + 5 % seconds
+     * @param channelShutdownTimeout shutdown timeout in milliseconds
+     */
+    public void setChannelShutdownTimeout(int channelShutdownTimeout) {
+        this.channelShutdownTimeout = channelShutdownTimeout;
     }
 }

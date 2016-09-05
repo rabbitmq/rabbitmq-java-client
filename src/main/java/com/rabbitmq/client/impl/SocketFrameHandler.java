@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.concurrent.*;
 
 import com.rabbitmq.client.AMQP;
 
@@ -33,6 +34,11 @@ import com.rabbitmq.client.AMQP;
 public class SocketFrameHandler implements FrameHandler {
     /** The underlying socket */
     private final Socket _socket;
+
+    /**
+     * Optional {@link ExecutorService} for final flush.
+     */
+    private final ExecutorService _shutdownExecutor;
 
     /** Socket's inputstream - data from the broker - synchronized on */
     private final DataInputStream _inputStream;
@@ -47,7 +53,15 @@ public class SocketFrameHandler implements FrameHandler {
      * @param socket the socket to use
      */
     public SocketFrameHandler(Socket socket) throws IOException {
+        this(socket, null);
+    }
+
+    /**
+     * @param socket the socket to use
+     */
+    public SocketFrameHandler(Socket socket, ExecutorService shutdownExecutor) throws IOException {
         _socket = socket;
+        _shutdownExecutor = shutdownExecutor;
 
         _inputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
         _outputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
@@ -152,7 +166,25 @@ public class SocketFrameHandler implements FrameHandler {
     @SuppressWarnings("unused")
     public void close() {
         try { _socket.setSoLinger(true, SOCKET_CLOSING_TIMEOUT); } catch (Exception _e) {}
-        try { flush();                                           } catch (Exception _e) {}
+        // async flush if possible
+        // see https://github.com/rabbitmq/rabbitmq-java-client/issues/194
+        Callable<Void> flushCallable = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                flush();
+                return null;
+            }
+        };
+        try {
+            if(this._shutdownExecutor == null) {
+                flushCallable.call();
+            } else {
+                Future<Void> flushTask = this._shutdownExecutor.submit(flushCallable);
+                flushTask.get(SOCKET_CLOSING_TIMEOUT, TimeUnit.SECONDS);
+            }
+        } catch(Exception e) {
+
+        }
         try { _socket.close();                                   } catch (Exception _e) {}
     }
 }

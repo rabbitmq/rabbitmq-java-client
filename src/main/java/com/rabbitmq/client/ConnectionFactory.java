@@ -642,7 +642,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     protected FrameHandlerFactory createFrameHandlerFactory() throws IOException {
-        return new FrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL());
+        return new FrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor);
     }
 
     /**
