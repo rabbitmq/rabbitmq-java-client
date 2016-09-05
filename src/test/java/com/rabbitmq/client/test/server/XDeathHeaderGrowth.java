@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Test;
 
@@ -39,17 +41,21 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 class RejectingConsumer extends DefaultConsumer {
     private CountDownLatch latch;
-    private Map<String, Object> headers;
+    private volatile Map<String, Object> headers;
+    private AtomicLong counter;
+
 
     public RejectingConsumer(Channel channel, CountDownLatch latch) {
         super(channel);
         this.latch = latch;
+        this.counter = new AtomicLong(latch.getCount());
     }
 
     @Override
     public void handleDelivery(String consumerTag, Envelope envelope,
                                AMQP.BasicProperties properties, byte[] body)
             throws IOException {
+
         if(this.latch.getCount() > 0) {
             this.getChannel().basicReject(envelope.getDeliveryTag(), false);
         } else {
@@ -57,7 +63,15 @@ class RejectingConsumer extends DefaultConsumer {
                 this.getChannel().basicAck(envelope.getDeliveryTag(), false);
             }
         }
-        this.headers = properties.getHeaders();
+        if(this.counter.decrementAndGet() == 0) {
+            // get headers only when the message has been redelivered
+            // the expected number of times.
+            // it looks like the message can be redelivered because
+            // of the reject when handleDelivery isn't done yet or
+            // before the latch releases the main thread. There's then
+            // an additional delivery and the checks (transiently) fail.
+            this.headers = properties.getHeaders();
+        }
         latch.countDown();
     }
 
@@ -88,7 +102,7 @@ public class XDeathHeaderGrowth extends BrokerTestCase {
         this.channel.queueBind(q3, x2, "");
 
         final String qz = "issues.rabbitmq-server-78.destination";
-        declareTransientQueue(qz, argumentsForDeadLetteringTo(x3));
+        declareTransientQueue(qz, argumentsForDeadLetteringWithoutTtlTo(x3));
         this.channel.queueBind(qz, x3, "");
 
         CountDownLatch latch = new CountDownLatch(10);
@@ -143,7 +157,7 @@ public class XDeathHeaderGrowth extends BrokerTestCase {
         this.channel.queueBind(q2, x1, "");
 
         final String qz = "issues.rabbitmq-server-152.destination";
-        declareTransientQueue(qz, argumentsForDeadLetteringTo(x2));
+        declareTransientQueue(qz, argumentsForDeadLetteringWithoutTtlTo(x2));
         this.channel.queueBind(qz, x2, "");
 
         CountDownLatch latch = new CountDownLatch(10);
@@ -215,11 +229,17 @@ public class XDeathHeaderGrowth extends BrokerTestCase {
         return argumentsForDeadLetteringTo(dlx, 1);
     }
 
+    private Map<String, Object> argumentsForDeadLetteringWithoutTtlTo(String dlx) {
+        return argumentsForDeadLetteringTo(dlx, -1);
+    }
+
     private Map<String, Object> argumentsForDeadLetteringTo(String dlx, int ttl) {
         Map<String, Object> m = new HashMap<String, Object>();
         m.put("x-dead-letter-exchange", dlx);
         m.put("x-dead-letter-routing-key", "some-routing-key");
-        m.put("x-message-ttl", ttl);
+        if(ttl > 0) {
+            m.put("x-message-ttl", ttl);
+        }
         return m;
     }
 }

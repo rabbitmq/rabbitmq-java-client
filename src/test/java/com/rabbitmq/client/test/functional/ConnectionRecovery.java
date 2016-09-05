@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -145,7 +146,7 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     // see https://github.com/rabbitmq/rabbitmq-java-client/issues/135
     @Test public void thatShutdownHooksOnConnectionFireBeforeRecoveryStarts() throws IOException, InterruptedException {
-        final List<String> events = new ArrayList<String>();
+        final List<String> events = new CopyOnWriteArrayList<String>();
         final CountDownLatch latch = new CountDownLatch(1);
         connection.addShutdownListener(new ShutdownListener() {
             public void shutdownCompleted(ShutdownSignalException cause) {
