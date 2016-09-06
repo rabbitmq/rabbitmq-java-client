@@ -160,10 +160,12 @@ public class ConnectionRecovery extends BrokerTestCase {
         });
         // note: we do not want to expose RecoveryCanBeginListener so this
         // test does not use it
+        final CountDownLatch recoveryCanBeginLatch = new CountDownLatch(1);
         ((AutorecoveringConnection)connection).getDelegate().addRecoveryCanBeginListener(new RecoveryCanBeginListener() {
             @Override
             public void recoveryCanBegin(ShutdownSignalException cause) {
                 events.add("recovery start hook 1");
+                recoveryCanBeginLatch.countDown();
             }
         });
         ((AutorecoveringConnection)connection).addRecoveryListener(new RecoveryListener() {
@@ -177,6 +179,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertTrue(connection.isOpen());
         assertEquals("shutdown hook 1", events.get(0));
         assertEquals("shutdown hook 2", events.get(1));
+        recoveryCanBeginLatch.await(5, TimeUnit.SECONDS);
         assertEquals("recovery start hook 1", events.get(2));
         connection.close();
         wait(latch);
