@@ -175,15 +175,18 @@ public class SocketFrameHandler implements FrameHandler {
                 return null;
             }
         };
+        Future<Void> flushTask = null;
         try {
             if(this._shutdownExecutor == null) {
                 flushCallable.call();
             } else {
-                Future<Void> flushTask = this._shutdownExecutor.submit(flushCallable);
+                flushTask = this._shutdownExecutor.submit(flushCallable);
                 flushTask.get(SOCKET_CLOSING_TIMEOUT, TimeUnit.SECONDS);
             }
         } catch(Exception e) {
-
+            if(flushTask != null) {
+                flushTask.cancel(true);
+            }
         }
         try { _socket.close();                                   } catch (Exception _e) {}
     }

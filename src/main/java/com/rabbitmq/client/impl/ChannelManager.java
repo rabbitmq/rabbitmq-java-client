@@ -52,7 +52,7 @@ public class ChannelManager {
     private ExecutorService shutdownExecutor;
     private final ThreadFactory threadFactory;
 
-    private int channelShutdownTimeout = (int) ((ConnectionFactory.DEFAULT_HEARTBEAT * 1.05) * 1000);
+    private int channelShutdownTimeout = (int) ((ConnectionFactory.DEFAULT_HEARTBEAT * AMQConnection.CHANNEL_SHUTDOWN_TIMEOUT_MULTIPLIER) * 1000);
 
     protected final MetricsCollector metricsCollector;
 
