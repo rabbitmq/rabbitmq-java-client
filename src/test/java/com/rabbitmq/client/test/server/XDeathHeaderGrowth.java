@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Test;
@@ -41,9 +40,8 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 class RejectingConsumer extends DefaultConsumer {
     private CountDownLatch latch;
-    private volatile Map<String, Object> headers;
+    private Map<String, Object> headers;
     private AtomicLong counter;
-
 
     public RejectingConsumer(Channel channel, CountDownLatch latch) {
         super(channel);
