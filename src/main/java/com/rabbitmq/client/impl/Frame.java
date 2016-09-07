@@ -21,8 +21,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Map;
@@ -123,6 +126,31 @@ public class Frame {
         return new Frame(type, channel, payload);
     }
 
+    public static Frame readFrom(SocketChannel socketChannel, ByteBuffer buffer) throws IOException {
+        // FIXME make frame read better
+        int type;
+        int channel;
+
+        type = buffer.get() & 0xff;
+
+        // FIXME check not a version mismatch
+
+        int ch1 = buffer.get() & 0xff;
+        int ch2 = buffer.get() & 0xff;
+
+        channel = (ch1 << 8) + (ch2 << 0);
+        int payloadSize = buffer.getInt();
+
+        byte[] payload = new byte[payloadSize];
+        buffer.get(payload);
+        int frameEndMarker = buffer.get() & 0xff;
+        if (frameEndMarker != AMQP.FRAME_END) {
+            throw new MalformedFrameException("Bad frame end marker: " + frameEndMarker);
+        }
+
+        return new Frame(type, channel, payload);
+    }
+
     /**
      * Private API - A protocol version mismatch is detected by checking the
      * three next bytes if a frame type of (int)'A' is read from an input
@@ -195,6 +223,24 @@ public class Frame {
             os.write(payload);
         }
         os.write(AMQP.FRAME_END);
+    }
+
+    public void writeTo(SocketChannel socketChannel, ByteBuffer buffer) throws IOException {
+        buffer.put((byte) type);
+        buffer.put((byte) ((channel >>> 8) & 0xFF));
+        buffer.put((byte) ((channel >>> 0) & 0xFF));
+
+        if(accumulator != null) {
+            buffer.putInt(accumulator.size());
+            buffer.put(accumulator.toByteArray());
+        } else {
+            buffer.putInt(payload.length);
+            buffer.put(payload);
+        }
+        buffer.put((byte) AMQP.FRAME_END);
+
+        buffer.flip();
+        while(buffer.hasRemaining() && socketChannel.write(buffer) != -1);
     }
 
     /**

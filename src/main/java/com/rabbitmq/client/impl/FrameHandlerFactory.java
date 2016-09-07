@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutorService;
 public class FrameHandlerFactory {
     private final int connectionTimeout;
     private final SocketFactory factory;
-    private final SocketConfigurator configurator;
+    protected final SocketConfigurator configurator;
     private final ExecutorService shutdownExecutor;
     private final boolean ssl;
 

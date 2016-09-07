@@ -108,6 +108,9 @@ public class ConnectionFactory implements Cloneable {
 
     private MetricsCollector metricsCollector;
 
+    private boolean nio = false;
+    private FrameHandlerFactory frameHandlerFactory;
+
     /** @return the default host to use for connections */
     public String getHost() {
         return host;
@@ -642,7 +645,15 @@ public class ConnectionFactory implements Cloneable {
     }
 
     protected FrameHandlerFactory createFrameHandlerFactory() throws IOException {
-        return new FrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor);
+        if(nio) {
+            if(this.frameHandlerFactory == null) {
+                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor);
+            }
+            return this.frameHandlerFactory;
+        } else {
+            return new FrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor);
+        }
+
     }
 
     /**
@@ -1018,5 +1029,9 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setNetworkRecoveryInterval(long networkRecoveryInterval) {
         this.networkRecoveryInterval = networkRecoveryInterval;
+    }
+
+    public void setNio(boolean nio) {
+        this.nio = nio;
     }
 }
