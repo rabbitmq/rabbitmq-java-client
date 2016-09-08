@@ -17,6 +17,8 @@ public class SocketChannelFrameHandlerState {
 
     private final BlockingQueue<Frame> readQueue = new LinkedBlockingQueue<Frame>();
 
+    private volatile AMQConnection connection;
+
     private volatile boolean sendHeader = false;
 
     private final SocketChannelFrameHandlerFactory.SelectorState selectorState;
@@ -56,5 +58,13 @@ public class SocketChannelFrameHandlerState {
     public void write(Frame frame) {
         this.writeQueue.add(frame);
         this.selectorState.registerFrameHandlerState(this, SelectionKey.OP_WRITE);
+    }
+
+    public AMQConnection getConnection() {
+        return connection;
+    }
+
+    public void setConnection(AMQConnection connection) {
+        this.connection = connection;
     }
 }

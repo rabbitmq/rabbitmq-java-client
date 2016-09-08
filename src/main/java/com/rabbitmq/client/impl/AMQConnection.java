@@ -281,12 +281,18 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             throw ioe;
         }
 
-        // start the main loop going
-        MainLoop loop = new MainLoop();
-        final String name = "AMQP Connection " + getHostAddress() + ":" + getPort();
-        mainLoopThread = Environment.newThread(threadFactory, loop, name);
-        mainLoopThread.start();
-        // after this point clear-up of MainLoop is triggered by closing the frameHandler.
+        // FIXME properly prepare the connection depending on IO implementation
+        if(this._frameHandler instanceof SocketChannelFrameHandler) {
+            ((SocketChannelFrameHandler) _frameHandler).getState().setConnection(this);
+        } else {
+            // start the main loop going
+            MainLoop loop = new MainLoop();
+            final String name = "AMQP Connection " + getHostAddress() + ":" + getPort();
+            mainLoopThread = Environment.newThread(threadFactory, loop, name);
+            mainLoopThread.start();
+            // after this point clear-up of MainLoop is triggered by closing the frameHandler.
+        }
+
 
         AMQP.Connection.Start connStart;
         AMQP.Connection.Tune connTune = null;
@@ -546,63 +552,91 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             try {
                 while (_running) {
                     Frame frame = _frameHandler.readFrame();
-
-                    if (frame != null) {
-                        _missedHeartbeats = 0;
-                        if (frame.type == AMQP.FRAME_HEARTBEAT) {
-                            // Ignore it: we've already just reset the heartbeat counter.
-                        } else {
-                            if (frame.channel == 0) { // the special channel
-                                _channel0.handleFrame(frame);
-                            } else {
-                                if (isOpen()) {
-                                    // If we're still _running, but not isOpen(), then we
-                                    // must be quiescing, which means any inbound frames
-                                    // for non-zero channels (and any inbound commands on
-                                    // channel zero that aren't Connection.CloseOk) must
-                                    // be discarded.
-                                    ChannelManager cm = _channelManager;
-                                    if (cm != null) {
-                                        ChannelN channel;
-                                        try {
-                                            channel = cm.getChannel(frame.channel);
-                                        } catch(UnknownChannelException e) {
-                                            // this can happen if channel has been closed,
-                                            // but there was e.g. an in-flight delivery.
-                                            // just ignoring the frame to avoid closing the whole connection
-                                            LOGGER.info("Received a frame on an unknown channel, ignoring it");
-                                            continue;
-                                        }
-                                        channel.handleFrame(frame);
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        // Socket timeout waiting for a frame.
-                        // Maybe missed heartbeat.
-                        handleSocketTimeout();
-                    }
+                    readFrame(frame);
                 }
-            } catch (EOFException ex) {
-                if (!_brokerInitiatedShutdown)
-                    shutdown(null, false, ex, true);
             } catch (Throwable ex) {
-                _exceptionHandler.handleUnexpectedConnectionDriverException(AMQConnection.this,
-                                                                            ex);
-                shutdown(null, false, ex, true);
+                handleFailureInRead(ex);
             } finally {
-                // Finally, shut down our underlying data connection.
-                _frameHandler.close();
-                _appContinuation.set(null);
-                notifyListeners();
-                // assuming that shutdown listeners do not do anything
-                // asynchronously, e.g. start new threads, this effectively
-                // guarantees that we only begin recovery when all shutdown
-                // listeners have executed
-                notifyRecoveryCanBeginListeners();
+                doFinalShutdownInRead();
             }
         }
+    }
+
+    boolean handleReadFrame(Frame frame) {
+        if(_running) {
+            try {
+                readFrame(frame);
+                return true;
+            } catch (Throwable ex) {
+                try {
+                    handleFailureInRead(ex);
+                } finally {
+                    doFinalShutdownInRead();
+                }
+            }
+        }
+        return false;
+    }
+
+    private void readFrame(Frame frame) throws IOException {
+        if (frame != null) {
+            _missedHeartbeats = 0;
+            if (frame.type == AMQP.FRAME_HEARTBEAT) {
+                // Ignore it: we've already just reset the heartbeat counter.
+            } else {
+                if (frame.channel == 0) { // the special channel
+                    _channel0.handleFrame(frame);
+                } else {
+                    if (isOpen()) {
+                        // If we're still _running, but not isOpen(), then we
+                        // must be quiescing, which means any inbound frames
+                        // for non-zero channels (and any inbound commands on
+                        // channel zero that aren't Connection.CloseOk) must
+                        // be discarded.
+                        ChannelManager cm = _channelManager;
+                        if (cm != null) {
+                            ChannelN channel;
+                            try {
+                                channel = cm.getChannel(frame.channel);
+                            } catch(UnknownChannelException e) {
+                                // this can happen if channel has been closed,
+                                // but there was e.g. an in-flight delivery.
+                                // just ignoring the frame to avoid closing the whole connection
+                                LOGGER.info("Received a frame on an unknown channel, ignoring it");
+                                return;
+                            }
+                            channel.handleFrame(frame);
+                        }
+                    }
+                }
+            }
+        } else {
+            // Socket timeout waiting for a frame.
+            // Maybe missed heartbeat.
+            handleSocketTimeout();
+        }
+    }
+
+    private void handleFailureInRead(Throwable ex)  {
+        if(ex instanceof EOFException) {
+            if (!_brokerInitiatedShutdown)
+                shutdown(null, false, ex, true);
+        } else {
+            _exceptionHandler.handleUnexpectedConnectionDriverException(AMQConnection.this,
+                ex);
+            shutdown(null, false, ex, true);
+        }
+    }
+
+    private void doFinalShutdownInRead() {
+        _frameHandler.close();
+        _appContinuation.set(null);
+        notifyListeners();
+        // assuming that shutdown listeners do not do anything
+        // asynchronously, e.g. start new threads, this effectively
+        // guarantees that we only begin recovery when all shutdown
+        // listeners have executed
+        notifyRecoveryCanBeginListeners();
     }
 
     private void notifyRecoveryCanBeginListeners() {

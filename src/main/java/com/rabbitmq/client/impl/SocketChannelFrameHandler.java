@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -77,11 +76,7 @@ public class SocketChannelFrameHandler implements FrameHandler {
 
     @Override
     public Frame readFrame() throws IOException {
-        try {
-            return state.getReadQueue().poll(readTimeout, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            throw new IOException("Timeout while polling read queue", e);
-        }
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -103,5 +98,9 @@ public class SocketChannelFrameHandler implements FrameHandler {
         } catch (IOException e) {
             LOGGER.error("Error while closing SocketChannel", e);
         }
+    }
+
+    public SocketChannelFrameHandlerState getState() {
+        return state;
     }
 }
