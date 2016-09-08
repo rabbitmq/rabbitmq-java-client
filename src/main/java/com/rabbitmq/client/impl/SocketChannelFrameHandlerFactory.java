@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -121,7 +120,11 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                 while(true) {
                     int select;
                     if(state.statesToBeRegistered.isEmpty()) {
-                        // we can block, registration will Selector.wakeup()
+                        // we can block, registration will call Selector.wakeup()
+
+                        // FIXME check the number of keys and stop the read and write loops
+                        // if there's no read key anymore
+
                         select = selector.select();
                     } else {
                         // we cannot block, we need to select and clean cancelled keys before registration
@@ -251,8 +254,8 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
 
                                     }
 
-                                } catch (ClosedChannelException e) {
-                                    LOGGER.warn("Error in read loop because of async close");
+                                } catch (Exception e) {
+                                    LOGGER.warn("Error during reading frames: "+e.getMessage());
                                 } finally {
                                     buffer.clear();
                                 }
@@ -287,7 +290,7 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                 while(true) {
                     int select;
                     if(state.statesToBeRegistered.isEmpty()) {
-                        // we can block, registration will Selector.wakeup()
+                        // we can block, registration will call Selector.wakeup()
                         select = selector.select();
                     } else {
                         // we cannot block, we need to select and clean cancelled keys before registration
@@ -330,9 +333,12 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
 
                                 Frame frame;
                                 while((frame = state.getWriteQueue().poll()) != null) {
+                                    if(buffer.remaining() < frame.size()) {
+                                        buffer.clear();
+                                    }
                                     frame.writeTo(channel, buffer);
-                                    buffer.clear();
                                 }
+                                buffer.clear();
                             }
                             key.cancel();
                         }

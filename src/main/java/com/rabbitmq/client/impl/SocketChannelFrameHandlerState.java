@@ -1,21 +1,25 @@
 package com.rabbitmq.client.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  *
  */
 public class SocketChannelFrameHandlerState {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SocketChannelFrameHandlerState.class);
+
     private final SocketChannel channel;
 
-    private final Queue<Frame> writeQueue = new LinkedBlockingQueue<Frame>();
-
-    private final BlockingQueue<Frame> readQueue = new LinkedBlockingQueue<Frame>();
+    // FIXME find appropriate default for limit in write queue
+    private final BlockingQueue<Frame> writeQueue = new ArrayBlockingQueue<Frame>(1000);
 
     private volatile AMQConnection connection;
 
@@ -30,14 +34,6 @@ public class SocketChannelFrameHandlerState {
 
     public SocketChannel getChannel() {
         return channel;
-    }
-
-    public void addReadFrame(Frame frame) {
-        this.readQueue.add(frame);
-    }
-
-    public BlockingQueue<Frame> getReadQueue() {
-        return readQueue;
     }
 
     public Queue<Frame> getWriteQueue() {
@@ -56,8 +52,12 @@ public class SocketChannelFrameHandlerState {
     }
 
     public void write(Frame frame) {
-        this.writeQueue.add(frame);
-        this.selectorState.registerFrameHandlerState(this, SelectionKey.OP_WRITE);
+        try {
+            this.writeQueue.put(frame);
+            this.selectorState.registerFrameHandlerState(this, SelectionKey.OP_WRITE);
+        } catch (InterruptedException e) {
+            LOGGER.warn("Thread interrupted during enqueuing frame in write queue");
+        }
     }
 
     public AMQConnection getConnection() {
