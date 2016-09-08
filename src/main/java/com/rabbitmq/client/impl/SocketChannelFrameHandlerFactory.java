@@ -17,6 +17,7 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.SocketConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,9 +128,12 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
             Selector selector = state.selector;
             // FIXME find a better default?
             ByteBuffer buffer = ByteBuffer.allocate(8192);
-
             try {
                 while(true) {
+                    int select = selector.select();
+
+                    // registrations should be done after select,
+                    // once the cancelled keys have been actually removed
                     RegistrationState registration;
                     while((registration = state.statesToBeRegistered.poll()) != null) {
                         int operations = registration.operations;
@@ -139,7 +143,6 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                         registration.done();
                     }
 
-                    int select = selector.select();
                     if (select > 0) {
                         Set<SelectionKey> readyKeys = selector.selectedKeys();
                         Iterator<SelectionKey> iterator = readyKeys.iterator();
@@ -150,12 +153,102 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                             SocketChannel channel = (SocketChannel) key.channel();
                             if (key.isReadable()) {
                                 SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
+
                                 channel.read(buffer);
                                 buffer.flip();
                                 // FIXME handle partial frame
                                 while(buffer.hasRemaining()) {
-                                    Frame frame = Frame.readFrom(channel, buffer);
+                                    // FIXME make frame read better
+                                    int type;
+                                    int channelHeader;
+
+                                    if(!buffer.hasRemaining()) {
+                                        buffer.clear();
+                                        channel.read(buffer);
+                                        buffer.flip();
+                                    }
+
+                                    type = buffer.get() & 0xff;
+
+                                    if(!buffer.hasRemaining()) {
+                                        buffer.clear();
+                                        channel.read(buffer);
+                                        buffer.flip();
+                                    }
+
+                                    int ch1 = buffer.get() & 0xff;
+
+
+                                    if(!buffer.hasRemaining()) {
+                                        buffer.clear();
+                                        channel.read(buffer);
+                                        buffer.flip();
+                                    }
+                                    int ch2 = buffer.get() & 0xff;
+
+                                    channelHeader = (ch1 << 8) + (ch2 << 0);
+
+                                    if(!buffer.hasRemaining()) {
+                                        buffer.clear();
+                                        channel.read(buffer);
+                                        buffer.flip();
+                                    }
+                                    byte b3 = buffer.get();
+                                    if(!buffer.hasRemaining()) {
+                                        buffer.clear();
+                                        channel.read(buffer);
+                                        buffer.flip();
+                                    }
+                                    byte b2 = buffer.get();
+                                    if(!buffer.hasRemaining()) {
+                                        buffer.clear();
+                                        channel.read(buffer);
+                                        buffer.flip();
+                                    }
+                                    byte b1 = buffer.get();
+                                    if(!buffer.hasRemaining()) {
+                                        buffer.clear();
+                                        channel.read(buffer);
+                                        buffer.flip();
+                                    }
+                                    byte b0 = buffer.get();
+
+                                    int payloadSize = (((b3       ) << 24) |
+                                        ((b2 & 0xff) << 16) |
+                                        ((b1 & 0xff) <<  8) |
+                                        ((b0 & 0xff)      ));
+
+
+                                    byte[] payload = new byte[payloadSize];
+                                    if(payloadSize > buffer.remaining()) {
+                                        int remaining = buffer.remaining();
+                                        buffer.get(payload, 0, remaining);
+                                        buffer.clear();
+                                        channel.read(buffer);
+                                        buffer.flip();
+                                        buffer.get(payload, remaining, payloadSize - remaining);
+                                    } else {
+                                        buffer.get(payload);
+                                    }
+
+                                    if(!buffer.hasRemaining()) {
+                                        buffer.clear();
+                                        channel.read(buffer);
+                                        buffer.flip();
+                                    }
+                                    int frameEndMarker = buffer.get() & 0xff;
+                                    if (frameEndMarker != AMQP.FRAME_END) {
+                                        throw new MalformedFrameException("Bad frame end marker: " + frameEndMarker);
+                                    }
+                                    Frame frame = new Frame(type, channelHeader, payload);
                                     state.addReadFrame(frame);
+
+                                    if(!buffer.hasRemaining()) {
+                                        buffer.clear();
+                                        channel.read(buffer);
+                                        buffer.flip();
+                                    }
+
                                 }
                                 buffer.clear();
                             }
@@ -165,9 +258,7 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
             } catch(Exception e) {
                 LOGGER.error("Error in read loop", e);
             }
-
         }
-
     }
 
     private static class WriteLoop implements Runnable {
@@ -186,16 +277,18 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
 
             try {
                 while(true) {
+                    int select = selector.select();
+
+                    // registrations should be done after select,
+                    // once the cancelled keys have been actually removed
                     RegistrationState registration;
                     while((registration = state.statesToBeRegistered.poll()) != null) {
                         int operations = registration.operations;
                         SelectionKey writeKey = registration.state.getChannel().register(selector, operations);
                         writeKey.attach(registration.state);
-                        registration.state.setWriteSelectionKey(writeKey);
                         registration.done();
                     }
 
-                    int select = selector.select();
                     if(select > 0) {
                         Set<SelectionKey> readyKeys = selector.selectedKeys();
                         Iterator<SelectionKey> iterator = readyKeys.iterator();
