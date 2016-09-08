@@ -33,7 +33,9 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  *
@@ -70,25 +72,15 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
         SocketAddress address = new InetSocketAddress("localhost", 5672);
         SocketChannel channel = SocketChannel.open();
         configurator.configure(channel.socket());
-        channel.configureBlocking(false);
 
+        // FIXME handle connection failure
         channel.connect(address);
+
+        channel.configureBlocking(false);
 
         SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(channel, writeSelectorState);
 
-        CountDownLatch latch = new CountDownLatch(2);
-        readSelectorState.registerFrameHandlerState(state, latch, SelectionKey.OP_READ);
-        writeSelectorState.registerFrameHandlerState(state, latch, SelectionKey.OP_CONNECT);
-
-        // FIXME make timeout a parameter
-        try {
-            boolean selectorRegistered = latch.await(5, TimeUnit.SECONDS);
-            if(!selectorRegistered) {
-                throw new IOException("Could not register socket channel in IO loops");
-            }
-        } catch (InterruptedException e) {
-            throw new IOException("Could not register socket channel in IO loops", e);
-        }
+        readSelectorState.registerFrameHandlerState(state, SelectionKey.OP_READ);
 
         SocketChannelFrameHandler frameHandler = new SocketChannelFrameHandler(state);
         return frameHandler;
@@ -104,13 +96,9 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
             this.selector = selector;
         }
 
-        public void registerFrameHandlerState(SocketChannelFrameHandlerState state, CountDownLatch latch, int operations) {
-            statesToBeRegistered.add(new RegistrationState(state, latch, operations));
-            selector.wakeup();
-        }
-
         public void registerFrameHandlerState(SocketChannelFrameHandlerState state, int operations) {
-            registerFrameHandlerState(state, null, operations);
+            statesToBeRegistered.add(new RegistrationState(state, operations));
+            selector.wakeup();
         }
 
     }
@@ -130,17 +118,21 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
             ByteBuffer buffer = ByteBuffer.allocate(8192);
             try {
                 while(true) {
-                    int select = selector.select();
+                    int select;
+                    if(state.statesToBeRegistered.isEmpty()) {
+                        // we can block, registration will Selector.wakeup()
+                        select = selector.select();
+                    } else {
+                        // we cannot block, we need to select and clean cancelled keys before registration
+                        select = selector.selectNow();
+                    }
 
                     // registrations should be done after select,
                     // once the cancelled keys have been actually removed
                     RegistrationState registration;
                     while((registration = state.statesToBeRegistered.poll()) != null) {
                         int operations = registration.operations;
-                        SelectionKey readKey = registration.state.getChannel().register(selector, operations);
-                        readKey.attach(registration.state);
-                        registration.state.setReadSelectionKey(readKey);
-                        registration.done();
+                        registration.state.getChannel().register(selector, operations, registration.state);
                     }
 
                     if (select > 0) {
@@ -277,16 +269,21 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
 
             try {
                 while(true) {
-                    int select = selector.select();
+                    int select;
+                    if(state.statesToBeRegistered.isEmpty()) {
+                        // we can block, registration will Selector.wakeup()
+                        select = selector.select();
+                    } else {
+                        // we cannot block, we need to select and clean cancelled keys before registration
+                        select = selector.selectNow();
+                    }
 
                     // registrations should be done after select,
                     // once the cancelled keys have been actually removed
                     RegistrationState registration;
                     while((registration = state.statesToBeRegistered.poll()) != null) {
                         int operations = registration.operations;
-                        SelectionKey writeKey = registration.state.getChannel().register(selector, operations);
-                        writeKey.attach(registration.state);
-                        registration.done();
+                        registration.state.getChannel().register(selector, operations, registration.state);
                     }
 
                     if(select > 0) {
@@ -302,7 +299,6 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                                 }
                             } else if (key.isWritable()) {
                                 SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
-
                                 // FIXME property handle header sending request
                                 if(state.isSendHeader()) {
                                     buffer.put("AMQP".getBytes("US-ASCII"));
@@ -337,19 +333,12 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
     public static class RegistrationState {
 
         private final SocketChannelFrameHandlerState state;
-        private final CountDownLatch latch;
         private final int operations;
 
-        private RegistrationState(SocketChannelFrameHandlerState state, CountDownLatch latch, int operations) {
+        private RegistrationState(SocketChannelFrameHandlerState state, int operations) {
             this.state = state;
-            this.latch = latch;
             this.operations = operations;
         }
 
-        public void done() {
-            if(latch != null) {
-                latch.countDown();
-            }
-        }
     }
 }

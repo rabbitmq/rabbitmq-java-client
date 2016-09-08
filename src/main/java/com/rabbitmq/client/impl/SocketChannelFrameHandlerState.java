@@ -13,10 +13,6 @@ public class SocketChannelFrameHandlerState {
 
     private final SocketChannel channel;
 
-    private volatile SelectionKey readSelectionKey;
-
-    private volatile SelectionKey writeSelectionKey;
-
     private final Queue<Frame> writeQueue = new LinkedBlockingQueue<Frame>();
 
     private final BlockingQueue<Frame> readQueue = new LinkedBlockingQueue<Frame>();
@@ -34,14 +30,6 @@ public class SocketChannelFrameHandlerState {
         return channel;
     }
 
-    public void setReadSelectionKey(SelectionKey readSelectionKey) {
-        this.readSelectionKey = readSelectionKey;
-    }
-
-    public void setWriteSelectionKey(SelectionKey writeSelectionKey) {
-        this.writeSelectionKey = writeSelectionKey;
-    }
-
     public void addReadFrame(Frame frame) {
         this.readQueue.add(frame);
     }
@@ -52,14 +40,6 @@ public class SocketChannelFrameHandlerState {
 
     public Queue<Frame> getWriteQueue() {
         return writeQueue;
-    }
-
-    public SelectionKey getReadSelectionKey() {
-        return readSelectionKey;
-    }
-
-    public SelectionKey getWriteSelectionKey() {
-        return writeSelectionKey;
     }
 
     public boolean isSendHeader() {
