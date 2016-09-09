@@ -91,8 +91,6 @@ public class SocketChannelFrameHandler implements FrameHandler {
 
     @Override
     public void close() {
-        //state.getReadSelectionKey().cancel();
-        //state.getWriteSelectionKey().cancel();
         try {
             state.getChannel().close();
         } catch (IOException e) {

@@ -68,7 +68,7 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
 
     @Override
     public FrameHandler create(Address addr) throws IOException {
-        SocketAddress address = new InetSocketAddress("localhost", 5672);
+        SocketAddress address = new InetSocketAddress(addr.getHost(), addr.getPort());
         SocketChannel channel = SocketChannel.open();
         configurator.configure(channel.socket());
 
@@ -153,7 +153,6 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                                     buffer.flip();
                                     while(buffer.hasRemaining()) {
                                         Frame frame = Frame.readFrom(channel, buffer);
-
                                         // FIXME the connection may not be there yet (to be checked)
                                         boolean handled = state.getConnection().handleReadFrame(frame);
 
