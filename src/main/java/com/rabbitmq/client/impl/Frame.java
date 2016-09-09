@@ -296,7 +296,7 @@ public class Frame {
                 buffer.put(b);
             }
 
-            buffer.put((byte) AMQP.FRAME_END);
+            safePut(writableChannel, buffer, (byte) AMQP.FRAME_END);
         } else {
             safePut(writableChannel, buffer, (byte) type);
             safePut(writableChannel, buffer, (byte) ((channel >>> 8) & 0xFF));
@@ -337,7 +337,7 @@ public class Frame {
 
     public static void drain(WritableByteChannel channel, ByteBuffer buffer) throws IOException {
         buffer.flip();
-        while(buffer.hasRemaining() && channel.write(buffer) != 0);
+        while(buffer.hasRemaining() && channel.write(buffer) != -1);
         buffer.clear();
     }
 

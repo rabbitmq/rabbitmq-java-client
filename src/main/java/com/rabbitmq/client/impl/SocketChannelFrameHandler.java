@@ -32,8 +32,6 @@ public class SocketChannelFrameHandler implements FrameHandler {
 
     private final SocketChannelFrameHandlerState state;
 
-    private volatile int readTimeout = ConnectionFactory.DEFAULT_HEARTBEAT * 1000;
-
     public SocketChannelFrameHandler(SocketChannelFrameHandlerState state) {
         this.state = state;
     }
@@ -61,7 +59,6 @@ public class SocketChannelFrameHandler implements FrameHandler {
     @Override
     public void setTimeout(int timeoutMs) throws SocketException {
         state.getChannel().socket().setSoTimeout(timeoutMs);
-        this.readTimeout = timeoutMs;
     }
 
     @Override

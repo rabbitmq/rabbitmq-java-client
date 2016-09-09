@@ -283,6 +283,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         // FIXME properly prepare the connection depending on IO implementation
         if(this._frameHandler instanceof SocketChannelFrameHandler) {
+            // FIXME set the connection earlier
             ((SocketChannelFrameHandler) _frameHandler).getState().setConnection(this);
         } else {
             // start the main loop going
@@ -614,6 +615,17 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             // Socket timeout waiting for a frame.
             // Maybe missed heartbeat.
             handleSocketTimeout();
+        }
+    }
+
+    void handleHeartbeatFailure() {
+        Exception ex = new MissedHeartbeatException("Heartbeat missing with heartbeat = " +
+            _heartbeat + " seconds");
+        try {
+            _exceptionHandler.handleUnexpectedConnectionDriverException(this, ex);
+            shutdown(null, false, ex, true);
+        } finally {
+            doFinalShutdownInRead();
         }
     }
 

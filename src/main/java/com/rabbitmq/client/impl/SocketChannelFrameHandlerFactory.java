@@ -32,9 +32,10 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  *
@@ -46,15 +47,28 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
     private final SelectorState readSelectorState;
     private final SelectorState writeSelectorState;
 
-    private final ExecutorService executorService = Executors.newFixedThreadPool(2);
+    private ExecutorService executorService;
+
+    private Future<?> readLoop;
+    private Future<?> writeLoop;
+
+    private Lock loopsLock = new ReentrantLock();
+
+    private final ThreadFactory threadFactory = new ThreadFactory() {
+
+        AtomicLong counter = new AtomicLong();
+
+        @Override
+        public Thread newThread(Runnable r) {
+            return new Thread(r, "rabbitmq-nio-"+counter.getAndIncrement());
+        }
+    };
 
     public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator,
         boolean ssl) throws IOException {
         super(connectionTimeout, factory, configurator, ssl);
         this.readSelectorState = new SelectorState(Selector.open());
         this.writeSelectorState = new SelectorState(Selector.open());
-        this.executorService.submit(new ReadLoop(readSelectorState));
-        this.executorService.submit(new WriteLoop(writeSelectorState));
     }
 
     public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl,
@@ -62,8 +76,6 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
         super(connectionTimeout, factory, configurator, ssl, shutdownExecutor);
         this.readSelectorState = new SelectorState(Selector.open());
         this.writeSelectorState = new SelectorState(Selector.open());
-        this.executorService.submit(new ReadLoop(readSelectorState));
-        this.executorService.submit(new WriteLoop(writeSelectorState));
     }
 
     @Override
@@ -79,7 +91,25 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
 
         SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(channel, writeSelectorState);
 
-        readSelectorState.registerFrameHandlerState(state, SelectionKey.OP_READ);
+        loopsLock.lock();
+        try {
+            readSelectorState.registerFrameHandlerState(state, SelectionKey.OP_READ);
+
+            if(this.executorService == null) {
+
+                this.executorService = Executors.newFixedThreadPool(2, threadFactory);
+            }
+            if(readLoop == null) {
+                readLoop = this.executorService.submit(new ReadLoop(readSelectorState));
+            }
+            if(writeLoop == null) {
+                writeLoop = this.executorService.submit(new WriteLoop(writeSelectorState));
+            }
+        } finally {
+            loopsLock.unlock();
+        }
+
+
 
         SocketChannelFrameHandler frameHandler = new SocketChannelFrameHandler(state);
         return frameHandler;
@@ -102,7 +132,28 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
 
     }
 
-    private static class ReadLoop implements Runnable {
+    private boolean cleanLoopsOrKeepRunning() {
+        loopsLock.lock();
+        try {
+            if(readSelectorState.statesToBeRegistered.isEmpty()) {
+                boolean cancelled = writeLoop.cancel(true);
+                if(!cancelled) {
+                    LOGGER.warn("Could not stop write loop");
+                }
+                this.writeLoop = null;
+                this.readLoop = null;
+                this.executorService.shutdownNow();
+                return false;
+            } else {
+                // looks like someone is trying to connect, keep running
+                return true;
+            }
+        } finally {
+            loopsLock.unlock();
+        }
+    }
+
+    private class ReadLoop implements Runnable {
 
         private final SelectorState state;
 
@@ -117,16 +168,45 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
             ByteBuffer buffer = ByteBuffer.allocate(8192);
             try {
                 while(true) {
+
+                    // if there's no read key anymore
+                    boolean someoneIsStillReading = false;
+                    for (SelectionKey selectionKey : selector.keys()) {
+                        SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) selectionKey.attachment();
+                        // FIXME connection should always be here
+                        if(state.getConnection() != null && state.getConnection().getHeartbeat() > 0) {
+                            long now = System.currentTimeMillis();
+                            if((now - state.getLastActivity()) > state.getConnection().getHeartbeat() * 1000 * 2) {
+                                try {
+                                    state.getConnection().handleHeartbeatFailure();
+                                } catch(Exception e) {
+                                    LOGGER.warn("Error after heartbeat failure of connection {}", state.getConnection());
+                                } finally {
+                                    selectionKey.cancel();
+                                }
+                            }
+                        }
+
+                        if(!selectionKey.channel().isOpen()) {
+                            selectionKey.cancel();
+                        } else {
+                            someoneIsStillReading = true;
+                        }
+                    }
+
+                    if(!someoneIsStillReading && state.statesToBeRegistered.isEmpty()) {
+                        boolean keepRunning = cleanLoopsOrKeepRunning();
+                        if(!keepRunning) {
+                            return;
+                        }
+                    }
+
                     int select;
                     if(state.statesToBeRegistered.isEmpty()) {
                         // we can block, registration will call Selector.wakeup()
-
-                        // FIXME check the number of keys and stop the read and write loops
-                        // if there's no read key anymore
-
-                        select = selector.select();
+                        select = selector.select(1000);
                     } else {
-                        // we cannot block, we need to select and clean cancelled keys before registration
+                        // we don't have to block, we need to select and clean cancelled keys before registration
                         select = selector.selectNow();
                     }
 
@@ -153,11 +233,12 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                                     buffer.flip();
                                     while(buffer.hasRemaining()) {
                                         Frame frame = Frame.readFrom(channel, buffer);
+
                                         // FIXME the connection may not be there yet (to be checked)
                                         boolean handled = state.getConnection().handleReadFrame(frame);
 
                                         // problem during frame processing, the connection triggered shutdown
-                                        // we can stop
+                                        // we can stop for this channel
                                         if(!handled) {
                                             break;
                                         }
@@ -169,9 +250,10 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                                         }
 
                                     }
-
+                                    state.setLastActivity(System.currentTimeMillis());
                                 } catch (Exception e) {
-                                    LOGGER.warn("Error during reading frames: "+e.getMessage());
+                                    LOGGER.warn("Error during reading frames", e);
+                                    key.cancel();
                                 } finally {
                                     buffer.clear();
                                 }
@@ -203,7 +285,7 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
             ByteBuffer buffer = ByteBuffer.allocate(8192);
 
             try {
-                while(true) {
+                while(true && !Thread.currentThread().isInterrupted()) {
                     int select;
                     if(state.statesToBeRegistered.isEmpty()) {
                         // we can block, registration will call Selector.wakeup()
@@ -228,12 +310,9 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                             SelectionKey key = iterator.next();
                             iterator.remove();
                             SocketChannel channel = (SocketChannel) key.channel();
-                            if (key.isConnectable()) {
-                                if (!channel.isConnected()) {
-                                    channel.finishConnect();
-                                }
-                            } else if (key.isWritable()) {
+                            if (key.isWritable()) {
                                 SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
+                                int toBeWritten = state.getWriteQueue().size();
                                 // FIXME property handle header sending request
                                 if(state.isSendHeader()) {
                                     buffer.put("AMQP".getBytes("US-ASCII"));
@@ -247,9 +326,11 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                                     state.setSendHeader(false);
                                 }
 
+                                int written = 0;
                                 Frame frame;
-                                while((frame = state.getWriteQueue().poll()) != null) {
+                                while(written <= toBeWritten && (frame = state.getWriteQueue().poll()) != null) {
                                     frame.writeTo(channel, buffer);
+                                    written++;
                                 }
                                 Frame.drain(channel, buffer);
                             }
