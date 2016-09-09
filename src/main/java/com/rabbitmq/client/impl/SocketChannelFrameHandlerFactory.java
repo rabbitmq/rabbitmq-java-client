@@ -17,7 +17,6 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
-import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.SocketConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,92 +151,10 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                                 try {
                                     channel.read(buffer);
                                     buffer.flip();
-                                    // FIXME handle partial frame
                                     while(buffer.hasRemaining()) {
-                                        // FIXME make frame read better
-                                        int type;
-                                        int channelHeader;
+                                        Frame frame = Frame.readFrom(channel, buffer);
 
-                                        if(!buffer.hasRemaining()) {
-                                            buffer.clear();
-                                            channel.read(buffer);
-                                            buffer.flip();
-                                        }
-
-                                        type = buffer.get() & 0xff;
-
-                                        if(!buffer.hasRemaining()) {
-                                            buffer.clear();
-                                            channel.read(buffer);
-                                            buffer.flip();
-                                        }
-
-                                        int ch1 = buffer.get() & 0xff;
-
-
-                                        if(!buffer.hasRemaining()) {
-                                            buffer.clear();
-                                            channel.read(buffer);
-                                            buffer.flip();
-                                        }
-                                        int ch2 = buffer.get() & 0xff;
-
-                                        channelHeader = (ch1 << 8) + (ch2 << 0);
-
-                                        if(!buffer.hasRemaining()) {
-                                            buffer.clear();
-                                            channel.read(buffer);
-                                            buffer.flip();
-                                        }
-                                        byte b3 = buffer.get();
-                                        if(!buffer.hasRemaining()) {
-                                            buffer.clear();
-                                            channel.read(buffer);
-                                            buffer.flip();
-                                        }
-                                        byte b2 = buffer.get();
-                                        if(!buffer.hasRemaining()) {
-                                            buffer.clear();
-                                            channel.read(buffer);
-                                            buffer.flip();
-                                        }
-                                        byte b1 = buffer.get();
-                                        if(!buffer.hasRemaining()) {
-                                            buffer.clear();
-                                            channel.read(buffer);
-                                            buffer.flip();
-                                        }
-                                        byte b0 = buffer.get();
-
-                                        int payloadSize = (((b3       ) << 24) |
-                                            ((b2 & 0xff) << 16) |
-                                            ((b1 & 0xff) <<  8) |
-                                            ((b0 & 0xff)      ));
-
-
-                                        byte[] payload = new byte[payloadSize];
-                                        if(payloadSize > buffer.remaining()) {
-                                            int remaining = buffer.remaining();
-                                            buffer.get(payload, 0, remaining);
-                                            buffer.clear();
-                                            channel.read(buffer);
-                                            buffer.flip();
-                                            buffer.get(payload, remaining, payloadSize - remaining);
-                                        } else {
-                                            buffer.get(payload);
-                                        }
-
-                                        if(!buffer.hasRemaining()) {
-                                            buffer.clear();
-                                            channel.read(buffer);
-                                            buffer.flip();
-                                        }
-                                        int frameEndMarker = buffer.get() & 0xff;
-                                        if (frameEndMarker != AMQP.FRAME_END) {
-                                            throw new MalformedFrameException("Bad frame end marker: " + frameEndMarker);
-                                        }
-                                        Frame frame = new Frame(type, channelHeader, payload);
-
+                                        // FIXME the connection may not be there yet (to be checked)
                                         boolean handled = state.getConnection().handleReadFrame(frame);
 
                                         // problem during frame processing, the connection triggered shutdown
@@ -333,12 +250,9 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
 
                                 Frame frame;
                                 while((frame = state.getWriteQueue().poll()) != null) {
-                                    if(buffer.remaining() < frame.size()) {
-                                        buffer.clear();
-                                    }
                                     frame.writeTo(channel, buffer);
                                 }
-                                buffer.clear();
+                                Frame.drain(channel, buffer);
                             }
                             key.cancel();
                         }

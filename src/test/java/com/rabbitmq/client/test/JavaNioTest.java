@@ -56,7 +56,7 @@ public class JavaNioTest {
         channel.queueDeclare(queue, false, false, false, null);
         channel.queuePurge(queue);
 
-        channel.basicPublish("", queue, null, "hello nio world!".getBytes("UTF-8"));
+        channel.basicPublish("", queue, null, new byte[20000]);
 
         channel.basicConsume(queue, false, new DefaultConsumer(channel) {
             @Override
