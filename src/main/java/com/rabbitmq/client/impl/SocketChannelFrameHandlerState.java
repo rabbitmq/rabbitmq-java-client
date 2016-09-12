@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -31,11 +30,15 @@ public class SocketChannelFrameHandlerState {
     /** should be used only in the NIO read thread */
     private long lastActivity;
 
-    private final SocketChannelFrameHandlerFactory.SelectorState selectorState;
+    private final SocketChannelFrameHandlerFactory.SelectorState writeSelectorState;
 
-    public SocketChannelFrameHandlerState(SocketChannel channel, SocketChannelFrameHandlerFactory.SelectorState selectorState) {
+    private final SocketChannelFrameHandlerFactory.SelectorState readSelectorState;
+
+    public SocketChannelFrameHandlerState(SocketChannel channel, SocketChannelFrameHandlerFactory.SelectorState readSelectorState,
+        SocketChannelFrameHandlerFactory.SelectorState writeSelectorState) {
         this.channel = channel;
-        this.selectorState = selectorState;
+        this.readSelectorState = readSelectorState;
+        this.writeSelectorState = writeSelectorState;
     }
 
     public SocketChannel getChannel() {
@@ -53,7 +56,7 @@ public class SocketChannelFrameHandlerState {
     public void setSendHeader(boolean sendHeader) {
         this.sendHeader = sendHeader;
         if(sendHeader) {
-            this.selectorState.registerFrameHandlerState(this, SelectionKey.OP_WRITE);
+            this.writeSelectorState.registerFrameHandlerState(this, SelectionKey.OP_WRITE);
         }
     }
 
@@ -61,7 +64,7 @@ public class SocketChannelFrameHandlerState {
         try {
             boolean offered = this.writeQueue.offer(frame, 10, TimeUnit.SECONDS);
             if(offered) {
-                this.selectorState.registerFrameHandlerState(this, SelectionKey.OP_WRITE);
+                this.writeSelectorState.registerFrameHandlerState(this, SelectionKey.OP_WRITE);
             } else {
                 throw new IOException("Frame enqueuing failed");
             }
@@ -69,6 +72,10 @@ public class SocketChannelFrameHandlerState {
         } catch (InterruptedException e) {
             LOGGER.warn("Thread interrupted during enqueuing frame in write queue");
         }
+    }
+
+    public void startReading() {
+        this.readSelectorState.registerFrameHandlerState(this, SelectionKey.OP_READ);
     }
 
     public AMQConnection getConnection() {

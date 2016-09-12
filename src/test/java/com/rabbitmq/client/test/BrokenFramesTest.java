@@ -122,6 +122,11 @@ public class BrokenFramesTest {
         public void sendHeader() throws IOException {
         }
 
+        @Override
+        public void initialize(AMQConnection connection) {
+            connection.startMainLoop();
+        }
+
         public void setTimeout(int timeoutMs) throws SocketException {
             // no need to implement this: don't bother changing the timeout
         }

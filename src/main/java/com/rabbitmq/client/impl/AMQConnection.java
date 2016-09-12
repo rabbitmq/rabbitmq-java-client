@@ -281,19 +281,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             throw ioe;
         }
 
-        // FIXME properly prepare the connection depending on IO implementation
-        if(this._frameHandler instanceof SocketChannelFrameHandler) {
-            // FIXME set the connection earlier
-            ((SocketChannelFrameHandler) _frameHandler).getState().setConnection(this);
-        } else {
-            // start the main loop going
-            MainLoop loop = new MainLoop();
-            final String name = "AMQP Connection " + getHostAddress() + ":" + getPort();
-            mainLoopThread = Environment.newThread(threadFactory, loop, name);
-            mainLoopThread.start();
-            // after this point clear-up of MainLoop is triggered by closing the frameHandler.
-        }
-
+        this._frameHandler.initialize(this);
 
         AMQP.Connection.Start connStart;
         AMQP.Connection.Tune connTune = null;
@@ -405,6 +393,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         result.setShutdownExecutor(this.shutdownExecutor);
         result.setChannelShutdownTimeout((int) ((requestedHeartbeat * CHANNEL_SHUTDOWN_TIMEOUT_MULTIPLIER) * 1000));
         return result;
+    }
+
+    /**
+     * Package private API, allows for easier testing.
+     */
+    public void startMainLoop() {
+        MainLoop loop = new MainLoop();
+        final String name = "AMQP Connection " + getHostAddress() + ":" + getPort();
+        mainLoopThread = Environment.newThread(threadFactory, loop, name);
+        mainLoopThread.start();
     }
 
     /**
@@ -556,9 +554,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     readFrame(frame);
                 }
             } catch (Throwable ex) {
-                handleFailureInRead(ex);
+                handleFailure(ex);
             } finally {
-                doFinalShutdownInRead();
+                doFinalShutdown();
             }
         }
     }
@@ -570,9 +568,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 return true;
             } catch (Throwable ex) {
                 try {
-                    handleFailureInRead(ex);
+                    handleFailure(ex);
                 } finally {
-                    doFinalShutdownInRead();
+                    doFinalShutdown();
                 }
             }
         }
@@ -625,11 +623,19 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             _exceptionHandler.handleUnexpectedConnectionDriverException(this, ex);
             shutdown(null, false, ex, true);
         } finally {
-            doFinalShutdownInRead();
+            doFinalShutdown();
         }
     }
 
-    private void handleFailureInRead(Throwable ex)  {
+    void handleIoError(Throwable ex) {
+        try {
+            handleFailure(ex);
+        } finally {
+            doFinalShutdown();
+        }
+    }
+
+    private void handleFailure(Throwable ex)  {
         if(ex instanceof EOFException) {
             if (!_brokerInitiatedShutdown)
                 shutdown(null, false, ex, true);
@@ -640,7 +646,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
-    private void doFinalShutdownInRead() {
+    private void doFinalShutdown() {
         _frameHandler.close();
         _appContinuation.set(null);
         notifyListeners();

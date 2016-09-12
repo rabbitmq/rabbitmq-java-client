@@ -17,6 +17,7 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.SocketConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,10 +33,10 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 
 /**
  *
@@ -47,28 +48,17 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
     private final SelectorState readSelectorState;
     private final SelectorState writeSelectorState;
 
-    private ExecutorService executorService;
+    // FIXME provide constructor with executorservice
+    private final ExecutorService executorService = null;
 
-    private Future<?> readLoop;
-    private Future<?> writeLoop;
-
-    private Lock loopsLock = new ReentrantLock();
-
-    private final ThreadFactory threadFactory = new ThreadFactory() {
-
-        AtomicLong counter = new AtomicLong();
-
-        @Override
-        public Thread newThread(Runnable r) {
-            return new Thread(r, "rabbitmq-nio-"+counter.getAndIncrement());
-        }
-    };
+    private final ThreadFactory threadFactory = Executors.defaultThreadFactory();
 
     public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator,
         boolean ssl) throws IOException {
         super(connectionTimeout, factory, configurator, ssl);
         this.readSelectorState = new SelectorState(Selector.open());
         this.writeSelectorState = new SelectorState(Selector.open());
+        startIoLoops();
     }
 
     public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl,
@@ -76,11 +66,14 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
         super(connectionTimeout, factory, configurator, ssl, shutdownExecutor);
         this.readSelectorState = new SelectorState(Selector.open());
         this.writeSelectorState = new SelectorState(Selector.open());
+        startIoLoops();
     }
 
     @Override
     public FrameHandler create(Address addr) throws IOException {
-        SocketAddress address = new InetSocketAddress(addr.getHost(), addr.getPort());
+        int portNumber = ConnectionFactory.portOrDefault(addr.getPort(), ssl);
+
+        SocketAddress address = new InetSocketAddress(addr.getHost(), portNumber);
         SocketChannel channel = SocketChannel.open();
         configurator.configure(channel.socket());
 
@@ -89,67 +82,21 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
 
         channel.configureBlocking(false);
 
-        SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(channel, writeSelectorState);
-
-        loopsLock.lock();
-        try {
-            readSelectorState.registerFrameHandlerState(state, SelectionKey.OP_READ);
-
-            if(this.executorService == null) {
-
-                this.executorService = Executors.newFixedThreadPool(2, threadFactory);
-            }
-            if(readLoop == null) {
-                readLoop = this.executorService.submit(new ReadLoop(readSelectorState));
-            }
-            if(writeLoop == null) {
-                writeLoop = this.executorService.submit(new WriteLoop(writeSelectorState));
-            }
-        } finally {
-            loopsLock.unlock();
-        }
-
-
+        SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(channel, readSelectorState, writeSelectorState);
 
         SocketChannelFrameHandler frameHandler = new SocketChannelFrameHandler(state);
         return frameHandler;
     }
 
-    public static class SelectorState {
-
-        private final Selector selector;
-
-        private final Queue<RegistrationState> statesToBeRegistered = new LinkedBlockingQueue<RegistrationState>();
-
-        private SelectorState(Selector selector) {
-            this.selector = selector;
-        }
-
-        public void registerFrameHandlerState(SocketChannelFrameHandlerState state, int operations) {
-            statesToBeRegistered.add(new RegistrationState(state, operations));
-            selector.wakeup();
-        }
-
-    }
-
-    private boolean cleanLoopsOrKeepRunning() {
-        loopsLock.lock();
-        try {
-            if(readSelectorState.statesToBeRegistered.isEmpty()) {
-                boolean cancelled = writeLoop.cancel(true);
-                if(!cancelled) {
-                    LOGGER.warn("Could not stop write loop");
-                }
-                this.writeLoop = null;
-                this.readLoop = null;
-                this.executorService.shutdownNow();
-                return false;
-            } else {
-                // looks like someone is trying to connect, keep running
-                return true;
-            }
-        } finally {
-            loopsLock.unlock();
+    protected void startIoLoops() {
+        if(executorService == null) {
+            Thread readThread = Environment.newThread(threadFactory, new ReadLoop(readSelectorState), "rabbitmq-nio-read");
+            Thread writeThread = Environment.newThread(threadFactory, new WriteLoop(writeSelectorState), "rabbitmq-nio-write");
+            readThread.start();
+            writeThread.start();
+        } else {
+            this.executorService.submit(new ReadLoop(readSelectorState));
+            this.executorService.submit(new WriteLoop(writeSelectorState));
         }
     }
 
@@ -167,14 +114,13 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
             // FIXME find a better default?
             ByteBuffer buffer = ByteBuffer.allocate(8192);
             try {
-                while(true) {
+                while(true && !Thread.currentThread().isInterrupted()) {
 
                     // if there's no read key anymore
-                    boolean someoneIsStillReading = false;
                     for (SelectionKey selectionKey : selector.keys()) {
                         SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) selectionKey.attachment();
                         // FIXME connection should always be here
-                        if(state.getConnection() != null && state.getConnection().getHeartbeat() > 0) {
+                        if(state.getConnection().getHeartbeat() > 0) {
                             long now = System.currentTimeMillis();
                             if((now - state.getLastActivity()) > state.getConnection().getHeartbeat() * 1000 * 2) {
                                 try {
@@ -188,16 +134,10 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                         }
 
                         if(!selectionKey.channel().isOpen()) {
+                            // FIXME maybe better to wait for an exception and to trigger AMQConnection shutdown?
+                            // or check if AMQConnection is closed and init shutdown if appropriate
+                            LOGGER.warn("Channel for connection {} closed, removing it from IO thread", state.getConnection());
                             selectionKey.cancel();
-                        } else {
-                            someoneIsStillReading = true;
-                        }
-                    }
-
-                    if(!someoneIsStillReading && state.statesToBeRegistered.isEmpty()) {
-                        boolean keepRunning = cleanLoopsOrKeepRunning();
-                        if(!keepRunning) {
-                            return;
                         }
                     }
 
@@ -227,19 +167,19 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
 
                             SocketChannel channel = (SocketChannel) key.channel();
                             if (key.isReadable()) {
-                                SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
+                                final SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
                                 try {
                                     channel.read(buffer);
                                     buffer.flip();
                                     while(buffer.hasRemaining()) {
                                         Frame frame = Frame.readFrom(channel, buffer);
 
-                                        // FIXME the connection may not be there yet (to be checked)
-                                        boolean handled = state.getConnection().handleReadFrame(frame);
-
-                                        // problem during frame processing, the connection triggered shutdown
-                                        // we can stop for this channel
-                                        if(!handled) {
+                                        try {
+                                            state.getConnection().handleReadFrame(frame);
+                                        } catch(Throwable ex) {
+                                            // problem during frame processing, tell connection, and
+                                            // we can stop for this channel
+                                            dispatchIoErrorToConnection(state, ex);
                                             break;
                                         }
 
@@ -251,8 +191,9 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
 
                                     }
                                     state.setLastActivity(System.currentTimeMillis());
-                                } catch (Exception e) {
+                                } catch (final Exception e) {
                                     LOGGER.warn("Error during reading frames", e);
+                                    dispatchIoErrorToConnection(state, e);
                                     key.cancel();
                                 } finally {
                                     buffer.clear();
@@ -270,7 +211,7 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
         }
     }
 
-    private static class WriteLoop implements Runnable {
+    private class WriteLoop implements Runnable {
 
         private final SelectorState state;
 
@@ -310,31 +251,36 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                             SelectionKey key = iterator.next();
                             iterator.remove();
                             SocketChannel channel = (SocketChannel) key.channel();
+                            SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
                             if (key.isWritable()) {
-                                SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
-                                int toBeWritten = state.getWriteQueue().size();
-                                // FIXME property handle header sending request
-                                if(state.isSendHeader()) {
-                                    buffer.put("AMQP".getBytes("US-ASCII"));
-                                    buffer.put((byte) 0);
-                                    buffer.put((byte) AMQP.PROTOCOL.MAJOR);
-                                    buffer.put((byte) AMQP.PROTOCOL.MINOR);
-                                    buffer.put((byte) AMQP.PROTOCOL.REVISION);
-                                    buffer.flip();
-                                    while(buffer.hasRemaining() && channel.write(buffer) != 0);
-                                    buffer.clear();
-                                    state.setSendHeader(false);
-                                }
+                                try {
+                                    int toBeWritten = state.getWriteQueue().size();
+                                    // FIXME property handle header sending request
+                                    if(state.isSendHeader()) {
+                                        buffer.put("AMQP".getBytes("US-ASCII"));
+                                        buffer.put((byte) 0);
+                                        buffer.put((byte) AMQP.PROTOCOL.MAJOR);
+                                        buffer.put((byte) AMQP.PROTOCOL.MINOR);
+                                        buffer.put((byte) AMQP.PROTOCOL.REVISION);
+                                        buffer.flip();
+                                        while(buffer.hasRemaining() && channel.write(buffer) != 0);
+                                        buffer.clear();
+                                        state.setSendHeader(false);
+                                    }
 
-                                int written = 0;
-                                Frame frame;
-                                while(written <= toBeWritten && (frame = state.getWriteQueue().poll()) != null) {
-                                    frame.writeTo(channel, buffer);
-                                    written++;
+                                    int written = 0;
+                                    Frame frame;
+                                    while(written <= toBeWritten && (frame = state.getWriteQueue().poll()) != null) {
+                                        frame.writeTo(channel, buffer);
+                                        written++;
+                                    }
+                                } catch(Exception e) {
+                                    dispatchIoErrorToConnection(state, e);
+                                } finally {
+                                    Frame.drain(channel, buffer);
+                                    key.cancel();
                                 }
-                                Frame.drain(channel, buffer);
                             }
-                            key.cancel();
                         }
                     }
 
@@ -344,6 +290,25 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
             }
         }
 
+    }
+
+    protected void dispatchIoErrorToConnection(final SocketChannelFrameHandlerState state, final Throwable ex) {
+        // In case of recovery after the shutdown,
+        // the new connection shouldn't be initialized in
+        // the NIO thread, to avoid a deadlock.
+        Runnable shutdown = new Runnable() {
+            @Override
+            public void run() {
+                state.getConnection().handleIoError(ex);
+            }
+        };
+        if(this.executorService == null) {
+            String name = "rabbitmq-connection-shutdown-" + state.getConnection();
+            Thread shutdownThread = Environment.newThread(threadFactory, shutdown, name);
+            shutdownThread.start();
+        } else {
+            this.executorService.submit(shutdown);
+        }
     }
 
     public static class RegistrationState {
@@ -357,4 +322,22 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
         }
 
     }
+
+    public static class SelectorState {
+
+        private final Selector selector;
+
+        private final Queue<RegistrationState> statesToBeRegistered = new LinkedBlockingQueue<RegistrationState>();
+
+        private SelectorState(Selector selector) {
+            this.selector = selector;
+        }
+
+        public void registerFrameHandlerState(SocketChannelFrameHandlerState state, int operations) {
+            statesToBeRegistered.add(new RegistrationState(state, operations));
+            selector.wakeup();
+        }
+
+    }
+
 }

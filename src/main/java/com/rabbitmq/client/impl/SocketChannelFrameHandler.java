@@ -72,6 +72,12 @@ public class SocketChannelFrameHandler implements FrameHandler {
     }
 
     @Override
+    public void initialize(AMQConnection connection) {
+        state.setConnection(connection);
+        state.startReading();
+    }
+
+    @Override
     public Frame readFrame() throws IOException {
         throw new UnsupportedOperationException();
     }

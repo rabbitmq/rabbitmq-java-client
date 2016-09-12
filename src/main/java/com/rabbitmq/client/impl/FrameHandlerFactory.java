@@ -30,7 +30,7 @@ public class FrameHandlerFactory {
     private final SocketFactory factory;
     protected final SocketConfigurator configurator;
     private final ExecutorService shutdownExecutor;
-    private final boolean ssl;
+    protected final boolean ssl;
 
     public FrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl) {
         this(connectionTimeout, factory, configurator, ssl, null);

@@ -225,6 +225,11 @@ public class AMQConnectionTest {
             _numHeadersSent++;
         }
 
+        @Override
+        public void initialize(AMQConnection connection) {
+            connection.startMainLoop();
+        }
+
         public void setTimeout(int timeoutMs) throws SocketException {
             this.timeout = timeoutMs;
         }
