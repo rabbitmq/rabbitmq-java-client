@@ -644,14 +644,14 @@ public class ConnectionFactory implements Cloneable {
         return metricsCollector;
     }
 
-    protected FrameHandlerFactory createFrameHandlerFactory() throws IOException {
+    protected synchronized FrameHandlerFactory createFrameHandlerFactory() throws IOException {
         if(nio) {
             if(this.frameHandlerFactory == null) {
-                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor);
+                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, socketConf, isSSL());
             }
             return this.frameHandlerFactory;
         } else {
-            return new FrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor);
+            return new SocketFrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor);
         }
 
     }

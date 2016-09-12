@@ -22,7 +22,6 @@ import com.rabbitmq.client.SocketConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.SocketFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -41,7 +40,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  *
  */
-public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
+public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketChannelFrameHandlerFactory.class);
 
@@ -53,17 +52,8 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
 
     private final ThreadFactory threadFactory = Executors.defaultThreadFactory();
 
-    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator,
-        boolean ssl) throws IOException {
-        super(connectionTimeout, factory, configurator, ssl);
-        this.readSelectorState = new SelectorState(Selector.open());
-        this.writeSelectorState = new SelectorState(Selector.open());
-        startIoLoops();
-    }
-
-    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl,
-        ExecutorService shutdownExecutor) throws IOException {
-        super(connectionTimeout, factory, configurator, ssl, shutdownExecutor);
+    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, boolean ssl) throws IOException {
+        super(connectionTimeout, configurator, ssl);
         this.readSelectorState = new SelectorState(Selector.open());
         this.writeSelectorState = new SelectorState(Selector.open());
         startIoLoops();
@@ -179,7 +169,7 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                                         } catch(Throwable ex) {
                                             // problem during frame processing, tell connection, and
                                             // we can stop for this channel
-                                            dispatchIoErrorToConnection(state, ex);
+                                            handleIoError(state, ex);
                                             break;
                                         }
 
@@ -193,7 +183,7 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                                     state.setLastActivity(System.currentTimeMillis());
                                 } catch (final Exception e) {
                                     LOGGER.warn("Error during reading frames", e);
-                                    dispatchIoErrorToConnection(state, e);
+                                    handleIoError(state, e);
                                     key.cancel();
                                 } finally {
                                     buffer.clear();
@@ -275,7 +265,7 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                                         written++;
                                     }
                                 } catch(Exception e) {
-                                    dispatchIoErrorToConnection(state, e);
+                                    handleIoError(state, e);
                                 } finally {
                                     Frame.drain(channel, buffer);
                                     key.cancel();
@@ -283,13 +273,22 @@ public class SocketChannelFrameHandlerFactory extends FrameHandlerFactory {
                             }
                         }
                     }
-
                 }
             } catch(Exception e) {
                 LOGGER.error("Error in write loop", e);
             }
         }
 
+    }
+
+    protected void handleIoError(SocketChannelFrameHandlerState state, Throwable ex) {
+        if(needToDispatchIoError(state)) {
+            dispatchIoErrorToConnection(state, ex);
+        }
+    }
+
+    protected boolean needToDispatchIoError(final SocketChannelFrameHandlerState state) {
+        return state.getConnection().isOpen();
     }
 
     protected void dispatchIoErrorToConnection(final SocketChannelFrameHandlerState state, final Throwable ex) {

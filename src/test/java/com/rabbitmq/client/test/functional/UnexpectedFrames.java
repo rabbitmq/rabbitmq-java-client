@@ -20,16 +20,12 @@ import java.net.Socket;
 
 import javax.net.SocketFactory;
 
+import com.rabbitmq.client.impl.*;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultSocketConfigurator;
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.Frame;
-import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.FrameHandlerFactory;
-import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 /**
@@ -77,7 +73,7 @@ public class UnexpectedFrames extends BrokerTestCase {
         }
     }
 
-    private static class ConfusedFrameHandlerFactory extends FrameHandlerFactory {
+    private static class ConfusedFrameHandlerFactory extends SocketFrameHandlerFactory {
         private ConfusedFrameHandlerFactory() {
             super(1000, SocketFactory.getDefault(), new DefaultSocketConfigurator(), false);
         }

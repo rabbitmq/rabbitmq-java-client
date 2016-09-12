@@ -16,10 +16,7 @@
 package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ConnectionParams;
-import com.rabbitmq.client.impl.FrameHandlerFactory;
-import com.rabbitmq.client.impl.NetworkConnection;
+import com.rabbitmq.client.impl.*;
 
 import java.io.IOException;
 import java.net.InetAddress;
