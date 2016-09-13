@@ -4,9 +4,7 @@ import com.rabbitmq.client.*;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 import static org.junit.Assert.assertTrue;
 
@@ -48,6 +46,68 @@ public class JavaNioTest {
             safeClose(connection2);
         }
     }
+
+    @Test
+    public void twoConnectionsWithNioExecutor() throws IOException, TimeoutException, InterruptedException {
+        CountDownLatch latch = new CountDownLatch(2);
+        ExecutorService nioExecutor = Executors.newFixedThreadPool(5);
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setNio(true);
+        connectionFactory.setNioExecutor(nioExecutor);
+        Connection connection1 = null;
+        Connection connection2 = null;
+        try {
+            connection1 = basicGetBasicConsume(connectionFactory, "nio.queue.1", latch);
+            connection2 = basicGetBasicConsume(connectionFactory, "nio.queue.2", latch);
+
+            boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
+            assertTrue("Messages have not been received", messagesReceived);
+        } finally {
+            safeClose(connection1);
+            safeClose(connection2);
+            nioExecutor.shutdownNow();
+        }
+    }
+
+    @Test public void shutdownListenerCalled() throws IOException, TimeoutException, InterruptedException {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setNio(true);
+        Connection connection = connectionFactory.newConnection();
+        try {
+            final CountDownLatch latch = new CountDownLatch(1);
+            connection.addShutdownListener(new ShutdownListener() {
+                @Override
+                public void shutdownCompleted(ShutdownSignalException cause) {
+                    latch.countDown();
+                }
+            });
+            safeClose(connection);
+            assertTrue("Shutdown listener should have been called", latch.await(5, TimeUnit.SECONDS));
+        } finally {
+            safeClose(connection);
+        }
+    }
+
+    /*
+    @Test public void tooManyOpenFiles() throws IOException, TimeoutException, InterruptedException {
+        // check NIO state is correctly cleaned
+        for(int i = 0; i < 500; i++) {
+            ConnectionFactory connectionFactory = new ConnectionFactory();
+            connectionFactory.setNio(true);
+            Connection connection = connectionFactory.newConnection();
+            safeClose(connection);
+        }
+
+        Thread.sleep(10 * 1000L);
+
+        for(int i = 0; i < 500; i++) {
+            ConnectionFactory connectionFactory = new ConnectionFactory();
+            connectionFactory.setNio(true);
+            Connection connection = connectionFactory.newConnection();
+            safeClose(connection);
+        }
+    }
+    */
 
     private Connection basicGetBasicConsume(ConnectionFactory connectionFactory, String queue, final CountDownLatch latch)
         throws IOException, TimeoutException {

@@ -32,10 +32,10 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  *
@@ -44,19 +44,31 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketChannelFrameHandlerFactory.class);
 
-    private final SelectorState readSelectorState;
-    private final SelectorState writeSelectorState;
+    private SelectorState readSelectorState;
+    private SelectorState writeSelectorState;
 
-    // FIXME provide constructor with executorservice
-    private final ExecutorService executorService = null;
+    private final ExecutorService executorService;
 
-    private final ThreadFactory threadFactory = Executors.defaultThreadFactory();
+    private final ThreadFactory threadFactory;
 
-    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, boolean ssl) throws IOException {
+    private final Lock stateLock = new ReentrantLock();
+
+    private final AtomicLong connectionCount = new AtomicLong();
+
+    private Thread readThread, writeThread;
+
+    private Future<?> readTask, writeTask;
+
+    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, boolean ssl, ExecutorService executorService) throws IOException {
         super(connectionTimeout, configurator, ssl);
-        this.readSelectorState = new SelectorState(Selector.open());
-        this.writeSelectorState = new SelectorState(Selector.open());
-        startIoLoops();
+        this.executorService = executorService;
+        this.threadFactory = null;
+    }
+
+    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, boolean ssl, ThreadFactory threadFactory) throws IOException {
+        super(connectionTimeout, configurator, ssl);
+        this.executorService = null;
+        this.threadFactory = threadFactory;
     }
 
     @Override
@@ -66,6 +78,15 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
         SocketAddress address = new InetSocketAddress(addr.getHost(), portNumber);
         SocketChannel channel = SocketChannel.open();
         configurator.configure(channel.socket());
+
+        // lock
+        stateLock.lock();
+        try {
+            connectionCount.incrementAndGet();
+            initStateIfNecessary();
+        } finally {
+            stateLock.unlock();
+        }
 
         // FIXME handle connection failure
         channel.connect(address);
@@ -78,15 +99,68 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
         return frameHandler;
     }
 
+    protected boolean cleanUp() {
+        // get connection count
+        // lock
+        // if connection count has changed, do nothing
+        // if connection count hasn't changed, clean
+        long connectionCountNow = connectionCount.get();
+        stateLock.lock();
+        try {
+            if(connectionCountNow != connectionCount.get()) {
+                // a connection request has come in meanwhile, don't do anything
+                return false;
+            }
+
+            if(this.executorService == null) {
+                this.writeThread.interrupt();
+            } else {
+                boolean canceled = this.writeTask.cancel(true);
+                if(!canceled) {
+                    LOGGER.info("Could not stop write NIO task");
+                }
+            }
+
+            try {
+                readSelectorState.selector.close();
+            } catch (IOException e) {
+                LOGGER.warn("Could not close read selector: {}", e.getMessage());
+            }
+            try {
+                writeSelectorState.selector.close();
+            } catch (IOException e) {
+                LOGGER.warn("Could not close write selector: {}", e.getMessage());
+            }
+
+            this.readSelectorState = null;
+            this.writeSelectorState = null;
+
+        } finally {
+            stateLock.unlock();
+        }
+        return true;
+    }
+
+    protected void initStateIfNecessary() throws IOException {
+        if(this.readSelectorState == null) {
+            // create selectors
+            this.readSelectorState = new SelectorState(Selector.open());
+            this.writeSelectorState = new SelectorState(Selector.open());
+
+            // create threads/tasks
+            startIoLoops();
+        }
+    }
+
     protected void startIoLoops() {
         if(executorService == null) {
-            Thread readThread = Environment.newThread(threadFactory, new ReadLoop(readSelectorState), "rabbitmq-nio-read");
-            Thread writeThread = Environment.newThread(threadFactory, new WriteLoop(writeSelectorState), "rabbitmq-nio-write");
+            this.readThread = Environment.newThread(threadFactory, new ReadLoop(this.readSelectorState), "rabbitmq-nio-read");
+            this.writeThread = Environment.newThread(threadFactory, new WriteLoop(this.writeSelectorState), "rabbitmq-nio-write");
             readThread.start();
             writeThread.start();
         } else {
-            this.executorService.submit(new ReadLoop(readSelectorState));
-            this.executorService.submit(new WriteLoop(writeSelectorState));
+            this.readTask = this.executorService.submit(new ReadLoop(this.readSelectorState));
+            this.writeTask = this.executorService.submit(new WriteLoop(this.writeSelectorState));
         }
     }
 
@@ -104,9 +178,9 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
             // FIXME find a better default?
             ByteBuffer buffer = ByteBuffer.allocate(8192);
             try {
+                int idlenessCount = 0;
                 while(true && !Thread.currentThread().isInterrupted()) {
 
-                    // if there's no read key anymore
                     for (SelectionKey selectionKey : selector.keys()) {
                         SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) selectionKey.attachment();
                         // FIXME connection should always be here
@@ -123,18 +197,30 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                             }
                         }
 
+                        // FIXME really necessary? key are supposed to be removed when channel is closed
+                        /*
                         if(!selectionKey.channel().isOpen()) {
-                            // FIXME maybe better to wait for an exception and to trigger AMQConnection shutdown?
-                            // or check if AMQConnection is closed and init shutdown if appropriate
                             LOGGER.warn("Channel for connection {} closed, removing it from IO thread", state.getConnection());
                             selectionKey.cancel();
                         }
+                        */
                     }
 
                     int select;
                     if(state.statesToBeRegistered.isEmpty()) {
                         // we can block, registration will call Selector.wakeup()
                         select = selector.select(1000);
+                        idlenessCount++;
+                        if(idlenessCount == 10 && selector.keys().size() == 0) {
+                        //if(false) {
+                            // we haven't been doing anything for a while, shutdown state
+                            boolean clean = cleanUp();
+                            if(clean) {
+                                // we stop this thread
+                                return;
+                            }
+                            // there may be incoming connections, keep going
+                        }
                     } else {
                         // we don't have to block, we need to select and clean cancelled keys before registration
                         select = selector.selectNow();
@@ -149,6 +235,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                     }
 
                     if (select > 0) {
+                        idlenessCount = 0;
                         Set<SelectionKey> readyKeys = selector.selectedKeys();
                         Iterator<SelectionKey> iterator = readyKeys.iterator();
                         while (iterator.hasNext()) {
@@ -165,11 +252,19 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                                         Frame frame = Frame.readFrom(channel, buffer);
 
                                         try {
-                                            state.getConnection().handleReadFrame(frame);
+                                            boolean noProblem = state.getConnection().handleReadFrame(frame);
+                                            if(noProblem && (!state.getConnection().isRunning() || state.getConnection().hasBrokerInitiatedShutdown())) {
+                                                // looks like the frame was Close-Ok or Close
+                                                dispatchShutdownToConnection(state);
+                                                key.cancel();
+                                                break;
+                                            }
+
                                         } catch(Throwable ex) {
                                             // problem during frame processing, tell connection, and
                                             // we can stop for this channel
                                             handleIoError(state, ex);
+                                            key.cancel();
                                             break;
                                         }
 
@@ -231,7 +326,13 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                     RegistrationState registration;
                     while((registration = state.statesToBeRegistered.poll()) != null) {
                         int operations = registration.operations;
-                        registration.state.getChannel().register(selector, operations, registration.state);
+                        try {
+                            registration.state.getChannel().register(selector, operations, registration.state);
+                        } catch(Exception e) {
+                            // can happen if the channel has been closed since the operation has been enqueued
+                            LOGGER.info("Error while registering socket channel for write: {}", e.getMessage());
+                        }
+
                     }
 
                     if(select > 0) {
@@ -264,10 +365,11 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                                         frame.writeTo(channel, buffer);
                                         written++;
                                     }
+                                    Frame.drain(channel, buffer);
                                 } catch(Exception e) {
                                     handleIoError(state, e);
                                 } finally {
-                                    Frame.drain(channel, buffer);
+                                    buffer.clear();
                                     key.cancel();
                                 }
                             }
@@ -299,6 +401,22 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
             @Override
             public void run() {
                 state.getConnection().handleIoError(ex);
+            }
+        };
+        if(this.executorService == null) {
+            String name = "rabbitmq-connection-shutdown-" + state.getConnection();
+            Thread shutdownThread = Environment.newThread(threadFactory, shutdown, name);
+            shutdownThread.start();
+        } else {
+            this.executorService.submit(shutdown);
+        }
+    }
+
+    protected void dispatchShutdownToConnection(final SocketChannelFrameHandlerState state) {
+        Runnable shutdown = new Runnable() {
+            @Override
+            public void run() {
+                state.getConnection().doFinalShutdown();
             }
         };
         if(this.executorService == null) {

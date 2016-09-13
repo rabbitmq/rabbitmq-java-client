@@ -32,6 +32,12 @@ import com.rabbitmq.client.test.BrokerTestCase;
  *
  */
 public class UnverifiedConnection extends BrokerTestCase {
+
+    @Override
+    protected boolean nio() {
+        return false;
+    }
+
     public void openConnection()
             throws IOException, TimeoutException {
         try {

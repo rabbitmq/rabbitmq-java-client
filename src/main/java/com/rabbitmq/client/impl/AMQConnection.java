@@ -577,6 +577,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return false;
     }
 
+    public boolean isRunning() {
+        return _running;
+    }
+
+    public boolean hasBrokerInitiatedShutdown() {
+        return _brokerInitiatedShutdown;
+    }
+
     private void readFrame(Frame frame) throws IOException {
         if (frame != null) {
             _missedHeartbeats = 0;
@@ -646,7 +654,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
-    private void doFinalShutdown() {
+    void doFinalShutdown() {
         _frameHandler.close();
         _appContinuation.set(null);
         notifyListeners();
@@ -798,7 +806,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 // this releases the thread
             } finally {
                 _running = false;
-                _channel0.notifyOutstandingRpc(cause);
+                    _channel0.notifyOutstandingRpc(cause);
             }
         }
     }

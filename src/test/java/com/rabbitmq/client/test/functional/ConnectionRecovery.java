@@ -15,11 +15,11 @@
 
 package com.rabbitmq.client.test.functional;
 
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.recovery.*;
+import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.tools.Host;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,32 +33,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.Test;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Address;
-import com.rabbitmq.client.BlockedListener;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConfirmListener;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.Recoverable;
-import com.rabbitmq.client.RecoveryListener;
-import com.rabbitmq.client.ReturnListener;
-import com.rabbitmq.client.ShutdownListener;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
-import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
-import com.rabbitmq.client.impl.recovery.ConsumerRecoveryListener;
-import com.rabbitmq.client.impl.recovery.QueueRecoveryListener;
-import com.rabbitmq.client.impl.recovery.RecoveryCanBeginListener;
-import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.tools.Host;
-
+import static org.junit.Assert.*;
 
 @SuppressWarnings("ThrowFromFinallyBlock")
 public class ConnectionRecovery extends BrokerTestCase {
@@ -852,6 +827,12 @@ public class ConnectionRecovery extends BrokerTestCase {
         cf.setAutomaticRecoveryEnabled(true);
         if (disableTopologyRecovery) {
             cf.setTopologyRecoveryEnabled(false);
+        }
+        if(nio()) {
+            cf.setNio(true);
+            cf.setNioExecutor(this.nioExecutor);
+        } else {
+            cf.setNio(false);
         }
         return cf;
     }

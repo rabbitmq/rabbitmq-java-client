@@ -108,8 +108,9 @@ public class ConnectionFactory implements Cloneable {
 
     private MetricsCollector metricsCollector;
 
-    private boolean nio = false;
+    private boolean nio = true;
     private FrameHandlerFactory frameHandlerFactory;
+    private ExecutorService nioExecutor;
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -647,7 +648,11 @@ public class ConnectionFactory implements Cloneable {
     protected synchronized FrameHandlerFactory createFrameHandlerFactory() throws IOException {
         if(nio) {
             if(this.frameHandlerFactory == null) {
-                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, socketConf, isSSL());
+                if(this.nioExecutor == null) {
+                    this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, socketConf, isSSL(), this.threadFactory);
+                } else {
+                    this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, socketConf, isSSL(), this.nioExecutor);
+                }
             }
             return this.frameHandlerFactory;
         } else {
@@ -1033,5 +1038,9 @@ public class ConnectionFactory implements Cloneable {
 
     public void setNio(boolean nio) {
         this.nio = nio;
+    }
+
+    public void setNioExecutor(ExecutorService nioExecutor) {
+        this.nioExecutor = nioExecutor;
     }
 }

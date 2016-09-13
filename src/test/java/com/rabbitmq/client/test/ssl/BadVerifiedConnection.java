@@ -72,6 +72,7 @@ public class BadVerifiedConnection extends UnverifiedConnection {
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
             connectionFactory = new ConnectionFactory();
+            connectionFactory.setNio(nio());
             connectionFactory.useSslProtocol(c);
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex.toString());

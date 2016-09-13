@@ -20,6 +20,12 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.tools.Host;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -27,16 +33,48 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.*;
 
 public class BrokerTestCase {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(BrokerTestCase.class);
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            LOGGER.info("Starting test: {}.{}", description.getTestClass().getSimpleName(), description.getMethodName());
+        }
+
+        @Override
+        protected void finished(Description description) {
+            LOGGER.info("Test finished: {}.{}", description.getTestClass().getSimpleName(), description.getMethodName());
+        }
+    };
+
     protected ConnectionFactory connectionFactory = newConnectionFactory();
 
+    protected ExecutorService nioExecutor = null;
+
     protected ConnectionFactory newConnectionFactory() {
-        return new ConnectionFactory();
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        if(nio()) {
+            connectionFactory.setNio(true);
+            this.nioExecutor = Executors.newFixedThreadPool(5);
+            connectionFactory.setNioExecutor(this.nioExecutor);
+        } else {
+            connectionFactory.setNio(false);
+            this.nioExecutor = null;
+        }
+
+        return connectionFactory;
+    }
+
+    protected boolean nio() {
+        return true;
     }
 
     protected Connection connection;
@@ -60,6 +98,11 @@ public class BrokerTestCase {
         releaseResources();
         closeChannel();
         closeConnection();
+        if(nio()) {
+            if(this.nioExecutor != null) {
+                this.nioExecutor.shutdownNow();
+            }
+        }
     }
 
     /**

@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.SocketException;
 
 /**
  * An implementation of {@link com.rabbitmq.client.ExceptionHandler} that does not
@@ -120,7 +119,9 @@ public class ForgivingExceptionHandler implements ExceptionHandler {
     }
 
     private boolean isSocketClosedOrConnectionReset(Throwable e) {
-        return e instanceof SocketException &&
-            ("Connection reset".equals(e.getMessage()) || "Socket closed".equals(e.getMessage()));
+        return e instanceof IOException &&
+            ("Connection reset".equals(e.getMessage()) || "Socket closed".equals(e.getMessage()) ||
+             "Connection reset by peer".equals(e.getMessage())
+            );
     }
 }
