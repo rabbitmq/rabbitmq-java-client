@@ -91,7 +91,6 @@ public class PerfTest {
             factory.setUri(uri);
             factory.setRequestedFrameMax(frameMax);
             factory.setRequestedHeartbeat(heartbeat);
-            factory.setNio(true);
 
             MulticastParams p = new MulticastParams();
             p.setAutoAck(          autoAck);

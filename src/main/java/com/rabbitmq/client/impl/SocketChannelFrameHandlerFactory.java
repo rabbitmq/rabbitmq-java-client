@@ -32,7 +32,10 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -57,7 +60,12 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
     private Thread readThread, writeThread;
 
-    private Future<?> readTask, writeTask;
+    private Future<?> writeTask;
+
+    // FIXME make the following configuration settings
+    //  size of byte buffers
+    //  nb of NIO threads (should be even, 1 thread for read, 1 thread for write to scale IO
+    //  SocketChannelFrameHandlerState.write timeout
 
     public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, boolean ssl, ExecutorService executorService) throws IOException {
         super(connectionTimeout, configurator, ssl);
@@ -100,10 +108,6 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
     }
 
     protected boolean cleanUp() {
-        // get connection count
-        // lock
-        // if connection count has changed, do nothing
-        // if connection count hasn't changed, clean
         long connectionCountNow = connectionCount.get();
         stateLock.lock();
         try {
@@ -143,11 +147,9 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
     protected void initStateIfNecessary() throws IOException {
         if(this.readSelectorState == null) {
-            // create selectors
             this.readSelectorState = new SelectorState(Selector.open());
             this.writeSelectorState = new SelectorState(Selector.open());
 
-            // create threads/tasks
             startIoLoops();
         }
     }
@@ -159,7 +161,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
             readThread.start();
             writeThread.start();
         } else {
-            this.readTask = this.executorService.submit(new ReadLoop(this.readSelectorState));
+            this.executorService.submit(new ReadLoop(this.readSelectorState));
             this.writeTask = this.executorService.submit(new WriteLoop(this.writeSelectorState));
         }
     }
@@ -183,7 +185,6 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
                     for (SelectionKey selectionKey : selector.keys()) {
                         SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) selectionKey.attachment();
-                        // FIXME connection should always be here
                         if(state.getConnection().getHeartbeat() > 0) {
                             long now = System.currentTimeMillis();
                             if((now - state.getLastActivity()) > state.getConnection().getHeartbeat() * 1000 * 2) {
@@ -196,14 +197,6 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                                 }
                             }
                         }
-
-                        // FIXME really necessary? key are supposed to be removed when channel is closed
-                        /*
-                        if(!selectionKey.channel().isOpen()) {
-                            LOGGER.warn("Channel for connection {} closed, removing it from IO thread", state.getConnection());
-                            selectionKey.cancel();
-                        }
-                        */
                     }
 
                     int select;
@@ -354,7 +347,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                                         buffer.put((byte) AMQP.PROTOCOL.MINOR);
                                         buffer.put((byte) AMQP.PROTOCOL.REVISION);
                                         buffer.flip();
-                                        while(buffer.hasRemaining() && channel.write(buffer) != 0);
+                                        while(buffer.hasRemaining() && channel.write(buffer) != -1);
                                         buffer.clear();
                                         state.setSendHeader(false);
                                     }
