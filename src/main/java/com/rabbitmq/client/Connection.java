@@ -259,24 +259,26 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
     ExceptionHandler getExceptionHandler();
 
     /**
-     * Unique ID for this connection.
-     * This ID should be unique, otherwise some services
+     * Returns a unique ID for this connection.
+     *
+     * This ID must be unique, otherwise some services
      * like the metrics collector won't work properly.
      * This ID doesn't have to be provided by the client,
-     * services that require it will assign it automatically
-     * if it's not set.
-     * @return
+     * services that require it will be assigned automatically
+     * if not set.
+     *
+     * @return unique ID for this connection.
      */
     String getId();
 
     /**
-     * Set the unique ID for this connection.
-     * This ID should be unique, otherwise some services
+     * Sets a unique ID for this connection.
+     *
+     * This ID must be unique, otherwise some services
      * like the metrics collector won't work properly.
      * This ID doesn't have to be provided by the client,
-     * services that require it will assign it automatically
-     * if it's not set.
-     * @return
+     * services that require it will be assigned automatically
+     * if not set.
      */
     void setId(String id);
 }
