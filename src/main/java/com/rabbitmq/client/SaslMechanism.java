@@ -15,8 +15,6 @@
 
 package com.rabbitmq.client;
 
-import java.io.IOException;
-
 /**
  * Our own view of a SASL authentication mechanism, introduced to remove a
  * dependency on javax.security.sasl.

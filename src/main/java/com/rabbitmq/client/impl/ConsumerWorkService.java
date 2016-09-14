@@ -88,6 +88,7 @@ final public class ConsumerWorkService {
 
     private final class WorkPoolRunnable implements Runnable {
 
+        @Override
         public void run() {
             int size = MAX_RUNNABLE_BLOCK_SIZE;
             List<Runnable> block = new ArrayList<Runnable>(size);

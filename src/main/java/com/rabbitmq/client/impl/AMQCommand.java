@@ -68,16 +68,19 @@ public class AMQCommand implements Command {
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Method getMethod() {
         return this.assembler.getMethod();
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public AMQContentHeader getContentHeader() {
         return this.assembler.getContentHeader();
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public byte[] getContentBody() {
         return this.assembler.getContentBody();
     }

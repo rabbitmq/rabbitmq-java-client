@@ -130,6 +130,7 @@ final class HeartbeatSender {
             this.heartbeatNanos = heartbeatNanos;
         }
 
+        @Override
         public void run() {
             try {
                 long now = System.nanoTime();

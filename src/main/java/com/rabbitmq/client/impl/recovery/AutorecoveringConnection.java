@@ -99,17 +99,13 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      */
     public void init() throws IOException, TimeoutException {
         this.delegate = this.cf.newConnection();
-        this.addAutomaticRecoveryListener();
-    }
-
-    public void start() throws IOException {
-        // no-op, AMQConnection#start is executed in ConnectionFactory#newConnection
-        // and invoking it again will result in a framing error. MK.
+        this.addAutomaticRecoveryListener(delegate);
     }
 
     /**
      * @see com.rabbitmq.client.Connection#createChannel()
      */
+    @Override
     public Channel createChannel() throws IOException {
         RecoveryAwareChannelN ch = (RecoveryAwareChannelN) delegate.createChannel();
         if (ch == null) {
@@ -122,6 +118,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#createChannel(int)
      */
+    @Override
     public Channel createChannel(int channelNumber) throws IOException {
         return delegate.createChannel(channelNumber);
     }
@@ -155,6 +152,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#getServerProperties()
      */
+    @Override
     public Map<String, Object> getServerProperties() {
         return delegate.getServerProperties();
     }
@@ -162,6 +160,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#getClientProperties()
      */
+    @Override
     public Map<String, Object> getClientProperties() {
         return delegate.getClientProperties();
     }
@@ -171,6 +170,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see ConnectionFactory#newConnection(Address[], String)
      * @see ConnectionFactory#newConnection(ExecutorService, Address[], String)
      */
+    @Override
     public String getClientProvidedName() {
         return delegate.getClientProvidedName();
     }
@@ -178,6 +178,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#getFrameMax()
      */
+    @Override
     public int getFrameMax() {
         return delegate.getFrameMax();
     }
@@ -185,6 +186,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#getHeartbeat()
      */
+    @Override
     public int getHeartbeat() {
         return delegate.getHeartbeat();
     }
@@ -192,6 +194,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#getChannelMax()
      */
+    @Override
     public int getChannelMax() {
         return delegate.getChannelMax();
     }
@@ -199,6 +202,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#isOpen()
      */
+    @Override
     public boolean isOpen() {
         return delegate.isOpen();
     }
@@ -206,6 +210,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#close()
      */
+    @Override
     public void close() throws IOException {
 		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
@@ -216,6 +221,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see Connection#close(int)
      */
+    @Override
     public void close(int timeout) throws IOException {
 		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
@@ -226,6 +232,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see Connection#close(int, String, int)
      */
+    @Override
     public void close(int closeCode, String closeMessage, int timeout) throws IOException {
 		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
@@ -236,6 +243,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#abort()
      */
+    @Override
     public void abort() {
 		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
@@ -246,6 +254,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see Connection#abort(int, String, int)
      */
+    @Override
     public void abort(int closeCode, String closeMessage, int timeout) {
 		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
@@ -256,6 +265,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see Connection#abort(int, String)
      */
+    @Override
     public void abort(int closeCode, String closeMessage) {
 		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
@@ -266,6 +276,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see Connection#abort(int)
      */
+    @Override
     public void abort(int timeout) {
 		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
@@ -276,6 +287,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#getCloseReason()
      */
+    @Override
     public ShutdownSignalException getCloseReason() {
         return delegate.getCloseReason();
     }
@@ -283,6 +295,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.ShutdownNotifier#addShutdownListener(com.rabbitmq.client.ShutdownListener)
      */
+    @Override
     public void addBlockedListener(BlockedListener listener) {
         this.blockedListeners.add(listener);
         delegate.addBlockedListener(listener);
@@ -291,6 +304,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see Connection#removeBlockedListener(com.rabbitmq.client.BlockedListener)
      */
+    @Override
     public boolean removeBlockedListener(BlockedListener listener) {
         this.blockedListeners.remove(listener);
         return delegate.removeBlockedListener(listener);
@@ -299,6 +313,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#clearBlockedListeners()
      */
+    @Override
     public void clearBlockedListeners() {
         this.blockedListeners.clear();
         delegate.clearBlockedListeners();
@@ -307,6 +322,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#close(int, String)
      */
+    @Override
     public void close(int closeCode, String closeMessage) throws IOException {
 		synchronized(recoveryLock) {
 			this.manuallyClosed = true;
@@ -317,6 +333,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see Connection#addShutdownListener(com.rabbitmq.client.ShutdownListener)
      */
+    @Override
     public void addShutdownListener(ShutdownListener listener) {
         this.shutdownHooks.add(listener);
         delegate.addShutdownListener(listener);
@@ -325,6 +342,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.ShutdownNotifier#removeShutdownListener(com.rabbitmq.client.ShutdownListener)
      */
+    @Override
     public void removeShutdownListener(ShutdownListener listener) {
         this.shutdownHooks.remove(listener);
         delegate.removeShutdownListener(listener);
@@ -333,6 +351,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.ShutdownNotifier#notifyListeners()
      */
+    @Override
     public void notifyListeners() {
         delegate.notifyListeners();
     }
@@ -341,6 +360,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * Adds the recovery listener
      * @param listener {@link com.rabbitmq.client.RecoveryListener} to execute after this connection recovers from network failure
      */
+    @Override
     public void addRecoveryListener(RecoveryListener listener) {
         this.recoveryListeners.add(listener);
     }
@@ -349,6 +369,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * Removes the recovery listener
      * @param listener {@link com.rabbitmq.client.RecoveryListener} to remove
      */
+    @Override
     public void removeRecoveryListener(RecoveryListener listener) {
         this.recoveryListeners.remove(listener);
     }
@@ -356,7 +377,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.impl.AMQConnection#getExceptionHandler()
      */
-    @SuppressWarnings("unused")
+    @Override
     public ExceptionHandler getExceptionHandler() {
         return this.delegate.getExceptionHandler();
     }
@@ -364,6 +385,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#getPort()
      */
+    @Override
     public int getPort() {
         return delegate.getPort();
     }
@@ -371,6 +393,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @see com.rabbitmq.client.Connection#getAddress()
      */
+    @Override
     public InetAddress getAddress() {
         return delegate.getAddress();
     }
@@ -378,6 +401,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @return client socket address
      */
+    @Override
     public InetAddress getLocalAddress() {
         return this.delegate.getLocalAddress();
     }
@@ -385,6 +409,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     /**
      * @return client socket port
      */
+    @Override
     public int getLocalPort() {
         return this.delegate.getLocalPort();
     }
@@ -393,8 +418,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     // Recovery
     //
 
-    private void addAutomaticRecoveryListener() {
+    private void addAutomaticRecoveryListener(final RecoveryAwareAMQConnection newConn) {
         final AutorecoveringConnection c = this;
+
         ShutdownListener automaticRecoveryListener = new ShutdownListener() {
             public void shutdownCompleted(ShutdownSignalException cause) {
                 try {
@@ -402,7 +428,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                         c.beginAutomaticRecovery();
                     }
                 } catch (Exception e) {
-                    c.delegate.getExceptionHandler().handleConnectionRecoveryException(c, e);
+                    newConn.getExceptionHandler().handleConnectionRecoveryException(c, e);
                 }
             }
         };
@@ -410,7 +436,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             if(!this.shutdownHooks.contains(automaticRecoveryListener)) {
                 this.shutdownHooks.add(automaticRecoveryListener);
             }
-            this.delegate.addShutdownListener(automaticRecoveryListener);
+            newConn.addShutdownListener(automaticRecoveryListener);
         }
     }
 
@@ -433,7 +459,6 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see com.rabbitmq.client.impl.recovery.AutorecoveringConnection#addQueueRecoveryListener
      * @param listener listener to be removed
      */
-    @SuppressWarnings("unused")
     public void removeQueueRecoveryListener(QueueRecoveryListener listener) {
         this.queueRecoveryListeners.remove(listener);
     }
@@ -453,58 +478,62 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @see com.rabbitmq.client.impl.recovery.AutorecoveringConnection#addConsumerRecoveryListener(ConsumerRecoveryListener)
      * @param listener listener to be removed
      */
-    @SuppressWarnings("unused")
     public void removeConsumerRecoveryListener(ConsumerRecoveryListener listener) {
         this.consumerRecoveryListeners.remove(listener);
     }
 
-    synchronized private void beginAutomaticRecovery() throws InterruptedException, IOException, TopologyRecoveryException {
+    synchronized private void beginAutomaticRecovery() throws InterruptedException {
         Thread.sleep(this.params.getNetworkRecoveryInterval());
-        if (!this.recoverConnection())
-			return; 
-		
-		this.recoverShutdownListeners();
-		this.recoverBlockedListeners();
-		this.recoverChannels();
-		if(this.params.isTopologyRecoveryEnabled()) {
-			this.recoverEntities();
-			this.recoverConsumers();
-		}
 
-		this.notifyRecoveryListeners();
+        final RecoveryAwareAMQConnection newConn = this.recoverConnection();
+        if (newConn == null) {
+            return;
+        }
+
+        this.addAutomaticRecoveryListener(newConn);
+	    this.recoverShutdownListeners(newConn);
+	    this.recoverBlockedListeners(newConn);
+	    this.recoverChannels(newConn);
+	    // don't assign new delegate connection until channel recovery is complete
+	    this.delegate = newConn;
+	    if(this.params.isTopologyRecoveryEnabled()) {
+		      this.recoverEntities();
+		      this.recoverConsumers();
+	    }
+
+	    this.notifyRecoveryListeners();
     }
 
-    private void recoverShutdownListeners() {
+    private void recoverShutdownListeners(final RecoveryAwareAMQConnection newConn) {
         for (ShutdownListener sh : this.shutdownHooks) {
-            this.delegate.addShutdownListener(sh);
+            newConn.addShutdownListener(sh);
         }
     }
 
-    private void recoverBlockedListeners() {
+    private void recoverBlockedListeners(final RecoveryAwareAMQConnection newConn) {
         for (BlockedListener bl : this.blockedListeners) {
-            this.delegate.addBlockedListener(bl);
+            newConn.addBlockedListener(bl);
         }
     }
 
-	// Returns true if the connection was recovered, 
-	// false if application initiated shutdown while attempting recovery.  
-    private boolean recoverConnection() throws IOException, InterruptedException {
+	// Returns new connection if the connection was recovered, 
+	// null if application initiated shutdown while attempting recovery.  
+    private RecoveryAwareAMQConnection recoverConnection() throws InterruptedException {
         while (!manuallyClosed)
 		{
             try {
 				RecoveryAwareAMQConnection newConn = this.cf.newConnection();
 				synchronized(recoveryLock) {
 					if (!manuallyClosed) {
-						// This is the standard case.
-						this.delegate = newConn;					
-						return true;
+						// This is the standard case.				
+						return newConn;
 					}
 				}
 				// This is the once in a blue moon case.  
 				// Application code just called close as the connection
 				// was being re-established.  So we attempt to close the newly created connection.
 				newConn.abort();
-				return false;
+				return null;
             } catch (Exception e) {
                 // TODO: exponential back-off
                 Thread.sleep(this.params.getNetworkRecoveryInterval());
@@ -512,15 +541,15 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             }
         }
 		
-		return false;
+		return null;
     }
 
-    private void recoverChannels() {
+    private void recoverChannels(final RecoveryAwareAMQConnection newConn) {
         for (AutorecoveringChannel ch : this.channels.values()) {
             try {
-                ch.automaticallyRecover(this, this.delegate);
+                ch.automaticallyRecover(this, newConn);
             } catch (Throwable t) {
-                this.delegate.getExceptionHandler().handleChannelRecoveryException(ch, t);
+                newConn.getExceptionHandler().handleChannelRecoveryException(ch, t);
             }
         }
     }
@@ -531,7 +560,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    private void recoverEntities() throws TopologyRecoveryException {
+    private void recoverEntities() {
         // The recovery sequence is the following:
         //
         // 1. Recover exchanges
@@ -567,19 +596,21 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             try {
                 q.recover();
                 String newName = q.getName();
-                // make sure server-named queues are re-added with
-                // their new names. MK.
-                synchronized (this.recordedQueues) {
-                    this.propagateQueueNameChangeToBindings(oldName, newName);
-                    this.propagateQueueNameChangeToConsumers(oldName, newName);
-                    // bug26552:
-                    // remove old name after we've updated the bindings and consumers,
-                    // plus only for server-named queues, both to make sure we don't lose
-                    // anything to recover. MK.
-                    if(q.isServerNamed()) {
-                        deleteRecordedQueue(oldName);
+                if (!oldName.equals(newName)) {
+                    // make sure server-named queues are re-added with
+                    // their new names. MK.
+                    synchronized (this.recordedQueues) {
+                        this.propagateQueueNameChangeToBindings(oldName, newName);
+                        this.propagateQueueNameChangeToConsumers(oldName, newName);
+                        // bug26552:
+                        // remove old name after we've updated the bindings and consumers,
+                        // plus only for server-named queues, both to make sure we don't lose
+                        // anything to recover. MK.
+                        if(q.isServerNamed()) {
+                            deleteRecordedQueue(oldName);
+                        }
+                        this.recordedQueues.put(newName, q);
                     }
-                    this.recordedQueues.put(newName, q);
                 }
                 for(QueueRecoveryListener qrl : this.queueRecoveryListeners) {
                     qrl.queueRecovered(oldName, newName);
@@ -657,9 +688,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                                          destination(queue).
                                          routingKey(routingKey).
                                          arguments(arguments);
-        if (this.recordedBindings.contains(binding)) {
-            this.recordedBindings.remove(binding);
-        }
+        this.recordedBindings.remove(binding);
         this.recordedBindings.add(binding);
     }
 
@@ -686,9 +715,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                                           destination(destination).
                                           routingKey(routingKey).
                                           arguments(arguments);
-        if (this.recordedBindings.contains(binding)) {
-            this.recordedBindings.remove(binding);
-        }
+        this.recordedBindings.remove(binding);
         this.recordedBindings.add(binding);
     }
 

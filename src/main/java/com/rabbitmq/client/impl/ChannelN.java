@@ -114,49 +114,56 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         exnWrappingRpc(new Channel.Open(UNSPECIFIED_OUT_OF_BAND));
     }
 
+    @Override
     public void addReturnListener(ReturnListener listener) {
         returnListeners.add(listener);
     }
 
+    @Override
     public boolean removeReturnListener(ReturnListener listener) {
         return returnListeners.remove(listener);
     }
 
+    @Override
     public void clearReturnListeners() {
         returnListeners.clear();
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
     @Deprecated
     public void addFlowListener(FlowListener listener) {
         flowListeners.add(listener);
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
     @Deprecated
     public boolean removeFlowListener(FlowListener listener) {
         return flowListeners.remove(listener);
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
     @Deprecated
     public void clearFlowListeners() {
         flowListeners.clear();
     }
 
+    @Override
     public void addConfirmListener(ConfirmListener listener) {
         confirmListeners.add(listener);
     }
 
+    @Override
     public boolean removeConfirmListener(ConfirmListener listener) {
         return confirmListeners.remove(listener);
     }
 
+    @Override
     public void clearConfirmListeners() {
         confirmListeners.clear();
     }
 
     /** {@inheritDoc} */
+    @Override
     public boolean waitForConfirms()
         throws InterruptedException
     {
@@ -168,6 +175,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** {@inheritDoc} */
+    @Override
     public boolean waitForConfirms(long timeout)
             throws InterruptedException, TimeoutException {
         if (nextPublishSeqNo == 0L)
@@ -198,6 +206,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** {@inheritDoc} */
+    @Override
     public void waitForConfirmsOrDie()
         throws IOException, InterruptedException
     {
@@ -207,6 +216,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** {@inheritDoc} */
+    @Override
     public void waitForConfirmsOrDie(long timeout)
         throws IOException, InterruptedException, TimeoutException
     {
@@ -222,6 +232,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Returns the current default consumer. */
+    @Override
     public Consumer getDefaultConsumer() {
         return defaultConsumer;
     }
@@ -230,6 +241,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * Sets the current default consumer.
      * A null argument is interpreted to mean "do not use a default consumer".
      */
+    @Override
     public void setDefaultConsumer(Consumer consumer) {
         defaultConsumer = consumer;
     }
@@ -487,18 +499,21 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void close()
         throws IOException, TimeoutException {
         close(AMQP.REPLY_SUCCESS, "OK");
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void close(int closeCode, String closeMessage)
         throws IOException, TimeoutException {
         close(closeCode, closeMessage, true, null, false);
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void abort()
         throws IOException
     {
@@ -506,6 +521,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void abort(int closeCode, String closeMessage)
         throws IOException
     {
@@ -592,6 +608,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void basicQos(int prefetchSize, int prefetchCount, boolean global)
 	throws IOException
     {
@@ -599,6 +616,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void basicQos(int prefetchCount, boolean global)
             throws IOException
     {
@@ -606,6 +624,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void basicQos(int prefetchCount)
 	throws IOException
     {
@@ -613,6 +632,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void basicPublish(String exchange, String routingKey,
                              BasicProperties props, byte[] body)
         throws IOException
@@ -621,6 +641,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void basicPublish(String exchange, String routingKey,
                              boolean mandatory,
                              BasicProperties props, byte[] body)
@@ -630,6 +651,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void basicPublish(String exchange, String routingKey,
                              boolean mandatory, boolean immediate,
                              BasicProperties props, byte[] body)
@@ -655,6 +677,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
                                               boolean durable, boolean autoDelete,
                                               Map<String, Object> arguments)
@@ -666,6 +689,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type,
         boolean durable, boolean autoDelete,
         Map<String, Object> arguments)
@@ -676,6 +700,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             arguments);
     }
 
+    @Override
     public void exchangeDeclareNoWait(String exchange,
                                       String type,
                                       boolean durable,
@@ -694,6 +719,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                 .build()));
     }
 
+    @Override
     public void exchangeDeclareNoWait(String exchange,
         BuiltinExchangeType type,
         boolean durable,
@@ -706,6 +732,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
                                               boolean durable,
                                               boolean autoDelete,
@@ -726,6 +753,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type,
         boolean durable,
         boolean autoDelete,
@@ -739,6 +767,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type,
                                               boolean durable)
         throws IOException
@@ -747,6 +776,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type,
         boolean durable)
         throws IOException
@@ -755,6 +785,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.DeclareOk exchangeDeclare(String exchange, String type)
         throws IOException
     {
@@ -762,6 +793,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type)
         throws IOException
     {
@@ -769,6 +801,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.DeclareOk exchangeDeclarePassive(String exchange)
         throws IOException
     {
@@ -782,6 +815,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused)
         throws IOException
     {
@@ -794,6 +828,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void exchangeDeleteNoWait(String exchange, boolean ifUnused) throws IOException {
         transmit(new AMQCommand(new Exchange.Delete.Builder()
                                         .exchange(exchange)
@@ -803,6 +838,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.DeleteOk exchangeDelete(String exchange)
         throws IOException
     {
@@ -810,6 +846,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.BindOk exchangeBind(String destination, String source,
             String routingKey, Map<String, Object> arguments)
             throws IOException {
@@ -824,6 +861,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void exchangeBindNoWait(String destination,
                                    String source,
                                    String routingKey,
@@ -838,12 +876,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.BindOk exchangeBind(String destination, String source,
             String routingKey) throws IOException {
         return exchangeBind(destination, source, routingKey, null);
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.UnbindOk exchangeUnbind(String destination, String source,
             String routingKey, Map<String, Object> arguments)
             throws IOException {
@@ -858,12 +898,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Exchange.UnbindOk exchangeUnbind(String destination, String source,
             String routingKey) throws IOException {
         return exchangeUnbind(destination, source, routingKey, null);
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void exchangeUnbindNoWait(String destination, String source,
                                      String routingKey, Map<String, Object> arguments)
             throws IOException {
@@ -877,6 +919,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive,
                                         boolean autoDelete, Map<String, Object> arguments)
         throws IOException
@@ -894,6 +937,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public com.rabbitmq.client.AMQP.Queue.DeclareOk queueDeclare()
         throws IOException
     {
@@ -901,6 +945,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void queueDeclareNoWait(String queue,
                                    boolean durable,
                                    boolean exclusive,
@@ -919,6 +964,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Queue.DeclareOk queueDeclarePassive(String queue)
         throws IOException
     {
@@ -934,18 +980,21 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public long messageCount(String queue) throws IOException {
         Queue.DeclareOk ok = queueDeclarePassive(queue);
         return ok.getMessageCount();
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public long consumerCount(String queue) throws IOException {
         Queue.DeclareOk ok = queueDeclarePassive(queue);
         return ok.getConsumerCount();
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty)
         throws IOException
     {
@@ -971,6 +1020,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Queue.DeleteOk queueDelete(String queue)
         throws IOException
     {
@@ -978,6 +1028,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Queue.BindOk queueBind(String queue, String exchange,
                                   String routingKey, Map<String, Object> arguments)
         throws IOException
@@ -994,6 +1045,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Queue.BindOk queueBind(String queue, String exchange, String routingKey)
         throws IOException
     {
@@ -1001,6 +1053,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void queueBindNoWait(String queue,
                                 String exchange,
                                 String routingKey,
@@ -1015,6 +1068,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey,
                                       Map<String, Object> arguments)
         throws IOException
@@ -1031,6 +1085,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Queue.PurgeOk queuePurge(String queue)
         throws IOException
     {
@@ -1043,6 +1098,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey)
         throws IOException
     {
@@ -1050,6 +1106,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public GetResponse basicGet(String queue, boolean autoAck)
         throws IOException
     {
@@ -1078,6 +1135,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void basicAck(long deliveryTag, boolean multiple)
         throws IOException
     {
@@ -1085,6 +1143,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void basicNack(long deliveryTag, boolean multiple, boolean requeue)
         throws IOException
     {
@@ -1092,6 +1151,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void basicReject(long deliveryTag, boolean requeue)
         throws IOException
     {
@@ -1099,6 +1159,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public String basicConsume(String queue, Consumer callback)
         throws IOException
     {
@@ -1106,6 +1167,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public String basicConsume(String queue, boolean autoAck, Consumer callback)
         throws IOException
     {
@@ -1113,6 +1175,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public String basicConsume(String queue, boolean autoAck, Map<String, Object> arguments,
                                Consumer callback)
         throws IOException
@@ -1121,6 +1184,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public String basicConsume(String queue, boolean autoAck, String consumerTag,
                                Consumer callback)
         throws IOException
@@ -1129,12 +1193,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    public String basicConsume(String queue, boolean autoAck, String consumerTag,
+    @Override
+    public String basicConsume(String queue, final boolean autoAck, String consumerTag,
                                boolean noLocal, boolean exclusive, Map<String, Object> arguments,
                                final Consumer callback)
         throws IOException
     {
         BlockingRpcContinuation<String> k = new BlockingRpcContinuation<String>() {
+            @Override
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).getConsumerTag();
                 _consumers.put(actualConsumerTag, callback);
@@ -1162,6 +1228,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void basicCancel(final String consumerTag)
         throws IOException
     {
@@ -1169,6 +1236,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (originalConsumer == null)
             throw new IOException("Unknown consumerTag");
         BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>() {
+            @Override
             public Consumer transformReply(AMQCommand replyCommand) {
                 replyCommand.getMethod();
                 _consumers.remove(consumerTag); //may already have been removed
@@ -1188,6 +1256,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Basic.RecoverOk basicRecover()
         throws IOException
     {
@@ -1195,6 +1264,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Basic.RecoverOk basicRecover(boolean requeue)
         throws IOException
     {
@@ -1203,6 +1273,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Tx.SelectOk txSelect()
         throws IOException
     {
@@ -1210,6 +1281,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Tx.CommitOk txCommit()
         throws IOException
     {
@@ -1217,6 +1289,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Tx.RollbackOk txRollback()
         throws IOException
     {
@@ -1224,6 +1297,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Confirm.SelectOk confirmSelect()
         throws IOException
     {
@@ -1234,21 +1308,24 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     /** Public API - {@inheritDoc} */
-    @SuppressWarnings("deprecation")
+    @Override
     @Deprecated
     public boolean flowBlocked() {
         return _blockContent;
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public long getNextPublishSeqNo() {
         return nextPublishSeqNo;
     }
 
+    @Override
     public void asyncRpc(Method method) throws IOException {
         transmit(method);
     }
 
+    @Override
     public AMQCommand rpc(Method method) throws IOException {
         return exnWrappingRpc(method);
     }
@@ -1281,7 +1358,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    private void validateQueueNameLength(String queue) {
+    private static void validateQueueNameLength(String queue) {
         if(queue.length() > 255) {
            throw new IllegalArgumentException("queue name must be no more than 255 characters long");
         }

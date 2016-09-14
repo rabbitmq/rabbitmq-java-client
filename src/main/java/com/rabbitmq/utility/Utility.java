@@ -32,7 +32,8 @@ public class Utility {
           this.setStackTrace(throwable.getStackTrace());
         }
 
-        @Override public Throwable fillInStackTrace(){
+        @Override
+        public Throwable fillInStackTrace(){
             return this;
         }
     }

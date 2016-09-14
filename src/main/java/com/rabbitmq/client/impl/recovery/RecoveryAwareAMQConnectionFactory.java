@@ -65,7 +65,7 @@ public class RecoveryAwareAMQConnectionFactory {
         throw (lastException != null) ? lastException : new IOException("failed to connect");
     }
 
-    private List<Address> shuffle(List<Address> addrs) {
+    private static List<Address> shuffle(List<Address> addrs) {
         List<Address> list = new ArrayList<Address>(addrs);
         Collections.shuffle(list);
         return list;
