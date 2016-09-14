@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -20,8 +21,7 @@ public class SocketChannelFrameHandlerState {
 
     private final SocketChannel channel;
 
-    // FIXME find appropriate default for limit in write queue
-    private final BlockingQueue<Frame> writeQueue = new LinkedBlockingQueue<Frame>(10000);
+    private final BlockingQueue<Frame> writeQueue;
 
     private volatile AMQConnection connection;
 
@@ -34,11 +34,15 @@ public class SocketChannelFrameHandlerState {
 
     private final SocketChannelFrameHandlerFactory.SelectorState readSelectorState;
 
+    private final int writeEnqueuingTimeoutInMs;
+
     public SocketChannelFrameHandlerState(SocketChannel channel, SocketChannelFrameHandlerFactory.SelectorState readSelectorState,
-        SocketChannelFrameHandlerFactory.SelectorState writeSelectorState) {
+        SocketChannelFrameHandlerFactory.SelectorState writeSelectorState, NioParams nioParams) {
         this.channel = channel;
         this.readSelectorState = readSelectorState;
         this.writeSelectorState = writeSelectorState;
+        this.writeQueue = new ArrayBlockingQueue<Frame>(nioParams.getWriteQueueCapacity(), true);
+        this.writeEnqueuingTimeoutInMs = nioParams.getWriteEnqueuingTimeoutInMs();
     }
 
     public SocketChannel getChannel() {
@@ -62,13 +66,12 @@ public class SocketChannelFrameHandlerState {
 
     public void write(Frame frame) throws IOException {
         try {
-            boolean offered = this.writeQueue.offer(frame, 10, TimeUnit.SECONDS);
+            boolean offered = this.writeQueue.offer(frame, writeEnqueuingTimeoutInMs, TimeUnit.MILLISECONDS);
             if(offered) {
                 this.writeSelectorState.registerFrameHandlerState(this, SelectionKey.OP_WRITE);
             } else {
                 throw new IOException("Frame enqueuing failed");
             }
-
         } catch (InterruptedException e) {
             LOGGER.warn("Thread interrupted during enqueuing frame in write queue");
         }

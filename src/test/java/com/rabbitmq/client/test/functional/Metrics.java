@@ -16,6 +16,7 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.NioParams;
 import com.rabbitmq.client.impl.StandardMetricsCollector;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -426,7 +427,7 @@ public class Metrics extends BrokerTestCase {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         if(nio()) {
             connectionFactory.setNio(true);
-            connectionFactory.setNioExecutor(this.nioExecutor);
+            connectionFactory.setNioParams(new NioParams().setNioExecutor(this.nioExecutor));
         } else {
             connectionFactory.setNio(false);
         }

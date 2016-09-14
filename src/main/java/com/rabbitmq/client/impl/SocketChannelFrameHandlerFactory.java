@@ -29,13 +29,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.Iterator;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -47,36 +42,27 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketChannelFrameHandlerFactory.class);
 
-    private SelectorState readSelectorState;
-    private SelectorState writeSelectorState;
-
     private final ExecutorService executorService;
 
     private final ThreadFactory threadFactory;
 
+    private final NioParams nioParams;
+
     private final Lock stateLock = new ReentrantLock();
 
-    private final AtomicLong connectionCount = new AtomicLong();
+    private final AtomicLong globalConnectionCount = new AtomicLong();
 
-    private Thread readThread, writeThread;
+    private final List<NioLoopsState> nioLoopsStates;
 
-    private Future<?> writeTask;
-
-    // FIXME make the following configuration settings
-    //  size of byte buffers
-    //  nb of NIO threads (should be even, 1 thread for read, 1 thread for write to scale IO
-    //  SocketChannelFrameHandlerState.write timeout
-
-    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, boolean ssl, ExecutorService executorService) throws IOException {
+    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, boolean ssl, NioParams nioParams) throws IOException {
         super(connectionTimeout, configurator, ssl);
-        this.executorService = executorService;
-        this.threadFactory = null;
-    }
-
-    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, boolean ssl, ThreadFactory threadFactory) throws IOException {
-        super(connectionTimeout, configurator, ssl);
-        this.executorService = null;
-        this.threadFactory = threadFactory;
+        this.nioParams = nioParams;
+        this.executorService = nioParams.getNioExecutor();
+        this.threadFactory = nioParams.getThreadFactory();
+        this.nioLoopsStates = new ArrayList<NioLoopsState>(this.nioParams.getNbIoThreads() / 2);
+        for(int i = 0; i < this.nioParams.getNbIoThreads() / 2; i++) {
+            this.nioLoopsStates.add(new NioLoopsState(this.executorService, this.threadFactory));
+        }
     }
 
     @Override
@@ -87,98 +73,134 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
         SocketChannel channel = SocketChannel.open();
         configurator.configure(channel.socket());
 
-        // lock
-        stateLock.lock();
-        try {
-            connectionCount.incrementAndGet();
-            initStateIfNecessary();
-        } finally {
-            stateLock.unlock();
-        }
-
         // FIXME handle connection failure
         channel.connect(address);
 
         channel.configureBlocking(false);
 
-        SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(channel, readSelectorState, writeSelectorState);
+        // lock
+        stateLock.lock();
+        NioLoopsState nioLoopsState = null;
+        try {
+            long modulo = globalConnectionCount.getAndIncrement() % (nioParams.getNbIoThreads() / 2);
+            nioLoopsState = nioLoopsStates.get((int) modulo);
+            nioLoopsState.initStateIfNecessary();
+            nioLoopsState.notifyNewConnection();
+        } finally {
+            stateLock.unlock();
+        }
+
+        SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(
+            channel,
+            nioLoopsState.readSelectorState, nioLoopsState.writeSelectorState,
+            nioParams
+        );
 
         SocketChannelFrameHandler frameHandler = new SocketChannelFrameHandler(state);
         return frameHandler;
     }
 
-    protected boolean cleanUp() {
-        long connectionCountNow = connectionCount.get();
-        stateLock.lock();
-        try {
-            if(connectionCountNow != connectionCount.get()) {
-                // a connection request has come in meanwhile, don't do anything
-                return false;
-            }
 
-            if(this.executorService == null) {
-                this.writeThread.interrupt();
+    private class NioLoopsState {
+
+        private Thread readThread, writeThread;
+
+        private Future<?> writeTask;
+
+        private SelectorState readSelectorState;
+        private SelectorState writeSelectorState;
+
+        private final ExecutorService executorService;
+
+        private final ThreadFactory threadFactory;
+
+        private final AtomicLong nioLoopsConnectionCount = new AtomicLong();
+
+        public NioLoopsState(ExecutorService executorService, ThreadFactory threadFactory) {
+            this.executorService = executorService;
+            this.threadFactory = threadFactory;
+        }
+
+        private void notifyNewConnection() {
+            nioLoopsConnectionCount.incrementAndGet();
+        }
+
+        private void initStateIfNecessary() throws IOException {
+            if(this.readSelectorState == null) {
+                this.readSelectorState = new SelectorState(Selector.open());
+                this.writeSelectorState = new SelectorState(Selector.open());
+
+                startIoLoops();
+            }
+        }
+
+        private void startIoLoops() {
+            if(executorService == null) {
+                this.readThread = Environment.newThread(threadFactory, new ReadLoop(this), "rabbitmq-nio-read");
+                this.writeThread = Environment.newThread(threadFactory, new WriteLoop(this.writeSelectorState), "rabbitmq-nio-write");
+                readThread.start();
+                writeThread.start();
             } else {
-                boolean canceled = this.writeTask.cancel(true);
-                if(!canceled) {
-                    LOGGER.info("Could not stop write NIO task");
+                this.executorService.submit(new ReadLoop(this));
+                this.writeTask = this.executorService.submit(new WriteLoop(this.writeSelectorState));
+            }
+        }
+
+        protected boolean cleanUp() {
+            long connectionCountNow = nioLoopsConnectionCount.get();
+            stateLock.lock();
+            try {
+                if(connectionCountNow != nioLoopsConnectionCount.get()) {
+                    // a connection request has come in meanwhile, don't do anything
+                    return false;
                 }
+
+                if(this.executorService == null) {
+                    this.writeThread.interrupt();
+                } else {
+                    boolean canceled = this.writeTask.cancel(true);
+                    if(!canceled) {
+                        LOGGER.info("Could not stop write NIO task");
+                    }
+                }
+
+                try {
+                    readSelectorState.selector.close();
+                } catch (IOException e) {
+                    LOGGER.warn("Could not close read selector: {}", e.getMessage());
+                }
+                try {
+                    writeSelectorState.selector.close();
+                } catch (IOException e) {
+                    LOGGER.warn("Could not close write selector: {}", e.getMessage());
+                }
+
+                this.readSelectorState = null;
+                this.writeSelectorState = null;
+
+            } finally {
+                stateLock.unlock();
             }
-
-            try {
-                readSelectorState.selector.close();
-            } catch (IOException e) {
-                LOGGER.warn("Could not close read selector: {}", e.getMessage());
-            }
-            try {
-                writeSelectorState.selector.close();
-            } catch (IOException e) {
-                LOGGER.warn("Could not close write selector: {}", e.getMessage());
-            }
-
-            this.readSelectorState = null;
-            this.writeSelectorState = null;
-
-        } finally {
-            stateLock.unlock();
+            return true;
         }
-        return true;
-    }
 
-    protected void initStateIfNecessary() throws IOException {
-        if(this.readSelectorState == null) {
-            this.readSelectorState = new SelectorState(Selector.open());
-            this.writeSelectorState = new SelectorState(Selector.open());
-
-            startIoLoops();
-        }
-    }
-
-    protected void startIoLoops() {
-        if(executorService == null) {
-            this.readThread = Environment.newThread(threadFactory, new ReadLoop(this.readSelectorState), "rabbitmq-nio-read");
-            this.writeThread = Environment.newThread(threadFactory, new WriteLoop(this.writeSelectorState), "rabbitmq-nio-write");
-            readThread.start();
-            writeThread.start();
-        } else {
-            this.executorService.submit(new ReadLoop(this.readSelectorState));
-            this.writeTask = this.executorService.submit(new WriteLoop(this.writeSelectorState));
-        }
     }
 
     private class ReadLoop implements Runnable {
 
-        private final SelectorState state;
+        private final NioLoopsState state;
 
-        public ReadLoop(SelectorState readSelectorState) {
+        public ReadLoop(NioLoopsState readSelectorState) {
             this.state = readSelectorState;
         }
 
         @Override
         public void run() {
-            Selector selector = state.selector;
+            final SelectorState selectorState = state.readSelectorState;
+            final Selector selector = selectorState.selector;
+            Set<RegistrationState> registrations = selectorState.statesToBeRegistered;
             // FIXME find a better default?
-            ByteBuffer buffer = ByteBuffer.allocate(8192);
+            ByteBuffer buffer = ByteBuffer.allocate(nioParams.getReadByteBufferSize());
             try {
                 int idlenessCount = 0;
                 while(true && !Thread.currentThread().isInterrupted()) {
@@ -200,14 +222,14 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                     }
 
                     int select;
-                    if(state.statesToBeRegistered.isEmpty()) {
+                    if(registrations.isEmpty()) {
                         // we can block, registration will call Selector.wakeup()
                         select = selector.select(1000);
                         idlenessCount++;
                         if(idlenessCount == 10 && selector.keys().size() == 0) {
                         //if(false) {
                             // we haven't been doing anything for a while, shutdown state
-                            boolean clean = cleanUp();
+                            boolean clean = state.cleanUp();
                             if(clean) {
                                 // we stop this thread
                                 return;
@@ -222,10 +244,21 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                     // registrations should be done after select,
                     // once the cancelled keys have been actually removed
                     RegistrationState registration;
-                    while((registration = state.statesToBeRegistered.poll()) != null) {
+                    Iterator<RegistrationState> registrationIterator = registrations.iterator();
+                    while(registrationIterator.hasNext()) {
+                        registration = registrationIterator.next();
+                        registrationIterator.remove();
                         int operations = registration.operations;
                         registration.state.getChannel().register(selector, operations, registration.state);
                     }
+                    /*
+                    RegistrationState registration;
+                    while((registration = registrationQueue.poll()) != null) {
+                        int operations = registration.operations;
+                        registration.state.getChannel().register(selector, operations, registration.state);
+                    }
+                    */
+
 
                     if (select > 0) {
                         idlenessCount = 0;
@@ -301,7 +334,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
         public void run() {
             Selector selector = state.selector;
             // FIXME find a better default?
-            ByteBuffer buffer = ByteBuffer.allocate(8192);
+            ByteBuffer buffer = ByteBuffer.allocate(nioParams.getWriteByteBufferSize());
 
             try {
                 while(true && !Thread.currentThread().isInterrupted()) {
@@ -317,6 +350,19 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                     // registrations should be done after select,
                     // once the cancelled keys have been actually removed
                     RegistrationState registration;
+                    Iterator<RegistrationState> registrationIterator = state.statesToBeRegistered.iterator();
+                    while(registrationIterator.hasNext()) {
+                        registration = registrationIterator.next();
+                        registrationIterator.remove();
+                        int operations = registration.operations;
+                        try {
+                            registration.state.getChannel().register(selector, operations, registration.state);
+                        } catch(Exception e) {
+                            // can happen if the channel has been closed since the operation has been enqueued
+                            LOGGER.info("Error while registering socket channel for write: {}", e.getMessage());
+                        }
+                    }
+                    /*
                     while((registration = state.statesToBeRegistered.poll()) != null) {
                         int operations = registration.operations;
                         try {
@@ -327,6 +373,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                         }
 
                     }
+                    */
 
                     if(select > 0) {
                         Set<SelectionKey> readyKeys = selector.selectedKeys();
@@ -337,6 +384,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                             SocketChannel channel = (SocketChannel) key.channel();
                             SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
                             if (key.isWritable()) {
+                                boolean cancelKey = true;
                                 try {
                                     int toBeWritten = state.getWriteQueue().size();
                                     // FIXME property handle header sending request
@@ -359,11 +407,16 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                                         written++;
                                     }
                                     Frame.drain(channel, buffer);
+                                    if(!state.getWriteQueue().isEmpty()) {
+                                        cancelKey = true;
+                                    }
                                 } catch(Exception e) {
                                     handleIoError(state, e);
                                 } finally {
                                     buffer.clear();
-                                    key.cancel();
+                                    if(cancelKey) {
+                                        key.cancel();
+                                    }
                                 }
                             }
                         }
@@ -431,13 +484,29 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
             this.operations = operations;
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+
+            RegistrationState that = (RegistrationState) o;
+
+            return state.getChannel().equals(that.state.getChannel());
+        }
+
+        @Override
+        public int hashCode() {
+            return state.getChannel().hashCode();
+        }
     }
 
     public static class SelectorState {
 
         private final Selector selector;
 
-        private final Queue<RegistrationState> statesToBeRegistered = new LinkedBlockingQueue<RegistrationState>();
+        private final Set<RegistrationState> statesToBeRegistered = Collections.newSetFromMap(new ConcurrentHashMap<RegistrationState, Boolean>());
 
         private SelectorState(Selector selector) {
             this.selector = selector;

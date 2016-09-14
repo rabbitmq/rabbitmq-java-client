@@ -1,6 +1,7 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.NioParams;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ public class JavaNioTest {
         CountDownLatch latch = new CountDownLatch(2);
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setNio(true);
+        connectionFactory.setNioParams(new NioParams().setNbIoThreads(4));
         Connection connection1 = null;
         Connection connection2 = null;
         try {
@@ -53,7 +55,7 @@ public class JavaNioTest {
         ExecutorService nioExecutor = Executors.newFixedThreadPool(5);
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setNio(true);
-        connectionFactory.setNioExecutor(nioExecutor);
+        connectionFactory.setNioParams(new NioParams().setNioExecutor(nioExecutor));
         Connection connection1 = null;
         Connection connection2 = null;
         try {

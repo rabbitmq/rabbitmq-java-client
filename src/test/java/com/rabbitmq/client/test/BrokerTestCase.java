@@ -17,6 +17,7 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.NioParams;
 import com.rabbitmq.tools.Host;
 import org.junit.After;
 import org.junit.Before;
@@ -64,7 +65,7 @@ public class BrokerTestCase {
         if(nio()) {
             connectionFactory.setNio(true);
             this.nioExecutor = Executors.newFixedThreadPool(5);
-            connectionFactory.setNioExecutor(this.nioExecutor);
+            connectionFactory.setNioParams(new NioParams().setNioExecutor(this.nioExecutor));
         } else {
             connectionFactory.setNio(false);
             this.nioExecutor = null;
