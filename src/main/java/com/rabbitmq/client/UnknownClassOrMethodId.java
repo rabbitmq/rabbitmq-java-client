@@ -34,6 +34,7 @@ public class UnknownClassOrMethodId extends IOException {
         this.classId = classId;
         this.methodId = methodId;
     }
+    @Override
     public String toString() {
         if (this.methodId == NO_METHOD_ID) {
             return super.toString() + "<" + classId + ">";

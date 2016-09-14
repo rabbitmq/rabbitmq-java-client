@@ -111,6 +111,7 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
     /** @return Reference to Connection or Channel object that fired the signal **/
     public Object getReference() { return _ref; }
 
+    @Override
     public ShutdownSignalException sensibleClone() {
         try {
             return (ShutdownSignalException)super.clone();

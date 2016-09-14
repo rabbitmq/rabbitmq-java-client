@@ -22,10 +22,12 @@ import com.rabbitmq.client.SaslMechanism;
  * The EXTERNAL auth mechanism
  */
 public class ExternalMechanism implements SaslMechanism {
+    @Override
     public String getName() {
         return "EXTERNAL";
     }
 
+    @Override
     public LongString handleChallenge(LongString challenge, String username, String password) {
         return LongStringHelper.asLongString("");
     }

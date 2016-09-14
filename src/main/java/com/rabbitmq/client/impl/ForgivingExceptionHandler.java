@@ -32,26 +32,32 @@ import java.net.SocketException;
  * @see com.rabbitmq.client.ConnectionFactory#setExceptionHandler(com.rabbitmq.client.ExceptionHandler)
  */
 public class ForgivingExceptionHandler implements ExceptionHandler {
+    @Override
     public void handleUnexpectedConnectionDriverException(Connection conn, Throwable exception) {
         log("An unexpected connection driver error occured", exception);
     }
 
+    @Override
     public void handleReturnListenerException(Channel channel, Throwable exception) {
         handleChannelKiller(channel, exception, "ReturnListener.handleReturn");
     }
 
+    @Override
     public void handleFlowListenerException(Channel channel, Throwable exception) {
         handleChannelKiller(channel, exception, "FlowListener.handleFlow");
     }
 
+    @Override
     public void handleConfirmListenerException(Channel channel, Throwable exception) {
         handleChannelKiller(channel, exception, "ConfirmListener.handle{N,A}ck");
     }
 
+    @Override
     public void handleBlockedListenerException(Connection connection, Throwable exception) {
         handleConnectionKiller(connection, exception, "BlockedListener");
     }
 
+    @Override
     public void handleConsumerException(Channel channel, Throwable exception,
                                         Consumer consumer, String consumerTag,
                                         String methodName)
@@ -65,6 +71,7 @@ public class ForgivingExceptionHandler implements ExceptionHandler {
     /**
      * @since 3.3.0
      */
+    @Override
     public void handleConnectionRecoveryException(Connection conn, Throwable exception) {
         // ignore java.net.ConnectException as those are
         // expected during recovery and will only produce noisy
@@ -79,6 +86,7 @@ public class ForgivingExceptionHandler implements ExceptionHandler {
     /**
      * @since 3.3.0
      */
+    @Override
     public void handleChannelRecoveryException(Channel ch, Throwable exception) {
         log("Caught an exception when recovering channel " + ch.getChannelNumber(), exception);
     }
@@ -86,6 +94,7 @@ public class ForgivingExceptionHandler implements ExceptionHandler {
     /**
      * @since 3.3.0
      */
+    @Override
     public void handleTopologyRecoveryException(Connection conn, Channel ch, TopologyRecoveryException exception) {
         log("Caught an exception when recovering topology " + exception.getMessage(), exception);
     }
@@ -119,7 +128,7 @@ public class ForgivingExceptionHandler implements ExceptionHandler {
         }
     }
 
-    private boolean isSocketClosedOrConnectionReset(Throwable e) {
+    private static boolean isSocketClosedOrConnectionReset(Throwable e) {
         return e instanceof SocketException &&
             ("Connection reset".equals(e.getMessage()) || "Socket closed".equals(e.getMessage()));
     }

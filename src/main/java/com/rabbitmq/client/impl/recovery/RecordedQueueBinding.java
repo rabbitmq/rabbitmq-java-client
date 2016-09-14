@@ -25,6 +25,7 @@ public class RecordedQueueBinding extends RecordedBinding {
         super(channel);
     }
 
+    @Override
     public void recover() throws IOException {
         this.channel.getDelegate().queueBind(this.getDestination(), this.getSource(), this.routingKey, this.arguments);
     }

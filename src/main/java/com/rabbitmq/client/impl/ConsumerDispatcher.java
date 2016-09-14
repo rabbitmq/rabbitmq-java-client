@@ -70,6 +70,7 @@ final class ConsumerDispatcher {
                                 final String consumerTag) {
         executeUnlessShuttingDown(
         new Runnable() {
+            @Override
             public void run() {
                 try {
                     delegate.handleConsumeOk(consumerTag);
@@ -89,6 +90,7 @@ final class ConsumerDispatcher {
                                final String consumerTag) {
         executeUnlessShuttingDown(
         new Runnable() {
+            @Override
             public void run() {
                 try {
                     delegate.handleCancelOk(consumerTag);
@@ -107,7 +109,8 @@ final class ConsumerDispatcher {
     public void handleCancel(final Consumer delegate, final String consumerTag) {
         executeUnlessShuttingDown(
         new Runnable() {
-      public void run() {
+      @Override
+    public void run() {
                 try {
                     delegate.handleCancel(consumerTag);
                 } catch (Throwable ex) {
@@ -126,6 +129,7 @@ final class ConsumerDispatcher {
     public void handleRecoverOk(final Consumer delegate, final String consumerTag) {
         executeUnlessShuttingDown(
         new Runnable() {
+            @Override
             public void run() {
                 delegate.handleRecoverOk(consumerTag);
             }
@@ -139,6 +143,7 @@ final class ConsumerDispatcher {
                                final byte[] body) throws IOException {
         executeUnlessShuttingDown(
         new Runnable() {
+            @Override
             public void run() {
                 try {
                     delegate.handleDelivery(consumerTag,
@@ -166,6 +171,7 @@ final class ConsumerDispatcher {
             this.shutdownConsumersDriven = true;
             // Execute shutdown processing even if there are no consumers.
             execute(new Runnable() {
+                @Override
                 public void run() {
                     ConsumerDispatcher.this.notifyConsumersOfShutdown(consumers, signal);
                     ConsumerDispatcher.this.shutdown(signal);

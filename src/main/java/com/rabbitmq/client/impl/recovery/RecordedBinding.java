@@ -67,9 +67,7 @@ public abstract class RecordedBinding extends RecordedEntity {
         this.destination = destination;
     }
 
-    public void recover() throws IOException {
-        // Implemented by subclasses
-    }
+    public abstract void recover() throws IOException;
 
     @Override
     public boolean equals(Object o) {

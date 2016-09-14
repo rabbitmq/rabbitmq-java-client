@@ -40,6 +40,7 @@ public class UnexpectedMethodError extends Error {
      * Return a string representation of this error.
      * @return a string describing the error
      */
+    @Override
     public String toString() {
         return super.toString() + ": " + _method;
     }

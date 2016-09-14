@@ -43,6 +43,7 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
      */
     private volatile ShutdownSignalException shutdownCause = null;
 
+    @Override
     public void addShutdownListener(ShutdownListener listener)
     {
         ShutdownSignalException sse = null;
@@ -54,12 +55,14 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
             listener.shutdownCompleted(sse);
     }
 
+    @Override
     public ShutdownSignalException getCloseReason() {
         synchronized(this.monitor) {
             return this.shutdownCause;
         }
     }
 
+    @Override
     public void notifyListeners()
     {
         ShutdownSignalException sse = null;
@@ -78,6 +81,7 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
         }
     }
 
+    @Override
     public void removeShutdownListener(ShutdownListener listener)
     {
         synchronized(this.monitor) {
@@ -85,6 +89,7 @@ public class ShutdownNotifierComponent implements ShutdownNotifier {
         }
     }
 
+    @Override
     public boolean isOpen() {
         synchronized(this.monitor) {
             return this.shutdownCause == null;
