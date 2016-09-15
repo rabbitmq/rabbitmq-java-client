@@ -29,6 +29,7 @@ public class NullTrustManager implements X509TrustManager {
      * Doesn't even bother looking at its arguments, simply returns,
      * which makes the check succeed.
      */
+    @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType) {
         // Do nothing.
     }
@@ -37,6 +38,7 @@ public class NullTrustManager implements X509TrustManager {
      * Doesn't even bother looking at its arguments, simply returns,
      * which makes the check succeed.
      */
+    @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) {
         // Do nothing.
     }
@@ -44,6 +46,7 @@ public class NullTrustManager implements X509TrustManager {
     /**
      * Always returns an empty array of X509Certificates.
      */
+    @Override
     public X509Certificate[] getAcceptedIssuers() {
         return new X509Certificate[0];
     }

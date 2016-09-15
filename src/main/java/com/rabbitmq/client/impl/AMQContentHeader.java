@@ -56,6 +56,7 @@ public abstract class AMQContentHeader implements ContentHeader {
     public abstract void writePropertiesTo(ContentHeaderPropertyWriter writer) throws IOException;
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void appendPropertyDebugStringTo(StringBuilder acc) {
         acc.append("(?)");
     }
@@ -78,6 +79,7 @@ public abstract class AMQContentHeader implements ContentHeader {
         return frame;
     }
     
+    @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
     }

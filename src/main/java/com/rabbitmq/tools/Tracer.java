@@ -178,6 +178,7 @@ public class Tracer implements Runnable {
         }
     }
 
+    @Override
     public void run() {
         try {
             byte[] handshake = new byte[8];
@@ -323,6 +324,7 @@ public class Tracer implements Runnable {
             }
         }
 
+        @Override
         public void run() {
             try {
                 while (true) {
@@ -442,6 +444,7 @@ public class Tracer implements Runnable {
                     flushInterval, this.queue);
         }
 
+        @Override
         public void log(String message) {
             if (message != null) {
                 try {
@@ -452,6 +455,7 @@ public class Tracer implements Runnable {
             }
         }
 
+        @Override
         public boolean start() {
             if (this.countStarted.testZeroAndIncrement()) {
                 this.loggerThread = new Thread(this.loggerRunnable);
@@ -461,6 +465,7 @@ public class Tracer implements Runnable {
             return false; // meaning already started
         }
 
+        @Override
         public boolean stop() {
             if (this.countStarted.decrementAndTestZero()) {
                 if (this.loggerThread != null) {
@@ -489,6 +494,7 @@ public class Tracer implements Runnable {
                 this.queue = queue;
             }
 
+            @Override
             public void run() {
                 try {
                     long timeOfNextFlush = System.currentTimeMillis()

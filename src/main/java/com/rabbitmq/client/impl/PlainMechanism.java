@@ -22,10 +22,12 @@ import com.rabbitmq.client.SaslMechanism;
  * The PLAIN auth mechanism
  */
 public class PlainMechanism implements SaslMechanism {
+    @Override
     public String getName() {
         return "PLAIN";
     }
 
+    @Override
     public LongString handleChallenge(LongString challenge,
                                       String username,
                                       String password) {

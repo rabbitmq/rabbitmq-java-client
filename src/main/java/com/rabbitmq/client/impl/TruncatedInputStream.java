@@ -36,16 +36,19 @@ public class TruncatedInputStream extends FilterInputStream {
         this.limit = limit;
     }
 
-    @Override public int available() throws IOException {
+    @Override
+    public int available() throws IOException {
         return (int) Math.min(limit - counter, super.available());
     }
 
-    @Override public void mark(int readlimit) {
+    @Override
+    public void mark(int readlimit) {
         super.mark(readlimit);
         mark = counter;
     }
 
-    @Override public int read() throws IOException {
+    @Override
+    public int read() throws IOException {
         if (counter < limit) {
             int result = super.read();
             if (result >= 0)
@@ -55,7 +58,8 @@ public class TruncatedInputStream extends FilterInputStream {
             return -1;
     }
 
-    @Override public int read(byte[] b, int off, int len) throws IOException {
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
 
         if (limit > counter) {
             int result = super.read(b, off, (int) Math.min(len, limit - counter));
@@ -66,12 +70,14 @@ public class TruncatedInputStream extends FilterInputStream {
             return -1;
     }
 
-    @Override public void reset() throws IOException {
+    @Override
+    public void reset() throws IOException {
         super.reset();
         counter = mark;
     }
 
-    @Override public long skip(long n) throws IOException {
+    @Override
+    public long skip(long n) throws IOException {
         long result = super.skip(Math.min(n, limit - counter));
         counter += result;
         return result;

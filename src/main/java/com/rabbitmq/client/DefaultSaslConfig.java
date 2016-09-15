@@ -40,6 +40,7 @@ public class DefaultSaslConfig implements SaslConfig {
         this.mechanism = mechanism;
     }
 
+    @Override
     public SaslMechanism getSaslMechanism(String[] serverMechanisms) {
         Set<String> server = new HashSet<String>(Arrays.asList(serverMechanisms));
 

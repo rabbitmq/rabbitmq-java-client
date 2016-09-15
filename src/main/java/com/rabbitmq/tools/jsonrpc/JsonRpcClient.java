@@ -127,6 +127,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * useful for constructing dynamic proxies for JSON-RPC
      * interfaces.
      */
+    @Override
     public Object invoke(Object proxy, Method method, Object[] args)
         throws Throwable
     {

@@ -138,6 +138,7 @@ public class ChannelManager {
         final Set<CountDownLatch> sdSet = new HashSet<CountDownLatch>(shutdownSet);
         final ConsumerWorkService ssWorkService = workService;
         Runnable target = new Runnable() {
+            @Override
             public void run() {
                 for (CountDownLatch latch : sdSet) {
                     try {
@@ -189,7 +190,7 @@ public class ChannelManager {
         return ch;
     }
 
-    private ChannelN addNewChannel(AMQConnection connection, int channelNumber) throws IOException {
+    private ChannelN addNewChannel(AMQConnection connection, int channelNumber) {
         if (_channelMap.containsKey(channelNumber)) {
             // That number's already allocated! Can't do it
             // This should never happen unless something has gone

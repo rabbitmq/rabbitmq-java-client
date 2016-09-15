@@ -30,22 +30,27 @@ import java.util.concurrent.TimeoutException;
  * @see com.rabbitmq.client.ConnectionFactory#setExceptionHandler(ExceptionHandler)
  */
 public class StrictExceptionHandler extends ForgivingExceptionHandler implements ExceptionHandler {
+    @Override
     public void handleReturnListenerException(Channel channel, Throwable exception) {
         handleChannelKiller(channel, exception, "ReturnListener.handleReturn");
     }
 
+    @Override
     public void handleFlowListenerException(Channel channel, Throwable exception) {
         handleChannelKiller(channel, exception, "FlowListener.handleFlow");
     }
 
+    @Override
     public void handleConfirmListenerException(Channel channel, Throwable exception) {
         handleChannelKiller(channel, exception, "ConfirmListener.handle{N,A}ck");
     }
 
+    @Override
     public void handleBlockedListenerException(Connection connection, Throwable exception) {
         handleConnectionKiller(connection, exception, "BlockedListener");
     }
 
+    @Override
     public void handleConsumerException(Channel channel, Throwable exception,
                                         Consumer consumer, String consumerTag,
                                         String methodName)
@@ -56,6 +61,7 @@ public class StrictExceptionHandler extends ForgivingExceptionHandler implements
                                                         + " for channel " + channel);
     }
 
+    @Override
     protected void handleChannelKiller(Channel channel, Throwable exception, String what) {
         log(what + " threw an exception for channel " + channel, exception);
         try {

@@ -43,6 +43,7 @@ public class MapRpcServer extends RpcServer {
     /**
      * Overridden to delegate to handleMapCall.
      */
+    @Override
     public byte[] handleCall(byte[] requestBody, AMQP.BasicProperties replyProperties)
     {
         try {
@@ -93,6 +94,7 @@ public class MapRpcServer extends RpcServer {
     /**
      * Overridden to delegate to handleMapCast.
      */
+    @Override
     public void handleCast(byte[] requestBody)
     {
         try {

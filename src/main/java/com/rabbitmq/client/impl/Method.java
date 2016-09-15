@@ -28,12 +28,15 @@ import com.rabbitmq.client.impl.AMQImpl.MethodVisitor;
  */
 public abstract class Method implements com.rabbitmq.client.Method {
     /** {@inheritDoc} */
+    @Override
     public abstract int protocolClassId(); /* properly an unsigned short */
 
     /** {@inheritDoc} */
+    @Override
     public abstract int protocolMethodId(); /* properly an unsigned short */
 
     /** {@inheritDoc} */
+    @Override
     public abstract String protocolMethodName();
 
     /**

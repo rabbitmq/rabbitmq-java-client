@@ -168,19 +168,23 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** {@inheritDoc} */
+    @Override
     public InetAddress getAddress() {
         return _frameHandler.getAddress();
     }
 
+    @Override
     public InetAddress getLocalAddress() {
         return _frameHandler.getLocalAddress();
     }
 
     /** {@inheritDoc} */
+    @Override
     public int getPort() {
         return _frameHandler.getPort();
     }
 
+    @Override
     public int getLocalPort() {
         return _frameHandler.getLocalPort();
     }
@@ -190,6 +194,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** {@inheritDoc} */
+    @Override
     public Map<String, Object> getServerProperties() {
         return _serverProperties;
     }
@@ -420,6 +425,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** {@inheritDoc} */
+    @Override
     public int getChannelMax() {
         ChannelManager cm = _channelManager;
         if (cm == null) return 0;
@@ -427,11 +433,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** {@inheritDoc} */
+    @Override
     public int getFrameMax() {
         return _frameMax;
     }
 
     /** {@inheritDoc} */
+    @Override
     public int getHeartbeat() {
         return _heartbeat;
     }
@@ -460,7 +468,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * in the environments with restricted
      * @param threadFactory thread factory to use
      */
-    @SuppressWarnings("unused")
     public void setThreadFactory(ThreadFactory threadFactory) {
         this.threadFactory = threadFactory;
     }
@@ -468,15 +475,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * @return Thread factory used by this connection.
      */
-    @SuppressWarnings("unused")
     public ThreadFactory getThreadFactory() {
         return threadFactory;
     }
 
+    @Override
     public Map<String, Object> getClientProperties() {
         return new HashMap<String, Object>(_clientProperties);
     }
 
+    @Override
     public String getClientProvidedName() {
         return (String) _clientProperties.get("connection_name");
     }
@@ -484,6 +492,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * Protected API - retrieve the current ExceptionHandler
      */
+    @Override
     public ExceptionHandler getExceptionHandler() {
         return _exceptionHandler;
     }
@@ -499,6 +508,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Channel createChannel(int channelNumber) throws IOException {
         ensureIsOpen();
         ChannelManager cm = _channelManager;
@@ -509,6 +519,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public Channel createChannel() throws IOException {
         ensureIsOpen();
         ChannelManager cm = _channelManager;
@@ -547,6 +558,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
          * Continues running until the "running" flag is set false by
          * shutdown().
          */
+        @Override
         public void run() {
             try {
                 while (_running) {
@@ -680,7 +692,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.recoveryCanBeginListeners.add(fn);
     }
 
-    @SuppressWarnings(value = "unused")
     public void removeRecoveryCanBeginListener(RecoveryCanBeginListener fn) {
         this.recoveryCanBeginListeners.remove(fn);
     }
@@ -768,7 +779,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
-    @SuppressWarnings("unused")
     public void handleConnectionClose(Command closeCommand) {
         ShutdownSignalException sse = shutdown(closeCommand.getMethod(), false, null, _inConnectionNegotiation);
         try {
@@ -800,6 +810,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             cause = sse;
         }
 
+        @Override
         public void run() {
             try {
                 // TODO: use a sensible timeout here
@@ -863,6 +874,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void close()
         throws IOException
     {
@@ -870,6 +882,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void close(int timeout)
         throws IOException
     {
@@ -877,6 +890,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void close(int closeCode, String closeMessage)
         throws IOException
     {
@@ -884,6 +898,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void close(int closeCode, String closeMessage, int timeout)
         throws IOException
     {
@@ -891,25 +906,28 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void abort()
     {
         abort(-1);
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void abort(int closeCode, String closeMessage)
     {
        abort(closeCode, closeMessage, -1);
     }
 
     /** Public API - {@inheritDoc} */
+    @Override
     public void abort(int timeout)
     {
         abort(AMQP.REPLY_SUCCESS, "OK", timeout);
     }
 
     /** Public API - {@inheritDoc} */
-    @SuppressWarnings("unused")
+    @Override
     public void abort(int closeCode, String closeMessage, int timeout)
     {
         try {
@@ -995,14 +1013,17 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return getAddress() == null ? null : getAddress().getHostAddress();
     }
 
+    @Override
     public void addBlockedListener(BlockedListener listener) {
         blockedListeners.add(listener);
     }
 
+    @Override
     public boolean removeBlockedListener(BlockedListener listener) {
         return blockedListeners.remove(listener);
     }
 
+    @Override
     public void clearBlockedListeners() {
         blockedListeners.clear();
     }
