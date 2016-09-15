@@ -15,27 +15,25 @@
 
 package com.rabbitmq.client.impl.nio;
 
-import java.nio.channels.Selector;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import com.rabbitmq.client.impl.Frame;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.WritableByteChannel;
 
 /**
  *
  */
-public class SelectorHolder {
+public class FrameWriteRequest implements WriteRequest {
 
-    final Selector selector;
+    private final Frame frame;
 
-    final Set<SocketChannelRegistration> registrations = Collections
-        .newSetFromMap(new ConcurrentHashMap<SocketChannelRegistration, Boolean>());
-
-    SelectorHolder(Selector selector) {
-        this.selector = selector;
+    public FrameWriteRequest(Frame frame) {
+        this.frame = frame;
     }
 
-    public void registerFrameHandlerState(SocketChannelFrameHandlerState state, int operations) {
-        registrations.add(new SocketChannelRegistration(state, operations));
-        selector.wakeup();
+    @Override
+    public void handle(WritableByteChannel writableChannel, ByteBuffer buffer) throws IOException {
+        frame.writeTo(writableChannel, buffer);
     }
 }

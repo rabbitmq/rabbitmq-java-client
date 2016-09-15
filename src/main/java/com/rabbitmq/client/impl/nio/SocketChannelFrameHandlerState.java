@@ -37,11 +37,9 @@ public class SocketChannelFrameHandlerState {
 
     private final SocketChannel channel;
 
-    private final BlockingQueue<Frame> writeQueue;
+    private final BlockingQueue<WriteRequest> writeQueue;
 
     private volatile AMQConnection connection;
-
-    private volatile boolean sendHeader = false;
 
     /** should be used only in the NIO read thread */
     private long lastActivity;
@@ -57,7 +55,7 @@ public class SocketChannelFrameHandlerState {
         this.channel = channel;
         this.readSelectorState = readSelectorState;
         this.writeSelectorState = writeSelectorState;
-        this.writeQueue = new ArrayBlockingQueue<Frame>(nioParams.getWriteQueueCapacity(), true);
+        this.writeQueue = new ArrayBlockingQueue<WriteRequest>(nioParams.getWriteQueueCapacity(), true);
         this.writeEnqueuingTimeoutInMs = nioParams.getWriteEnqueuingTimeoutInMs();
     }
 
@@ -65,24 +63,21 @@ public class SocketChannelFrameHandlerState {
         return channel;
     }
 
-    public Queue<Frame> getWriteQueue() {
+    public Queue<WriteRequest> getWriteQueue() {
         return writeQueue;
     }
 
-    public boolean isSendHeader() {
-        return sendHeader;
-    }
-
-    public void setSendHeader(boolean sendHeader) {
-        this.sendHeader = sendHeader;
-        if(sendHeader) {
-            this.writeSelectorState.registerFrameHandlerState(this, SelectionKey.OP_WRITE);
-        }
+    public void sendHeader() throws IOException {
+        sendWriteRequest(new HeaderWriteRequest());
     }
 
     public void write(Frame frame) throws IOException {
+        sendWriteRequest(new FrameWriteRequest(frame));
+    }
+
+    private void sendWriteRequest(WriteRequest writeRequest) throws IOException {
         try {
-            boolean offered = this.writeQueue.offer(frame, writeEnqueuingTimeoutInMs, TimeUnit.MILLISECONDS);
+            boolean offered = this.writeQueue.offer(writeRequest, writeEnqueuingTimeoutInMs, TimeUnit.MILLISECONDS);
             if(offered) {
                 this.writeSelectorState.registerFrameHandlerState(this, SelectionKey.OP_WRITE);
             } else {

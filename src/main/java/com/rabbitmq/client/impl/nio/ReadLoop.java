@@ -44,7 +44,7 @@ public class ReadLoop extends AbstractNioLoop {
     public void run() {
         final SelectorHolder selectorState = state.readSelectorState;
         final Selector selector = selectorState.selector;
-        Set<SocketChannelRegistration> registrations = selectorState.statesToBeRegistered;
+        Set<SocketChannelRegistration> registrations = selectorState.registrations;
         // FIXME find a better default?
         ByteBuffer buffer = ByteBuffer.allocate(nioParams.getReadByteBufferSize());
         try {

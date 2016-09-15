@@ -70,7 +70,7 @@ public class SocketChannelFrameHandler implements FrameHandler {
 
     @Override
     public void sendHeader() throws IOException {
-        state.setSendHeader(true);
+        state.sendHeader();
     }
 
     @Override

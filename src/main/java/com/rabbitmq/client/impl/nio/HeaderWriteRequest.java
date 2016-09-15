@@ -15,27 +15,26 @@
 
 package com.rabbitmq.client.impl.nio;
 
-import java.nio.channels.Selector;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import com.rabbitmq.client.AMQP;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.WritableByteChannel;
 
 /**
  *
  */
-public class SelectorHolder {
+public class HeaderWriteRequest implements WriteRequest {
 
-    final Selector selector;
-
-    final Set<SocketChannelRegistration> registrations = Collections
-        .newSetFromMap(new ConcurrentHashMap<SocketChannelRegistration, Boolean>());
-
-    SelectorHolder(Selector selector) {
-        this.selector = selector;
-    }
-
-    public void registerFrameHandlerState(SocketChannelFrameHandlerState state, int operations) {
-        registrations.add(new SocketChannelRegistration(state, operations));
-        selector.wakeup();
+    @Override
+    public void handle(WritableByteChannel writableChannel, ByteBuffer buffer) throws IOException {
+        buffer.put("AMQP".getBytes("US-ASCII"));
+        buffer.put((byte) 0);
+        buffer.put((byte) AMQP.PROTOCOL.MAJOR);
+        buffer.put((byte) AMQP.PROTOCOL.MINOR);
+        buffer.put((byte) AMQP.PROTOCOL.REVISION);
+        buffer.flip();
+        while(buffer.hasRemaining() && writableChannel.write(buffer) != -1);
+        buffer.clear();
     }
 }

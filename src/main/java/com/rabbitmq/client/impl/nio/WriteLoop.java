@@ -15,7 +15,6 @@
 
 package com.rabbitmq.client.impl.nio;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.Frame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +49,7 @@ public class WriteLoop extends AbstractNioLoop {
         try {
             while(true && !Thread.currentThread().isInterrupted()) {
                 int select;
-                if(state.statesToBeRegistered.isEmpty()) {
+                if(state.registrations.isEmpty()) {
                     // we can block, registration will call Selector.wakeup()
                     select = selector.select();
                 } else {
@@ -61,7 +60,7 @@ public class WriteLoop extends AbstractNioLoop {
                 // registrations should be done after select,
                 // once the cancelled keys have been actually removed
                 SocketChannelRegistration registration;
-                Iterator<SocketChannelRegistration> registrationIterator = state.statesToBeRegistered.iterator();
+                Iterator<SocketChannelRegistration> registrationIterator = state.registrations.iterator();
                 while(registrationIterator.hasNext()) {
                     registration = registrationIterator.next();
                     registrationIterator.remove();
@@ -86,23 +85,11 @@ public class WriteLoop extends AbstractNioLoop {
                             boolean cancelKey = true;
                             try {
                                 int toBeWritten = state.getWriteQueue().size();
-                                // FIXME property handle header sending request
-                                if(state.isSendHeader()) {
-                                    buffer.put("AMQP".getBytes("US-ASCII"));
-                                    buffer.put((byte) 0);
-                                    buffer.put((byte) AMQP.PROTOCOL.MAJOR);
-                                    buffer.put((byte) AMQP.PROTOCOL.MINOR);
-                                    buffer.put((byte) AMQP.PROTOCOL.REVISION);
-                                    buffer.flip();
-                                    while(buffer.hasRemaining() && channel.write(buffer) != -1);
-                                    buffer.clear();
-                                    state.setSendHeader(false);
-                                }
 
                                 int written = 0;
-                                Frame frame;
-                                while(written <= toBeWritten && (frame = state.getWriteQueue().poll()) != null) {
-                                    frame.writeTo(channel, buffer);
+                                WriteRequest request;
+                                while(written <= toBeWritten && (request = state.getWriteQueue().poll()) != null) {
+                                    request.handle(channel, buffer);
                                     written++;
                                 }
                                 Frame.drain(channel, buffer);
