@@ -47,10 +47,12 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         this.delegate = delegate;
     }
 
+    @Override
     public int getChannelNumber() {
         return delegate.getChannelNumber();
     }
 
+    @Override
     public Connection getConnection() {
         return delegate.getConnection();
     }
@@ -59,6 +61,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return delegate;
     }
 
+    @Override
     public void close() throws IOException, TimeoutException {
         try {
           delegate.close();
@@ -67,6 +70,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         }
     }
 
+    @Override
     public void close(int closeCode, String closeMessage) throws IOException, TimeoutException {
         try {
           delegate.close(closeCode, closeMessage);
@@ -75,79 +79,90 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
     @Deprecated
     public boolean flowBlocked() {
         return delegate.flowBlocked();
     }
 
+    @Override
     public void abort() throws IOException {
         delegate.abort();
     }
 
+    @Override
     public void abort(int closeCode, String closeMessage) throws IOException {
         delegate.abort(closeCode, closeMessage);
     }
 
+    @Override
     public void addReturnListener(ReturnListener listener) {
         this.returnListeners.add(listener);
         delegate.addReturnListener(listener);
     }
 
+    @Override
     public boolean removeReturnListener(ReturnListener listener) {
         this.returnListeners.remove(listener);
         return delegate.removeReturnListener(listener);
     }
 
+    @Override
     public void clearReturnListeners() {
         this.returnListeners.clear();
         delegate.clearReturnListeners();
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
     @Deprecated
     public void addFlowListener(FlowListener listener) {
         this.flowListeners.add(listener);
         delegate.addFlowListener(listener);
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
     @Deprecated
     public boolean removeFlowListener(FlowListener listener) {
         this.flowListeners.remove(listener);
         return delegate.removeFlowListener(listener);
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
     @Deprecated
     public void clearFlowListeners() {
         this.flowListeners.clear();
         delegate.clearFlowListeners();
     }
 
+    @Override
     public void addConfirmListener(ConfirmListener listener) {
         this.confirmListeners.add(listener);
         delegate.addConfirmListener(listener);
     }
 
+    @Override
     public boolean removeConfirmListener(ConfirmListener listener) {
         this.confirmListeners.remove(listener);
         return delegate.removeConfirmListener(listener);
     }
 
+    @Override
     public void clearConfirmListeners() {
         this.confirmListeners.clear();
         delegate.clearConfirmListeners();
     }
 
+    @Override
     public Consumer getDefaultConsumer() {
         return delegate.getDefaultConsumer();
     }
 
+    @Override
     public void setDefaultConsumer(Consumer consumer) {
         delegate.setDefaultConsumer(consumer);
     }
 
+    @Override
     public void basicQos(int prefetchSize, int prefetchCount, boolean global) throws IOException {
         if (global) {
             this.prefetchCountGlobal = prefetchCount;
@@ -158,50 +173,62 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         delegate.basicQos(prefetchSize, prefetchCount, global);
     }
 
+    @Override
     public void basicQos(int prefetchCount) throws IOException {
         basicQos(0, prefetchCount, false);
     }
 
+    @Override
     public void basicQos(int prefetchCount, boolean global) throws IOException {
         basicQos(0, prefetchCount, global);
     }
 
+    @Override
     public void basicPublish(String exchange, String routingKey, AMQP.BasicProperties props, byte[] body) throws IOException {
         delegate.basicPublish(exchange, routingKey, props, body);
     }
 
+    @Override
     public void basicPublish(String exchange, String routingKey, boolean mandatory, AMQP.BasicProperties props, byte[] body) throws IOException {
         delegate.basicPublish(exchange, routingKey, mandatory, props, body);
     }
 
+    @Override
     public void basicPublish(String exchange, String routingKey, boolean mandatory, boolean immediate, AMQP.BasicProperties props, byte[] body) throws IOException {
         delegate.basicPublish(exchange, routingKey, mandatory, immediate, props, body);
     }
 
+    @Override
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, String type) throws IOException {
         return exchangeDeclare(exchange, type, false, false, null);
     }
 
+    @Override
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type) throws IOException {
         return exchangeDeclare(exchange, type.getType());
     }
 
+    @Override
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable) throws IOException {
         return exchangeDeclare(exchange, type, durable, false, null);
     }
 
+    @Override
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type, boolean durable) throws IOException {
         return exchangeDeclare(exchange, type.getType(), durable);
     }
 
+    @Override
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable, boolean autoDelete, Map<String, Object> arguments) throws IOException {
         return exchangeDeclare(exchange, type, durable, autoDelete, false, arguments);
     }
 
+    @Override
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type, boolean durable, boolean autoDelete, Map<String, Object> arguments) throws IOException {
         return exchangeDeclare(exchange, type.getType(), durable, autoDelete, arguments);
     }
 
+    @Override
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
         final AMQP.Exchange.DeclareOk ok = delegate.exchangeDeclare(exchange, type, durable, autoDelete, internal, arguments);
         RecordedExchange x = new RecordedExchange(this, exchange).
@@ -213,6 +240,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return ok;
     }
 
+    @Override
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
         return exchangeDeclare(exchange, type.getType(), durable, autoDelete, internal, arguments);
     }
@@ -233,58 +261,70 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         exchangeDeclareNoWait(exchange, type.getType(), durable, autoDelete, internal, arguments);
     }
 
+    @Override
     public AMQP.Exchange.DeclareOk exchangeDeclarePassive(String name) throws IOException {
         return delegate.exchangeDeclarePassive(name);
     }
 
+    @Override
     public AMQP.Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException {
         deleteRecordedExchange(exchange);
         return delegate.exchangeDelete(exchange, ifUnused);
     }
 
+    @Override
     public void exchangeDeleteNoWait(String exchange, boolean ifUnused) throws IOException {
         deleteRecordedExchange(exchange);
         delegate.exchangeDeleteNoWait(exchange, ifUnused);
     }
 
+    @Override
     public AMQP.Exchange.DeleteOk exchangeDelete(String exchange) throws IOException {
         return exchangeDelete(exchange, false);
     }
 
+    @Override
     public AMQP.Exchange.BindOk exchangeBind(String destination, String source, String routingKey) throws IOException {
         return exchangeBind(destination, source, routingKey, null);
     }
 
+    @Override
     public AMQP.Exchange.BindOk exchangeBind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
         final AMQP.Exchange.BindOk ok = delegate.exchangeBind(destination, source, routingKey, arguments);
         recordExchangeBinding(destination, source, routingKey, arguments);
         return ok;
     }
 
+    @Override
     public void exchangeBindNoWait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
         delegate.exchangeBindNoWait(destination, source, routingKey, arguments);
         recordExchangeBinding(destination, source, routingKey, arguments);
     }
 
+    @Override
     public AMQP.Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey) throws IOException {
         return exchangeUnbind(destination, source, routingKey, null);
     }
 
+    @Override
     public AMQP.Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
         deleteRecordedExchangeBinding(destination, source, routingKey, arguments);
         this.maybeDeleteRecordedAutoDeleteExchange(source);
         return delegate.exchangeUnbind(destination, source, routingKey, arguments);
     }
 
+    @Override
     public void exchangeUnbindNoWait(String destination, String source, String routingKey, Map<String, Object> arguments) throws IOException {
         delegate.exchangeUnbindNoWait(destination, source, routingKey, arguments);
         deleteRecordedExchangeBinding(destination, source, routingKey, arguments);
     }
 
+    @Override
     public AMQP.Queue.DeclareOk queueDeclare() throws IOException {
         return queueDeclare("", false, true, true, null);
     }
 
+    @Override
     public AMQP.Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive, boolean autoDelete, Map<String, Object> arguments) throws IOException {
         final AMQP.Queue.DeclareOk ok = delegate.queueDeclare(queue, durable, exclusive, autoDelete, arguments);
         RecordedQueue q = new RecordedQueue(this, ok.getQueue()).
@@ -299,6 +339,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         return ok;
     }
 
+    @Override
     public void queueDeclareNoWait(String queue,
                                    boolean durable,
                                    boolean exclusive,
@@ -314,99 +355,121 @@ public class AutorecoveringChannel implements Channel, Recoverable {
 
     }
 
+    @Override
     public AMQP.Queue.DeclareOk queueDeclarePassive(String queue) throws IOException {
         return delegate.queueDeclarePassive(queue);
     }
 
+    @Override
     public long messageCount(String queue) throws IOException {
         return delegate.messageCount(queue);
     }
 
+    @Override
     public long consumerCount(String queue) throws IOException {
         return delegate.consumerCount(queue);
     }
 
+    @Override
     public AMQP.Queue.DeleteOk queueDelete(String queue) throws IOException {
         return queueDelete(queue, false, false);
     }
 
+    @Override
     public AMQP.Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
         deleteRecordedQueue(queue);
         return delegate.queueDelete(queue, ifUnused, ifEmpty);
     }
 
+    @Override
     public void queueDeleteNoWait(String queue, boolean ifUnused, boolean ifEmpty) throws IOException {
         deleteRecordedQueue(queue);
         delegate.queueDeleteNoWait(queue, ifUnused, ifEmpty);
     }
 
+    @Override
     public AMQP.Queue.BindOk queueBind(String queue, String exchange, String routingKey) throws IOException {
         return queueBind(queue, exchange, routingKey, null);
     }
 
+    @Override
     public AMQP.Queue.BindOk queueBind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException {
         AMQP.Queue.BindOk ok = delegate.queueBind(queue, exchange, routingKey, arguments);
         recordQueueBinding(queue, exchange, routingKey, arguments);
         return ok;
     }
 
+    @Override
     public void queueBindNoWait(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException {
         delegate.queueBindNoWait(queue, exchange, routingKey, arguments);
         recordQueueBinding(queue, exchange, routingKey, arguments);
     }
 
+    @Override
     public AMQP.Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey) throws IOException {
         return queueUnbind(queue, exchange, routingKey, null);
     }
 
+    @Override
     public AMQP.Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey, Map<String, Object> arguments) throws IOException {
         deleteRecordedQueueBinding(queue, exchange, routingKey, arguments);
         this.maybeDeleteRecordedAutoDeleteExchange(exchange);
         return delegate.queueUnbind(queue, exchange, routingKey, arguments);
     }
 
+    @Override
     public AMQP.Queue.PurgeOk queuePurge(String queue) throws IOException {
         return delegate.queuePurge(queue);
     }
 
+    @Override
     public GetResponse basicGet(String queue, boolean autoAck) throws IOException {
         return delegate.basicGet(queue, autoAck);
     }
 
+    @Override
     public void basicAck(long deliveryTag, boolean multiple) throws IOException {
         delegate.basicAck(deliveryTag, multiple);
     }
 
+    @Override
     public void basicNack(long deliveryTag, boolean multiple, boolean requeue) throws IOException {
         delegate.basicNack(deliveryTag, multiple, requeue);
     }
 
+    @Override
     public void basicReject(long deliveryTag, boolean requeue) throws IOException {
         delegate.basicReject(deliveryTag, requeue);
     }
 
+    @Override
     public String basicConsume(String queue, Consumer callback) throws IOException {
         return basicConsume(queue, false, callback);
     }
 
+    @Override
     public String basicConsume(String queue, boolean autoAck, Consumer callback) throws IOException {
         return basicConsume(queue, autoAck, "", callback);
     }
 
+    @Override
     public String basicConsume(String queue, boolean autoAck, String consumerTag, Consumer callback) throws IOException {
         return basicConsume(queue, autoAck, consumerTag, false, false, null, callback);
     }
 
+    @Override
     public String basicConsume(String queue, boolean autoAck, Map<String, Object> arguments, Consumer callback) throws IOException {
         return basicConsume(queue, autoAck, "", false, false, arguments, callback);
     }
 
+    @Override
     public String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments, Consumer callback) throws IOException {
         final String result = delegate.basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, callback);
         recordConsumer(result, queue, autoAck, exclusive, arguments, callback);
         return result;
     }
 
+    @Override
     public void basicCancel(String consumerTag) throws IOException {
         RecordedConsumer c = this.deleteRecordedConsumer(consumerTag);
         if(c != null) {
@@ -415,56 +478,69 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         delegate.basicCancel(consumerTag);
     }
 
+    @Override
     public AMQP.Basic.RecoverOk basicRecover() throws IOException {
         return delegate.basicRecover();
     }
 
+    @Override
     public AMQP.Basic.RecoverOk basicRecover(boolean requeue) throws IOException {
         return delegate.basicRecover(requeue);
     }
 
+    @Override
     public AMQP.Tx.SelectOk txSelect() throws IOException {
         this.usesTransactions = true;
         return delegate.txSelect();
     }
 
+    @Override
     public AMQP.Tx.CommitOk txCommit() throws IOException {
         return delegate.txCommit();
     }
 
+    @Override
     public AMQP.Tx.RollbackOk txRollback() throws IOException {
         return delegate.txRollback();
     }
 
+    @Override
     public AMQP.Confirm.SelectOk confirmSelect() throws IOException {
         this.usesPublisherConfirms = true;
         return delegate.confirmSelect();
     }
 
+    @Override
     public long getNextPublishSeqNo() {
         return delegate.getNextPublishSeqNo();
     }
 
+    @Override
     public boolean waitForConfirms() throws InterruptedException {
         return delegate.waitForConfirms();
     }
 
+    @Override
     public boolean waitForConfirms(long timeout) throws InterruptedException, TimeoutException {
         return delegate.waitForConfirms(timeout);
     }
 
+    @Override
     public void waitForConfirmsOrDie() throws IOException, InterruptedException {
         delegate.waitForConfirmsOrDie();
     }
 
+    @Override
     public void waitForConfirmsOrDie(long timeout) throws IOException, InterruptedException, TimeoutException {
         delegate.waitForConfirmsOrDie(timeout);
     }
 
+    @Override
     public void asyncRpc(Method method) throws IOException {
         delegate.asyncRpc(method);
     }
 
+    @Override
     public Command rpc(Method method) throws IOException {
         return delegate.rpc(method);
     }
@@ -472,32 +548,39 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     /**
      * @see Connection#addShutdownListener(com.rabbitmq.client.ShutdownListener)
      */
+    @Override
     public void addShutdownListener(ShutdownListener listener) {
         this.shutdownHooks.add(listener);
         delegate.addShutdownListener(listener);
     }
 
+    @Override
     public void removeShutdownListener(ShutdownListener listener) {
         this.shutdownHooks.remove(listener);
         delegate.removeShutdownListener(listener);
     }
 
+    @Override
     public ShutdownSignalException getCloseReason() {
         return delegate.getCloseReason();
     }
 
+    @Override
     public void notifyListeners() {
         delegate.notifyListeners();
     }
 
+    @Override
     public boolean isOpen() {
         return delegate.isOpen();
     }
 
+    @Override
     public void addRecoveryListener(RecoveryListener listener) {
         this.recoveryListeners.add(listener);
     }
 
+    @Override
     public void removeRecoveryListener(RecoveryListener listener) {
         this.recoveryListeners.remove(listener);
     }
@@ -509,7 +592,11 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     public void automaticallyRecover(AutorecoveringConnection connection, Connection connDelegate) throws IOException {
         RecoveryAwareChannelN defunctChannel = this.delegate;
         this.connection = connection;
-        this.delegate = (RecoveryAwareChannelN) connDelegate.createChannel(this.getChannelNumber());
+        
+        final RecoveryAwareChannelN newChannel = (RecoveryAwareChannelN) connDelegate.createChannel(this.getChannelNumber());
+        if (newChannel == null)
+            throw new IOException("Failed to create new channel for channel number=" + this.getChannelNumber() + " during recovery");
+        this.delegate = newChannel;
         this.delegate.inheritOffsetFrom(defunctChannel);
 
         this.recoverShutdownListeners();
@@ -539,7 +626,6 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     }
 
     @Deprecated
-    @SuppressWarnings("deprecation")
     private void recoverFlowListeners() {
         for(FlowListener fl : this.flowListeners) {
             this.delegate.addFlowListener(fl);

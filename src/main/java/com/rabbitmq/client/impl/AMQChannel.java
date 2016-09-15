@@ -347,10 +347,12 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         public final BlockingValueOrException<T, ShutdownSignalException> _blocker =
             new BlockingValueOrException<T, ShutdownSignalException>();
 
+        @Override
         public void handleCommand(AMQCommand command) {
             _blocker.setValue(transformReply(command));
         }
 
+        @Override
         public void handleShutdownSignal(ShutdownSignalException signal) {
             _blocker.setException(signal);
         }
@@ -372,6 +374,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public static class SimpleBlockingRpcContinuation
         extends BlockingRpcContinuation<AMQCommand>
     {
+        @Override
         public AMQCommand transformReply(AMQCommand command) {
             return command;
         }

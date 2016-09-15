@@ -64,6 +64,7 @@ public class JDKSaslConfig implements SaslConfig {
         this.mechanisms = Arrays.asList(mechanisms);
     }
 
+    @Override
     public SaslMechanism getSaslMechanism(String[] serverMechanisms) {
         Set<String> server = new HashSet<String>(Arrays.asList(serverMechanisms));
 
@@ -88,10 +89,12 @@ public class JDKSaslConfig implements SaslConfig {
             this.client = client;
         }
 
+        @Override
         public String getName() {
             return client.getMechanismName();
         }
 
+        @Override
         public LongString handleChallenge(LongString challenge, String username, String password) {
             try {
                 return LongStringHelper.asLongString(client.evaluateChallenge(challenge.getBytes()));
@@ -107,6 +110,7 @@ public class JDKSaslConfig implements SaslConfig {
             this.factory = factory;
         }
 
+        @Override
         public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
             for (Callback callback: callbacks) {
                 if (callback instanceof NameCallback) {

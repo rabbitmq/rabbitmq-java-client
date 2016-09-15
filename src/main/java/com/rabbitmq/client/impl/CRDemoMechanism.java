@@ -33,10 +33,12 @@ public class CRDemoMechanism implements SaslMechanism {
 
     private int round = 0;
 
+    @Override
     public String getName() {
         return NAME;
     }
 
+    @Override
     public LongString handleChallenge(LongString challenge, String username, String password) {
         round++;
         if (round == 1) {
@@ -47,6 +49,7 @@ public class CRDemoMechanism implements SaslMechanism {
     }
 
     public static class CRDemoSaslConfig implements SaslConfig {
+        @Override
         public SaslMechanism getSaslMechanism(String[] mechanisms)  {
             if (Arrays.asList(mechanisms).contains(NAME)) {
                 return new CRDemoMechanism();

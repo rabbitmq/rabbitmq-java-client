@@ -67,10 +67,12 @@ public class SocketFrameHandler implements FrameHandler {
         _outputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
     }
 
+    @Override
     public InetAddress getAddress() {
         return _socket.getInetAddress();
     }
 
+    @Override
     public InetAddress getLocalAddress() {
         return _socket.getLocalAddress();
     }
@@ -80,20 +82,24 @@ public class SocketFrameHandler implements FrameHandler {
         return _inputStream;
     }
 
+    @Override
     public int getPort() {
         return _socket.getPort();
     }
 
+    @Override
     public int getLocalPort() {
         return _socket.getLocalPort();
     }
 
+    @Override
     public void setTimeout(int timeoutMs)
         throws SocketException
     {
         _socket.setSoTimeout(timeoutMs);
     }
 
+    @Override
     public int getTimeout()
         throws SocketException
     {
@@ -143,27 +149,31 @@ public class SocketFrameHandler implements FrameHandler {
         }
     }
 
+    @Override
     public void sendHeader() throws IOException {
         sendHeader(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR, AMQP.PROTOCOL.REVISION);
     }
 
+    @Override
     public Frame readFrame() throws IOException {
         synchronized (_inputStream) {
             return Frame.readFrom(_inputStream);
         }
     }
 
+    @Override
     public void writeFrame(Frame frame) throws IOException {
         synchronized (_outputStream) {
             frame.writeTo(_outputStream);
         }
     }
 
+    @Override
     public void flush() throws IOException {
         _outputStream.flush();
     }
 
-    @SuppressWarnings("unused")
+    @Override
     public void close() {
         try { _socket.setSoLinger(true, SOCKET_CLOSING_TIMEOUT); } catch (Exception _e) {}
         // async flush if possible

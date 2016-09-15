@@ -59,12 +59,14 @@ public class LongStringHelper
         }
 
         /** {@inheritDoc} */
+        @Override
         public byte[] getBytes()
         {
             return bytes;
         }
 
         /** {@inheritDoc} */
+        @Override
         public DataInputStream getStream()
             throws IOException
         {
@@ -72,6 +74,7 @@ public class LongStringHelper
         }
 
         /** {@inheritDoc} */
+        @Override
         public long length()
         {
             return bytes.length;

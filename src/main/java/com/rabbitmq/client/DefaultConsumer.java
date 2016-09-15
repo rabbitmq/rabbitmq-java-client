@@ -40,6 +40,7 @@ public class DefaultConsumer implements Consumer {
      * Stores the most recently passed-in consumerTag - semantically, there should be only one.
      * @see Consumer#handleConsumeOk
      */
+    @Override
     public void handleConsumeOk(String consumerTag) {
         this._consumerTag = consumerTag;
     }
@@ -48,6 +49,7 @@ public class DefaultConsumer implements Consumer {
      * No-op implementation of {@link Consumer#handleCancelOk}.
      * @param consumerTag the defined consumer tag (client- or server-generated)
      */
+    @Override
     public void handleCancelOk(String consumerTag) {
         // no work to do
     }
@@ -56,6 +58,7 @@ public class DefaultConsumer implements Consumer {
      * No-op implementation of {@link Consumer#handleCancel(String)}
      * @param consumerTag the defined consumer tag (client- or server-generated)
      */
+    @Override
     public void handleCancel(String consumerTag) throws IOException {
         // no work to do
     }
@@ -63,6 +66,7 @@ public class DefaultConsumer implements Consumer {
     /**
      * No-op implementation of {@link Consumer#handleShutdownSignal}.
      */
+    @Override
     public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
         // no work to do
     }
@@ -70,6 +74,7 @@ public class DefaultConsumer implements Consumer {
      /**
      * No-op implementation of {@link Consumer#handleRecoverOk}.
      */
+    @Override
     public void handleRecoverOk(String consumerTag) {
         // no work to do
     }
@@ -77,6 +82,7 @@ public class DefaultConsumer implements Consumer {
     /**
      * No-op implementation of {@link Consumer#handleDelivery}.
      */
+    @Override
     public void handleDelivery(String consumerTag,
                                Envelope envelope,
                                AMQP.BasicProperties properties,
