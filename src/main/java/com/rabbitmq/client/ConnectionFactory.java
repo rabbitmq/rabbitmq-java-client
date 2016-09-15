@@ -16,6 +16,8 @@
 package com.rabbitmq.client;
 
 import com.rabbitmq.client.impl.*;
+import com.rabbitmq.client.impl.nio.NioParams;
+import com.rabbitmq.client.impl.nio.SocketChannelFrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 
 import javax.net.SocketFactory;

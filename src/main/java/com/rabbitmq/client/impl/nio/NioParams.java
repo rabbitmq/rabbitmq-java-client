@@ -13,7 +13,7 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-package com.rabbitmq.client.impl;
+package com.rabbitmq.client.impl.nio;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -36,6 +36,18 @@ public class NioParams {
     private ExecutorService nioExecutor;
 
     private ThreadFactory threadFactory;
+
+    public NioParams() {}
+
+    public NioParams(NioParams nioParams) {
+        setReadByteBufferSize(nioParams.getReadByteBufferSize());
+        setWriteByteBufferSize(nioParams.getWriteByteBufferSize());
+        setNbIoThreads(nioParams.getNbIoThreads());
+        setWriteEnqueuingTimeoutInMs(nioParams.getWriteEnqueuingTimeoutInMs());
+        setWriteQueueCapacity(nioParams.getWriteQueueCapacity());
+        setNioExecutor(nioParams.getNioExecutor());
+        setThreadFactory(nioParams.getThreadFactory());
+    }
 
     public int getReadByteBufferSize() {
         return readByteBufferSize;

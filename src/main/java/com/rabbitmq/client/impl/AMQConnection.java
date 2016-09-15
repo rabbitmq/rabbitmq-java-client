@@ -561,7 +561,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
-    boolean handleReadFrame(Frame frame) {
+    /** private API */
+    public boolean handleReadFrame(Frame frame) {
         if(_running) {
             try {
                 readFrame(frame);
@@ -624,7 +625,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
-    void handleHeartbeatFailure() {
+    /** private API */
+    public void handleHeartbeatFailure() {
         Exception ex = new MissedHeartbeatException("Heartbeat missing with heartbeat = " +
             _heartbeat + " seconds");
         try {
@@ -635,7 +637,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
-    void handleIoError(Throwable ex) {
+    /** private API */
+    public void handleIoError(Throwable ex) {
         try {
             handleFailure(ex);
         } finally {
@@ -654,7 +657,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
-    void doFinalShutdown() {
+    /** private API */
+    public void doFinalShutdown() {
         _frameHandler.close();
         _appContinuation.set(null);
         notifyListeners();

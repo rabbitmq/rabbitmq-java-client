@@ -20,8 +20,9 @@ import java.util.concurrent.ThreadFactory;
 /**
  * Infers information about the execution environment, e.g.
  * security permissions.
+ * Package-protected API.
  */
-class Environment {
+public class Environment {
     public static boolean isAllowedToModifyThreads() {
         try {
             SecurityManager sm = System.getSecurityManager();

@@ -1,7 +1,7 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.NioParams;
+import com.rabbitmq.client.impl.nio.NioParams;
 import org.junit.Test;
 
 import java.io.IOException;

@@ -13,9 +13,11 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-package com.rabbitmq.client.impl;
+package com.rabbitmq.client.impl.nio;
 
-import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.Frame;
+import com.rabbitmq.client.impl.FrameHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

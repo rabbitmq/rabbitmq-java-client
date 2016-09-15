@@ -17,7 +17,7 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.NioParams;
+import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.tools.Host;
 import org.junit.After;
 import org.junit.Before;
