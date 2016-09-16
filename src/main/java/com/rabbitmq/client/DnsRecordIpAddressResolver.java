@@ -66,15 +66,12 @@ public class DnsRecordIpAddressResolver implements AddressResolver {
      * @throws IOException if DNS resolution fails
      */
     @Override
-    public List<Address> getAddresses() throws IOException {
+    public List<Address> getAddresses() throws UnknownHostException {
         String hostName = address.getHost();
         int portNumber = ConnectionFactory.portOrDefault(address.getPort(), ssl);
-        InetAddress[] inetAddresses;
-        try {
-            inetAddresses = resolveIpAddresses(hostName);
-        } catch (UnknownHostException e) {
-            throw new IOException("Could not resolve IP addresses for host "+hostName, e);
-        }
+
+        InetAddress[] inetAddresses = resolveIpAddresses(hostName);
+
         List<Address> addresses = new ArrayList<Address>();
         for (InetAddress inetAddress : inetAddresses) {
             addresses.add(new Address(inetAddress.getHostAddress(), portNumber));
