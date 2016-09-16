@@ -1,15 +1,15 @@
 package com.rabbitmq.client.test;
 
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
-import org.junit.Test;
-
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DnsRecordIpAddressResolver;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.net.UnknownHostException;
+import java.util.concurrent.TimeoutException;
+
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -45,7 +45,7 @@ public class DnsRecordIpAddressResolverTests extends BrokerTestCase {
         try {
             connectionFactory.newConnection(addressResolver);
             fail("The host resolution should have failed");
-        } catch (IOException e) {
+        } catch (UnknownHostException e) {
             // expected
         }
     }
