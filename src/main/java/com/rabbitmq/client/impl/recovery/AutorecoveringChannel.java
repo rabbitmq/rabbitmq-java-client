@@ -649,7 +649,7 @@ public class AutorecoveringChannel implements Channel, Recoverable {
     }
 
     private void notifyRecoveryListeners() {
-        for (RecoveryListener f : Utility.copy(this.recoveryListeners)) {
+        for (RecoveryListener f : this.recoveryListeners) {
             f.handleRecovery(this);
         }
     }
