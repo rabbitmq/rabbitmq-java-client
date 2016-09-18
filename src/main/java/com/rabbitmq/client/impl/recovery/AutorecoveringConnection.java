@@ -20,14 +20,16 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
+import com.rabbitmq.utility.Utility;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,19 +62,19 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     private final RecoveryAwareAMQConnectionFactory cf;
     private final Map<Integer, AutorecoveringChannel> channels;
     private final ConnectionParams params;
-    private RecoveryAwareAMQConnection delegate;
+    private volatile RecoveryAwareAMQConnection delegate;
 
-    private final List<ShutdownListener> shutdownHooks  = new ArrayList<ShutdownListener>();
-    private final List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
-    private final List<BlockedListener> blockedListeners = new ArrayList<BlockedListener>();
+    private final List<ShutdownListener> shutdownHooks  = Collections.synchronizedList(new ArrayList<ShutdownListener>());
+    private final List<RecoveryListener> recoveryListeners = Collections.synchronizedList(new ArrayList<RecoveryListener>());
+    private final List<BlockedListener> blockedListeners = Collections.synchronizedList(new ArrayList<BlockedListener>());
 
     // Records topology changes
-    private final Map<String, RecordedQueue> recordedQueues = new ConcurrentHashMap<String, RecordedQueue>();
-    private final List<RecordedBinding> recordedBindings = new ArrayList<RecordedBinding>();
-    private final Map<String, RecordedExchange> recordedExchanges = new ConcurrentHashMap<String, RecordedExchange>();
-    private final Map<String, RecordedConsumer> consumers = new ConcurrentHashMap<String, RecordedConsumer>();
-    private final List<ConsumerRecoveryListener> consumerRecoveryListeners = new ArrayList<ConsumerRecoveryListener>();
-    private final List<QueueRecoveryListener> queueRecoveryListeners = new ArrayList<QueueRecoveryListener>();
+    private final Map<String, RecordedQueue> recordedQueues = Collections.synchronizedMap(new LinkedHashMap<String, RecordedQueue>());
+    private final List<RecordedBinding> recordedBindings = Collections.synchronizedList(new ArrayList<RecordedBinding>());
+    private final Map<String, RecordedExchange> recordedExchanges = Collections.synchronizedMap(new LinkedHashMap<String, RecordedExchange>());
+    private final Map<String, RecordedConsumer> consumers = Collections.synchronizedMap(new LinkedHashMap<String, RecordedConsumer>());
+    private final List<ConsumerRecoveryListener> consumerRecoveryListeners = Collections.synchronizedList(new ArrayList<ConsumerRecoveryListener>());
+    private final List<QueueRecoveryListener> queueRecoveryListeners = Collections.synchronizedList(new ArrayList<QueueRecoveryListener>());
 	
 	// Used to block connection recovery attempts after close() is invoked.
 	private volatile boolean manuallyClosed = false;
@@ -132,10 +134,10 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
      * @return Recovering channel.
      */
     private Channel wrapChannel(RecoveryAwareChannelN delegateChannel) {
-        final AutorecoveringChannel channel = new AutorecoveringChannel(this, delegateChannel);
         if (delegateChannel == null) {
             return null;
         } else {
+            final AutorecoveringChannel channel = new AutorecoveringChannel(this, delegateChannel);
             this.registerChannel(channel);
             return channel;
         }
@@ -505,13 +507,13 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     private void recoverShutdownListeners(final RecoveryAwareAMQConnection newConn) {
-        for (ShutdownListener sh : this.shutdownHooks) {
+        for (ShutdownListener sh : Utility.copy(this.shutdownHooks)) {
             newConn.addShutdownListener(sh);
         }
     }
 
     private void recoverBlockedListeners(final RecoveryAwareAMQConnection newConn) {
-        for (BlockedListener bl : this.blockedListeners) {
+        for (BlockedListener bl : Utility.copy(this.blockedListeners)) {
             newConn.addBlockedListener(bl);
         }
     }
@@ -555,7 +557,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     private void notifyRecoveryListeners() {
-        for (RecoveryListener f : this.recoveryListeners) {
+        for (RecoveryListener f : Utility.copy(this.recoveryListeners)) {
             f.handleRecovery(this);
         }
     }
@@ -576,7 +578,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         // recorded exchanges are guaranteed to be
         // non-predefined (we filter out predefined ones
         // in exchangeDeclare). MK.
-        for (RecordedExchange x : this.recordedExchanges.values()) {
+        for (RecordedExchange x : Utility.copy(this.recordedExchanges).values()) {
             try {
                 x.recover();
             } catch (Exception cause) {
@@ -589,8 +591,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     private void recoverQueues() {
-        Map<String, RecordedQueue> copy = new HashMap<String, RecordedQueue>(this.recordedQueues);
-        for (Map.Entry<String, RecordedQueue> entry : copy.entrySet()) {
+        for (Map.Entry<String, RecordedQueue> entry : Utility.copy(this.recordedQueues).entrySet()) {
             String oldName = entry.getKey();
             RecordedQueue q = entry.getValue();
             try {
@@ -612,7 +613,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                         this.recordedQueues.put(newName, q);
                     }
                 }
-                for(QueueRecoveryListener qrl : this.queueRecoveryListeners) {
+                for(QueueRecoveryListener qrl : Utility.copy(this.queueRecoveryListeners)) {
                     qrl.queueRecovered(oldName, newName);
                 }
             } catch (Exception cause) {
@@ -625,7 +626,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     private void recoverBindings() {
-        for (RecordedBinding b : this.recordedBindings) {
+        for (RecordedBinding b : Utility.copy(this.recordedBindings)) {
             try {
                 b.recover();
             } catch (Exception cause) {
@@ -638,8 +639,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     private void recoverConsumers() {
-        Map<String, RecordedConsumer> copy = new HashMap<String, RecordedConsumer>(this.consumers);
-        for (Map.Entry<String, RecordedConsumer> entry : copy.entrySet()) {
+        for (Map.Entry<String, RecordedConsumer> entry : Utility.copy(this.consumers).entrySet()) {
             String tag = entry.getKey();
             RecordedConsumer consumer = entry.getValue();
 
@@ -650,7 +650,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                     this.consumers.remove(tag);
                     this.consumers.put(newTag, consumer);
                 }
-                for(ConsumerRecoveryListener crl : this.consumerRecoveryListeners) {
+                for(ConsumerRecoveryListener crl : Utility.copy(this.consumerRecoveryListeners)) {
                     crl.consumerRecovered(tag, newTag);
                 }
             } catch (Exception cause) {
@@ -663,7 +663,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     private void propagateQueueNameChangeToBindings(String oldName, String newName) {
-        for (RecordedBinding b : this.recordedBindings) {
+        for (RecordedBinding b : Utility.copy(this.recordedBindings)) {
             if (b.getDestination().equals(oldName)) {
                 b.setDestination(newName);
             }
@@ -671,14 +671,14 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     private void propagateQueueNameChangeToConsumers(String oldName, String newName) {
-        for (RecordedConsumer c : this.consumers.values()) {
+        for (RecordedConsumer c : Utility.copy(this.consumers).values()) {
             if (c.getQueue().equals(oldName)) {
                 c.setQueue(newName);
             }
         }
     }
 
-    synchronized void recordQueueBinding(AutorecoveringChannel ch,
+    void recordQueueBinding(AutorecoveringChannel ch,
                                                 String queue,
                                                 String exchange,
                                                 String routingKey,
@@ -692,7 +692,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.recordedBindings.add(binding);
     }
 
-    synchronized boolean deleteRecordedQueueBinding(AutorecoveringChannel ch,
+    boolean deleteRecordedQueueBinding(AutorecoveringChannel ch,
                                                            String queue,
                                                            String exchange,
                                                            String routingKey,
@@ -705,7 +705,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         return this.recordedBindings.remove(b);
     }
 
-    synchronized void recordExchangeBinding(AutorecoveringChannel ch,
+    void recordExchangeBinding(AutorecoveringChannel ch,
                                                    String destination,
                                                    String source,
                                                    String routingKey,
@@ -719,7 +719,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         this.recordedBindings.add(binding);
     }
 
-    synchronized boolean deleteRecordedExchangeBinding(AutorecoveringChannel ch,
+    boolean deleteRecordedExchangeBinding(AutorecoveringChannel ch,
                                                               String destination,
                                                               String source,
                                                               String routingKey,
@@ -775,7 +775,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
                     RecordedQueue q = this.recordedQueues.get(queue);
                     // last consumer on this connection is gone, remove recorded queue
                     // if it is auto-deleted. See bug 26364.
-                    if((q != null) && q.isAutoDelete()) { this.recordedQueues.remove(queue); }
+                    if((q != null) && q.isAutoDelete()) {
+                        deleteRecordedQueue(queue);
+                    }
                 }
             }
         }
@@ -784,11 +786,13 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     void maybeDeleteRecordedAutoDeleteExchange(String exchange) {
         synchronized (this.recordedExchanges) {
             synchronized (this.consumers) {
-                if(!hasMoreDestinationsBoundToExchange(this.recordedBindings, exchange)) {
+                if(!hasMoreDestinationsBoundToExchange(Utility.copy(this.recordedBindings), exchange)) {
                     RecordedExchange x = this.recordedExchanges.get(exchange);
                     // last binding where this exchange is the source is gone, remove recorded exchange
                     // if it is auto-deleted. See bug 26364.
-                    if((x != null) && x.isAutoDelete()) { this.recordedExchanges.remove(exchange); }
+                    if((x != null) && x.isAutoDelete()) {
+                        this.recordedExchanges.remove(exchange);
+                    }
                 }
             }
         }
@@ -816,13 +820,15 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         return result;
     }
 
-    synchronized Set<RecordedBinding> removeBindingsWithDestination(String s) {
-        Set<RecordedBinding> result = new HashSet<RecordedBinding>();
-        for (Iterator<RecordedBinding> it = this.recordedBindings.iterator(); it.hasNext(); ) {
-            RecordedBinding b = it.next();
-            if(b.getDestination().equals(s)) {
-                it.remove();
-                result.add(b);
+    Set<RecordedBinding> removeBindingsWithDestination(String s) {
+        final Set<RecordedBinding> result = new HashSet<RecordedBinding>();
+        synchronized (this.recordedBindings) {
+            for (Iterator<RecordedBinding> it = this.recordedBindings.iterator(); it.hasNext(); ) {
+                RecordedBinding b = it.next();
+                if(b.getDestination().equals(s)) {
+                    it.remove();
+                    result.add(b);
+                }
             }
         }
         return result;
