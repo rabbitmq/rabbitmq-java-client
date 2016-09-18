@@ -16,7 +16,6 @@
 package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.*;
-import com.rabbitmq.utility.Utility;
 
 import java.io.IOException;
 import java.util.List;
