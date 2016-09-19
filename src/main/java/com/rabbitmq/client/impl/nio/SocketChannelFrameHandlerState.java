@@ -20,7 +20,9 @@ import com.rabbitmq.client.impl.Frame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLEngine;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
@@ -50,13 +52,40 @@ public class SocketChannelFrameHandlerState {
 
     private final int writeEnqueuingTimeoutInMs;
 
+    final boolean ssl;
+
+    final SSLEngine sslEngine;
+
+    /** app data to be crypted before sending */
+    final ByteBuffer localAppData;
+    /** crypted data to be sent */
+    final ByteBuffer localNetData;
+    /** app data received and decrypted */
+    final ByteBuffer peerAppData;
+    /** crypted data received */
+    final ByteBuffer peerNetData;
+
     public SocketChannelFrameHandlerState(SocketChannel channel, SelectorHolder readSelectorState,
-        SelectorHolder writeSelectorState, NioParams nioParams) {
+        SelectorHolder writeSelectorState, NioParams nioParams, SSLEngine sslEngine) {
         this.channel = channel;
         this.readSelectorState = readSelectorState;
         this.writeSelectorState = writeSelectorState;
         this.writeQueue = new ArrayBlockingQueue<WriteRequest>(nioParams.getWriteQueueCapacity(), true);
         this.writeEnqueuingTimeoutInMs = nioParams.getWriteEnqueuingTimeoutInMs();
+        this.sslEngine = sslEngine;
+        if(this.sslEngine == null) {
+            this.ssl = false;
+            this.localAppData = null;
+            this.localNetData = null;
+            this.peerAppData = null;
+            this.peerNetData = null;
+        } else {
+            this.ssl = true;
+            this.localAppData = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
+            this.localNetData = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
+            this.peerAppData = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
+            this.peerNetData = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
+        }
     }
 
     public SocketChannel getChannel() {

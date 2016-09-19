@@ -23,6 +23,9 @@ import com.rabbitmq.client.impl.FrameHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -48,15 +51,18 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
     final NioParams nioParams;
 
+    private final SSLContext sslContext;
+
     private final Lock stateLock = new ReentrantLock();
 
     private final AtomicLong globalConnectionCount = new AtomicLong();
 
     private final List<NioLoopsState> nioLoopsStates;
 
-    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, boolean ssl, NioParams nioParams) throws IOException {
+    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, NioParams nioParams, boolean ssl, SSLContext sslContext) throws IOException {
         super(connectionTimeout, configurator, ssl);
         this.nioParams = new NioParams(nioParams);
+        this.sslContext = sslContext;
         this.executorService = nioParams.getNioExecutor();
         this.threadFactory = nioParams.getThreadFactory();
         this.nioLoopsStates = new ArrayList<NioLoopsState>(this.nioParams.getNbIoThreads() / 2);
@@ -69,6 +75,12 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
     public FrameHandler create(Address addr) throws IOException {
         int portNumber = ConnectionFactory.portOrDefault(addr.getPort(), ssl);
 
+        SSLEngine sslEngine = null;
+        if(ssl) {
+            sslEngine = sslContext.createSSLEngine(addr.getHost(), portNumber);
+            sslEngine.setUseClientMode(true);
+        }
+
         SocketAddress address = new InetSocketAddress(addr.getHost(), portNumber);
         SocketChannel channel = SocketChannel.open();
         configurator.configure(channel.socket());
@@ -77,6 +89,14 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
         channel.connect(address);
 
         channel.configureBlocking(false);
+
+        if(ssl) {
+            sslEngine.beginHandshake();
+            boolean handshake = SslEngineHelper.doHandshake(channel, sslEngine);
+            if(!handshake) {
+                throw new SSLException("TLS handshake failed");
+            }
+        }
 
         // lock
         stateLock.lock();
@@ -93,7 +113,8 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
         SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(
             channel,
             nioLoopsState.readSelectorState, nioLoopsState.writeSelectorState,
-            nioParams
+            nioParams,
+            sslEngine
         );
 
         SocketChannelFrameHandler frameHandler = new SocketChannelFrameHandler(state);

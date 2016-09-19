@@ -114,6 +114,8 @@ public class ConnectionFactory implements Cloneable {
     private FrameHandlerFactory frameHandlerFactory;
     private NioParams nioParams = new NioParams();
 
+    private SSLContext sslContext;
+
     /** @return the default host to use for connections */
     public String getHost() {
         return host;
@@ -588,6 +590,7 @@ public class ConnectionFactory implements Cloneable {
      */
     public void useSslProtocol(SSLContext context) {
         setSocketFactory(context.getSocketFactory());
+        this.sslContext = context;
     }
 
     public static String computeDefaultTlsProcotol(String[] supportedProtocols) {
@@ -653,7 +656,7 @@ public class ConnectionFactory implements Cloneable {
                 if(this.nioParams.getNioExecutor() == null && this.nioParams.getThreadFactory() == null) {
                     this.nioParams.setThreadFactory(getThreadFactory());
                 }
-                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, socketConf, isSSL(), nioParams);
+                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, socketConf, nioParams, isSSL(), sslContext);
             }
             return this.frameHandlerFactory;
         } else {

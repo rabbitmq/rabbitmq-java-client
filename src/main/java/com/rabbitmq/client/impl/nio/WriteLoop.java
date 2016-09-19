@@ -15,10 +15,12 @@
 
 package com.rabbitmq.client.impl.nio;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.Frame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.DataOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -47,9 +49,9 @@ public class WriteLoop extends AbstractNioLoop {
         ByteBuffer buffer = ByteBuffer.allocate(nioParams.getWriteByteBufferSize());
 
         try {
-            while(true && !Thread.currentThread().isInterrupted()) {
+            while (true && !Thread.currentThread().isInterrupted()) {
                 int select;
-                if(state.registrations.isEmpty()) {
+                if (state.registrations.isEmpty()) {
                     // we can block, registration will call Selector.wakeup()
                     select = selector.select();
                 } else {
@@ -61,19 +63,19 @@ public class WriteLoop extends AbstractNioLoop {
                 // once the cancelled keys have been actually removed
                 SocketChannelRegistration registration;
                 Iterator<SocketChannelRegistration> registrationIterator = state.registrations.iterator();
-                while(registrationIterator.hasNext()) {
+                while (registrationIterator.hasNext()) {
                     registration = registrationIterator.next();
                     registrationIterator.remove();
                     int operations = registration.operations;
                     try {
                         registration.state.getChannel().register(selector, operations, registration.state);
-                    } catch(Exception e) {
+                    } catch (Exception e) {
                         // can happen if the channel has been closed since the operation has been enqueued
                         LOGGER.info("Error while registering socket channel for write: {}", e.getMessage());
                     }
                 }
 
-                if(select > 0) {
+                if (select > 0) {
                     Set<SelectionKey> readyKeys = selector.selectedKeys();
                     Iterator<SelectionKey> iterator = readyKeys.iterator();
                     while (iterator.hasNext()) {
@@ -82,36 +84,83 @@ public class WriteLoop extends AbstractNioLoop {
                         SocketChannel channel = (SocketChannel) key.channel();
                         SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
                         if (key.isWritable()) {
-                            boolean cancelKey = true;
-                            try {
-                                int toBeWritten = state.getWriteQueue().size();
+                            if (state.ssl) {
+                                ByteBuffer localAppData = state.localAppData;
+                                ByteBuffer localNetData = state.localNetData;
 
-                                int written = 0;
-                                WriteRequest request;
-                                while(written <= toBeWritten && (request = state.getWriteQueue().poll()) != null) {
-                                    request.handle(channel, buffer);
-                                    written++;
+                                localAppData.clear();
+                                localNetData.clear();
+
+                                boolean cancelKey = true;
+                                try {
+                                    int toBeWritten = state.getWriteQueue().size();
+                                    // FIXME re-use output stream
+                                    DataOutputStream outputStream = new DataOutputStream(
+                                        new SslEngineByteBufferOutputStream(
+                                            state.sslEngine,
+                                            localAppData, localNetData,
+                                            state.getChannel()
+                                        )
+                                    );
+                                    int written = 0;
+                                    WriteRequest request;
+                                    while (written <= toBeWritten && (request = state.getWriteQueue().poll()) != null) {
+
+                                        if (request instanceof HeaderWriteRequest) {
+                                            outputStream.write("AMQP".getBytes("US-ASCII"));
+                                            outputStream.write(0);
+                                            outputStream.write(AMQP.PROTOCOL.MAJOR);
+                                            outputStream.write(AMQP.PROTOCOL.MINOR);
+                                            outputStream.write(AMQP.PROTOCOL.REVISION);
+                                        } else {
+                                            Frame frame = ((FrameWriteRequest) request).frame;
+                                            frame.writeTo(outputStream);
+                                        }
+
+                                        written++;
+                                    }
+                                    outputStream.flush();
+                                    if (!state.getWriteQueue().isEmpty()) {
+                                        cancelKey = true;
+                                    }
+                                } catch (Exception e) {
+                                    handleIoError(state, e);
+                                } finally {
+                                    buffer.clear();
+                                    if (cancelKey) {
+                                        key.cancel();
+                                    }
                                 }
-                                Frame.drain(channel, buffer);
-                                if(!state.getWriteQueue().isEmpty()) {
-                                    cancelKey = true;
-                                }
-                            } catch(Exception e) {
-                                handleIoError(state, e);
-                            } finally {
-                                buffer.clear();
-                                if(cancelKey) {
-                                    key.cancel();
+                            } else {
+                                boolean cancelKey = true;
+                                try {
+                                    int toBeWritten = state.getWriteQueue().size();
+
+                                    int written = 0;
+                                    WriteRequest request;
+                                    while (written <= toBeWritten && (request = state.getWriteQueue().poll()) != null) {
+                                        request.handle(channel, buffer);
+                                        written++;
+                                    }
+                                    Frame.drain(channel, buffer);
+                                    if (!state.getWriteQueue().isEmpty()) {
+                                        cancelKey = true;
+                                    }
+                                } catch (Exception e) {
+                                    handleIoError(state, e);
+                                } finally {
+                                    buffer.clear();
+                                    if (cancelKey) {
+                                        key.cancel();
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             LOGGER.error("Error in write loop", e);
         }
     }
-
-
 }

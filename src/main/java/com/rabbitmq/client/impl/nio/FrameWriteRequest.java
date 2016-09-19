@@ -26,7 +26,7 @@ import java.nio.channels.WritableByteChannel;
  */
 public class FrameWriteRequest implements WriteRequest {
 
-    private final Frame frame;
+    final Frame frame;
 
     public FrameWriteRequest(Frame frame) {
         this.frame = frame;

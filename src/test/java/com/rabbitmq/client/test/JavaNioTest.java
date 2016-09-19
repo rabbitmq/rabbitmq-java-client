@@ -15,10 +15,11 @@ import static org.junit.Assert.assertTrue;
 public class JavaNioTest {
 
     @Test
-    public void connection() throws IOException, TimeoutException, InterruptedException {
+    public void connection() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setNio(true);
+        connectionFactory.useSslProtocol();
         Connection connection = null;
         try {
             connection = basicGetBasicConsume(connectionFactory, "nio.queue", latch);
