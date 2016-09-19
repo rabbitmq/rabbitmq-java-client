@@ -2,9 +2,12 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.Frame;
+import com.rabbitmq.client.impl.nio.ByteBufferInputStream;
+import com.rabbitmq.client.impl.nio.ByteBufferOutputStream;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -33,11 +36,15 @@ public class FrameTest {
 
         ByteBuffer buffer = ByteBuffer.allocate(8192);
 
+        DataInputStream inputStream = new DataInputStream(
+            new ByteBufferInputStream(channel, buffer)
+        );
+
         int nbReadFrames = 0;
         channel.read(buffer);
         buffer.flip();
         while(buffer.hasRemaining()) {
-            Frame.readFrom(channel, buffer);
+            Frame.readFrom(inputStream);
             nbReadFrames++;
             if(!buffer.hasRemaining()) {
                 buffer.clear();
@@ -60,11 +67,15 @@ public class FrameTest {
 
         ByteBuffer buffer = ByteBuffer.allocate(8192);
 
+        DataInputStream inputStream = new DataInputStream(
+            new ByteBufferInputStream(channel, buffer)
+        );
+
         int nbReadFrames = 0;
         channel.read(buffer);
         buffer.flip();
         while(buffer.hasRemaining()) {
-            Frame.readFrom(channel, buffer);
+            Frame.readFrom(inputStream);
             nbReadFrames++;
             if(!buffer.hasRemaining()) {
                 buffer.clear();
@@ -92,7 +103,7 @@ public class FrameTest {
         ByteBuffer buffer = ByteBuffer.allocate(8192);
 
         for (Frame frame : frames) {
-            frame.writeTo(channel, buffer);
+            frame.writeTo(new DataOutputStream(new ByteBufferOutputStream(channel, buffer)));
         }
         Frame.drain(channel, buffer);
         checkWrittenChunks(totalFrameSize, channel);
@@ -112,7 +123,7 @@ public class FrameTest {
         ByteBuffer buffer = ByteBuffer.allocate(8192);
 
         for (Frame frame : frames) {
-            frame.writeTo(channel, buffer);
+            frame.writeTo(new DataOutputStream(new ByteBufferOutputStream(channel, buffer)));
         }
         Frame.drain(channel, buffer);
         checkWrittenChunks(totalFrameSize, channel);

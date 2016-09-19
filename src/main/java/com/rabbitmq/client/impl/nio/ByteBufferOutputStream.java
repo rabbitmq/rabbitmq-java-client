@@ -15,27 +15,37 @@
 
 package com.rabbitmq.client.impl.nio;
 
-import com.rabbitmq.client.impl.Frame;
-
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
 /**
  *
  */
-public class FrameWriteRequest implements WriteRequest {
+public class ByteBufferOutputStream extends OutputStream {
 
-    final Frame frame;
+    private final WritableByteChannel channel;
 
-    public FrameWriteRequest(Frame frame) {
-        this.frame = frame;
+    private final ByteBuffer buffer;
+
+    public ByteBufferOutputStream(WritableByteChannel channel, ByteBuffer buffer) {
+        this.buffer = buffer;
+        this.channel = channel;
     }
 
     @Override
-    public void handle(WritableByteChannel writableChannel, ByteBuffer buffer) throws IOException {
-        // FIXME reuse output stream from state
-        frame.writeTo(new DataOutputStream(new ByteBufferOutputStream(writableChannel, buffer)));
+    public void write(int b) throws IOException {
+        if(!buffer.hasRemaining()) {
+            drain(channel, buffer);
+        }
+        buffer.put((byte) b);
     }
+
+    public static void drain(WritableByteChannel channel, ByteBuffer buffer) throws IOException {
+        buffer.flip();
+        while(buffer.hasRemaining() && channel.write(buffer) != -1);
+        buffer.clear();
+    }
+
 }

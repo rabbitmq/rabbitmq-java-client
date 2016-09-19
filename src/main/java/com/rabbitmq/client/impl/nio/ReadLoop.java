@@ -163,8 +163,14 @@ public class ReadLoop extends AbstractNioLoop {
                                 } else {
                                     channel.read(buffer);
                                     buffer.flip();
+
+                                    // FIXME reuse input stream
+                                    DataInputStream inputStream = new DataInputStream(
+                                        new ByteBufferInputStream(channel, buffer)
+                                    );
+
                                     while (buffer.hasRemaining()) {
-                                        Frame frame = Frame.readFrom(channel, buffer);
+                                        Frame frame = Frame.readFrom(inputStream);
 
                                         try {
                                             boolean noProblem = state.getConnection().handleReadFrame(frame);
