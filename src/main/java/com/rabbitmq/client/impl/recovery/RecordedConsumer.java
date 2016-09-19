@@ -57,7 +57,7 @@ public class RecordedConsumer extends RecordedEntity {
     }
 
     public String recover() throws IOException {
-        this.consumerTag = this.channel.basicConsume(this.queue, this.autoAck, this.consumerTag, false, this.exclusive, this.arguments, this.consumer);
+        this.consumerTag = this.channel.getDelegate().basicConsume(this.queue, this.autoAck, this.consumerTag, false, this.exclusive, this.arguments, this.consumer);
         return this.consumerTag;
     }
 

@@ -50,7 +50,7 @@ public class RecordedQueue extends RecordedNamedEntity {
     public boolean isAutoDelete() { return this.autoDelete; }
 
     public void recover() throws IOException {
-        this.name = this.channel.queueDeclare(this.getNameToUseForRecovery(),
+        this.name = this.channel.getDelegate().queueDeclare(this.getNameToUseForRecovery(),
                                                      this.durable,
                                                      this.exclusive,
                                                      this.autoDelete,

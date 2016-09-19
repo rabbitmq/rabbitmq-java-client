@@ -270,11 +270,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @param signal an exception signalling channel shutdown
      */
     private void broadcastShutdownSignal(ShutdownSignalException signal) {
-        Map<String, Consumer> snapshotConsumers;
-        synchronized (_consumers) {
-            snapshotConsumers = new HashMap<String, Consumer>(_consumers);
-        }
-        this.finishedShutdownFlag = this.dispatcher.handleShutdownSignal(snapshotConsumers, signal);
+        this.finishedShutdownFlag = this.dispatcher.handleShutdownSignal(Utility.copy(_consumers), signal);
     }
 
     /**
@@ -370,7 +366,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 handleAckNack(nack.getDeliveryTag(), nack.getMultiple(), true);
                 return true;
             } else if (method instanceof Basic.RecoverOk) {
-                for (Map.Entry<String, Consumer> entry : _consumers.entrySet()) {
+                for (Map.Entry<String, Consumer> entry : Utility.copy(_consumers).entrySet()) {
                     this.dispatcher.handleRecoverOk(entry.getValue(), entry.getKey());
                 }
                 // Unlike all the other cases we still want this RecoverOk to
