@@ -18,9 +18,9 @@ package com.rabbitmq.client.impl.recovery;
 import com.rabbitmq.client.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -30,13 +30,13 @@ import java.util.concurrent.TimeoutException;
  * @since 3.3.0
  */
 public class AutorecoveringChannel implements Channel, Recoverable {
-    private RecoveryAwareChannelN delegate;
-    private AutorecoveringConnection connection;
-    private final List<ShutdownListener> shutdownHooks  = new ArrayList<ShutdownListener>();
-    private final List<RecoveryListener> recoveryListeners = new ArrayList<RecoveryListener>();
-    private final List<ReturnListener> returnListeners = new ArrayList<ReturnListener>();
-    private final List<ConfirmListener> confirmListeners = new ArrayList<ConfirmListener>();
-    private final List<FlowListener> flowListeners = new ArrayList<FlowListener>();
+    private volatile RecoveryAwareChannelN delegate;
+    private volatile AutorecoveringConnection connection;
+    private final List<ShutdownListener> shutdownHooks  = new CopyOnWriteArrayList<ShutdownListener>();
+    private final List<RecoveryListener> recoveryListeners = new CopyOnWriteArrayList<RecoveryListener>();
+    private final List<ReturnListener> returnListeners = new CopyOnWriteArrayList<ReturnListener>();
+    private final List<ConfirmListener> confirmListeners = new CopyOnWriteArrayList<ConfirmListener>();
+    private final List<FlowListener> flowListeners = new CopyOnWriteArrayList<FlowListener>();
     private int prefetchCountConsumer;
     private int prefetchCountGlobal;
     private boolean usesPublisherConfirms;

@@ -20,6 +20,8 @@ import com.rabbitmq.client.Method;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.client.impl.recovery.RecoveryCanBeginListener;
 import com.rabbitmq.utility.BlockingCell;
+import com.rabbitmq.utility.Utility;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +59,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private String id;
 
     private final List<RecoveryCanBeginListener> recoveryCanBeginListeners =
-            new ArrayList<RecoveryCanBeginListener>();
+            Collections.synchronizedList(new ArrayList<RecoveryCanBeginListener>());
 
     /**
      * Retrieve a copy of the default table of client properties that
@@ -683,7 +685,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     private void notifyRecoveryCanBeginListeners() {
         ShutdownSignalException sse = this.getCloseReason();
-        for(RecoveryCanBeginListener fn : this.recoveryCanBeginListeners) {
+        for(RecoveryCanBeginListener fn : Utility.copy(this.recoveryCanBeginListeners)) {
             fn.recoveryCanBegin(sse);
         }
     }

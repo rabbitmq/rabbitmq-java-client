@@ -17,6 +17,11 @@ package com.rabbitmq.utility;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Catch-all holder class for static helper methods.
@@ -33,7 +38,7 @@ public class Utility {
         }
 
         @Override
-        public Throwable fillInStackTrace(){
+        public synchronized Throwable fillInStackTrace(){
             return this;
         }
     }
@@ -84,5 +89,33 @@ public class Utility {
         String text = baOutStream.toString();
         printStream.close(); // closes baOutStream
         return text;
+    }
+    
+    /**
+     * Synchronizes on the list and then returns a copy of the list that is safe to iterate over. Useful when wanting to do thread-safe iteration over
+     * a List wrapped in {@link Collections#synchronizedList(List)}.
+     *
+     * @param list
+     *            The list, which may not be {@code null}
+     * @return ArrayList copy of the list
+     */
+    public static <E> List<E> copy(final List<E> list) {
+        synchronized (list) {
+            return new ArrayList<E>(list);
+        }
+    }
+    
+    /**
+     * Synchronizes on the map and then returns a copy of the map that is safe to iterate over. Useful when wanting to do thread-safe iteration over a
+     * Map wrapped in {@link Collections#synchronizedMap(Map)}
+     *
+     * @param map
+     *            The map, which may not be {@code null}
+     * @return LinkedHashMap copy of the map
+     */
+    public static <K, V> Map<K, V> copy(final Map<K, V> map) {
+        synchronized (map) {
+            return new LinkedHashMap<K, V>(map);
+        }
     }
 }

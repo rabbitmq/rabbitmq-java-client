@@ -42,7 +42,7 @@ public class TruncatedInputStream extends FilterInputStream {
     }
 
     @Override
-    public void mark(int readlimit) {
+    public synchronized void mark(int readlimit) {
         super.mark(readlimit);
         mark = counter;
     }
@@ -71,7 +71,7 @@ public class TruncatedInputStream extends FilterInputStream {
     }
 
     @Override
-    public void reset() throws IOException {
+    public synchronized void reset() throws IOException {
         super.reset();
         counter = mark;
     }
