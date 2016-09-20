@@ -109,9 +109,11 @@ public class ReadLoop extends AbstractNioLoop {
                         SelectionKey key = iterator.next();
                         iterator.remove();
 
-                        SocketChannel channel = (SocketChannel) key.channel();
                         if (key.isReadable()) {
                             final SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
+
+                            // FIXME check if connection isn't closing (on the state)
+
                             try {
 
                                 DataInputStream inputStream = state.inputStream;

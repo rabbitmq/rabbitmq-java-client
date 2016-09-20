@@ -211,4 +211,11 @@ public class SocketChannelFrameHandlerState {
             return plainIn.hasRemaining();
         }
     }
+
+    void close() throws IOException {
+        if(ssl) {
+            SslEngineHelper.close(channel, sslEngine);
+        }
+        channel.close();
+    }
 }

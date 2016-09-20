@@ -97,8 +97,7 @@ public class SocketChannelFrameHandler implements FrameHandler {
     @Override
     public void close() {
         try {
-            // FIXME close SSL engine if necessary
-            state.getChannel().close();
+            state.close();
         } catch (IOException e) {
             LOGGER.error("Error while closing SocketChannel", e);
         }

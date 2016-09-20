@@ -161,4 +161,25 @@ public class SslEngineHelper {
             }
         }
     }
+
+    public static void close(WritableByteChannel channel, SSLEngine engine) throws IOException {
+        ByteBuffer plainOut = ByteBuffer.allocate(engine.getSession().getApplicationBufferSize());
+        ByteBuffer cipherOut = ByteBuffer.allocate(engine.getSession().getPacketBufferSize());
+
+        // won't be sending any more data
+        engine.closeOutbound();
+
+        while (!engine.isOutboundDone()) {
+            engine.wrap(plainOut, cipherOut);
+            cipherOut.flip();
+            while (cipherOut.hasRemaining()) {
+                int num = channel.write(cipherOut);
+                if (num == -1) {
+                    // the channel has been closed
+                    break;
+                }
+            }
+            cipherOut.clear();
+        }
+    }
 }

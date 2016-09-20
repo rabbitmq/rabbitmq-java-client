@@ -78,6 +78,9 @@ public class WriteLoop extends AbstractNioLoop {
                         SelectionKey key = iterator.next();
                         iterator.remove();
                         SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
+
+                        // FIXME check if connection isn't closing (on the state)
+
                         if (key.isWritable()) {
                             state.prepareForWriteSequence();
 
