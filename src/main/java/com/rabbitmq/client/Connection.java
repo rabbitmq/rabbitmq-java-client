@@ -139,7 +139,6 @@ public interface Connection extends ShutdownNotifier { // rename to AMQPConnecti
      *
      * @throws IOException if an I/O problem is encountered
      */
-    @Override
     void close() throws IOException;
 
     /**
