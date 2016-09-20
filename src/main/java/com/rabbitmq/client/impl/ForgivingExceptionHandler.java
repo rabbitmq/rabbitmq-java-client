@@ -132,4 +132,5 @@ public class ForgivingExceptionHandler implements ExceptionHandler {
         return e instanceof SocketException &&
             ("Connection reset".equals(e.getMessage()) || "Socket closed".equals(e.getMessage()));
     }
+
 }
