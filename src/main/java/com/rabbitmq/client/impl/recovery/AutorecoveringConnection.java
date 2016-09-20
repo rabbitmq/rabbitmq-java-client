@@ -501,7 +501,6 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             return;
         }
 
-        this.addAutomaticRecoveryListener(newConn);
 	    this.recoverShutdownListeners(newConn);
 	    this.recoverBlockedListeners(newConn);
 	    this.recoverChannels(newConn);
