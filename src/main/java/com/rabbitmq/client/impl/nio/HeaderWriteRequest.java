@@ -17,6 +17,7 @@ package com.rabbitmq.client.impl.nio;
 
 import com.rabbitmq.client.AMQP;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
@@ -27,14 +28,11 @@ import java.nio.channels.WritableByteChannel;
 public class HeaderWriteRequest implements WriteRequest {
 
     @Override
-    public void handle(WritableByteChannel writableChannel, ByteBuffer buffer) throws IOException {
-        buffer.put("AMQP".getBytes("US-ASCII"));
-        buffer.put((byte) 0);
-        buffer.put((byte) AMQP.PROTOCOL.MAJOR);
-        buffer.put((byte) AMQP.PROTOCOL.MINOR);
-        buffer.put((byte) AMQP.PROTOCOL.REVISION);
-        buffer.flip();
-        while(buffer.hasRemaining() && writableChannel.write(buffer) != -1);
-        buffer.clear();
+    public void handle(DataOutputStream outputStream) throws IOException {
+        outputStream.write("AMQP".getBytes("US-ASCII"));
+        outputStream.write(0);
+        outputStream.write(AMQP.PROTOCOL.MAJOR);
+        outputStream.write(AMQP.PROTOCOL.MINOR);
+        outputStream.write(AMQP.PROTOCOL.REVISION);
     }
 }

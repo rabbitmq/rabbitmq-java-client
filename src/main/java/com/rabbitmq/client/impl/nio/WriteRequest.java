@@ -15,15 +15,14 @@
 
 package com.rabbitmq.client.impl.nio;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.WritableByteChannel;
 
 /**
  *
  */
 public interface WriteRequest {
 
-    void handle(WritableByteChannel writableChannel, ByteBuffer buffer) throws IOException;
+    void handle(DataOutputStream dataOutputStream) throws IOException;
 
 }

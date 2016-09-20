@@ -19,8 +19,6 @@ import com.rabbitmq.client.impl.Frame;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.WritableByteChannel;
 
 /**
  *
@@ -34,8 +32,7 @@ public class FrameWriteRequest implements WriteRequest {
     }
 
     @Override
-    public void handle(WritableByteChannel writableChannel, ByteBuffer buffer) throws IOException {
-        // FIXME reuse output stream from state
-        frame.writeTo(new DataOutputStream(new ByteBufferOutputStream(writableChannel, buffer)));
+    public void handle(DataOutputStream outputStream) throws IOException {
+        frame.writeTo(outputStream);
     }
 }

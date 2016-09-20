@@ -67,7 +67,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
         this.threadFactory = nioParams.getThreadFactory();
         this.nioLoopsStates = new ArrayList<NioLoopsState>(this.nioParams.getNbIoThreads() / 2);
         for(int i = 0; i < this.nioParams.getNbIoThreads() / 2; i++) {
-            this.nioLoopsStates.add(new NioLoopsState(this, this.executorService, this.threadFactory));
+            this.nioLoopsStates.add(new NioLoopsState(this, this.nioParams));
         }
     }
 
@@ -112,7 +112,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
         SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(
             channel,
-            nioLoopsState.readSelectorState, nioLoopsState.writeSelectorState,
+            nioLoopsState,
             nioParams,
             sslEngine
         );

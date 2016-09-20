@@ -37,18 +37,19 @@ public class ReadLoop extends AbstractNioLoop {
 
     private final NioLoopsState state;
 
-    public ReadLoop(NioParams nioParams, NioLoopsState readSelectorState) {
+    public ReadLoop(NioParams nioParams, NioLoopsState loopsState) {
         super(nioParams);
-        this.state = readSelectorState;
+        this.state = loopsState;
     }
 
     @Override
     public void run() {
         final SelectorHolder selectorState = state.readSelectorState;
         final Selector selector = selectorState.selector;
-        Set<SocketChannelRegistration> registrations = selectorState.registrations;
-        // FIXME find a better default?
-        ByteBuffer buffer = ByteBuffer.allocate(nioParams.getReadByteBufferSize());
+        final Set<SocketChannelRegistration> registrations = selectorState.registrations;
+
+        final ByteBuffer buffer = state.readBuffer;
+
         try {
             int idlenessCount = 0;
             while (true && !Thread.currentThread().isInterrupted()) {
@@ -112,23 +113,44 @@ public class ReadLoop extends AbstractNioLoop {
                         if (key.isReadable()) {
                             final SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
                             try {
+
+                                DataInputStream inputStream = state.inputStream;
+
+                                state.prepareForReadSequence();
+
+                                while (state.continueReading()) {
+                                    Frame frame = Frame.readFrom(inputStream);
+
+                                    try {
+                                        boolean noProblem = state.getConnection().handleReadFrame(frame);
+                                        if (noProblem && (!state.getConnection().isRunning() || state.getConnection().hasBrokerInitiatedShutdown())) {
+                                            // looks like the frame was Close-Ok or Close
+                                            dispatchShutdownToConnection(state);
+                                            key.cancel();
+                                            break;
+                                        }
+                                    } catch (Throwable ex) {
+                                        // problem during frame processing, tell connection, and
+                                        // we can stop for this channel
+                                        handleIoError(state, ex);
+                                        key.cancel();
+                                        break;
+                                    }
+
+                                }
+
+                                /*
                                 if (state.ssl) {
-                                    ByteBuffer peerAppData = state.peerAppData;
-                                    ByteBuffer peerNetData = state.peerNetData;
-                                    SSLEngine engine = state.sslEngine;
+                                    ByteBuffer plainIn = state.plainIn;
+                                    ByteBuffer cipherIn = state.cipherIn;
 
-                                    peerNetData.clear();
-                                    peerAppData.clear();
+                                    cipherIn.clear();
+                                    plainIn.clear();
 
-                                    peerNetData.flip();
-                                    peerAppData.flip();
+                                    cipherIn.flip();
+                                    plainIn.flip();
 
-                                    // FIXME reuse input stream
-                                    SslEngineByteBufferInputStream sslEngineByteBufferInputStream = new SslEngineByteBufferInputStream(
-                                        engine, peerAppData, peerNetData, channel
-                                    );
-
-                                    DataInputStream inputStream = new DataInputStream(sslEngineByteBufferInputStream);
+                                    DataInputStream inputStream = state.inputStream;
 
                                     while (true) {
                                         Frame frame = Frame.readFrom(inputStream);
@@ -149,14 +171,14 @@ public class ReadLoop extends AbstractNioLoop {
                                             break;
                                         }
 
-                                        if (!peerAppData.hasRemaining() && !peerNetData.hasRemaining()) {
+                                        if (!plainIn.hasRemaining() && !cipherIn.hasRemaining()) {
                                             // need to try to read something
-                                            peerNetData.clear();
-                                            int bytesRead = channel.read(peerNetData);
+                                            cipherIn.clear();
+                                            int bytesRead = channel.read(cipherIn);
                                             if (bytesRead <= 0) {
                                                 break;
                                             } else {
-                                                peerNetData.flip();
+                                                cipherIn.flip();
                                             }
                                         }
                                     }
@@ -164,10 +186,7 @@ public class ReadLoop extends AbstractNioLoop {
                                     channel.read(buffer);
                                     buffer.flip();
 
-                                    // FIXME reuse input stream
-                                    DataInputStream inputStream = new DataInputStream(
-                                        new ByteBufferInputStream(channel, buffer)
-                                    );
+                                    DataInputStream inputStream = state.inputStream;
 
                                     while (buffer.hasRemaining()) {
                                         Frame frame = Frame.readFrom(inputStream);
@@ -195,7 +214,7 @@ public class ReadLoop extends AbstractNioLoop {
                                         }
                                     }
                                 }
-
+                                */
                                 state.setLastActivity(System.currentTimeMillis());
                             } catch (final Exception e) {
                                 LOGGER.warn("Error during reading frames", e);

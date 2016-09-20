@@ -42,6 +42,11 @@ public class ByteBufferOutputStream extends OutputStream {
         buffer.put((byte) b);
     }
 
+    @Override
+    public void flush() throws IOException {
+        drain(channel, buffer);
+    }
+
     public static void drain(WritableByteChannel channel, ByteBuffer buffer) throws IOException {
         buffer.flip();
         while(buffer.hasRemaining() && channel.write(buffer) != -1);

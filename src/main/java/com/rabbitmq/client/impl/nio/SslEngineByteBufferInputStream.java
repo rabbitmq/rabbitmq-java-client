@@ -30,14 +30,14 @@ public class SslEngineByteBufferInputStream extends InputStream {
 
     private final SSLEngine sslEngine;
 
-    private final ByteBuffer plainIn, cypherIn;
+    private final ByteBuffer plainIn, cipherIn;
 
     private final ReadableByteChannel channel;
 
-    public SslEngineByteBufferInputStream(SSLEngine sslEngine, ByteBuffer plainIn, ByteBuffer cypherIn, ReadableByteChannel channel) {
+    public SslEngineByteBufferInputStream(SSLEngine sslEngine, ByteBuffer plainIn, ByteBuffer cipherIn, ReadableByteChannel channel) {
         this.sslEngine = sslEngine;
         this.plainIn = plainIn;
-        this.cypherIn = cypherIn;
+        this.cipherIn = cipherIn;
         this.channel = channel;
     }
 
@@ -47,7 +47,7 @@ public class SslEngineByteBufferInputStream extends InputStream {
             return readFromBuffer(plainIn);
         } else {
             plainIn.clear();
-            SSLEngineResult result = sslEngine.unwrap(cypherIn, plainIn);
+            SSLEngineResult result = sslEngine.unwrap(cipherIn, plainIn);
 
             switch (result.getStatus()) {
             case OK:
@@ -59,20 +59,20 @@ public class SslEngineByteBufferInputStream extends InputStream {
             case BUFFER_OVERFLOW:
                 throw new SSLException("buffer overflow in read");
             case BUFFER_UNDERFLOW:
-                if (cypherIn.hasRemaining()) {
-                    cypherIn.compact();
+                if (cipherIn.hasRemaining()) {
+                    cipherIn.compact();
                 } else {
-                    cypherIn.clear();
+                    cipherIn.clear();
                 }
 
-                int bytesRead = channel.read(cypherIn);
+                int bytesRead = channel.read(cipherIn);
                 if (bytesRead > 0) {
-                    cypherIn.flip();
+                    cipherIn.flip();
                 } else {
                     throw new IllegalStateException("Should be reading something from the network");
                 }
                 plainIn.clear();
-                result = sslEngine.unwrap(cypherIn, plainIn);
+                result = sslEngine.unwrap(cipherIn, plainIn);
 
                 if (result.getStatus() != SSLEngineResult.Status.OK) {
                     throw new SSLException("Unexpected result: " + result);

@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -24,6 +25,8 @@ public class NioLoopsState {
 
     private final ThreadFactory threadFactory;
 
+    final ByteBuffer readBuffer, writeBuffer;
+
     private Thread readThread, writeThread;
 
     private Future<?> writeTask;
@@ -34,10 +37,12 @@ public class NioLoopsState {
     private final AtomicLong nioLoopsConnectionCount = new AtomicLong();
 
     public NioLoopsState(SocketChannelFrameHandlerFactory socketChannelFrameHandlerFactory,
-        ExecutorService executorService, ThreadFactory threadFactory) {
+        NioParams nioParams) {
         this.socketChannelFrameHandlerFactory = socketChannelFrameHandlerFactory;
-        this.executorService = executorService;
-        this.threadFactory = threadFactory;
+        this.executorService = nioParams.getNioExecutor();
+        this.threadFactory = nioParams.getThreadFactory();
+        this.readBuffer = ByteBuffer.allocate(nioParams.getReadByteBufferSize());
+        this.writeBuffer = ByteBuffer.allocate(nioParams.getWriteByteBufferSize());
     }
 
     void notifyNewConnection() {
@@ -62,14 +67,14 @@ public class NioLoopsState {
             );
             this.writeThread = Environment.newThread(
                 threadFactory,
-                new WriteLoop(socketChannelFrameHandlerFactory.nioParams,this.writeSelectorState),
+                new WriteLoop(socketChannelFrameHandlerFactory.nioParams,this),
                 "rabbitmq-nio-write"
             );
             readThread.start();
             writeThread.start();
         } else {
             this.executorService.submit(new ReadLoop(socketChannelFrameHandlerFactory.nioParams, this));
-            this.writeTask = this.executorService.submit(new WriteLoop(socketChannelFrameHandlerFactory.nioParams,this.writeSelectorState));
+            this.writeTask = this.executorService.submit(new WriteLoop(socketChannelFrameHandlerFactory.nioParams,this));
         }
     }
 

@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -56,36 +58,58 @@ public class SocketChannelFrameHandlerState {
 
     final SSLEngine sslEngine;
 
-    /** app data to be crypted before sending */
-    final ByteBuffer localAppData;
-    /** crypted data to be sent */
-    final ByteBuffer localNetData;
-    /** app data received and decrypted */
-    final ByteBuffer peerAppData;
-    /** crypted data received */
-    final ByteBuffer peerNetData;
+    /** outbound app data (to be crypted if TLS is on) */
+    final ByteBuffer plainOut;
 
-    public SocketChannelFrameHandlerState(SocketChannel channel, SelectorHolder readSelectorState,
-        SelectorHolder writeSelectorState, NioParams nioParams, SSLEngine sslEngine) {
+    /** inbound app data (deciphered if TLS is on) */
+    final ByteBuffer plainIn;
+
+    /** outbound net data (ciphered if TLS is on) */
+    final ByteBuffer cipherOut;
+
+    /** inbound data (ciphered if TLS is on) */
+    final ByteBuffer cipherIn;
+
+    final DataOutputStream outputStream;
+
+    final DataInputStream inputStream;
+
+    public SocketChannelFrameHandlerState(SocketChannel channel, NioLoopsState nioLoopsState, NioParams nioParams, SSLEngine sslEngine) {
         this.channel = channel;
-        this.readSelectorState = readSelectorState;
-        this.writeSelectorState = writeSelectorState;
+        this.readSelectorState = nioLoopsState.readSelectorState;
+        this.writeSelectorState = nioLoopsState.writeSelectorState;
         this.writeQueue = new ArrayBlockingQueue<WriteRequest>(nioParams.getWriteQueueCapacity(), true);
         this.writeEnqueuingTimeoutInMs = nioParams.getWriteEnqueuingTimeoutInMs();
         this.sslEngine = sslEngine;
         if(this.sslEngine == null) {
             this.ssl = false;
-            this.localAppData = null;
-            this.localNetData = null;
-            this.peerAppData = null;
-            this.peerNetData = null;
+            this.plainOut = nioLoopsState.writeBuffer;
+            this.cipherOut = null;
+            this.plainIn = nioLoopsState.readBuffer;
+            this.cipherIn = null;
+
+            this.outputStream = new DataOutputStream(
+                new ByteBufferOutputStream(channel, plainOut)
+            );
+            this.inputStream = new DataInputStream(
+                new ByteBufferInputStream(channel, plainIn)
+            );
+
         } else {
             this.ssl = true;
-            this.localAppData = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
-            this.localNetData = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
-            this.peerAppData = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
-            this.peerNetData = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
+            this.plainOut = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
+            this.cipherOut = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
+            this.plainIn = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
+            this.cipherIn = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
+
+            this.outputStream = new DataOutputStream(
+                new SslEngineByteBufferOutputStream(sslEngine, plainOut, cipherOut, channel)
+            );
+            this.inputStream = new DataInputStream(
+                new SslEngineByteBufferInputStream(sslEngine, plainIn, cipherIn, channel)
+            );
         }
+
     }
 
     public SocketChannel getChannel() {
@@ -135,5 +159,56 @@ public class SocketChannelFrameHandlerState {
 
     public long getLastActivity() {
         return lastActivity;
+    }
+
+    void prepareForWriteSequence() {
+        if(ssl) {
+            plainOut.clear();
+            cipherOut.clear();
+        }
+    }
+
+    void endWriteSequence() {
+        if(!ssl) {
+            plainOut.clear();
+        }
+    }
+
+    void prepareForReadSequence() throws IOException {
+        if(ssl) {
+            cipherIn.clear();
+            plainIn.clear();
+
+            cipherIn.flip();
+            plainIn.flip();
+        } else {
+            channel.read(plainIn);
+            plainIn.flip();
+        }
+    }
+
+    boolean continueReading() throws IOException {
+        if(ssl) {
+            if (!plainIn.hasRemaining() && !cipherIn.hasRemaining()) {
+                // need to try to read something
+                cipherIn.clear();
+                int bytesRead = channel.read(cipherIn);
+                if (bytesRead <= 0) {
+                    return false;
+                } else {
+                    cipherIn.flip();
+                    return true;
+                }
+            } else {
+                return true;
+            }
+        } else {
+            if (!plainIn.hasRemaining()) {
+                plainIn.clear();
+                channel.read(plainIn);
+                plainIn.flip();
+            }
+            return plainIn.hasRemaining();
+        }
     }
 }
