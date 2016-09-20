@@ -64,7 +64,9 @@ public class WriteLoop extends AbstractNioLoop {
                     registrationIterator.remove();
                     int operations = registration.operations;
                     try {
-                        registration.state.getChannel().register(selector, operations, registration.state);
+                        if(registration.state.getChannel().isOpen()) {
+                            registration.state.getChannel().register(selector, operations, registration.state);
+                        }
                     } catch (Exception e) {
                         // can happen if the channel has been closed since the operation has been enqueued
                         LOGGER.info("Error while registering socket channel for write: {}", e.getMessage());
@@ -79,13 +81,16 @@ public class WriteLoop extends AbstractNioLoop {
                         iterator.remove();
                         SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
 
-                        // FIXME check if connection isn't closing (on the state)
-
                         if (key.isWritable()) {
-                            state.prepareForWriteSequence();
-
                             boolean cancelKey = true;
                             try {
+                                if(!state.getChannel().isOpen()) {
+                                    key.cancel();
+                                    continue;
+                                }
+
+                                state.prepareForWriteSequence();
+
                                 int toBeWritten = state.getWriteQueue().size();
                                 int written = 0;
 
