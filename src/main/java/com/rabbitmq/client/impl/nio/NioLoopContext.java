@@ -8,16 +8,15 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
  */
-public class NioLoopsState {
+public class NioLoopContext {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(NioLoopsState.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NioLoopContext.class);
 
     private final SocketChannelFrameHandlerFactory socketChannelFrameHandlerFactory;
 
@@ -27,16 +26,12 @@ public class NioLoopsState {
 
     final ByteBuffer readBuffer, writeBuffer;
 
-    private Thread readThread, writeThread;
-
-    private Future<?> writeTask;
-
     SelectorHolder readSelectorState;
     SelectorHolder writeSelectorState;
 
     private final AtomicLong nioLoopsConnectionCount = new AtomicLong();
 
-    public NioLoopsState(SocketChannelFrameHandlerFactory socketChannelFrameHandlerFactory,
+    public NioLoopContext(SocketChannelFrameHandlerFactory socketChannelFrameHandlerFactory,
         NioParams nioParams) {
         this.socketChannelFrameHandlerFactory = socketChannelFrameHandlerFactory;
         this.executorService = nioParams.getNioExecutor();
@@ -50,7 +45,7 @@ public class NioLoopsState {
     }
 
     void initStateIfNecessary() throws IOException {
-        if(this.readSelectorState == null) {
+        if (this.readSelectorState == null) {
             this.readSelectorState = new SelectorHolder(Selector.open());
             this.writeSelectorState = new SelectorHolder(Selector.open());
 
@@ -59,22 +54,15 @@ public class NioLoopsState {
     }
 
     private void startIoLoops() {
-        if(executorService == null) {
-            this.readThread = Environment.newThread(
+        if (executorService == null) {
+            Thread nioThread = Environment.newThread(
                 threadFactory,
-                new ReadLoop(socketChannelFrameHandlerFactory.nioParams, this),
-                "rabbitmq-nio-read"
+                new NioLoop(socketChannelFrameHandlerFactory.nioParams, this),
+                "rabbitmq-nio"
             );
-            this.writeThread = Environment.newThread(
-                threadFactory,
-                new WriteLoop(socketChannelFrameHandlerFactory.nioParams,this),
-                "rabbitmq-nio-write"
-            );
-            readThread.start();
-            writeThread.start();
+            nioThread.start();
         } else {
-            this.executorService.submit(new ReadLoop(socketChannelFrameHandlerFactory.nioParams, this));
-            this.writeTask = this.executorService.submit(new WriteLoop(socketChannelFrameHandlerFactory.nioParams,this));
+            this.executorService.submit(new NioLoop(socketChannelFrameHandlerFactory.nioParams, this));
         }
     }
 
@@ -82,18 +70,9 @@ public class NioLoopsState {
         long connectionCountNow = nioLoopsConnectionCount.get();
         socketChannelFrameHandlerFactory.lock();
         try {
-            if(connectionCountNow != nioLoopsConnectionCount.get()) {
+            if (connectionCountNow != nioLoopsConnectionCount.get()) {
                 // a connection request has come in meanwhile, don't do anything
                 return false;
-            }
-
-            if(this.executorService == null) {
-                this.writeThread.interrupt();
-            } else {
-                boolean canceled = this.writeTask.cancel(true);
-                if(!canceled) {
-                    LOGGER.info("Could not stop write NIO task");
-                }
             }
 
             try {
@@ -109,11 +88,9 @@ public class NioLoopsState {
 
             this.readSelectorState = null;
             this.writeSelectorState = null;
-
         } finally {
             socketChannelFrameHandlerFactory.unlock();
         }
         return true;
     }
-
 }

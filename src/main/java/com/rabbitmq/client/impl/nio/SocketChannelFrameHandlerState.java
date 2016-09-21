@@ -74,7 +74,7 @@ public class SocketChannelFrameHandlerState {
 
     final DataInputStream inputStream;
 
-    public SocketChannelFrameHandlerState(SocketChannel channel, NioLoopsState nioLoopsState, NioParams nioParams, SSLEngine sslEngine) {
+    public SocketChannelFrameHandlerState(SocketChannel channel, NioLoopContext nioLoopsState, NioParams nioParams, SSLEngine sslEngine) {
         this.channel = channel;
         this.readSelectorState = nioLoopsState.readSelectorState;
         this.writeSelectorState = nioLoopsState.writeSelectorState;
@@ -133,6 +133,7 @@ public class SocketChannelFrameHandlerState {
             boolean offered = this.writeQueue.offer(writeRequest, writeEnqueuingTimeoutInMs, TimeUnit.MILLISECONDS);
             if(offered) {
                 this.writeSelectorState.registerFrameHandlerState(this, SelectionKey.OP_WRITE);
+                this.readSelectorState.selector.wakeup();
             } else {
                 throw new IOException("Frame enqueuing failed");
             }

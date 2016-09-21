@@ -27,17 +27,18 @@ public class NioParams {
 
     private int writeByteBufferSize = 8192;
 
-    private int nbIoThreads = 2;
+    private int nbIoThreads = 1;
 
     private int writeEnqueuingTimeoutInMs = 10 * 1000;
 
-    private int writeQueueCapacity = 1000;
+    private int writeQueueCapacity = 10000;
 
     private ExecutorService nioExecutor;
 
     private ThreadFactory threadFactory;
 
-    public NioParams() {}
+    public NioParams() {
+    }
 
     public NioParams(NioParams nioParams) {
         setReadByteBufferSize(nioParams.getReadByteBufferSize());
@@ -54,7 +55,7 @@ public class NioParams {
     }
 
     public NioParams setReadByteBufferSize(int readByteBufferSize) {
-        if(readByteBufferSize <= 0) {
+        if (readByteBufferSize <= 0) {
             throw new IllegalArgumentException("Buffer size must be greater than 0");
         }
         this.readByteBufferSize = readByteBufferSize;
@@ -66,7 +67,7 @@ public class NioParams {
     }
 
     public NioParams setWriteByteBufferSize(int writeByteBufferSize) {
-        if(readByteBufferSize <= 0) {
+        if (readByteBufferSize <= 0) {
             throw new IllegalArgumentException("Buffer size must be greater than 0");
         }
         this.writeByteBufferSize = writeByteBufferSize;
@@ -78,11 +79,8 @@ public class NioParams {
     }
 
     public NioParams setNbIoThreads(int nbIoThreads) {
-        if(nbIoThreads <= 0) {
+        if (nbIoThreads <= 0) {
             throw new IllegalArgumentException("Number of threads must be greater than 0");
-        }
-        if(nbIoThreads % 2 != 0) {
-            throw new IllegalArgumentException("Number of threads must be even (e.g. 2, 4, 6, etc)");
         }
         this.nbIoThreads = nbIoThreads;
         return this;
@@ -120,7 +118,7 @@ public class NioParams {
     }
 
     public NioParams setWriteQueueCapacity(int writeQueueCapacity) {
-        if(writeQueueCapacity <= 0) {
+        if (writeQueueCapacity <= 0) {
             throw new IllegalArgumentException("Write queue capacity must be greater than 0");
         }
         this.writeQueueCapacity = writeQueueCapacity;

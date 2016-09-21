@@ -20,8 +20,6 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.SocketConfigurator;
 import com.rabbitmq.client.impl.AbstractFrameHandlerFactory;
 import com.rabbitmq.client.impl.FrameHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -32,8 +30,6 @@ import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -43,12 +39,6 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactory {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SocketChannelFrameHandlerFactory.class);
-
-    private final ExecutorService executorService;
-
-    private final ThreadFactory threadFactory;
-
     final NioParams nioParams;
 
     private final SSLContext sslContext;
@@ -57,17 +47,16 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
     private final AtomicLong globalConnectionCount = new AtomicLong();
 
-    private final List<NioLoopsState> nioLoopsStates;
+    private final List<NioLoopContext> nioLoopContexts;
 
-    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, NioParams nioParams, boolean ssl, SSLContext sslContext) throws IOException {
+    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, NioParams nioParams, boolean ssl, SSLContext sslContext)
+        throws IOException {
         super(connectionTimeout, configurator, ssl);
         this.nioParams = new NioParams(nioParams);
         this.sslContext = sslContext;
-        this.executorService = nioParams.getNioExecutor();
-        this.threadFactory = nioParams.getThreadFactory();
-        this.nioLoopsStates = new ArrayList<NioLoopsState>(this.nioParams.getNbIoThreads() / 2);
-        for(int i = 0; i < this.nioParams.getNbIoThreads() / 2; i++) {
-            this.nioLoopsStates.add(new NioLoopsState(this, this.nioParams));
+        this.nioLoopContexts = new ArrayList<NioLoopContext>(this.nioParams.getNbIoThreads());
+        for (int i = 0; i < this.nioParams.getNbIoThreads(); i++) {
+            this.nioLoopContexts.add(new NioLoopContext(this, this.nioParams));
         }
     }
 
@@ -76,7 +65,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
         int portNumber = ConnectionFactory.portOrDefault(addr.getPort(), ssl);
 
         SSLEngine sslEngine = null;
-        if(ssl) {
+        if (ssl) {
             sslEngine = sslContext.createSSLEngine(addr.getHost(), portNumber);
             sslEngine.setUseClientMode(true);
         }
@@ -90,29 +79,29 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
         channel.configureBlocking(false);
 
-        if(ssl) {
+        if (ssl) {
             sslEngine.beginHandshake();
             boolean handshake = SslEngineHelper.doHandshake(channel, sslEngine);
-            if(!handshake) {
+            if (!handshake) {
                 throw new SSLException("TLS handshake failed");
             }
         }
 
         // lock
         stateLock.lock();
-        NioLoopsState nioLoopsState = null;
+        NioLoopContext nioLoopContext = null;
         try {
-            long modulo = globalConnectionCount.getAndIncrement() % (nioParams.getNbIoThreads() / 2);
-            nioLoopsState = nioLoopsStates.get((int) modulo);
-            nioLoopsState.initStateIfNecessary();
-            nioLoopsState.notifyNewConnection();
+            long modulo = globalConnectionCount.getAndIncrement() % nioParams.getNbIoThreads();
+            nioLoopContext = nioLoopContexts.get((int) modulo);
+            nioLoopContext.initStateIfNecessary();
+            nioLoopContext.notifyNewConnection();
         } finally {
             stateLock.unlock();
         }
 
         SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(
             channel,
-            nioLoopsState,
+            nioLoopContext,
             nioParams,
             sslEngine
         );
@@ -128,5 +117,4 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
     void unlock() {
         stateLock.unlock();
     }
-
 }
