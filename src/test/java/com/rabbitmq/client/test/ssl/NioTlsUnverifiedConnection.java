@@ -16,6 +16,7 @@
 package com.rabbitmq.client.test.ssl;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.test.BrokerTestCase;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -28,28 +29,36 @@ import static org.junit.Assert.assertTrue;
 /**
  *
  */
-public class NioTlsTest {
+public class NioTlsUnverifiedConnection extends BrokerTestCase {
 
-    @Test
-    public void connectionGetConsume() throws Exception {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.setNio(true);
-        connectionFactory.useSslProtocol();
+    @Override
+    protected boolean nio() {
+        return true;
+    }
 
-        CountDownLatch latch = new CountDownLatch(1);
-        Connection connection = null;
+    public void openConnection()
+        throws IOException, TimeoutException {
         try {
-            connection = basicGetBasicConsume(connectionFactory, "tls.nio.queue", latch);
-            boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
-            assertTrue("Message has not been received", messagesReceived);
-        } finally {
-            safeClose(connection);
+            connectionFactory.useSslProtocol();
+        } catch (Exception ex) {
+            throw new IOException(ex.toString());
+        }
+
+        if (connection == null) {
+            connection = connectionFactory.newConnection();
         }
     }
 
-    private Connection basicGetBasicConsume(ConnectionFactory connectionFactory, String queue, final CountDownLatch latch)
+    @Test
+    public void connectionGetConsume() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        connection = basicGetBasicConsume(connection, "tls.nio.queue", latch);
+        boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
+        assertTrue("Message has not been received", messagesReceived);
+    }
+
+    private Connection basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch)
         throws IOException, TimeoutException {
-        Connection connection = connectionFactory.newConnection();
         Channel channel = connection.createChannel();
         channel.queueDeclare(queue, false, false, false, null);
         channel.queuePurge(queue);
@@ -68,13 +77,4 @@ public class NioTlsTest {
         return connection;
     }
 
-    private void safeClose(Connection connection) {
-        if (connection != null) {
-            try {
-                connection.abort();
-            } catch (Exception e) {
-                // OK
-            }
-        }
-    }
 }
