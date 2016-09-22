@@ -80,9 +80,7 @@ public class SslEngineHelper {
             status = unwrapResult.getStatus();
             switch (status) {
             case OK:
-                plainIn.flip();
-                bufferCopy(plainIn, cipherIn);
-                plainIn.compact();
+                plainIn.clear();
                 handshakeStatus = runDelegatedTasks(sslEngine);
                 break;
             case BUFFER_OVERFLOW:
@@ -109,7 +107,6 @@ public class SslEngineHelper {
         WritableByteChannel channel, SSLEngine sslEngine) throws IOException {
         SSLEngineResult.HandshakeStatus handshakeStatus = sslEngine.getHandshakeStatus();
         SSLEngineResult.Status status = sslEngine.wrap(plainOut, cipherOut).getStatus();
-
         switch (status) {
         case OK:
             handshakeStatus = runDelegatedTasks(sslEngine);

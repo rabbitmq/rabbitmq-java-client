@@ -74,13 +74,12 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
             SocketAddress address = new InetSocketAddress(addr.getHost(), portNumber);
             channel = SocketChannel.open();
+            channel.configureBlocking(true);
             if(nioParams.getSocketChannelConfigurator() != null) {
                 nioParams.getSocketChannelConfigurator().configure(channel);
             }
 
             channel.connect(address);
-
-            channel.configureBlocking(false);
 
             if (ssl) {
                 sslEngine.beginHandshake();
@@ -89,6 +88,8 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                     throw new SSLException("TLS handshake failed");
                 }
             }
+
+            channel.configureBlocking(false);
 
             // lock
             stateLock.lock();

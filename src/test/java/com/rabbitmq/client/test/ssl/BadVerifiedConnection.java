@@ -90,7 +90,6 @@ public class BadVerifiedConnection extends UnverifiedConnection {
             throw new IOException(ex.toString());
         }
 
-        if (connection == null) {
             try {
                 connection = connectionFactory.newConnection();
                 fail();
@@ -98,7 +97,6 @@ public class BadVerifiedConnection extends UnverifiedConnection {
             } catch (IOException e) {
                 fail();
             }
-        }
     }
 
     public void openChannel() {}

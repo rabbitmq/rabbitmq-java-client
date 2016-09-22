@@ -48,9 +48,7 @@ public class UnverifiedConnection extends BrokerTestCase {
             throw new IOException(ex.toString());
         }
 
-        if (connection == null) {
-            connection = connectionFactory.newConnection();
-        }
+        connection = connectionFactory.newConnection();
     }
 
     @Test public void sSL() throws IOException

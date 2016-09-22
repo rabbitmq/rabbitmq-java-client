@@ -64,7 +64,7 @@ public class VerifiedConnection extends UnverifiedConnection {
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ks, p12Password);
-            
+
             SSLContext c = getSSLContext();
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
@@ -87,8 +87,8 @@ public class VerifiedConnection extends UnverifiedConnection {
             throw new IOException(ex.toString());
         }
 
-        if (connection == null) {
+        //if (connection == null) {
             connection = connectionFactory.newConnection();
-        }
+        //}
     }
 }
