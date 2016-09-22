@@ -105,7 +105,7 @@ public class FrameTest {
         for (Frame frame : frames) {
             frame.writeTo(new DataOutputStream(new ByteBufferOutputStream(channel, buffer)));
         }
-        Frame.drain(channel, buffer);
+        drain(channel, buffer);
         checkWrittenChunks(totalFrameSize, channel);
     }
 
@@ -125,7 +125,7 @@ public class FrameTest {
         for (Frame frame : frames) {
             frame.writeTo(new DataOutputStream(new ByteBufferOutputStream(channel, buffer)));
         }
-        Frame.drain(channel, buffer);
+        drain(channel, buffer);
         checkWrittenChunks(totalFrameSize, channel);
     }
 
@@ -207,6 +207,12 @@ public class FrameTest {
                 bytesOfFrames.add(b);
             }
         }
+    }
+
+    public static void drain(WritableByteChannel channel, ByteBuffer buffer) throws IOException {
+        buffer.flip();
+        while(buffer.hasRemaining() && channel.write(buffer) != -1);
+        buffer.clear();
     }
 
 }

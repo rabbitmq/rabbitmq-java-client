@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
 /**
- *
+ * Bridge between the byte buffer and stream worlds.
  */
 public class SslEngineByteBufferOutputStream extends OutputStream {
 

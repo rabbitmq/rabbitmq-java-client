@@ -22,9 +22,6 @@ import com.rabbitmq.client.MalformedFrameException;
 import java.io.*;
 import java.math.BigDecimal;
 import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
@@ -123,77 +120,6 @@ public class Frame {
         return new Frame(type, channel, payload);
     }
 
-    public static Frame readFrom(ReadableByteChannel readableChannel, ByteBuffer buffer) throws IOException {
-        int type;
-        int channel;
-
-        readIfNecessary(readableChannel, buffer);
-        type = buffer.get() & 0xff;
-
-        // FIXME check not a version mismatch
-
-        // channel
-        readIfNecessary(readableChannel, buffer);
-        int ch1 = buffer.get() & 0xff;
-        readIfNecessary(readableChannel, buffer);
-        int ch2 = buffer.get() & 0xff;
-        channel = (ch1 << 8) + (ch2 << 0);
-
-        readIfNecessary(readableChannel, buffer);
-        // get payload size
-        // FIXME deal with big/little endian, see buffer.getInt()
-        byte b3 = buffer.get();
-        readIfNecessary(readableChannel, buffer);
-        byte b2 = buffer.get();
-        readIfNecessary(readableChannel, buffer);
-        byte b1 = buffer.get();
-        readIfNecessary(readableChannel, buffer);
-        byte b0 = buffer.get();
-
-        int payloadSize = (((b3       ) << 24) |
-            ((b2 & 0xff) << 16) |
-            ((b1 & 0xff) <<  8) |
-            ((b0 & 0xff)      ));
-
-
-        byte[] payload = new byte[payloadSize];
-
-        if(payloadSize > buffer.remaining()) {
-            int remainingPayloadToRead = payloadSize;
-            while(remainingPayloadToRead > 0) {
-                readIfNecessary(readableChannel, buffer);
-                int remainingInBuffer = buffer.remaining();
-                if(remainingPayloadToRead > remainingInBuffer) {
-                    // we can read the whole buffer
-                    buffer.get(payload, payloadSize - remainingPayloadToRead, remainingInBuffer);
-                } else {
-                    // we read only what we need
-                    buffer.get(payload, payloadSize - remainingPayloadToRead, remainingPayloadToRead);
-                }
-                remainingPayloadToRead -= remainingInBuffer;
-            }
-
-        } else {
-            buffer.get(payload);
-        }
-
-        readIfNecessary(readableChannel, buffer);
-
-        int frameEndMarker = buffer.get() & 0xff;
-        if (frameEndMarker != AMQP.FRAME_END) {
-            throw new MalformedFrameException("Bad frame end marker: " + frameEndMarker);
-        }
-        return new Frame(type, channel, payload);
-    }
-
-    private static void readIfNecessary(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
-        if(!buffer.hasRemaining()) {
-            buffer.clear();
-            channel.read(buffer);
-            buffer.flip();
-        }
-    }
-
     /**
      * Private API - A protocol version mismatch is detected by checking the
      * three next bytes if a frame type of (int)'A' is read from an input
@@ -266,79 +192,6 @@ public class Frame {
             os.write(payload);
         }
         os.write(AMQP.FRAME_END);
-    }
-
-    public void writeTo(WritableByteChannel writableChannel, ByteBuffer buffer) throws IOException {
-        // FIXME write whole frame if it fits in buffer
-        if(size() < buffer.remaining()) {
-            buffer.put((byte) type);
-            buffer.put((byte) ((channel >>> 8) & 0xFF));
-            buffer.put((byte) ((channel >>> 0) & 0xFF));
-
-            int payloadSize;
-            byte [] framePayload;
-
-            if(accumulator != null) {
-                payloadSize = accumulator.size();
-                framePayload = accumulator.toByteArray();
-            } else {
-                payloadSize = payload.length;
-                framePayload = payload;
-            }
-
-            buffer.put((byte)(payloadSize >> 24));
-            buffer.put((byte)(payloadSize >> 16));
-            buffer.put((byte)(payloadSize >> 8));
-            buffer.put((byte)(payloadSize     ));
-
-            // FIXME write the payload in batch
-            for (byte b : framePayload) {
-                buffer.put(b);
-            }
-
-            safePut(writableChannel, buffer, (byte) AMQP.FRAME_END);
-        } else {
-            safePut(writableChannel, buffer, (byte) type);
-            safePut(writableChannel, buffer, (byte) ((channel >>> 8) & 0xFF));
-            safePut(writableChannel, buffer, (byte) ((channel >>> 0) & 0xFF));
-
-            int payloadSize;
-            byte [] framePayload;
-
-            if(accumulator != null) {
-                payloadSize = accumulator.size();
-                framePayload = accumulator.toByteArray();
-            } else {
-                payloadSize = payload.length;
-                framePayload = payload;
-            }
-
-            safePut(writableChannel, buffer, (byte)(payloadSize >> 24));
-            safePut(writableChannel, buffer, (byte)(payloadSize >> 16));
-            safePut(writableChannel, buffer, (byte)(payloadSize >> 8));
-            safePut(writableChannel, buffer, (byte)(payloadSize     ));
-
-            // FIXME write the payload in batch
-            for (byte b : framePayload) {
-                safePut(writableChannel, buffer, b);
-            }
-
-            safePut(writableChannel, buffer, (byte) AMQP.FRAME_END);
-        }
-
-    }
-
-    private void safePut(WritableByteChannel channel, ByteBuffer buffer, byte content) throws IOException {
-        if(!buffer.hasRemaining()) {
-            drain(channel, buffer);
-        }
-        buffer.put(content);
-    }
-
-    public static void drain(WritableByteChannel channel, ByteBuffer buffer) throws IOException {
-        buffer.flip();
-        while(buffer.hasRemaining() && channel.write(buffer) != -1);
-        buffer.clear();
     }
 
     public int size() {

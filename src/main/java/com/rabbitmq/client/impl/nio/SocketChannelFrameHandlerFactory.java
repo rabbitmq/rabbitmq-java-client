@@ -17,7 +17,6 @@ package com.rabbitmq.client.impl.nio;
 
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.SocketConfigurator;
 import com.rabbitmq.client.impl.AbstractFrameHandlerFactory;
 import com.rabbitmq.client.impl.FrameHandler;
 
@@ -49,9 +48,9 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
     private final List<NioLoopContext> nioLoopContexts;
 
-    public SocketChannelFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator, NioParams nioParams, boolean ssl, SSLContext sslContext)
+    public SocketChannelFrameHandlerFactory(int connectionTimeout, NioParams nioParams, boolean ssl, SSLContext sslContext)
         throws IOException {
-        super(connectionTimeout, configurator, ssl);
+        super(connectionTimeout, null, ssl);
         this.nioParams = new NioParams(nioParams);
         this.sslContext = sslContext;
         this.nioLoopContexts = new ArrayList<NioLoopContext>(this.nioParams.getNbIoThreads());
@@ -65,49 +64,65 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
         int portNumber = ConnectionFactory.portOrDefault(addr.getPort(), ssl);
 
         SSLEngine sslEngine = null;
-        if (ssl) {
-            sslEngine = sslContext.createSSLEngine(addr.getHost(), portNumber);
-            sslEngine.setUseClientMode(true);
-        }
+        SocketChannel channel = null;
 
-        SocketAddress address = new InetSocketAddress(addr.getHost(), portNumber);
-        SocketChannel channel = SocketChannel.open();
-        configurator.configure(channel.socket());
-
-        // FIXME handle connection failure
-        channel.connect(address);
-
-        channel.configureBlocking(false);
-
-        if (ssl) {
-            sslEngine.beginHandshake();
-            boolean handshake = SslEngineHelper.doHandshake(channel, sslEngine);
-            if (!handshake) {
-                throw new SSLException("TLS handshake failed");
-            }
-        }
-
-        // lock
-        stateLock.lock();
-        NioLoopContext nioLoopContext = null;
         try {
-            long modulo = globalConnectionCount.getAndIncrement() % nioParams.getNbIoThreads();
-            nioLoopContext = nioLoopContexts.get((int) modulo);
-            nioLoopContext.initStateIfNecessary();
-            nioLoopContext.notifyNewConnection();
-        } finally {
-            stateLock.unlock();
+            if (ssl) {
+                sslEngine = sslContext.createSSLEngine(addr.getHost(), portNumber);
+                sslEngine.setUseClientMode(true);
+            }
+
+            SocketAddress address = new InetSocketAddress(addr.getHost(), portNumber);
+            channel = SocketChannel.open();
+            if(nioParams.getSocketChannelConfigurator() != null) {
+                nioParams.getSocketChannelConfigurator().configure(channel);
+            }
+
+            channel.connect(address);
+
+            channel.configureBlocking(false);
+
+            if (ssl) {
+                sslEngine.beginHandshake();
+                boolean handshake = SslEngineHelper.doHandshake(channel, sslEngine);
+                if (!handshake) {
+                    throw new SSLException("TLS handshake failed");
+                }
+            }
+
+            // lock
+            stateLock.lock();
+            NioLoopContext nioLoopContext = null;
+            try {
+                long modulo = globalConnectionCount.getAndIncrement() % nioParams.getNbIoThreads();
+                nioLoopContext = nioLoopContexts.get((int) modulo);
+                nioLoopContext.initStateIfNecessary();
+                nioLoopContext.notifyNewConnection();
+            } finally {
+                stateLock.unlock();
+            }
+
+            SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(
+                channel,
+                nioLoopContext,
+                nioParams,
+                sslEngine
+            );
+
+            SocketChannelFrameHandler frameHandler = new SocketChannelFrameHandler(state);
+            return frameHandler;
+        } catch(IOException e) {
+            try {
+                if(sslEngine != null && channel != null) {
+                    SslEngineHelper.close(channel, sslEngine);
+                }
+                channel.close();
+            } catch(IOException closingException) {
+                // ignore
+            }
+            throw e;
         }
 
-        SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(
-            channel,
-            nioLoopContext,
-            nioParams,
-            sslEngine
-        );
-
-        SocketChannelFrameHandler frameHandler = new SocketChannelFrameHandler(state);
-        return frameHandler;
     }
 
     void lock() {

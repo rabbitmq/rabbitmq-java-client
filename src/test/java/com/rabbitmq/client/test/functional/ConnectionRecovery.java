@@ -830,10 +830,10 @@ public class ConnectionRecovery extends BrokerTestCase {
             cf.setTopologyRecoveryEnabled(false);
         }
         if(nio()) {
-            cf.setNio(true);
+            cf.useNio();
             cf.setNioParams(new NioParams().setNioExecutor(this.nioExecutor));
         } else {
-            cf.setNio(false);
+            cf.useBlockingIo();
         }
         return cf;
     }

@@ -99,7 +99,7 @@ public class SocketChannelFrameHandler implements FrameHandler {
         try {
             state.close();
         } catch (IOException e) {
-            LOGGER.error("Error while closing SocketChannel", e);
+            LOGGER.warn("Error while closing SocketChannel", e);
         }
     }
 

@@ -39,6 +39,9 @@ public class SocketChannelFrameHandlerState {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketChannelFrameHandlerState.class);
 
+    /** Time to linger before closing the socket forcefully. */
+    private static final int SOCKET_CLOSING_TIMEOUT = 1;
+
     private final SocketChannel channel;
 
     private final BlockingQueue<WriteRequest> writeQueue;
@@ -217,6 +220,9 @@ public class SocketChannelFrameHandlerState {
         if(ssl) {
             SslEngineHelper.close(channel, sslEngine);
         }
-        channel.close();
+        if(!channel.isOpen()) {
+            channel.socket().setSoLinger(true, SOCKET_CLOSING_TIMEOUT);
+            channel.close();
+        }
     }
 }

@@ -63,11 +63,11 @@ public class BrokerTestCase {
     protected ConnectionFactory newConnectionFactory() {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         if(nio()) {
-            connectionFactory.setNio(true);
+            connectionFactory.useNio();
             this.nioExecutor = Executors.newFixedThreadPool(5);
             connectionFactory.setNioParams(new NioParams().setNioExecutor(this.nioExecutor));
         } else {
-            connectionFactory.setNio(false);
+            connectionFactory.useBlockingIo();
             this.nioExecutor = null;
         }
 

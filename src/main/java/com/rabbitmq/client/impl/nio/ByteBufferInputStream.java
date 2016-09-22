@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 
 /**
- *
+ * Bridge between the byte buffer and stream worlds.
  */
 public class ByteBufferInputStream extends InputStream {
 

@@ -57,7 +57,7 @@ public class SslEngineHelper {
     }
 
     private static SSLEngineResult.HandshakeStatus runDelegatedTasks(SSLEngine sslEngine) {
-        // FIXME run in executor
+        // FIXME run in executor?
         Runnable runnable;
         while ((runnable = sslEngine.getDelegatedTask()) != null) {
             runnable.run();

@@ -426,10 +426,10 @@ public class Metrics extends BrokerTestCase {
     private ConnectionFactory createConnectionFactory() {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         if(nio()) {
-            connectionFactory.setNio(true);
+            connectionFactory.useNio();
             connectionFactory.setNioParams(new NioParams().setNioExecutor(this.nioExecutor));
         } else {
-            connectionFactory.setNio(false);
+            connectionFactory.useBlockingIo();
         }
         return connectionFactory;
     }

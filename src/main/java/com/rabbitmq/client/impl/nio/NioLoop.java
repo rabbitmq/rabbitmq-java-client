@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 /**
- *
+ * Logic of the NIO loop.
  */
 public class NioLoop implements Runnable {
 

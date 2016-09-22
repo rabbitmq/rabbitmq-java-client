@@ -18,7 +18,7 @@ public class JavaNioTest {
     public void connection() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.setNio(true);
+        connectionFactory.useNio();
         Connection connection = null;
         try {
             connection = basicGetBasicConsume(connectionFactory, "nio.queue", latch);
@@ -33,7 +33,7 @@ public class JavaNioTest {
     public void twoConnections() throws IOException, TimeoutException, InterruptedException {
         CountDownLatch latch = new CountDownLatch(2);
         ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.setNio(true);
+        connectionFactory.useNio();
         connectionFactory.setNioParams(new NioParams().setNbIoThreads(4));
         Connection connection1 = null;
         Connection connection2 = null;
@@ -54,7 +54,7 @@ public class JavaNioTest {
         CountDownLatch latch = new CountDownLatch(2);
         ExecutorService nioExecutor = Executors.newFixedThreadPool(5);
         ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.setNio(true);
+        connectionFactory.useNio();
         connectionFactory.setNioParams(new NioParams().setNioExecutor(nioExecutor));
         Connection connection1 = null;
         Connection connection2 = null;
@@ -71,13 +71,15 @@ public class JavaNioTest {
         }
     }
 
-    @Test public void shutdownListenerCalled() throws IOException, TimeoutException, InterruptedException {
+    @Test
+    public void shutdownListenerCalled() throws IOException, TimeoutException, InterruptedException {
         ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.setNio(true);
+        connectionFactory.useNio();
         Connection connection = connectionFactory.newConnection();
         try {
             final CountDownLatch latch = new CountDownLatch(1);
             connection.addShutdownListener(new ShutdownListener() {
+
                 @Override
                 public void shutdownCompleted(ShutdownSignalException cause) {
                     latch.countDown();
@@ -89,27 +91,6 @@ public class JavaNioTest {
             safeClose(connection);
         }
     }
-
-    /*
-    @Test public void tooManyOpenFiles() throws IOException, TimeoutException, InterruptedException {
-        // check NIO state is correctly cleaned
-        for(int i = 0; i < 500; i++) {
-            ConnectionFactory connectionFactory = new ConnectionFactory();
-            connectionFactory.setNio(true);
-            Connection connection = connectionFactory.newConnection();
-            safeClose(connection);
-        }
-
-        Thread.sleep(10 * 1000L);
-
-        for(int i = 0; i < 500; i++) {
-            ConnectionFactory connectionFactory = new ConnectionFactory();
-            connectionFactory.setNio(true);
-            Connection connection = connectionFactory.newConnection();
-            safeClose(connection);
-        }
-    }
-    */
 
     private Connection basicGetBasicConsume(ConnectionFactory connectionFactory, String queue, final CountDownLatch latch)
         throws IOException, TimeoutException {
@@ -132,7 +113,7 @@ public class JavaNioTest {
     }
 
     private void safeClose(Connection connection) {
-        if(connection != null) {
+        if (connection != null) {
             try {
                 connection.abort();
             } catch (Exception e) {
@@ -140,5 +121,4 @@ public class JavaNioTest {
             }
         }
     }
-
 }
