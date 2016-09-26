@@ -148,9 +148,9 @@ public class SslEngineHelper {
                 }
                 break;
             case BUFFER_OVERFLOW:
-                throw new SSLException("Buffer overflow occured after a wrap. I don't think we should ever get here.");
+                throw new SSLException("Buffer overflow occured after a wrap.");
             case BUFFER_UNDERFLOW:
-                throw new SSLException("Buffer underflow occured after a wrap. I don't think we should ever get here.");
+                throw new SSLException("Buffer underflow occured after a wrap.");
             case CLOSED:
                 throw new SSLException("Buffer closed");
             default:
