@@ -17,7 +17,9 @@ package com.rabbitmq.client.test.ssl;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.test.BrokerTestCase;
+import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -25,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -44,9 +47,20 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
             throw new IOException(ex.toString());
         }
 
-        if (connection == null) {
-            connection = connectionFactory.newConnection();
+        int attempt = 0;
+        while(attempt < 3) {
+            try {
+                connection = connectionFactory.newConnection();
+                break;
+            } catch(Exception e) {
+                LoggerFactory.getLogger(getClass()).warn("Error when opening TLS connection");
+                attempt++;
+            }
         }
+        if(connection == null) {
+            fail("Couldn't open TLS connection after 3 attemps");
+        }
+
     }
 
     @Test

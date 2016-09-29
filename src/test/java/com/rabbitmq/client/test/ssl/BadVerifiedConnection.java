@@ -90,13 +90,13 @@ public class BadVerifiedConnection extends UnverifiedConnection {
             throw new IOException(ex.toString());
         }
 
-            try {
-                connection = connectionFactory.newConnection();
-                fail();
-            } catch (SSLHandshakeException ignored) {
-            } catch (IOException e) {
-                fail();
-            }
+        try {
+            connection = connectionFactory.newConnection();
+            fail();
+        } catch (SSLHandshakeException ignored) {
+        } catch (IOException e) {
+            fail();
+        }
     }
 
     public void openChannel() {}

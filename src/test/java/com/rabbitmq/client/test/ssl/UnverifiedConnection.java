@@ -26,6 +26,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test for bug 19356 - SSL Support in rabbitmq
@@ -48,7 +49,19 @@ public class UnverifiedConnection extends BrokerTestCase {
             throw new IOException(ex.toString());
         }
 
-        connection = connectionFactory.newConnection();
+        int attempt = 0;
+        while(attempt < 3) {
+            try {
+                connection = connectionFactory.newConnection();
+                break;
+            } catch(Exception e) {
+                LoggerFactory.getLogger(getClass()).warn("Error when opening TLS connection");
+                attempt++;
+            }
+        }
+        if(connection == null) {
+            fail("Couldn't open TLS connection after 3 attemps");
+        }
     }
 
     @Test public void sSL() throws IOException
