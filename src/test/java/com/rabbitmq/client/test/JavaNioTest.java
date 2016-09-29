@@ -92,6 +92,16 @@ public class JavaNioTest {
         }
     }
 
+    @Test
+    public void nioLoopCleaning() throws Exception {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.useNio();
+        for(int i = 0; i < 10; i++) {
+            Connection connection = connectionFactory.newConnection();
+            connection.abort();
+        }
+    }
+
     private Connection basicGetBasicConsume(ConnectionFactory connectionFactory, String queue, final CountDownLatch latch)
         throws IOException, TimeoutException {
         Connection connection = connectionFactory.newConnection();

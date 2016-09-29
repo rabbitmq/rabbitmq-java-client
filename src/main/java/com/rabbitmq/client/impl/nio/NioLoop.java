@@ -66,12 +66,11 @@ public class NioLoop implements Runnable {
         boolean writeRegistered = false;
 
         try {
-            int idlenessCount = 0;
             while (true && !Thread.currentThread().isInterrupted()) {
 
                 for (SelectionKey selectionKey : selector.keys()) {
                     SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) selectionKey.attachment();
-                    if (state.getConnection().getHeartbeat() > 0) {
+                    if (state.getConnection() != null && state.getConnection().getHeartbeat() > 0) {
                         long now = System.currentTimeMillis();
                         if ((now - state.getLastActivity()) > state.getConnection().getHeartbeat() * 1000 * 2) {
                             try {
@@ -89,8 +88,7 @@ public class NioLoop implements Runnable {
                 if (!writeRegistered && registrations.isEmpty() && writeRegistrations.isEmpty()) {
                     // we can block, registrations will call Selector.wakeup()
                     select = selector.select(1000);
-                    idlenessCount++;
-                    if (idlenessCount == 10 && selector.keys().size() == 0) {
+                    if (selector.keys().size() == 0) {
                         // we haven't been doing anything for a while, shutdown state
                         boolean clean = context.cleanUp();
                         if (clean) {
@@ -118,7 +116,6 @@ public class NioLoop implements Runnable {
                 }
 
                 if (select > 0) {
-                    idlenessCount = 0;
                     Set<SelectionKey> readyKeys = selector.selectedKeys();
                     Iterator<SelectionKey> iterator = readyKeys.iterator();
                     while (iterator.hasNext()) {
@@ -246,7 +243,7 @@ public class NioLoop implements Runnable {
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("Error in read loop", e);
+            LOGGER.error("Error in NIO loop", e);
         }
     }
 

@@ -98,20 +98,20 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                 long modulo = globalConnectionCount.getAndIncrement() % nioParams.getNbIoThreads();
                 nioLoopContext = nioLoopContexts.get((int) modulo);
                 nioLoopContext.initStateIfNecessary();
-                nioLoopContext.notifyNewConnection();
+                SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(
+                    channel,
+                    nioLoopContext,
+                    nioParams,
+                    sslEngine
+                );
+                state.startReading();
+                SocketChannelFrameHandler frameHandler = new SocketChannelFrameHandler(state);
+                return frameHandler;
             } finally {
                 stateLock.unlock();
             }
 
-            SocketChannelFrameHandlerState state = new SocketChannelFrameHandlerState(
-                channel,
-                nioLoopContext,
-                nioParams,
-                sslEngine
-            );
 
-            SocketChannelFrameHandler frameHandler = new SocketChannelFrameHandler(state);
-            return frameHandler;
         } catch(IOException e) {
             try {
                 if(sslEngine != null && channel != null) {

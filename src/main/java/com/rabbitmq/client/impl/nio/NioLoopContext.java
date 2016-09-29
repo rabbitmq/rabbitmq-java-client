@@ -9,7 +9,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
@@ -29,8 +28,6 @@ public class NioLoopContext {
     SelectorHolder readSelectorState;
     SelectorHolder writeSelectorState;
 
-    private final AtomicLong nioLoopsConnectionCount = new AtomicLong();
-
     public NioLoopContext(SocketChannelFrameHandlerFactory socketChannelFrameHandlerFactory,
         NioParams nioParams) {
         this.socketChannelFrameHandlerFactory = socketChannelFrameHandlerFactory;
@@ -38,10 +35,6 @@ public class NioLoopContext {
         this.threadFactory = nioParams.getThreadFactory();
         this.readBuffer = ByteBuffer.allocate(nioParams.getReadByteBufferSize());
         this.writeBuffer = ByteBuffer.allocate(nioParams.getWriteByteBufferSize());
-    }
-
-    void notifyNewConnection() {
-        nioLoopsConnectionCount.incrementAndGet();
     }
 
     void initStateIfNecessary() throws IOException {
@@ -67,10 +60,13 @@ public class NioLoopContext {
     }
 
     protected boolean cleanUp() {
-        long connectionCountNow = nioLoopsConnectionCount.get();
+        int readRegistrationsCount = readSelectorState.registrations.size();
+        if(readRegistrationsCount != 0) {
+            return false;
+        }
         socketChannelFrameHandlerFactory.lock();
         try {
-            if (connectionCountNow != nioLoopsConnectionCount.get()) {
+            if (readRegistrationsCount != readSelectorState.registrations.size()) {
                 // a connection request has come in meanwhile, don't do anything
                 return false;
             }
