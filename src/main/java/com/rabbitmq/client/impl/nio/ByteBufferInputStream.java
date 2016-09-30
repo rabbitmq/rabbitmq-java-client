@@ -47,7 +47,22 @@ public class ByteBufferInputStream extends InputStream {
     private static void readFromNetworkIfNecessary(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         if(!buffer.hasRemaining()) {
             buffer.clear();
-            channel.read(buffer);
+            int read = channel.read(buffer);
+            if(read <= 0) {
+                int attempt = 0;
+                while(attempt < 3) {
+                    try {
+                        Thread.sleep(100L);
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
+                    read = channel.read(buffer);
+                    if(read > 0) {
+                        break;
+                    }
+                    attempt++;
+                }
+            }
             buffer.flip();
         }
     }

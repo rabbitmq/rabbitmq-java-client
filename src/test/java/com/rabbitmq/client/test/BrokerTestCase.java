@@ -91,19 +91,24 @@ public class BrokerTestCase {
 
     @After public void tearDown()
             throws IOException, TimeoutException {
-        closeChannel();
-        closeConnection();
+        try {
+            closeChannel();
+            closeConnection();
 
-        openConnection();
-        openChannel();
-        releaseResources();
-        closeChannel();
-        closeConnection();
-        if(nio()) {
-            if(this.nioExecutor != null) {
-                this.nioExecutor.shutdownNow();
+            openConnection();
+            openChannel();
+            releaseResources();
+            closeChannel();
+            closeConnection();
+        } finally {
+            if(nio()) {
+                if(this.nioExecutor != null) {
+                    this.nioExecutor.shutdownNow();
+                }
             }
         }
+
+
     }
 
     /**
