@@ -134,6 +134,11 @@ public class NioLoop implements Runnable {
                                     key.cancel();
                                     continue;
                                 }
+                                if(state.getConnection() == null) {
+                                    // we're in AMQConnection#start, between the header sending and the FrameHandler#initialize
+                                    // let's wait a bit more
+                                    continue;
+                                }
 
                                 DataInputStream inputStream = state.inputStream;
 
