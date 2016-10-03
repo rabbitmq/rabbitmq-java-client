@@ -34,8 +34,7 @@ import java.util.List;
 	ConnectionFactoryDefaultTlsVersion.class,
 	NioTlsUnverifiedConnection.class,
 	NioTlsVerifiedConnection.class,
-	NioTlsBadVerifiedConnection.class,
-	HandshakeTest.class
+	NioTlsBadVerifiedConnection.class
 })
 public class SSLTests {
 
