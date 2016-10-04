@@ -55,7 +55,6 @@ public class JavaNioTest {
         ExecutorService nioExecutor = Executors.newFixedThreadPool(5);
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.useNio();
-        connectionFactory.setNioParams(new NioParams().setNioExecutor(nioExecutor));
         Connection connection1 = null;
         Connection connection2 = null;
         try {

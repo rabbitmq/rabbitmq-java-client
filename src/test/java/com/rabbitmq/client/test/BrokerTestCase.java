@@ -17,7 +17,6 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.tools.Host;
 import org.junit.After;
 import org.junit.Before;
@@ -34,8 +33,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.*;
@@ -58,17 +55,12 @@ public class BrokerTestCase {
 
     protected ConnectionFactory connectionFactory = newConnectionFactory();
 
-    protected ExecutorService nioExecutor = null;
-
     protected ConnectionFactory newConnectionFactory() {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         if(nio()) {
             connectionFactory.useNio();
-            this.nioExecutor = Executors.newFixedThreadPool(5);
-            connectionFactory.setNioParams(new NioParams().setNioExecutor(this.nioExecutor));
         } else {
             connectionFactory.useBlockingIo();
-            this.nioExecutor = null;
         }
 
         return connectionFactory;
@@ -91,24 +83,14 @@ public class BrokerTestCase {
 
     @After public void tearDown()
             throws IOException, TimeoutException {
-        try {
-            closeChannel();
-            closeConnection();
+        closeChannel();
+        closeConnection();
 
-            openConnection();
-            openChannel();
-            releaseResources();
-            closeChannel();
-            closeConnection();
-        } finally {
-            if(nio()) {
-                if(this.nioExecutor != null) {
-                    this.nioExecutor.shutdownNow();
-                }
-            }
-        }
-
-
+        openConnection();
+        openChannel();
+        releaseResources();
+        closeChannel();
+        closeConnection();
     }
 
     /**

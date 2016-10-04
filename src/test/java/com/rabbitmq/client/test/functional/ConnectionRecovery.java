@@ -16,7 +16,6 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.recovery.*;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
@@ -831,7 +830,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
         if(nio()) {
             cf.useNio();
-            cf.setNioParams(new NioParams().setNioExecutor(this.nioExecutor));
         } else {
             cf.useBlockingIo();
         }

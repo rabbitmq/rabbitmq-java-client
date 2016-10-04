@@ -16,7 +16,6 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.StandardMetricsCollector;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -268,6 +267,7 @@ public class Metrics extends BrokerTestCase {
 
         // create connections
         Connection [] connections = new Connection[nbConnections];
+        ExecutorService executorService = Executors.newFixedThreadPool(nbTasks);
         try {
             Channel [] channels = new Channel[nbChannels];
             for(int i = 0; i < nbConnections; i++) {
@@ -284,7 +284,7 @@ public class Metrics extends BrokerTestCase {
                 sendMessage(channels[random.nextInt(nbChannels)]);
             }
 
-            ExecutorService executorService = Executors.newFixedThreadPool(nbTasks);
+
             List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
             for(int i = 0; i < nbTasks; i++) {
                 Channel channelForConsuming = channels[random.nextInt(nbChannels)];
@@ -310,6 +310,8 @@ public class Metrics extends BrokerTestCase {
             for(int i = 0; i < nbOfMessages; i++) {
                 sendMessage(channels[random.nextInt(nbChannels)]);
             }
+
+            executorService.shutdownNow();
 
             executorService = Executors.newFixedThreadPool(nbTasks);
             tasks = new ArrayList<Callable<Void>>();
@@ -338,6 +340,8 @@ public class Metrics extends BrokerTestCase {
                 sendMessage(channels[random.nextInt(nbChannels)]);
             }
 
+            executorService.shutdownNow();
+
             executorService = Executors.newFixedThreadPool(nbTasks);
             tasks = new ArrayList<Callable<Void>>();
             for(int i = 0; i < nbTasks; i++) {
@@ -356,6 +360,7 @@ public class Metrics extends BrokerTestCase {
             for (Connection connection : connections) {
                 safeClose(connection);
             }
+            executorService.shutdownNow();
         }
 
     }
@@ -427,7 +432,6 @@ public class Metrics extends BrokerTestCase {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         if(nio()) {
             connectionFactory.useNio();
-            connectionFactory.setNioParams(new NioParams().setNioExecutor(this.nioExecutor));
         } else {
             connectionFactory.useBlockingIo();
         }
