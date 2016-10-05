@@ -87,7 +87,7 @@ public class SslEngineHelper {
                 throw new SSLException("Buffer overflow during handshake");
             case BUFFER_UNDERFLOW:
                 cipherIn.compact();
-                channel.read(cipherIn);
+                NioHelper.read(channel, cipherIn);
                 cipherIn.flip();
                 break;
             case CLOSED:

@@ -65,7 +65,7 @@ public class SslEngineByteBufferInputStream extends InputStream {
                     cipherIn.clear();
                 }
 
-                int bytesRead = channel.read(cipherIn);
+                int bytesRead = NioHelper.read(channel, cipherIn);
                 if (bytesRead > 0) {
                     cipherIn.flip();
                 } else {

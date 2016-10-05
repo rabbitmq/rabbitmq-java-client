@@ -47,7 +47,7 @@ public class ByteBufferInputStream extends InputStream {
     private static void readFromNetworkIfNecessary(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         if(!buffer.hasRemaining()) {
             buffer.clear();
-            int read = channel.read(buffer);
+            int read = NioHelper.read(channel, buffer);
             if(read <= 0) {
                 int attempt = 0;
                 while(attempt < 3) {
@@ -56,7 +56,7 @@ public class ByteBufferInputStream extends InputStream {
                     } catch (InterruptedException e) {
                         // ignore
                     }
-                    read = channel.read(buffer);
+                    read = NioHelper.read(channel, buffer);
                     if(read > 0) {
                         break;
                     }

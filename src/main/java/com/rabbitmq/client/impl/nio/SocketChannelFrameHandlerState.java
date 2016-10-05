@@ -186,7 +186,7 @@ public class SocketChannelFrameHandlerState {
             cipherIn.flip();
             plainIn.flip();
         } else {
-            channel.read(plainIn);
+            NioHelper.read(channel, plainIn);
             plainIn.flip();
         }
     }
@@ -196,7 +196,7 @@ public class SocketChannelFrameHandlerState {
             if (!plainIn.hasRemaining() && !cipherIn.hasRemaining()) {
                 // need to try to read something
                 cipherIn.clear();
-                int bytesRead = channel.read(cipherIn);
+                int bytesRead = NioHelper.read(channel, cipherIn);
                 if (bytesRead <= 0) {
                     return false;
                 } else {
@@ -209,7 +209,7 @@ public class SocketChannelFrameHandlerState {
         } else {
             if (!plainIn.hasRemaining()) {
                 plainIn.clear();
-                channel.read(plainIn);
+                NioHelper.read(channel, plainIn);
                 plainIn.flip();
             }
             return plainIn.hasRemaining();
