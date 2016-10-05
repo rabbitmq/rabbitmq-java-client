@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -38,7 +39,7 @@ import com.rabbitmq.client.impl.ForgivingExceptionHandler;
 
 public class ExceptionHandling {
     private ConnectionFactory newConnectionFactory(ExceptionHandler eh) {
-        ConnectionFactory cf = new ConnectionFactory();
+        ConnectionFactory cf = TestUtils.connectionFactory();
         cf.setExceptionHandler(eh);
         return cf;
     }
@@ -91,7 +92,7 @@ public class ExceptionHandling {
     }
 
     @Test public void nullExceptionHandler() {
-      ConnectionFactory cf = new ConnectionFactory();
+      ConnectionFactory cf = TestUtils.connectionFactory();
       try {
         cf.setExceptionHandler(null);
         fail("expected setExceptionHandler to throw");

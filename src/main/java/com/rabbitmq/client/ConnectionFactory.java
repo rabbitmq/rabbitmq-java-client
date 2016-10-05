@@ -110,7 +110,7 @@ public class ConnectionFactory implements Cloneable {
 
     private MetricsCollector metricsCollector;
 
-    private boolean nio = true;
+    private boolean nio = false;
     private FrameHandlerFactory frameHandlerFactory;
     private NioParams nioParams = new NioParams();
 

@@ -32,9 +32,7 @@ import java.util.List;
 	VerifiedConnection.class,
 	BadVerifiedConnection.class,
 	ConnectionFactoryDefaultTlsVersion.class,
-	NioTlsUnverifiedConnection.class,
-	NioTlsVerifiedConnection.class,
-	NioTlsBadVerifiedConnection.class
+	NioTlsUnverifiedConnection.class
 })
 public class SSLTests {
 

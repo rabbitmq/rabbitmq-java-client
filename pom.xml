@@ -410,6 +410,28 @@
       </build>
     </profile>
 
+    <!--
+      Profile to activate the NIO mode in the test suite:
+      mvn verify -P use-nio
+    -->
+    <profile>
+      <id>use-nio</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <version>2.19.1</version>
+            <configuration>
+              <systemPropertyVariables>
+                <use.nio>true</use.nio>
+              </systemPropertyVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
     <profile>
       <!--
       The "release" Maven profile is used to push release artifacts to a

@@ -42,7 +42,7 @@ public class CloseInMainLoop extends BrokerTestCase{
     private final CountDownLatch closeLatch = new CountDownLatch(1);
 
     private ConnectionFactory specialConnectionFactory() {
-        ConnectionFactory f = new ConnectionFactory();
+        ConnectionFactory f = TestUtils.connectionFactory();
         f.setExceptionHandler(new DefaultExceptionHandler(){
             @Override
             public void handleConsumerException(Channel channel,

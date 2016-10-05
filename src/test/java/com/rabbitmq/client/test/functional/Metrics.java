@@ -19,6 +19,7 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.StandardMetricsCollector;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
 import org.awaitility.Duration;
 import org.junit.Test;
@@ -429,12 +430,7 @@ public class Metrics extends BrokerTestCase {
     }
 
     private ConnectionFactory createConnectionFactory() {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
-        if(nio()) {
-            connectionFactory.useNio();
-        } else {
-            connectionFactory.useBlockingIo();
-        }
+        ConnectionFactory connectionFactory = TestUtils.connectionFactory();
         return connectionFactory;
     }
 

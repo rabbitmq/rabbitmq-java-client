@@ -15,29 +15,23 @@
 
 package com.rabbitmq.client.test.ssl;
 
-import static org.junit.Assert.*;
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.test.BrokerTestCase;
 import org.junit.Test;
-
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeoutException;
 
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.test.BrokerTestCase;
-import org.slf4j.LoggerFactory;
+import static org.junit.Assert.*;
 
 /**
  * Test for bug 19356 - SSL Support in rabbitmq
  *
  */
 public class UnverifiedConnection extends BrokerTestCase {
-
-    @Override
-    protected boolean nio() {
-        return false;
-    }
 
     public void openConnection()
             throws IOException, TimeoutException {

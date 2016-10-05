@@ -13,15 +13,22 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-package com.rabbitmq.client.test.ssl;
+package com.rabbitmq.client.test;
 
-/**
- *
- */
-public class NioTlsBadVerifiedConnection extends BadVerifiedConnection {
+import com.rabbitmq.client.ConnectionFactory;
 
-    @Override
-    protected boolean nio() {
-        return true;
+public class TestUtils {
+
+    public static final boolean USE_NIO = System.getProperty("use.nio") == null ? false : true;
+
+    public static ConnectionFactory connectionFactory() {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        if(USE_NIO) {
+            connectionFactory.useNio();
+        } else {
+            connectionFactory.useBlockingIo();
+        }
+        return connectionFactory;
     }
+
 }

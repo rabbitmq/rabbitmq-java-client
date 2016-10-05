@@ -21,6 +21,7 @@ import java.net.Socket;
 import javax.net.SocketFactory;
 
 import com.rabbitmq.client.impl.*;
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -68,6 +69,16 @@ public class UnexpectedFrames extends BrokerTestCase {
     }
 
     private static class ConfusedConnectionFactory extends ConnectionFactory {
+
+        public ConfusedConnectionFactory() {
+            super();
+            if(TestUtils.USE_NIO) {
+                useNio();
+            } else {
+                useBlockingIo();
+            }
+        }
+
         @Override protected FrameHandlerFactory createFrameHandlerFactory() {
             return new ConfusedFrameHandlerFactory();
         }

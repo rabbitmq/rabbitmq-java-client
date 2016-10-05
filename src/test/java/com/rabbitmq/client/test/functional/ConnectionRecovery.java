@@ -18,6 +18,7 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.recovery.*;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
 import org.junit.Test;
 
@@ -822,16 +823,11 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     private ConnectionFactory buildConnectionFactoryWithRecoveryEnabled(boolean disableTopologyRecovery) {
-        ConnectionFactory cf = new ConnectionFactory();
+        ConnectionFactory cf = TestUtils.connectionFactory();
         cf.setNetworkRecoveryInterval(RECOVERY_INTERVAL);
         cf.setAutomaticRecoveryEnabled(true);
         if (disableTopologyRecovery) {
             cf.setTopologyRecoveryEnabled(false);
-        }
-        if(nio()) {
-            cf.useNio();
-        } else {
-            cf.useBlockingIo();
         }
         return cf;
     }

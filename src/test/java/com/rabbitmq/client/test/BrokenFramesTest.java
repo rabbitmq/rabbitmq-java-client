@@ -44,7 +44,7 @@ public class BrokenFramesTest {
 
     @Before public void setUp() throws Exception {
         myFrameHandler = new MyFrameHandler();
-        factory = new ConnectionFactory();
+        factory = TestUtils.connectionFactory();
     }
 
     @After public void tearDown() throws Exception {

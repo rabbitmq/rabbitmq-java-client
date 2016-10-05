@@ -44,7 +44,10 @@ public class BrokerTestCase {
     @Rule
     public TestRule watcher = new TestWatcher() {
         protected void starting(Description description) {
-            LOGGER.info("Starting test: {}.{}", description.getTestClass().getSimpleName(), description.getMethodName());
+            LOGGER.info(
+                "Starting test: {}.{} (nio? {})",
+                description.getTestClass().getSimpleName(), description.getMethodName(), TestUtils.USE_NIO
+            );
         }
 
         @Override
@@ -56,18 +59,8 @@ public class BrokerTestCase {
     protected ConnectionFactory connectionFactory = newConnectionFactory();
 
     protected ConnectionFactory newConnectionFactory() {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
-        if(nio()) {
-            connectionFactory.useNio();
-        } else {
-            connectionFactory.useBlockingIo();
-        }
-
+        ConnectionFactory connectionFactory = TestUtils.connectionFactory();
         return connectionFactory;
-    }
-
-    protected boolean nio() {
-        return true;
     }
 
     protected Connection connection;

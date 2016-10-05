@@ -18,24 +18,23 @@ package com.rabbitmq.client.test.ssl;
 import com.rabbitmq.client.ConnectionFactory;
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.junit.Test;
 
-public class ConnectionFactoryDefaultTlsVersion extends TestCase {
+public class ConnectionFactoryDefaultTlsVersion {
 
-    private ConnectionFactory connectionFactory = new ConnectionFactory();
-
-    public void testDefaultTlsVersionJdk16ShouldTakeFallback() {
+    @Test public void defaultTlsVersionJdk16ShouldTakeFallback() {
         String [] supportedProtocols = {"SSLv2Hello", "SSLv3", "TLSv1"};
         String tlsProtocol = ConnectionFactory.computeDefaultTlsProcotol(supportedProtocols);
         Assert.assertEquals("TLSv1",tlsProtocol);
     }
 
-    public void testDefaultTlsVersionJdk17ShouldTakePrefered() {
+    @Test public void defaultTlsVersionJdk17ShouldTakePrefered() {
         String [] supportedProtocols = {"SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"};
         String tlsProtocol = ConnectionFactory.computeDefaultTlsProcotol(supportedProtocols);
         Assert.assertEquals("TLSv1.2",tlsProtocol);
     }
 
-    public void testDefaultTlsVersionJdk18ShouldTakePrefered() {
+    @Test public void defaultTlsVersionJdk18ShouldTakePrefered() {
         String [] supportedProtocols = {"SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"};
         String tlsProtocol = ConnectionFactory.computeDefaultTlsProcotol(supportedProtocols);
         Assert.assertEquals("TLSv1.2",tlsProtocol);

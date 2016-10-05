@@ -33,6 +33,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.test.TestUtils;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -70,12 +71,7 @@ public class VerifiedConnection extends UnverifiedConnection {
             SSLContext c = getSSLContext();
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-            connectionFactory = new ConnectionFactory();
-            if(nio()) {
-                connectionFactory.useNio();
-            } else {
-                connectionFactory.useBlockingIo();
-            }
+            connectionFactory = TestUtils.connectionFactory();
             connectionFactory.useSslProtocol(c);
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex.toString());

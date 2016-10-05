@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -45,7 +46,7 @@ public class Permissions extends BrokerTestCase
 
     public Permissions()
     {
-        ConnectionFactory factory = new ConnectionFactory();
+        ConnectionFactory factory = TestUtils.connectionFactory();
         factory.setUsername("test");
         factory.setPassword("test");
         factory.setVirtualHost("/test");
@@ -87,7 +88,7 @@ public class Permissions extends BrokerTestCase
 
     protected void createResources()
             throws IOException, TimeoutException {
-        ConnectionFactory factory = new ConnectionFactory();
+        ConnectionFactory factory = TestUtils.connectionFactory();
         factory.setUsername("testadmin");
         factory.setPassword("test");
         factory.setVirtualHost("/test");
@@ -121,7 +122,7 @@ public class Permissions extends BrokerTestCase
     }
 
     @Test public void auth() throws TimeoutException {
-        ConnectionFactory unAuthFactory = new ConnectionFactory();
+        ConnectionFactory unAuthFactory = TestUtils.connectionFactory();
         unAuthFactory.setUsername("test");
         unAuthFactory.setPassword("tset");
 

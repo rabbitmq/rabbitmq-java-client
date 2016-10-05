@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -40,7 +41,7 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
  */
 public class ConnectionOpen {
     @Test public void correctProtocolHeader() throws IOException {
-        ConnectionFactory factory = new ConnectionFactory();
+        ConnectionFactory factory = TestUtils.connectionFactory();
         SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
         fh.sendHeader();
         AMQCommand command = new AMQCommand();
@@ -57,7 +58,7 @@ public class ConnectionOpen {
     }
 
     @Test public void crazyProtocolHeader() throws IOException {
-        ConnectionFactory factory = new ConnectionFactory();
+        ConnectionFactory factory = TestUtils.connectionFactory();
         // keep the frame handler's socket
         Socket fhSocket = factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT);
         SocketFrameHandler fh = new SocketFrameHandler(fhSocket);
@@ -89,7 +90,7 @@ public class ConnectionOpen {
     }
 
     @Test public void frameMaxLessThanFrameMinSize() throws IOException, TimeoutException {
-        ConnectionFactory factory = new ConnectionFactory();
+        ConnectionFactory factory = TestUtils.connectionFactory();
         factory.setRequestedFrameMax(100);
         try {
             factory.newConnection();

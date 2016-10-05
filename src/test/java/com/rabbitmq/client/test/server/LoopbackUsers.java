@@ -25,6 +25,7 @@ import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,7 +83,7 @@ public class LoopbackUsers {
     }
 
     private ConnectionFactory getFactory(String name, String addr) {
-        ConnectionFactory factory = new ConnectionFactory();
+        ConnectionFactory factory = TestUtils.connectionFactory();
         factory.setUsername(name);
         factory.setPassword(name);
         factory.setHost(addr);

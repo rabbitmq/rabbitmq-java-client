@@ -15,27 +15,21 @@
 
 package com.rabbitmq.client.test.ssl;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.util.concurrent.TimeoutException;
+import com.rabbitmq.client.test.TestUtils;
+import org.junit.Test;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.util.concurrent.TimeoutException;
 
-import org.junit.Test;
-
-import com.rabbitmq.client.ConnectionFactory;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Test for bug 19356 - SSL Support in rabbitmq
@@ -71,12 +65,7 @@ public class BadVerifiedConnection extends UnverifiedConnection {
             SSLContext c = getSSLContext();
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-            connectionFactory = new ConnectionFactory();
-            if(nio()) {
-                connectionFactory.useNio();
-            } else {
-                connectionFactory.useBlockingIo();
-            }
+            connectionFactory = TestUtils.connectionFactory();
             connectionFactory.useSslProtocol(c);
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex.toString());

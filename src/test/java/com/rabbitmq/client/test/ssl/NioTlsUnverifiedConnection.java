@@ -34,11 +34,6 @@ import static org.junit.Assert.fail;
  */
 public class NioTlsUnverifiedConnection extends BrokerTestCase {
 
-    @Override
-    protected boolean nio() {
-        return true;
-    }
-
     public void openConnection()
         throws IOException, TimeoutException {
         try {
