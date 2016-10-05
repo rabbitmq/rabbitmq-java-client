@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 
 import javax.net.SocketFactory;
 
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -44,7 +45,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
         private final int channelMax;
 
         public SpecialConnection(int channelMax) throws Exception {
-            this(new ConnectionFactory(), channelMax);
+            this(TestUtils.connectionFactory(), channelMax);
         }
 
         private SpecialConnection(ConnectionFactory factory, int channelMax) throws Exception {
@@ -63,7 +64,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
 
     @Test public void channelMaxLowerThanServerMinimum() throws Exception {
         int n = 64;
-        ConnectionFactory cf = new ConnectionFactory();
+        ConnectionFactory cf = TestUtils.connectionFactory();
         cf.setRequestedChannelMax(n);
 
         Connection conn = cf.newConnection();
@@ -91,7 +92,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
 
         try {
             Host.rabbitmqctl("eval 'application:set_env(rabbit, channel_max, " + n + ").'");
-            ConnectionFactory cf = new ConnectionFactory();
+            ConnectionFactory cf = TestUtils.connectionFactory();
             Connection conn = cf.newConnection();
             assertEquals(n, conn.getChannelMax());
 

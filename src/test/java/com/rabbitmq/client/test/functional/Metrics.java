@@ -19,6 +19,7 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.StandardMetricsCollector;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
 import org.awaitility.Duration;
 import org.junit.Test;
@@ -56,11 +57,11 @@ public class Metrics extends BrokerTestCase {
     }
 
     @Test public void metricsStandardConnection() throws IOException, TimeoutException {
-        doMetrics(new ConnectionFactory());
+        doMetrics(createConnectionFactory());
     }
 
     @Test public void metricsAutoRecoveryConnection() throws IOException, TimeoutException {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
+        ConnectionFactory connectionFactory = createConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
         doMetrics(connectionFactory);
     }
@@ -125,11 +126,11 @@ public class Metrics extends BrokerTestCase {
     }
 
     @Test public void metricsAckStandardConnection() throws IOException, TimeoutException {
-        doMetricsAck(new ConnectionFactory());
+        doMetricsAck(createConnectionFactory());
     }
 
     @Test public void metricsAckAutoRecoveryConnection() throws IOException, TimeoutException {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
+        ConnectionFactory connectionFactory = createConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
         doMetricsAck(connectionFactory);
     }
@@ -207,11 +208,11 @@ public class Metrics extends BrokerTestCase {
     }
 
     @Test public void metricsRejectStandardConnection() throws IOException, TimeoutException {
-        doMetricsReject(new ConnectionFactory());
+        doMetricsReject(createConnectionFactory());
     }
 
     @Test public void metricsRejectAutoRecoveryConnection() throws IOException, TimeoutException {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
+        ConnectionFactory connectionFactory = createConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
         doMetricsReject(connectionFactory);
     }
@@ -245,11 +246,11 @@ public class Metrics extends BrokerTestCase {
     }
 
     @Test public void multiThreadedMetricsStandardConnection() throws InterruptedException, TimeoutException, IOException {
-        doMultiThreadedMetrics(new ConnectionFactory());
+        doMultiThreadedMetrics(createConnectionFactory());
     }
 
     @Test public void multiThreadedMetricsAutoRecoveryConnection() throws InterruptedException, TimeoutException, IOException {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
+        ConnectionFactory connectionFactory = createConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
         doMultiThreadedMetrics(connectionFactory);
     }
@@ -267,6 +268,7 @@ public class Metrics extends BrokerTestCase {
 
         // create connections
         Connection [] connections = new Connection[nbConnections];
+        ExecutorService executorService = Executors.newFixedThreadPool(nbTasks);
         try {
             Channel [] channels = new Channel[nbChannels];
             for(int i = 0; i < nbConnections; i++) {
@@ -283,7 +285,7 @@ public class Metrics extends BrokerTestCase {
                 sendMessage(channels[random.nextInt(nbChannels)]);
             }
 
-            ExecutorService executorService = Executors.newFixedThreadPool(nbTasks);
+
             List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
             for(int i = 0; i < nbTasks; i++) {
                 Channel channelForConsuming = channels[random.nextInt(nbChannels)];
@@ -309,6 +311,8 @@ public class Metrics extends BrokerTestCase {
             for(int i = 0; i < nbOfMessages; i++) {
                 sendMessage(channels[random.nextInt(nbChannels)]);
             }
+
+            executorService.shutdownNow();
 
             executorService = Executors.newFixedThreadPool(nbTasks);
             tasks = new ArrayList<Callable<Void>>();
@@ -337,6 +341,8 @@ public class Metrics extends BrokerTestCase {
                 sendMessage(channels[random.nextInt(nbChannels)]);
             }
 
+            executorService.shutdownNow();
+
             executorService = Executors.newFixedThreadPool(nbTasks);
             tasks = new ArrayList<Callable<Void>>();
             for(int i = 0; i < nbTasks; i++) {
@@ -355,16 +361,17 @@ public class Metrics extends BrokerTestCase {
             for (Connection connection : connections) {
                 safeClose(connection);
             }
+            executorService.shutdownNow();
         }
 
     }
 
     @Test public void errorInChannelStandardConnection() throws IOException, TimeoutException {
-        errorInChannel(new ConnectionFactory());
+        errorInChannel(createConnectionFactory());
     }
 
     @Test public void errorInChananelAutoRecoveryConnection() throws IOException, TimeoutException {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
+        ConnectionFactory connectionFactory = createConnectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
         errorInChannel(connectionFactory);
     }
@@ -392,7 +399,7 @@ public class Metrics extends BrokerTestCase {
     }
 
     @Test public void checkListenersWithAutoRecoveryConnection() throws Exception {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
+        ConnectionFactory connectionFactory = createConnectionFactory();
         connectionFactory.setNetworkRecoveryInterval(2000);
         connectionFactory.setAutomaticRecoveryEnabled(true);
         StandardMetricsCollector metrics = new StandardMetricsCollector();
@@ -422,7 +429,10 @@ public class Metrics extends BrokerTestCase {
 
     }
 
-
+    private ConnectionFactory createConnectionFactory() {
+        ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+        return connectionFactory;
+    }
 
     private void closeAndWaitForRecovery(AutorecoveringConnection connection) throws IOException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);

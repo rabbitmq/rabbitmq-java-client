@@ -30,7 +30,7 @@ import com.rabbitmq.client.impl.AMQConnection;
 
 public class SharedThreadPoolTest extends BrokerTestCase {
     @Test public void willShutDownExecutor() throws IOException, TimeoutException {
-        ConnectionFactory cf = new ConnectionFactory();
+        ConnectionFactory cf = TestUtils.connectionFactory();
         ExecutorService executor = Executors.newFixedThreadPool(8);
         cf.setSharedExecutor(executor);
 

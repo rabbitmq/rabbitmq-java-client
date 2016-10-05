@@ -42,7 +42,7 @@ public class ChannelNumberAllocationTests {
   Connection connection;
 
   @Before public void setUp() throws Exception{
-    connection = new ConnectionFactory().newConnection();
+    connection = TestUtils.connectionFactory().newConnection();
   }
 
   @After public void tearDown() throws Exception{

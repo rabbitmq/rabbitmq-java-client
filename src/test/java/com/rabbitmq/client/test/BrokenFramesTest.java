@@ -44,7 +44,7 @@ public class BrokenFramesTest {
 
     @Before public void setUp() throws Exception {
         myFrameHandler = new MyFrameHandler();
-        factory = new ConnectionFactory();
+        factory = TestUtils.connectionFactory();
     }
 
     @After public void tearDown() throws Exception {
@@ -120,6 +120,11 @@ public class BrokenFramesTest {
         }
 
         public void sendHeader() throws IOException {
+        }
+
+        @Override
+        public void initialize(AMQConnection connection) {
+            connection.startMainLoop();
         }
 
         public void setTimeout(int timeoutMs) throws SocketException {

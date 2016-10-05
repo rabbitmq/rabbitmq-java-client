@@ -16,6 +16,8 @@
 package com.rabbitmq.client;
 
 import com.rabbitmq.client.impl.*;
+import com.rabbitmq.client.impl.nio.NioParams;
+import com.rabbitmq.client.impl.nio.SocketChannelFrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 
 import javax.net.SocketFactory;
@@ -107,6 +109,12 @@ public class ConnectionFactory implements Cloneable {
     private long networkRecoveryInterval          = 5000;
 
     private MetricsCollector metricsCollector;
+
+    private boolean nio = false;
+    private FrameHandlerFactory frameHandlerFactory;
+    private NioParams nioParams = new NioParams();
+
+    private SSLContext sslContext;
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -541,7 +549,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Convenience method for setting up a SSL socket factory, using
+     * Convenience method for setting up a SSL socket factory/engine, using
      * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
      */
     public void useSslProtocol()
@@ -551,7 +559,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Convenience method for setting up a SSL socket factory, using
+     * Convenience method for setting up a SSL socket factory/engine, using
      * the supplied protocol and a very trusting TrustManager.
      */
     public void useSslProtocol(String protocol)
@@ -561,7 +569,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Convenience method for setting up an SSL socket factory.
+     * Convenience method for setting up an SSL socket factory/engine.
      * Pass in the SSL protocol to use, e.g. "TLSv1" or "TLSv1.2".
      *
      * @param protocol SSL protocol to use.
@@ -575,13 +583,14 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Convenience method for setting up an SSL socket factory.
+     * Convenience method for setting up an SSL socket factory/engine.
      * Pass in an initialized SSLContext.
      *
      * @param context An initialized SSLContext
      */
     public void useSslProtocol(SSLContext context) {
         setSocketFactory(context.getSocketFactory());
+        this.sslContext = context;
     }
 
     public static String computeDefaultTlsProcotol(String[] supportedProtocols) {
@@ -641,8 +650,19 @@ public class ConnectionFactory implements Cloneable {
         return metricsCollector;
     }
 
-    protected FrameHandlerFactory createFrameHandlerFactory() throws IOException {
-        return new FrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor);
+    protected synchronized FrameHandlerFactory createFrameHandlerFactory() throws IOException {
+        if(nio) {
+            if(this.frameHandlerFactory == null) {
+                if(this.nioParams.getNioExecutor() == null && this.nioParams.getThreadFactory() == null) {
+                    this.nioParams.setThreadFactory(getThreadFactory());
+                }
+                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, nioParams, isSSL(), sslContext);
+            }
+            return this.frameHandlerFactory;
+        } else {
+            return new SocketFrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor);
+        }
+
     }
 
     /**
@@ -1018,5 +1038,45 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setNetworkRecoveryInterval(long networkRecoveryInterval) {
         this.networkRecoveryInterval = networkRecoveryInterval;
+    }
+
+    /**
+     * Sets the parameters when using NIO.
+     *
+     *
+     * @param nioParams
+     * @see NioParams
+     */
+    public void setNioParams(NioParams nioParams) {
+        this.nioParams = nioParams;
+    }
+
+    /**
+     * Use non-blocking IO (NIO) for communication with the server.
+     * With NIO, several connections created from the same {@link ConnectionFactory}
+     * can use the same IO thread.
+     *
+     * A client process using a lot of not-so-active connections can benefit
+     * from NIO, as it would use fewer threads than with the traditional, blocking IO mode.
+     *
+     * Use {@link NioParams} to tune NIO and a {@link SocketChannelConfigurator} to
+     * configure the underlying {@link java.nio.channels.SocketChannel}s for connections.
+     *
+     * @see NioParams
+     * @see SocketChannelConfigurator
+     * @see java.nio.channels.SocketChannel
+     * @see java.nio.channels.Selector
+     */
+    public void useNio() {
+        this.nio = true;
+    }
+
+    /**
+     * Use blocking IO for communication with the server.
+     * With blocking IO, each connection creates its own thread
+     * to read data from the server.
+     */
+    public void useBlockingIo() {
+        this.nio = false;
     }
 }

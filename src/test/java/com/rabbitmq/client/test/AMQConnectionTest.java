@@ -53,7 +53,7 @@ public class AMQConnectionTest {
 
     @Before public void setUp() throws Exception {
         _mockFrameHandler = new MockFrameHandler();
-        factory = new ConnectionFactory();
+        factory = TestUtils.connectionFactory();
         exceptionHandler = new MyExceptionHandler();
         factory.setExceptionHandler(exceptionHandler);
     }
@@ -64,7 +64,7 @@ public class AMQConnectionTest {
     }
 
     @Test public void negativeTCPConnectionTimeout() {
-        ConnectionFactory cf = new ConnectionFactory();
+        ConnectionFactory cf = TestUtils.connectionFactory();
         try {
             cf.setConnectionTimeout(-10);
             fail("expected an exception");
@@ -74,7 +74,7 @@ public class AMQConnectionTest {
     }
 
     @Test public void negativeProtocolHandshakeTimeout() {
-        ConnectionFactory cf = new ConnectionFactory();
+        ConnectionFactory cf = TestUtils.connectionFactory();
         try {
             cf.setHandshakeTimeout(-10);
             fail("expected an exception");
@@ -84,13 +84,13 @@ public class AMQConnectionTest {
     }
 
     @Test public void tcpConnectionTimeoutGreaterThanHandShakeTimeout() {
-        ConnectionFactory cf = new ConnectionFactory();
+        ConnectionFactory cf = TestUtils.connectionFactory();
         cf.setHandshakeTimeout(3000);
         cf.setConnectionTimeout(5000);
     }
 
     @Test public void protocolHandshakeTimeoutGreaterThanTCPConnectionTimeout() {
-        ConnectionFactory cf = new ConnectionFactory();
+        ConnectionFactory cf = TestUtils.connectionFactory();
 
         cf.setConnectionTimeout(5000);
         cf.setHandshakeTimeout(7000);
@@ -223,6 +223,11 @@ public class AMQConnectionTest {
 
         public void sendHeader() throws IOException {
             _numHeadersSent++;
+        }
+
+        @Override
+        public void initialize(AMQConnection connection) {
+            connection.startMainLoop();
         }
 
         public void setTimeout(int timeoutMs) throws SocketException {

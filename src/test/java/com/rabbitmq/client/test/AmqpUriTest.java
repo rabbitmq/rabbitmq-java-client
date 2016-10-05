@@ -77,7 +77,7 @@ public class AmqpUriTest extends BrokerTestCase
                               String host, int port, String vhost)
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
-        ConnectionFactory cf = new ConnectionFactory();
+        ConnectionFactory cf = TestUtils.connectionFactory();
         cf.setUri(uri);
 
         assertEquals(user, cf.getUsername());
@@ -89,7 +89,7 @@ public class AmqpUriTest extends BrokerTestCase
 
     private void parseFail(String uri) {
         try {
-            (new ConnectionFactory()).setUri(uri);
+            (TestUtils.connectionFactory()).setUri(uri);
             fail("URI parse didn't fail: '" + uri + "'");
         } catch (Exception e) {
             // whoosh!

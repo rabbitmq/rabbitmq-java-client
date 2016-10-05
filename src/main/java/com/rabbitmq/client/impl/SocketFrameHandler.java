@@ -15,17 +15,16 @@
 
 package com.rabbitmq.client.impl;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import com.rabbitmq.client.AMQP;
+
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.concurrent.*;
-
-import com.rabbitmq.client.AMQP;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A socket-based frame handler.
@@ -152,6 +151,11 @@ public class SocketFrameHandler implements FrameHandler {
     @Override
     public void sendHeader() throws IOException {
         sendHeader(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR, AMQP.PROTOCOL.REVISION);
+    }
+
+    @Override
+    public void initialize(AMQConnection connection) {
+        connection.startMainLoop();
     }
 
     @Override

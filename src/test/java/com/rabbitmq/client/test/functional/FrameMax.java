@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -81,7 +82,7 @@ public class FrameMax extends BrokerTestCase {
      * during connection negotiation */
     @Test public void rejectLargeFramesDuringConnectionNegotiation()
             throws IOException, TimeoutException {
-        ConnectionFactory cf = new ConnectionFactory();
+        ConnectionFactory cf = TestUtils.connectionFactory();
         cf.getClientProperties().put("too_long", LongStringHelper.asLongString(new byte[AMQP.FRAME_MIN_SIZE]));
         try {
             cf.newConnection();
@@ -106,6 +107,16 @@ public class FrameMax extends BrokerTestCase {
     /* ConnectionFactory that uses MyFrameHandler rather than
      * SocketFrameHandler. */
     private static class MyConnectionFactory extends ConnectionFactory {
+
+        public MyConnectionFactory() {
+            super();
+            if(TestUtils.USE_NIO) {
+                useNio();
+            } else {
+                useBlockingIo();
+            }
+        }
+
         protected FrameHandler createFrameHandler(Socket sock)
             throws IOException
         {
@@ -153,6 +164,15 @@ public class FrameMax extends BrokerTestCase {
     }
 
     private static class GenerousConnectionFactory extends ConnectionFactory {
+
+        public GenerousConnectionFactory() {
+            super();
+            if(TestUtils.USE_NIO) {
+                useNio();
+            } else {
+                useBlockingIo();
+            }
+        }
 
         @Override public Connection newConnection(ExecutorService executor, List<Address> addrs)
                 throws IOException, TimeoutException {

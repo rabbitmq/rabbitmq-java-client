@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
 import com.rabbitmq.client.BuiltinExchangeType;
@@ -87,7 +88,7 @@ public class ExchangeDeclare extends ExchangeEquivalenceBase {
     }
 
     @Test public void exchangeDeclaredWithEnumerationEquivalentOnRecoverableConnection() throws IOException, TimeoutException, InterruptedException {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
+        ConnectionFactory connectionFactory = TestUtils.connectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
         connectionFactory.setTopologyRecoveryEnabled(false);
         Connection c = connectionFactory.newConnection();

@@ -15,22 +15,17 @@
 
 package com.rabbitmq.client.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.LongString;
+import com.rabbitmq.client.MalformedFrameException;
+
+import java.io.*;
 import java.math.BigDecimal;
 import java.net.SocketTimeoutException;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.Map;
 import java.util.List;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.LongString;
-import com.rabbitmq.client.MalformedFrameException;
+import java.util.Map;
 
 /**
  * Represents an AMQP wire-protocol frame, with frame type, channel number, and payload bytes.
@@ -48,6 +43,8 @@ public class Frame {
 
     /** Frame payload (for outbound frames) */
     private final ByteArrayOutputStream accumulator;
+
+    private static final int NON_BODY_SIZE = 1 /* type */ + 2 /* channel */ + 4 /* payload size */ + 1 /* end character */;
 
     /**
      * Constructs a frame for output with a type and a channel number and a
@@ -195,6 +192,14 @@ public class Frame {
             os.write(payload);
         }
         os.write(AMQP.FRAME_END);
+    }
+
+    public int size() {
+        if(accumulator != null) {
+            return accumulator.size() + NON_BODY_SIZE;
+        } else {
+            return payload.length + NON_BODY_SIZE;
+        }
     }
 
     /**

@@ -20,6 +20,12 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.tools.Host;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -33,10 +39,28 @@ import static org.junit.Assert.*;
 
 public class BrokerTestCase {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(BrokerTestCase.class);
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            LOGGER.info(
+                "Starting test: {}.{} (nio? {})",
+                description.getTestClass().getSimpleName(), description.getMethodName(), TestUtils.USE_NIO
+            );
+        }
+
+        @Override
+        protected void finished(Description description) {
+            LOGGER.info("Test finished: {}.{}", description.getTestClass().getSimpleName(), description.getMethodName());
+        }
+    };
+
     protected ConnectionFactory connectionFactory = newConnectionFactory();
 
     protected ConnectionFactory newConnectionFactory() {
-        return new ConnectionFactory();
+        ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+        return connectionFactory;
     }
 
     protected Connection connection;

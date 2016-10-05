@@ -42,7 +42,8 @@ import org.junit.runners.Suite;
     SharedThreadPoolTest.class,
     DnsRecordIpAddressResolverTests.class,
     StandardMetricsCollectorTest.class,
-    DnsSrvRecordAddressResolverTest.class
+    DnsSrvRecordAddressResolverTest.class,
+    JavaNioTest.class
 })
 public class ClientTests {
 

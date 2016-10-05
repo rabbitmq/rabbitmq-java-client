@@ -16,6 +16,7 @@
 package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.*;
+
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandlerFactory;

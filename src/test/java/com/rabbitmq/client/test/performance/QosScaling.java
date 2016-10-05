@@ -22,6 +22,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
+import com.rabbitmq.client.test.TestUtils;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 
@@ -68,8 +69,7 @@ public class QosScaling {
     }
 
     protected final Parameters params;
-    protected final ConnectionFactory connectionFactory =
-        new ConnectionFactory();
+    protected final ConnectionFactory connectionFactory = TestUtils.connectionFactory();
     protected Connection connection;
     protected Channel channel;
 

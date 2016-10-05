@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
 import com.rabbitmq.client.AuthenticationFailureException;
@@ -131,7 +132,7 @@ public class SaslMechanisms extends BrokerTestCase {
     }
 
     private void loginOk(String name, byte[][] responses) throws IOException, TimeoutException {
-        ConnectionFactory factory = new ConnectionFactory();
+        ConnectionFactory factory = TestUtils.connectionFactory();
         factory.setSaslConfig(new Config(name, responses));
         Connection connection = factory.newConnection();
         connection.close();

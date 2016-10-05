@@ -48,6 +48,8 @@ public interface FrameHandler extends NetworkConnection {
      */
     void sendHeader() throws IOException;
 
+    void initialize(AMQConnection connection);
+
     /**
      * Read a {@link Frame} from the underlying data connection.
      * @return an incoming Frame, or null if there is none

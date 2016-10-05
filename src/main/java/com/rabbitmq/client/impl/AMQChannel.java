@@ -143,8 +143,12 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         if (!processAsync(command)) {
             // The filter decided not to handle/consume the command,
             // so it must be some reply to an earlier RPC.
-            nextOutstandingRpc().handleCommand(command);
-            markRpcFinished();
+            RpcContinuation nextOutstandingRpc = nextOutstandingRpc();
+            // the outstanding RPC can be null when calling Channel#asyncRpc
+            if(nextOutstandingRpc != null) {
+                nextOutstandingRpc.handleCommand(command);
+                markRpcFinished();
+            }
         }
     }
 

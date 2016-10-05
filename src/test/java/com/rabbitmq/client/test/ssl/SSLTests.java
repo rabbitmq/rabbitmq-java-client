@@ -26,11 +26,13 @@ import org.junit.runners.model.RunnerBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
-@RunWith(Suite.class)
+@RunWith(SSLTests.SslSuite.class)
 @Suite.SuiteClasses({
 	UnverifiedConnection.class,
 	VerifiedConnection.class,
-	BadVerifiedConnection.class
+	BadVerifiedConnection.class,
+	ConnectionFactoryDefaultTlsVersion.class,
+	NioTlsUnverifiedConnection.class
 })
 public class SSLTests {
 

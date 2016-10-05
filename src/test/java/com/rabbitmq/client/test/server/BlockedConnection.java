@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
 import com.rabbitmq.client.BlockedListener;
@@ -65,7 +66,7 @@ public class BlockedConnection extends BrokerTestCase {
     }
 
     private Connection connection(final CountDownLatch latch) throws IOException, TimeoutException {
-        ConnectionFactory factory = new ConnectionFactory();
+        ConnectionFactory factory = TestUtils.connectionFactory();
         Connection connection = factory.newConnection();
         connection.addBlockedListener(new BlockedListener() {
             public void handleBlocked(String reason) throws IOException {

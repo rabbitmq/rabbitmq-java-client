@@ -16,6 +16,7 @@
 package com.rabbitmq.client.test.ssl;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -32,6 +33,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.test.TestUtils;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test for bug 19356 - SSL Support in rabbitmq
@@ -64,11 +67,11 @@ public class VerifiedConnection extends UnverifiedConnection {
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ks, p12Password);
-            
+
             SSLContext c = getSSLContext();
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-            connectionFactory = new ConnectionFactory();
+            connectionFactory = TestUtils.connectionFactory();
             connectionFactory.useSslProtocol(c);
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex.toString());
@@ -82,8 +85,18 @@ public class VerifiedConnection extends UnverifiedConnection {
             throw new IOException(ex.toString());
         }
 
-        if (connection == null) {
-            connection = connectionFactory.newConnection();
+        int attempt = 0;
+        while(attempt < 3) {
+            try {
+                connection = connectionFactory.newConnection();
+                break;
+            } catch(Exception e) {
+                LoggerFactory.getLogger(getClass()).warn("Error when opening TLS connection");
+                attempt++;
+            }
+        }
+        if(connection == null) {
+            fail("Couldn't open TLS connection after 3 attemps");
         }
     }
 }

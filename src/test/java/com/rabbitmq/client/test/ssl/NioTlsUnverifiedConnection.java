@@ -15,31 +15,30 @@
 
 package com.rabbitmq.client.test.ssl;
 
-import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.test.BrokerTestCase;
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
- * Test for bug 19356 - SSL Support in rabbitmq
  *
  */
-public class UnverifiedConnection extends BrokerTestCase {
+public class NioTlsUnverifiedConnection extends BrokerTestCase {
 
     public void openConnection()
-            throws IOException, TimeoutException {
+        throws IOException, TimeoutException {
         try {
             connectionFactory.useSslProtocol();
-        } catch (NoSuchAlgorithmException ex) {
-            throw new IOException(ex.toString());
-        } catch (KeyManagementException ex) {
+        } catch (Exception ex) {
             throw new IOException(ex.toString());
         }
 
@@ -56,18 +55,35 @@ public class UnverifiedConnection extends BrokerTestCase {
         if(connection == null) {
             fail("Couldn't open TLS connection after 3 attemps");
         }
+
     }
 
-    @Test public void sSL() throws IOException
-    {
-        channel.queueDeclare("Bug19356Test", false, true, true, null);
-        channel.basicPublish("", "Bug19356Test", null, "SSL".getBytes());
-
-        GetResponse chResponse = channel.basicGet("Bug19356Test", false);
-        assertNotNull(chResponse);
-
-        byte[] body = chResponse.getBody();
-        assertEquals("SSL", new String(body));
+    @Test
+    public void connectionGetConsume() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        connection = basicGetBasicConsume(connection, "tls.nio.queue", latch);
+        boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
+        assertTrue("Message has not been received", messagesReceived);
     }
-    
+
+    private Connection basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch)
+        throws IOException, TimeoutException {
+        Channel channel = connection.createChannel();
+        channel.queueDeclare(queue, false, false, false, null);
+        channel.queuePurge(queue);
+
+        channel.basicPublish("", queue, null, new byte[100 * 1000]);
+
+        channel.basicConsume(queue, false, new DefaultConsumer(channel) {
+
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                getChannel().basicAck(envelope.getDeliveryTag(), false);
+                latch.countDown();
+            }
+        });
+
+        return connection;
+    }
+
 }
