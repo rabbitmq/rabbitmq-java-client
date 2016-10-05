@@ -28,10 +28,10 @@ import java.util.concurrent.ThreadFactory;
 public class NioParams {
 
     /** size of the byte buffer used for inbound data */
-    private int readByteBufferSize = 8192;
+    private int readByteBufferSize = 32768;
 
     /** size of the byte buffer used for outbound data */
-    private int writeByteBufferSize = 8192;
+    private int writeByteBufferSize = 32768;
 
     /** the max number of IO threads */
     private int nbIoThreads = 1;
@@ -70,7 +70,7 @@ public class NioParams {
 
     /**
      * Sets the size in byte of the read {@link java.nio.ByteBuffer} used in the NIO loop.
-     * Default is 8192.
+     * Default is 32768.
      *
      * This parameter isn't used when using SSL/TLS, where {@link java.nio.ByteBuffer}
      * size is set up according to the {@link javax.net.ssl.SSLSession} packet size.
@@ -92,7 +92,7 @@ public class NioParams {
 
     /**
      * Sets the size in byte of the write {@link java.nio.ByteBuffer} used in the NIO loop.
-     * Default is 8192.
+     * Default is 32768.
      *
      * This parameter isn't used when using SSL/TLS, where {@link java.nio.ByteBuffer}
      * size is set up according to the {@link javax.net.ssl.SSLSession} packet size.

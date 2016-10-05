@@ -25,7 +25,7 @@ public class NioHelper {
     static int read(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         int read = channel.read(buffer);
         if(read < 0) {
-            throw new IOException("Channel has reached EOF");
+            throw new IOException("I/O thread: reached EOF");
         }
         return read;
     }
