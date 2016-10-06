@@ -204,7 +204,7 @@
 
               Currently, those test brokers will listen to the default
               TCP ports of 5672 and 5673 for AMQP and 5671 and 5670
-              for AMQP+TLS. Unforunately, this means no other standard
+              for AMQP+TLS. Unfortunately, this means no other standard
               RabbitMQ can run on the same host at the same time.
               -->
               <execution>
