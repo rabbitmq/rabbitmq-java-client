@@ -98,6 +98,9 @@
     <test-broker.B.nodename>hare@localhost</test-broker.B.nodename>
     <test-broker.B.node_port>5673</test-broker.B.node_port>
     <test-broker.B.config_file>${project.build.directory}/test-classes/${test-broker.B.nodename}</test-broker.B.config_file>
+
+    <!-- to sign artifacts when releasing -->
+    <gpg.keyname>6026DFCA</gpg.keyname>
   </properties>
 
   <profiles>
@@ -482,9 +485,95 @@
               </execution>
             </executions>
           </plugin>
+
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>1.6.7</version>
+            <extensions>true</extensions>
+            <configuration>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>false</autoReleaseAfterClose>
+            </configuration>
+          </plugin>
+
         </plugins>
       </build>
     </profile>
+
+    <!--
+      The "milestone" Maven profile is used to push release artifacts to the
+      Bintray Milestones Maven Repository.
+
+      Add Bintray credentials in the <servers> tag of Maven's settings.xml:
+
+      <server>
+        <id>bintray-rabbitmq-maven-milestones</id>
+        <username>[username]</username>
+        <password>[api-key]</password>
+      </server>
+      -->
+    <profile>
+      <id>milestone</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.0.1</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.10.4</version>
+            <configuration>
+              <additionalparam>${javadoc.opts}</additionalparam>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <configuration>
+                  <keyname>${gpg.keyname}</keyname>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <distributionManagement>
+        <repository>
+          <id>bintray-rabbitmq-maven-milestones</id>
+          <name>rabbitmq-maven-milestones</name>
+          <url>https://api.bintray.com/maven/rabbitmq/maven-milestones/java-client/;publish=1</url>
+        </repository>
+      </distributionManagement>
+    </profile>
+
   </profiles>
 
   <dependencies>
@@ -737,18 +826,6 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.7</version>
-        <extensions>true</extensions>
-        <configuration>
-          <serverId>ossrh</serverId>
-          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-          <autoReleaseAfterClose>false</autoReleaseAfterClose>
-        </configuration>
       </plugin>
 
       <plugin>
