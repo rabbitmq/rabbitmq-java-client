@@ -397,9 +397,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     protected ChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
         ChannelManager result = new ChannelManager(this._workService, channelMax, threadFactory, this.metricsCollector);
-        result.setShutdownExecutor(this.shutdownExecutor);
-        result.setChannelShutdownTimeout((int) ((requestedHeartbeat * CHANNEL_SHUTDOWN_TIMEOUT_MULTIPLIER) * 1000));
+        configureChannelManager(result);
         return result;
+    }
+
+    protected void configureChannelManager(ChannelManager channelManager) {
+        channelManager.setShutdownExecutor(this.shutdownExecutor);
+        channelManager.setChannelShutdownTimeout((int) ((requestedHeartbeat * CHANNEL_SHUTDOWN_TIMEOUT_MULTIPLIER) * 1000));
     }
 
     /**

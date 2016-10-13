@@ -38,6 +38,9 @@ public class RecoveryAwareAMQConnection extends AMQConnection {
 
     @Override
     protected RecoveryAwareChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
-        return new RecoveryAwareChannelManager(super._workService, channelMax, threadFactory, this.metricsCollector);
+        RecoveryAwareChannelManager recoveryAwareChannelManager = new RecoveryAwareChannelManager(super._workService, channelMax, threadFactory,
+            this.metricsCollector);
+        configureChannelManager(recoveryAwareChannelManager);
+        return recoveryAwareChannelManager;
     }
 }
