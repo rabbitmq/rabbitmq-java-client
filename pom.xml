@@ -516,7 +516,7 @@
 
       Checkout the correct tag and launch:
 
-      mvn clean deploy -P milestone
+      mvn clean deploy -P milestone -DskipTests
 
       -->
     <profile>
