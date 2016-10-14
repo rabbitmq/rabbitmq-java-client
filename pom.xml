@@ -513,6 +513,11 @@
         <username>[username]</username>
         <password>[api-key]</password>
       </server>
+
+      Checkout the correct tag and launch:
+
+      mvn clean deploy -P milestone
+
       -->
     <profile>
       <id>milestone</id>
