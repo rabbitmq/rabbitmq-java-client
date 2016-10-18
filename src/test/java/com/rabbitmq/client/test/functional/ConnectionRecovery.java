@@ -123,7 +123,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     // see https://github.com/rabbitmq/rabbitmq-java-client/issues/135
     @Test public void thatShutdownHooksOnConnectionFireBeforeRecoveryStarts() throws IOException, InterruptedException {
         final List<String> events = new CopyOnWriteArrayList<String>();
-        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch latch = new CountDownLatch(2); // one when started, another when complete
         connection.addShutdownListener(new ShutdownListener() {
             public void shutdownCompleted(ShutdownSignalException cause) {
                 events.add("shutdown hook 1");
@@ -147,6 +147,10 @@ public class ConnectionRecovery extends BrokerTestCase {
         ((AutorecoveringConnection)connection).addRecoveryListener(new RecoveryListener() {
             @Override
             public void handleRecovery(Recoverable recoverable) {
+                latch.countDown();
+            }
+            @Override
+            public void handleRecoveryStarted(Recoverable recoverable) {
                 latch.countDown();
             }
         });
@@ -622,9 +626,13 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     @Test public void channelRecoveryCallback() throws IOException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch startLatch = new CountDownLatch(2);
         final RecoveryListener listener = new RecoveryListener() {
             public void handleRecovery(Recoverable recoverable) {
                 latch.countDown();
+            }
+            public void handleRecoveryStarted(Recoverable recoverable) {
+                startLatch.countDown();
             }
         };
         AutorecoveringChannel ch1 = (AutorecoveringChannel) connection.createChannel();
@@ -638,6 +646,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         expectChannelRecovery(ch1);
         expectChannelRecovery(ch2);
         wait(latch);
+        wait(startLatch);
     }
 
     @Test public void basicAckAfterChannelRecovery() throws IOException, InterruptedException, TimeoutException {
@@ -741,6 +750,9 @@ public class ConnectionRecovery extends BrokerTestCase {
         ((AutorecoveringConnection)conn).addRecoveryListener(new RecoveryListener() {
             public void handleRecovery(Recoverable recoverable) {
                 latch.countDown();
+            }
+            public void handleRecoveryStarted(Recoverable recoverable) {
+                // No-op
             }
         });
         return latch;

@@ -16,7 +16,6 @@
 package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.*;
-
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
@@ -25,15 +24,7 @@ import com.rabbitmq.utility.Utility;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
@@ -497,6 +488,9 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 
     synchronized private void beginAutomaticRecovery() throws InterruptedException {
         Thread.sleep(this.params.getNetworkRecoveryInterval());
+
+        this.notifyRecoveryListenersStarted();
+
         final RecoveryAwareAMQConnection newConn = this.recoverConnection();
         if (newConn == null) {
             return;
@@ -513,7 +507,7 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
 		      this.recoverConsumers();
 	    }
 
-	    this.notifyRecoveryListeners();
+		this.notifyRecoveryListenersComplete();
     }
 
     private void recoverShutdownListeners(final RecoveryAwareAMQConnection newConn) {
@@ -566,9 +560,15 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
         }
     }
 
-    private void notifyRecoveryListeners() {
-        for (RecoveryListener f : Utility.copy(this.recoveryListeners)) {
+    private void notifyRecoveryListenersComplete() {
+        for (RecoveryListener f : this.recoveryListeners) {
             f.handleRecovery(this);
+        }
+    }
+
+    private void notifyRecoveryListenersStarted() {
+        for (RecoveryListener f : this.recoveryListeners) {
+            f.handleRecoveryStarted(this);
         }
     }
 

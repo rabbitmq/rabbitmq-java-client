@@ -599,12 +599,13 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         this.delegate = newChannel;
         this.delegate.inheritOffsetFrom(defunctChannel);
 
+        this.notifyRecoveryListenersStarted();
         this.recoverShutdownListeners();
         this.recoverReturnListeners();
         this.recoverConfirmListeners();
         this.recoverFlowListeners();
         this.recoverState();
-        this.notifyRecoveryListeners();
+        this.notifyRecoveryListenersComplete();
     }
 
     private void recoverShutdownListeners() {
@@ -647,9 +648,15 @@ public class AutorecoveringChannel implements Channel, Recoverable {
         }
     }
 
-    private void notifyRecoveryListeners() {
+    private void notifyRecoveryListenersComplete() {
         for (RecoveryListener f : this.recoveryListeners) {
             f.handleRecovery(this);
+        }
+    }
+
+    private void notifyRecoveryListenersStarted() {
+        for (RecoveryListener f : this.recoveryListeners) {
+            f.handleRecoveryStarted(this);
         }
     }
 
