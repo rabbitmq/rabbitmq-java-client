@@ -440,6 +440,11 @@ public class Metrics extends BrokerTestCase {
             public void handleRecovery(Recoverable recoverable) {
                 latch.countDown();
             }
+
+            @Override
+            public void handleRecoveryStarted(Recoverable recoverable) {
+                // no-op
+            }
         });
         Host.closeConnection(connection);
         assertTrue(latch.await(5, TimeUnit.SECONDS));

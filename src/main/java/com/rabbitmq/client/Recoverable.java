@@ -32,7 +32,7 @@ public interface Recoverable {
      *
      * @param listener Callback function
      */
-    public void addRecoveryListener(RecoveryListener listener);
+    void addRecoveryListener(RecoveryListener listener);
 
-    public void removeRecoveryListener(RecoveryListener listener);
+    void removeRecoveryListener(RecoveryListener listener);
 }
