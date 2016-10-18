@@ -101,6 +101,7 @@
 
     <!-- to sign artifacts when releasing -->
     <gpg.keyname>6026DFCA</gpg.keyname>
+    <nexus-staging-maven-plugin.version>1.6.4</nexus-staging-maven-plugin.version>
   </properties>
 
   <profiles>
@@ -437,10 +438,23 @@
 
     <profile>
       <!--
-      The "release" Maven profile is used to push release artifacts to a
+      The "ossrh-release" Maven profile is used to push release artifacts to a
       Sonatype staging repository.
+
+      Add Sonatype credentials in the <servers> tag of Maven's settings.xml:
+
+      <server>
+        <id>ossrh</id>
+        <username>[username]</username>
+        <password>[password]</password>
+      </server>
+
+      Checkout the correct tag and launch:
+
+      mvn clean deploy -P ossrh-release -DskipTests
+
       -->
-      <id>release</id>
+      <id>ossrh-release</id>
       <build>
         <plugins>
           <plugin>
@@ -478,28 +492,28 @@
             <executions>
               <execution>
                 <id>sign-artifacts</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>sign</goal>
                 </goals>
+                <configuration>
+                  <keyname>${gpg.keyname}</keyname>
+                </configuration>
               </execution>
             </executions>
           </plugin>
-
-          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.7</version>
-            <extensions>true</extensions>
-            <configuration>
-              <serverId>ossrh</serverId>
-              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <autoReleaseAfterClose>false</autoReleaseAfterClose>
-            </configuration>
-          </plugin>
-
         </plugins>
       </build>
+      <distributionManagement>
+        <snapshotRepository>
+          <id>ossrh</id>
+          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+          <id>ossrh</id>
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+      </distributionManagement>
     </profile>
 
     <!--
@@ -841,14 +855,4 @@
     </plugins>
   </build>
 
-  <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <repository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
 </project>
