@@ -50,7 +50,7 @@ import java.util.concurrent.TimeoutException;
  * @see com.rabbitmq.client.ConnectionFactory#setTopologyRecoveryEnabled(boolean)
  * @since 3.3.0
  */
-public class AutorecoveringConnection implements Connection, Recoverable, NetworkConnection {
+public class AutorecoveringConnection implements RecoverableConnection, NetworkConnection {
     private final RecoveryAwareAMQConnectionFactory cf;
     private final Map<Integer, AutorecoveringChannel> channels;
     private final ConnectionParams params;

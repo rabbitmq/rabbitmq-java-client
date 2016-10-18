@@ -16,7 +16,11 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.recovery.*;
+import com.rabbitmq.client.impl.NetworkConnection;
+import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
+import com.rabbitmq.client.impl.recovery.ConsumerRecoveryListener;
+import com.rabbitmq.client.impl.recovery.QueueRecoveryListener;
+import com.rabbitmq.client.impl.recovery.RecoveryCanBeginListener;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
@@ -49,7 +53,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     @Test public void namedConnectionRecovery()
             throws IOException, InterruptedException, TimeoutException  {
         String connectionName = "custom name";
-        AutorecoveringConnection c = newRecoveringConnection(connectionName);
+        RecoverableConnection c = newRecoveringConnection(connectionName);
         try {
             assertTrue(c.isOpen());
             assertEquals(connectionName, c.getClientProvidedName());
@@ -70,7 +74,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     @Test public void connectionRecoveryWithArrayOfAddresses()
             throws IOException, InterruptedException, TimeoutException {
         final Address[] addresses = {new Address("127.0.0.1"), new Address("127.0.0.1", 5672)};
-        AutorecoveringConnection c = newRecoveringConnection(addresses);
+        RecoverableConnection c = newRecoveringConnection(addresses);
         try {
             assertTrue(c.isOpen());
             closeAndWaitForRecovery(c);
@@ -86,7 +90,7 @@ public class ConnectionRecovery extends BrokerTestCase {
 
         final List<Address> addresses = Arrays.asList(new Address("127.0.0.1"), new Address("127.0.0.1", 5672));
 
-        AutorecoveringConnection c = newRecoveringConnection(addresses);
+        RecoverableConnection c = newRecoveringConnection(addresses);
         try {
             assertTrue(c.isOpen());
             closeAndWaitForRecovery(c);
@@ -98,7 +102,7 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     @Test public void connectionRecoveryWithDisabledTopologyRecovery()
             throws IOException, InterruptedException, TimeoutException {
-        AutorecoveringConnection c = newRecoveringConnection(true);
+        RecoverableConnection c = newRecoveringConnection(true);
         Channel ch = c.createChannel();
         String q = "java-client.test.recovery.q2";
         ch.queueDeclare(q, false, true, false, null);
@@ -107,7 +111,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         try {
             CountDownLatch shutdownLatch = prepareForShutdown(c);
             CountDownLatch recoveryLatch = prepareForRecovery(c);
-            Host.closeConnection(c);
+            Host.closeConnection((NetworkConnection) c);
             wait(shutdownLatch);
             wait(recoveryLatch);
             assertTrue(c.isOpen());
@@ -144,7 +148,7 @@ public class ConnectionRecovery extends BrokerTestCase {
                 recoveryCanBeginLatch.countDown();
             }
         });
-        ((AutorecoveringConnection)connection).addRecoveryListener(new RecoveryListener() {
+        ((RecoverableConnection)connection).addRecoveryListener(new RecoveryListener() {
             @Override
             public void handleRecovery(Recoverable recoverable) {
                 latch.countDown();
@@ -635,9 +639,9 @@ public class ConnectionRecovery extends BrokerTestCase {
                 startLatch.countDown();
             }
         };
-        AutorecoveringChannel ch1 = (AutorecoveringChannel) connection.createChannel();
+        RecoverableChannel ch1 = (RecoverableChannel) connection.createChannel();
         ch1.addRecoveryListener(listener);
-        AutorecoveringChannel ch2 = (AutorecoveringChannel) connection.createChannel();
+        RecoverableChannel ch2 = (RecoverableChannel) connection.createChannel();
         ch2.addRecoveryListener(listener);
 
         assertTrue(ch1.isOpen());
@@ -677,7 +681,7 @@ public class ConnectionRecovery extends BrokerTestCase {
 
         String q = channel.queueDeclare().getQueue();
         channel.basicConsume(q, consumer);
-        AutorecoveringConnection publishingConnection = newRecoveringConnection(false);
+        RecoverableConnection publishingConnection = newRecoveringConnection(false);
         Channel publishingChannel = publishingConnection.createChannel();
         for (int i = 0; i < n; i++) {
             publishingChannel.basicPublish("", q, null, "msg".getBytes());
@@ -772,9 +776,9 @@ public class ConnectionRecovery extends BrokerTestCase {
         closeAndWaitForRecovery((AutorecoveringConnection)this.connection);
     }
 
-    private void closeAndWaitForRecovery(AutorecoveringConnection connection) throws IOException, InterruptedException {
+    private void closeAndWaitForRecovery(RecoverableConnection connection) throws IOException, InterruptedException {
         CountDownLatch latch = prepareForRecovery(connection);
-        Host.closeConnection(connection);
+        Host.closeConnection((NetworkConnection) connection);
         wait(latch);
     }
 
@@ -799,37 +803,37 @@ public class ConnectionRecovery extends BrokerTestCase {
         return buildConnectionFactoryWithRecoveryEnabled(false);
     }
 
-    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery)
+    private RecoverableConnection newRecoveringConnection(boolean disableTopologyRecovery)
             throws IOException, TimeoutException {
         ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
         return (AutorecoveringConnection) cf.newConnection();
     }
 
-    private AutorecoveringConnection newRecoveringConnection(Address[] addresses)
+    private RecoverableConnection newRecoveringConnection(Address[] addresses)
             throws IOException, TimeoutException {
         ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(false);
         // specifically use the Address[] overload
         return (AutorecoveringConnection) cf.newConnection(addresses);
     }
 
-    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery, List<Address> addresses)
+    private RecoverableConnection newRecoveringConnection(boolean disableTopologyRecovery, List<Address> addresses)
             throws IOException, TimeoutException {
         ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
         return (AutorecoveringConnection) cf.newConnection(addresses);
     }
 
-    private AutorecoveringConnection newRecoveringConnection(List<Address> addresses)
+    private RecoverableConnection newRecoveringConnection(List<Address> addresses)
             throws IOException, TimeoutException {
         return newRecoveringConnection(false, addresses);
     }
 
-    private AutorecoveringConnection newRecoveringConnection(boolean disableTopologyRecovery, String connectionName)
+    private RecoverableConnection newRecoveringConnection(boolean disableTopologyRecovery, String connectionName)
             throws IOException, TimeoutException {
         ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
-        return (AutorecoveringConnection) cf.newConnection(connectionName);
+        return (RecoverableConnection) cf.newConnection(connectionName);
     }
 
-    private AutorecoveringConnection newRecoveringConnection(String connectionName)
+    private RecoverableConnection newRecoveringConnection(String connectionName)
             throws IOException, TimeoutException {
         return newRecoveringConnection(false, connectionName);
     }

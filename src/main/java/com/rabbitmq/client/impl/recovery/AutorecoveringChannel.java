@@ -16,6 +16,7 @@
 package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.RecoverableChannel;
 
 import java.io.IOException;
 import java.util.List;
@@ -29,7 +30,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @since 3.3.0
  */
-public class AutorecoveringChannel implements Channel, Recoverable {
+public class AutorecoveringChannel implements RecoverableChannel {
     private volatile RecoveryAwareChannelN delegate;
     private volatile AutorecoveringConnection connection;
     private final List<ShutdownListener> shutdownHooks  = new CopyOnWriteArrayList<ShutdownListener>();
