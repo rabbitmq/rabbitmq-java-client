@@ -18,7 +18,6 @@ package com.rabbitmq.client.impl.nio;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SocketChannel;
 
 public class NioHelper {
 
@@ -26,6 +25,24 @@ public class NioHelper {
         int read = channel.read(buffer);
         if(read < 0) {
             throw new IOException("I/O thread: reached EOF");
+        }
+        return read;
+    }
+
+    static int retryRead(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+        int attempt = 0;
+        int read = 0;
+        while(attempt < 3) {
+            try {
+                Thread.sleep(100L);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+            read = read(channel, buffer);
+            if(read > 0) {
+                break;
+            }
+            attempt++;
         }
         return read;
     }

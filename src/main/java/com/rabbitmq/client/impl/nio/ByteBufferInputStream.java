@@ -49,19 +49,7 @@ public class ByteBufferInputStream extends InputStream {
             buffer.clear();
             int read = NioHelper.read(channel, buffer);
             if(read <= 0) {
-                int attempt = 0;
-                while(attempt < 3) {
-                    try {
-                        Thread.sleep(100L);
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
-                    read = NioHelper.read(channel, buffer);
-                    if(read > 0) {
-                        break;
-                    }
-                    attempt++;
-                }
+                NioHelper.retryRead(channel, buffer);
             }
             buffer.flip();
         }

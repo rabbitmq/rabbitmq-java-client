@@ -69,7 +69,10 @@ public class SslEngineByteBufferInputStream extends InputStream {
                 if (bytesRead > 0) {
                     cipherIn.flip();
                 } else {
-                    throw new IllegalStateException("Should be reading something from the network");
+                    bytesRead = NioHelper.retryRead(channel, cipherIn);
+                    if(bytesRead <= 0) {
+                        throw new IllegalStateException("Should be reading something from the network");
+                    }
                 }
                 plainIn.clear();
                 result = sslEngine.unwrap(cipherIn, plainIn);
