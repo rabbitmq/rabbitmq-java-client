@@ -16,21 +16,19 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
+
 import com.rabbitmq.client.impl.NetworkConnection;
-import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
-import com.rabbitmq.client.impl.recovery.ConsumerRecoveryListener;
-import com.rabbitmq.client.impl.recovery.QueueRecoveryListener;
-import com.rabbitmq.client.impl.recovery.RecoveryCanBeginListener;
+import com.rabbitmq.client.impl.recovery.*;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+
+import java.lang.reflect.Field;
+import java.util.*;
+
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -688,6 +686,38 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
         wait(latch);
         publishingConnection.abort();
+    }
+
+    @Test public void consumersAreRemovedFromConnectionWhenChannelIsClosed() throws Exception {
+        RecoverableConnection connection = newRecoveringConnection(true);
+        try {
+            Field consumersField = AutorecoveringConnection.class.getDeclaredField("consumers");
+            consumersField.setAccessible(true);
+            Map<?, ?> connectionConsumers = (Map<?, ?>) consumersField.get(connection);
+
+            Channel channel1 = connection.createChannel();
+            Channel channel2 = connection.createChannel();
+
+            assertEquals(0, connectionConsumers.size());
+
+            String queue = channel1.queueDeclare().getQueue();
+
+            channel1.basicConsume(queue, true, new HashMap<String, Object>(), new DefaultConsumer(channel1));
+            assertEquals(1, connectionConsumers.size());
+            channel1.basicConsume(queue, true, new HashMap<String, Object>(), new DefaultConsumer(channel1));
+            assertEquals(2, connectionConsumers.size());
+
+            channel2.basicConsume(queue, true, new HashMap<String, Object>(), new DefaultConsumer(channel2));
+            assertEquals(3, connectionConsumers.size());
+
+            channel1.close();
+            assertEquals(3 - 2, connectionConsumers.size());
+
+            channel2.close();
+            assertEquals(0, connectionConsumers.size());
+        } finally {
+            connection.abort();
+        }
     }
 
     private void assertConsumerCount(int exp, String q) throws IOException {

@@ -19,8 +19,7 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.RecoverableChannel;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
 
@@ -38,6 +37,7 @@ public class AutorecoveringChannel implements RecoverableChannel {
     private final List<ReturnListener> returnListeners = new CopyOnWriteArrayList<ReturnListener>();
     private final List<ConfirmListener> confirmListeners = new CopyOnWriteArrayList<ConfirmListener>();
     private final List<FlowListener> flowListeners = new CopyOnWriteArrayList<FlowListener>();
+    private final Set<String> consumerTags = Collections.synchronizedSet(new HashSet<String>());
     private int prefetchCountConsumer;
     private int prefetchCountGlobal;
     private boolean usesPublisherConfirms;
@@ -65,9 +65,12 @@ public class AutorecoveringChannel implements RecoverableChannel {
     @Override
     public void close() throws IOException, TimeoutException {
         try {
-          delegate.close();
+            delegate.close();
         } finally {
-          this.connection.unregisterChannel(this);
+            for (String consumerTag : consumerTags) {
+                this.connection.deleteRecordedConsumer(consumerTag);
+            }
+            this.connection.unregisterChannel(this);
         }
     }
 
@@ -709,10 +712,12 @@ public class AutorecoveringChannel implements RecoverableChannel {
                                             exclusive(exclusive).
                                             arguments(arguments).
                                             consumer(callback);
+        this.consumerTags.add(result);
         this.connection.recordConsumer(result, consumer);
     }
 
     private RecordedConsumer deleteRecordedConsumer(String consumerTag) {
+        this.consumerTags.remove(consumerTag);
         return this.connection.deleteRecordedConsumer(consumerTag);
     }
 
