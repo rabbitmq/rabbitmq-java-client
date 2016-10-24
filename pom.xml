@@ -517,6 +517,83 @@
     </profile>
 
     <!--
+      The "bintray-release" Maven profile is used to push release artifacts to the
+      Bintray Release Maven Repository.
+
+      Add Bintray credentials in the <servers> tag of Maven's settings.xml:
+
+      <server>
+        <id>bintray-rabbitmq-maven</id>
+        <username>[username]</username>
+        <password>[api-key]</password>
+      </server>
+
+      Checkout the correct tag and launch:
+
+      mvn clean deploy -P milestone -DskipTests
+
+      -->
+    <profile>
+      <id>bintray-release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.0.1</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.10.4</version>
+            <configuration>
+              <additionalparam>${javadoc.opts}</additionalparam>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <configuration>
+                  <keyname>${gpg.keyname}</keyname>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <distributionManagement>
+        <repository>
+          <id>bintray-rabbitmq-maven</id>
+          <name>rabbitmq-maven</name>
+          <url>https://api.bintray.com/maven/rabbitmq/maven/java-client/;publish=1</url>
+        </repository>
+      </distributionManagement>
+    </profile>
+
+    <!--
       The "milestone" Maven profile is used to push release artifacts to the
       Bintray Milestones Maven Repository.
 
@@ -592,7 +669,6 @@
         </repository>
       </distributionManagement>
     </profile>
-
 
     <profile>
       <!--
