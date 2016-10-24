@@ -729,4 +729,11 @@ public class AutorecoveringChannel implements RecoverableChannel {
         this.connection.maybeDeleteRecordedAutoDeleteExchange(exchange);
     }
 
+    void updateConsumerTag(String tag, String newTag) {
+        synchronized (this.consumerTags) {
+            consumerTags.remove(tag);
+            consumerTags.add(newTag);
+        }
+    }
+
 }
