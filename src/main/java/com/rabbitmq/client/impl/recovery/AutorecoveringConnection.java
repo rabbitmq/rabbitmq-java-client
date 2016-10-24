@@ -645,10 +645,14 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
             try {
                 String newTag = consumer.recover();
                 // make sure server-generated tags are re-added. MK.
-                synchronized (this.consumers) {
-                    this.consumers.remove(tag);
-                    this.consumers.put(newTag, consumer);
+                if(tag != null && !tag.equals(newTag)) {
+                    synchronized (this.consumers) {
+                        this.consumers.remove(tag);
+                        this.consumers.put(newTag, consumer);
+                    }
+                    consumer.getChannel().updateConsumerTag(tag, newTag);
                 }
+
                 for(ConsumerRecoveryListener crl : Utility.copy(this.consumerRecoveryListeners)) {
                     crl.consumerRecovered(tag, newTag);
                 }
