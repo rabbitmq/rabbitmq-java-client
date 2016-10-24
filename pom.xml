@@ -593,6 +593,40 @@
       </distributionManagement>
     </profile>
 
+
+    <profile>
+      <!--
+      The "assemblies" Maven profile is used to generate source
+      and binary archives (to-be-uploaded on Github).
+      -->
+      <id>assemblies</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>2.6</version>
+            <configuration>
+              <finalName>rabbitmq-${project.build.finalName}</finalName>
+              <descriptors>
+                <descriptor>src/assembly/dist-bin.xml</descriptor>
+                <descriptor>src/assembly/dist-src.xml</descriptor>
+              </descriptors>
+            </configuration>
+
+            <executions>
+              <execution>
+                <id>create-archive</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
   </profiles>
 
   <dependencies>
