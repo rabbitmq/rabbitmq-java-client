@@ -440,19 +440,6 @@
       <!--
       The "ossrh-release" Maven profile is used to push release artifacts to a
       Sonatype staging repository.
-
-      Add Sonatype credentials in the <servers> tag of Maven's settings.xml:
-
-      <server>
-        <id>ossrh</id>
-        <username>[username]</username>
-        <password>[password]</password>
-      </server>
-
-      Checkout the correct tag and launch:
-
-      mvn clean deploy -P ossrh-release -DskipTests
-
       -->
       <id>ossrh-release</id>
       <build>
@@ -519,20 +506,7 @@
     <!--
       The "bintray-release" Maven profile is used to push release artifacts to the
       Bintray Release Maven Repository.
-
-      Add Bintray credentials in the <servers> tag of Maven's settings.xml:
-
-      <server>
-        <id>bintray-rabbitmq-maven</id>
-        <username>[username]</username>
-        <password>[api-key]</password>
-      </server>
-
-      Checkout the correct tag and launch:
-
-      mvn clean deploy -P milestone -DskipTests
-
-      -->
+    -->
     <profile>
       <id>bintray-release</id>
       <build>
@@ -596,20 +570,7 @@
     <!--
       The "milestone" Maven profile is used to push release artifacts to the
       Bintray Milestones Maven Repository.
-
-      Add Bintray credentials in the <servers> tag of Maven's settings.xml:
-
-      <server>
-        <id>bintray-rabbitmq-maven-milestones</id>
-        <username>[username]</username>
-        <password>[api-key]</password>
-      </server>
-
-      Checkout the correct tag and launch:
-
-      mvn clean deploy -P milestone -DskipTests
-
-      -->
+    -->
     <profile>
       <id>milestone</id>
       <build>
@@ -668,39 +629,6 @@
           <url>https://api.bintray.com/maven/rabbitmq/maven-milestones/java-client/;publish=1</url>
         </repository>
       </distributionManagement>
-    </profile>
-
-    <profile>
-      <!--
-      The "assemblies" Maven profile is used to generate source
-      and binary archives (to-be-uploaded on Github).
-      -->
-      <id>assemblies</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <version>2.6</version>
-            <configuration>
-              <finalName>rabbitmq-${project.build.finalName}</finalName>
-              <descriptors>
-                <descriptor>src/assembly/dist-bin.xml</descriptor>
-                <descriptor>src/assembly/dist-src.xml</descriptor>
-              </descriptors>
-            </configuration>
-
-            <executions>
-              <execution>
-                <id>create-archive</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>single</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
 
   </profiles>
