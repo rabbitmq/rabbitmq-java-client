@@ -40,8 +40,9 @@
   </developers>
 
   <scm>
-    <url>https://github.com/rabbitmq/rabbitmq-java-client.git</url>
-    <connection>scm:git:https://github.com/rabbitmq/rabbitmq-java-client.git</connection>
+    <url>https://github.com/rabbitmq/rabbitmq-java-client</url>
+    <connection>scm:git:git://github.com/rabbitmq/rabbitmq-java-client.git</connection>
+    <developerConnection>scm:git:git@github.com/rabbitmq/rabbitmq-java-client.git</developerConnection>
   </scm>
 
   <organization>
@@ -890,6 +891,16 @@
         <artifactId>versions-maven-plugin</artifactId>
         <version>2.3</version>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5.3</version>
+        <configuration>
+          <tagNameFormat>v@{project.version}</tagNameFormat>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 
