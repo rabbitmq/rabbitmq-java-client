@@ -38,6 +38,6 @@ ssh $DEPLOY_USERHOST \
 		"rm -rf $DEPLOY_PATH; \
 		 mkdir -p $DEPLOY_PATH"
 
-rsync -rpl target/site/apidocs/ $DEPLOY_USERHOST:$DEPLOY_PATH
+rsync -rpl --exclude '*.sh'  target/site/apidocs/ $DEPLOY_USERHOST:$DEPLOY_PATH
 
 
