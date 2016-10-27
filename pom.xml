@@ -1,11 +1,10 @@
 <?xml version="1.0"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-  xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.rabbitmq</groupId>
   <artifactId>amqp-client</artifactId>
-  <version>4.0.0-SNAPSHOT</version>
+  <version>4.0.0.RC1</version>
   <packaging>jar</packaging>
 
   <name>RabbitMQ Java Client</name>
@@ -43,6 +42,7 @@
     <url>https://github.com/rabbitmq/rabbitmq-java-client</url>
     <connection>scm:git:git://github.com/rabbitmq/rabbitmq-java-client.git</connection>
     <developerConnection>scm:git:git@github.com/rabbitmq/rabbitmq-java-client.git</developerConnection>
+    <tag>v4.0.0.RC1</tag>
   </scm>
 
   <organization>
@@ -300,7 +300,7 @@
           <!--
           Generate two Java keystores from the test TLS certificates.
           Here, we only enable the plugin. The actual configuration is
-          in the main <build/> element.
+          in the main <build /> element.
           -->
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
