@@ -40,8 +40,9 @@
   </developers>
 
   <scm>
-    <url>https://github.com/rabbitmq/rabbitmq-java-client.git</url>
-    <connection>scm:git:https://github.com/rabbitmq/rabbitmq-java-client.git</connection>
+    <url>https://github.com/rabbitmq/rabbitmq-java-client</url>
+    <connection>scm:git:git://github.com/rabbitmq/rabbitmq-java-client.git</connection>
+    <developerConnection>scm:git:git@github.com:rabbitmq/rabbitmq-java-client.git</developerConnection>
   </scm>
 
   <organization>
@@ -90,6 +91,10 @@
     <test-broker.B.nodename>hare@localhost</test-broker.B.nodename>
     <test-broker.B.node_port>5673</test-broker.B.node_port>
     <test-broker.B.config_file>${project.build.directory}/test-classes/${test-broker.B.nodename}</test-broker.B.config_file>
+
+    <!-- to sign artifacts when releasing -->
+    <gpg.keyname>6026DFCA</gpg.keyname>
+    <nexus-staging-maven-plugin.version>1.6.4</nexus-staging-maven-plugin.version>
   </properties>
 
   <profiles>
@@ -404,10 +409,10 @@
 
     <profile>
       <!--
-      The "release" Maven profile is used to push release artifacts to a
+      The "ossrh-release" Maven profile is used to push release artifacts to a
       Sonatype staging repository.
       -->
-      <id>release</id>
+      <id>ossrh-release</id>
       <build>
         <plugins>
           <plugin>
@@ -445,16 +450,158 @@
             <executions>
               <execution>
                 <id>sign-artifacts</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>sign</goal>
                 </goals>
+                <configuration>
+                  <keyname>${gpg.keyname}</keyname>
+                </configuration>
               </execution>
             </executions>
           </plugin>
         </plugins>
       </build>
+      <distributionManagement>
+        <snapshotRepository>
+          <id>ossrh</id>
+          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+          <id>ossrh</id>
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+      </distributionManagement>
     </profile>
+
+    <!--
+      The "bintray-release" Maven profile is used to push release artifacts to the
+      Bintray Release Maven Repository.
+    -->
+    <profile>
+      <id>bintray-release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.0.1</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.10.4</version>
+            <configuration>
+              <additionalparam>${javadoc.opts}</additionalparam>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <configuration>
+                  <keyname>${gpg.keyname}</keyname>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <distributionManagement>
+        <repository>
+          <id>bintray-rabbitmq-maven</id>
+          <name>rabbitmq-maven</name>
+          <url>https://api.bintray.com/maven/rabbitmq/maven/java-client/;publish=1</url>
+        </repository>
+      </distributionManagement>
+    </profile>
+
+    <!--
+      The "milestone" Maven profile is used to push release artifacts to the
+      Bintray Milestones Maven Repository.
+    -->
+    <profile>
+      <id>milestone</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.0.1</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.10.4</version>
+            <configuration>
+              <additionalparam>${javadoc.opts}</additionalparam>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <configuration>
+                  <keyname>${gpg.keyname}</keyname>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <distributionManagement>
+        <repository>
+          <id>bintray-rabbitmq-maven-milestones</id>
+          <name>rabbitmq-maven-milestones</name>
+          <url>https://api.bintray.com/maven/rabbitmq/maven-milestones/java-client/;publish=1</url>
+        </repository>
+      </distributionManagement>
+    </profile>
+
   </profiles>
 
   <dependencies>
