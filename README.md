@@ -1,3 +1,5 @@
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.rabbitmq/amqp-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.rabbitmq/amqp-client)
+
 ## RabbitMQ Java Client
 
 This repository contains source code of the [RabbitMQ Java client](http://www.rabbitmq.com/api-guide.html).
