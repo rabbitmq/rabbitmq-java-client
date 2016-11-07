@@ -86,6 +86,7 @@ public interface Channel extends ShutdownNotifier {
 
     /**
      * Deprecated, superseded by TCP back pressure.
+     * Will be removed in next major release.
      * @deprecated
      * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      */
@@ -130,6 +131,7 @@ public interface Channel extends ShutdownNotifier {
     /**
      * Add a {@link FlowListener}.
      * Deprecated, superseded by TCP back pressure.
+     * Will be removed in next major release.
      * @deprecated
      * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      * @param listener the listener to add
@@ -139,6 +141,7 @@ public interface Channel extends ShutdownNotifier {
     /**
      * Remove a {@link FlowListener}.
      * Deprecated, superseded by TCP back pressure.
+     * Will be removed in next major release.
      * @deprecated
      * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      * @param listener the listener to remove
@@ -150,6 +153,7 @@ public interface Channel extends ShutdownNotifier {
     /**
      * Remove all {@link FlowListener}s.
      * Deprecated, superseded by TCP back pressure.
+     * Will be removed in next major release.
      * @deprecated
      * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      */

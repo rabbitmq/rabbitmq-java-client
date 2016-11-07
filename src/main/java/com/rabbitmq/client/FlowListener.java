@@ -21,6 +21,9 @@ import java.io.IOException;
 /**
  * Implement this interface in order to be notified of Channel.Flow
  * events.
+ * Deprecated, superseded by TCP back pressure.
+ * Will be removed in next major release.
+ * @deprecated
  */
 public interface FlowListener {
     void handleFlow(boolean active)
