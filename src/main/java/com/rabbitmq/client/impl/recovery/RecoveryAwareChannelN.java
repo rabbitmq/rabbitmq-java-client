@@ -82,16 +82,20 @@ public class RecoveryAwareChannelN extends ChannelN {
 
     @Override
     public void basicAck(long deliveryTag, boolean multiple) throws IOException {
+        // FIXME no check if deliveryTag = 0 (ack all)
         long realTag = deliveryTag - activeDeliveryTagOffset;
-        if (realTag > 0) {
+        // 0 tag means ack all
+        if (realTag >= 0) {
             super.basicAck(realTag, multiple);
         }
     }
 
     @Override
     public void basicNack(long deliveryTag, boolean multiple, boolean requeue) throws IOException {
+        // FIXME no check if deliveryTag = 0 (nack all)
         long realTag = deliveryTag - activeDeliveryTagOffset;
-        if (realTag > 0) {
+        // 0 tag means nack all
+        if (realTag >= 0) {
             super.basicNack(realTag, multiple, requeue);
         }
     }

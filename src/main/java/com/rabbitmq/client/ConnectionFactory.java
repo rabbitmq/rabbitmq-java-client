@@ -100,7 +100,7 @@ public class ConnectionFactory implements Cloneable {
     private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
     private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
 
-    private boolean automaticRecovery             = false;
+    private boolean automaticRecovery             = true;
     private boolean topologyRecovery              = true;
 
     // long is used to make sure the users can use both ints
