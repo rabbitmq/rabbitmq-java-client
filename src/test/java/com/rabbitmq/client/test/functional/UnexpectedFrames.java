@@ -15,19 +15,18 @@
 
 package com.rabbitmq.client.test.functional;
 
-import java.io.IOException;
-import java.net.Socket;
-
-import javax.net.SocketFactory;
-
-import com.rabbitmq.client.impl.*;
-import com.rabbitmq.client.test.TestUtils;
-import org.junit.Test;
-
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultSocketConfigurator;
+import com.rabbitmq.client.impl.*;
+import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.TestUtils;
+import org.junit.Test;
+
+import javax.net.SocketFactory;
+import java.io.IOException;
+import java.net.Socket;
 
 /**
  * Test that the server correctly handles us when we send it bad frames
@@ -177,7 +176,7 @@ public class UnexpectedFrames extends BrokerTestCase {
     }
 
     private void expectError(int error, Confuser confuser) throws IOException {
-        ((ConfusedFrameHandler)((AMQConnection)connection).getFrameHandler()).
+        ((ConfusedFrameHandler)((AutorecoveringConnection)connection).getDelegate().getFrameHandler()).
             confuser = confuser;
 
         //NB: the frame confuser relies on the encoding of the
