@@ -167,7 +167,7 @@
       is missing, nothing is setup and the testsuite relies on an
       externally provided broker/cluster.
 
-      If you want to explicitely disable the automatic cluster setup,
+      If you want to explicitly disable the automatic cluster setup,
       you must disable this profile:
 
           mvn verify -P '!setup-test-cluster'
