@@ -8,7 +8,9 @@ The client is maintained by the [RabbitMQ team at Pivotal](http://github.com/rab
 
 ## Dependency (Maven Artifact)
 
-Maven artifacts are [released to Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.rabbitmq%20a%3Aamqp-client).
+Maven artifacts are [released to Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.rabbitmq%20a%3Aamqp-client)
+via [RabbitMQ Maven repository on Bintray](https://bintray.com/rabbitmq/maven). There's also
+a [Maven repository with milestone releases](https://bintray.com/rabbitmq/maven-milestones).
 
 ### Maven
 
