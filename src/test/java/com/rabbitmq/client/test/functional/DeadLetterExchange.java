@@ -56,6 +56,11 @@ public class DeadLetterExchange extends BrokerTestCase {
     public static final int TTL = 1000;
 
     @Override
+    protected boolean isAutomaticRecoveryEnabled() {
+        return false;
+    }
+
+    @Override
     protected void createResources() throws IOException {
         channel.exchangeDelete(DLX);
         channel.queueDelete(DLQ);
@@ -163,10 +168,6 @@ public class DeadLetterExchange extends BrokerTestCase {
             channel.queueDeclare("bar", false, true, false, args);
 
             args.put(DLX_RK_ARG, "foo");
-
-            // sleep a little, otherwise the resource is still locked
-            // before the next call and we get a 405 - resource locked
-            Thread.sleep(100L);
 
             channel.queueDeclare("bar", false, true, false, args);
             fail("x-dead-letter-exchange must be specified if " +

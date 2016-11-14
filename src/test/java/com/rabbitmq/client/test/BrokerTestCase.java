@@ -60,7 +60,12 @@ public class BrokerTestCase {
 
     protected ConnectionFactory newConnectionFactory() {
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+        connectionFactory.setAutomaticRecoveryEnabled(isAutomaticRecoveryEnabled());
         return connectionFactory;
+    }
+
+    protected boolean isAutomaticRecoveryEnabled() {
+        return true;
     }
 
     protected Connection connection;
