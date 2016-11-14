@@ -157,13 +157,16 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     @Test public void redeclareQueueWithRoutingKeyButNoDeadLetterExchange()
-        throws IOException
-    {
+        throws IOException, InterruptedException {
         try {
             Map<String, Object> args = new HashMap<String, Object>();
             channel.queueDeclare("bar", false, true, false, args);
 
             args.put(DLX_RK_ARG, "foo");
+
+            // sleep a little, otherwise the resource is still locked
+            // before the next call and we get a 405 - resource locked
+            Thread.sleep(100L);
 
             channel.queueDeclare("bar", false, true, false, args);
             fail("x-dead-letter-exchange must be specified if " +
