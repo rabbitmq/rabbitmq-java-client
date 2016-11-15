@@ -16,28 +16,20 @@
 
 package com.rabbitmq.client.test.server;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.AMQChannel;
+import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
+import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.TestUtils;
+import com.rabbitmq.tools.Host;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import com.rabbitmq.client.test.TestUtils;
-import org.junit.Test;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.AuthenticationFailureException;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.impl.AMQChannel;
-import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.tools.Host;
+import static org.junit.Assert.*;
 
 public class Permissions extends BrokerTestCase
 {
@@ -222,9 +214,9 @@ public class Permissions extends BrokerTestCase
     {
         runTest(false, false, true, false, new WithName() {
                 public void with(String name) throws IOException {
-                    ((AMQChannel)channel)
-                    .exnWrappingRpc(new AMQP.Queue.Purge.Builder()
-                                                        .queue(name)
+                    AMQChannel channelDelegate = (AMQChannel) ((AutorecoveringChannel)channel).getDelegate();
+                    channelDelegate.exnWrappingRpc(new AMQP.Queue.Purge.Builder()
+                                    .queue(name)
                                     .build());
                 }});
     }

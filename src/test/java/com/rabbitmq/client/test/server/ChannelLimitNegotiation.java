@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 
 import javax.net.SocketFactory;
 
+import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
@@ -103,7 +104,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
             assertNull(conn.createChannel(n + 1));
 
             // Construct a channel directly
-            final ChannelN ch = new ChannelN((AMQConnection) conn, n + 1,
+            final ChannelN ch = new ChannelN(((AutorecoveringConnection) conn).getDelegate(), n + 1,
                                              new ConsumerWorkService(Executors.newSingleThreadExecutor(),
                                                      Executors.defaultThreadFactory(), ConnectionFactory.DEFAULT_SHUTDOWN_TIMEOUT));
             conn.addShutdownListener(new ShutdownListener() {

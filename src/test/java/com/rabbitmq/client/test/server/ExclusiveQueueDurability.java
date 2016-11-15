@@ -33,6 +33,14 @@ import com.rabbitmq.client.test.BrokerTestCase;
  */
 public class ExclusiveQueueDurability extends BrokerTestCase {
 
+    @Override
+    protected boolean isAutomaticRecoveryEnabled() {
+        // With automatic recovery enabled, queue can be re-created when launching the test suite
+        // (because FunctionalTests are launched independently and as part of the HATests)
+        // This then makes this test fail.
+        return false;
+    }
+
     void verifyQueueMissing(Channel channel, String queueName)
             throws IOException {
         try {

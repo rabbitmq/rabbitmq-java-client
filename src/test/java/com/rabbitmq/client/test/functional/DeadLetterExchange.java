@@ -15,35 +15,19 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
+import com.rabbitmq.client.test.BrokerTestCase;
+import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.QueueingConsumer.Delivery;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.*;
 
 public class DeadLetterExchange extends BrokerTestCase {
     public static final String DLX = "dead.letter.exchange";
@@ -149,7 +133,7 @@ public class DeadLetterExchange extends BrokerTestCase {
             Map<String, Object> args = new HashMap<String, Object>();
             args.put(DLX_RK_ARG, "foo");
 
-            channel.queueDeclare("bar", false, true, false, args);
+            channel.queueDeclare(randomQueueName(), false, true, false, args);
             fail("dlx must be defined if dl-rk is set");
         } catch (IOException ex) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ex);
@@ -157,15 +141,15 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     @Test public void redeclareQueueWithRoutingKeyButNoDeadLetterExchange()
-        throws IOException
-    {
+        throws IOException, InterruptedException {
         try {
+            String queueName = randomQueueName();
             Map<String, Object> args = new HashMap<String, Object>();
-            channel.queueDeclare("bar", false, true, false, args);
+            channel.queueDeclare(queueName, false, true, false, args);
 
             args.put(DLX_RK_ARG, "foo");
 
-            channel.queueDeclare("bar", false, true, false, args);
+            channel.queueDeclare(queueName, false, true, false, args);
             fail("x-dead-letter-exchange must be specified if " +
                     "x-dead-letter-routing-key is set");
         } catch (IOException ex) {
@@ -710,5 +694,9 @@ public class DeadLetterExchange extends BrokerTestCase {
             };
 
         public void process(GetResponse response);
+    }
+
+    private static String randomQueueName() {
+        return DeadLetterExchange.class.getSimpleName() + "-" + UUID.randomUUID().toString();
     }
 }
