@@ -1,6 +1,4 @@
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.rabbitmq/amqp-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.rabbitmq/amqp-client)
-
-## RabbitMQ Java Client
+# RabbitMQ Java Client
 
 This repository contains source code of the [RabbitMQ Java client](http://www.rabbitmq.com/api-guide.html).
 The client is maintained by the [RabbitMQ team at Pivotal](http://github.com/rabbitmq/).
@@ -13,6 +11,8 @@ via [RabbitMQ Maven repository on Bintray](https://bintray.com/rabbitmq/maven). 
 a [Maven repository with milestone releases](https://bintray.com/rabbitmq/maven-milestones).
 
 ### Maven
+
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.rabbitmq/amqp-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.rabbitmq/amqp-client)
 
 ``` xml
 <dependency>
