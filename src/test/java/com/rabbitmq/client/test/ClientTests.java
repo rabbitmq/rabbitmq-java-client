@@ -33,7 +33,7 @@ import org.junit.runners.Suite;
     Bug20004Test.class,
     CloseInMainLoop.class,
     ChannelNumberAllocationTests.class,
-    QueueingConsumerShutdownTests.class,
+    QueueingConsumerTests.class,
     MultiThreadedChannel.class,
     IntAllocatorTests.class,
     AMQBuilderApiTest.class,

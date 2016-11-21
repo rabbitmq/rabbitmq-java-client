@@ -15,21 +15,20 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.test.BrokerTestCase;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class ConsumerPriorities extends BrokerTestCase {
     @Test public void validation() throws IOException {
@@ -43,7 +42,7 @@ public class ConsumerPriorities extends BrokerTestCase {
         Channel ch = connection.createChannel();
         String queue = ch.queueDeclare().getQueue();
         try {
-            ch.basicConsume(queue, true, args, new QueueingConsumer(ch));
+            ch.basicConsume(queue, true, args, new DefaultConsumer(ch));
             fail("Validation should fail for " + args);
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
@@ -54,9 +53,9 @@ public class ConsumerPriorities extends BrokerTestCase {
 
     @Test public void consumerPriorities() throws Exception {
         String queue = channel.queueDeclare().getQueue();
-        QueueingConsumer highConsumer = new QueueingConsumer(channel);
-        QueueingConsumer medConsumer = new QueueingConsumer(channel);
-        QueueingConsumer lowConsumer = new QueueingConsumer(channel);
+        QueueMessageConsumer highConsumer = new QueueMessageConsumer(channel);
+        QueueMessageConsumer medConsumer = new QueueMessageConsumer(channel);
+        QueueMessageConsumer lowConsumer = new QueueMessageConsumer(channel);
         String high = channel.basicConsume(queue, true, args(1), highConsumer);
         String med = channel.basicConsume(queue, true, medConsumer);
         channel.basicConsume(queue, true, args(-1), lowConsumer);
@@ -78,12 +77,12 @@ public class ConsumerPriorities extends BrokerTestCase {
         return map;
     }
 
-    private void assertContents(QueueingConsumer qc, int count, String msg) throws InterruptedException {
+    private void assertContents(QueueMessageConsumer c, int count, String msg) throws InterruptedException {
         for (int i = 0; i < count; i++) {
-            QueueingConsumer.Delivery d = qc.nextDelivery();
-            assertEquals(msg, new String(d.getBody()));
+            byte[] body = c.nextDelivery(100);
+            assertEquals(msg, new String(body));
         }
-        assertEquals(null, qc.nextDelivery(0));
+        assertEquals(null, c.nextDelivery());
     }
 
     private void publish(String queue, int count, String msg) throws IOException {
@@ -91,4 +90,28 @@ public class ConsumerPriorities extends BrokerTestCase {
             channel.basicPublish("", queue, MessageProperties.MINIMAL_BASIC, msg.getBytes());
         }
     }
+
+    class QueueMessageConsumer extends DefaultConsumer {
+
+        BlockingQueue<byte[]> messages = new LinkedBlockingQueue<byte[]>();
+
+        public QueueMessageConsumer(Channel channel) {
+            super(channel);
+        }
+
+        @Override
+        public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+            messages.add(body);
+        }
+
+        byte[] nextDelivery() {
+            return messages.poll();
+        }
+
+        byte[] nextDelivery(long timeoutInMs) throws InterruptedException {
+            return messages.poll(timeoutInMs, TimeUnit.MILLISECONDS);
+        }
+
+    }
+
 }

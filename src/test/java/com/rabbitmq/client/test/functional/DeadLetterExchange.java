@@ -23,9 +23,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
 
@@ -173,13 +171,13 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(DLQ, DLX, "test");
 
         //measure round-trip latency
-        QueueingConsumer c = new QueueingConsumer(channel);
+        QueueMessageConsumer c = new QueueMessageConsumer(channel);
         String cTag = channel.basicConsume(TEST_QUEUE_NAME, true, c);
         long start = System.currentTimeMillis();
         publish(null, "test");
-        Delivery d = c.nextDelivery(TTL);
+        byte[] body = c.nextDelivery(TTL);
         long stop = System.currentTimeMillis();
-        assertNotNull(d);
+        assertNotNull(body);
         channel.basicCancel(cTag);
         long latency = stop-start;
 
@@ -565,14 +563,14 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     /* check that each message arrives within epsilon of the
        publication time + TTL + latency */
-    private void checkPromptArrival(QueueingConsumer c,
+    private void checkPromptArrival(QueueMessageConsumer c,
                                     int count, long latency) throws Exception {
         long epsilon = TTL / 10;
         for (int i = 0; i < count; i++) {
-            Delivery d = c.nextDelivery(TTL + TTL + latency + epsilon);
-            assertNotNull("message #" + i + " did not expire", d);
+            byte[] body = c.nextDelivery(TTL + TTL + latency + epsilon);
+            assertNotNull("message #" + i + " did not expire", body);
             long now = System.currentTimeMillis();
-            long publishTime = Long.valueOf(new String(d.getBody()));
+            long publishTime = Long.valueOf(new String(body));
             long targetTime = publishTime + TTL + latency;
             assertTrue("expiry outside bounds (+/- " + epsilon + "): " +
                        (now - targetTime),
@@ -698,5 +696,28 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     private static String randomQueueName() {
         return DeadLetterExchange.class.getSimpleName() + "-" + UUID.randomUUID().toString();
+    }
+
+    class QueueMessageConsumer extends DefaultConsumer {
+
+        BlockingQueue<byte[]> messages = new LinkedBlockingQueue<byte[]>();
+
+        public QueueMessageConsumer(Channel channel) {
+            super(channel);
+        }
+
+        @Override
+        public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+            messages.add(body);
+        }
+
+        byte[] nextDelivery() {
+            return messages.poll();
+        }
+
+        byte[] nextDelivery(long timeoutInMs) throws InterruptedException {
+            return messages.poll(timeoutInMs, TimeUnit.MILLISECONDS);
+        }
+
     }
 }

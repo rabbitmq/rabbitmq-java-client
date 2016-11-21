@@ -16,9 +16,13 @@
 package com.rabbitmq.client.test;
 
 import static org.junit.Assert.*;
+
+import com.rabbitmq.client.ConsumerCancelledException;
 import org.junit.Test;
 
-
+import java.io.IOException;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,7 +31,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 
-public class QueueingConsumerShutdownTests extends BrokerTestCase{
+public class QueueingConsumerTests extends BrokerTestCase{
   static final String QUEUE = "some-queue";
   static final int THREADS = 5;
 
@@ -62,6 +66,38 @@ public class QueueingConsumerShutdownTests extends BrokerTestCase{
     // Far longer than this could reasonably take
     assertTrue(latch.await(5, TimeUnit.SECONDS));
     assertEquals(0, count.get());
+  }
+
+  @Test public void consumerCancellationInterruptsQueuingConsumerWait()
+      throws IOException, InterruptedException {
+    String queue = "cancel_notification_queue_for_queueing_consumer";
+    final BlockingQueue<Boolean> result = new ArrayBlockingQueue<Boolean>(1);
+    channel.queueDeclare(queue, false, true, false, null);
+    final QueueingConsumer consumer = new QueueingConsumer(channel);
+    Runnable receiver = new Runnable() {
+
+      public void run() {
+        try {
+          try {
+            consumer.nextDelivery();
+          } catch (ConsumerCancelledException e) {
+            result.put(true);
+            return;
+          } catch (ShutdownSignalException e) {
+          } catch (InterruptedException e) {
+          }
+          result.put(false);
+        } catch (InterruptedException e) {
+          fail();
+        }
+      }
+    };
+    Thread t = new Thread(receiver);
+    t.start();
+    channel.basicConsume(queue, consumer);
+    channel.queueDelete(queue);
+    assertTrue(result.take());
+    t.join();
   }
 
 }

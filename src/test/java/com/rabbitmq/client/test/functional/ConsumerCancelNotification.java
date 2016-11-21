@@ -15,8 +15,12 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.test.BrokerTestCase;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -24,15 +28,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.ConsumerCancelledException;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ConsumerCancelNotification extends BrokerTestCase {
 
@@ -43,7 +40,7 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         final BlockingQueue<Boolean> result = new ArrayBlockingQueue<Boolean>(1);
 
         channel.queueDeclare(queue, false, true, false, null);
-        Consumer consumer = new QueueingConsumer(channel) {
+        Consumer consumer = new DefaultConsumer(channel) {
             @Override
             public void handleCancel(String consumerTag) throws IOException {
                 try {
@@ -57,38 +54,6 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         channel.queueDelete(queue);
         assertTrue(result.take());
     }
-
-    @Test public void consumerCancellationInterruptsQueuingConsumerWait()
-            throws IOException, InterruptedException {
-        final BlockingQueue<Boolean> result = new ArrayBlockingQueue<Boolean>(1);
-        channel.queueDeclare(queue, false, true, false, null);
-        final QueueingConsumer consumer = new QueueingConsumer(channel);
-        Runnable receiver = new Runnable() {
-
-            public void run() {
-                try {
-                    try {
-                        consumer.nextDelivery();
-                    } catch (ConsumerCancelledException e) {
-                        result.put(true);
-                        return;
-                    } catch (ShutdownSignalException e) {
-                    } catch (InterruptedException e) {
-                    }
-                    result.put(false);
-                } catch (InterruptedException e) {
-                    fail();
-                }
-            }
-        };
-        Thread t = new Thread(receiver);
-        t.start();
-        channel.basicConsume(queue, consumer);
-        channel.queueDelete(queue);
-        assertTrue(result.take());
-        t.join();
-    }
-
 
     class AlteringConsumer extends DefaultConsumer {
         private final String altQueue;
