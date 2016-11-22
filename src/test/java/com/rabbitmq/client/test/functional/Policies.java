@@ -187,7 +187,7 @@ public class Policies extends BrokerTestCase {
         if (HATests.HA_TESTS_RUNNING) {
             definition += ",\"ha-mode\":\"all\"";
         }
-        Host.rabbitmqctl("set_policy --priority 1 " + name + " " + pattern +
+        Host.rabbitmqctl("set_policy --priority=1 " + name + " " + pattern +
                          " {" + escapeDefinition(definition) + "}");
         policies.add(name);
     }
