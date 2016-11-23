@@ -14,18 +14,41 @@ a [Maven repository with milestone releases](https://bintray.com/rabbitmq/maven-
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.rabbitmq/amqp-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.rabbitmq/amqp-client)
 
+#### 4.x Series
+
+Starting with `4.0`, this client releases are independent from RabbitMQ server releases.
+These versions can still be used with RabbitMQ server `3.x`.
+
 ``` xml
 <dependency>
     <groupId>com.rabbitmq</groupId>
     <artifactId>amqp-client</artifactId>
-    <version>3.6.5</version>
+    <version>4.0.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ``` groovy
-compile 'com.rabbitmq:amqp-client:3.6.5'
+compile 'com.rabbitmq:amqp-client:4.0.0'
+```
+
+#### 3.6.x Series
+
+`3.6.x` series are released in concert with RabbitMQ server for historical reasons.
+
+``` xml
+<dependency>
+    <groupId>com.rabbitmq</groupId>
+    <artifactId>amqp-client</artifactId>
+    <version>3.6.6</version>
+</dependency>
+```
+
+### Gradle
+
+``` groovy
+compile 'com.rabbitmq:amqp-client:3.6.6'
 ```
 
 
