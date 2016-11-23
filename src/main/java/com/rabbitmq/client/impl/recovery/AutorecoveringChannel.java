@@ -596,7 +596,7 @@ public class AutorecoveringChannel implements RecoverableChannel {
     public void automaticallyRecover(AutorecoveringConnection connection, Connection connDelegate) throws IOException {
         RecoveryAwareChannelN defunctChannel = this.delegate;
         this.connection = connection;
-        
+
         final RecoveryAwareChannelN newChannel = (RecoveryAwareChannelN) connDelegate.createChannel(this.getChannelNumber());
         if (newChannel == null)
             throw new IOException("Failed to create new channel for channel number=" + this.getChannelNumber() + " during recovery");
@@ -734,6 +734,11 @@ public class AutorecoveringChannel implements RecoverableChannel {
             consumerTags.remove(tag);
             consumerTags.add(newTag);
         }
+    }
+
+    @Override
+    public String toString() {
+        return this.delegate.toString();
     }
 
 }
