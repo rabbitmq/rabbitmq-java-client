@@ -119,6 +119,10 @@ public class ConnectionFactory implements Cloneable {
 
     private SSLContext sslContext;
 
+    /**
+     * RPC timeout.
+     * @since 4.1.0
+     */
     private int channelRpcTimeout = DEFAULT_CHANNEL_RPC_TIMEOUT;
 
     /** @return the default host to use for connections */
