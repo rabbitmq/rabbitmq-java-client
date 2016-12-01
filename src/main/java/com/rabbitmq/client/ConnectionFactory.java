@@ -73,6 +73,9 @@ public class ConnectionFactory implements Cloneable {
      *  zero means wait indefinitely */
     public static final int    DEFAULT_SHUTDOWN_TIMEOUT = 10000;
 
+    /** The default timeout for RPC calls in channels: no timeout */
+    public static final int    DEFAULT_CHANNEL_RPC_TIMEOUT = -1;
+
     private static final String PREFERRED_TLS_PROTOCOL = "TLSv1.2";
 
     private static final String FALLBACK_TLS_PROTOCOL = "TLSv1";
@@ -115,6 +118,8 @@ public class ConnectionFactory implements Cloneable {
     private NioParams nioParams = new NioParams();
 
     private SSLContext sslContext;
+
+    private int channelRpcTimeout = DEFAULT_CHANNEL_RPC_TIMEOUT;
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -937,6 +942,7 @@ public class ConnectionFactory implements Cloneable {
         result.setRequestedHeartbeat(requestedHeartbeat);
         result.setShutdownExecutor(shutdownExecutor);
         result.setHeartbeatExecutor(heartbeatExecutor);
+        result.setChannelRpcTimeout(channelRpcTimeout);
         return result;
     }
 
@@ -1078,5 +1084,22 @@ public class ConnectionFactory implements Cloneable {
      */
     public void useBlockingIo() {
         this.nio = false;
+    }
+
+    /**
+     * Set the timeout for RPC calls in channels.
+     * Default is no timeout.
+     * @param channelRpcTimeout
+     */
+    public void setChannelRpcTimeout(int channelRpcTimeout) {
+        this.channelRpcTimeout = channelRpcTimeout;
+    }
+
+    /**
+     * Get the timeout for RPC calls in channels.
+     * @return
+     */
+    public int getChannelRpcTimeout() {
+        return channelRpcTimeout;
     }
 }

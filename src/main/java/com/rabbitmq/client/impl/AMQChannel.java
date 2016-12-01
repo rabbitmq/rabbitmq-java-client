@@ -19,12 +19,11 @@ package com.rabbitmq.client.impl;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.Command;
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.Method;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.BlockingValueOrException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Base class modelling an AMQ channel. Subclasses implement
@@ -37,6 +36,11 @@ import com.rabbitmq.utility.BlockingValueOrException;
  * @see Connection
  */
 public abstract class AMQChannel extends ShutdownNotifierComponent {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AMQChannel.class);
+
+    private static final int NO_RPC_TIMEOUT = ConnectionFactory.DEFAULT_CHANNEL_RPC_TIMEOUT;
+
     /**
      * Protected; used instead of synchronizing on the channel itself,
      * so that clients can themselves use the channel to synchronize
@@ -59,6 +63,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     /** Whether transmission of content-bearing methods should be blocked */
     public volatile boolean _blockContent = false;
 
+    /** Timeout for RPC calls */
+    private final int _rpcTimeout;
+
     /**
      * Construct a channel on the given connection, with the given channel number.
      * @param connection the underlying connection for this channel
@@ -67,6 +74,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public AMQChannel(AMQConnection connection, int channelNumber) {
         this._connection = connection;
         this._channelNumber = channelNumber;
+        this._rpcTimeout = connection.getChannelRpcTimeout();
     }
 
     /**
@@ -225,8 +233,23 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         //
         // Calling getReply() on the continuation puts us to sleep
         // until the connection's reader-thread throws the reply over
-        // the fence.
-        return k.getReply();
+        // the fence or the RPC times out (if enabled)
+        if(_rpcTimeout == NO_RPC_TIMEOUT) {
+            return k.getReply();
+        } else {
+            try {
+                return k.getReply(_rpcTimeout);
+            } catch (TimeoutException e) {
+                try {
+                    // clean RPC channel state
+                    nextOutstandingRpc();
+                    markRpcFinished();
+                } catch(Exception ex) {
+                    LOGGER.warn("Error while cleaning timed out channel RPC: {}", ex.getMessage());
+                }
+                throw new ChannelRpcTimeoutException(e, this, m);
+            }
+        }
     }
 
     private AMQCommand privateRpc(Method m, int timeout)

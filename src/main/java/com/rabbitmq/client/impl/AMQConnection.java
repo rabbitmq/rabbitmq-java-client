@@ -94,11 +94,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         new Version(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR);
 
     /** The special channel 0 (<i>not</i> managed by the <code><b>_channelManager</b></code>) */
-    private final AMQChannel _channel0 = new AMQChannel(this, 0) {
-        @Override public boolean processAsync(Command c) throws IOException {
-            return getConnection().processControlCommand(c);
-        }
-    };
+    private final AMQChannel _channel0;
 
     protected ConsumerWorkService _workService = null;
 
@@ -137,6 +133,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final String password;
     private final Collection<BlockedListener> blockedListeners = new CopyOnWriteArrayList<BlockedListener>();
     protected final MetricsCollector metricsCollector;
+    private final int channelRpcTimeout;
 
     /* State modified after start - all volatile */
 
@@ -228,6 +225,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.heartbeatExecutor = params.getHeartbeatExecutor();
         this.shutdownExecutor = params.getShutdownExecutor();
         this.threadFactory = params.getThreadFactory();
+        this.channelRpcTimeout = params.getChannelRpcTimeout();
+
+        this._channel0 = new AMQChannel(this, 0) {
+            @Override public boolean processAsync(Command c) throws IOException {
+                return getConnection().processControlCommand(c);
+            }
+        };
 
         this._channelManager = null;
 
@@ -1044,5 +1048,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     @Override
     public void setId(String id) {
         this.id = id;
+    }
+
+    public int getChannelRpcTimeout() {
+        return channelRpcTimeout;
     }
 }
