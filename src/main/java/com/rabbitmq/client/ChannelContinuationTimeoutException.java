@@ -4,13 +4,13 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Exception thrown when a channel times out on a RPC call.
+ * Exception thrown when a channel times out on a continuation during a RPC call.
  * @since 4.1.0
  */
-public class ChannelRpcTimeoutException extends IOException {
+public class ChannelContinuationTimeoutException extends IOException {
 
     /**
-     * The channel that performed the RPC.
+     * The channel that performed the call.
      */
     private final Object channel;
 
@@ -19,7 +19,7 @@ public class ChannelRpcTimeoutException extends IOException {
      */
     private final Method method;
 
-    public ChannelRpcTimeoutException(TimeoutException cause, Object channel, Method method) {
+    public ChannelContinuationTimeoutException(TimeoutException cause, Object channel, Method method) {
         super(cause);
         this.channel = channel;
         this.method = method;

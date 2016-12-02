@@ -39,7 +39,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AMQChannel.class);
 
-    private static final int NO_RPC_TIMEOUT = ConnectionFactory.DEFAULT_CHANNEL_RPC_TIMEOUT;
+    private static final int NO_RPC_TIMEOUT = 0;
 
     /**
      * Protected; used instead of synchronizing on the channel itself,
@@ -74,6 +74,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public AMQChannel(AMQConnection connection, int channelNumber) {
         this._connection = connection;
         this._channelNumber = channelNumber;
+        if(connection.getChannelRpcTimeout() < 0) {
+            throw new IllegalArgumentException("Continuation timeout on RPC calls cannot be less than 0");
+        }
         this._rpcTimeout = connection.getChannelRpcTimeout();
     }
 
@@ -235,6 +238,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         // until the connection's reader-thread throws the reply over
         // the fence or the RPC times out (if enabled)
         if(_rpcTimeout == NO_RPC_TIMEOUT) {
+            System.out.println("passe");
             return k.getReply();
         } else {
             try {
@@ -247,7 +251,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                 } catch(Exception ex) {
                     LOGGER.warn("Error while cleaning timed out channel RPC: {}", ex.getMessage());
                 }
-                throw new ChannelRpcTimeoutException(e, this, m);
+                throw new ChannelContinuationTimeoutException(e, this, m);
             }
         }
     }

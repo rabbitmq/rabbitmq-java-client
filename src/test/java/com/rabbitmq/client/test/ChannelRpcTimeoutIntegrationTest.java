@@ -71,10 +71,9 @@ public class ChannelRpcTimeoutIntegrationTest {
             connection.start();
             Channel channel = connection.createChannel();
             try {
-
                 channel.queueDeclare();
                 fail("Should time out and throw an exception");
-            } catch(ChannelRpcTimeoutException e) {
+            } catch(ChannelContinuationTimeoutException e) {
                 // OK
                 assertThat((Channel) e.getChannel(), is(channel));
                 assertThat(e.getMethod(), instanceOf(AMQP.Queue.Declare.class));

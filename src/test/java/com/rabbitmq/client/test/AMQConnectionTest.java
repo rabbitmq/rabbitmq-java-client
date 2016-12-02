@@ -99,6 +99,16 @@ public class AMQConnectionTest {
         cf.setHandshakeTimeout(7000);
     }
 
+    @Test public void negativeRpcTimeoutIsForbidden() {
+        ConnectionFactory cf = TestUtils.connectionFactory();
+        try {
+            cf.setChannelRpcTimeout(-10);
+            fail("expected an exception");
+        } catch (IllegalArgumentException _ignored) {
+            // expected
+        }
+    }
+
     /** Check the AMQConnection does send exactly 1 initial header, and deal correctly with
      * the frame handler throwing an exception when we try to read data
      */

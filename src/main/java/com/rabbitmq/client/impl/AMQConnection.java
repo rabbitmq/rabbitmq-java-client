@@ -225,6 +225,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.heartbeatExecutor = params.getHeartbeatExecutor();
         this.shutdownExecutor = params.getShutdownExecutor();
         this.threadFactory = params.getThreadFactory();
+        if(params.getChannelRpcTimeout() < 0) {
+            throw new IllegalArgumentException("Continuation timeout on RPC calls cannot be less than 0");
+        }
         this.channelRpcTimeout = params.getChannelRpcTimeout();
 
         this._channel0 = new AMQChannel(this, 0) {

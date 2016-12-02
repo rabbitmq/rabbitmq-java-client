@@ -15,7 +15,7 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.ChannelRpcTimeoutException;
+import com.rabbitmq.client.ChannelContinuationTimeoutException;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.impl.AMQChannel;
@@ -66,7 +66,7 @@ public class AMQChannelTest {
         try {
             channel.rpc(method);
             fail("Should time out and throw an exception");
-        } catch(ChannelRpcTimeoutException e) {
+        } catch(ChannelContinuationTimeoutException e) {
             // OK
             assertThat((DummyAmqChannel) e.getChannel(), is(channel));
             assertThat(e.getMethod(), is(method));
