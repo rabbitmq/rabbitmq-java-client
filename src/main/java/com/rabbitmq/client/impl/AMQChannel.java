@@ -238,7 +238,6 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         // until the connection's reader-thread throws the reply over
         // the fence or the RPC times out (if enabled)
         if(_rpcTimeout == NO_RPC_TIMEOUT) {
-            System.out.println("passe");
             return k.getReply();
         } else {
             try {
