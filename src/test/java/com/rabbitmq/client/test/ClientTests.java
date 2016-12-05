@@ -27,6 +27,8 @@ import org.junit.runners.Suite;
     BlockingCellTest.class,
     TruncatedInputStreamTest.class,
     AMQConnectionTest.class,
+    AMQChannelTest.class,
+    ChannelRpcTimeoutIntegrationTest.class,
     ValueOrExceptionTest.class,
     BrokenFramesTest.class,
     ClonePropertiesTest.class,

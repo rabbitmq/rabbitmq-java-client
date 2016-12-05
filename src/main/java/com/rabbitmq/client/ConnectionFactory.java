@@ -33,6 +33,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static java.util.concurrent.TimeUnit.*;
+
 /**
  * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
  */
@@ -72,6 +74,9 @@ public class ConnectionFactory implements Cloneable {
     /** The default shutdown timeout;
      *  zero means wait indefinitely */
     public static final int    DEFAULT_SHUTDOWN_TIMEOUT = 10000;
+
+    /** The default continuation timeout for RPC calls in channels: 10 minutes */
+    public static final int    DEFAULT_CHANNEL_RPC_TIMEOUT = (int) MINUTES.toMillis(10);
 
     private static final String PREFERRED_TLS_PROTOCOL = "TLSv1.2";
 
@@ -115,6 +120,12 @@ public class ConnectionFactory implements Cloneable {
     private NioParams nioParams = new NioParams();
 
     private SSLContext sslContext;
+
+    /**
+     * Continuation timeout on RPC calls.
+     * @since 4.1.0
+     */
+    private int channelRpcTimeout = DEFAULT_CHANNEL_RPC_TIMEOUT;
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -937,6 +948,7 @@ public class ConnectionFactory implements Cloneable {
         result.setRequestedHeartbeat(requestedHeartbeat);
         result.setShutdownExecutor(shutdownExecutor);
         result.setHeartbeatExecutor(heartbeatExecutor);
+        result.setChannelRpcTimeout(channelRpcTimeout);
         return result;
     }
 
@@ -1078,5 +1090,25 @@ public class ConnectionFactory implements Cloneable {
      */
     public void useBlockingIo() {
         this.nio = false;
+    }
+
+    /**
+     * Set the continuation timeout for RPC calls in channels.
+     * Default is 10 minutes. 0 means no timeout.
+     * @param channelRpcTimeout
+     */
+    public void setChannelRpcTimeout(int channelRpcTimeout) {
+        if(channelRpcTimeout < 0) {
+            throw new IllegalArgumentException("Timeout cannot be less than 0");
+        }
+        this.channelRpcTimeout = channelRpcTimeout;
+    }
+
+    /**
+     * Get the timeout for RPC calls in channels.
+     * @return
+     */
+    public int getChannelRpcTimeout() {
+        return channelRpcTimeout;
     }
 }

@@ -39,6 +39,7 @@ public class ConnectionParams {
     private SaslConfig saslConfig;
     private long networkRecoveryInterval;
     private boolean topologyRecovery;
+    private int channelRpcTimeout;
 
     private ExceptionHandler exceptionHandler;
     private ThreadFactory threadFactory;
@@ -108,6 +109,10 @@ public class ConnectionParams {
     public ThreadFactory getThreadFactory() {
     return threadFactory;
   }
+
+    public int getChannelRpcTimeout() {
+        return channelRpcTimeout;
+    }
 
     public void setUsername(String username) {
         this.username = username;
@@ -179,5 +184,9 @@ public class ConnectionParams {
 
     public void setHeartbeatExecutor(ScheduledExecutorService heartbeatExecutor) {
         this.heartbeatExecutor = heartbeatExecutor;
+    }
+
+    public void setChannelRpcTimeout(int channelRpcTimeout) {
+        this.channelRpcTimeout = channelRpcTimeout;
     }
 }
