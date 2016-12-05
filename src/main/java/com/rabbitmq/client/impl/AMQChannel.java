@@ -250,7 +250,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                 } catch(Exception ex) {
                     LOGGER.warn("Error while cleaning timed out channel RPC: {}", ex.getMessage());
                 }
-                throw new ChannelContinuationTimeoutException(e, this, m);
+                throw new ChannelContinuationTimeoutException(e, this, this._channelNumber, m);
             }
         }
     }

@@ -69,6 +69,7 @@ public class AMQChannelTest {
         } catch(ChannelContinuationTimeoutException e) {
             // OK
             assertThat((DummyAmqChannel) e.getChannel(), is(channel));
+            assertThat(e.getChannelNumber(), is(channel.getChannelNumber()));
             assertThat(e.getMethod(), is(method));
             assertNull("outstanding RPC should have been cleaned", channel.nextOutstandingRpc());
         }

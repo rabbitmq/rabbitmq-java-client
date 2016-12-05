@@ -76,6 +76,7 @@ public class ChannelRpcTimeoutIntegrationTest {
             } catch(ChannelContinuationTimeoutException e) {
                 // OK
                 assertThat((Channel) e.getChannel(), is(channel));
+                assertThat(e.getChannelNumber(), is(channel.getChannelNumber()));
                 assertThat(e.getMethod(), instanceOf(AMQP.Queue.Declare.class));
             }
         } finally {
