@@ -378,7 +378,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         for(int i = 0; i < 5000; i++) {
             String q = UUID.randomUUID().toString();
             ch.queueDeclare(q, false, false, true, null);
-            QueueingConsumer dummy = new QueueingConsumer(ch);
+            DefaultConsumer dummy = new DefaultConsumer(ch);
             String tag = ch.basicConsume(q, true, dummy);
             ch.basicCancel(tag);
         }

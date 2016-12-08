@@ -22,34 +22,32 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
+import com.rabbitmq.client.*;
 import org.junit.Test;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class DirectReplyTo extends BrokerTestCase {
     private static final String QUEUE = "amq.rabbitmq.reply-to";
 
     @Test public void roundTrip() throws IOException, InterruptedException {
-        QueueingConsumer c = new QueueingConsumer(channel);
+        QueueMessageConsumer c = new QueueMessageConsumer(channel);
         String replyTo = rpcFirstHalf(c);
         declare(connection, replyTo, true);
         channel.confirmSelect();
         basicPublishVolatile("response".getBytes(), "", replyTo, MessageProperties.BASIC);
         channel.waitForConfirms();
 
-        QueueingConsumer.Delivery del = c.nextDelivery();
-        assertEquals("response", new String(del.getBody()));
+        byte[] body = c.nextDelivery(10000);
+        assertEquals("response", new String(body));
     }
 
     @Test public void hack() throws IOException, InterruptedException {
-        QueueingConsumer c = new QueueingConsumer(channel);
+        QueueMessageConsumer c = new QueueMessageConsumer(channel);
         String replyTo = rpcFirstHalf(c);
         // 5 chars should overwrite part of the key but not the pid; aiming to prove
         // we can't publish using just the pid
@@ -57,8 +55,8 @@ public class DirectReplyTo extends BrokerTestCase {
         declare(connection, replyTo, false);
         basicPublishVolatile("response".getBytes(), "", replyTo, MessageProperties.BASIC);
 
-        QueueingConsumer.Delivery del = c.nextDelivery(500);
-        assertNull(del);
+        byte[] body = c.nextDelivery(500);
+        assertNull(body);
     }
 
     private void declare(Connection connection, String q, boolean expectedExists) throws IOException {
@@ -75,7 +73,7 @@ public class DirectReplyTo extends BrokerTestCase {
     }
 
     @Test public void consumeFail() throws IOException, InterruptedException {
-        QueueingConsumer c = new QueueingConsumer(channel);
+        DefaultConsumer c = new DefaultConsumer(channel);
         Channel ch = connection.createChannel();
         try {
             ch.basicConsume(QUEUE, false, c);
@@ -95,7 +93,7 @@ public class DirectReplyTo extends BrokerTestCase {
     }
 
     @Test public void consumeSuccess() throws IOException, InterruptedException {
-        QueueingConsumer c = new QueueingConsumer(channel);
+        DefaultConsumer c = new DefaultConsumer(channel);
         String ctag = channel.basicConsume(QUEUE, true, c);
         channel.basicCancel(ctag);
 
@@ -104,7 +102,7 @@ public class DirectReplyTo extends BrokerTestCase {
         assertNotSame(ctag, ctag2);
     }
 
-    private String rpcFirstHalf(QueueingConsumer c) throws IOException {
+    private String rpcFirstHalf(Consumer c) throws IOException {
         channel.basicConsume(QUEUE, true, c);
         String serverQueue = channel.queueDeclare().getQueue();
         basicPublishVolatile("request".getBytes(), "", serverQueue, props());
@@ -115,5 +113,28 @@ public class DirectReplyTo extends BrokerTestCase {
 
     private AMQP.BasicProperties props() {
         return MessageProperties.BASIC.builder().replyTo(QUEUE).build();
+    }
+
+    class QueueMessageConsumer extends DefaultConsumer {
+
+        BlockingQueue<byte[]> messages = new LinkedBlockingQueue<byte[]>();
+
+        public QueueMessageConsumer(Channel channel) {
+            super(channel);
+        }
+
+        @Override
+        public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+            messages.add(body);
+        }
+
+        byte[] nextDelivery() {
+            return messages.poll();
+        }
+
+        byte[] nextDelivery(long timeoutInMs) throws InterruptedException {
+            return messages.poll(timeoutInMs, TimeUnit.MILLISECONDS);
+        }
+
     }
 }

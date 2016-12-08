@@ -17,7 +17,6 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.test.BrokerTestCase;
 import org.junit.Test;
 
