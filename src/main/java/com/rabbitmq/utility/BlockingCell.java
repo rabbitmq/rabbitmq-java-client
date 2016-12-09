@@ -83,12 +83,19 @@ public class BlockingCell<T> {
      * @return the waited-for value
      */
     public synchronized T uninterruptibleGet() {
-        while (true) {
-            try {
-                return get();
-            } catch (InterruptedException ex) {
-                // no special handling necessary
+        boolean wasInterrupted = false;
+        try {
+            while (true) {
+                try {
+                    return get();
+                } catch (InterruptedException ex) {
+                    // no special handling necessary
+                    wasInterrupted = true;
+                }
             }
+        } finally {
+            if (wasInterrupted)
+                Thread.currentThread().interrupt();
         }
     }
 
@@ -104,14 +111,20 @@ public class BlockingCell<T> {
     public synchronized T uninterruptibleGet(int timeout) throws TimeoutException {
         long now = System.nanoTime() / NANOS_IN_MILLI;
         long runTime = now + timeout;
-
-        do {
-            try {
-                return get(runTime - now);
-            } catch (InterruptedException e) {
-                // Ignore.
-            }
-        } while ((timeout == INFINITY) || ((now = System.nanoTime() / NANOS_IN_MILLI) < runTime));
+        boolean wasInterrupted = false;
+        try {
+            do {
+                try {
+                    return get(runTime - now);
+                } catch (InterruptedException e) {
+                    // Ignore.
+                    wasInterrupted = true;
+                }
+            } while ((timeout == INFINITY) || ((now = System.nanoTime() / NANOS_IN_MILLI) < runTime));
+        } finally {
+            if (wasInterrupted)
+                Thread.currentThread().interrupt();
+        }
 
         throw new TimeoutException();
     }
