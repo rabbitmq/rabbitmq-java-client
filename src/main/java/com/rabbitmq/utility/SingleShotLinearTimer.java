@@ -31,7 +31,10 @@ import com.rabbitmq.client.impl.AMQChannel;
  * package-private.
  * 
  * We currently just use this to time the quiescing RPC in AMQChannel.
- * 
+ *
+ * Will be removed in next major release.
+ *
+ * @deprecated
  * @see AMQChannel
  */
 
@@ -72,21 +75,27 @@ public class SingleShotLinearTimer {
         public void run() {
             try {
                 long now;
-                while ((now = System.nanoTime() / NANOS_IN_MILLI) < _runTime) {
-                    if (_task == null) break;
+                boolean wasInterrupted = false;
+                try {
+                    while ((now = System.nanoTime() / NANOS_IN_MILLI) < _runTime) {
+                        if (_task == null) break;
 
-                    try {
-                        synchronized(this) {
-                            wait(_runTime - now);
+                        try {
+                            synchronized(this) {
+                                wait(_runTime - now);
+                            }
+                        } catch (InterruptedException e) {
+                            wasInterrupted = true;
                         }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
                     }
+                } finally {
+                    if (wasInterrupted)
+                        Thread.currentThread().interrupt();
                 }
                 
                 Runnable task = _task;
                 if (task != null) {
-                    task.run();                    
+                    task.run();
                 }
 
             } finally {
