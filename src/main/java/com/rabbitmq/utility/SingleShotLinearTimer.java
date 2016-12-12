@@ -31,7 +31,10 @@ import com.rabbitmq.client.impl.AMQChannel;
  * package-private.
  * 
  * We currently just use this to time the quiescing RPC in AMQChannel.
- * 
+ *
+ * Will be removed in next major release.
+ *
+ * @deprecated
  * @see AMQChannel
  */
 

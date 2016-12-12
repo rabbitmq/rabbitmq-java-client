@@ -63,8 +63,9 @@ public class BlockingCell<T> {
     public synchronized T get(long timeout) throws InterruptedException, TimeoutException {
         if (timeout == INFINITY) return get();
 
-        if (timeout < 0)
+        if (timeout < 0) {
             throw new AssertionError("Timeout cannot be less than zero");
+        }
 
         long now = System.nanoTime() / NANOS_IN_MILLI;
         long maxTime = now + timeout;
@@ -94,8 +95,9 @@ public class BlockingCell<T> {
                 }
             }
         } finally {
-            if (wasInterrupted)
+            if (wasInterrupted) {
                 Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -122,8 +124,9 @@ public class BlockingCell<T> {
                 }
             } while ((timeout == INFINITY) || ((now = System.nanoTime() / NANOS_IN_MILLI) < runTime));
         } finally {
-            if (wasInterrupted)
+            if (wasInterrupted) {
                 Thread.currentThread().interrupt();
+            }
         }
 
         throw new TimeoutException();
