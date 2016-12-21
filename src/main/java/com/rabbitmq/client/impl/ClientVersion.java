@@ -16,6 +16,7 @@
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 /**
@@ -28,10 +29,18 @@ public class ClientVersion {
 
     static {
         version = new Properties();
+        InputStream inputStream = ClientVersion.class.getClassLoader()
+                .getResourceAsStream("version.properties");
         try {
-            version.load(ClientVersion.class.getClassLoader()
-              .getResourceAsStream("version.properties"));
+            version.load(inputStream);
         } catch (IOException e) {
+        } finally {
+            try {
+                if(inputStream != null) {
+                    inputStream.close();
+                }
+            } catch (IOException e) {
+            }
         }
 
         VERSION = version.getProperty("com.rabbitmq.client.version",
