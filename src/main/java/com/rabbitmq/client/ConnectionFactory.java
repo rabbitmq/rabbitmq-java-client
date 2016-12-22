@@ -24,11 +24,14 @@ import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.*;
@@ -212,9 +215,8 @@ public class ConnectionFactory implements Cloneable {
      * is left unchanged.
      * @param uri is the AMQP URI containing the data
      */
-    public void setUri(URI uri)
-        throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
-    {
+    public void setUri(URI uri) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException,
+            KeyStoreException {
         if ("amqp".equals(uri.getScheme().toLowerCase())) {
             // nothing special to do
         } else if ("amqps".equals(uri.getScheme().toLowerCase())) {
@@ -271,9 +273,8 @@ public class ConnectionFactory implements Cloneable {
      * hostname are not permitted.
      * @param uriString is the AMQP URI containing the data
      */
-    public void setUri(String uriString)
-        throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
-    {
+    public void setUri(String uriString) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException,
+            KeyStoreException {
         setUri(new URI(uriString));
     }
 
@@ -563,9 +564,7 @@ public class ConnectionFactory implements Cloneable {
      * Convenience method for setting up a SSL socket factory/engine, using
      * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
      */
-    public void useSslProtocol()
-        throws NoSuchAlgorithmException, KeyManagementException
-    {
+    public void useSslProtocol() throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException {
         useSslProtocol(computeDefaultTlsProcotol(SSLContext.getDefault().getSupportedSSLParameters().getProtocols()));
     }
 
@@ -573,10 +572,11 @@ public class ConnectionFactory implements Cloneable {
      * Convenience method for setting up a SSL socket factory/engine, using
      * the supplied protocol and a very trusting TrustManager.
      */
-    public void useSslProtocol(String protocol)
-        throws NoSuchAlgorithmException, KeyManagementException
-    {
-        useSslProtocol(protocol, new NullTrustManager());
+    public void useSslProtocol(String protocol) throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException {
+        TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        factory.init((KeyStore) null);
+        TrustManager[] tms = factory.getTrustManagers();
+        useSslProtocol(protocol, tms[0]);
     }
 
     /**
