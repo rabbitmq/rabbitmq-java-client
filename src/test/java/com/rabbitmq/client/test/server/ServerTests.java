@@ -40,7 +40,7 @@ import org.junit.runners.Suite;
     LoopbackUsers.class,
 	XDeathHeaderGrowth.class,
 	PriorityQueues.class,
-
+	TopicPermissions.class
 })
 public class ServerTests {
 
