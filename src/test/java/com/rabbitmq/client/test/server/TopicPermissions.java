@@ -93,7 +93,7 @@ public class TopicPermissions extends BrokerTestCase {
         try {
             action.call();
         } catch(Exception e) {
-            fail(description + "(" + e.getMessage()+")");
+            fail(description + " (" + e.getMessage()+")");
         }
     }
 
