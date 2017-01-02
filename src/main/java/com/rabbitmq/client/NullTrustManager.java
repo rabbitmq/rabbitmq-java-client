@@ -16,6 +16,8 @@
 
 package com.rabbitmq.client;
 
+import org.slf4j.LoggerFactory;
+
 import java.security.cert.X509Certificate;
 
 import javax.net.ssl.X509TrustManager;
@@ -25,6 +27,15 @@ import javax.net.ssl.X509TrustManager;
  * Trusts every single certificate presented to it.
  */
 public class NullTrustManager implements X509TrustManager {
+
+    public NullTrustManager() {
+        LoggerFactory.getLogger(NullTrustManager.class).warn(
+            "This trust manager trusts every certificate, making peer hostname verification disabled. " +
+            "This is convenient for local development but prone to man-in-the-middle attacks. " +
+            "Please see http://www.rabbitmq.com/ssl.html#validating-cerficates to validate server certificates."
+        );
+    }
+
     /**
      * Doesn't even bother looking at its arguments, simply returns,
      * which makes the check succeed.
