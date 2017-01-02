@@ -576,7 +576,7 @@ public class ConnectionFactory implements Cloneable {
     public void useSslProtocol(String protocol)
         throws NoSuchAlgorithmException, KeyManagementException
     {
-        useSslProtocol(protocol, new NullTrustManager());
+        useSslProtocol(protocol, new TrustEverythingTrustManager());
     }
 
     /**
