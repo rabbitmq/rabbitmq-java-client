@@ -29,9 +29,9 @@ public class TrustEverythingTrustManager implements X509TrustManager {
 
     public TrustEverythingTrustManager() {
         LoggerFactory.getLogger(TrustEverythingTrustManager.class).warn(
-            "This trust manager trusts every certificate, making peer hostname verification disabled. " +
+            "This trust manager trusts every certificate, effectively disabling peer verification. " +
             "This is convenient for local development but prone to man-in-the-middle attacks. " +
-            "Please see http://www.rabbitmq.com/ssl.html#validating-cerficates to validate server certificates."
+            "Please see http://www.rabbitmq.com/ssl.html#validating-cerficates to learn more about peer certificate validation."
         );
     }
 
