@@ -17,6 +17,7 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.tools.Host;
 import org.junit.After;
 import org.junit.Before;
@@ -60,8 +61,15 @@ public class BrokerTestCase {
 
     protected ConnectionFactory newConnectionFactory() {
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+        if(TestUtils.USE_NIO) {
+            connectionFactory.setNioParams(nioParams());
+        }
         connectionFactory.setAutomaticRecoveryEnabled(isAutomaticRecoveryEnabled());
         return connectionFactory;
+    }
+
+    protected NioParams nioParams() {
+        return new NioParams();
     }
 
     protected boolean isAutomaticRecoveryEnabled() {
