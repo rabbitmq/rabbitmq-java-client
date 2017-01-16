@@ -78,6 +78,9 @@ public class NioLoop implements Runnable {
                                 state.getConnection().handleHeartbeatFailure();
                             } catch (Exception e) {
                                 LOGGER.warn("Error after heartbeat failure of connection {}", state.getConnection());
+                            } catch (AssertionError e) {
+                                // see https://github.com/rabbitmq/rabbitmq-java-client/issues/237
+                                LOGGER.warn("Assertion error after heartbeat failure of connection {}", state.getConnection());
                             } finally {
                                 selectionKey.cancel();
                             }
