@@ -280,7 +280,11 @@ public class NioLoop implements Runnable {
 
             @Override
             public void run() {
-                state.getConnection().handleIoError(ex);
+                try {
+                    state.getConnection().handleIoError(ex);
+                } catch(AssertionError e) {
+                    LOGGER.warn("Assertion error during error dispatching to connection: " + e.getMessage());
+                }
             }
         };
         if (executorService() == null) {
