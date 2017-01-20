@@ -23,14 +23,14 @@ These versions can still be used with RabbitMQ server `3.x`.
 <dependency>
     <groupId>com.rabbitmq</groupId>
     <artifactId>amqp-client</artifactId>
-    <version>4.0.1</version>
+    <version>4.0.2</version>
 </dependency>
 ```
 
 ### Gradle
 
 ``` groovy
-compile 'com.rabbitmq:amqp-client:4.0.1'
+compile 'com.rabbitmq:amqp-client:4.0.2'
 ```
 
 #### 3.6.x Series
