@@ -18,12 +18,15 @@ package com.rabbitmq.client.test.functional;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import com.rabbitmq.client.*;
 import org.junit.Test;
 
-import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class NoRequeueOnCancel extends BrokerTestCase
@@ -43,11 +46,16 @@ public class NoRequeueOnCancel extends BrokerTestCase
     {
         channel.basicPublish("", Q, null, "1".getBytes());
 
-        QueueingConsumer c;
-
-        c = new QueueingConsumer(channel);
+        final CountDownLatch latch = new CountDownLatch(1);
+        Consumer c = new DefaultConsumer(channel) {
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                latch.countDown();
+            }
+        };
         String consumerTag = channel.basicConsume(Q, false, c);
-        c.nextDelivery();
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+
         channel.basicCancel(consumerTag);
 
         assertNull(channel.basicGet(Q, true));

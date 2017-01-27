@@ -16,18 +16,18 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.fail;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.test.BrokerTestCase;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import org.junit.Test;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.test.BrokerTestCase;
+import static org.junit.Assert.fail;
 
 /**
  * Test queue auto-delete and exclusive semantics.
@@ -125,7 +125,7 @@ public class QueueLifecycle extends BrokerTestCase {
         channel.queueDeclare(name, false, false, true, null);
         // now it's there
         verifyQueue(name, false, false, true, null);
-        QueueingConsumer consumer = new QueueingConsumer(channel);
+        Consumer consumer = new DefaultConsumer(channel);
         String consumerTag = channel.basicConsume(name, consumer);
         channel.basicCancel(consumerTag);
         // now it's not .. we hope
@@ -143,7 +143,7 @@ public class QueueLifecycle extends BrokerTestCase {
         channel.queueDeclare(name, false, true, false, null);
         // now it's there
         verifyQueue(name, false, true, false, null);
-        QueueingConsumer consumer = new QueueingConsumer(channel);
+        Consumer consumer = new DefaultConsumer(channel);
         String consumerTag = channel.basicConsume(name, consumer);
         channel.basicCancel(consumerTag);
         // and still there, because exclusive no longer implies autodelete

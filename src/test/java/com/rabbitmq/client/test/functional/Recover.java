@@ -23,12 +23,13 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import com.rabbitmq.client.*;
 import org.junit.Test;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class Recover extends BrokerTestCase {
@@ -67,12 +68,20 @@ public class Recover extends BrokerTestCase {
 
     void verifyNoRedeliveryWithAutoAck(RecoverCallback call)
         throws IOException, InterruptedException {
-        QueueingConsumer consumer = new QueueingConsumer(channel);
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<byte[]> bodyReference = new AtomicReference<byte[]>();
+        Consumer consumer = new DefaultConsumer(channel) {
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                bodyReference.set(body);
+                latch.countDown();
+            }
+        };
         channel.basicConsume(queue, true, consumer); // auto ack.
         channel.basicPublish("", queue, new AMQP.BasicProperties.Builder().build(), body);
-        QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertTrue("consumed message body not as sent",
-                   Arrays.equals(body, delivery.getBody()));
+                   Arrays.equals(body, bodyReference.get()));
         call.recover(channel);
         assertNull("should be no message available", channel.basicGet(queue, true));
     }
