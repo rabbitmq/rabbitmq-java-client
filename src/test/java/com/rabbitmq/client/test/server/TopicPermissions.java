@@ -40,8 +40,8 @@ public class TopicPermissions extends BrokerTestCase {
         channel.exchangeDeclare(notProtectedTopic, BuiltinExchangeType.TOPIC);
         channel.exchangeDeclare(noneTopicExchange, BuiltinExchangeType.DIRECT);
 
-        Host.rabbitmqctl("set_topic_permissions -p / guest " + protectedTopic + " \"^a\"");
-        Host.rabbitmqctl("set_topic_permissions -p / guest " + noneTopicExchange + " \"^a\"");
+        Host.rabbitmqctl("set_topic_permissions -p / guest " + protectedTopic + " \"^a\" \"^b\"");
+        Host.rabbitmqctl("set_topic_permissions -p / guest " + noneTopicExchange + " \"^a\" \"^b\"");
     }
 
     @Override
