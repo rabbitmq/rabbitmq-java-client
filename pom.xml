@@ -4,7 +4,7 @@
 
   <groupId>com.rabbitmq</groupId>
   <artifactId>amqp-client</artifactId>
-  <version>4.2.0-SNAPSHOT</version>
+  <version>5.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>RabbitMQ Java Client</name>
@@ -54,13 +54,13 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <slf4j.version>1.7.21</slf4j.version>
+    <slf4j.version>1.7.23</slf4j.version>
     <metrics.version>3.1.2</metrics.version>
-    <logback.version>1.1.7</logback.version>
+    <logback.version>1.2.1</logback.version>
     <commons-cli.version>1.1</commons-cli.version>
     <junit.version>4.12</junit.version>
     <awaitility.version>2.0.0</awaitility.version>
-    <mockito.version>1.10.19</mockito.version>
+    <mockito.version>2.7.9</mockito.version>
 
     <!--
     These groovy scripts are used later in this POM file to generate
@@ -721,7 +721,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>3.0.1</version>
+        <version>3.0.2</version>
       </plugin>
       <plugin>
         <groupId>org.codehaus.gmaven</groupId>
@@ -801,10 +801,10 @@
 
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.5.1</version>
+        <version>3.6.1</version>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>1.8</source>
+          <target>1.8</target>
           <compilerArgs>
             <arg>-Xlint:deprecation</arg>
             <arg>-Xlint:unchecked</arg>
@@ -880,7 +880,7 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
-        <version>2.3.7</version>
+        <version>3.2.0</version>
         <executions>
           <execution>
             <id>bundle-manifest</id>
