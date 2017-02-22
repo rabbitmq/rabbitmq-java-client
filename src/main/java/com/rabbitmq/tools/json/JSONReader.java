@@ -53,14 +53,14 @@ public class JSONReader {
 
     private static final Map<Character, Character> escapes = new HashMap<Character, Character>();
     static {
-        escapes.put(new Character('"'), new Character('"'));
-        escapes.put(new Character('\\'), new Character('\\'));
-        escapes.put(new Character('/'), new Character('/'));
-        escapes.put(new Character('b'), new Character('\b'));
-        escapes.put(new Character('f'), new Character('\f'));
-        escapes.put(new Character('n'), new Character('\n'));
-        escapes.put(new Character('r'), new Character('\r'));
-        escapes.put(new Character('t'), new Character('\t'));
+        escapes.put(Character.valueOf('"'), Character.valueOf('"'));
+        escapes.put(Character.valueOf('\\'), Character.valueOf('\\'));
+        escapes.put(Character.valueOf('/'), Character.valueOf('/'));
+        escapes.put(Character.valueOf('b'), Character.valueOf('\b'));
+        escapes.put(Character.valueOf('f'), Character.valueOf('\f'));
+        escapes.put(Character.valueOf('n'), Character.valueOf('\n'));
+        escapes.put(Character.valueOf('r'), Character.valueOf('\r'));
+        escapes.put(Character.valueOf('t'), Character.valueOf('\t'));
     }
 
     private CharacterIterator it;
@@ -191,9 +191,9 @@ public class JSONReader {
 
         String result = buf.toString();
         try {
-            return new Integer(result);
+            return Integer.valueOf(result);
         } catch (NumberFormatException nfe) {
-            return new Double(result);
+            return Double.valueOf(result);
         }
     }
 
@@ -208,7 +208,7 @@ public class JSONReader {
                 if (c == 'u') {
                     add(unicode());
                 } else {
-                    Object value = escapes.get(new Character(c));
+                    Object value = escapes.get(Character.valueOf(c));
                     if (value != null) {
                         add(((Character) value).charValue());
                     }
