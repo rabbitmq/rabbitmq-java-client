@@ -86,15 +86,15 @@ public class JSONWriter {
     }
 
     public String write(long n) {
-        return write(new Long(n));
+        return write(Long.valueOf(n));
     }
 
     public Object write(double d) {
-        return write(new Double(d));
+        return write(Double.valueOf(d));
     }
 
     public String write(char c) {
-        return write(new Character(c));
+        return write(Character.valueOf(c));
     }
 
     public String write(boolean b) {
