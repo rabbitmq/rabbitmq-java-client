@@ -156,9 +156,9 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
 	    return Boolean.getBoolean(val) ? Boolean.TRUE : Boolean.FALSE;
 	} else if ("num".equals(type)) {
 	    try {
-		return new Integer(val);
+		return Integer.valueOf(val);
 	    } catch (NumberFormatException nfe) {
-		return new Double(val);
+		return Double.valueOf(val);
 	    }
 	} else if ("str".equals(type)) {
 	    return val;
