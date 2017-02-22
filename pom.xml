@@ -60,7 +60,7 @@
     <commons-cli.version>1.1</commons-cli.version>
     <junit.version>4.12</junit.version>
     <awaitility.version>2.0.0</awaitility.version>
-    <mockito.version>1.10.19</mockito.version>
+    <mockito.version>2.7.9</mockito.version>
 
     <!--
     These groovy scripts are used later in this POM file to generate
