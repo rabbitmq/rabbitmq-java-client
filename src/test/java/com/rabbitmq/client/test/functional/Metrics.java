@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
 
-import static org.awaitility.Awaitility.to;
 import static org.awaitility.Awaitility.waitAtMost;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -106,15 +105,15 @@ public class Metrics extends BrokerTestCase {
             assertThat(metrics.getConsumedMessages().getCount(), is(2L+1L));
 
             channel.basicConsume(QUEUE, true, new DefaultConsumer(channel));
-            waitAtMost(timeout()).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(2L+1L+1L));
+            waitAtMost(timeout()).until(new ConsumedMessagesMetricsCallable(metrics), equalTo(2L+1L+1L));
 
             safeClose(connection1);
-            waitAtMost(timeout()).untilCall(to(metrics.getConnections()).getCount(), equalTo(1L));
-            waitAtMost(timeout()).untilCall(to(metrics.getChannels()).getCount(), equalTo(2L));
+            waitAtMost(timeout()).until(new ConnectionsMetricsCallable(metrics), equalTo(1L));
+            waitAtMost(timeout()).until(new ChannelsMetricsCallable(metrics), equalTo(2L));
 
             safeClose(connection2);
-            waitAtMost(timeout()).untilCall(to(metrics.getConnections()).getCount(), equalTo(0L));
-            waitAtMost(timeout()).untilCall(to(metrics.getChannels()).getCount(), equalTo(0L));
+            waitAtMost(timeout()).until(new ConnectionsMetricsCallable(metrics), equalTo(0L));
+            waitAtMost(timeout()).until(new ChannelsMetricsCallable(metrics), equalTo(0L));
 
             assertThat(metrics.getAcknowledgedMessages().getCount(), is(0L));
             assertThat(metrics.getRejectedMessages().getCount(), is(0L));
@@ -192,13 +191,13 @@ public class Metrics extends BrokerTestCase {
                 sendMessage(i%2 == 0 ? channel1 : channel2);
             }
 
-            waitAtMost(timeout()).untilCall(
-                to(metrics.getConsumedMessages()).getCount(),
+            waitAtMost(timeout()).until(
+                new ConsumedMessagesMetricsCallable(metrics),
                 equalTo(alreadySentMessages+nbMessages)
             );
 
-            waitAtMost(timeout()).untilCall(
-                to(metrics.getAcknowledgedMessages()).getCount(),
+            waitAtMost(timeout()).until(
+                new AcknowledgedMessagesMetricsCallable(metrics),
                 equalTo(alreadySentMessages+nbMessages)
             );
 
@@ -296,7 +295,7 @@ public class Metrics extends BrokerTestCase {
             executorService.invokeAll(tasks);
 
             assertThat(metrics.getPublishedMessages().getCount(), is(nbOfMessages));
-            waitAtMost(timeout()).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(nbOfMessages));
+            waitAtMost(timeout()).until(new ConsumedMessagesMetricsCallable(metrics), equalTo(nbOfMessages));
             assertThat(metrics.getAcknowledgedMessages().getCount(), is(0L));
 
             // to remove the listeners
@@ -325,8 +324,8 @@ public class Metrics extends BrokerTestCase {
             executorService.invokeAll(tasks);
 
             assertThat(metrics.getPublishedMessages().getCount(), is(2*nbOfMessages));
-            waitAtMost(timeout()).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(2*nbOfMessages));
-            waitAtMost(timeout()).untilCall(to(metrics.getAcknowledgedMessages()).getCount(), equalTo(nbOfMessages));
+            waitAtMost(timeout()).until(new ConsumedMessagesMetricsCallable(metrics), equalTo(2*nbOfMessages));
+            waitAtMost(timeout()).until(new AcknowledgedMessagesMetricsCallable(metrics), equalTo(nbOfMessages));
 
             // to remove the listeners
             for(int i = 0; i < nbChannels; i++) {
@@ -354,9 +353,9 @@ public class Metrics extends BrokerTestCase {
             executorService.invokeAll(tasks);
 
             assertThat(metrics.getPublishedMessages().getCount(), is(3*nbOfMessages));
-            waitAtMost(timeout()).untilCall(to(metrics.getConsumedMessages()).getCount(), equalTo(3*nbOfMessages));
-            waitAtMost(timeout()).untilCall(to(metrics.getAcknowledgedMessages()).getCount(), equalTo(nbOfMessages));
-            waitAtMost(timeout()).untilCall(to(metrics.getRejectedMessages()).getCount(), equalTo(nbOfMessages));
+            waitAtMost(timeout()).until(new ConsumedMessagesMetricsCallable(metrics), equalTo(3*nbOfMessages));
+            waitAtMost(timeout()).until(new AcknowledgedMessagesMetricsCallable(metrics), equalTo(nbOfMessages));
+            waitAtMost(timeout()).until(new RejectedMessagesMetricsCallable(metrics), equalTo(nbOfMessages));
         } finally {
             for (Connection connection : connections) {
                 safeClose(connection);
@@ -390,7 +389,7 @@ public class Metrics extends BrokerTestCase {
 
             channel.basicPublish("unlikelynameforanexchange", "", null, "msg".getBytes("UTF-8"));
 
-            waitAtMost(timeout()).untilCall(to(metrics.getChannels()).getCount(), is(0L));
+            waitAtMost(timeout()).until(new ChannelsMetricsCallable(metrics), is(0L));
             assertThat(metrics.getConnections().getCount(), is(1L));
         } finally {
             safeClose(connection);
@@ -587,6 +586,89 @@ public class Metrics extends BrokerTestCase {
                 throw new RuntimeException("Error during randomized wait",e);
             }
             getChannel().basicAck(envelope.getDeliveryTag(), multiple);
+        }
+    }
+
+    static abstract class MetricsCallable implements Callable<Long> {
+
+        final StandardMetricsCollector metrics;
+
+        protected MetricsCallable(StandardMetricsCollector metrics) {
+            this.metrics = metrics;
+        }
+
+
+    }
+
+    static class ConnectionsMetricsCallable extends MetricsCallable {
+
+        ConnectionsMetricsCallable(StandardMetricsCollector metrics) {
+            super(metrics);
+        }
+
+        @Override
+        public Long call() throws Exception {
+            return metrics.getConnections().getCount();
+        }
+    }
+
+    static class ChannelsMetricsCallable extends MetricsCallable {
+
+        ChannelsMetricsCallable(StandardMetricsCollector metrics) {
+            super(metrics);
+        }
+
+        @Override
+        public Long call() throws Exception {
+            return metrics.getChannels().getCount();
+        }
+    }
+
+    static class PublishedMessagesMetricsCallable extends MetricsCallable {
+
+        PublishedMessagesMetricsCallable(StandardMetricsCollector metrics) {
+            super(metrics);
+        }
+
+        @Override
+        public Long call() throws Exception {
+            return metrics.getPublishedMessages().getCount();
+        }
+    }
+
+    static class ConsumedMessagesMetricsCallable extends MetricsCallable {
+
+        ConsumedMessagesMetricsCallable(StandardMetricsCollector metrics) {
+            super(metrics);
+        }
+
+        @Override
+        public Long call() throws Exception {
+            return metrics.getConsumedMessages().getCount();
+        }
+    }
+
+    static class AcknowledgedMessagesMetricsCallable extends MetricsCallable {
+
+        AcknowledgedMessagesMetricsCallable(StandardMetricsCollector metrics) {
+            super(metrics);
+        }
+
+        @Override
+        public Long call() throws Exception {
+            return metrics.getAcknowledgedMessages().getCount();
+        }
+    }
+
+    static class RejectedMessagesMetricsCallable extends MetricsCallable {
+
+        RejectedMessagesMetricsCallable(StandardMetricsCollector metrics) {
+            super(metrics);
+        }
+
+        @Override
+        public Long call() throws Exception {
+            return metrics.getRejectedMessages().getCount();
         }
     }
 
