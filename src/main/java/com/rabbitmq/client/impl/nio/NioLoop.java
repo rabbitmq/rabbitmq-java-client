@@ -78,9 +78,6 @@ public class NioLoop implements Runnable {
                                 state.getConnection().handleHeartbeatFailure();
                             } catch (Exception e) {
                                 LOGGER.warn("Error after heartbeat failure of connection {}", state.getConnection());
-                            } catch (AssertionError e) {
-                                // see https://github.com/rabbitmq/rabbitmq-java-client/issues/237
-                                LOGGER.warn("Assertion error after heartbeat failure of connection {}", state.getConnection());
                             } finally {
                                 selectionKey.cancel();
                             }
@@ -276,17 +273,7 @@ public class NioLoop implements Runnable {
         // In case of recovery after the shutdown,
         // the new connection shouldn't be initialized in
         // the NIO thread, to avoid a deadlock.
-        Runnable shutdown = new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    state.getConnection().handleIoError(ex);
-                } catch(AssertionError e) {
-                    LOGGER.warn("Assertion error during error dispatching to connection: " + e.getMessage());
-                }
-            }
-        };
+        Runnable shutdown = () -> state.getConnection().handleIoError(ex);
         if (executorService() == null) {
             String name = "rabbitmq-connection-shutdown-" + state.getConnection();
             Thread shutdownThread = Environment.newThread(threadFactory(), shutdown, name);

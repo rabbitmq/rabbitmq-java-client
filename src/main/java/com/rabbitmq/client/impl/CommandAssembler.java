@@ -159,7 +159,7 @@ final class CommandAssembler {
           case EXPECTING_CONTENT_BODY:    consumeBodyFrame(f);   break;
 
           default:
-              throw new AssertionError("Bad Command State " + this.state);
+              throw new IllegalStateException("Bad Command State " + this.state);
         }
         return isComplete();
     }

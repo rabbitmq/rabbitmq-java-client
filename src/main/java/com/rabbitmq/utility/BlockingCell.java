@@ -64,7 +64,7 @@ public class BlockingCell<T> {
         if (timeout == INFINITY) return get();
 
         if (timeout < 0) {
-            throw new AssertionError("Timeout cannot be less than zero");
+            throw new IllegalArgumentException("Timeout cannot be less than zero");
         }
 
         long now = System.nanoTime() / NANOS_IN_MILLI;
@@ -133,12 +133,12 @@ public class BlockingCell<T> {
     }
 
     /**
-     * Store a value in this BlockingCell, throwing AssertionError if the cell already has a value.
+     * Store a value in this BlockingCell, throwing {@link IllegalStateException} if the cell already has a value.
      * @param newValue the new value to store
      */
     public synchronized void set(T newValue) {
         if (_filled) {
-            throw new AssertionError("BlockingCell can only be set once");
+            throw new IllegalStateException("BlockingCell can only be set once");
         }
         _value = newValue;
         _filled = true;
