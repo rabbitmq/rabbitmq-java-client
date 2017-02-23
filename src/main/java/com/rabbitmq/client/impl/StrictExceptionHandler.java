@@ -36,11 +36,6 @@ public class StrictExceptionHandler extends ForgivingExceptionHandler implements
     }
 
     @Override
-    public void handleFlowListenerException(Channel channel, Throwable exception) {
-        handleChannelKiller(channel, exception, "FlowListener.handleFlow");
-    }
-
-    @Override
     public void handleConfirmListenerException(Channel channel, Throwable exception) {
         handleChannelKiller(channel, exception, "ConfirmListener.handle{N,A}ck");
     }

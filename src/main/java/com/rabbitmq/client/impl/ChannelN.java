@@ -64,8 +64,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /* All listeners collections are in CopyOnWriteArrayList objects */
     /** The ReturnListener collection. */
     private final Collection<ReturnListener> returnListeners = new CopyOnWriteArrayList<ReturnListener>();
-    /** The FlowListener collection. */
-    private final Collection<FlowListener> flowListeners = new CopyOnWriteArrayList<FlowListener>();
     /** The ConfirmListener collection. */
     private final Collection<ConfirmListener> confirmListeners = new CopyOnWriteArrayList<ConfirmListener>();
 
@@ -145,24 +143,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     @Override
     public void clearReturnListeners() {
         returnListeners.clear();
-    }
-
-    @Override
-    @Deprecated
-    public void addFlowListener(FlowListener listener) {
-        flowListeners.add(listener);
-    }
-
-    @Override
-    @Deprecated
-    public boolean removeFlowListener(FlowListener listener) {
-        return flowListeners.remove(listener);
-    }
-
-    @Override
-    @Deprecated
-    public void clearFlowListeners() {
-        flowListeners.clear();
     }
 
     @Override
@@ -353,7 +333,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                     transmit(new Channel.FlowOk(!_blockContent));
                     _channelMutex.notifyAll();
                 }
-                callFlowListeners(command, channelFlow);
                 return true;
             } else if (method instanceof Basic.Ack) {
                 Basic.Ack ack = (Basic.Ack) method;
@@ -466,16 +445,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             }
         } catch (Throwable ex) {
             getConnection().getExceptionHandler().handleReturnListenerException(this, ex);
-        }
-    }
-
-    private void callFlowListeners(@SuppressWarnings("unused") Command command, Channel.Flow channelFlow) {
-        try {
-            for (FlowListener l : this.flowListeners) {
-                l.handleFlow(channelFlow.getActive());
-            }
-        } catch (Throwable ex) {
-            getConnection().getExceptionHandler().handleFlowListenerException(this, ex);
         }
     }
 
@@ -1335,13 +1304,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         return (Confirm.SelectOk)
             exnWrappingRpc(new Confirm.Select(false)).getMethod();
 
-    }
-
-    /** Public API - {@inheritDoc} */
-    @Override
-    @Deprecated
-    public boolean flowBlocked() {
-        return _blockContent;
     }
 
     /** Public API - {@inheritDoc} */

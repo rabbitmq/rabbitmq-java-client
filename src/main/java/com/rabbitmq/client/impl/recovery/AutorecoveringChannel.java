@@ -36,7 +36,6 @@ public class AutorecoveringChannel implements RecoverableChannel {
     private final List<RecoveryListener> recoveryListeners = new CopyOnWriteArrayList<RecoveryListener>();
     private final List<ReturnListener> returnListeners = new CopyOnWriteArrayList<ReturnListener>();
     private final List<ConfirmListener> confirmListeners = new CopyOnWriteArrayList<ConfirmListener>();
-    private final List<FlowListener> flowListeners = new CopyOnWriteArrayList<FlowListener>();
     private final Set<String> consumerTags = Collections.synchronizedSet(new HashSet<String>());
     private int prefetchCountConsumer;
     private int prefetchCountGlobal;
@@ -84,12 +83,6 @@ public class AutorecoveringChannel implements RecoverableChannel {
     }
 
     @Override
-    @Deprecated
-    public boolean flowBlocked() {
-        return delegate.flowBlocked();
-    }
-
-    @Override
     public void abort() throws IOException {
         delegate.abort();
     }
@@ -115,27 +108,6 @@ public class AutorecoveringChannel implements RecoverableChannel {
     public void clearReturnListeners() {
         this.returnListeners.clear();
         delegate.clearReturnListeners();
-    }
-
-    @Override
-    @Deprecated
-    public void addFlowListener(FlowListener listener) {
-        this.flowListeners.add(listener);
-        delegate.addFlowListener(listener);
-    }
-
-    @Override
-    @Deprecated
-    public boolean removeFlowListener(FlowListener listener) {
-        this.flowListeners.remove(listener);
-        return delegate.removeFlowListener(listener);
-    }
-
-    @Override
-    @Deprecated
-    public void clearFlowListeners() {
-        this.flowListeners.clear();
-        delegate.clearFlowListeners();
     }
 
     @Override
@@ -607,7 +579,6 @@ public class AutorecoveringChannel implements RecoverableChannel {
         this.recoverShutdownListeners();
         this.recoverReturnListeners();
         this.recoverConfirmListeners();
-        this.recoverFlowListeners();
         this.recoverState();
         this.notifyRecoveryListenersComplete();
     }
@@ -627,13 +598,6 @@ public class AutorecoveringChannel implements RecoverableChannel {
     private void recoverConfirmListeners() {
         for(ConfirmListener cl : this.confirmListeners) {
             this.delegate.addConfirmListener(cl);
-        }
-    }
-
-    @Deprecated
-    private void recoverFlowListeners() {
-        for(FlowListener fl : this.flowListeners) {
-            this.delegate.addFlowListener(fl);
         }
     }
 
