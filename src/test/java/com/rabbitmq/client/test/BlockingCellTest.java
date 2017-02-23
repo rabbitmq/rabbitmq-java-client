@@ -35,10 +35,10 @@ public class BlockingCellTest
         assertEquals("one", cell.get());
         try {
             cell.set("two");
-        } catch (AssertionError ae) {
+        } catch (IllegalStateException ae) {
             return;
         }
-        fail("Expected AssertionError");
+        fail("Expected IllegalStateException");
     }
 
     @Test public void multiGet()

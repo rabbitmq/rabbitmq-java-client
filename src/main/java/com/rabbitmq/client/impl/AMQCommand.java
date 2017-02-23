@@ -173,11 +173,11 @@ public class AMQCommand implements Command {
         try {
             f.writeTo(new DataOutputStream(s));
         } catch (IOException ioe) {
-            throw new AssertionError("IOException while checking EMPTY_FRAME_SIZE");
+            throw new IllegalStateException("IOException while checking EMPTY_FRAME_SIZE");
         }
         int actualLength = s.toByteArray().length;
         if (EMPTY_FRAME_SIZE != actualLength) {
-            throw new AssertionError("Internal error: expected EMPTY_FRAME_SIZE("
+            throw new IllegalStateException("Internal error: expected EMPTY_FRAME_SIZE("
                     + EMPTY_FRAME_SIZE
                     + ") is not equal to computed value: " + actualLength);
         }
