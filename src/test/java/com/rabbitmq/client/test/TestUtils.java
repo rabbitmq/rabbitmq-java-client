@@ -15,7 +15,10 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+
+import java.io.IOException;
 
 public class TestUtils {
 
@@ -29,6 +32,16 @@ public class TestUtils {
             connectionFactory.useBlockingIo();
         }
         return connectionFactory;
+    }
+
+    public static void close(Connection connection) {
+        if(connection != null) {
+            try {
+                connection.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
 }
