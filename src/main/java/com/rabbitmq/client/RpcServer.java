@@ -16,7 +16,11 @@
 
 package com.rabbitmq.client;
 
+import com.rabbitmq.utility.Utility;
+
 import java.io.IOException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Class which manages a request queue for a simple RPC-style service.
@@ -28,10 +32,10 @@ public class RpcServer {
     /** Queue to receive requests from */
     private final String _queueName;
     /** Boolean controlling the exit from the mainloop. */
-    private boolean _mainloopRunning = true;
+    private volatile boolean _mainloopRunning = true;
 
     /** Consumer attached to our request queue */
-    private QueueingConsumer _consumer;
+    private RpcConsumer _consumer;
 
     /**
      * Creates an RpcServer listening on a temporary exclusive
@@ -80,10 +84,10 @@ public class RpcServer {
      * @throws IOException if an error is encountered
      * @return the newly created and registered consumer
      */
-    protected QueueingConsumer setupConsumer()
+    protected RpcConsumer setupConsumer()
         throws IOException
     {
-        QueueingConsumer consumer = new QueueingConsumer(_channel);
+        RpcConsumer consumer = new DefaultRpcConsumer(_channel);
         _channel.basicConsume(_queueName, consumer);
         return consumer;
     }
@@ -106,7 +110,7 @@ public class RpcServer {
     {
         try {
             while (_mainloopRunning) {
-                QueueingConsumer.Delivery request;
+                Delivery request;
                 try {
                     request = _consumer.nextDelivery();
                 } catch (InterruptedException ie) {
@@ -136,7 +140,7 @@ public class RpcServer {
     /**
      * Private API - Process a single request. Called from mainloop().
      */
-    public void processRequest(QueueingConsumer.Delivery request)
+    public void processRequest(Delivery request)
         throws IOException
     {
         AMQP.BasicProperties requestProperties = request.getProperties();
@@ -157,7 +161,7 @@ public class RpcServer {
      * Lowest-level response method. Calls
      * handleCall(AMQP.BasicProperties,byte[],AMQP.BasicProperties).
      */
-    public byte[] handleCall(QueueingConsumer.Delivery request,
+    public byte[] handleCall(Delivery request,
                              AMQP.BasicProperties replyProperties)
     {
         return handleCall(request.getProperties(),
@@ -191,7 +195,7 @@ public class RpcServer {
      * Lowest-level handler method. Calls
      * handleCast(AMQP.BasicProperties,byte[]).
      */
-    public void handleCast(QueueingConsumer.Delivery request)
+    public void handleCast(Delivery request)
     {
         handleCast(request.getProperties(), request.getBody());
     }
@@ -230,5 +234,143 @@ public class RpcServer {
     public String getQueueName() {
         return _queueName;
     }
+
+    /**
+     * Encapsulates an arbitrary message - simple "bean" holder structure.
+     */
+    public static class Delivery {
+        private final Envelope _envelope;
+        private final AMQP.BasicProperties _properties;
+        private final byte[] _body;
+
+        public Delivery(Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
+            _envelope = envelope;
+            _properties = properties;
+            _body = body;
+        }
+
+        /**
+         * Retrieve the message envelope.
+         * @return the message envelope
+         */
+        public Envelope getEnvelope() {
+            return _envelope;
+        }
+
+        /**
+         * Retrieve the message properties.
+         * @return the message properties
+         */
+        public AMQP.BasicProperties getProperties() {
+            return _properties;
+        }
+
+        /**
+         * Retrieve the message body.
+         * @return the message body
+         */
+        public byte[] getBody() {
+            return _body;
+        }
+    }
+
+    public interface RpcConsumer extends Consumer {
+
+        Delivery nextDelivery() throws InterruptedException, ShutdownSignalException, ConsumerCancelledException;
+
+        String getConsumerTag();
+
+    }
+
+    private static class DefaultRpcConsumer extends DefaultConsumer implements RpcConsumer {
+
+        // Marker object used to signal the queue is in shutdown mode.
+        // It is only there to wake up consumers. The canonical representation
+        // of shutting down is the presence of _shutdown.
+        // Invariant: This is never on _queue unless _shutdown != null.
+        private static final Delivery POISON = new Delivery(null, null, null);
+        private final BlockingQueue<Delivery> _queue;
+        // When this is non-null the queue is in shutdown mode and nextDelivery should
+        // throw a shutdown signal exception.
+        private volatile ShutdownSignalException _shutdown;
+        private volatile ConsumerCancelledException _cancelled;
+
+        public DefaultRpcConsumer(Channel ch) {
+            this(ch, new LinkedBlockingQueue<>());
+        }
+
+        public DefaultRpcConsumer(Channel ch, BlockingQueue<Delivery> q) {
+            super(ch);
+            this._queue = q;
+        }
+
+        @Override
+        public Delivery nextDelivery() throws InterruptedException, ShutdownSignalException, ConsumerCancelledException {
+            return handle(_queue.take());
+        }
+
+        @Override
+        public void handleShutdownSignal(String consumerTag,
+            ShutdownSignalException sig) {
+            _shutdown = sig;
+            _queue.add(POISON);
+        }
+
+        @Override
+        public void handleCancel(String consumerTag) throws IOException {
+            _cancelled = new ConsumerCancelledException();
+            _queue.add(POISON);
+        }
+
+        @Override
+        public void handleDelivery(String consumerTag,
+            Envelope envelope,
+            AMQP.BasicProperties properties,
+            byte[] body)
+            throws IOException {
+            checkShutdown();
+            this._queue.add(new Delivery(envelope, properties, body));
+        }
+
+        /**
+         * Check if we are in shutdown mode and if so throw an exception.
+         */
+        private void checkShutdown() {
+            if (_shutdown != null)
+                throw Utility.fixStackTrace(_shutdown);
+        }
+
+        /**
+         * If delivery is not POISON nor null, return it.
+         * <p/>
+         * If delivery, _shutdown and _cancelled are all null, return null.
+         * <p/>
+         * If delivery is POISON re-insert POISON into the queue and
+         * throw an exception if POISONed for no reason.
+         * <p/>
+         * Otherwise, if we are in shutdown mode or cancelled,
+         * throw a corresponding exception.
+         */
+        private Delivery handle(Delivery delivery) {
+            if (delivery == POISON ||
+                delivery == null && (_shutdown != null || _cancelled != null)) {
+                if (delivery == POISON) {
+                    _queue.add(POISON);
+                    if (_shutdown == null && _cancelled == null) {
+                        throw new IllegalStateException(
+                            "POISON in queue, but null _shutdown and null _cancelled. " +
+                                "This should never happen, please report as a BUG");
+                    }
+                }
+                if (null != _shutdown)
+                    throw Utility.fixStackTrace(_shutdown);
+                if (null != _cancelled)
+                    throw Utility.fixStackTrace(_cancelled);
+            }
+            return delivery;
+        }
+    }
+
+
 }
 
