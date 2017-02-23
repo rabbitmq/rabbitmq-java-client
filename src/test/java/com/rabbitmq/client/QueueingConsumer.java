@@ -26,7 +26,8 @@ import com.rabbitmq.utility.Utility;
 
 /**
  * Convenience class: an implementation of {@link Consumer} with
- * straightforward blocking semantics.
+ * straightforward blocking semantics. It is meant to be using in
+ * tests.
  *
  * Deprecated in favor of {@link DefaultConsumer} (see below for background).
  * Will be removed in next major release.
@@ -87,7 +88,6 @@ import com.rabbitmq.utility.Utility;
  * to extend <code>DefaultConsumer</code> and <code>QueueingConsumer</code>
  * is a lot less relevant.</p>
  *
- * @deprecated
  */
 public class QueueingConsumer extends DefaultConsumer {
     private final BlockingQueue<Delivery> _queue;
