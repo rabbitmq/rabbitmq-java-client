@@ -141,7 +141,7 @@ public interface Channel extends ShutdownNotifier {
      * @see ConfirmListener
      * @see ConfirmCallback
      * @param ackCallback callback on ack
-     * @param nackCallback call on ack
+     * @param nackCallback call on nack (negative ack)
      * @return the listener that wraps the callbacks
      */
     ConfirmListener addConfirmListener(ConfirmCallback ackCallback, ConfirmCallback nackCallback);
