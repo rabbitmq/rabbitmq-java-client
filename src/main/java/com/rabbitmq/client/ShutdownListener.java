@@ -29,6 +29,7 @@ import java.util.EventListener;
  * @see ShutdownNotifier
  * @see ShutdownSignalException
  */
+@FunctionalInterface
 public interface ShutdownListener extends EventListener {
     void shutdownCompleted(ShutdownSignalException cause);
 }

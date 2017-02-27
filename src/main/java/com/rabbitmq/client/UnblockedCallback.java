@@ -18,8 +18,12 @@ package com.rabbitmq.client;
 import java.io.IOException;
 
 /**
- *
+ * Implement this interface in order to be notified of connection unblock events.
+ * Prefer it over {@link BlockedListener} for a lambda-oriented syntax.
+ * @see BlockedListener
+ * @see BlockedCallback
  */
+@FunctionalInterface
 public interface UnblockedCallback {
 
     void handle() throws IOException;

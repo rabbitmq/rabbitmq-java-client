@@ -16,8 +16,16 @@
 package com.rabbitmq.client;
 
 /**
- *
+ * Implement this interface in order to be notified of failed
+ * deliveries when basicPublish is called with "mandatory" or
+ * "immediate" flags set.
+ * Prefer this interface over {@link ReturnListener} for
+ * a simpler, lambda-oriented syntax.
+ * @see Channel#basicPublish
+ * @see ReturnListener
+ * @see Return
  */
+@FunctionalInterface
 public interface ReturnCallback {
 
     void handle(Return returnMessage);

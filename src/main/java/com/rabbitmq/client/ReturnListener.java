@@ -22,6 +22,7 @@ import java.io.IOException;
  * Implement this interface in order to be notified of failed
  * deliveries when basicPublish is called with "mandatory" or
  * "immediate" flags set.
+ * For a lambda-oriented syntax, use {@link ReturnCallback}.
  * @see Channel#basicPublish
  */
 public interface ReturnListener {
