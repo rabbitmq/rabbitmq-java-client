@@ -240,6 +240,17 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
     void addBlockedListener(BlockedListener listener);
 
     /**
+     * Add a lambda-based {@link BlockedListener}.
+     * @see BlockedListener
+     * @see BlockedCallback
+     * @see UnblockedCallback
+     * @param blockedCallback the callback when the connection is blocked
+     * @param unblockedCallback the callback when the connection is unblocked
+     * @return the listener that wraps the callback
+     */
+    BlockedListener addBlockedListener(BlockedCallback blockedCallback, UnblockedCallback unblockedCallback);
+
+    /**
      * Remove a {@link BlockedListener}.
      * @param listener the listener to remove
      * @return <code><b>true</b></code> if the listener was found and removed,

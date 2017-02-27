@@ -108,6 +108,16 @@ public interface Channel extends ShutdownNotifier {
     void addReturnListener(ReturnListener listener);
 
     /**
+     * Add a lambda-based {@link ReturnListener}.
+     * @see ReturnListener
+     * @see ReturnCallback
+     * @see Return
+     * @param returnCallback the callback when the message is returned
+     * @return the listener that wraps the callback
+     */
+    ReturnListener addReturnListener(ReturnCallback returnCallback);
+
+    /**
      * Remove a {@link ReturnListener}.
      * @param listener the listener to remove
      * @return <code><b>true</b></code> if the listener was found and removed,
@@ -125,6 +135,16 @@ public interface Channel extends ShutdownNotifier {
      * @param listener the listener to add
      */
     void addConfirmListener(ConfirmListener listener);
+
+    /**
+     * Add a lambda-based {@link ConfirmListener}.
+     * @see ConfirmListener
+     * @see ConfirmCallback
+     * @param ackCallback callback on ack
+     * @param nackCallback call on nack (negative ack)
+     * @return the listener that wraps the callbacks
+     */
+    ConfirmListener addConfirmListener(ConfirmCallback ackCallback, ConfirmCallback nackCallback);
 
     /**
      * Remove a {@link ConfirmListener}.

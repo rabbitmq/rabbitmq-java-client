@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2017 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -24,12 +24,13 @@ import java.io.IOException;
  * messages lost by the broker.  Note, the lost messages could still
  * have been delivered to consumers, but the broker cannot guarantee
  * this.
- * For a lambda-oriented syntax, use {@link ConfirmCallback}.
+ * Prefer this interface over {@link ConfirmListener} for
+ * a lambda-oriented syntax.
+ * @see ConfirmListener
  */
-public interface ConfirmListener {
-    void handleAck(long deliveryTag, boolean multiple)
-        throws IOException;
+@FunctionalInterface
+public interface ConfirmCallback {
 
-    void handleNack(long deliveryTag, boolean multiple)
-        throws IOException;
+    void handle(long deliveryTag, boolean multiple) throws IOException;
+
 }

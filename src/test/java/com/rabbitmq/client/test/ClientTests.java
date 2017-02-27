@@ -46,7 +46,8 @@ import org.junit.runners.Suite;
     StandardMetricsCollectorTest.class,
     DnsSrvRecordAddressResolverTest.class,
     JavaNioTest.class,
-    RpcTest.class
+    RpcTest.class,
+    LambdaListenerCallbackTest.class
 })
 public class ClientTests {
 

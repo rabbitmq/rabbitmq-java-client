@@ -21,6 +21,8 @@ import java.io.IOException;
 /**
  * Implement this interface in order to be notified of connection block and
  * unblock events.
+ * For a lambda-oriented syntax, use {@link BlockedCallback} and
+ * {@link UnblockedCallback}.
  */
 public interface BlockedListener {
     void handleBlocked(String reason) throws IOException;

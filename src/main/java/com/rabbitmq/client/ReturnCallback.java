@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2017 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -13,23 +13,21 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client;
 
-import java.io.IOException;
-
 /**
- * Implement this interface in order to be notified of Confirm events.
- * Acks represent messages handled successfully; Nacks represent
- * messages lost by the broker.  Note, the lost messages could still
- * have been delivered to consumers, but the broker cannot guarantee
- * this.
- * For a lambda-oriented syntax, use {@link ConfirmCallback}.
+ * Implement this interface in order to be notified of failed
+ * deliveries when basicPublish is called with "mandatory" or
+ * "immediate" flags set.
+ * Prefer this interface over {@link ReturnListener} for
+ * a simpler, lambda-oriented syntax.
+ * @see Channel#basicPublish
+ * @see ReturnListener
+ * @see Return
  */
-public interface ConfirmListener {
-    void handleAck(long deliveryTag, boolean multiple)
-        throws IOException;
+@FunctionalInterface
+public interface ReturnCallback {
 
-    void handleNack(long deliveryTag, boolean multiple)
-        throws IOException;
+    void handle(Return returnMessage);
+
 }
