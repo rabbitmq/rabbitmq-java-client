@@ -1032,6 +1032,24 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     @Override
+    public BlockedListener addBlockedListener(BlockedCallback blockedCallback, UnblockedCallback unblockedCallback) {
+        BlockedListener blockedListener = new BlockedListener() {
+
+            @Override
+            public void handleBlocked(String reason) throws IOException {
+                blockedCallback.handle(reason);
+            }
+
+            @Override
+            public void handleUnblocked() throws IOException {
+                unblockedCallback.handle();
+            }
+        };
+        this.addBlockedListener(blockedListener);
+        return blockedListener;
+    }
+
+    @Override
     public boolean removeBlockedListener(BlockedListener listener) {
         return blockedListeners.remove(listener);
     }

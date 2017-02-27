@@ -26,6 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.ConfirmCallback;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Method;
@@ -136,6 +137,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     @Override
+    public ReturnListener addReturnListener(ReturnCallback returnCallback) {
+        ReturnListener returnListener = (replyCode, replyText, exchange, routingKey, properties, body) -> returnCallback.handle(new Return(
+            replyCode, replyText, exchange, routingKey, properties, body
+        ));
+        this.addReturnListener(returnListener);
+        return returnListener;
+    }
+
+    @Override
     public boolean removeReturnListener(ReturnListener listener) {
         return returnListeners.remove(listener);
     }
@@ -148,6 +158,24 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     @Override
     public void addConfirmListener(ConfirmListener listener) {
         confirmListeners.add(listener);
+    }
+
+    @Override
+    public ConfirmListener addConfirmListener(ConfirmCallback ackCallback, ConfirmCallback nackCallback) {
+        ConfirmListener confirmListener = new ConfirmListener() {
+
+            @Override
+            public void handleAck(long deliveryTag, boolean multiple) throws IOException {
+                ackCallback.handle(deliveryTag, multiple);
+            }
+
+            @Override
+            public void handleNack(long deliveryTag, boolean multiple) throws IOException {
+                nackCallback.handle(deliveryTag, multiple);
+            }
+        };
+        this.addConfirmListener(confirmListener);
+        return confirmListener;
     }
 
     @Override

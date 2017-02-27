@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2007-2017 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -238,6 +238,8 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
      * @param listener the listener to add
      */
     void addBlockedListener(BlockedListener listener);
+
+    BlockedListener addBlockedListener(BlockedCallback blockedCallback, UnblockedCallback unblockedCallback);
 
     /**
      * Remove a {@link BlockedListener}.

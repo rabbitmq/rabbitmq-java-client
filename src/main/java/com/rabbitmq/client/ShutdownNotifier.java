@@ -30,26 +30,26 @@ public interface ShutdownNotifier {
      *
      * @param listener {@link ShutdownListener} to the component
      */
-    public void addShutdownListener(ShutdownListener listener);
+    void addShutdownListener(ShutdownListener listener);
 
     /**
      * Remove shutdown listener for the component.
      *
      * @param listener {@link ShutdownListener} to be removed
      */
-    public void removeShutdownListener(ShutdownListener listener);
+    void removeShutdownListener(ShutdownListener listener);
 
     /**
      * Get the shutdown reason object
      * @return ShutdownSignalException if component is closed, null otherwise
      */
-    public ShutdownSignalException getCloseReason();
+    ShutdownSignalException getCloseReason();
 
     /**
      * Protected API - notify the listeners attached to the component
      * @see com.rabbitmq.client.ShutdownListener
      */
-    public void notifyListeners();
+    void notifyListeners();
 
     /**
      * Determine whether the component is currently open.

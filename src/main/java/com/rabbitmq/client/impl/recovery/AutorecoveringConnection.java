@@ -306,6 +306,24 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         delegate.addBlockedListener(listener);
     }
 
+    @Override
+    public BlockedListener addBlockedListener(BlockedCallback blockedCallback, UnblockedCallback unblockedCallback) {
+        BlockedListener blockedListener = new BlockedListener() {
+
+            @Override
+            public void handleBlocked(String reason) throws IOException {
+                blockedCallback.handle(reason);
+            }
+
+            @Override
+            public void handleUnblocked() throws IOException {
+                unblockedCallback.handle();
+            }
+        };
+        this.addBlockedListener(blockedListener);
+        return blockedListener;
+    }
+
     /**
      * @see Connection#removeBlockedListener(com.rabbitmq.client.BlockedListener)
      */

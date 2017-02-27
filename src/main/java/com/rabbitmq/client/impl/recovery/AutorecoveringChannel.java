@@ -99,6 +99,15 @@ public class AutorecoveringChannel implements RecoverableChannel {
     }
 
     @Override
+    public ReturnListener addReturnListener(ReturnCallback returnCallback) {
+        ReturnListener returnListener = (replyCode, replyText, exchange, routingKey, properties, body) -> returnCallback.handle(new Return(
+            replyCode, replyText, exchange, routingKey, properties, body
+        ));
+        this.addReturnListener(returnListener);
+        return returnListener;
+    }
+
+    @Override
     public boolean removeReturnListener(ReturnListener listener) {
         this.returnListeners.remove(listener);
         return delegate.removeReturnListener(listener);
@@ -114,6 +123,24 @@ public class AutorecoveringChannel implements RecoverableChannel {
     public void addConfirmListener(ConfirmListener listener) {
         this.confirmListeners.add(listener);
         delegate.addConfirmListener(listener);
+    }
+
+    @Override
+    public ConfirmListener addConfirmListener(ConfirmCallback ackCallback, ConfirmCallback nackCallback) {
+        ConfirmListener confirmListener = new ConfirmListener() {
+
+            @Override
+            public void handleAck(long deliveryTag, boolean multiple) throws IOException {
+                ackCallback.handle(deliveryTag, multiple);
+            }
+
+            @Override
+            public void handleNack(long deliveryTag, boolean multiple) throws IOException {
+                nackCallback.handle(deliveryTag, multiple);
+            }
+        };
+        this.addConfirmListener(confirmListener);
+        return confirmListener;
     }
 
     @Override
