@@ -1191,10 +1191,22 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Public API - {@inheritDoc} */
     @Override
+    public String basicConsume(String queue, DeliverCallback deliverCallback, CancelCallback cancelCallback) throws IOException {
+        return basicConsume(queue, consumerFromCallbacks(deliverCallback, cancelCallback));
+    }
+
+    /** Public API - {@inheritDoc} */
+    @Override
     public String basicConsume(String queue, boolean autoAck, Consumer callback)
         throws IOException
     {
         return basicConsume(queue, autoAck, "", callback);
+    }
+
+    /** Public API - {@inheritDoc} */
+    @Override
+    public String basicConsume(String queue, boolean autoAck, DeliverCallback deliverCallback, CancelCallback cancelCallback) throws IOException {
+        return basicConsume(queue, autoAck, "", consumerFromCallbacks(deliverCallback, cancelCallback));
     }
 
     /** Public API - {@inheritDoc} */
@@ -1208,11 +1220,32 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Public API - {@inheritDoc} */
     @Override
+    public String basicConsume(String queue, boolean autoAck, Map<String, Object> arguments, DeliverCallback deliverCallback, CancelCallback cancelCallback)
+        throws IOException {
+        return basicConsume(queue, autoAck, "", false, false, arguments, consumerFromCallbacks(deliverCallback, cancelCallback));
+    }
+
+    /** Public API - {@inheritDoc} */
+    @Override
     public String basicConsume(String queue, boolean autoAck, String consumerTag,
                                Consumer callback)
         throws IOException
     {
         return basicConsume(queue, autoAck, consumerTag, false, false, null, callback);
+    }
+
+    /** Public API - {@inheritDoc} */
+    @Override
+    public String basicConsume(String queue, boolean autoAck, String consumerTag, DeliverCallback deliverCallback, CancelCallback cancelCallback)
+        throws IOException {
+        return basicConsume(queue, autoAck, consumerTag, false, false, null, consumerFromCallbacks(deliverCallback, cancelCallback));
+    }
+
+    /** Public API - {@inheritDoc} */
+    @Override
+    public String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments,
+        DeliverCallback deliverCallback, CancelCallback cancelCallback) throws IOException {
+        return basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, consumerFromCallbacks(deliverCallback, cancelCallback));
     }
 
     /** Public API - {@inheritDoc} */
@@ -1251,6 +1284,33 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         } catch(ShutdownSignalException ex) {
             throw wrap(ex);
         }
+    }
+
+    private Consumer consumerFromCallbacks(final DeliverCallback deliverCallback, final CancelCallback cancelCallback) {
+        return new Consumer() {
+
+            @Override
+            public void handleConsumeOk(String consumerTag) { }
+
+            @Override
+            public void handleCancelOk(String consumerTag) { }
+
+            @Override
+            public void handleCancel(String consumerTag) throws IOException {
+                cancelCallback.handle(consumerTag);
+            }
+
+            @Override
+            public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) { }
+
+            @Override
+            public void handleRecoverOk(String consumerTag) { }
+
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, BasicProperties properties, byte[] body) throws IOException {
+                deliverCallback.handle(consumerTag, new Delivery(envelope, properties, body));
+            }
+        };
     }
 
     /** Public API - {@inheritDoc} */

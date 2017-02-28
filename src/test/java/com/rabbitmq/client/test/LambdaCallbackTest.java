@@ -20,14 +20,25 @@ import com.rabbitmq.client.Connection;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertTrue;
 
-public class LambdaListenerCallbackTest extends BrokerTestCase {
+public class LambdaCallbackTest extends BrokerTestCase {
 
+    String queue;
+
+    @Override
+    protected void createResources() throws IOException, TimeoutException {
+        queue = channel.queueDeclare(UUID.randomUUID().toString(), true, false, false, null).getQueue();
+    }
+
+    @Override
     protected void releaseResources() throws IOException {
+        channel.queueDelete(queue);
         try {
             unblock();
         } catch (InterruptedException e) {
@@ -80,6 +91,22 @@ public class LambdaListenerCallbackTest extends BrokerTestCase {
             Channel ch = connection.createChannel();
             ch.basicPublish("", "", null, "dummy".getBytes());
             assertTrue("Should have been blocked and unblocked", latch.await(10, TimeUnit.SECONDS));
+        }
+    }
+
+    @Test public void basicConsume() throws Exception {
+        final CountDownLatch cancelLatch = new CountDownLatch(1);
+        try(Connection connection = TestUtils.connectionFactory().newConnection()) {
+            final CountDownLatch consumingLatch = new CountDownLatch(1);
+            Channel consumingChannel = connection.createChannel();
+            consumingChannel.basicConsume(queue, true,
+                (consumerTag, delivery) -> consumingLatch.countDown(),
+                consumerTag -> cancelLatch.countDown()
+            );
+            this.channel.basicPublish("", queue, null, "dummy".getBytes());
+            assertTrue("deliver callback should have been called", consumingLatch.await(1, TimeUnit.SECONDS));
+            this.channel.queueDelete(queue);
+            assertTrue("cancel callback should have been called", cancelLatch.await(1, TimeUnit.SECONDS));
         }
     }
 
