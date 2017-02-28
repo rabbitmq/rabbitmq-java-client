@@ -20,6 +20,7 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.tools.Host;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
@@ -37,6 +38,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.*;
+import static org.junit.Assume.*;
 
 public class BrokerTestCase {
 
@@ -81,6 +83,7 @@ public class BrokerTestCase {
 
     @Before public void setUp()
             throws IOException, TimeoutException {
+        assumeTrue(shouldRun());
         openConnection();
         openChannel();
 
@@ -89,14 +92,26 @@ public class BrokerTestCase {
 
     @After public void tearDown()
             throws IOException, TimeoutException {
-        closeChannel();
-        closeConnection();
+        if(shouldRun()) {
+            closeChannel();
+            closeConnection();
 
-        openConnection();
-        openChannel();
-        releaseResources();
-        closeChannel();
-        closeConnection();
+            openConnection();
+            openChannel();
+            releaseResources();
+            closeChannel();
+            closeConnection();
+        }
+    }
+
+    /**
+     * Whether to run the test or not.
+     * Subclasses can check whether some broker features
+     * are available or not, and choose not to run the test.
+     * @return
+     */
+    protected boolean shouldRun() throws IOException {
+        return true;
     }
 
     /**
