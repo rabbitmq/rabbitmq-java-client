@@ -94,10 +94,10 @@ public class LambdaCallbackTest extends BrokerTestCase {
         }
     }
 
-    @Test public void basicConsume() throws Exception {
-        final CountDownLatch cancelLatch = new CountDownLatch(1);
+    @Test public void basicConsumeDeliverCancel() throws Exception {
         try(Connection connection = TestUtils.connectionFactory().newConnection()) {
             final CountDownLatch consumingLatch = new CountDownLatch(1);
+            final CountDownLatch cancelLatch = new CountDownLatch(1);
             Channel consumingChannel = connection.createChannel();
             consumingChannel.basicConsume(queue, true,
                 (consumerTag, delivery) -> consumingLatch.countDown(),
@@ -108,6 +108,21 @@ public class LambdaCallbackTest extends BrokerTestCase {
             this.channel.queueDelete(queue);
             assertTrue("cancel callback should have been called", cancelLatch.await(1, TimeUnit.SECONDS));
         }
+    }
+
+    @Test public void basicConsumeDeliverShutdown() throws Exception {
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
+        try(Connection connection = TestUtils.connectionFactory().newConnection()) {
+            final CountDownLatch consumingLatch = new CountDownLatch(1);
+            Channel consumingChannel = connection.createChannel();
+            consumingChannel.basicConsume(queue, true,
+                (consumerTag, delivery) -> consumingLatch.countDown(),
+                (consumerTag, sig) -> shutdownLatch.countDown()
+            );
+            this.channel.basicPublish("", queue, null, "dummy".getBytes());
+            assertTrue("deliver callback should have been called", consumingLatch.await(1, TimeUnit.SECONDS));
+        }
+        assertTrue("shutdown callback should have been called", shutdownLatch.await(1, TimeUnit.SECONDS));
     }
 
 }

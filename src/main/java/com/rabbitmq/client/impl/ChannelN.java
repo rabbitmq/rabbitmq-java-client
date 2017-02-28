@@ -1192,7 +1192,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Public API - {@inheritDoc} */
     @Override
     public String basicConsume(String queue, DeliverCallback deliverCallback, CancelCallback cancelCallback) throws IOException {
-        return basicConsume(queue, consumerFromCallbacks(deliverCallback, cancelCallback));
+        return basicConsume(queue, consumerFromDeliverCancelCallbacks(deliverCallback, cancelCallback));
+    }
+
+    /** Public API - {@inheritDoc} */
+    @Override
+    public String basicConsume(String queue, DeliverCallback deliverCallback, ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, consumerFromDeliverShutdownCallbacks(deliverCallback, shutdownSignalCallback));
     }
 
     /** Public API - {@inheritDoc} */
@@ -1205,8 +1211,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     /** Public API - {@inheritDoc} */
     @Override
+    public String basicConsume(String queue, boolean autoAck, DeliverCallback deliverCallback, ConsumerShutdownSignalCallback shutdownSignalCallback)
+        throws IOException {
+        return basicConsume(queue, autoAck, "", consumerFromDeliverShutdownCallbacks(deliverCallback, shutdownSignalCallback));
+    }
+
+    /** Public API - {@inheritDoc} */
+    @Override
     public String basicConsume(String queue, boolean autoAck, DeliverCallback deliverCallback, CancelCallback cancelCallback) throws IOException {
-        return basicConsume(queue, autoAck, "", consumerFromCallbacks(deliverCallback, cancelCallback));
+        return basicConsume(queue, autoAck, "", consumerFromDeliverCancelCallbacks(deliverCallback, cancelCallback));
     }
 
     /** Public API - {@inheritDoc} */
@@ -1222,7 +1235,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     @Override
     public String basicConsume(String queue, boolean autoAck, Map<String, Object> arguments, DeliverCallback deliverCallback, CancelCallback cancelCallback)
         throws IOException {
-        return basicConsume(queue, autoAck, "", false, false, arguments, consumerFromCallbacks(deliverCallback, cancelCallback));
+        return basicConsume(queue, autoAck, "", false, false, arguments, consumerFromDeliverCancelCallbacks(deliverCallback, cancelCallback));
+    }
+
+    /** Public API - {@inheritDoc} */
+    @Override
+    public String basicConsume(String queue, boolean autoAck, Map<String, Object> arguments, DeliverCallback deliverCallback,
+        ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, autoAck, "", false, false, arguments, consumerFromDeliverShutdownCallbacks(deliverCallback, shutdownSignalCallback));
     }
 
     /** Public API - {@inheritDoc} */
@@ -1238,14 +1258,28 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     @Override
     public String basicConsume(String queue, boolean autoAck, String consumerTag, DeliverCallback deliverCallback, CancelCallback cancelCallback)
         throws IOException {
-        return basicConsume(queue, autoAck, consumerTag, false, false, null, consumerFromCallbacks(deliverCallback, cancelCallback));
+        return basicConsume(queue, autoAck, consumerTag, false, false, null, consumerFromDeliverCancelCallbacks(deliverCallback, cancelCallback));
+    }
+
+    /** Public API - {@inheritDoc} */
+    @Override
+    public String basicConsume(String queue, boolean autoAck, String consumerTag, DeliverCallback deliverCallback,
+        ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, autoAck, consumerTag, consumerFromDeliverShutdownCallbacks(deliverCallback, shutdownSignalCallback));
     }
 
     /** Public API - {@inheritDoc} */
     @Override
     public String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments,
         DeliverCallback deliverCallback, CancelCallback cancelCallback) throws IOException {
-        return basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, consumerFromCallbacks(deliverCallback, cancelCallback));
+        return basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, consumerFromDeliverCancelCallbacks(deliverCallback, cancelCallback));
+    }
+
+    /** Public API - {@inheritDoc} */
+    @Override
+    public String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments,
+        DeliverCallback deliverCallback, ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, consumerFromDeliverShutdownCallbacks(deliverCallback, shutdownSignalCallback));
     }
 
     /** Public API - {@inheritDoc} */
@@ -1286,7 +1320,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
-    private Consumer consumerFromCallbacks(final DeliverCallback deliverCallback, final CancelCallback cancelCallback) {
+    private Consumer consumerFromDeliverCancelCallbacks(final DeliverCallback deliverCallback, final CancelCallback cancelCallback) {
         return new Consumer() {
 
             @Override
@@ -1302,6 +1336,32 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
             @Override
             public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) { }
+
+            @Override
+            public void handleRecoverOk(String consumerTag) { }
+
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, BasicProperties properties, byte[] body) throws IOException {
+                deliverCallback.handle(consumerTag, new Delivery(envelope, properties, body));
+            }
+        };
+    }
+
+    private Consumer consumerFromDeliverShutdownCallbacks(final DeliverCallback deliverCallback, final ConsumerShutdownSignalCallback shutdownSignalCallback) {
+        return new Consumer() {
+            @Override
+            public void handleConsumeOk(String consumerTag) { }
+
+            @Override
+            public void handleCancelOk(String consumerTag) { }
+
+            @Override
+            public void handleCancel(String consumerTag) throws IOException { }
+
+            @Override
+            public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
+                shutdownSignalCallback.handleShutdownSignal(consumerTag, sig);
+            }
 
             @Override
             public void handleRecoverOk(String consumerTag) { }
