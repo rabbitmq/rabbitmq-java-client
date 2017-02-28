@@ -35,6 +35,11 @@ public class TopicPermissions extends BrokerTestCase {
     String noneTopicExchange = "not.a.topic";
 
     @Override
+    protected boolean shouldRun() throws IOException {
+        return Host.isRabbitMqCtlCommandAvailable("set_topic_permissions");
+    }
+
+    @Override
     protected void createResources() throws IOException, TimeoutException {
         channel.exchangeDeclare(protectedTopic, BuiltinExchangeType.TOPIC);
         channel.exchangeDeclare(notProtectedTopic, BuiltinExchangeType.TOPIC);
