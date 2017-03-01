@@ -451,8 +451,41 @@ public class AutorecoveringChannel implements RecoverableChannel {
     }
 
     @Override
+    public String basicConsume(String queue, DeliverCallback deliverCallback, CancelCallback cancelCallback) throws IOException {
+        return basicConsume(queue, consumerFromDeliverCancelCallbacks(deliverCallback, cancelCallback));
+    }
+
+    @Override
+    public String basicConsume(String queue, DeliverCallback deliverCallback, ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, consumerFromDeliverShutdownCallbacks(deliverCallback, shutdownSignalCallback));
+    }
+
+    @Override
+    public String basicConsume(String queue, DeliverCallback deliverCallback, CancelCallback cancelCallback,
+        ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, false, consumerFromDeliverCancelShutdownCallbacks(deliverCallback, cancelCallback, shutdownSignalCallback));
+    }
+
+    @Override
     public String basicConsume(String queue, boolean autoAck, Consumer callback) throws IOException {
         return basicConsume(queue, autoAck, "", callback);
+    }
+
+    @Override
+    public String basicConsume(String queue, boolean autoAck, DeliverCallback deliverCallback, CancelCallback cancelCallback) throws IOException {
+        return basicConsume(queue, autoAck, "", consumerFromDeliverCancelCallbacks(deliverCallback, cancelCallback));
+    }
+
+    @Override
+    public String basicConsume(String queue, boolean autoAck, DeliverCallback deliverCallback, ConsumerShutdownSignalCallback shutdownSignalCallback)
+        throws IOException {
+        return basicConsume(queue, autoAck, "", consumerFromDeliverShutdownCallbacks(deliverCallback, shutdownSignalCallback));
+    }
+
+    @Override
+    public String basicConsume(String queue, boolean autoAck, DeliverCallback deliverCallback, CancelCallback cancelCallback,
+        ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, autoAck, "", consumerFromDeliverCancelShutdownCallbacks(deliverCallback, cancelCallback, shutdownSignalCallback));
     }
 
     @Override
@@ -461,8 +494,44 @@ public class AutorecoveringChannel implements RecoverableChannel {
     }
 
     @Override
+    public String basicConsume(String queue, boolean autoAck, String consumerTag, DeliverCallback deliverCallback, CancelCallback cancelCallback)
+        throws IOException {
+        return basicConsume(queue, autoAck, consumerTag, false, false, null, consumerFromDeliverCancelCallbacks(deliverCallback, cancelCallback));
+    }
+
+    @Override
+    public String basicConsume(String queue, boolean autoAck, String consumerTag, DeliverCallback deliverCallback,
+        ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, autoAck, consumerTag, false, false, null, consumerFromDeliverShutdownCallbacks(deliverCallback, shutdownSignalCallback));
+    }
+
+    @Override
+    public String basicConsume(String queue, boolean autoAck, String consumerTag, DeliverCallback deliverCallback, CancelCallback cancelCallback,
+        ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, autoAck, consumerTag, false, false, null, consumerFromDeliverCancelShutdownCallbacks(deliverCallback, cancelCallback, shutdownSignalCallback));
+    }
+
+    @Override
     public String basicConsume(String queue, boolean autoAck, Map<String, Object> arguments, Consumer callback) throws IOException {
         return basicConsume(queue, autoAck, "", false, false, arguments, callback);
+    }
+
+    @Override
+    public String basicConsume(String queue, boolean autoAck, Map<String, Object> arguments, DeliverCallback deliverCallback, CancelCallback cancelCallback)
+        throws IOException {
+        return basicConsume(queue, autoAck, "", false, false, arguments, consumerFromDeliverCancelCallbacks(deliverCallback, cancelCallback));
+    }
+
+    @Override
+    public String basicConsume(String queue, boolean autoAck, Map<String, Object> arguments, DeliverCallback deliverCallback,
+        ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, autoAck, "", false, false, arguments, consumerFromDeliverShutdownCallbacks(deliverCallback, shutdownSignalCallback));
+    }
+
+    @Override
+    public String basicConsume(String queue, boolean autoAck, Map<String, Object> arguments, DeliverCallback deliverCallback, CancelCallback cancelCallback,
+        ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, autoAck, "", false, false, arguments, consumerFromDeliverCancelShutdownCallbacks(deliverCallback, cancelCallback, shutdownSignalCallback));
     }
 
     @Override
@@ -470,6 +539,105 @@ public class AutorecoveringChannel implements RecoverableChannel {
         final String result = delegate.basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, callback);
         recordConsumer(result, queue, autoAck, exclusive, arguments, callback);
         return result;
+    }
+
+    @Override
+    public String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments,
+        DeliverCallback deliverCallback, CancelCallback cancelCallback) throws IOException {
+        return basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, consumerFromDeliverCancelCallbacks(deliverCallback, cancelCallback));
+    }
+
+    @Override
+    public String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments,
+        DeliverCallback deliverCallback, ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, consumerFromDeliverShutdownCallbacks(deliverCallback, shutdownSignalCallback));
+    }
+
+    @Override
+    public String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments,
+        DeliverCallback deliverCallback, CancelCallback cancelCallback, ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException {
+        return basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, consumerFromDeliverCancelShutdownCallbacks(deliverCallback, cancelCallback, shutdownSignalCallback));
+    }
+
+    private Consumer consumerFromDeliverCancelCallbacks(final DeliverCallback deliverCallback, final CancelCallback cancelCallback) {
+        return new Consumer() {
+
+            @Override
+            public void handleConsumeOk(String consumerTag) { }
+
+            @Override
+            public void handleCancelOk(String consumerTag) { }
+
+            @Override
+            public void handleCancel(String consumerTag) throws IOException {
+                cancelCallback.handle(consumerTag);
+            }
+
+            @Override
+            public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) { }
+
+            @Override
+            public void handleRecoverOk(String consumerTag) { }
+
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                deliverCallback.handle(consumerTag, new Delivery(envelope, properties, body));
+            }
+        };
+    }
+
+    private Consumer consumerFromDeliverShutdownCallbacks(final DeliverCallback deliverCallback, final ConsumerShutdownSignalCallback shutdownSignalCallback) {
+        return new Consumer() {
+            @Override
+            public void handleConsumeOk(String consumerTag) { }
+
+            @Override
+            public void handleCancelOk(String consumerTag) { }
+
+            @Override
+            public void handleCancel(String consumerTag) throws IOException { }
+
+            @Override
+            public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
+                shutdownSignalCallback.handleShutdownSignal(consumerTag, sig);
+            }
+
+            @Override
+            public void handleRecoverOk(String consumerTag) { }
+
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                deliverCallback.handle(consumerTag, new Delivery(envelope, properties, body));
+            }
+        };
+    }
+
+    private Consumer consumerFromDeliverCancelShutdownCallbacks(final DeliverCallback deliverCallback, final CancelCallback cancelCallback, final ConsumerShutdownSignalCallback shutdownSignalCallback) {
+        return new Consumer() {
+            @Override
+            public void handleConsumeOk(String consumerTag) { }
+
+            @Override
+            public void handleCancelOk(String consumerTag) { }
+
+            @Override
+            public void handleCancel(String consumerTag) throws IOException {
+                cancelCallback.handle(consumerTag);
+            }
+
+            @Override
+            public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
+                shutdownSignalCallback.handleShutdownSignal(consumerTag, sig);
+            }
+
+            @Override
+            public void handleRecoverOk(String consumerTag) { }
+
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                deliverCallback.handle(consumerTag, new Delivery(envelope, properties, body));
+            }
+        };
     }
 
     @Override

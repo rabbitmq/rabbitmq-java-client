@@ -33,6 +33,9 @@ import java.io.IOException;
  * because this will delay dispatch of messages to other {@link Consumer}s on the same
  * {@link Channel}.
  *
+ * For a lambda-oriented syntax, use {@link DeliverCallback},
+ * {@link CancelCallback}, and {@link ConsumerShutdownSignalCallback}.
+ *
  * @see Channel#basicConsume(String, boolean, String, boolean, boolean, java.util.Map, Consumer)
  * @see Channel#basicCancel
  */
