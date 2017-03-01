@@ -26,6 +26,7 @@ import java.util.Map;
  * @see ConsumerShutdownSignalCallback
  * @see Channel#basicConsume(String, boolean, String, boolean, boolean, Map, DeliverCallback, CancelCallback)
  * @see Channel#basicConsume(String, boolean, String, boolean, boolean, Map, DeliverCallback, ConsumerShutdownSignalCallback)
+ * @see Channel#basicConsume(String, boolean, String, boolean, boolean, Map, DeliverCallback, CancelCallback, ConsumerShutdownSignalCallback)
  * @since 5.0
  */
 @FunctionalInterface

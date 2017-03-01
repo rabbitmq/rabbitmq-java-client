@@ -125,4 +125,22 @@ public class LambdaCallbackTest extends BrokerTestCase {
         assertTrue("shutdown callback should have been called", shutdownLatch.await(1, TimeUnit.SECONDS));
     }
 
+    @Test public void basicConsumeCancelDeliverShutdown() throws Exception {
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
+        try(Connection connection = TestUtils.connectionFactory().newConnection()) {
+            final CountDownLatch consumingLatch = new CountDownLatch(1);
+            Channel consumingChannel = connection.createChannel();
+            // not both cancel and shutdown callback can be called on the same consumer
+            // testing just shutdown
+            consumingChannel.basicConsume(queue, true,
+                (consumerTag, delivery) -> consumingLatch.countDown(),
+                (consumerTag) -> { },
+                (consumerTag, sig) -> shutdownLatch.countDown()
+            );
+            this.channel.basicPublish("", queue, null, "dummy".getBytes());
+            assertTrue("deliver callback should have been called", consumingLatch.await(1, TimeUnit.SECONDS));
+        }
+        assertTrue("shutdown callback should have been called", shutdownLatch.await(1, TimeUnit.SECONDS));
+    }
+
 }
