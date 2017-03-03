@@ -235,45 +235,6 @@ public class RpcServer {
         return _queueName;
     }
 
-    /**
-     * Encapsulates an arbitrary message - simple "bean" holder structure.
-     */
-    public static class Delivery {
-        private final Envelope _envelope;
-        private final AMQP.BasicProperties _properties;
-        private final byte[] _body;
-
-        public Delivery(Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
-            _envelope = envelope;
-            _properties = properties;
-            _body = body;
-        }
-
-        /**
-         * Retrieve the message envelope.
-         * @return the message envelope
-         */
-        public Envelope getEnvelope() {
-            return _envelope;
-        }
-
-        /**
-         * Retrieve the message properties.
-         * @return the message properties
-         */
-        public AMQP.BasicProperties getProperties() {
-            return _properties;
-        }
-
-        /**
-         * Retrieve the message body.
-         * @return the message body
-         */
-        public byte[] getBody() {
-            return _body;
-        }
-    }
-
     public interface RpcConsumer extends Consumer {
 
         Delivery nextDelivery() throws InterruptedException, ShutdownSignalException, ConsumerCancelledException;
