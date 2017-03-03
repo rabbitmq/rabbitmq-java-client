@@ -772,8 +772,8 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     void maybeDeleteRecordedAutoDeleteQueue(String queue) {
-        synchronized (this.recordedQueues) {
-            synchronized (this.consumers) {
+        synchronized (this.consumers) {
+            synchronized (this.recordedQueues) {
                 if(!hasMoreConsumersOnQueue(this.consumers.values(), queue)) {
                     RecordedQueue q = this.recordedQueues.get(queue);
                     // last consumer on this connection is gone, remove recorded queue
@@ -787,8 +787,8 @@ public class AutorecoveringConnection implements Connection, Recoverable, Networ
     }
 
     void maybeDeleteRecordedAutoDeleteExchange(String exchange) {
-        synchronized (this.recordedExchanges) {
-            synchronized (this.consumers) {
+        synchronized (this.consumers) {
+            synchronized (this.recordedExchanges) {
                 if(!hasMoreDestinationsBoundToExchange(Utility.copy(this.recordedBindings), exchange)) {
                     RecordedExchange x = this.recordedExchanges.get(exchange);
                     // last binding where this exchange is the source is gone, remove recorded exchange
