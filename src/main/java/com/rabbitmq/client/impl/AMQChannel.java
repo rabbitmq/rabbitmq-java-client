@@ -17,6 +17,7 @@
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.*;
@@ -58,7 +59,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     private AMQCommand _command = new AMQCommand();
 
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
-    private RpcContinuation _activeRpc = null;
+    private RpcWrapper _activeRpc = null;
 
     /** Whether transmission of content-bearing methods should be blocked */
     public volatile boolean _blockContent = false;
@@ -135,6 +136,20 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
+    public CompletableFuture<Command> exnWrappingAsyncRpc(Method m)
+        throws IOException
+    {
+        try {
+            return privateAsyncRpc(m);
+        } catch (AlreadyClosedException ace) {
+            // Do not wrap it since it means that connection/channel
+            // was closed in some action in the past
+            throw ace;
+        } catch (ShutdownSignalException ex) {
+            throw wrap(ex);
+        }
+    }
+
     /**
      * Private API - handle a command which has been assembled
      * @throws IOException if there's any problem
@@ -154,10 +169,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         if (!processAsync(command)) {
             // The filter decided not to handle/consume the command,
             // so it must be some reply to an earlier RPC.
-            RpcContinuation nextOutstandingRpc = nextOutstandingRpc();
+            RpcWrapper nextOutstandingRpc = nextOutstandingRpc();
             // the outstanding RPC can be null when calling Channel#asyncRpc
             if(nextOutstandingRpc != null) {
-                nextOutstandingRpc.handleCommand(command);
+                nextOutstandingRpc.complete(command);
                 markRpcFinished();
             }
         }
@@ -177,7 +192,24 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             if (waitClearedInterruptStatus) {
                 Thread.currentThread().interrupt();
             }
-            _activeRpc = k;
+            _activeRpc = new RpcContinuationRpcWrapper(k);
+        }
+    }
+
+    public void enqueueAsyncRpc(CompletableFuture<Command> future) {
+        synchronized (_channelMutex) {
+            boolean waitClearedInterruptStatus = false;
+            while (_activeRpc != null) {
+                try {
+                    _channelMutex.wait();
+                } catch (InterruptedException e) {
+                    waitClearedInterruptStatus = true;
+                }
+            }
+            if (waitClearedInterruptStatus) {
+                Thread.currentThread().interrupt();
+            }
+            _activeRpc = new CompletableFutureRpcWrapper(future);
         }
     }
 
@@ -188,10 +220,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public RpcContinuation nextOutstandingRpc()
+    public RpcWrapper nextOutstandingRpc()
     {
         synchronized (_channelMutex) {
-            RpcContinuation result = _activeRpc;
+            RpcWrapper result = _activeRpc;
             _activeRpc = null;
             _channelMutex.notifyAll();
             return result;
@@ -255,6 +287,26 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
+    private CompletableFuture<Command> privateAsyncRpc(Method m)
+        throws IOException, ShutdownSignalException
+    {
+        SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
+        CompletableFuture<Command> future = new CompletableFuture<>();
+        asyncRpc(m, future);
+        // At this point, the request method has been sent, and we
+        // should wait for the reply to arrive.
+        //
+        // Calling getReply() on the continuation puts us to sleep
+        // until the connection's reader-thread throws the reply over
+        // the fence or the RPC times out (if enabled)
+
+        // TODO clean in case of error, timeout
+        //                    nextOutstandingRpc();
+        //                    markRpcFinished();
+
+        return future;
+    }
+
     private AMQCommand privateRpc(Method m, int timeout)
             throws IOException, ShutdownSignalException, TimeoutException {
         SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
@@ -277,6 +329,24 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     {
         synchronized (_channelMutex) {
             enqueueRpc(k);
+            quiescingTransmit(m);
+        }
+    }
+
+    public void asyncRpc(Method m, CompletableFuture<Command> future)
+        throws IOException
+    {
+        synchronized (_channelMutex) {
+            ensureIsOpen();
+            quiescingAsyncRpc(m, future);
+        }
+    }
+
+    public void quiescingAsyncRpc(Method m, CompletableFuture<Command> future)
+        throws IOException
+    {
+        synchronized (_channelMutex) {
+            enqueueAsyncRpc(future);
             quiescingTransmit(m);
         }
     }
@@ -321,9 +391,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     public void notifyOutstandingRpc(ShutdownSignalException signal) {
-        RpcContinuation k = nextOutstandingRpc();
+        RpcWrapper k = nextOutstandingRpc();
         if (k != null) {
-            k.handleShutdownSignal(signal);
+            k.shutdown(signal);
         }
     }
 

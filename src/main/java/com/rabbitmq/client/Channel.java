@@ -17,6 +17,7 @@ package com.rabbitmq.client;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -1361,5 +1362,7 @@ public interface Channel extends ShutdownNotifier {
      * @throws IOException Problem transmitting method.
      */
     long consumerCount(String queue) throws IOException;
+
+    CompletableFuture<Command> asyncCompletableRpc(Method method) throws IOException;
 
 }
