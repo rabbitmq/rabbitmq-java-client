@@ -16,7 +16,6 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Command;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.impl.AMQImpl;
@@ -26,7 +25,10 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
 
@@ -35,46 +37,73 @@ public class ChannelAsyncCompletableFutureTest extends BrokerTestCase {
     ExecutorService executor;
 
     String queue;
+    String exchange;
 
     @Before public void init() {
-        executor = Executors.newSingleThreadExecutor();
+        executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         queue = UUID.randomUUID().toString();
+        exchange = UUID.randomUUID().toString();
     }
 
     @After public void tearDown() throws IOException {
         executor.shutdownNow();
         channel.queueDelete(queue);
+        channel.exchangeDelete(exchange);
     }
 
     @Test
     public void async() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        AMQP.Queue.Declare method = new AMQImpl.Queue.Declare.Builder()
+        AMQP.Queue.Declare queueDeclare = new AMQImpl.Queue.Declare.Builder()
             .queue(queue)
             .durable(true)
             .exclusive(false)
             .autoDelete(false)
             .arguments(null)
             .build();
-        CompletableFuture<Command> future = channel.asyncCompletableRpc(method);
-        future.thenAcceptAsync(action -> {
-            try {
-                channel.basicPublish("", queue, null, "dummy".getBytes());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }, executor).thenAccept((whatever) -> {
-            try {
-                channel.basicConsume(queue, true, new DefaultConsumer(channel) {
-                    @Override
-                    public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-                        latch.countDown();
-                    }
-                });
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+
+        channel.asyncCompletableRpc(queueDeclare)
+            .thenComposeAsync(action -> {
+                try {
+                    return channel.asyncCompletableRpc(new AMQImpl.Exchange.Declare.Builder()
+                        .exchange(exchange)
+                        .type("fanout")
+                        .durable(false)
+                        .autoDelete(false)
+                        .arguments(null)
+                        .build());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }, executor).thenComposeAsync(action -> {
+                try {
+                    return channel.asyncCompletableRpc(new AMQImpl.Queue.Bind.Builder()
+                        .queue(queue)
+                        .exchange(exchange)
+                        .routingKey("")
+                        .arguments(null)
+                        .build());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }, executor).thenAcceptAsync(action -> {
+                try {
+                    channel.basicPublish("", queue, null, "dummy".getBytes());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }, executor).thenAcceptAsync((whatever) -> {
+                try {
+                    channel.basicConsume(queue, true, new DefaultConsumer(channel) {
+                        @Override
+                        public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                            latch.countDown();
+                        }
+                    });
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+        }, executor);
         assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
