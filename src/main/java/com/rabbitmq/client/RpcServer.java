@@ -148,10 +148,10 @@ public class RpcServer {
         String replyTo = requestProperties.getReplyTo();
         if (correlationId != null && replyTo != null)
         {
-            AMQP.BasicProperties replyProperties
-                = new AMQP.BasicProperties.Builder().correlationId(correlationId).build();
-            byte[] replyBody = handleCall(request, replyProperties);
-            _channel.basicPublish("", replyTo, replyProperties, replyBody);
+            AMQP.BasicProperties.Builder replyPropertiesBuilder
+                = new AMQP.BasicProperties.Builder().correlationId(correlationId);
+            byte[] replyBody = handleCall(request, replyPropertiesBuilder);
+            _channel.basicPublish("", replyTo, replyPropertiesBuilder.build(), replyBody);
         } else {
             handleCast(request);
         }
@@ -159,25 +159,25 @@ public class RpcServer {
 
     /**
      * Lowest-level response method. Calls
-     * handleCall(AMQP.BasicProperties,byte[],AMQP.BasicProperties).
+     * handleCall(AMQP.BasicProperties,byte[],AMQP.BasicProperties.Builder).
      */
     public byte[] handleCall(Delivery request,
-                             AMQP.BasicProperties replyProperties)
+                             AMQP.BasicProperties.Builder replyPropertiesBuilder)
     {
         return handleCall(request.getProperties(),
                           request.getBody(),
-                          replyProperties);
+                          replyPropertiesBuilder);
     }
 
     /**
      * Mid-level response method. Calls
-     * handleCall(byte[],AMQP.BasicProperties).
+     * handleCall(byte[],AMQP.BasicProperties.Builder).
      */
     public byte[] handleCall(AMQP.BasicProperties requestProperties,
                              byte[] requestBody,
-                             AMQP.BasicProperties replyProperties)
+                             AMQP.BasicProperties.Builder replyPropertiesBuilder)
     {
-        return handleCall(requestBody, replyProperties);
+        return handleCall(requestBody, replyPropertiesBuilder);
     }
 
     /**
@@ -186,7 +186,7 @@ public class RpcServer {
      * methods) in subclasses.
      */
     public byte[] handleCall(byte[] requestBody,
-                             AMQP.BasicProperties replyProperties)
+                             AMQP.BasicProperties.Builder replyPropertiesBuilder)
     {
         return new byte[0];
     }
