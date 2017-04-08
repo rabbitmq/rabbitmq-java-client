@@ -98,7 +98,7 @@ public class JsonRpcServer extends StringRpcServer {
      * Override our superclass' method, dispatching to doCall.
      */
     @Override
-    public String handleStringCall(String requestBody, AMQP.BasicProperties replyProperties)
+    public String handleStringCall(String requestBody, AMQP.BasicProperties.Builder replyPropertiesBuilder)
     {
         String replyBody = doCall(requestBody);
         return replyBody;
