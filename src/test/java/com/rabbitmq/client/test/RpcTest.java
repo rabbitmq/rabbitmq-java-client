@@ -78,7 +78,7 @@ public class RpcTest {
         }
 
         @Override
-        public byte[] handleCall(Delivery request, AMQP.BasicProperties replyProperties) {
+        public byte[] handleCall(Delivery request, AMQP.BasicProperties.Builder replyPropertiesBuilder) {
             String input = new String(request.getBody());
             return ("*** " + input + " ***").getBytes();
         }
