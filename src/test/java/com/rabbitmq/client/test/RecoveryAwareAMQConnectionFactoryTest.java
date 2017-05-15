@@ -16,16 +16,19 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.AddressResolver;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MetricsCollector;
-import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
+import com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnection;
+import com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnectionFactory;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeoutException;
@@ -33,33 +36,32 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.*;
 
-public class ConnectionFactoryTest {
+public class RecoveryAwareAMQConnectionFactoryTest {
 
     // see https://github.com/rabbitmq/rabbitmq-java-client/issues/262
-    @Test public void tryNextAddressIfTimeoutExceptionNoAutoRecovery() throws IOException, TimeoutException {
-        final AMQConnection connectionThatThrowsTimeout = mock(AMQConnection.class);
-        final AMQConnection connectionThatSucceeds = mock(AMQConnection.class);
-        final Queue<AMQConnection> connections = new ArrayBlockingQueue<AMQConnection>(10);
+    @Test public void tryNextAddressIfTimeoutException() throws IOException, TimeoutException {
+        final RecoveryAwareAMQConnection connectionThatThrowsTimeout = mock(RecoveryAwareAMQConnection.class);
+        final RecoveryAwareAMQConnection connectionThatSucceeds = mock(RecoveryAwareAMQConnection.class);
+        final Queue<RecoveryAwareAMQConnection> connections = new ArrayBlockingQueue<RecoveryAwareAMQConnection>(10);
         connections.add(connectionThatThrowsTimeout);
         connections.add(connectionThatSucceeds);
-        ConnectionFactory connectionFactory = new ConnectionFactory() {
-
+        AddressResolver addressResolver = new AddressResolver() {
             @Override
-            protected AMQConnection createConnection(ConnectionParams params, FrameHandler frameHandler, MetricsCollector metricsCollector) {
-                return connections.poll();
-            }
-
-            @Override
-            protected synchronized FrameHandlerFactory createFrameHandlerFactory() throws IOException {
-                return mock(FrameHandlerFactory.class);
+            public List<Address> getAddresses() throws IOException {
+                return Arrays.asList(new Address("host1"), new Address("host2"));
             }
         };
-        connectionFactory.setAutomaticRecoveryEnabled(false);
+        RecoveryAwareAMQConnectionFactory connectionFactory = new RecoveryAwareAMQConnectionFactory(
+            new ConnectionParams(), mock(FrameHandlerFactory.class), addressResolver
+        ) {
+            @Override
+            protected RecoveryAwareAMQConnection createConnection(ConnectionParams params, FrameHandler handler, MetricsCollector metricsCollector) {
+                return connections.poll();
+            }
+        };
         doThrow(TimeoutException.class).when(connectionThatThrowsTimeout).start();
         doNothing().when(connectionThatSucceeds).start();
-        Connection returnedConnection = connectionFactory.newConnection(
-            new Address[] { new Address("host1"), new Address("host2") }
-        );
+        Connection returnedConnection = connectionFactory.newConnection();
         assertSame(connectionThatSucceeds, returnedConnection);
     }
 
