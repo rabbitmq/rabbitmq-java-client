@@ -901,19 +901,28 @@ public class ConnectionFactory implements Cloneable {
             return conn;
         } else {
             List<Address> addrs = addressResolver.getAddresses();
-            IOException lastException = null;
+            Exception lastException = null;
             for (Address addr : addrs) {
                 try {
                     FrameHandler handler = fhFactory.create(addr);
-                    AMQConnection conn = new AMQConnection(params, handler, metricsCollector);
+                    AMQConnection conn = createConnection(params, handler, metricsCollector);
                     conn.start();
                     this.metricsCollector.newConnection(conn);
                     return conn;
                 } catch (IOException e) {
                     lastException = e;
+                } catch (TimeoutException te) {
+                    lastException = te;
                 }
             }
-            throw (lastException != null) ? lastException : new IOException("failed to connect");
+            if (lastException != null) {
+                if (lastException instanceof IOException) {
+                    throw (IOException) lastException;
+                } else if (lastException instanceof TimeoutException) {
+                    throw (TimeoutException) lastException;
+                }
+            }
+            throw new IOException("failed to connect");
         }
     }
 
@@ -938,6 +947,10 @@ public class ConnectionFactory implements Cloneable {
         result.setShutdownExecutor(shutdownExecutor);
         result.setHeartbeatExecutor(heartbeatExecutor);
         return result;
+    }
+
+    protected AMQConnection createConnection(ConnectionParams params, FrameHandler frameHandler, MetricsCollector metricsCollector) {
+        return new AMQConnection(params, frameHandler, metricsCollector);
     }
 
     /**
