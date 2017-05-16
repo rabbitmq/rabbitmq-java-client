@@ -37,7 +37,7 @@ public class StringRpcServer extends RpcServer {
      */
     @Override
     @SuppressWarnings("unused")
-    public byte[] handleCall(byte[] requestBody, AMQP.BasicProperties replyProperties)
+    public byte[] handleCall(byte[] requestBody, AMQP.BasicProperties.Builder replyPropertiesBuilder)
     {
         String request;
         try {
@@ -45,7 +45,7 @@ public class StringRpcServer extends RpcServer {
         } catch (IOException _e) {
             request = new String(requestBody);
         }
-        String reply = handleStringCall(request, replyProperties);
+        String reply = handleStringCall(request, replyPropertiesBuilder);
         try {
             return reply.getBytes(STRING_ENCODING);
         } catch (IOException _e) {
@@ -56,7 +56,7 @@ public class StringRpcServer extends RpcServer {
     /**
      * Delegates to handleStringCall(String).
      */
-    public String handleStringCall(String request, AMQP.BasicProperties replyProperties)
+    public String handleStringCall(String request, AMQP.BasicProperties.Builder replyPropertiesBuilder)
     {
         return handleStringCall(request);
     }

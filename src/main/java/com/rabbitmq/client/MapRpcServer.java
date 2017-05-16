@@ -44,10 +44,10 @@ public class MapRpcServer extends RpcServer {
      * Overridden to delegate to handleMapCall.
      */
     @Override
-    public byte[] handleCall(byte[] requestBody, AMQP.BasicProperties replyProperties)
+    public byte[] handleCall(byte[] requestBody, AMQP.BasicProperties.Builder replyPropertiesBuilder)
     {
         try {
-            return encode(handleMapCall(decode(requestBody), replyProperties));
+            return encode(handleMapCall(decode(requestBody), replyPropertiesBuilder));
         } catch (IOException ioe) {
             return new byte[0];
         }
@@ -78,7 +78,7 @@ public class MapRpcServer extends RpcServer {
      * Delegates to {@link MapRpcServer#handleMapCall(Map)}.
      */
     public Map<String, Object> handleMapCall(Map<String, Object> request,
-                                             AMQP.BasicProperties replyProperties)
+                                             AMQP.BasicProperties.Builder replyPropertiesBuilder)
     {
         return handleMapCall(request);
     }
