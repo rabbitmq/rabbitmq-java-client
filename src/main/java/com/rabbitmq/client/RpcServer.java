@@ -146,9 +146,9 @@ public class RpcServer {
         {
             AMQP.BasicProperties.Builder replyPropertiesBuilder
                 = new AMQP.BasicProperties.Builder().correlationId(correlationId);
-            AMQP.BasicProperties replyProperties = preProcessReplyProperties(request, replyPropertiesBuilder);
+            AMQP.BasicProperties replyProperties = preprocessReplyProperties(request, replyPropertiesBuilder);
             byte[] replyBody = handleCall(request, replyProperties);
-            replyProperties = postProcessReplyProperties(request, replyProperties.builder());
+            replyProperties = postprocessReplyProperties(request, replyProperties.builder());
             _channel.basicPublish("", replyTo, replyProperties, replyBody);
         } else {
             handleCast(request);
@@ -196,7 +196,7 @@ public class RpcServer {
      * @param builder the reply properties builder
      * @return the properties to pass in to the handling call
      */
-    protected AMQP.BasicProperties preProcessReplyProperties(QueueingConsumer.Delivery request, AMQP.BasicProperties.Builder builder) {
+    protected AMQP.BasicProperties preprocessReplyProperties(QueueingConsumer.Delivery request, AMQP.BasicProperties.Builder builder) {
         return builder.build();
     }
 
@@ -206,7 +206,7 @@ public class RpcServer {
      * @param builder the reply properties builder
      * @return the properties to pass in to the response message
      */
-    protected AMQP.BasicProperties postProcessReplyProperties(QueueingConsumer.Delivery request, AMQP.BasicProperties.Builder builder) {
+    protected AMQP.BasicProperties postprocessReplyProperties(QueueingConsumer.Delivery request, AMQP.BasicProperties.Builder builder) {
         return builder.build();
     }
 

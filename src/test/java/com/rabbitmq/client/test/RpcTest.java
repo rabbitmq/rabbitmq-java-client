@@ -84,7 +84,7 @@ public class RpcTest {
         }
 
         @Override
-        protected AMQP.BasicProperties preProcessReplyProperties(QueueingConsumer.Delivery request, AMQP.BasicProperties.Builder builder) {
+        protected AMQP.BasicProperties preprocessReplyProperties(QueueingConsumer.Delivery request, AMQP.BasicProperties.Builder builder) {
             Map<String, Object> headers = new HashMap<String, Object>();
             headers.put("pre", "pre-" + new String(request.getBody()));
             builder.headers(headers);
@@ -98,7 +98,7 @@ public class RpcTest {
         }
 
         @Override
-        protected AMQP.BasicProperties postProcessReplyProperties(QueueingConsumer.Delivery request, AMQP.BasicProperties.Builder builder) {
+        protected AMQP.BasicProperties postprocessReplyProperties(QueueingConsumer.Delivery request, AMQP.BasicProperties.Builder builder) {
             Map<String, Object> headers = new HashMap<String, Object>(builder.build().getHeaders());
             headers.put("post", "post-" + new String(request.getBody()));
             builder.headers(headers);
