@@ -1363,6 +1363,12 @@ public interface Channel extends ShutdownNotifier {
      */
     long consumerCount(String queue) throws IOException;
 
+    /**
+     * Asynchronously send a method over this channel.
+     * @param method method to transmit over this channel.
+     * @return a completable future that completes when the result is received
+     * @throws IOException Problem transmitting method.
+     */
     CompletableFuture<Command> asyncCompletableRpc(Method method) throws IOException;
 
 }
