@@ -45,7 +45,9 @@ import org.junit.runners.Suite;
     DnsRecordIpAddressResolverTests.class,
     StandardMetricsCollectorTest.class,
     DnsSrvRecordAddressResolverTest.class,
-    JavaNioTest.class
+    JavaNioTest.class,
+    ConnectionFactoryTest.class,
+    RecoveryAwareAMQConnectionFactoryTest.class
 })
 public class ClientTests {
 
