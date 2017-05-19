@@ -87,7 +87,7 @@ public class ChannelRpcTimeoutIntegrationTest {
     private FrameHandler createFrameHandler() throws IOException {
         SocketFrameHandlerFactory socketFrameHandlerFactory = new SocketFrameHandlerFactory(ConnectionFactory.DEFAULT_CONNECTION_TIMEOUT,
             SocketFactory.getDefault(), new DefaultSocketConfigurator(), false, null);
-        return socketFrameHandlerFactory.create(new Address("localhost"));
+        return socketFrameHandlerFactory.create(new Address("localhost"), null);
     }
 
     static class WaitingChannel extends ChannelN {

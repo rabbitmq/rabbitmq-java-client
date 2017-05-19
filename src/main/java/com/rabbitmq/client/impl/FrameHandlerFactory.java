@@ -9,6 +9,6 @@ import java.io.IOException;
  */
 public interface FrameHandlerFactory {
 
-    FrameHandler create(Address addr) throws IOException;
+    FrameHandler create(Address addr, String connectionName) throws IOException;
 
 }

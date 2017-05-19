@@ -49,6 +49,7 @@ import org.junit.runners.Suite;
     ConnectionFactoryTest.class,
     RecoveryAwareAMQConnectionFactoryTest.class,
     RpcTest.class,
+    SslContextFactoryTest.class,
     LambdaCallbackTest.class
 })
 public class ClientTests {

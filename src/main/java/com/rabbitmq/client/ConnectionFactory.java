@@ -94,7 +94,7 @@ public class ConnectionFactory implements Cloneable {
     private int handshakeTimeout                  = DEFAULT_HANDSHAKE_TIMEOUT;
     private int shutdownTimeout                   = DEFAULT_SHUTDOWN_TIMEOUT;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
-    private SocketFactory factory                 = SocketFactory.getDefault();
+    private SocketFactory factory                 = null;
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
     private ThreadFactory threadFactory           = Executors.defaultThreadFactory();
@@ -119,7 +119,7 @@ public class ConnectionFactory implements Cloneable {
     private FrameHandlerFactory frameHandlerFactory;
     private NioParams nioParams = new NioParams();
 
-    private SSLContext sslContext;
+    private SslContextFactory sslContextFactory;
 
     /**
      * Continuation timeout on RPC calls.
@@ -449,7 +449,8 @@ public class ConnectionFactory implements Cloneable {
      * Set the socket factory used to make connections with. Can be
      * used to enable SSL connections by passing in a
      * javax.net.ssl.SSLSocketFactory instance.
-     *
+     * Note this applies only to blocking IO, not to
+     * NIO, as the NIO API doesn't use the SocketFactory API.
      * @see #useSslProtocol
      */
     public void setSocketFactory(SocketFactory factory) {
@@ -556,7 +557,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     public boolean isSSL(){
-        return getSocketFactory() instanceof SSLSocketFactory;
+        return getSocketFactory() instanceof SSLSocketFactory || sslContextFactory != null;
     }
 
     /**
@@ -572,6 +573,10 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting up a SSL socket factory/engine, using
      * the supplied protocol and a very trusting TrustManager.
+     * The produced {@link SSLContext} instance will be shared by all
+     * the connections created by this connection factory. Use
+     * {@link #setSslContextFactory(SslContextFactory)} for more flexibility.
+     * @see #setSslContextFactory(SslContextFactory)
      */
     public void useSslProtocol(String protocol)
         throws NoSuchAlgorithmException, KeyManagementException
@@ -582,8 +587,11 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting up an SSL socket factory/engine.
      * Pass in the SSL protocol to use, e.g. "TLSv1" or "TLSv1.2".
-     *
+     * The produced {@link SSLContext} instance will be shared with all
+     * the connections created by this connection factory. Use
+     * {@link #setSslContextFactory(SslContextFactory)} for more flexibility.
      * @param protocol SSL protocol to use.
+     * @see #setSslContextFactory(SslContextFactory)
      */
     public void useSslProtocol(String protocol, TrustManager trustManager)
         throws NoSuchAlgorithmException, KeyManagementException
@@ -596,12 +604,15 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting up an SSL socket factory/engine.
      * Pass in an initialized SSLContext.
-     *
+     * The {@link SSLContext} instance will be shared with all
+     * the connections created by this connection factory. Use
+     * {@link #setSslContextFactory(SslContextFactory)} for more flexibility.
      * @param context An initialized SSLContext
+     * @see #setSslContextFactory(SslContextFactory)
      */
     public void useSslProtocol(SSLContext context) {
+        this.sslContextFactory = name -> context;
         setSocketFactory(context.getSocketFactory());
-        this.sslContext = context;
     }
 
     public static String computeDefaultTlsProcotol(String[] supportedProtocols) {
@@ -667,11 +678,11 @@ public class ConnectionFactory implements Cloneable {
                 if(this.nioParams.getNioExecutor() == null && this.nioParams.getThreadFactory() == null) {
                     this.nioParams.setThreadFactory(getThreadFactory());
                 }
-                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, nioParams, isSSL(), sslContext);
+                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, nioParams, isSSL(), sslContextFactory);
             }
             return this.frameHandlerFactory;
         } else {
-            return new SocketFrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor);
+            return new SocketFrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor, sslContextFactory);
         }
 
     }
@@ -915,7 +926,7 @@ public class ConnectionFactory implements Cloneable {
             Exception lastException = null;
             for (Address addr : addrs) {
                 try {
-                    FrameHandler handler = fhFactory.create(addr);
+                    FrameHandler handler = fhFactory.create(addr, clientProvidedName);
                     AMQConnection conn = createConnection(params, handler, metricsCollector);
                     conn.start();
                     this.metricsCollector.newConnection(conn);
@@ -1123,5 +1134,21 @@ public class ConnectionFactory implements Cloneable {
      */
     public int getChannelRpcTimeout() {
         return channelRpcTimeout;
+    }
+
+    /**
+     * The factory to create SSL contexts.
+     * This provides more flexibility to create {@link SSLContext}s
+     * for different connections than sharing the {@link SSLContext}
+     * with all the connections produced by the connection factory
+     * (which is the case with the {@link #useSslProtocol()} methods).
+     * This way, different connections with a different certificate
+     * for each of them is a possible scenario.
+     * @param sslContextFactory
+     * @see #useSslProtocol(SSLContext)
+     * @since 5.0.0
+     */
+    public void setSslContextFactory(SslContextFactory sslContextFactory) {
+        this.sslContextFactory = sslContextFactory;
     }
 }

@@ -17,6 +17,7 @@ package com.rabbitmq.client.impl.nio;
 
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.SslContextFactory;
 import com.rabbitmq.client.impl.AbstractFrameHandlerFactory;
 import com.rabbitmq.client.impl.FrameHandler;
 
@@ -40,7 +41,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
     final NioParams nioParams;
 
-    private final SSLContext sslContext;
+    private final SslContextFactory sslContextFactory;
 
     private final Lock stateLock = new ReentrantLock();
 
@@ -48,11 +49,11 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
     private final List<NioLoopContext> nioLoopContexts;
 
-    public SocketChannelFrameHandlerFactory(int connectionTimeout, NioParams nioParams, boolean ssl, SSLContext sslContext)
+    public SocketChannelFrameHandlerFactory(int connectionTimeout, NioParams nioParams, boolean ssl, SslContextFactory sslContextFactory)
         throws IOException {
         super(connectionTimeout, null, ssl);
         this.nioParams = new NioParams(nioParams);
-        this.sslContext = sslContext;
+        this.sslContextFactory = sslContextFactory;
         this.nioLoopContexts = new ArrayList<NioLoopContext>(this.nioParams.getNbIoThreads());
         for (int i = 0; i < this.nioParams.getNbIoThreads(); i++) {
             this.nioLoopContexts.add(new NioLoopContext(this, this.nioParams));
@@ -60,7 +61,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
     }
 
     @Override
-    public FrameHandler create(Address addr) throws IOException {
+    public FrameHandler create(Address addr, String connectionName) throws IOException {
         int portNumber = ConnectionFactory.portOrDefault(addr.getPort(), ssl);
 
         SSLEngine sslEngine = null;
@@ -68,6 +69,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
         try {
             if (ssl) {
+                SSLContext sslContext = sslContextFactory.create(connectionName);
                 sslEngine = sslContext.createSSLEngine(addr.getHost(), portNumber);
                 sslEngine.setUseClientMode(true);
             }

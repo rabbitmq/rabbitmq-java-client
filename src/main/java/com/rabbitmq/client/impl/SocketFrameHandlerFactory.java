@@ -18,6 +18,7 @@ package com.rabbitmq.client.impl;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.SocketConfigurator;
+import com.rabbitmq.client.SslContextFactory;
 
 import javax.net.SocketFactory;
 import java.io.IOException;
@@ -29,23 +30,29 @@ public class SocketFrameHandlerFactory extends AbstractFrameHandlerFactory {
 
     private final SocketFactory factory;
     private final ExecutorService shutdownExecutor;
+    private final SslContextFactory sslContextFactory;
 
     public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl) {
         this(connectionTimeout, factory, configurator, ssl, null);
     }
 
     public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl, ExecutorService shutdownExecutor) {
+        this(connectionTimeout, factory, configurator, ssl, shutdownExecutor, null);
+    }
+
+    public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl, ExecutorService shutdownExecutor, SslContextFactory sslContextFactory) {
         super(connectionTimeout, configurator, ssl);
         this.factory = factory;
         this.shutdownExecutor = shutdownExecutor;
+        this.sslContextFactory = sslContextFactory;
     }
 
-    public FrameHandler create(Address addr) throws IOException {
+    public FrameHandler create(Address addr, String connectionName) throws IOException {
         String hostName = addr.getHost();
         int portNumber = ConnectionFactory.portOrDefault(addr.getPort(), ssl);
         Socket socket = null;
         try {
-            socket = factory.createSocket();
+            socket = createSocket(connectionName);
             configurator.configure(socket);
             socket.connect(new InetSocketAddress(hostName, portNumber),
                     connectionTimeout);
@@ -53,6 +60,19 @@ public class SocketFrameHandlerFactory extends AbstractFrameHandlerFactory {
         } catch (IOException ioe) {
             quietTrySocketClose(socket);
             throw ioe;
+        }
+    }
+
+    protected Socket createSocket(String connectionName) throws IOException {
+        // SocketFactory takes precedence if specified
+        if (factory != null) {
+            return factory.createSocket();
+        } else {
+            if (ssl) {
+                return sslContextFactory.create(connectionName).getSocketFactory().createSocket();
+            } else {
+                return SocketFactory.getDefault().createSocket();
+            }
         }
     }
 
