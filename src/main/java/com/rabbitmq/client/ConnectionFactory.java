@@ -98,7 +98,7 @@ public class ConnectionFactory implements Cloneable {
     private int handshakeTimeout                  = DEFAULT_HANDSHAKE_TIMEOUT;
     private int shutdownTimeout                   = DEFAULT_SHUTDOWN_TIMEOUT;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
-    private SocketFactory socketFactory = null;
+    private SocketFactory socketFactory           = SocketFactory.getDefault();
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
     private ThreadFactory threadFactory           = Executors.defaultThreadFactory();
