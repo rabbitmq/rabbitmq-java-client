@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 public class RecoveryAwareAMQConnectionFactory {
@@ -58,7 +59,7 @@ public class RecoveryAwareAMQConnectionFactory {
 
         for (Address addr : shuffled) {
             try {
-                FrameHandler frameHandler = factory.create(addr);
+                FrameHandler frameHandler = factory.create(addr, connectionName());
                 RecoveryAwareAMQConnection conn = createConnection(params, frameHandler, metricsCollector);
                 conn.start();
                 metricsCollector.newConnection(conn);
@@ -88,5 +89,15 @@ public class RecoveryAwareAMQConnectionFactory {
 
     protected RecoveryAwareAMQConnection createConnection(ConnectionParams params, FrameHandler handler, MetricsCollector metricsCollector) {
         return new RecoveryAwareAMQConnection(params, handler, metricsCollector);
+    }
+
+    private String connectionName() {
+        Map<String, Object> clientProperties = params.getClientProperties();
+        if (clientProperties == null) {
+            return null;
+        } else {
+            Object connectionName = clientProperties.get("connection_name");
+            return connectionName == null ? null : connectionName.toString();
+        }
     }
 }
