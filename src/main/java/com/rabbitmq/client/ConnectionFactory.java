@@ -36,7 +36,11 @@ import java.util.concurrent.*;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
- * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
+ * Convenience factory class to facilitate opening a {@link Connection} to a RabbitMQ node.
+ *
+ * Most connection and socket settings are configured using this factory.
+ * Some settings that apply to connections can also be configured here
+ * and will apply to all connections produced by this factory.
  */
 
 public class ConnectionFactory implements Cloneable {
@@ -94,7 +98,7 @@ public class ConnectionFactory implements Cloneable {
     private int handshakeTimeout                  = DEFAULT_HANDSHAKE_TIMEOUT;
     private int shutdownTimeout                   = DEFAULT_SHUTDOWN_TIMEOUT;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
-    private SocketFactory factory                 = null;
+    private SocketFactory socketFactory = null;
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
     private ThreadFactory threadFactory           = Executors.defaultThreadFactory();
@@ -442,19 +446,19 @@ public class ConnectionFactory implements Cloneable {
      * Retrieve the socket factory used to make connections with.
      */
     public SocketFactory getSocketFactory() {
-        return this.factory;
+        return this.socketFactory;
     }
 
     /**
-     * Set the socket factory used to make connections with. Can be
-     * used to enable SSL connections by passing in a
+     * Set the socket factory used to create sockets for new connections. Can be
+     * used to customize TLS-related settings by passing in a
      * javax.net.ssl.SSLSocketFactory instance.
      * Note this applies only to blocking IO, not to
      * NIO, as the NIO API doesn't use the SocketFactory API.
      * @see #useSslProtocol
      */
     public void setSocketFactory(SocketFactory factory) {
-        this.factory = factory;
+        this.socketFactory = factory;
     }
 
     /**
@@ -602,7 +606,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Convenience method for setting up an SSL socket factory/engine.
+     * Convenience method for setting up an SSL socket socketFactory/engine.
      * Pass in an initialized SSLContext.
      * The {@link SSLContext} instance will be shared with all
      * the connections created by this connection factory. Use
@@ -682,7 +686,7 @@ public class ConnectionFactory implements Cloneable {
             }
             return this.frameHandlerFactory;
         } else {
-            return new SocketFrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor, sslContextFactory);
+            return new SocketFrameHandlerFactory(connectionTimeout, socketFactory, socketConf, isSSL(), this.shutdownExecutor, sslContextFactory);
         }
 
     }
