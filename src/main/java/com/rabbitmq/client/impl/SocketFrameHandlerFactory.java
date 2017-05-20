@@ -28,21 +28,24 @@ import java.util.concurrent.ExecutorService;
 
 public class SocketFrameHandlerFactory extends AbstractFrameHandlerFactory {
 
-    private final SocketFactory factory;
+    private final SocketFactory socketFactory;
     private final ExecutorService shutdownExecutor;
     private final SslContextFactory sslContextFactory;
 
-    public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl) {
-        this(connectionTimeout, factory, configurator, ssl, null);
+    public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory socketFactory, SocketConfigurator configurator,
+                                     boolean ssl) {
+        this(connectionTimeout, socketFactory, configurator, ssl, null);
     }
 
-    public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl, ExecutorService shutdownExecutor) {
-        this(connectionTimeout, factory, configurator, ssl, shutdownExecutor, null);
+    public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory socketFactory, SocketConfigurator configurator,
+                                     boolean ssl, ExecutorService shutdownExecutor) {
+        this(connectionTimeout, socketFactory, configurator, ssl, shutdownExecutor, null);
     }
 
-    public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl, ExecutorService shutdownExecutor, SslContextFactory sslContextFactory) {
+    public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory socketFactory, SocketConfigurator configurator,
+                                     boolean ssl, ExecutorService shutdownExecutor, SslContextFactory sslContextFactory) {
         super(connectionTimeout, configurator, ssl);
-        this.factory = factory;
+        this.socketFactory = socketFactory;
         this.shutdownExecutor = shutdownExecutor;
         this.sslContextFactory = sslContextFactory;
     }
@@ -65,8 +68,8 @@ public class SocketFrameHandlerFactory extends AbstractFrameHandlerFactory {
 
     protected Socket createSocket(String connectionName) throws IOException {
         // SocketFactory takes precedence if specified
-        if (factory != null) {
-            return factory.createSocket();
+        if (socketFactory != null) {
+            return socketFactory.createSocket();
         } else {
             if (ssl) {
                 return sslContextFactory.create(connectionName).getSocketFactory().createSocket();
