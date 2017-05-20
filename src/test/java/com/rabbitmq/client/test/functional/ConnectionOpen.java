@@ -35,6 +35,8 @@ import com.rabbitmq.client.Method;
 import com.rabbitmq.client.impl.AMQCommand;
 import com.rabbitmq.client.impl.SocketFrameHandler;
 
+import javax.net.SocketFactory;
+
 
 /**
  * Check that protocol negotiation works
@@ -42,7 +44,7 @@ import com.rabbitmq.client.impl.SocketFrameHandler;
 public class ConnectionOpen {
     @Test public void correctProtocolHeader() throws IOException {
         ConnectionFactory factory = TestUtils.connectionFactory();
-        SocketFrameHandler fh = new SocketFrameHandler(factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT));
+        SocketFrameHandler fh = new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT));
         fh.sendHeader();
         AMQCommand command = new AMQCommand();
         while (!command.handleFrame(fh.readFrame())) { }
@@ -60,7 +62,7 @@ public class ConnectionOpen {
     @Test public void crazyProtocolHeader() throws IOException {
         ConnectionFactory factory = TestUtils.connectionFactory();
         // keep the frame handler's socket
-        Socket fhSocket = factory.getSocketFactory().createSocket("localhost", AMQP.PROTOCOL.PORT);
+        Socket fhSocket = SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT);
         SocketFrameHandler fh = new SocketFrameHandler(fhSocket);
         fh.sendHeader(100, 3); // major, minor
         DataInputStream in = fh.getInputStream();
