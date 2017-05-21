@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
@@ -1529,6 +1530,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     @Override
     public AMQCommand rpc(Method method) throws IOException {
         return exnWrappingRpc(method);
+    }
+
+    @Override
+    public CompletableFuture<Command> asyncCompletableRpc(Method method) throws IOException {
+        return exnWrappingAsyncRpc(method);
     }
 
     @Override
