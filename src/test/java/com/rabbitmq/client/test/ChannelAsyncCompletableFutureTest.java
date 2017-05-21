@@ -25,10 +25,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.junit.Assert.assertTrue;
 
@@ -53,6 +50,8 @@ public class ChannelAsyncCompletableFutureTest extends BrokerTestCase {
 
     @Test
     public void async() throws Exception {
+        channel.confirmSelect();
+
         CountDownLatch latch = new CountDownLatch(1);
         AMQP.Queue.Declare queueDeclare = new AMQImpl.Queue.Declare.Builder()
             .queue(queue)
@@ -92,7 +91,7 @@ public class ChannelAsyncCompletableFutureTest extends BrokerTestCase {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-            }, executor).thenAcceptAsync((whatever) -> {
+        }, executor).thenAcceptAsync((whatever) -> {
                 try {
                     channel.basicConsume(queue, true, new DefaultConsumer(channel) {
                         @Override
@@ -104,7 +103,8 @@ public class ChannelAsyncCompletableFutureTest extends BrokerTestCase {
                     throw new RuntimeException(e);
                 }
         }, executor);
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        channel.waitForConfirmsOrDie(1000);
+        assertTrue(latch.await(2, TimeUnit.SECONDS));
     }
 
 }
