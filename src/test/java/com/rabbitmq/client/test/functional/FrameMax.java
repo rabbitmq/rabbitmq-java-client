@@ -179,7 +179,7 @@ public class FrameMax extends BrokerTestCase {
             IOException lastException = null;
             for (Address addr : addrs) {
                 try {
-                    FrameHandler frameHandler = createFrameHandlerFactory().create(addr);
+                    FrameHandler frameHandler = createFrameHandlerFactory().create(addr, null);
                     AMQConnection conn = new GenerousAMQConnection(this, frameHandler, executor);
                     conn.start();
                     return conn;

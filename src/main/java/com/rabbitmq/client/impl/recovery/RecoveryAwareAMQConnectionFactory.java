@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 public class RecoveryAwareAMQConnectionFactory {
@@ -51,28 +52,52 @@ public class RecoveryAwareAMQConnectionFactory {
      * @return an interface to the connection
      * @throws java.io.IOException if it encounters a problem
      */
-    RecoveryAwareAMQConnection newConnection() throws IOException, TimeoutException {
-        IOException lastException = null;
+    // package protected API, made public for testing only
+    public RecoveryAwareAMQConnection newConnection() throws IOException, TimeoutException {
+        Exception lastException = null;
         List<Address> shuffled = shuffle(addressResolver.getAddresses());
 
         for (Address addr : shuffled) {
             try {
-                FrameHandler frameHandler = factory.create(addr);
-                RecoveryAwareAMQConnection conn = new RecoveryAwareAMQConnection(params, frameHandler, metricsCollector);
+                FrameHandler frameHandler = factory.create(addr, connectionName());
+                RecoveryAwareAMQConnection conn = createConnection(params, frameHandler, metricsCollector);
                 conn.start();
                 metricsCollector.newConnection(conn);
                 return conn;
             } catch (IOException e) {
                 lastException = e;
+            } catch (TimeoutException te) {
+                lastException = te;
             }
         }
 
-        throw (lastException != null) ? lastException : new IOException("failed to connect");
+        if (lastException != null) {
+            if (lastException instanceof IOException) {
+                throw (IOException) lastException;
+            } else if (lastException instanceof TimeoutException) {
+                throw (TimeoutException) lastException;
+            }
+        }
+        throw new IOException("failed to connect");
     }
 
     private static List<Address> shuffle(List<Address> addrs) {
         List<Address> list = new ArrayList<Address>(addrs);
         Collections.shuffle(list);
         return list;
+    }
+
+    protected RecoveryAwareAMQConnection createConnection(ConnectionParams params, FrameHandler handler, MetricsCollector metricsCollector) {
+        return new RecoveryAwareAMQConnection(params, handler, metricsCollector);
+    }
+
+    private String connectionName() {
+        Map<String, Object> clientProperties = params.getClientProperties();
+        if (clientProperties == null) {
+            return null;
+        } else {
+            Object connectionName = clientProperties.get("connection_name");
+            return connectionName == null ? null : connectionName.toString();
+        }
     }
 }

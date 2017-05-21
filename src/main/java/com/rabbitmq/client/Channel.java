@@ -55,7 +55,7 @@ import com.rabbitmq.client.AMQP.Confirm;
  * @see <a href="http://www.rabbitmq.com/getstarted.html">RabbitMQ tutorials</a>
  * @see <a href="http://www.rabbitmq.com/api-guide.html">RabbitMQ Java Client User Guide</a>
  */
-public interface Channel extends ShutdownNotifier {
+public interface Channel extends ShutdownNotifier, AutoCloseable {
     /**
      * Retrieve this channel's channel number.
      * @return the channel number
@@ -74,6 +74,7 @@ public interface Channel extends ShutdownNotifier {
      *
      * @throws java.io.IOException if an error is encountered
      */
+    @Override
     void close() throws IOException, TimeoutException;
 
     /**

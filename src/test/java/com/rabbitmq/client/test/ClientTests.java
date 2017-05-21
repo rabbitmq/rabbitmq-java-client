@@ -46,7 +46,10 @@ import org.junit.runners.Suite;
     StandardMetricsCollectorTest.class,
     DnsSrvRecordAddressResolverTest.class,
     JavaNioTest.class,
+    ConnectionFactoryTest.class,
+    RecoveryAwareAMQConnectionFactoryTest.class,
     RpcTest.class,
+    SslContextFactoryTest.class,
     LambdaCallbackTest.class,
     ChannelAsyncCompletableFutureTest.class
 })

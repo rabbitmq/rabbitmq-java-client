@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2017-Present Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -22,6 +22,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -62,14 +64,13 @@ public class RpcTest {
                 // safe to ignore when loops ends/server is canceled
             }
         }).start();
-
         RpcClient client = new RpcClient(clientChannel, "", queue, 1000);
-        byte[] response = client.primitiveCall("hello".getBytes());
-        assertEquals("*** hello ***", new String(response));
+        RpcClient.Response response = client.doCall(null, "hello".getBytes());
+        assertEquals("*** hello ***", new String(response.getBody()));
+        assertEquals("pre-hello", response.getProperties().getHeaders().get("pre").toString());
+        assertEquals("post-hello", response.getProperties().getHeaders().get("post").toString());
         client.close();
     }
-
-
 
     private static class TestRpcServer extends RpcServer {
 
@@ -78,9 +79,25 @@ public class RpcTest {
         }
 
         @Override
+        protected AMQP.BasicProperties preprocessReplyProperties(Delivery request, AMQP.BasicProperties.Builder builder) {
+            Map<String, Object> headers = new HashMap<String, Object>();
+            headers.put("pre", "pre-" + new String(request.getBody()));
+            builder.headers(headers);
+            return builder.build();
+        }
+
+        @Override
         public byte[] handleCall(Delivery request, AMQP.BasicProperties replyProperties) {
             String input = new String(request.getBody());
             return ("*** " + input + " ***").getBytes();
+        }
+
+        @Override
+        protected AMQP.BasicProperties postprocessReplyProperties(Delivery request, AMQP.BasicProperties.Builder builder) {
+            Map<String, Object> headers = new HashMap<String, Object>(builder.build().getHeaders());
+            headers.put("post", "post-" + new String(request.getBody()));
+            builder.headers(headers);
+            return builder.build();
         }
     }
 
