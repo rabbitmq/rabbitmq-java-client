@@ -17,7 +17,10 @@ package com.rabbitmq.client.impl.nio;
 
 import com.rabbitmq.client.DefaultSocketChannelConfigurator;
 import com.rabbitmq.client.SocketChannelConfigurator;
+import com.rabbitmq.client.SslEngineConfigurator;
 
+import javax.net.ssl.SSLEngine;
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
@@ -51,6 +54,12 @@ public class NioParams {
     /** the hook to configure the socket channel before it's open */
     private SocketChannelConfigurator socketChannelConfigurator = new DefaultSocketChannelConfigurator();
 
+    /** the hook to configure the SSL engine before the connection is open */
+    private SslEngineConfigurator sslEngineConfigurator = new SslEngineConfigurator() {
+        @Override
+        public void configure(SSLEngine sslEngine) throws IOException { }
+    };
+
     public NioParams() {
     }
 
@@ -62,6 +71,7 @@ public class NioParams {
         setWriteQueueCapacity(nioParams.getWriteQueueCapacity());
         setNioExecutor(nioParams.getNioExecutor());
         setThreadFactory(nioParams.getThreadFactory());
+        setSslEngineConfigurator(nioParams.getSslEngineConfigurator());
     }
 
     public int getReadByteBufferSize() {
@@ -247,5 +257,22 @@ public class NioParams {
 
     public SocketChannelConfigurator getSocketChannelConfigurator() {
         return socketChannelConfigurator;
+    }
+
+    /**
+     * Set the {@link SSLEngine} configurator.
+     * This gets a change to "configure" the SSL engine
+     * before the connection has been opened. This can be
+     * used e.g. to set {@link javax.net.ssl.SSLParameters}.
+     * The default implementation doesn't do anything.
+     *
+     * @param configurator the configurator to use
+     */
+    public void setSslEngineConfigurator(SslEngineConfigurator configurator) {
+        this.sslEngineConfigurator = configurator;
+    }
+
+    public SslEngineConfigurator getSslEngineConfigurator() {
+        return sslEngineConfigurator;
     }
 }

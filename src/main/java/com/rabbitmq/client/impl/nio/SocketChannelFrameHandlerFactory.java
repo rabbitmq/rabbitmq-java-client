@@ -70,6 +70,9 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
             if (ssl) {
                 sslEngine = sslContext.createSSLEngine(addr.getHost(), portNumber);
                 sslEngine.setUseClientMode(true);
+                if (nioParams.getSslEngineConfigurator() != null) {
+                    nioParams.getSslEngineConfigurator().configure(sslEngine);
+                }
             }
 
             SocketAddress address = new InetSocketAddress(addr.getHost(), portNumber);
