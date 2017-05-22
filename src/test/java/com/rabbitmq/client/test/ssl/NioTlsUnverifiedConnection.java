@@ -16,15 +16,17 @@
 package com.rabbitmq.client.test.ssl;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.test.BrokerTestCase;
-import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -64,6 +66,32 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
         connection = basicGetBasicConsume(connection, "tls.nio.queue", latch);
         boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
         assertTrue("Message has not been received", messagesReceived);
+    }
+
+    @Test public void socketChannelConfigurator() throws Exception {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.useNio();
+        connectionFactory.useSslProtocol();
+        NioParams nioParams = new NioParams();
+        final AtomicBoolean sslEngineHasBeenCalled = new AtomicBoolean(false);
+        nioParams.setSslEngineConfigurator(new SslEngineConfigurator() {
+            @Override
+            public void configure(SSLEngine sslEngine) throws IOException {
+                sslEngineHasBeenCalled.set(true);
+            }
+        });
+
+        connectionFactory.setNioParams(nioParams);
+
+        Connection connection = null;
+        try {
+            connection = connectionFactory.newConnection();
+            assertTrue("The SSL engine configurator should have called", sslEngineHasBeenCalled.get());
+        } finally {
+            if (connection != null) {
+                connection.close();
+            }
+        }
     }
 
     private Connection basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch)
