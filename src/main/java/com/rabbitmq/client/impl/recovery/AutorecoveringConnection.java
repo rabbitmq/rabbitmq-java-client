@@ -805,7 +805,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
                     // last binding where this exchange is the source is gone, remove recorded exchange
                     // if it is auto-deleted. See bug 26364.
                     if((x != null) && x.isAutoDelete()) {
-                        this.recordedExchanges.remove(exchange);
+                        deleteRecordedExchange(exchange);
                     }
                 }
             }

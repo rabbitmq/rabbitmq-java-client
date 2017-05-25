@@ -1239,18 +1239,26 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             }
         };
 
-        rpc(new Basic.Consume.Builder()
-             .queue(queue)
-             .consumerTag(consumerTag)
-             .noLocal(noLocal)
-             .noAck(autoAck)
-             .exclusive(exclusive)
-             .arguments(arguments)
-            .build(),
-            k);
+        final Method m = new Basic.Consume.Builder()
+                .queue(queue)
+                .consumerTag(consumerTag)
+                .noLocal(noLocal)
+                .noAck(autoAck)
+                .exclusive(exclusive)
+                .arguments(arguments)
+               .build();
+        rpc(m, k);
 
         try {
-            return k.getReply();
+            if(_rpcTimeout == NO_RPC_TIMEOUT) {
+                return k.getReply();
+            } else {
+                try {
+                    return k.getReply(_rpcTimeout);
+                } catch (TimeoutException e) {
+                    throw wrapTimeoutException(m, e);
+                }
+            }
         } catch(ShutdownSignalException ex) {
             throw wrap(ex);
         }
@@ -1267,17 +1275,26 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>() {
             @Override
             public Consumer transformReply(AMQCommand replyCommand) {
-                replyCommand.getMethod();
+                ((Basic.CancelOk) replyCommand.getMethod()).getConsumerTag(); // just to make sure its the method expected
                 _consumers.remove(consumerTag); //may already have been removed
                 dispatcher.handleCancelOk(originalConsumer, consumerTag);
                 return originalConsumer;
             }
         };
 
-        rpc(new Basic.Cancel(consumerTag, false), k);
-
+        final Method m = new Basic.Cancel(consumerTag, false);
+        rpc(m, k);
+        
         try {
-            k.getReply(); // discard result
+            if(_rpcTimeout == NO_RPC_TIMEOUT) {
+                k.getReply(); // discard result
+            } else {
+                try {
+                    k.getReply(_rpcTimeout);
+                } catch (TimeoutException e) {
+                    throw wrapTimeoutException(m, e);
+                }
+            }
         } catch(ShutdownSignalException ex) {
             throw wrap(ex);
         }
