@@ -37,6 +37,9 @@ import com.rabbitmq.client.impl.AMQImpl.Queue;
 import com.rabbitmq.client.impl.AMQImpl.Tx;
 import com.rabbitmq.utility.Utility;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Main interface to AMQP protocol functionality. Public API -
  * Implementation of all AMQChannels except channel zero.
@@ -49,6 +52,7 @@ import com.rabbitmq.utility.Utility;
  */
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
     private static final String UNSPECIFIED_OUT_OF_BAND = "";
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChannelN.class);
 
     /** Map from consumer tag to {@link Consumer} instance.
      * <p/>
@@ -1275,7 +1279,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>() {
             @Override
             public Consumer transformReply(AMQCommand replyCommand) {
-                ((Basic.CancelOk) replyCommand.getMethod()).getConsumerTag(); // just to make sure its the method expected
+                if (!(replyCommand.getMethod() instanceof Basic.CancelOk))
+                    LOGGER.warn("Received reply was not of expected method Basic.CancelOk");
                 _consumers.remove(consumerTag); //may already have been removed
                 dispatcher.handleCancelOk(originalConsumer, consumerTag);
                 return originalConsumer;
