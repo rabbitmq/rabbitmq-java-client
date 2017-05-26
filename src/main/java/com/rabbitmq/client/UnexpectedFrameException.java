@@ -13,24 +13,34 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
+
 package com.rabbitmq.client;
 
-import com.rabbitmq.utility.SensibleClone;
+import com.rabbitmq.client.impl.Frame;
 
-public class ConsumerCancelledException extends RuntimeException implements
-        SensibleClone<ConsumerCancelledException> {
-
-    /** Default for non-checking. */
+/**
+ * Thrown when the command parser hits an unexpected frame type.
+ */
+public class UnexpectedFrameException extends RuntimeException {
     private static final long serialVersionUID = 1L;
+    private final Frame _frame;
+    private final int _expectedFrameType;
 
-    @Override
-    public ConsumerCancelledException sensibleClone() {
-        try {
-            return (ConsumerCancelledException) super.clone();
-        } catch (CloneNotSupportedException e) {
-            // You've got to be kidding me
-            throw new RuntimeException(e);
-        }
+    public UnexpectedFrameException(Frame frame, int expectedFrameType) {
+        super("Received frame: " + frame + ", expected type " + expectedFrameType);
+        _frame = frame;
+        _expectedFrameType = expectedFrameType;
     }
 
+    public static long getSerialVersionUID() {
+        return serialVersionUID;
+    }
+
+    public Frame getReceivedFrame() {
+        return _frame;
+    }
+
+    public int getExpectedFrameType() {
+        return _expectedFrameType;
+    }
 }

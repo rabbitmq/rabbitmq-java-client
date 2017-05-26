@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 
 import com.rabbitmq.client.LongString;
@@ -80,14 +81,10 @@ public class LongStringHelper
             return bytes.length;
         }
 
-        @Override public String toString()
+        @Override
+        public String toString()
         {
-            try {
-                return new String(bytes, "utf-8");
-            }
-            catch (UnsupportedEncodingException e) {
-                throw new Error("utf-8 encoding support required");
-            }
+            return new String(bytes, Charset.forName("utf-8"));
         }
     }
 
@@ -98,13 +95,9 @@ public class LongStringHelper
      */
     public static LongString asLongString(String string)
     {
-        if (string==null) return null;
-        try {
-            return new ByteArrayLongString(string.getBytes("utf-8"));
-        }
-        catch (UnsupportedEncodingException e) {
-            throw new Error("utf-8 encoding support required");
-        }
+        if (string == null)
+            return null;
+        return new ByteArrayLongString(string.getBytes(Charset.forName("utf-8")));
     }
 
     /**

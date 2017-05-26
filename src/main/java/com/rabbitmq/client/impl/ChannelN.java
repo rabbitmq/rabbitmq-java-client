@@ -1150,7 +1150,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         } else if (method instanceof Basic.GetEmpty) {
             return null;
         } else {
-            throw new UnexpectedMethodError(method);
+            throw new UnexpectedMethodException(method);
         }
     }
 

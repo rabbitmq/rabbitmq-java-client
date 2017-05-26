@@ -1037,7 +1037,7 @@ public class ConnectionFactory implements Cloneable {
         try {
             return (ConnectionFactory)super.clone();
         } catch (CloneNotSupportedException e) {
-            throw new Error(e);
+            throw new RuntimeException(e);
         }
     }
 
