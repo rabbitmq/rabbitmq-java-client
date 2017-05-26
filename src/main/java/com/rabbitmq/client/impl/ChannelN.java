@@ -1280,7 +1280,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             @Override
             public Consumer transformReply(AMQCommand replyCommand) {
                 if (!(replyCommand.getMethod() instanceof Basic.CancelOk))
-                    LOGGER.warn("Received reply was not of expected method Basic.CancelOk");
+                    LOGGER.warn("Received reply {} was not of expected method Basic.CancelOk", replyCommand.getMethod());
                 _consumers.remove(consumerTag); //may already have been removed
                 dispatcher.handleCancelOk(originalConsumer, consumerTag);
                 return originalConsumer;
