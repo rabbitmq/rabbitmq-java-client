@@ -45,8 +45,8 @@ public class TopicPermissions extends BrokerTestCase {
         channel.exchangeDeclare(notProtectedTopic, BuiltinExchangeType.TOPIC);
         channel.exchangeDeclare(noneTopicExchange, BuiltinExchangeType.DIRECT);
 
-        Host.rabbitmqctl("set_topic_permissions -p / guest " + protectedTopic + " \"^a\" \"^x\"");
-        Host.rabbitmqctl("set_topic_permissions -p / guest " + noneTopicExchange + " \"^a\" \"^x\"");
+        Host.rabbitmqctl("set_topic_permissions -p / guest " + protectedTopic + " \"^{username}\" \"^{username}\"");
+        Host.rabbitmqctl("set_topic_permissions -p / guest " + noneTopicExchange + " \"^{username}\" \"^{username}\"");
     }
 
     @Override
@@ -60,70 +60,49 @@ public class TopicPermissions extends BrokerTestCase {
 
     @Test
     public void topicPermissions() throws IOException {
-        assertAccessOk("Routing key matches on protected topic, should pass", new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                channel.basicPublish(protectedTopic, "a.b.c", null, "content".getBytes());
-                channel.basicQos(0);
-                return null;
-            }
+        assertAccessOk("Routing key matches on protected topic, should pass", () -> {
+            channel.basicPublish(protectedTopic, "guest.b.c", null, "content".getBytes());
+            channel.basicQos(0);
+            return null;
         });
-        assertAccessRefused("Routing key does not match on protected topic, should not pass", new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                channel.basicPublish(protectedTopic, "b.c", null, "content".getBytes());
-                channel.basicQos(0);
-                return null;
-            }
+        assertAccessRefused("Routing key does not match on protected topic, should not pass", () -> {
+            channel.basicPublish(protectedTopic, "b.c", null, "content".getBytes());
+            channel.basicQos(0);
+            return null;
         });
-        assertAccessOk("Message sent on not-protected exchange, should pass", new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                channel.basicPublish(notProtectedTopic, "a.b.c", null, "content".getBytes());
-                channel.basicQos(0);
-                return null;
-            }
+        assertAccessOk("Message sent on not-protected exchange, should pass", () -> {
+            channel.basicPublish(notProtectedTopic, "guest.b.c", null, "content".getBytes());
+            channel.basicQos(0);
+            return null;
         });
-        assertAccessOk("Routing key does not match on protected exchange, but not a topic, should pass", new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                channel.basicPublish(noneTopicExchange, "b.c", null, "content".getBytes());
-                channel.basicQos(0);
-                return null;
-            }
+        assertAccessOk("Routing key does not match on protected exchange, but not a topic, should pass", () -> {
+            channel.basicPublish(noneTopicExchange, "b.c", null, "content".getBytes());
+            channel.basicQos(0);
+            return null;
         });
-        assertAccessOk("Binding/unbinding on protected exchange with matching routing key, should pass", new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                String queue = channel.queueDeclare().getQueue();
-                channel.queueBind(queue, protectedTopic, "x.y.z");
-                channel.basicQos(0);
-                channel.queueUnbind(queue, protectedTopic, "x.y.z");
-                channel.basicQos(0);
-                return null;
-            }
+        assertAccessOk("Binding/unbinding on protected exchange with matching routing key, should pass", () -> {
+            String queue = channel.queueDeclare().getQueue();
+            channel.queueBind(queue, protectedTopic, "guest.y.z");
+            channel.basicQos(0);
+            channel.queueUnbind(queue, protectedTopic, "guest.y.z");
+            channel.basicQos(0);
+            return null;
         });
-        assertAccessRefused("Binding/unbinding on protected exchange with none-matching routing key, should not pass", new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                String queue = channel.queueDeclare().getQueue();
-                channel.queueBind(queue, protectedTopic, "y.z");
-                channel.basicQos(0);
-                channel.queueUnbind(queue, protectedTopic, "y.z");
-                channel.basicQos(0);
-                return null;
-            }
+        assertAccessRefused("Binding/unbinding on protected exchange with none-matching routing key, should not pass", () -> {
+            String queue = channel.queueDeclare().getQueue();
+            channel.queueBind(queue, protectedTopic, "y.z");
+            channel.basicQos(0);
+            channel.queueUnbind(queue, protectedTopic, "y.z");
+            channel.basicQos(0);
+            return null;
         });
-        assertAccessOk("Binding/unbinding on not-protected exchange with none-matching routing key, should pass", new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                String queue = channel.queueDeclare().getQueue();
-                channel.queueBind(queue, notProtectedTopic, "y.z");
-                channel.basicQos(0);
-                channel.queueUnbind(queue, notProtectedTopic, "y.z");
-                channel.basicQos(0);
-                return null;
-            }
+        assertAccessOk("Binding/unbinding on not-protected exchange with none-matching routing key, should pass", () -> {
+            String queue = channel.queueDeclare().getQueue();
+            channel.queueBind(queue, notProtectedTopic, "y.z");
+            channel.basicQos(0);
+            channel.queueUnbind(queue, notProtectedTopic, "y.z");
+            channel.basicQos(0);
+            return null;
         });
     }
 
