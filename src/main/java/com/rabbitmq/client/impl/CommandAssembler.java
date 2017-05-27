@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.UnexpectedFrameException;
+import com.rabbitmq.client.UnexpectedFrameError;
 
 /**
  * Class responsible for piecing together a command from a series of {@link Frame}s.
@@ -92,7 +92,7 @@ final class CommandAssembler {
             this.method = AMQImpl.readMethodFrom(f.getInputStream());
             this.state = this.method.hasContent() ? CAState.EXPECTING_CONTENT_HEADER : CAState.COMPLETE;
         } else {
-            throw new UnexpectedFrameException(f, AMQP.FRAME_METHOD);
+            throw new UnexpectedFrameError(f, AMQP.FRAME_METHOD);
         }
     }
 
@@ -102,7 +102,7 @@ final class CommandAssembler {
             this.remainingBodyBytes = this.contentHeader.getBodySize();
             updateContentBodyState();
         } else {
-            throw new UnexpectedFrameException(f, AMQP.FRAME_HEADER);
+            throw new UnexpectedFrameError(f, AMQP.FRAME_HEADER);
         }
     }
 
@@ -116,7 +116,7 @@ final class CommandAssembler {
             }
             appendBodyFragment(fragment);
         } else {
-            throw new UnexpectedFrameException(f, AMQP.FRAME_BODY);
+            throw new UnexpectedFrameError(f, AMQP.FRAME_BODY);
         }
     }
 

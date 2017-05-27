@@ -18,7 +18,7 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.UnexpectedFrameException;
+import com.rabbitmq.client.UnexpectedFrameError;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.AMQImpl.Basic.Publish;
 import com.rabbitmq.client.impl.Frame;
@@ -60,10 +60,10 @@ public class BrokenFramesTest {
         try {
             new AMQConnection(factory.params(Executors.newFixedThreadPool(1)), myFrameHandler).start();
         } catch (IOException e) {
-            UnexpectedFrameException unexpectedFrameException = findUnexpectedFrameError(e);
-            assertNotNull(unexpectedFrameException);
-            assertEquals(AMQP.FRAME_HEADER, unexpectedFrameException.getReceivedFrame().type);
-            assertEquals(AMQP.FRAME_METHOD, unexpectedFrameException.getExpectedFrameType());
+            UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
+            assertNotNull(unexpectedFrameError);
+            assertEquals(AMQP.FRAME_HEADER, unexpectedFrameError.getReceivedFrame().type);
+            assertEquals(AMQP.FRAME_METHOD, unexpectedFrameError.getExpectedFrameType());
             return;
         }
 
@@ -86,22 +86,22 @@ public class BrokenFramesTest {
         try {
             new AMQConnection(factory.params(Executors.newFixedThreadPool(1)), myFrameHandler).start();
         } catch (IOException e) {
-            UnexpectedFrameException unexpectedFrameException = findUnexpectedFrameError(e);
-            assertNotNull(unexpectedFrameException);
-            assertEquals(AMQP.FRAME_BODY, unexpectedFrameException.getReceivedFrame().type);
-            assertEquals(AMQP.FRAME_HEADER, unexpectedFrameException.getExpectedFrameType());
+            UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
+            assertNotNull(unexpectedFrameError);
+            assertEquals(AMQP.FRAME_BODY, unexpectedFrameError.getReceivedFrame().type);
+            assertEquals(AMQP.FRAME_HEADER, unexpectedFrameError.getExpectedFrameType());
             return;
         }
 
         fail("No UnexpectedFrameError thrown");
     }
 
-    private UnexpectedFrameException findUnexpectedFrameError(Exception e) {
+    private UnexpectedFrameError findUnexpectedFrameError(Exception e) {
         Throwable t = e;
         while ((t = t.getCause()) != null) {
-            if (t instanceof UnexpectedFrameException) {
+            if (t instanceof UnexpectedFrameError) {
                 // This is what we wanted
-                return (UnexpectedFrameException) t;
+                return (UnexpectedFrameError) t;
             }
         }
 

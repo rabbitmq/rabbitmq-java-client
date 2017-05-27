@@ -24,15 +24,15 @@ package com.rabbitmq.client;
  * {@link com.rabbitmq.client.impl.AMQImpl.DefaultMethodVisitor DefaultMethodVisitor}
  * throws this as the action within each visitor case.
  */
-public class UnexpectedMethodException extends RuntimeException {
+public class UnexpectedMethodError extends RuntimeException {
     private static final long serialVersionUID = 1L;
     private final Method _method;
 
     /**
-     * Construct an UnexpectedMethodException with the given method parameter
+     * Construct an UnexpectedMethodError with the given method parameter
      * @param method the unexpected method
      */
-    public UnexpectedMethodException(Method method) {
+    public UnexpectedMethodError(Method method) {
         _method = method;
     }
 
