@@ -220,7 +220,7 @@ public class SocketChannelFrameHandlerState {
         if(ssl) {
             SslEngineHelper.close(channel, sslEngine);
         }
-        if(!channel.isOpen()) {
+        if(channel.isOpen()) {
             channel.socket().setSoLinger(true, SOCKET_CLOSING_TIMEOUT);
             channel.close();
         }
