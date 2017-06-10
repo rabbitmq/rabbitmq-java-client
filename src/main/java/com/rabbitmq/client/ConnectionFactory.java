@@ -974,7 +974,8 @@ public class ConnectionFactory implements Cloneable {
      * is enabled, the connection returned by this method will be {@link Recoverable}. Reconnection
      * attempts will always use the address configured on {@link ConnectionFactory}.
      *
-     * @param connectionName arbitrary sring for connection name client property
+     * @param connectionName client-provided connection name (an arbitrary string). Will
+     *                       be displayed in management UI if the server supports it.
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
@@ -1005,7 +1006,8 @@ public class ConnectionFactory implements Cloneable {
      * attempts will always use the address configured on {@link ConnectionFactory}.
      *
      * @param executor thread execution service for consumers on the connection
-     * @param connectionName arbitrary sring for connection name client property
+     * @param connectionName client-provided connection name (an arbitrary string). Will
+     *                       be displayed in management UI if the server supports it.
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
