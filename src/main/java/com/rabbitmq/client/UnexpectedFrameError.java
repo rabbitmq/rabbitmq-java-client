@@ -21,7 +21,7 @@ import com.rabbitmq.client.impl.Frame;
 /**
  * Thrown when the command parser hits an unexpected frame type.
  */
-public class UnexpectedFrameError extends Error {
+public class UnexpectedFrameError extends RuntimeException {
     private static final long serialVersionUID = 1L;
     private final Frame _frame;
     private final int _expectedFrameType;

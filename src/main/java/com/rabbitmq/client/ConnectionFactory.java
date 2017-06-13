@@ -567,6 +567,10 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting up a SSL socket factory/engine, using
      * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
+     * Note the trust manager will trust every server certificate presented
+     * to it, this is convenient for local development but
+     * not recommended to use in production as it provides no protection
+     * against man-in-the-middle attacks.
      */
     public void useSslProtocol()
         throws NoSuchAlgorithmException, KeyManagementException
@@ -577,6 +581,10 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting up a SSL socket factory/engine, using
      * the supplied protocol and a very trusting TrustManager.
+     * Note the trust manager will trust every server certificate presented
+     * to it, this is convenient for local development but
+     * not recommended to use in production as it provides no protection
+     * against man-in-the-middle attacks.
      * The produced {@link SSLContext} instance will be shared by all
      * the connections created by this connection factory. Use
      * {@link #setSslContextFactory(SslContextFactory)} for more flexibility.
@@ -1001,7 +1009,8 @@ public class ConnectionFactory implements Cloneable {
      * is enabled, the connection returned by this method will be {@link Recoverable}. Reconnection
      * attempts will always use the address configured on {@link ConnectionFactory}.
      *
-     * @param connectionName arbitrary sring for connection name client property
+     * @param connectionName client-provided connection name (an arbitrary string). Will
+     *                       be displayed in management UI if the server supports it.
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
@@ -1032,7 +1041,8 @@ public class ConnectionFactory implements Cloneable {
      * attempts will always use the address configured on {@link ConnectionFactory}.
      *
      * @param executor thread execution service for consumers on the connection
-     * @param connectionName arbitrary sring for connection name client property
+     * @param connectionName client-provided connection name (an arbitrary string). Will
+     *                       be displayed in management UI if the server supports it.
      * @return an interface to the connection
      * @throws IOException if it encounters a problem
      */
@@ -1052,7 +1062,7 @@ public class ConnectionFactory implements Cloneable {
         try {
             return (ConnectionFactory)super.clone();
         } catch (CloneNotSupportedException e) {
-            throw new Error(e);
+            throw new RuntimeException(e);
         }
     }
 

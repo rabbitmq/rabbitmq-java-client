@@ -39,6 +39,9 @@ import com.rabbitmq.client.impl.AMQImpl.Queue;
 import com.rabbitmq.client.impl.AMQImpl.Tx;
 import com.rabbitmq.utility.Utility;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Main interface to AMQP protocol functionality. Public API -
  * Implementation of all AMQChannels except channel zero.
@@ -51,6 +54,7 @@ import com.rabbitmq.utility.Utility;
  */
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
     private static final String UNSPECIFIED_OUT_OF_BAND = "";
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChannelN.class);
 
     /** Map from consumer tag to {@link Consumer} instance.
      * <p/>
@@ -1337,18 +1341,26 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             }
         };
 
-        rpc(new Basic.Consume.Builder()
-             .queue(queue)
-             .consumerTag(consumerTag)
-             .noLocal(noLocal)
-             .noAck(autoAck)
-             .exclusive(exclusive)
-             .arguments(arguments)
-            .build(),
-            k);
+        final Method m = new Basic.Consume.Builder()
+                .queue(queue)
+                .consumerTag(consumerTag)
+                .noLocal(noLocal)
+                .noAck(autoAck)
+                .exclusive(exclusive)
+                .arguments(arguments)
+               .build();
+        rpc(m, k);
 
         try {
-            return k.getReply();
+            if(_rpcTimeout == NO_RPC_TIMEOUT) {
+                return k.getReply();
+            } else {
+                try {
+                    return k.getReply(_rpcTimeout);
+                } catch (TimeoutException e) {
+                    throw wrapTimeoutException(m, e);
+                }
+            }
         } catch(ShutdownSignalException ex) {
             throw wrap(ex);
         }
@@ -1446,17 +1458,27 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>() {
             @Override
             public Consumer transformReply(AMQCommand replyCommand) {
-                replyCommand.getMethod();
+                if (!(replyCommand.getMethod() instanceof Basic.CancelOk))
+                    LOGGER.warn("Received reply {} was not of expected method Basic.CancelOk", replyCommand.getMethod());
                 _consumers.remove(consumerTag); //may already have been removed
                 dispatcher.handleCancelOk(originalConsumer, consumerTag);
                 return originalConsumer;
             }
         };
 
-        rpc(new Basic.Cancel(consumerTag, false), k);
-
+        final Method m = new Basic.Cancel(consumerTag, false);
+        rpc(m, k);
+        
         try {
-            k.getReply(); // discard result
+            if(_rpcTimeout == NO_RPC_TIMEOUT) {
+                k.getReply(); // discard result
+            } else {
+                try {
+                    k.getReply(_rpcTimeout);
+                } catch (TimeoutException e) {
+                    throw wrapTimeoutException(m, e);
+                }
+            }
         } catch(ShutdownSignalException ex) {
             throw wrap(ex);
         }

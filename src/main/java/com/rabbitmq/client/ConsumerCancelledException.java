@@ -29,7 +29,7 @@ public class ConsumerCancelledException extends RuntimeException implements
             return (ConsumerCancelledException) super.clone();
         } catch (CloneNotSupportedException e) {
             // You've got to be kidding me
-            throw new Error(e);
+            throw new RuntimeException(e);
         }
     }
 

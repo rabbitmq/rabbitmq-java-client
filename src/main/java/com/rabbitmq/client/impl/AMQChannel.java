@@ -41,7 +41,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AMQChannel.class);
 
-    private static final int NO_RPC_TIMEOUT = 0;
+    protected static final int NO_RPC_TIMEOUT = 0;
 
     /**
      * Protected; used instead of synchronizing on the channel itself,
@@ -66,7 +66,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public volatile boolean _blockContent = false;
 
     /** Timeout for RPC calls */
-    private final int _rpcTimeout;
+    protected final int _rpcTimeout;
 
     /**
      * Construct a channel on the given connection, with the given channel number.
@@ -267,16 +267,25 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             try {
                 return k.getReply(_rpcTimeout);
             } catch (TimeoutException e) {
-                try {
-                    // clean RPC channel state
-                    nextOutstandingRpc();
-                    markRpcFinished();
-                } catch(Exception ex) {
-                    LOGGER.warn("Error while cleaning timed out channel RPC: {}", ex.getMessage());
-                }
-                throw new ChannelContinuationTimeoutException(e, this, this._channelNumber, m);
+                throw wrapTimeoutException(m, e);
             }
         }
+    }
+    
+    private void cleanRpcChannelState() {
+        try {
+            // clean RPC channel state
+            nextOutstandingRpc();
+            markRpcFinished();
+        } catch (Exception ex) {
+            LOGGER.warn("Error while cleaning timed out channel RPC: {}", ex.getMessage());
+        }
+    }
+    
+    /** Cleans RPC channel state after a timeout and wraps the TimeoutException in a ChannelContinuationTimeoutException */
+    protected ChannelContinuationTimeoutException wrapTimeoutException(final Method m, final TimeoutException e)  {
+        cleanRpcChannelState();
+        return new ChannelContinuationTimeoutException(e, this, this._channelNumber, m);
     }
 
     private CompletableFuture<Command> privateAsyncRpc(Method m)
@@ -292,7 +301,12 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
         rpc(m, k);
 
-        return k.getReply(timeout);
+        try {
+            return k.getReply(timeout);
+        } catch (TimeoutException e) {
+            cleanRpcChannelState();
+            throw e;
+        }
     }
 
     public void rpc(Method m, RpcContinuation k)
