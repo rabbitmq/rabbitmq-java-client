@@ -22,5 +22,10 @@ package com.rabbitmq.client;
  * @since 3.3.0
  */
 public interface RecoveryListener {
+    /**
+     * Invoked when automatic connection recovery has completed.
+     * This includes topology recovery if it was enabled.
+     * @param recoverable a {@link Recoverable} connection.
+     */
     public void handleRecovery(Recoverable recoverable);
 }
