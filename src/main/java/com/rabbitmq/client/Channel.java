@@ -504,7 +504,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
      * @param destination the name of the exchange to which messages flow across the binding
      * @param source the name of the exchange from which messages flow across the binding
-     * @param routingKey the routine key to use for the binding
+     * @param routingKey the routing key to use for the binding
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
      */
@@ -516,7 +516,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
      * @param destination the name of the exchange to which messages flow across the binding
      * @param source the name of the exchange from which messages flow across the binding
-     * @param routingKey the routine key to use for the binding
+     * @param routingKey the routing key to use for the binding
      * @param arguments other properties (binding parameters)
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
@@ -528,7 +528,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * to true and returns void (as there will be no response from the server).
      * @param destination the name of the exchange to which messages flow across the binding
      * @param source the name of the exchange from which messages flow across the binding
-     * @param routingKey the routine key to use for the binding
+     * @param routingKey the routing key to use for the binding
      * @param arguments other properties (binding parameters)
      * @throws java.io.IOException if an error is encountered
      */
@@ -540,7 +540,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
      * @param destination the name of the exchange to which messages flow across the binding
      * @param source the name of the exchange from which messages flow across the binding
-     * @param routingKey the routine key to use for the binding
+     * @param routingKey the routing key to use for the binding
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
      */
@@ -552,7 +552,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @see com.rabbitmq.client.AMQP.Exchange.BindOk
      * @param destination the name of the exchange to which messages flow across the binding
      * @param source the name of the exchange from which messages flow across the binding
-     * @param routingKey the routine key to use for the binding
+     * @param routingKey the routing key to use for the binding
      * @param arguments other properties (binding parameters)
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
@@ -564,7 +564,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * and returns nothing (as there will be no response from the server).
      * @param destination the name of the exchange to which messages flow across the binding
      * @param source the name of the exchange from which messages flow across the binding
-     * @param routingKey the routine key to use for the binding
+     * @param routingKey the routing key to use for the binding
      * @param arguments other properties (binding parameters)
      * @throws java.io.IOException if an error is encountered
      */
@@ -662,7 +662,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @see com.rabbitmq.client.AMQP.Queue.BindOk
      * @param queue the name of the queue
      * @param exchange the name of the exchange
-     * @param routingKey the routine key to use for the binding
+     * @param routingKey the routing key to use for the binding
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
      */
@@ -674,7 +674,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @see com.rabbitmq.client.AMQP.Queue.BindOk
      * @param queue the name of the queue
      * @param exchange the name of the exchange
-     * @param routingKey the routine key to use for the binding
+     * @param routingKey the routing key to use for the binding
      * @param arguments other properties (binding parameters)
      * @return a binding-confirm method if the binding was successfully created
      * @throws java.io.IOException if an error is encountered
@@ -687,7 +687,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * from the server).
      * @param queue the name of the queue
      * @param exchange the name of the exchange
-     * @param routingKey the routine key to use for the binding
+     * @param routingKey the routing key to use for the binding
      * @param arguments other properties (binding parameters)
      * @throws java.io.IOException if an error is encountered
      */
@@ -699,7 +699,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
      * @param queue the name of the queue
      * @param exchange the name of the exchange
-     * @param routingKey the routine key to use for the binding
+     * @param routingKey the routing key to use for the binding
      * @return an unbinding-confirm method if the binding was successfully deleted
      * @throws java.io.IOException if an error is encountered
      */
@@ -711,7 +711,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @see com.rabbitmq.client.AMQP.Queue.UnbindOk
      * @param queue the name of the queue
      * @param exchange the name of the exchange
-     * @param routingKey the routine key to use for the binding
+     * @param routingKey the routing key to use for the binding
      * @param arguments other properties (binding parameters)
      * @return an unbinding-confirm method if the binding was successfully deleted
      * @throws java.io.IOException if an error is encountered
