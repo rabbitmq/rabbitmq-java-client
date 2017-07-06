@@ -20,6 +20,11 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP.Basic;
+import com.rabbitmq.client.AMQP.Confirm;
+import com.rabbitmq.client.AMQP.Exchange;
+import com.rabbitmq.client.AMQP.Queue;
+import com.rabbitmq.client.AMQP.Tx;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.utility.BlockingValueOrException;
 import org.slf4j.Logger;
@@ -154,9 +159,21 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         if (!processAsync(command)) {
             // The filter decided not to handle/consume the command,
             // so it must be some reply to an earlier RPC.
-            RpcContinuation nextOutstandingRpc = nextOutstandingRpc();
+            final RpcContinuation nextOutstandingRpc;
+            synchronized (_channelMutex) {
+                // check if this reply command is intended for the current waiting request before calling nextOutstandingRpc()
+                if (_activeRpc instanceof RpcContinuation2) {
+                    if (!((RpcContinuation2)_activeRpc).canHandleCommand(command)) {
+                        // this reply command is not intended for the current waiting request
+                        // most likely a previous request timed out and this command is the reply for that.
+                        // Throw this reply command away so we don't stop the current request from waiting for its reply
+                        return;
+                    }
+                }
+                nextOutstandingRpc = nextOutstandingRpc();
+            }
             // the outstanding RPC can be null when calling Channel#asyncRpc
-            if(nextOutstandingRpc != null) {
+            if (nextOutstandingRpc != null) {
                 nextOutstandingRpc.handleCommand(command);
                 markRpcFinished();
             }
@@ -229,7 +246,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     private AMQCommand privateRpc(Method m)
         throws IOException, ShutdownSignalException
     {
-        SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
+        SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation(m);
         rpc(m, k);
         // At this point, the request method has been sent, and we
         // should wait for the reply to arrive.
@@ -266,7 +283,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
 
     private AMQCommand privateRpc(Method m, int timeout)
             throws IOException, ShutdownSignalException, TimeoutException {
-        SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation();
+        SimpleBlockingRpcContinuation k = new SimpleBlockingRpcContinuation(m);
         rpc(m, k);
 
         try {
@@ -304,7 +321,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      */
     public abstract boolean processAsync(Command command) throws IOException;
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return "AMQChannel(" + _connection + "," + _channelNumber + ")";
     }
 
@@ -386,11 +404,85 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         void handleCommand(AMQCommand command);
         void handleShutdownSignal(ShutdownSignalException signal);
     }
+    
+    public interface RpcContinuation2 extends RpcContinuation {
+        /** @return true if the reply command can be handled for this request */
+        boolean canHandleCommand(AMQCommand command);
+    }
 
-    public static abstract class BlockingRpcContinuation<T> implements RpcContinuation {
+    public static abstract class BlockingRpcContinuation<T> implements RpcContinuation2 {
         public final BlockingValueOrException<T, ShutdownSignalException> _blocker =
             new BlockingValueOrException<T, ShutdownSignalException>();
-
+        protected final Method request;
+        
+        public BlockingRpcContinuation() {
+            request = null;
+        }
+        
+        public BlockingRpcContinuation(final Method request) {
+            this.request = request;
+        }
+        
+        @Override
+        public boolean canHandleCommand(AMQCommand command) {
+            // make a best effort attempt to ensure the reply was intended for this rpc request
+            // Ideally each rpc request would tag an id on it that could be returned and referenced on its reply.
+            // But because that would be a very large undertaking to add passively this logic at least protects against ClassCastExceptions
+            if (request != null) {
+                final Method reply = command.getMethod();
+                if (request instanceof Basic.Qos) {
+                    return reply instanceof Basic.QosOk;
+                } else if (request instanceof Basic.Get) {
+                    return reply instanceof Basic.GetOk || reply instanceof Basic.GetEmpty;
+                } else if (request instanceof Basic.Consume) {
+                    if (!(reply instanceof Basic.ConsumeOk))
+                        return false;
+                    // can also check the consumer tags match here. handle case where request consumer tag is empty and server-generated.
+                    final String consumerTag = ((Basic.Consume)request).getConsumerTag();
+                    return consumerTag == null || consumerTag.equals("") || consumerTag.equals(((Basic.ConsumeOk)reply).getConsumerTag());
+                } else if (request instanceof Basic.Cancel) {
+                    if (!(reply instanceof Basic.CancelOk))
+                        return false;
+                    // can also check the consumer tags match here
+                    return ((Basic.Cancel)request).getConsumerTag().equals(((Basic.CancelOk)reply).getConsumerTag());
+                } else if (request instanceof Basic.Recover) {
+                    return reply instanceof Basic.RecoverOk;
+                } else if (request instanceof Exchange.Declare) {
+                    return reply instanceof Exchange.DeclareOk;
+                } else if (request instanceof Exchange.Delete) {
+                    return reply instanceof Exchange.DeleteOk;
+                } else if (request instanceof Exchange.Bind) {
+                    return reply instanceof Exchange.BindOk;
+                } else if (request instanceof Exchange.Unbind) {
+                    return reply instanceof Exchange.UnbindOk;
+                } else if (request instanceof Queue.Declare) {
+                    if (!(reply instanceof Queue.DeclareOk))
+                        return false;
+                    // can also check the queue names match here. handle case where request queue name is empty and server-generated.
+                    final String queue = ((Queue.Declare)request).getQueue();
+                    return queue == null || queue.equals("") || queue.equals(((Queue.DeclareOk)reply).getQueue());
+                } else if (request instanceof Queue.Delete) {
+                    return reply instanceof Queue.DeleteOk;
+                } else if (request instanceof Queue.Bind) {
+                    return reply instanceof Queue.BindOk;
+                } else if (request instanceof Queue.Unbind) {
+                    return reply instanceof Queue.UnbindOk;
+                } else if (request instanceof Queue.Purge) {
+                    return reply instanceof Queue.PurgeOk;
+                } else if (request instanceof Tx.Select) {
+                    return reply instanceof Tx.SelectOk;
+                } else if (request instanceof Tx.Commit) {
+                    return reply instanceof Tx.CommitOk;
+                } else if (request instanceof Tx.Rollback) {
+                    return reply instanceof Tx.RollbackOk;
+                } else if (request instanceof Confirm.Select) {
+                    return reply instanceof Confirm.SelectOk;
+                }
+            }
+            // for passivity default to true
+            return true;
+        }
+        
         @Override
         public void handleCommand(AMQCommand command) {
             _blocker.setValue(transformReply(command));
@@ -418,6 +510,14 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public static class SimpleBlockingRpcContinuation
         extends BlockingRpcContinuation<AMQCommand>
     {
+        public SimpleBlockingRpcContinuation() {
+            super();
+        }
+        
+        public SimpleBlockingRpcContinuation(final Method request) {
+            super(request);
+        }
+        
         @Override
         public AMQCommand transformReply(AMQCommand command) {
             return command;

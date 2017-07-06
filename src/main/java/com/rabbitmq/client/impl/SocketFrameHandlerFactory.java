@@ -40,6 +40,7 @@ public class SocketFrameHandlerFactory extends AbstractFrameHandlerFactory {
         this.shutdownExecutor = shutdownExecutor;
     }
 
+    @Override
     public FrameHandler create(Address addr) throws IOException {
         String hostName = addr.getHost();
         int portNumber = ConnectionFactory.portOrDefault(addr.getPort(), ssl);

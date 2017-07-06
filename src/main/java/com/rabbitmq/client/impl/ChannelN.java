@@ -37,9 +37,6 @@ import com.rabbitmq.client.impl.AMQImpl.Queue;
 import com.rabbitmq.client.impl.AMQImpl.Tx;
 import com.rabbitmq.utility.Utility;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Main interface to AMQP protocol functionality. Public API -
  * Implementation of all AMQChannels except channel zero.
@@ -52,7 +49,6 @@ import org.slf4j.LoggerFactory;
  */
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
     private static final String UNSPECIFIED_OUT_OF_BAND = "";
-    private static final Logger LOGGER = LoggerFactory.getLogger(ChannelN.class);
 
     /** Map from consumer tag to {@link Consumer} instance.
      * <p/>
@@ -303,7 +299,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * Protected API - overridden to quiesce consumer work and broadcast the signal
      * to all consumers after calling the superclass's method.
      */
-    @Override public void processShutdownSignal(ShutdownSignalException signal,
+    @Override
+    public void processShutdownSignal(ShutdownSignalException signal,
                                                 boolean ignoreClosed,
                                                 boolean notifyRpc)
     {
@@ -325,7 +322,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * we're in quiescing mode, all inbound commands are ignored,
      * except for Channel.Close and Channel.CloseOk.
      */
-    @Override public boolean processAsync(Command command) throws IOException
+    @Override
+    public boolean processAsync(Command command) throws IOException
     {
         // If we are isOpen(), then we process commands normally.
         //
@@ -634,7 +632,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void basicQos(int prefetchSize, int prefetchCount, boolean global)
 	throws IOException
     {
-	exnWrappingRpc(new Basic.Qos(prefetchSize, prefetchCount, global));
+        exnWrappingRpc(new Basic.Qos(prefetchSize, prefetchCount, global));
     }
 
     /** Public API - {@inheritDoc} */
@@ -650,7 +648,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void basicQos(int prefetchCount)
 	throws IOException
     {
-	basicQos(0, prefetchCount, false);
+        basicQos(0, prefetchCount, false);
     }
 
     /** Public API - {@inheritDoc} */
@@ -1229,7 +1227,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                final Consumer callback)
         throws IOException
     {
-        BlockingRpcContinuation<String> k = new BlockingRpcContinuation<String>() {
+        final Method m = new Basic.Consume.Builder()
+                .queue(queue)
+                .consumerTag(consumerTag)
+                .noLocal(noLocal)
+                .noAck(autoAck)
+                .exclusive(exclusive)
+                .arguments(arguments)
+               .build();
+        final BlockingRpcContinuation<String> k = new BlockingRpcContinuation<String>(m) {
             @Override
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).getConsumerTag();
@@ -1243,14 +1249,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             }
         };
 
-        final Method m = new Basic.Consume.Builder()
-                .queue(queue)
-                .consumerTag(consumerTag)
-                .noLocal(noLocal)
-                .noAck(autoAck)
-                .exclusive(exclusive)
-                .arguments(arguments)
-               .build();
+        
         rpc(m, k);
 
         try {
@@ -1276,18 +1275,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         final Consumer originalConsumer = _consumers.get(consumerTag);
         if (originalConsumer == null)
             throw new IOException("Unknown consumerTag");
-        BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>() {
+        final Method m = new Basic.Cancel(consumerTag, false);
+        final BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>(m) {
             @Override
             public Consumer transformReply(AMQCommand replyCommand) {
-                if (!(replyCommand.getMethod() instanceof Basic.CancelOk))
-                    LOGGER.warn("Received reply {} was not of expected method Basic.CancelOk", replyCommand.getMethod());
                 _consumers.remove(consumerTag); //may already have been removed
                 dispatcher.handleCancelOk(originalConsumer, consumerTag);
                 return originalConsumer;
             }
         };
-
-        final Method m = new Basic.Cancel(consumerTag, false);
         rpc(m, k);
         
         try {
