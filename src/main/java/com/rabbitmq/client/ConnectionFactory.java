@@ -127,6 +127,13 @@ public class ConnectionFactory implements Cloneable {
      */
     private int channelRpcTimeout = DEFAULT_CHANNEL_RPC_TIMEOUT;
 
+    /**
+     * Whether or not channels check the reply type of an RPC call.
+     * Default is false.
+     * @since 4.2.0
+     */
+    private boolean channelShouldCheckRpcResponseType = false;
+
     /** @return the default host to use for connections */
     public String getHost() {
         return host;
@@ -958,6 +965,7 @@ public class ConnectionFactory implements Cloneable {
         result.setShutdownExecutor(shutdownExecutor);
         result.setHeartbeatExecutor(heartbeatExecutor);
         result.setChannelRpcTimeout(channelRpcTimeout);
+        result.setChannelShouldCheckRpcResponseType(channelShouldCheckRpcResponseType);
         return result;
     }
 
@@ -1125,5 +1133,20 @@ public class ConnectionFactory implements Cloneable {
      */
     public int getChannelRpcTimeout() {
         return channelRpcTimeout;
+    }
+
+    /**
+     * When set to true, channels will check the response type (e.g. queue.declare
+     * expects a queue.declare-ok response) of RPC calls
+     * and ignore those that do not match.
+     * Default is false.
+     * @param channelShouldCheckRpcResponseType
+     */
+    public void setChannelShouldCheckRpcResponseType(boolean channelShouldCheckRpcResponseType) {
+        this.channelShouldCheckRpcResponseType = channelShouldCheckRpcResponseType;
+    }
+
+    public boolean isChannelShouldCheckRpcResponseType() {
+        return channelShouldCheckRpcResponseType;
     }
 }
