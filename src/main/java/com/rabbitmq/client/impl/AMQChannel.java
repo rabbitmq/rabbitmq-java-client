@@ -71,7 +71,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     /** Timeout for RPC calls */
     protected final int _rpcTimeout;
 
-    private final boolean _checkRpcReplyType;
+    private final boolean _checkRpcResponseType;
 
     /**
      * Construct a channel on the given connection, with the given channel number.
@@ -85,7 +85,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             throw new IllegalArgumentException("Continuation timeout on RPC calls cannot be less than 0");
         }
         this._rpcTimeout = connection.getChannelRpcTimeout();
-        this._checkRpcReplyType = connection.willCheckRpcResponseType();
+        this._checkRpcResponseType = connection.willCheckRpcResponseType();
     }
 
     /**
@@ -162,7 +162,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         if (!processAsync(command)) {
             // The filter decided not to handle/consume the command,
             // so it must be some reply to an earlier RPC.
-            if (_checkRpcReplyType) {
+            if (_checkRpcResponseType) {
                 synchronized (_channelMutex) {
                     // check if this reply command is intended for the current waiting request before calling nextOutstandingRpc()
                     if (!_activeRpc.canHandleReply(command)) {
