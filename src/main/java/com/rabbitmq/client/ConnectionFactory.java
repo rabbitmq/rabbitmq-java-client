@@ -127,6 +127,13 @@ public class ConnectionFactory implements Cloneable {
      */
     private int channelRpcTimeout = DEFAULT_CHANNEL_RPC_TIMEOUT;
 
+    /**
+     * Whether or not channels check the reply type of an RPC call.
+     * Default is false.
+     * @since 4.2.0
+     */
+    private boolean channelCheckRpcReplyType = false;
+
     /** @return the default host to use for connections */
     public String getHost() {
         return host;
@@ -958,6 +965,7 @@ public class ConnectionFactory implements Cloneable {
         result.setShutdownExecutor(shutdownExecutor);
         result.setHeartbeatExecutor(heartbeatExecutor);
         result.setChannelRpcTimeout(channelRpcTimeout);
+        result.setChannelCheckRpcReplyType(channelCheckRpcReplyType);
         return result;
     }
 
@@ -1123,5 +1131,18 @@ public class ConnectionFactory implements Cloneable {
      */
     public int getChannelRpcTimeout() {
         return channelRpcTimeout;
+    }
+
+    /**
+     * Set whether or not channels check the reply type of an RPC call.
+     * Default is false.
+     * @param channelCheckRpcReplyType
+     */
+    public void setChannelCheckRpcReplyType(boolean channelCheckRpcReplyType) {
+        this.channelCheckRpcReplyType = channelCheckRpcReplyType;
+    }
+
+    public boolean isChannelCheckRpcReplyType() {
+        return channelCheckRpcReplyType;
     }
 }

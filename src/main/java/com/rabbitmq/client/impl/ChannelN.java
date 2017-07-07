@@ -1229,7 +1229,15 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                final Consumer callback)
         throws IOException
     {
-        BlockingRpcContinuation<String> k = new BlockingRpcContinuation<String>() {
+        final Method m = new Basic.Consume.Builder()
+            .queue(queue)
+            .consumerTag(consumerTag)
+            .noLocal(noLocal)
+            .noAck(autoAck)
+            .exclusive(exclusive)
+            .arguments(arguments)
+            .build();
+        BlockingRpcContinuation<String> k = new BlockingRpcContinuation<String>(m) {
             @Override
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).getConsumerTag();
@@ -1243,14 +1251,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             }
         };
 
-        final Method m = new Basic.Consume.Builder()
-                .queue(queue)
-                .consumerTag(consumerTag)
-                .noLocal(noLocal)
-                .noAck(autoAck)
-                .exclusive(exclusive)
-                .arguments(arguments)
-               .build();
+
         rpc(m, k);
 
         try {
@@ -1276,7 +1277,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         final Consumer originalConsumer = _consumers.get(consumerTag);
         if (originalConsumer == null)
             throw new IOException("Unknown consumerTag");
-        BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>() {
+
+        final Method m = new Basic.Cancel(consumerTag, false);
+        BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>(m) {
             @Override
             public Consumer transformReply(AMQCommand replyCommand) {
                 if (!(replyCommand.getMethod() instanceof Basic.CancelOk))
@@ -1287,7 +1290,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             }
         };
 
-        final Method m = new Basic.Cancel(consumerTag, false);
+
         rpc(m, k);
         
         try {

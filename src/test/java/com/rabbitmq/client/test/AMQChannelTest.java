@@ -106,6 +106,62 @@ public class AMQChannelTest {
         assertThat(rpcResponse.getMethod(), is(response));
     }
 
+    @Test
+    public void testRpcTimeout_replyComesDuringNexRpc() throws Exception {
+        int rpcTimeout = 100;
+        AMQConnection connection = mock(AMQConnection.class);
+        when(connection.getChannelRpcTimeout()).thenReturn(rpcTimeout);
+        when(connection.isChannelCheckRpcReplyType()).thenReturn(Boolean.TRUE);
+
+        final DummyAmqChannel channel = new DummyAmqChannel(connection, 1);
+        Method method = new AMQImpl.Queue.Declare.Builder()
+            .queue("123")
+            .durable(false)
+            .exclusive(true)
+            .autoDelete(true)
+            .arguments(null)
+            .build();
+
+        try {
+            channel.rpc(method);
+            fail("Should time out and throw an exception");
+        } catch(final ChannelContinuationTimeoutException e) {
+            // OK
+            assertThat((DummyAmqChannel) e.getChannel(), is(channel));
+            assertThat(e.getChannelNumber(), is(channel.getChannelNumber()));
+            assertThat(e.getMethod(), is(method));
+            assertNull("outstanding RPC should have been cleaned", channel.nextOutstandingRpc());
+        }
+
+        // now do a basic.consume request and have the queue.declareok returned instead
+        method = new AMQImpl.Basic.Consume.Builder()
+            .queue("123")
+            .consumerTag("")
+            .arguments(null)
+            .build();
+
+        final Method response1 = new AMQImpl.Queue.DeclareOk.Builder()
+            .queue("123")
+            .consumerCount(0)
+            .messageCount(0).build();
+
+        final Method response2 = new AMQImpl.Basic.ConsumeOk.Builder()
+            .consumerTag("456").build();
+
+        scheduler.schedule(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                channel.handleCompleteInboundCommand(new AMQCommand(response1));
+                Thread.sleep(10);
+                channel.handleCompleteInboundCommand(new AMQCommand(response2));
+                return null;
+            }
+        }, (long) (rpcTimeout / 2.0), TimeUnit.MILLISECONDS);
+
+        AMQCommand rpcResponse = channel.rpc(method);
+        assertThat(rpcResponse.getMethod(), is(response2));
+    }
+
     static class DummyAmqChannel extends AMQChannel {
 
         public DummyAmqChannel(AMQConnection connection, int channelNumber) {

@@ -134,6 +134,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final Collection<BlockedListener> blockedListeners = new CopyOnWriteArrayList<BlockedListener>();
     protected final MetricsCollector metricsCollector;
     private final int channelRpcTimeout;
+    private final boolean channelCheckRpcReplyType;
 
     /* State modified after start - all volatile */
 
@@ -229,6 +230,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             throw new IllegalArgumentException("Continuation timeout on RPC calls cannot be less than 0");
         }
         this.channelRpcTimeout = params.getChannelRpcTimeout();
+        this.channelCheckRpcReplyType = params.isChannelCheckRpcReplyType();
 
         this._channel0 = new AMQChannel(this, 0) {
             @Override public boolean processAsync(Command c) throws IOException {
@@ -1055,5 +1057,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     public int getChannelRpcTimeout() {
         return channelRpcTimeout;
+    }
+
+    public boolean isChannelCheckRpcReplyType() {
+        return channelCheckRpcReplyType;
     }
 }

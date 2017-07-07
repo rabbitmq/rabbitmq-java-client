@@ -40,6 +40,7 @@ public class ConnectionParams {
     private long networkRecoveryInterval;
     private boolean topologyRecovery;
     private int channelRpcTimeout;
+    private boolean channelCheckRpcReplyType;
 
     private ExceptionHandler exceptionHandler;
     private ThreadFactory threadFactory;
@@ -112,6 +113,10 @@ public class ConnectionParams {
 
     public int getChannelRpcTimeout() {
         return channelRpcTimeout;
+    }
+
+    public boolean isChannelCheckRpcReplyType() {
+        return channelCheckRpcReplyType;
     }
 
     public void setUsername(String username) {
@@ -188,5 +193,9 @@ public class ConnectionParams {
 
     public void setChannelRpcTimeout(int channelRpcTimeout) {
         this.channelRpcTimeout = channelRpcTimeout;
+    }
+
+    public void setChannelCheckRpcReplyType(boolean channelCheckRpcReplyType) {
+        this.channelCheckRpcReplyType = channelCheckRpcReplyType;
     }
 }

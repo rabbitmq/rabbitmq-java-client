@@ -19,8 +19,6 @@ import com.rabbitmq.client.AMQP;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.WritableByteChannel;
 
 /**
  *
