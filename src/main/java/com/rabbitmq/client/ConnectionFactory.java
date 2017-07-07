@@ -965,7 +965,7 @@ public class ConnectionFactory implements Cloneable {
         result.setShutdownExecutor(shutdownExecutor);
         result.setHeartbeatExecutor(heartbeatExecutor);
         result.setChannelRpcTimeout(channelRpcTimeout);
-        result.setChannelCheckRpcReplyType(channelCheckRpcReplyType);
+        result.setChannelShouldCheckRpcResponseType(channelCheckRpcReplyType);
         return result;
     }
 

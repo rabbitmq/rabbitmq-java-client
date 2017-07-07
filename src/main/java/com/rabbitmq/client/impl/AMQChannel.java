@@ -85,7 +85,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             throw new IllegalArgumentException("Continuation timeout on RPC calls cannot be less than 0");
         }
         this._rpcTimeout = connection.getChannelRpcTimeout();
-        this._checkRpcReplyType = connection.isChannelCheckRpcReplyType();
+        this._checkRpcReplyType = connection.willCheckRpcResponseType();
     }
 
     /**

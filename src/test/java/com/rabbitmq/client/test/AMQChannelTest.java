@@ -107,11 +107,11 @@ public class AMQChannelTest {
     }
 
     @Test
-    public void testRpcTimeout_replyComesDuringNexRpc() throws Exception {
+    public void testRpcTimeoutReplyComesDuringNexRpc() throws Exception {
         int rpcTimeout = 100;
         AMQConnection connection = mock(AMQConnection.class);
         when(connection.getChannelRpcTimeout()).thenReturn(rpcTimeout);
-        when(connection.isChannelCheckRpcReplyType()).thenReturn(Boolean.TRUE);
+        when(connection.willCheckRpcResponseType()).thenReturn(Boolean.TRUE);
 
         final DummyAmqChannel channel = new DummyAmqChannel(connection, 1);
         Method method = new AMQImpl.Queue.Declare.Builder()
