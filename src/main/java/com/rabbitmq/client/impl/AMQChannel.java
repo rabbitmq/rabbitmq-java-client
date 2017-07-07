@@ -161,7 +161,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         // waiting RPC continuation.
         if (!processAsync(command)) {
             // The filter decided not to handle/consume the command,
-            // so it must be some reply to an earlier RPC.
+            // so it must be a response to an earlier RPC.
             if (_checkRpcResponseType) {
                 synchronized (_channelMutex) {
                     // check if this reply command is intended for the current waiting request before calling nextOutstandingRpc()

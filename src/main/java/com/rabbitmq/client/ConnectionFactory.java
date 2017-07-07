@@ -1134,7 +1134,9 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Set whether or not channels check the reply type of an RPC call.
+     * When set to true, channels will check the response type (e.g. queue.declare
+     * expects a queue.declare-ok response) of RPC calls
+     * and ignore those that do not match.
      * Default is false.
      * @param channelShouldCheckRpcResponseType
      */
