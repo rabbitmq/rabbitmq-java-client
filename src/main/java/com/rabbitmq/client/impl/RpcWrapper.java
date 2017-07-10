@@ -22,6 +22,8 @@ import com.rabbitmq.client.ShutdownSignalException;
  */
 public interface RpcWrapper {
 
+    boolean canHandleReply(AMQCommand command);
+
     void complete(AMQCommand command);
 
     void shutdown(ShutdownSignalException signal);

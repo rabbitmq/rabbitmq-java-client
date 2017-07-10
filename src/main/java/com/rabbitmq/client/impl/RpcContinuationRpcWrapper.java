@@ -29,6 +29,11 @@ public class RpcContinuationRpcWrapper implements RpcWrapper {
     }
 
     @Override
+    public boolean canHandleReply(AMQCommand command) {
+        return continuation.canHandleReply(command);
+    }
+
+    @Override
     public void complete(AMQCommand command) {
         continuation.handleCommand(command);
     }

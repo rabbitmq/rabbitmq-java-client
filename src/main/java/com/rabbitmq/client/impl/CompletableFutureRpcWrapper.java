@@ -15,8 +15,8 @@
 
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.Command;
-import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.Method;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -25,10 +25,18 @@ import java.util.concurrent.CompletableFuture;
  */
 public class CompletableFutureRpcWrapper implements RpcWrapper {
 
+    private final com.rabbitmq.client.Method request;
+
     private final CompletableFuture<Command> completableFuture;
 
-    public CompletableFutureRpcWrapper(CompletableFuture<Command> completableFuture) {
+    public CompletableFutureRpcWrapper(Method method, CompletableFuture<Command> completableFuture) {
+        this.request = method;
         this.completableFuture = completableFuture;
+    }
+
+    @Override
+    public boolean canHandleReply(AMQCommand command) {
+        return AMQChannel.SimpleBlockingRpcContinuation.isResponseCompatibleWithRequest(request, command.getMethod());
     }
 
     @Override
