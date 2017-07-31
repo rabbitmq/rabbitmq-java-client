@@ -32,11 +32,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
 
-import static org.awaitility.Awaitility.waitAtMost;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.awaitility.Awaitility.*;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 /**
  *
