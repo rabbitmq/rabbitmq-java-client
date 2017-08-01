@@ -22,6 +22,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.Channel;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -55,7 +56,8 @@ public class AbsentQueue extends ClusteredTestBase {
         alternateChannel.queueDelete(Q);
     }
 
-    @Test public void notFound() throws IOException {
+    @Test public void notFound() throws IOException, InterruptedException {
+        waitPropagationInHa();
         assertNotFound(new Task() {
                 public void run() throws IOException {
                     channel.queueDeclare(Q, true, false, false, null);
@@ -96,8 +98,26 @@ public class AbsentQueue extends ClusteredTestBase {
 
     }
 
+    private void waitPropagationInHa() throws IOException, InterruptedException {
+        // can be necessary to wait a bit in HA mode
+        if (HATests.HA_TESTS_RUNNING) {
+            long waited = 0;
+            while(waited < 5000) {
+                Channel tempChannel = connection.createChannel();
+                try {
+                    tempChannel.queueDeclarePassive(Q);
+                    break;
+                } catch (IOException e) {
+
+                }
+                Thread.sleep(10);
+                waited += 10;
+            }
+        }
+    }
+
     private interface Task {
-        public void run() throws IOException;
+        void run() throws IOException;
     }
 
 }
