@@ -19,6 +19,8 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.Method;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  *
@@ -29,9 +31,12 @@ public class CompletableFutureRpcWrapper implements RpcWrapper {
 
     private final CompletableFuture<Command> completableFuture;
 
-    public CompletableFutureRpcWrapper(Method method, CompletableFuture<Command> completableFuture) {
+    private final ExecutorService executorService;
+
+    public CompletableFutureRpcWrapper(Method method, CompletableFuture<Command> completableFuture, ExecutorService executorService) {
         this.request = method;
         this.completableFuture = completableFuture;
+        this.executorService = executorService;
     }
 
     @Override
@@ -41,7 +46,11 @@ public class CompletableFutureRpcWrapper implements RpcWrapper {
 
     @Override
     public void complete(AMQCommand command) {
-        completableFuture.complete(command);
+        if (executorService == null) {
+            completableFuture.complete(command);
+        } else {
+            executorService.submit(() -> completableFuture.complete(command));
+        }
     }
 
     @Override

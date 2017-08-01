@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
@@ -145,11 +146,11 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public CompletableFuture<Command> exnWrappingAsyncRpc(Method m)
+    public CompletableFuture<Command> exnWrappingAsyncRpc(Method m, ExecutorService executorService)
         throws IOException
     {
         try {
-            return privateAsyncRpc(m);
+            return privateAsyncRpc(m, executorService);
         } catch (AlreadyClosedException ace) {
             // Do not wrap it since it means that connection/channel
             // was closed in some action in the past
@@ -204,8 +205,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         doEnqueueRpc(() -> new RpcContinuationRpcWrapper(k));
     }
 
-    public void enqueueAsyncRpc(Method method, CompletableFuture<Command> future) {
-        doEnqueueRpc(() -> new CompletableFutureRpcWrapper(method, future));
+    public void enqueueAsyncRpc(Method method, CompletableFuture<Command> future, ExecutorService executorService) {
+        doEnqueueRpc(() -> new CompletableFutureRpcWrapper(method, future, executorService));
     }
 
     private void doEnqueueRpc(Supplier<RpcWrapper> rpcWrapperSupplier) {
@@ -308,11 +309,11 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         return new ChannelContinuationTimeoutException(e, this, this._channelNumber, m);
     }
 
-    private CompletableFuture<Command> privateAsyncRpc(Method m)
+    private CompletableFuture<Command> privateAsyncRpc(Method m, ExecutorService executorService)
         throws IOException, ShutdownSignalException
     {
         CompletableFuture<Command> future = new CompletableFuture<>();
-        asyncRpc(m, future);
+        asyncRpc(m, future, executorService);
         return future;
     }
 
@@ -347,20 +348,20 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public void asyncRpc(Method m, CompletableFuture<Command> future)
+    public void asyncRpc(Method m, CompletableFuture<Command> future, ExecutorService executorService)
         throws IOException
     {
         synchronized (_channelMutex) {
             ensureIsOpen();
-            quiescingAsyncRpc(m, future);
+            quiescingAsyncRpc(m, future, executorService);
         }
     }
 
-    public void quiescingAsyncRpc(Method m, CompletableFuture<Command> future)
+    public void quiescingAsyncRpc(Method m, CompletableFuture<Command> future, ExecutorService executorService)
         throws IOException
     {
         synchronized (_channelMutex) {
-            enqueueAsyncRpc(m, future);
+            enqueueAsyncRpc(m, future, executorService);
             quiescingTransmit(m);
         }
     }

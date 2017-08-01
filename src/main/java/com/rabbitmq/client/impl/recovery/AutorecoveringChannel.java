@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -897,8 +898,8 @@ public class AutorecoveringChannel implements RecoverableChannel {
     }
 
     @Override
-    public CompletableFuture<Command> asyncCompletableRpc(Method method) throws IOException {
-        return this.delegate.asyncCompletableRpc(method);
+    public CompletableFuture<Command> asyncCompletableRpc(Method method, ExecutorService executorService) throws IOException {
+        return this.delegate.asyncCompletableRpc(method, executorService);
     }
 
     @Override

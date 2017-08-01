@@ -18,6 +18,7 @@ package com.rabbitmq.client;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -1367,9 +1368,10 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
     /**
      * Asynchronously send a method over this channel.
      * @param method method to transmit over this channel.
+     * @param executorService executor used to complete the operation, can be null
      * @return a completable future that completes when the result is received
      * @throws IOException Problem transmitting method.
      */
-    CompletableFuture<Command> asyncCompletableRpc(Method method) throws IOException;
+    CompletableFuture<Command> asyncCompletableRpc(Method method, ExecutorService executorService) throws IOException;
 
 }

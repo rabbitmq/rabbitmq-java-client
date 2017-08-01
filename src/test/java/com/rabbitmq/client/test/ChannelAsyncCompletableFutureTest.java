@@ -22,16 +22,37 @@ import com.rabbitmq.client.impl.AMQImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
 
+@RunWith(Parameterized.class)
 public class ChannelAsyncCompletableFutureTest extends BrokerTestCase {
 
-    ExecutorService executor;
+    ExecutorService executor, methodArgumentExecutor;
+
+    @Parameterized.Parameters
+    public static Collection<ExecutorService> params() {
+        List<ExecutorService> executors = new ArrayList<>();
+        executors.add(null);
+        executors.add(Executors.newSingleThreadExecutor());
+        return executors;
+    }
+
+    public ChannelAsyncCompletableFutureTest(ExecutorService methodArgumentExecutor) {
+        this.methodArgumentExecutor = methodArgumentExecutor;
+    }
 
     String queue;
     String exchange;
@@ -61,7 +82,7 @@ public class ChannelAsyncCompletableFutureTest extends BrokerTestCase {
             .arguments(null)
             .build();
 
-        channel.asyncCompletableRpc(queueDeclare)
+        channel.asyncCompletableRpc(queueDeclare, null)
             .thenComposeAsync(action -> {
                 try {
                     return channel.asyncCompletableRpc(new AMQImpl.Exchange.Declare.Builder()
@@ -70,7 +91,7 @@ public class ChannelAsyncCompletableFutureTest extends BrokerTestCase {
                         .durable(false)
                         .autoDelete(false)
                         .arguments(null)
-                        .build());
+                        .build(), methodArgumentExecutor);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -81,7 +102,7 @@ public class ChannelAsyncCompletableFutureTest extends BrokerTestCase {
                         .exchange(exchange)
                         .routingKey("")
                         .arguments(null)
-                        .build());
+                        .build(), methodArgumentExecutor);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
