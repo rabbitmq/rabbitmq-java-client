@@ -67,6 +67,9 @@ public class ChannelAsyncCompletableFutureTest extends BrokerTestCase {
         executor.shutdownNow();
         channel.queueDelete(queue);
         channel.exchangeDelete(exchange);
+        if (methodArgumentExecutor != null) {
+            methodArgumentExecutor.shutdownNow();
+        }
     }
 
     @Test
