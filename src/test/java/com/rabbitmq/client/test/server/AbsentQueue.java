@@ -16,17 +16,17 @@
 
 package com.rabbitmq.client.test.server;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.test.functional.ClusteredTestBase;
 import org.junit.Test;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.test.functional.ClusteredTestBase;
+import java.io.IOException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeoutException;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 /**
  * This tests whether 'absent' queues - durable queues whose home node
@@ -56,39 +56,19 @@ public class AbsentQueue extends ClusteredTestBase {
         alternateChannel.queueDelete(Q);
     }
 
-    @Test public void notFound() throws IOException, InterruptedException {
+    @Test public void notFound() throws Exception {
         waitPropagationInHa();
-        assertNotFound(new Task() {
-                public void run() throws IOException {
-                    channel.queueDeclare(Q, true, false, false, null);
-                }
-            });
-        assertNotFound(new Task() {
-                public void run() throws IOException {
-                    channel.queueDeclarePassive(Q);
-                }
-            });
-        assertNotFound(new Task() {
-                public void run() throws IOException {
-                    channel.queuePurge(Q);
-                }
-            });
-        assertNotFound(new Task() {
-                public void run() throws IOException {
-                    channel.basicGet(Q, true);
-                }
-            });
-        assertNotFound(new Task() {
-                public void run() throws IOException {
-                    channel.queueBind(Q, "amq.fanout", "", null);
-                }
-            });
+        assertNotFound(() -> channel.queueDeclare(Q, true, false, false, null));
+        assertNotFound(() -> channel.queueDeclarePassive(Q));
+        assertNotFound(() -> channel.queuePurge(Q));
+        assertNotFound(() -> channel.basicGet(Q, true));
+        assertNotFound(() -> channel.queueBind(Q, "amq.fanout", "", null));
     }
 
-    protected void assertNotFound(Task t) throws IOException {
+    protected void assertNotFound(Callable<?> t) throws Exception {
         if (clusteredChannel == null) return;
         try {
-            t.run();
+            t.call();
             if (!HATests.HA_TESTS_RUNNING) fail("expected not_found");
         } catch (IOException ioe) {
             assertFalse(HATests.HA_TESTS_RUNNING);
@@ -114,10 +94,6 @@ public class AbsentQueue extends ClusteredTestBase {
                 waited += 10;
             }
         }
-    }
-
-    private interface Task {
-        void run() throws IOException;
     }
 
 }
