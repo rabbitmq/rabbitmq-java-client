@@ -644,7 +644,7 @@
         <repository>
           <id>bintray-rabbitmq-maven-milestones</id>
           <name>rabbitmq-maven-milestones</name>
-          <url>https://api.bintray.com/maven/rabbitmq/maven-milestones/java-client/;publish=1</url>
+          <url>https://api.bintray.com/maven/rabbitmq/maven-milestones/java-client-milestone/;publish=1</url>
         </repository>
       </distributionManagement>
     </profile>
