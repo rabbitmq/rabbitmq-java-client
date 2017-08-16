@@ -92,9 +92,9 @@ public class Host {
     }
 
     public static boolean isRabbitMqCtlCommandAvailable(String command) throws IOException {
-        Process process = rabbitmqctl("help");
-        String stdout = capture(process.getInputStream());
-        return stdout.contains(command);
+        Process process = rabbitmqctlIgnoreErrors("");
+        String stderr = capture(process.getErrorStream());
+        return stderr.contains(command);
     }
 
     public static Process rabbitmqctl(String command) throws IOException {
