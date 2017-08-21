@@ -552,7 +552,7 @@
         <repository>
           <id>bintray-rabbitmq-maven</id>
           <name>rabbitmq-maven</name>
-          <url>https://api.bintray.com/maven/rabbitmq/maven/java-client/;publish=1</url>
+          <url>https://api.bintray.com/maven/rabbitmq/maven/com.rabbitmq:amqp-client/;publish=1</url>
         </repository>
       </distributionManagement>
     </profile>
@@ -616,7 +616,7 @@
         <repository>
           <id>bintray-rabbitmq-maven-milestones</id>
           <name>rabbitmq-maven-milestones</name>
-          <url>https://api.bintray.com/maven/rabbitmq/maven-milestones/java-client-milestone/;publish=1</url>
+          <url>https://api.bintray.com/maven/rabbitmq/maven-milestones/com.rabbitmq:amqp-client/;publish=1</url>
         </repository>
       </distributionManagement>
     </profile>
