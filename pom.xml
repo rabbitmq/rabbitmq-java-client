@@ -66,7 +66,7 @@
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
     <versions.maven.plugin.version>2.3</versions.maven.plugin.version>
     <maven.resources.plugin.version>3.0.1</maven.resources.plugin.version>
-    <maven.sources.plugin.version>3.0.1</maven.sources.plugin.version>
+    <maven.source.plugin.version>3.0.1</maven.source.plugin.version>
     <groovy.maven.plugin.version>2.0</groovy.maven.plugin.version>
     <groovy.all.version>2.4.8</groovy.all.version>
     <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
@@ -696,7 +696,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>${maven.sources.plugin.version}</version>
+        <version>${maven.resources.plugin.version}</version>
       </plugin>
       <plugin>
         <groupId>org.codehaus.gmaven</groupId>
@@ -905,7 +905,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>${maven.sources.plugin.version}</version>
+        <version>${maven.source.plugin.version}</version>
         <executions>
           <execution>
             <goals>
