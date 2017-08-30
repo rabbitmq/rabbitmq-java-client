@@ -62,6 +62,23 @@
     <awaitility.version>2.0.0</awaitility.version>
     <mockito.version>2.7.9</mockito.version>
 
+    <maven.javadoc.plugin.version>3.0.0-M1</maven.javadoc.plugin.version>
+    <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
+    <versions.maven.plugin.version>2.3</versions.maven.plugin.version>
+    <maven.resources.plugin.version>3.0.1</maven.resources.plugin.version>
+    <maven.sources.plugin.version>3.0.1</maven.sources.plugin.version>
+    <groovy.maven.plugin.version>2.0</groovy.maven.plugin.version>
+    <groovy.all.version>2.4.8</groovy.all.version>
+    <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
+    <keytool.maven.plugin.version>1.5</keytool.maven.plugin.version>
+    <build.helper.maven-plugin.version>1.12</build.helper.maven-plugin.version>
+    <maven.compiler.plugin.version>3.5.1</maven.compiler.plugin.version>
+    <maven.surefire.plugin.version>2.19.1</maven.surefire.plugin.version>
+    <maven.failsafe.plugin.version>2.19.1</maven.failsafe.plugin.version>
+    <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
+    <maven.jar.plugin.version>3.0.2</maven.jar.plugin.version>
+    <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
+
     <!--
     These groovy scripts are used later in this POM file to generate
     source files and resources for the library itself and for the
@@ -102,7 +119,6 @@
 
     <!-- to sign artifacts when releasing -->
     <gpg.keyname>6026DFCA</gpg.keyname>
-    <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
   </properties>
 
   <profiles>
@@ -185,12 +201,12 @@
           <plugin>
             <groupId>org.codehaus.gmaven</groupId>
             <artifactId>groovy-maven-plugin</artifactId>
-            <version>2.0</version>
+            <version>${groovy.maven.plugin.version}</version>
             <dependencies>
               <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
-                <version>2.4.8</version>
+                <version>${groovy.all.version}</version>
               </dependency>
             </dependencies>
             <executions>
@@ -312,6 +328,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>keytool-maven-plugin</artifactId>
+            <version>${keytool.maven.plugin.version}</version>
             <configuration>
               <skip>false</skip>
             </configuration>
@@ -340,6 +357,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>keytool-maven-plugin</artifactId>
+            <version>${keytool.maven.plugin.version}</version>
             <configuration>
               <skip>false</skip>
             </configuration>
@@ -371,7 +389,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
-            <version>2.19.1</version>
+            <version>${maven.failsafe.plugin.version}</version>
             <configuration>
               <systemPropertyVariables>
                 <make.bin>${make.bin}</make.bin>
@@ -433,7 +451,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
-            <version>2.19.1</version>
+            <version>${maven.failsafe.plugin.version}</version>
             <configuration>
               <systemPropertyVariables>
                 <use.nio>true</use.nio>
@@ -453,33 +471,12 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>${nexus-staging-maven-plugin.version}</version>
-            <configuration>
-              <serverId>ossrh</serverId>
-              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <skipStaging>false</skipStaging>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>3.0.1</version>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.10.4</version>
+            <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <additionalparam>${javadoc.opts}</additionalparam>
+              <quiet>true</quiet>
             </configuration>
             <executions>
               <execution>
@@ -493,7 +490,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
+            <version>${maven.gpg.plugin.version}</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -514,10 +511,6 @@
           <id>ossrh</id>
           <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
-        <repository>
-          <id>ossrh</id>
-          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
       </distributionManagement>
     </profile>
 
@@ -531,22 +524,11 @@
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>3.0.1</version>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.10.4</version>
+            <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <additionalparam>${javadoc.opts}</additionalparam>
+              <quiet>true</quiet>
             </configuration>
             <executions>
               <execution>
@@ -560,7 +542,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
+            <version>${maven.gpg.plugin.version}</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -595,22 +577,11 @@
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>3.0.1</version>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.10.4</version>
+            <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <additionalparam>${javadoc.opts}</additionalparam>
+              <quiet>true</quiet>
             </configuration>
             <executions>
               <execution>
@@ -624,7 +595,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
+            <version>${maven.gpg.plugin.version}</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -719,17 +690,17 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>3.0.1</version>
+        <version>${maven.sources.plugin.version}</version>
       </plugin>
       <plugin>
         <groupId>org.codehaus.gmaven</groupId>
         <artifactId>groovy-maven-plugin</artifactId>
-        <version>2.0</version>
+        <version>${groovy.maven.plugin.version}</version>
         <dependencies>
           <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>2.4.8</version>
+            <version>${groovy.all.version}</version>
           </dependency>
         </dependencies>
         <executions>
@@ -787,7 +758,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.12</version>
+        <version>${build.helper.maven-plugin.version}</version>
         <executions>
           <execution>
             <id>add-generated-sources-dir</id>
@@ -806,7 +777,7 @@
 
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.5.1</version>
+        <version>${maven.compiler.plugin.version}</version>
         <configuration>
           <source>1.6</source>
           <target>1.6</target>
@@ -824,7 +795,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.19.1</version>
+        <version>${maven.surefire.plugin.version}</version>
         <configuration>
           <skip>true</skip>
         </configuration>
@@ -834,7 +805,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>keytool-maven-plugin</artifactId>
-        <version>1.5</version>
+        <version>${keytool.maven.plugin.version}</version>
         <configuration>
           <skip>true</skip>
         </configuration>
@@ -874,7 +845,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>3.0.2</version>
+        <version>${maven.jar.plugin.version}</version>
         <configuration>
           <archive>
             <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
@@ -885,7 +856,7 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
-        <version>2.3.7</version>
+        <version>${maven.bundle.plugin.version}</version>
         <executions>
           <execution>
             <id>bundle-manifest</id>
@@ -913,16 +884,29 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.3</version>
+        <version>${versions.maven.plugin.version}</version>
       </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>2.5.3</version>
+        <version>${maven.release.plugin.version}</version>
         <configuration>
           <tagNameFormat>v@{project.version}</tagNameFormat>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>${maven.sources.plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
 
     </plugins>
