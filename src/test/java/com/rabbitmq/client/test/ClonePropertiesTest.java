@@ -38,7 +38,7 @@ public class ClonePropertiesTest {
         assertEquals(MessageProperties.MINIMAL_PERSISTENT_BASIC.getDeliveryMode(),
             ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
                 .getDeliveryMode());
-        assertEquals(new Integer(2),
+        assertEquals(Integer.valueOf(2),
             ((BasicProperties) MessageProperties.MINIMAL_PERSISTENT_BASIC.clone())
                 .getDeliveryMode());
     }
