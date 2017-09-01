@@ -38,7 +38,7 @@ public class ValueOrExceptionTest {
     }
 
     @Test public void storesValue() throws InsufficientMagicException {
-        Integer value = new Integer(3);
+        Integer value = Integer.valueOf(3);
 
         ValueOrException<Integer, InsufficientMagicException> valueOrEx = 
             ValueOrException.makeValue(value);
