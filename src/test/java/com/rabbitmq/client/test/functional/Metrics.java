@@ -15,7 +15,15 @@
 
 package com.rabbitmq.client.test.functional;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.Recoverable;
+import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.impl.StandardMetricsCollector;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -23,6 +31,8 @@ import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
 import org.awaitility.Duration;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -30,16 +40,32 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import static org.awaitility.Awaitility.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.awaitility.Awaitility.waitAtMost;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
  */
+@RunWith(Parameterized.class)
 public class Metrics extends BrokerTestCase {
+
+    @Parameterized.Parameters
+    public static Object[] data() {
+        return new Object[] { createConnectionFactory(), createAutoRecoveryConnectionFactory() };
+    }
+
+    @Parameterized.Parameter
+    public ConnectionFactory connectionFactory;
 
     static final String QUEUE = "metrics.queue";
 
@@ -53,17 +79,7 @@ public class Metrics extends BrokerTestCase {
         channel.queueDelete(QUEUE);
     }
 
-    @Test public void metricsStandardConnection() throws IOException, TimeoutException {
-        doMetrics(createConnectionFactory());
-    }
-
-    @Test public void metricsAutoRecoveryConnection() throws IOException, TimeoutException {
-        ConnectionFactory connectionFactory = createConnectionFactory();
-        connectionFactory.setAutomaticRecoveryEnabled(true);
-        doMetrics(connectionFactory);
-    }
-
-    private void doMetrics(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
+    @Test public void metrics() throws IOException, TimeoutException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
         Connection connection1 = null;
@@ -103,15 +119,15 @@ public class Metrics extends BrokerTestCase {
             assertThat(metrics.getConsumedMessages().getCount(), is(2L+1L));
 
             channel.basicConsume(QUEUE, true, new DefaultConsumer(channel));
-            waitAtMost(timeout()).until(new ConsumedMessagesMetricsCallable(metrics), equalTo(2L+1L+1L));
+            waitAtMost(timeout()).until(() -> metrics.getConsumedMessages().getCount(), equalTo(2L+1L+1L));
 
             safeClose(connection1);
-            waitAtMost(timeout()).until(new ConnectionsMetricsCallable(metrics), equalTo(1L));
-            waitAtMost(timeout()).until(new ChannelsMetricsCallable(metrics), equalTo(2L));
+            waitAtMost(timeout()).until(() -> metrics.getConnections().getCount(), equalTo(1L));
+            waitAtMost(timeout()).until(() -> metrics.getChannels().getCount(), equalTo(2L));
 
             safeClose(connection2);
-            waitAtMost(timeout()).until(new ConnectionsMetricsCallable(metrics), equalTo(0L));
-            waitAtMost(timeout()).until(new ChannelsMetricsCallable(metrics), equalTo(0L));
+            waitAtMost(timeout()).until(() -> metrics.getConnections().getCount(), equalTo(0L));
+            waitAtMost(timeout()).until(() -> metrics.getChannels().getCount(), equalTo(0L));
 
             assertThat(metrics.getAcknowledgedMessages().getCount(), is(0L));
             assertThat(metrics.getRejectedMessages().getCount(), is(0L));
@@ -122,17 +138,8 @@ public class Metrics extends BrokerTestCase {
         }
     }
 
-    @Test public void metricsAckStandardConnection() throws IOException, TimeoutException {
-        doMetricsAck(createConnectionFactory());
-    }
 
-    @Test public void metricsAckAutoRecoveryConnection() throws IOException, TimeoutException {
-        ConnectionFactory connectionFactory = createConnectionFactory();
-        connectionFactory.setAutomaticRecoveryEnabled(true);
-        doMetricsAck(connectionFactory);
-    }
-
-    private void doMetricsAck(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
+    @Test public void metricsAck() throws IOException, TimeoutException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
 
@@ -190,12 +197,12 @@ public class Metrics extends BrokerTestCase {
             }
 
             waitAtMost(timeout()).until(
-                new ConsumedMessagesMetricsCallable(metrics),
+                () -> metrics.getConsumedMessages().getCount(),
                 equalTo(alreadySentMessages+nbMessages)
             );
 
             waitAtMost(timeout()).until(
-                new AcknowledgedMessagesMetricsCallable(metrics),
+                () -> metrics.getAcknowledgedMessages().getCount(),
                 equalTo(alreadySentMessages+nbMessages)
             );
 
@@ -204,17 +211,7 @@ public class Metrics extends BrokerTestCase {
         }
     }
 
-    @Test public void metricsRejectStandardConnection() throws IOException, TimeoutException {
-        doMetricsReject(createConnectionFactory());
-    }
-
-    @Test public void metricsRejectAutoRecoveryConnection() throws IOException, TimeoutException {
-        ConnectionFactory connectionFactory = createConnectionFactory();
-        connectionFactory.setAutomaticRecoveryEnabled(true);
-        doMetricsReject(connectionFactory);
-    }
-
-    private void doMetricsReject(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
+    @Test public void metricsReject() throws IOException, TimeoutException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
 
@@ -239,20 +236,9 @@ public class Metrics extends BrokerTestCase {
         } finally {
             safeClose(connection);
         }
-
     }
 
     @Test public void multiThreadedMetricsStandardConnection() throws InterruptedException, TimeoutException, IOException {
-        doMultiThreadedMetrics(createConnectionFactory());
-    }
-
-    @Test public void multiThreadedMetricsAutoRecoveryConnection() throws InterruptedException, TimeoutException, IOException {
-        ConnectionFactory connectionFactory = createConnectionFactory();
-        connectionFactory.setAutomaticRecoveryEnabled(true);
-        doMultiThreadedMetrics(connectionFactory);
-    }
-
-    private void doMultiThreadedMetrics(ConnectionFactory connectionFactory) throws IOException, TimeoutException, InterruptedException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
         int nbConnections = 3;
@@ -293,7 +279,7 @@ public class Metrics extends BrokerTestCase {
             executorService.invokeAll(tasks);
 
             assertThat(metrics.getPublishedMessages().getCount(), is(nbOfMessages));
-            waitAtMost(timeout()).until(new ConsumedMessagesMetricsCallable(metrics), equalTo(nbOfMessages));
+            waitAtMost(timeout()).until(() -> metrics.getConsumedMessages().getCount(), equalTo(nbOfMessages));
             assertThat(metrics.getAcknowledgedMessages().getCount(), is(0L));
 
             // to remove the listeners
@@ -322,8 +308,8 @@ public class Metrics extends BrokerTestCase {
             executorService.invokeAll(tasks);
 
             assertThat(metrics.getPublishedMessages().getCount(), is(2*nbOfMessages));
-            waitAtMost(timeout()).until(new ConsumedMessagesMetricsCallable(metrics), equalTo(2*nbOfMessages));
-            waitAtMost(timeout()).until(new AcknowledgedMessagesMetricsCallable(metrics), equalTo(nbOfMessages));
+            waitAtMost(timeout()).until(() -> metrics.getConsumedMessages().getCount(), equalTo(2*nbOfMessages));
+            waitAtMost(timeout()).until(() -> metrics.getAcknowledgedMessages().getCount(), equalTo(nbOfMessages));
 
             // to remove the listeners
             for(int i = 0; i < nbChannels; i++) {
@@ -351,29 +337,18 @@ public class Metrics extends BrokerTestCase {
             executorService.invokeAll(tasks);
 
             assertThat(metrics.getPublishedMessages().getCount(), is(3*nbOfMessages));
-            waitAtMost(timeout()).until(new ConsumedMessagesMetricsCallable(metrics), equalTo(3*nbOfMessages));
-            waitAtMost(timeout()).until(new AcknowledgedMessagesMetricsCallable(metrics), equalTo(nbOfMessages));
-            waitAtMost(timeout()).until(new RejectedMessagesMetricsCallable(metrics), equalTo(nbOfMessages));
+            waitAtMost(timeout()).until(() -> metrics.getConsumedMessages().getCount(), equalTo(3*nbOfMessages));
+            waitAtMost(timeout()).until(() -> metrics.getAcknowledgedMessages().getCount(), equalTo(nbOfMessages));
+            waitAtMost(timeout()).until(() -> metrics.getRejectedMessages().getCount(), equalTo(nbOfMessages));
         } finally {
             for (Connection connection : connections) {
                 safeClose(connection);
             }
             executorService.shutdownNow();
         }
-
     }
 
-    @Test public void errorInChannelStandardConnection() throws IOException, TimeoutException {
-        errorInChannel(createConnectionFactory());
-    }
-
-    @Test public void errorInChananelAutoRecoveryConnection() throws IOException, TimeoutException {
-        ConnectionFactory connectionFactory = createConnectionFactory();
-        connectionFactory.setAutomaticRecoveryEnabled(true);
-        errorInChannel(connectionFactory);
-    }
-
-    private void errorInChannel(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
+    @Test public void errorInChannel() throws IOException, TimeoutException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
 
@@ -387,12 +362,11 @@ public class Metrics extends BrokerTestCase {
 
             channel.basicPublish("unlikelynameforanexchange", "", null, "msg".getBytes("UTF-8"));
 
-            waitAtMost(timeout()).until(new ChannelsMetricsCallable(metrics), is(0L));
+            waitAtMost(timeout()).until(() -> metrics.getChannels().getCount(), is(0L));
             assertThat(metrics.getConnections().getCount(), is(1L));
         } finally {
             safeClose(connection);
         }
-
     }
 
     @Test public void checkListenersWithAutoRecoveryConnection() throws Exception {
@@ -426,8 +400,15 @@ public class Metrics extends BrokerTestCase {
 
     }
 
-    private ConnectionFactory createConnectionFactory() {
+    private static ConnectionFactory createConnectionFactory() {
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+        connectionFactory.setAutomaticRecoveryEnabled(false);
+        return connectionFactory;
+    }
+
+    private static ConnectionFactory createAutoRecoveryConnectionFactory() {
+        ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+        connectionFactory.setAutomaticRecoveryEnabled(true);
         return connectionFactory;
     }
 
@@ -584,89 +565,6 @@ public class Metrics extends BrokerTestCase {
                 throw new RuntimeException("Error during randomized wait",e);
             }
             getChannel().basicAck(envelope.getDeliveryTag(), multiple);
-        }
-    }
-
-    static abstract class MetricsCallable implements Callable<Long> {
-
-        final StandardMetricsCollector metrics;
-
-        protected MetricsCallable(StandardMetricsCollector metrics) {
-            this.metrics = metrics;
-        }
-
-
-    }
-
-    static class ConnectionsMetricsCallable extends MetricsCallable {
-
-        ConnectionsMetricsCallable(StandardMetricsCollector metrics) {
-            super(metrics);
-        }
-
-        @Override
-        public Long call() throws Exception {
-            return metrics.getConnections().getCount();
-        }
-    }
-
-    static class ChannelsMetricsCallable extends MetricsCallable {
-
-        ChannelsMetricsCallable(StandardMetricsCollector metrics) {
-            super(metrics);
-        }
-
-        @Override
-        public Long call() throws Exception {
-            return metrics.getChannels().getCount();
-        }
-    }
-
-    static class PublishedMessagesMetricsCallable extends MetricsCallable {
-
-        PublishedMessagesMetricsCallable(StandardMetricsCollector metrics) {
-            super(metrics);
-        }
-
-        @Override
-        public Long call() throws Exception {
-            return metrics.getPublishedMessages().getCount();
-        }
-    }
-
-    static class ConsumedMessagesMetricsCallable extends MetricsCallable {
-
-        ConsumedMessagesMetricsCallable(StandardMetricsCollector metrics) {
-            super(metrics);
-        }
-
-        @Override
-        public Long call() throws Exception {
-            return metrics.getConsumedMessages().getCount();
-        }
-    }
-
-    static class AcknowledgedMessagesMetricsCallable extends MetricsCallable {
-
-        AcknowledgedMessagesMetricsCallable(StandardMetricsCollector metrics) {
-            super(metrics);
-        }
-
-        @Override
-        public Long call() throws Exception {
-            return metrics.getAcknowledgedMessages().getCount();
-        }
-    }
-
-    static class RejectedMessagesMetricsCallable extends MetricsCallable {
-
-        RejectedMessagesMetricsCallable(StandardMetricsCollector metrics) {
-            super(metrics);
-        }
-
-        @Override
-        public Long call() throws Exception {
-            return metrics.getRejectedMessages().getCount();
         }
     }
 
