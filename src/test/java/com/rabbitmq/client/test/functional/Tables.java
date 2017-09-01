@@ -45,7 +45,7 @@ public class Tables extends BrokerTestCase
         Map<String, Object> subTable = new HashMap<String, Object>();
         subTable.put("key", 1);
         table.put("S", LongStringHelper.asLongString("string"));
-        table.put("I", new Integer(1));
+        table.put("I", Integer.valueOf(1));
         table.put("D", new BigDecimal("1.1"));
         table.put("T", new java.util.Date(1000000));
         table.put("F", subTable);
