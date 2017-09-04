@@ -57,6 +57,10 @@ public class AbsentQueue extends ClusteredTestBase {
     }
 
     @Test public void notFound() throws Exception {
+        if (!HATests.HA_TESTS_RUNNING) {
+            // we don't care about this test in normal mode
+            return;
+        }
         waitPropagationInHa();
         assertNotFound(() -> channel.queueDeclare(Q, true, false, false, null));
         assertNotFound(() -> channel.queueDeclarePassive(Q));
