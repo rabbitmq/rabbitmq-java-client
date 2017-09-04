@@ -57,6 +57,10 @@ public class AbsentQueue extends ClusteredTestBase {
     }
 
     @Test public void notFound() throws IOException, InterruptedException {
+        if (!HATests.HA_TESTS_RUNNING) {
+            // we don't care about this test in normal mode
+            return;
+        }
         waitPropagationInHa();
         assertNotFound(new Task() {
                 public void run() throws IOException {
