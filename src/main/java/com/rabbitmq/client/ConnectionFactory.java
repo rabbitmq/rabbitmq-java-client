@@ -227,7 +227,7 @@ public class ConnectionFactory implements Cloneable {
         } else if ("amqps".equals(uri.getScheme().toLowerCase())) {
             setPort(DEFAULT_AMQP_OVER_SSL_PORT);
             // SSL context not set yet, we use the default one
-            if (this.sslContext != null) {
+            if (this.sslContext == null) {
                 useSslProtocol();
             }
         } else {
