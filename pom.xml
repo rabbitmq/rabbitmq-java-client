@@ -69,7 +69,6 @@
     <maven.source.plugin.version>3.0.1</maven.source.plugin.version>
     <groovy.maven.plugin.version>2.0</groovy.maven.plugin.version>
     <groovy.all.version>2.4.8</groovy.all.version>
-    <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
     <keytool.maven.plugin.version>1.5</keytool.maven.plugin.version>
     <build.helper.maven-plugin.version>1.12</build.helper.maven-plugin.version>
     <maven.compiler.plugin.version>3.5.1</maven.compiler.plugin.version>
