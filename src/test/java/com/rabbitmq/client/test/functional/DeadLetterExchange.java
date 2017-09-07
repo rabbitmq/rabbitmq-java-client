@@ -170,7 +170,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(DLQ, DLX, "test");
 
         //measure round-trip latency
-        QueueMessageConsumer c = new QueueMessageConsumer(channel);
+        AccumulatingMessageConsumer c = new AccumulatingMessageConsumer(channel);
         String cTag = channel.basicConsume(TEST_QUEUE_NAME, true, c);
         long start = System.currentTimeMillis();
         publish(null, "test");
@@ -562,7 +562,7 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     /* check that each message arrives within epsilon of the
        publication time + TTL + latency */
-    private void checkPromptArrival(QueueMessageConsumer c,
+    private void checkPromptArrival(AccumulatingMessageConsumer c,
                                     int count, long latency) throws Exception {
         long epsilon = TTL / 10;
         for (int i = 0; i < count; i++) {
@@ -697,11 +697,11 @@ public class DeadLetterExchange extends BrokerTestCase {
         return DeadLetterExchange.class.getSimpleName() + "-" + UUID.randomUUID().toString();
     }
 
-    class QueueMessageConsumer extends DefaultConsumer {
+    class AccumulatingMessageConsumer extends DefaultConsumer {
 
         BlockingQueue<byte[]> messages = new LinkedBlockingQueue<byte[]>();
 
-        public QueueMessageConsumer(Channel channel) {
+        public AccumulatingMessageConsumer(Channel channel) {
             super(channel);
         }
 
