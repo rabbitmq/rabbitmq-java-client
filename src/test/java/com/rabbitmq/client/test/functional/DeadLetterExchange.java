@@ -536,6 +536,9 @@ public class DeadLetterExchange extends BrokerTestCase {
                 assertNotNull(headers);
                 ArrayList<Object> death = (ArrayList<Object>) headers.get("x-death");
                 assertNotNull(death);
+                assertNotNull(headers.get("x-first-death-queue"));
+                assertNotNull(headers.get("x-first-death-reason"));
+                assertNotNull(headers.get("x-first-death-exchange"));
                 assertEquals(1, death.size());
                 assertDeathReason(death, 0, TEST_QUEUE_NAME, reason,
                         "amq.direct",
