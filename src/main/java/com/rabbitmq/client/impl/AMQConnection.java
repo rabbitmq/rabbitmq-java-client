@@ -56,6 +56,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final ExecutorService shutdownExecutor;
     private Thread mainLoopThread;
     private ThreadFactory threadFactory = Executors.defaultThreadFactory();
+    private final int consumerWorkerCount;
     private String id;
 
     private final List<RecoveryCanBeginListener> recoveryCanBeginListeners =
@@ -231,7 +232,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
         this.channelRpcTimeout = params.getChannelRpcTimeout();
         this.channelShouldCheckRpcResponseType = params.channelShouldCheckRpcResponseType();
-
+        
         this._channel0 = new AMQChannel(this, 0) {
             @Override public boolean processAsync(Command c) throws IOException {
                 return getConnection().processControlCommand(c);
@@ -245,10 +246,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
 
         this.metricsCollector = metricsCollector;
+        
+        this.consumerWorkerCount = params.getConsumerWorkerCount();
     }
 
     private void initializeConsumerWorkService() {
-        this._workService  = new ConsumerWorkService(consumerWorkServiceExecutor, threadFactory, shutdownTimeout);
+        this._workService  = new ConsumerWorkService(consumerWorkServiceExecutor, consumerWorkerCount, threadFactory, shutdownTimeout);
     }
 
     private void initializeHeartbeatSender() {

@@ -85,6 +85,9 @@ public class ConnectionFactory implements Cloneable {
     private static final String PREFERRED_TLS_PROTOCOL = "TLSv1.2";
 
     private static final String FALLBACK_TLS_PROTOCOL = "TLSv1";
+    
+    /** Default consumer worker count per connection */ 
+    public static final int DEFAULT_CONSUMER_WORKER_COUNT = Runtime.getRuntime().availableProcessors() * 2;
 
     private String username                       = DEFAULT_USER;
     private String password                       = DEFAULT_PASS;
@@ -97,6 +100,7 @@ public class ConnectionFactory implements Cloneable {
     private int connectionTimeout                 = DEFAULT_CONNECTION_TIMEOUT;
     private int handshakeTimeout                  = DEFAULT_HANDSHAKE_TIMEOUT;
     private int shutdownTimeout                   = DEFAULT_SHUTDOWN_TIMEOUT;
+    private int consumerWorkerCount   	  		  = DEFAULT_CONSUMER_WORKER_COUNT;
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory socketFactory           = null;
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
@@ -992,6 +996,7 @@ public class ConnectionFactory implements Cloneable {
         result.setHeartbeatExecutor(heartbeatExecutor);
         result.setChannelRpcTimeout(channelRpcTimeout);
         result.setChannelShouldCheckRpcResponseType(channelShouldCheckRpcResponseType);
+        result.setConsumerWorkerCount(consumerWorkerCount);
         return result;
     }
 
@@ -1191,4 +1196,22 @@ public class ConnectionFactory implements Cloneable {
     public boolean isChannelShouldCheckRpcResponseType() {
         return channelShouldCheckRpcResponseType;
     }
+
+    /**
+     * @return
+     */
+	public int getConsumerWorkerCount() {
+		return consumerWorkerCount;
+	}
+	
+	/**
+	 * Set the number of consumer worker thread count 
+	 * It provides the flexibility to control the number of worker per AMQP connection  
+	 * Default is {@link #DEFAULT_CONSUMER_WORKER_COUNT} 
+	 * @param consumerWorkerCount
+	 */
+	public void setConsumerWorkerCount(int consumerWorkerCount) {
+		this.consumerWorkerCount = consumerWorkerCount;
+	}
+    
 }
