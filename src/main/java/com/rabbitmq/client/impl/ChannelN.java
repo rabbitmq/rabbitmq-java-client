@@ -1555,8 +1555,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     }
 
     @Override
-    public CompletableFuture<Command> asyncCompletableRpc(Method method, ExecutorService executorService) throws IOException {
-        return exnWrappingAsyncRpc(method, executorService);
+    public CompletableFuture<Command> asyncCompletableRpc(Method method) throws IOException {
+        return exnWrappingAsyncRpc(method);
     }
 
     @Override
