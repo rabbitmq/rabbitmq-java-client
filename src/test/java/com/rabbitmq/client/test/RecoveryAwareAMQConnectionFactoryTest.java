@@ -45,12 +45,7 @@ public class RecoveryAwareAMQConnectionFactoryTest {
         final Queue<RecoveryAwareAMQConnection> connections = new ArrayBlockingQueue<RecoveryAwareAMQConnection>(10);
         connections.add(connectionThatThrowsTimeout);
         connections.add(connectionThatSucceeds);
-        AddressResolver addressResolver = new AddressResolver() {
-            @Override
-            public List<Address> getAddresses() throws IOException {
-                return Arrays.asList(new Address("host1"), new Address("host2"));
-            }
-        };
+        AddressResolver addressResolver = () -> Arrays.asList(new Address("host1"), new Address("host2"));
         RecoveryAwareAMQConnectionFactory connectionFactory = new RecoveryAwareAMQConnectionFactory(
             new ConnectionParams(), mock(FrameHandlerFactory.class), addressResolver
         ) {
