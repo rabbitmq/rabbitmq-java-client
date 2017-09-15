@@ -914,6 +914,16 @@
         </executions>
       </plugin>
 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven.javadoc.plugin.version}</version>
+        <configuration>
+          <additionalparam>${javadoc.opts}</additionalparam>
+          <quiet>true</quiet>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 
