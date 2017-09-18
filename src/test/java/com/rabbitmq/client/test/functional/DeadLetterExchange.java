@@ -18,6 +18,7 @@ package com.rabbitmq.client.test.functional;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -536,9 +537,14 @@ public class DeadLetterExchange extends BrokerTestCase {
                 assertNotNull(headers);
                 ArrayList<Object> death = (ArrayList<Object>) headers.get("x-death");
                 assertNotNull(death);
-                assertNotNull(headers.get("x-first-death-queue"));
-                assertNotNull(headers.get("x-first-death-reason"));
-                assertNotNull(headers.get("x-first-death-exchange"));
+                // the following assertions shouldn't be checked on version lower than 3.7
+                // as the headers are new in 3.7
+                // see https://github.com/rabbitmq/rabbitmq-server/issues/1332
+                if(TestUtils.isVersion37orLater(channel.getConnection())) {
+                    assertNotNull(headers.get("x-first-death-queue"));
+                    assertNotNull(headers.get("x-first-death-reason"));
+                    assertNotNull(headers.get("x-first-death-exchange"));
+                }
                 assertEquals(1, death.size());
                 assertDeathReason(death, 0, TEST_QUEUE_NAME, reason,
                         "amq.direct",
