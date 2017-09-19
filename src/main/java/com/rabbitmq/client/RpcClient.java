@@ -190,8 +190,10 @@ public class RpcClient {
                     throws IOException {
                 synchronized (_continuationMap) {
                     String replyId = properties.getCorrelationId();
-                    BlockingCell<Object> blocker = _continuationMap.get(replyId);
-                    _continuationMap.remove(replyId);
+                    BlockingCell<Object> blocker =_continuationMap.remove(replyId);
+                    if (blocker == null) {
+                        throw new IllegalStateException("No outstanding request for correlation ID " + replyId);
+                    }
                     blocker.set(new Response(consumerTag, envelope, properties, body));
                 }
             }
