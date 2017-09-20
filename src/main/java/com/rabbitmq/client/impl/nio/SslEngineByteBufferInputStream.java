@@ -73,6 +73,8 @@ public class SslEngineByteBufferInputStream extends InputStream {
                     if(bytesRead <= 0) {
                         throw new IllegalStateException("Should be reading something from the network");
                     }
+                    // see https://github.com/rabbitmq/rabbitmq-java-client/issues/307
+                    cipherIn.flip();
                 }
                 plainIn.clear();
                 result = sslEngine.unwrap(cipherIn, plainIn);
