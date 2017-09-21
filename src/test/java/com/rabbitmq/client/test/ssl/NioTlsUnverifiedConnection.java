@@ -95,11 +95,14 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
         }
     }
 
-    @Test public void largeMessage() throws Exception {
-        CountDownLatch latch = new CountDownLatch(1);
-        connection = basicGetBasicConsume(connection, "tls.nio.queue", latch, 1 * 1000 * 1000);
-        boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
-        assertTrue("Message has not been received", messagesReceived);
+    @Test public void messageSize() throws Exception {
+        int [] sizes = new int [] {100, 1000, 10 * 1000, 1 * 1000 * 1000, 5 * 1000 * 1000};
+        for(int size : sizes) {
+            CountDownLatch latch = new CountDownLatch(1);
+            connection = basicGetBasicConsume(connection, "tls.nio.queue", latch, size);
+            boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
+            assertTrue("Message has not been received", messagesReceived);
+        }
     }
 
     private Connection basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch, int msgSize)
@@ -116,6 +119,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
                 getChannel().basicAck(envelope.getDeliveryTag(), false);
                 latch.countDown();
+                getChannel().basicCancel(consumerTag);
             }
         });
 
