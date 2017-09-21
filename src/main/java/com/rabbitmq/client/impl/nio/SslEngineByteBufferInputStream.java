@@ -66,14 +66,15 @@ public class SslEngineByteBufferInputStream extends InputStream {
                 }
 
                 int bytesRead = NioHelper.read(channel, cipherIn);
-                if (bytesRead > 0) {
-                    cipherIn.flip();
-                } else {
+                // see https://github.com/rabbitmq/rabbitmq-java-client/issues/307
+                if (bytesRead <= 0) {
                     bytesRead = NioHelper.retryRead(channel, cipherIn);
                     if(bytesRead <= 0) {
                         throw new IllegalStateException("Should be reading something from the network");
                     }
                 }
+                cipherIn.flip();
+
                 plainIn.clear();
                 result = sslEngine.unwrap(cipherIn, plainIn);
 

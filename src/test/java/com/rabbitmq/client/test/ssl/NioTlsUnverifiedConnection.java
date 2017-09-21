@@ -40,6 +40,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
         throws IOException, TimeoutException {
         try {
             connectionFactory.useSslProtocol();
+            connectionFactory.useNio();
         } catch (Exception ex) {
             throw new IOException(ex.toString());
         }
@@ -55,7 +56,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
             }
         }
         if(connection == null) {
-            fail("Couldn't open TLS connection after 3 attemps");
+            fail("Couldn't open TLS connection after 3 attempts");
         }
 
     }
@@ -63,7 +64,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
     @Test
     public void connectionGetConsume() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        connection = basicGetBasicConsume(connection, "tls.nio.queue", latch);
+        connection = basicGetBasicConsume(connection, "tls.nio.queue", latch, 100 * 1000);
         boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
         assertTrue("Message has not been received", messagesReceived);
     }
@@ -94,13 +95,23 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
         }
     }
 
-    private Connection basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch)
+    @Test public void messageSize() throws Exception {
+        int [] sizes = new int [] {100, 1000, 10 * 1000, 1 * 1000 * 1000, 5 * 1000 * 1000};
+        for(int size : sizes) {
+            CountDownLatch latch = new CountDownLatch(1);
+            connection = basicGetBasicConsume(connection, "tls.nio.queue", latch, size);
+            boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
+            assertTrue("Message has not been received", messagesReceived);
+        }
+    }
+
+    private Connection basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch, int msgSize)
         throws IOException, TimeoutException {
         Channel channel = connection.createChannel();
         channel.queueDeclare(queue, false, false, false, null);
         channel.queuePurge(queue);
 
-        channel.basicPublish("", queue, null, new byte[100 * 1000]);
+        channel.basicPublish("", queue, null, new byte[msgSize]);
 
         channel.basicConsume(queue, false, new DefaultConsumer(channel) {
 
@@ -108,6 +119,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
                 getChannel().basicAck(envelope.getDeliveryTag(), false);
                 latch.countDown();
+                getChannel().basicCancel(consumerTag);
             }
         });
 
