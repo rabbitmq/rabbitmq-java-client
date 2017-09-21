@@ -34,7 +34,8 @@ public class PersistenceGuarantees extends BrokerTestCase {
         NioParams nioParams = super.nioParams();
         // may need a higher enqueuing timeout on slow environments
         return nioParams
-            .setWriteEnqueuingTimeoutInMs(nioParams.getWriteEnqueuingTimeoutInMs() * 2);
+            .setWriteEnqueuingTimeoutInMs(nioParams.getWriteEnqueuingTimeoutInMs() * 3)
+            .setWriteQueueCapacity(nioParams.getWriteQueueCapacity() * 2);
     }
 
     protected void declareQueue() throws IOException {
