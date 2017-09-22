@@ -34,7 +34,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 final class Copyright {
-    final static String COPYRIGHT="Copyright (c) 2007-2016 Pivotal Software, Inc.";
+    final static String COPYRIGHT="Copyright (c) 2007-2017 Pivotal Software, Inc.";
     final static String LICENSE="Licensed under the MPL. See http://www.rabbitmq.com/";
 }
 
