@@ -46,8 +46,13 @@ public class TestUtils {
 
     public static boolean isVersion37orLater(Connection connection) {
         String currentVersion = connection.getServerProperties().get("version").toString();
+        // versions built from source: 3.7.0+rc.1.4.gedc5d96
         if (currentVersion.contains("+")) {
             currentVersion = currentVersion.substring(0, currentVersion.indexOf("+"));
+        }
+        // alpha (snapshot) versions: 3.7.0~alpha.449-1
+        if (currentVersion.contains("~")) {
+            currentVersion = currentVersion.substring(0, currentVersion.indexOf("~"));
         }
         return "0.0.0".equals(currentVersion) ? true : versionCompare(currentVersion, "3.7.0") >= 0;
     }
