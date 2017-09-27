@@ -112,6 +112,7 @@ public class ConnectionFactory implements Cloneable {
     // and longs safely. It is unlikely that anybody'd need
     // to use recovery intervals > Integer.MAX_VALUE in practice.
     private long networkRecoveryInterval          = 5000;
+    private RecoveryDelayHandler recoveryDelayHandler;
 
     private MetricsCollector metricsCollector;
 
@@ -960,6 +961,7 @@ public class ConnectionFactory implements Cloneable {
         result.setShutdownTimeout(shutdownTimeout);
         result.setSaslConfig(saslConfig);
         result.setNetworkRecoveryInterval(networkRecoveryInterval);
+        result.setRecoveryDelayHandler(recoveryDelayHandler);
         result.setTopologyRecovery(topologyRecovery);
         result.setExceptionHandler(exceptionHandler);
         result.setThreadFactory(threadFactory);
@@ -1076,6 +1078,14 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setNetworkRecoveryInterval(long networkRecoveryInterval) {
         this.networkRecoveryInterval = networkRecoveryInterval;
+    }
+    
+    public RecoveryDelayHandler getRecoveryDelayHandler() {
+        return recoveryDelayHandler;
+    }
+    
+    public void setRecoveryDelayHandler(final RecoveryDelayHandler recoveryDelayHandler) {
+        this.recoveryDelayHandler = recoveryDelayHandler;
     }
 
     /**

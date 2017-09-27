@@ -16,6 +16,7 @@
 package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.ExceptionHandler;
+import com.rabbitmq.client.RecoveryDelayHandler;
 import com.rabbitmq.client.SaslConfig;
 
 import java.util.Map;
@@ -38,6 +39,7 @@ public class ConnectionParams {
     private int shutdownTimeout;
     private SaslConfig saslConfig;
     private long networkRecoveryInterval;
+    private RecoveryDelayHandler recoveryDelayHandler;
     private boolean topologyRecovery;
     private int channelRpcTimeout;
     private boolean channelShouldCheckRpcResponseType;
@@ -102,6 +104,10 @@ public class ConnectionParams {
     public long getNetworkRecoveryInterval() {
         return networkRecoveryInterval;
     }
+    
+    public RecoveryDelayHandler getRecoveryDelayHandler() {
+        return recoveryDelayHandler == null ? new RecoveryDelayHandler.DefaultRecoveryDelayHandler(networkRecoveryInterval) : recoveryDelayHandler;
+    }
 
     public boolean isTopologyRecoveryEnabled() {
         return topologyRecovery;
@@ -161,6 +167,10 @@ public class ConnectionParams {
 
     public void setNetworkRecoveryInterval(long networkRecoveryInterval) {
         this.networkRecoveryInterval = networkRecoveryInterval;
+    }
+    
+    public void setRecoveryDelayHandler(final RecoveryDelayHandler recoveryDelayHandler) {
+        this.recoveryDelayHandler = recoveryDelayHandler;
     }
 
     public void setTopologyRecovery(boolean topologyRecovery) {
