@@ -67,20 +67,25 @@ public class AutorecoveringChannel implements RecoverableChannel {
         try {
             delegate.close();
         } finally {
-            for (String consumerTag : consumerTags) {
-                this.connection.deleteRecordedConsumer(consumerTag);
-            }
-            this.connection.unregisterChannel(this);
+            recoveryCleanup();
         }
     }
 
     @Override
     public void close(int closeCode, String closeMessage) throws IOException, TimeoutException {
         try {
-          delegate.close(closeCode, closeMessage);
+            delegate.close(closeCode, closeMessage);
         } finally {
-          this.connection.unregisterChannel(this);
+            recoveryCleanup();
         }
+    }
+    
+    private void recoveryCleanup() {
+        for (String consumerTag : consumerTags) {
+            this.connection.deleteRecordedConsumer(consumerTag);
+        }
+        // TODO what about any other recorded queues and bindings that were owned by this channel? They will now cause recovery exceptions.
+        this.connection.unregisterChannel(this);
     }
 
     @Override
