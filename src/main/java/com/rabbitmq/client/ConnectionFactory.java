@@ -77,6 +77,9 @@ public class ConnectionFactory implements Cloneable {
 
     /** The default continuation timeout for RPC calls in channels: 10 minutes */
     public static final int    DEFAULT_CHANNEL_RPC_TIMEOUT = (int) MINUTES.toMillis(10);
+    
+    /** The default network recovery interval: 5000 millis */
+    public static final long   DEFAULT_NETWORK_RECOVERY_INTERVAL = 5000;
 
     private static final String PREFERRED_TLS_PROTOCOL = "TLSv1.2";
 
@@ -111,7 +114,7 @@ public class ConnectionFactory implements Cloneable {
     // long is used to make sure the users can use both ints
     // and longs safely. It is unlikely that anybody'd need
     // to use recovery intervals > Integer.MAX_VALUE in practice.
-    private long networkRecoveryInterval          = 5000;
+    private long networkRecoveryInterval          = DEFAULT_NETWORK_RECOVERY_INTERVAL;
     private RecoveryDelayHandler recoveryDelayHandler;
 
     private MetricsCollector metricsCollector;
@@ -1080,10 +1083,18 @@ public class ConnectionFactory implements Cloneable {
         this.networkRecoveryInterval = networkRecoveryInterval;
     }
     
+    /**
+     * Returns automatic connection recovery delay handler.
+     * @return recovery delay handler. May be null if not set.
+     */
     public RecoveryDelayHandler getRecoveryDelayHandler() {
         return recoveryDelayHandler;
     }
     
+    /**
+     * Sets the automatic connection recovery delay handler.
+     * @param recoveryDelayHandler the recovery delay handler
+     */
     public void setRecoveryDelayHandler(final RecoveryDelayHandler recoveryDelayHandler) {
         this.recoveryDelayHandler = recoveryDelayHandler;
     }

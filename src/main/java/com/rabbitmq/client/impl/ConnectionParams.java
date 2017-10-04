@@ -17,6 +17,7 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.RecoveryDelayHandler;
+import com.rabbitmq.client.RecoveryDelayHandler.DefaultRecoveryDelayHandler;
 import com.rabbitmq.client.SaslConfig;
 
 import java.util.Map;
@@ -105,8 +106,12 @@ public class ConnectionParams {
         return networkRecoveryInterval;
     }
     
+    /**
+     * Get the recovery delay handler.
+     * @return recovery delay handler or if none was set a {@link DefaultRecoveryDelayHandler} will be returned with a delay of {@link #getNetworkRecoveryInterval()}.
+     */
     public RecoveryDelayHandler getRecoveryDelayHandler() {
-        return recoveryDelayHandler == null ? new RecoveryDelayHandler.DefaultRecoveryDelayHandler(networkRecoveryInterval) : recoveryDelayHandler;
+        return recoveryDelayHandler == null ? new DefaultRecoveryDelayHandler(networkRecoveryInterval) : recoveryDelayHandler;
     }
 
     public boolean isTopologyRecoveryEnabled() {
