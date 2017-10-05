@@ -1,3 +1,18 @@
+// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+//
+// This software, the RabbitMQ Java client library, is triple-licensed under the
+// Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
+// ("GPL") and the Apache License version 2 ("ASL"). For the MPL, please see
+// LICENSE-MPL-RabbitMQ. For the GPL, please see LICENSE-GPL2.  For the ASL,
+// please see LICENSE-APACHE2.
+//
+// This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND,
+// either express or implied. See the LICENSE file for specific language governing
+// rights and limitations of this software.
+//
+// If you have any questions regarding licensing, please contact us at
+// info@rabbitmq.com.
+
 package com.rabbitmq.client;
 
 import java.util.Arrays;
@@ -24,7 +39,7 @@ public interface RecoveryDelayHandler {
     /**
      * Basic implementation of {@link RecoveryDelayHandler} that returns the {@link ConnectionFactory#getNetworkRecoveryInterval() network recovery interval} each time.
      */
-    public static class DefaultRecoveryDelayHandler implements RecoveryDelayHandler {
+    class DefaultRecoveryDelayHandler implements RecoveryDelayHandler {
 
         private final long networkRecoveryInterval;
         
@@ -47,7 +62,7 @@ public interface RecoveryDelayHandler {
      * Backoff implementation of {@link RecoveryDelayHandler} that uses the Fibonacci sequence (by default) to increase the recovery delay time after each failed attempt.
      * You can optionally use your own backoff sequence.
      */
-    public static class ExponentialBackoffDelayHandler implements RecoveryDelayHandler {
+    class ExponentialBackoffDelayHandler implements RecoveryDelayHandler {
 
         private final List<Long> sequence;
         

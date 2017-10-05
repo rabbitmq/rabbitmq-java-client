@@ -720,6 +720,19 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
     }
 
+    @Test public void recoveryWithExponentialBackoffDelayHandler() throws Exception {
+        ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+        connectionFactory.setRecoveryDelayHandler(new RecoveryDelayHandler.ExponentialBackoffDelayHandler());
+        Connection testConnection = connectionFactory.newConnection();
+        try {
+            assertTrue(testConnection.isOpen());
+            closeAndWaitForRecovery((RecoverableConnection) testConnection);
+            assertTrue(testConnection.isOpen());
+        } finally {
+            connection.close();
+        }
+    }
+
     private void assertConsumerCount(int exp, String q) throws IOException {
         assertEquals(exp, channel.queueDeclarePassive(q).getConsumerCount());
     }

@@ -48,7 +48,8 @@ import org.junit.runners.Suite;
     JavaNioTest.class,
     ConnectionFactoryTest.class,
     RecoveryAwareAMQConnectionFactoryTest.class,
-    RpcTest.class
+    RpcTest.class,
+    RecoveryDelayHandlerTest.class
 })
 public class ClientTests {
 

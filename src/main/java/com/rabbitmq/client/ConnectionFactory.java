@@ -1069,7 +1069,10 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Sets connection recovery interval. Default is 5000.
+     * Uses {@link com.rabbitmq.client.RecoveryDelayHandler.DefaultRecoveryDelayHandler} by default.
+     * Use another {@link RecoveryDelayHandler} implementation for more flexibility.
      * @param networkRecoveryInterval how long will automatic recovery wait before attempting to reconnect, in ms
+     * @see RecoveryDelayHandler
      */
     public void setNetworkRecoveryInterval(int networkRecoveryInterval) {
         this.networkRecoveryInterval = networkRecoveryInterval;
@@ -1077,7 +1080,10 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Sets connection recovery interval. Default is 5000.
+     * Uses {@link com.rabbitmq.client.RecoveryDelayHandler.DefaultRecoveryDelayHandler} by default.
+     * Use another {@link RecoveryDelayHandler} implementation for more flexibility.
      * @param networkRecoveryInterval how long will automatic recovery wait before attempting to reconnect, in ms
+     * @see RecoveryDelayHandler
      */
     public void setNetworkRecoveryInterval(long networkRecoveryInterval) {
         this.networkRecoveryInterval = networkRecoveryInterval;
@@ -1086,6 +1092,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Returns automatic connection recovery delay handler.
      * @return recovery delay handler. May be null if not set.
+     * @since 4.3.0
      */
     public RecoveryDelayHandler getRecoveryDelayHandler() {
         return recoveryDelayHandler;
@@ -1094,6 +1101,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Sets the automatic connection recovery delay handler.
      * @param recoveryDelayHandler the recovery delay handler
+     * @since 4.3.0
      */
     public void setRecoveryDelayHandler(final RecoveryDelayHandler recoveryDelayHandler) {
         this.recoveryDelayHandler = recoveryDelayHandler;
