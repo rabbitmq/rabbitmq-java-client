@@ -81,6 +81,9 @@ public class ConnectionFactory implements Cloneable {
 
     /** The default continuation timeout for RPC calls in channels: 10 minutes */
     public static final int    DEFAULT_CHANNEL_RPC_TIMEOUT = (int) MINUTES.toMillis(10);
+    
+    /** The default network recovery interval: 5000 millis */
+    public static final long   DEFAULT_NETWORK_RECOVERY_INTERVAL = 5000;
 
     private static final String PREFERRED_TLS_PROTOCOL = "TLSv1.2";
 
@@ -115,7 +118,8 @@ public class ConnectionFactory implements Cloneable {
     // long is used to make sure the users can use both ints
     // and longs safely. It is unlikely that anybody'd need
     // to use recovery intervals > Integer.MAX_VALUE in practice.
-    private long networkRecoveryInterval          = 5000;
+    private long networkRecoveryInterval          = DEFAULT_NETWORK_RECOVERY_INTERVAL;
+    private RecoveryDelayHandler recoveryDelayHandler;
 
     private MetricsCollector metricsCollector;
 
@@ -983,6 +987,7 @@ public class ConnectionFactory implements Cloneable {
         result.setShutdownTimeout(shutdownTimeout);
         result.setSaslConfig(saslConfig);
         result.setNetworkRecoveryInterval(networkRecoveryInterval);
+        result.setRecoveryDelayHandler(recoveryDelayHandler);
         result.setTopologyRecovery(topologyRecovery);
         result.setExceptionHandler(exceptionHandler);
         result.setThreadFactory(threadFactory);
@@ -1087,7 +1092,10 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Sets connection recovery interval. Default is 5000.
+     * Uses {@link com.rabbitmq.client.RecoveryDelayHandler.DefaultRecoveryDelayHandler} by default.
+     * Use another {@link RecoveryDelayHandler} implementation for more flexibility.
      * @param networkRecoveryInterval how long will automatic recovery wait before attempting to reconnect, in ms
+     * @see RecoveryDelayHandler
      */
     public void setNetworkRecoveryInterval(int networkRecoveryInterval) {
         this.networkRecoveryInterval = networkRecoveryInterval;
@@ -1095,10 +1103,31 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Sets connection recovery interval. Default is 5000.
+     * Uses {@link com.rabbitmq.client.RecoveryDelayHandler.DefaultRecoveryDelayHandler} by default.
+     * Use another {@link RecoveryDelayHandler} implementation for more flexibility.
      * @param networkRecoveryInterval how long will automatic recovery wait before attempting to reconnect, in ms
+     * @see RecoveryDelayHandler
      */
     public void setNetworkRecoveryInterval(long networkRecoveryInterval) {
         this.networkRecoveryInterval = networkRecoveryInterval;
+    }
+    
+    /**
+     * Returns automatic connection recovery delay handler.
+     * @return recovery delay handler. May be null if not set.
+     * @since 4.3.0
+     */
+    public RecoveryDelayHandler getRecoveryDelayHandler() {
+        return recoveryDelayHandler;
+    }
+    
+    /**
+     * Sets the automatic connection recovery delay handler.
+     * @param recoveryDelayHandler the recovery delay handler
+     * @since 4.3.0
+     */
+    public void setRecoveryDelayHandler(final RecoveryDelayHandler recoveryDelayHandler) {
+        this.recoveryDelayHandler = recoveryDelayHandler;
     }
 
     /**
