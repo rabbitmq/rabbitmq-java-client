@@ -487,7 +487,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     synchronized private void beginAutomaticRecovery() throws InterruptedException {
-        Thread.sleep(this.params.getNetworkRecoveryInterval());
+        Thread.sleep(this.params.getRecoveryDelayHandler().getDelay(0));
 
         this.notifyRecoveryListenersStarted();
 
@@ -525,9 +525,10 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 	// Returns new connection if the connection was recovered, 
 	// null if application initiated shutdown while attempting recovery.  
     private RecoveryAwareAMQConnection recoverConnection() throws InterruptedException {
-        while (!manuallyClosed)
-		{
+        int attempts = 0;
+        while (!manuallyClosed) {
             try {
+                attempts++;
 				RecoveryAwareAMQConnection newConn = this.cf.newConnection();
 				synchronized(recoveryLock) {
 					if (!manuallyClosed) {
@@ -541,8 +542,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 				newConn.abort();
 				return null;
             } catch (Exception e) {
-                // TODO: exponential back-off
-                Thread.sleep(this.params.getNetworkRecoveryInterval());
+                Thread.sleep(this.params.getRecoveryDelayHandler().getDelay(attempts));
                 this.getExceptionHandler().handleConnectionRecoveryException(this, e);
             }
         }
@@ -561,13 +561,13 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     private void notifyRecoveryListenersComplete() {
-        for (RecoveryListener f : this.recoveryListeners) {
+        for (RecoveryListener f : Utility.copy(this.recoveryListeners)) {
             f.handleRecovery(this);
         }
     }
 
     private void notifyRecoveryListenersStarted() {
-        for (RecoveryListener f : this.recoveryListeners) {
+        for (RecoveryListener f : Utility.copy(this.recoveryListeners)) {
             f.handleRecoveryStarted(this);
         }
     }
