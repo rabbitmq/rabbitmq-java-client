@@ -17,8 +17,14 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.MetricsCollector;
+import com.rabbitmq.client.impl.AbstractMetricsCollector;
+import com.rabbitmq.client.impl.MicrometerMetricsCollector;
 import com.rabbitmq.client.impl.StandardMetricsCollector;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
@@ -27,11 +33,23 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
-public class StandardMetricsCollectorTest {
+@RunWith(Parameterized.class)
+public class MetricsCollectorTest {
+
+    @Parameterized.Parameters
+    public static Object[] data() {
+        // need to resort to a factory, as this method is called only once
+        // if creating the collector instance, it's reused across the test methods
+        // and this doesn't work (it cannot be reset)
+        return new Object[] { new StandardMetricsCollectorFactory(), new MicrometerMetricsCollectorFactory() };
+    }
+
+    @Parameterized.Parameter
+    public MetricsCollectorFactory factory;
 
     @Test
     public void basicGetAndAck() {
-        StandardMetricsCollector metrics = new StandardMetricsCollector();
+        AbstractMetricsCollector metrics = factory.create();
         Connection connection = mock(Connection.class);
         when(connection.getId()).thenReturn("connection-1");
         Channel channel = mock(Channel.class);
@@ -49,20 +67,20 @@ public class StandardMetricsCollectorTest {
         metrics.consumedMessage(channel, 6, false);
 
         metrics.basicAck(channel, 6, false);
-        assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L));
+        assertThat(acknowledgedMessages(metrics), is(1L));
 
         metrics.basicAck(channel, 3, true);
-        assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L+2L));
+        assertThat(acknowledgedMessages(metrics), is(1L+2L));
 
         metrics.basicAck(channel, 6, true);
-        assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L+2L+1L));
+        assertThat(acknowledgedMessages(metrics), is(1L+2L+1L));
 
         metrics.basicAck(channel, 10, true);
-        assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L+2L+1L));
+        assertThat(acknowledgedMessages(metrics), is(1L+2L+1L));
     }
 
     @Test public void basicConsumeAndAck() {
-        StandardMetricsCollector metrics = new StandardMetricsCollector();
+        AbstractMetricsCollector metrics = factory.create();
         Connection connection = mock(Connection.class);
         when(connection.getId()).thenReturn("connection-1");
         Channel channel = mock(Channel.class);
@@ -78,8 +96,8 @@ public class StandardMetricsCollectorTest {
         metrics.basicConsume(channel, consumerTagWithManualAck, false);
 
         metrics.consumedMessage(channel, 1, consumerTagWithAutoAck);
-        assertThat(metrics.getConsumedMessages().getCount(), is(1L));
-        assertThat(metrics.getAcknowledgedMessages().getCount(), is(0L));
+        assertThat(consumedMessages(metrics), is(1L));
+        assertThat(acknowledgedMessages(metrics), is(0L));
 
         metrics.consumedMessage(channel, 2, consumerTagWithManualAck);
         metrics.consumedMessage(channel, 3, consumerTagWithManualAck);
@@ -88,21 +106,21 @@ public class StandardMetricsCollectorTest {
         metrics.consumedMessage(channel, 6, consumerTagWithManualAck);
 
         metrics.basicAck(channel, 6, false);
-        assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L));
+        assertThat(acknowledgedMessages(metrics), is(1L));
 
         metrics.basicAck(channel, 3, true);
-        assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L+2L));
+        assertThat(acknowledgedMessages(metrics), is(1L+2L));
 
         metrics.basicAck(channel, 6, true);
-        assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L+2L+1L));
+        assertThat(acknowledgedMessages(metrics), is(1L+2L+1L));
 
         metrics.basicAck(channel, 10, true);
-        assertThat(metrics.getAcknowledgedMessages().getCount(), is(1L+2L+1L));
+        assertThat(acknowledgedMessages(metrics), is(1L+2L+1L));
 
     }
 
     @Test public void cleanStaleState() {
-        StandardMetricsCollector metrics = new StandardMetricsCollector();
+        AbstractMetricsCollector metrics = factory.create();
         Connection openConnection = mock(Connection.class);
         when(openConnection.getId()).thenReturn("connection-1");
         when(openConnection.isOpen()).thenReturn(true);
@@ -132,13 +150,63 @@ public class StandardMetricsCollectorTest {
         metrics.newChannel(closedChannel);
         metrics.newChannel(openChannelInClosedConnection);
 
-        assertThat(metrics.getConnections().getCount(), is(2L));
-        assertThat(metrics.getChannels().getCount(), is(2L+1L));
+        assertThat(connections(metrics), is(2L));
+        assertThat(channels(metrics), is(2L+1L));
 
         metrics.cleanStaleState();
 
-        assertThat(metrics.getConnections().getCount(), is(1L));
-        assertThat(metrics.getChannels().getCount(), is(1L));
+        assertThat(connections(metrics), is(1L));
+        assertThat(channels(metrics), is(1L));
+    }
+
+    long consumedMessages(MetricsCollector metrics) {
+        if (metrics instanceof StandardMetricsCollector) {
+            return ((StandardMetricsCollector) metrics).getConsumedMessages().getCount();
+        } else {
+            return (long) ((MicrometerMetricsCollector) metrics).getConsumedMessages().count();
+        }
+    }
+
+    long acknowledgedMessages(MetricsCollector metrics) {
+        if (metrics instanceof StandardMetricsCollector) {
+            return ((StandardMetricsCollector) metrics).getAcknowledgedMessages().getCount();
+        } else {
+            return (long) ((MicrometerMetricsCollector) metrics).getAcknowledgedMessages().count();
+        }
+    }
+
+    long connections(MetricsCollector metrics) {
+        if (metrics instanceof StandardMetricsCollector) {
+            return ((StandardMetricsCollector) metrics).getConnections().getCount();
+        } else {
+            return ((MicrometerMetricsCollector) metrics).getConnections().get();
+        }
+    }
+
+    long channels(MetricsCollector metrics) {
+        if (metrics instanceof StandardMetricsCollector) {
+            return ((StandardMetricsCollector) metrics).getChannels().getCount();
+        } else {
+            return ((MicrometerMetricsCollector) metrics).getChannels().get();
+        }
+    }
+
+    interface MetricsCollectorFactory {
+        AbstractMetricsCollector create();
+    }
+
+    static class StandardMetricsCollectorFactory implements MetricsCollectorFactory {
+        @Override
+        public AbstractMetricsCollector create() {
+            return new StandardMetricsCollector();
+        }
+    }
+
+    static class MicrometerMetricsCollectorFactory implements MetricsCollectorFactory {
+        @Override
+        public AbstractMetricsCollector create() {
+            return new MicrometerMetricsCollector(new SimpleMeterRegistry());
+        }
     }
 
 }
