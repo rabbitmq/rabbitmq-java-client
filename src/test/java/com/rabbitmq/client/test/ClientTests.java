@@ -43,7 +43,7 @@ import org.junit.runners.Suite;
     JSONReadWriteTest.class,
     SharedThreadPoolTest.class,
     DnsRecordIpAddressResolverTests.class,
-    StandardMetricsCollectorTest.class,
+    MetricsCollectorTest.class,
     DnsSrvRecordAddressResolverTest.class,
     JavaNioTest.class,
     ConnectionFactoryTest.class,
