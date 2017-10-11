@@ -21,8 +21,8 @@ import com.rabbitmq.client.MetricsCollector;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 import static com.rabbitmq.client.impl.MicrometerMetricsCollector.Metrics.ACKNOWLEDGED_MESSAGES;
 import static com.rabbitmq.client.impl.MicrometerMetricsCollector.Metrics.CHANNELS;
@@ -62,21 +62,16 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
     }
 
     public MicrometerMetricsCollector(final MeterRegistry registry, final String prefix) {
-        this(new MetricsCreator() {
-            @Override
-            public Object create(Metrics metric) {
-                return metric.create(registry, prefix);
-            }
-        });
+        this(metric -> metric.create(registry, prefix));
     }
 
-    public MicrometerMetricsCollector(MetricsCreator creator) {
-        this.connections = (AtomicLong) creator.create(CONNECTIONS);
-        this.channels = (AtomicLong) creator.create(CHANNELS);
-        this.publishedMessages = (Counter) creator.create(PUBLISHED_MESSAGES);
-        this.consumedMessages = (Counter) creator.create(CONSUMED_MESSAGES);
-        this.acknowledgedMessages = (Counter) creator.create(ACKNOWLEDGED_MESSAGES);
-        this.rejectedMessages = (Counter) creator.create(REJECTED_MESSAGES);
+    public MicrometerMetricsCollector(Function<Metrics, Object> metricsCreator) {
+        this.connections = (AtomicLong) metricsCreator.apply(CONNECTIONS);
+        this.channels = (AtomicLong) metricsCreator.apply(CHANNELS);
+        this.publishedMessages = (Counter) metricsCreator.apply(PUBLISHED_MESSAGES);
+        this.consumedMessages = (Counter) metricsCreator.apply(CONSUMED_MESSAGES);
+        this.acknowledgedMessages = (Counter) metricsCreator.apply(ACKNOWLEDGED_MESSAGES);
+        this.rejectedMessages = (Counter) metricsCreator.apply(REJECTED_MESSAGES);
     }
 
     @Override
@@ -182,12 +177,6 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
         };
 
         abstract Object create(MeterRegistry registry, String prefix);
-    }
-
-    public interface MetricsCreator {
-
-        Object create(Metrics metric);
-
     }
 
 }
