@@ -60,6 +60,7 @@ public class SslEngineByteBufferInputStream extends InputStream {
                     if (plainIn.hasRemaining()) {
                         return readFromBuffer(plainIn);
                     }
+                    plainIn.clear();
                     break;
                 case BUFFER_OVERFLOW:
                     throw new SSLException("buffer overflow in read");
