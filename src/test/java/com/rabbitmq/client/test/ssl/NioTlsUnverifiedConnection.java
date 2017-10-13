@@ -36,6 +36,8 @@ import static org.junit.Assert.fail;
  */
 public class NioTlsUnverifiedConnection extends BrokerTestCase {
 
+    public static final String QUEUE = "tls.nio.queue";
+
     public void openConnection()
         throws IOException, TimeoutException {
         try {
@@ -61,10 +63,15 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
 
     }
 
+    @Override
+    protected void releaseResources() throws IOException {
+        channel.queueDelete(QUEUE);
+    }
+
     @Test
     public void connectionGetConsume() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        connection = basicGetBasicConsume(connection, "tls.nio.queue", latch, 100 * 1000);
+        connection = basicGetBasicConsume(connection, QUEUE, latch, 100 * 1000);
         boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
         assertTrue("Message has not been received", messagesReceived);
     }
@@ -113,7 +120,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
 
     private void sendAndVerifyMessage(int size) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        connection = basicGetBasicConsume(connection, "tls.nio.queue", latch, size);
+        connection = basicGetBasicConsume(connection, QUEUE, latch, size);
         boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
         assertTrue("Message has not been received", messagesReceived);
     }
