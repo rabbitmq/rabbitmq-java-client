@@ -43,57 +43,41 @@ public class SslEngineByteBufferInputStream extends InputStream {
 
     @Override
     public int read() throws IOException {
+
         if (plainIn.hasRemaining()) {
             return readFromBuffer(plainIn);
-        } else {
-            plainIn.clear();
+        }
+
+        plainIn.clear();
+
+        while (true) {
+
             SSLEngineResult result = sslEngine.unwrap(cipherIn, plainIn);
 
             switch (result.getStatus()) {
-            case OK:
-                plainIn.flip();
-                if (plainIn.hasRemaining()) {
-                    return readFromBuffer(plainIn);
-                }
-                break;
-            case BUFFER_OVERFLOW:
-                throw new SSLException("buffer overflow in read");
-            case BUFFER_UNDERFLOW:
-                if (cipherIn.hasRemaining()) {
+                case OK:
+                    plainIn.flip();
+                    if (plainIn.hasRemaining()) {
+                        return readFromBuffer(plainIn);
+                    }
+                    plainIn.clear();
+                    break;
+                case BUFFER_OVERFLOW:
+                    throw new SSLException("buffer overflow in read");
+                case BUFFER_UNDERFLOW:
                     cipherIn.compact();
-                } else {
-                    cipherIn.clear();
-                }
-
-                int bytesRead = NioHelper.read(channel, cipherIn);
-                // see https://github.com/rabbitmq/rabbitmq-java-client/issues/307
-                if (bytesRead <= 0) {
-                    bytesRead = NioHelper.retryRead(channel, cipherIn);
-                    if(bytesRead <= 0) {
+                    int bytesRead = NioHelper.readWithRetry(channel, cipherIn);
+                    if (bytesRead <= 0) {
                         throw new IllegalStateException("Should be reading something from the network");
                     }
-                }
-                cipherIn.flip();
-
-                plainIn.clear();
-                result = sslEngine.unwrap(cipherIn, plainIn);
-
-                if (result.getStatus() != SSLEngineResult.Status.OK) {
-                    throw new SSLException("Unexpected result: " + result);
-                }
-                plainIn.flip();
-                if (plainIn.hasRemaining()) {
-                    return readFromBuffer(plainIn);
-                }
-                break;
-            case CLOSED:
-                throw new SSLException("closed in read");
-            default:
-                throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
+                    cipherIn.flip();
+                    break;
+                case CLOSED:
+                    throw new SSLException("closed in read");
+                default:
+                    throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
             }
         }
-
-        return -1;
     }
 
     private int readFromBuffer(ByteBuffer buffer) {
