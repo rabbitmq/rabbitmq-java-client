@@ -47,4 +47,11 @@ public class NioHelper {
         return read;
     }
 
+    static int readWithRetry(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+        int bytesRead = NioHelper.read(channel, buffer);
+        if (bytesRead <= 0) {
+            bytesRead = NioHelper.retryRead(channel, buffer);
+        }
+        return bytesRead;
+    }
 }
