@@ -96,13 +96,26 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
     }
 
     @Test public void messageSize() throws Exception {
-        int [] sizes = new int [] {100, 1000, 10 * 1000, 1 * 1000 * 1000, 5 * 1000 * 1000};
-        for(int size : sizes) {
-            CountDownLatch latch = new CountDownLatch(1);
-            connection = basicGetBasicConsume(connection, "tls.nio.queue", latch, size);
-            boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
-            assertTrue("Message has not been received", messagesReceived);
+        int[] sizes = new int[]{100, 1000, 10 * 1000, 1 * 1000 * 1000, 5 * 1000 * 1000};
+        for (int size : sizes) {
+            sendAndVerifyMessage(size);
         }
+    }
+
+    // The purpose of this test is to put some stress on client TLS layer (SslEngineByteBufferInputStream to be specific)
+    // in an attempt to trigger condition described in https://github.com/rabbitmq/rabbitmq-java-client/issues/317
+    // Unfortunately it is not guaranteed to be reproducible
+    @Test public void largeMessagesTlsTraffic() throws Exception {
+        for (int i = 0; i < 50; i++) {
+            sendAndVerifyMessage(76390);
+        }
+    }
+
+    private void sendAndVerifyMessage(int size) throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        connection = basicGetBasicConsume(connection, "tls.nio.queue", latch, size);
+        boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
+        assertTrue("Message has not been received", messagesReceived);
     }
 
     private Connection basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch, int msgSize)
