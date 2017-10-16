@@ -121,7 +121,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
     private void sendAndVerifyMessage(int size) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         connection = basicGetBasicConsume(connection, QUEUE, latch, size);
-        boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
+        boolean messagesReceived = latch.await(10, TimeUnit.SECONDS);
         assertTrue("Message has not been received", messagesReceived);
     }
 

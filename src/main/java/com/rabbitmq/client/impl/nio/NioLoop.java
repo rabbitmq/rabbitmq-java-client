@@ -67,7 +67,7 @@ public class NioLoop implements Runnable {
         boolean writeRegistered = false;
 
         try {
-            while (true && !Thread.currentThread().isInterrupted()) {
+            while (!Thread.currentThread().isInterrupted()) {
 
                 for (SelectionKey selectionKey : selector.keys()) {
                     SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) selectionKey.attachment();
