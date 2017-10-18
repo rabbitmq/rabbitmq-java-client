@@ -16,13 +16,20 @@
 package com.rabbitmq.client.test.functional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -51,24 +58,33 @@ public class ConsumerPriorities extends BrokerTestCase {
     }
 
     private static final int COUNT = 10;
+    private static final long DELIVERY_TIMEOUT_MS = 100;
+    private static final long CANCEL_OK_TIMEOUT_MS = 10 * 1000;
 
     @Test public void consumerPriorities() throws Exception {
         String queue = channel.queueDeclare().getQueue();
-        QueueingConsumer highConsumer = new QueueingConsumer(channel);
-        QueueingConsumer medConsumer = new QueueingConsumer(channel);
-        QueueingConsumer lowConsumer = new QueueingConsumer(channel);
+        QueueMessageConsumer highConsumer = new QueueMessageConsumer(channel);
+        QueueMessageConsumer medConsumer = new QueueMessageConsumer(channel);
+        QueueMessageConsumer lowConsumer = new QueueMessageConsumer(channel);
         String high = channel.basicConsume(queue, true, args(1), highConsumer);
         String med = channel.basicConsume(queue, true, medConsumer);
         channel.basicConsume(queue, true, args(-1), lowConsumer);
 
         publish(queue, COUNT, "high");
-        channel.basicCancel(high);
-        publish(queue, COUNT, "med");
-        channel.basicCancel(med);
-        publish(queue, COUNT, "low");
-
         assertContents(highConsumer, COUNT, "high");
+        channel.basicCancel(high);
+        assertTrue(
+            "High priority consumer should have been cancelled",
+            highConsumer.cancelLatch.await(CANCEL_OK_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        );
+        publish(queue, COUNT, "med");
         assertContents(medConsumer, COUNT, "med");
+        channel.basicCancel(med);
+        assertTrue(
+            "Medium priority consumer should have been cancelled",
+            medConsumer.cancelLatch.await(CANCEL_OK_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        );
+        publish(queue, COUNT, "low");
         assertContents(lowConsumer, COUNT, "low");
     }
 
@@ -78,17 +94,43 @@ public class ConsumerPriorities extends BrokerTestCase {
         return map;
     }
 
-    private void assertContents(QueueingConsumer qc, int count, String msg) throws InterruptedException {
+    private void assertContents(QueueMessageConsumer qc, int count, String msg) throws InterruptedException {
         for (int i = 0; i < count; i++) {
-            QueueingConsumer.Delivery d = qc.nextDelivery();
-            assertEquals(msg, new String(d.getBody()));
+            byte[] body = qc.nextDelivery(DELIVERY_TIMEOUT_MS);
+            assertEquals(msg, new String(body));
         }
-        assertEquals(null, qc.nextDelivery(0));
+        assertEquals(null, qc.nextDelivery(DELIVERY_TIMEOUT_MS));
     }
 
     private void publish(String queue, int count, String msg) throws IOException {
         for (int i = 0; i < count; i++) {
             channel.basicPublish("", queue, MessageProperties.MINIMAL_BASIC, msg.getBytes());
         }
+    }
+
+    private static class QueueMessageConsumer extends DefaultConsumer {
+
+        BlockingQueue<byte[]> messages = new LinkedBlockingQueue<byte[]>();
+
+        CountDownLatch cancelLatch = new CountDownLatch(1);
+
+        public QueueMessageConsumer(Channel channel) {
+            super(channel);
+        }
+
+        @Override
+        public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+            messages.add(body);
+        }
+
+        @Override
+        public void handleCancelOk(String consumerTag) {
+            cancelLatch.countDown();
+        }
+
+        byte[] nextDelivery(long timeoutInMs) throws InterruptedException {
+            return messages.poll(timeoutInMs, TimeUnit.MILLISECONDS);
+        }
+
     }
 }
