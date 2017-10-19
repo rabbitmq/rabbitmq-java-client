@@ -20,16 +20,11 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.tools.Host;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
@@ -37,26 +32,6 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.*;
 
 public class BrokerTestCase {
-
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println(String.format(
-                "Starting test %s.%s (%s)",
-                description.getTestClass().getSimpleName(), description.getMethodName(),
-                new Date().toString()
-            ));
-        }
-
-        @Override
-        protected void finished(Description description) {
-            System.out.println(String.format(
-                "Test finished %s.%s (%s)",
-                description.getTestClass().getSimpleName(), description.getMethodName(),
-                new Date().toString()
-            ));
-        }
-    };
 
     protected ConnectionFactory connectionFactory = newConnectionFactory();
 
