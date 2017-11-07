@@ -49,7 +49,8 @@ import org.junit.runners.Suite;
     ConnectionFactoryTest.class,
     RecoveryAwareAMQConnectionFactoryTest.class,
     RpcTest.class,
-    RecoveryDelayHandlerTest.class
+    RecoveryDelayHandlerTest.class,
+    PropertyFileInitialisationTest.class
 })
 public class ClientTests {
 
