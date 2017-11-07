@@ -48,7 +48,7 @@ import java.util.Properties;
  * @since 4.4.0
  * @see ConnectionFactory#load(String, String)
  */
-public class ConnectionFactoryConfigurer {
+public class ConnectionFactoryConfigurator {
 
     public static final String DEFAULT_PREFIX = "rabbitmq.";
 
@@ -85,7 +85,7 @@ public class ConnectionFactoryConfigurer {
         if (propertyFileLocation.startsWith("classpath:")) {
             InputStream in = null;
             try {
-                in = ConnectionFactoryConfigurer.class.getResourceAsStream(
+                in = ConnectionFactoryConfigurator.class.getResourceAsStream(
                     propertyFileLocation.substring("classpath:".length())
                 );
                 properties.load(in);

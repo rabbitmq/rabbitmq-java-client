@@ -1065,22 +1065,22 @@ public class ConnectionFactory implements Cloneable {
      * @param propertyFileLocation location of the property file to use
      * @throws IOException when something goes wrong reading the file
      * @since 4.4.0
-     * @see ConnectionFactoryConfigurer
+     * @see ConnectionFactoryConfigurator
      */
     public void load(String propertyFileLocation) throws IOException {
-        ConnectionFactoryConfigurer.load(this, propertyFileLocation);
+        ConnectionFactoryConfigurator.load(this, propertyFileLocation);
     }
 
     /**
      * Load settings from a property file.
      * @param propertyFileLocation location of the property file to use
-     * @param prefix prefix used in the property file keys
+     * @param prefix key prefix for the entries in the file
      * @throws IOException when something goes wrong reading the file
      * @since 4.4.0
-     * @see ConnectionFactoryConfigurer
+     * @see ConnectionFactoryConfigurator
      */
     public void load(String propertyFileLocation, String prefix) throws IOException {
-        ConnectionFactoryConfigurer.load(this, propertyFileLocation, prefix);
+        ConnectionFactoryConfigurator.load(this, propertyFileLocation, prefix);
     }
 
     /**
@@ -1088,21 +1088,21 @@ public class ConnectionFactory implements Cloneable {
      * The default prefix for keys is <code>rabbitmq.</code>
      * @param properties source for settings
      * @since 4.4.0
-     * @see ConnectionFactoryConfigurer
+     * @see ConnectionFactoryConfigurator
      */
     public void load(Properties properties) {
-        ConnectionFactoryConfigurer.load(this, properties);
+        ConnectionFactoryConfigurator.load(this, properties);
     }
 
     /**
      * Load settings from a {@link Properties} instance.
      * @param properties source for settings
-     * @param prefix prefix used in keys
+     * @param prefix key prefix for properties entries
      * @since 4.4.0
-     * @see ConnectionFactoryConfigurer
+     * @see ConnectionFactoryConfigurator
      */
     public void load(Properties properties, String prefix) {
-        ConnectionFactoryConfigurer.load(this, (Map) properties, prefix);
+        ConnectionFactoryConfigurator.load(this, (Map) properties, prefix);
     }
 
     /**
@@ -1110,21 +1110,21 @@ public class ConnectionFactory implements Cloneable {
      * The default prefix for keys is <code>rabbitmq.</code>
      * @param properties source for settings
      * @since 4.4.0
-     * @see ConnectionFactoryConfigurer
+     * @see ConnectionFactoryConfigurator
      */
     public void load(Map<String, String> properties) {
-        ConnectionFactoryConfigurer.load(this, properties);
+        ConnectionFactoryConfigurator.load(this, properties);
     }
 
     /**
      * Load settings from a {@link Map} instance.
      * @param properties source for settings
-     * @param prefix prefix used in keys
+     * @param prefix key prefix for map entries
      * @since 4.4.0
-     * @see ConnectionFactoryConfigurer
+     * @see ConnectionFactoryConfigurator
      */
     public void load(Map<String, String> properties, String prefix) {
-        ConnectionFactoryConfigurer.load(this, properties, prefix);
+        ConnectionFactoryConfigurator.load(this, properties, prefix);
     }
 
     /**

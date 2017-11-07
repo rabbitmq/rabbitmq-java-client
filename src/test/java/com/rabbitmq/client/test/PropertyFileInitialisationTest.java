@@ -16,7 +16,7 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ConnectionFactoryConfigurer;
+import com.rabbitmq.client.ConnectionFactoryConfigurator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -160,7 +160,7 @@ public class PropertyFileInitialisationTest {
         Properties propertiesCustomPrefix = new Properties();
         for (Map.Entry<Object, Object> entry : properties.entrySet()) {
             propertiesCustomPrefix.put(
-                prefix + entry.getKey().toString().substring(ConnectionFactoryConfigurer.DEFAULT_PREFIX.length()),
+                prefix + entry.getKey().toString().substring(ConnectionFactoryConfigurator.DEFAULT_PREFIX.length()),
                 entry.getValue()
             );
         }
