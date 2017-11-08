@@ -2,6 +2,8 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.nio.NioParams;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -13,6 +15,25 @@ import static org.junit.Assert.assertTrue;
  *
  */
 public class JavaNioTest {
+
+    public static final String QUEUE = "nio.queue";
+
+    private Connection testConnection;
+
+    @Before
+    public void init() throws Exception {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.useNio();
+        testConnection = connectionFactory.newConnection();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (testConnection != null) {
+            testConnection.createChannel().queueDelete(QUEUE);
+            testConnection.close();
+        }
+    }
 
     @Test
     public void connection() throws Exception {
@@ -101,6 +122,18 @@ public class JavaNioTest {
         }
     }
 
+    @Test public void messageSize() throws Exception {
+        for (int i = 0; i < 50; i++) {
+            sendAndVerifyMessage(testConnection, 76390);
+        }
+    }
+
+    private void sendAndVerifyMessage(Connection connection, int size) throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        boolean messageReceived = basicGetBasicConsume(connection, QUEUE, latch, size);
+        assertTrue("Message has not been received", messageReceived);
+    }
+
     private Connection basicGetBasicConsume(ConnectionFactory connectionFactory, String queue, final CountDownLatch latch)
         throws IOException, TimeoutException {
         Connection connection = connectionFactory.newConnection();
@@ -119,6 +152,28 @@ public class JavaNioTest {
         });
 
         return connection;
+    }
+
+    private boolean basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch, int msgSize)
+        throws Exception {
+        Channel channel = connection.createChannel();
+        channel.queueDeclare(queue, false, false, false, null);
+        channel.queuePurge(queue);
+
+        channel.basicPublish("", queue, null, new byte[msgSize]);
+
+        final String tag = channel.basicConsume(queue, false, new DefaultConsumer(channel) {
+
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                getChannel().basicAck(envelope.getDeliveryTag(), false);
+                latch.countDown();
+            }
+        });
+
+        boolean done = latch.await(20, TimeUnit.SECONDS);
+        channel.basicCancel(tag);
+        return done;
     }
 
     private void safeClose(Connection connection) {

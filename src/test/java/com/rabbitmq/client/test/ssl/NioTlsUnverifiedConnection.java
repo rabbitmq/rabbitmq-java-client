@@ -71,7 +71,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
     @Test
     public void connectionGetConsume() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        connection = basicGetBasicConsume(connection, QUEUE, latch, 100 * 1000);
+        basicGetBasicConsume(connection, QUEUE, latch, 100 * 1000);
         boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
         assertTrue("Message has not been received", messagesReceived);
     }
@@ -120,30 +120,32 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
 
     private void sendAndVerifyMessage(int size) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        connection = basicGetBasicConsume(connection, QUEUE, latch, size);
-        boolean messagesReceived = latch.await(20, TimeUnit.SECONDS);
-        assertTrue("Message has not been received", messagesReceived);
+        boolean messageReceived = basicGetBasicConsume(connection, QUEUE, latch, size);
+        assertTrue("Message has not been received", messageReceived);
     }
 
-    private Connection basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch, int msgSize)
-        throws IOException, TimeoutException {
+    private boolean basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch, int msgSize)
+        throws Exception {
         Channel channel = connection.createChannel();
         channel.queueDeclare(queue, false, false, false, null);
         channel.queuePurge(queue);
 
         channel.basicPublish("", queue, null, new byte[msgSize]);
 
-        channel.basicConsume(queue, false, new DefaultConsumer(channel) {
+        String tag = channel.basicConsume(queue, false, new DefaultConsumer(channel) {
 
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
                 getChannel().basicAck(envelope.getDeliveryTag(), false);
                 latch.countDown();
-                getChannel().basicCancel(consumerTag);
             }
         });
 
-        return connection;
+        boolean messageReceived = latch.await(20, TimeUnit.SECONDS);
+
+        channel.basicCancel(tag);
+
+        return messageReceived;
     }
 
 }
