@@ -1067,8 +1067,9 @@ public class ConnectionFactory implements Cloneable {
      * @since 4.4.0
      * @see ConnectionFactoryConfigurator
      */
-    public void load(String propertyFileLocation) throws IOException {
+    public ConnectionFactory load(String propertyFileLocation) throws IOException {
         ConnectionFactoryConfigurator.load(this, propertyFileLocation);
+        return this;
     }
 
     /**
@@ -1079,8 +1080,9 @@ public class ConnectionFactory implements Cloneable {
      * @since 4.4.0
      * @see ConnectionFactoryConfigurator
      */
-    public void load(String propertyFileLocation, String prefix) throws IOException {
+    public ConnectionFactory load(String propertyFileLocation, String prefix) throws IOException {
         ConnectionFactoryConfigurator.load(this, propertyFileLocation, prefix);
+        return this;
     }
 
     /**
@@ -1090,8 +1092,9 @@ public class ConnectionFactory implements Cloneable {
      * @since 4.4.0
      * @see ConnectionFactoryConfigurator
      */
-    public void load(Properties properties) {
+    public ConnectionFactory load(Properties properties) {
         ConnectionFactoryConfigurator.load(this, properties);
+        return this;
     }
 
     /**
@@ -1101,8 +1104,9 @@ public class ConnectionFactory implements Cloneable {
      * @since 4.4.0
      * @see ConnectionFactoryConfigurator
      */
-    public void load(Properties properties, String prefix) {
+    public ConnectionFactory load(Properties properties, String prefix) {
         ConnectionFactoryConfigurator.load(this, (Map) properties, prefix);
+        return this;
     }
 
     /**
@@ -1112,8 +1116,9 @@ public class ConnectionFactory implements Cloneable {
      * @since 4.4.0
      * @see ConnectionFactoryConfigurator
      */
-    public void load(Map<String, String> properties) {
+    public ConnectionFactory load(Map<String, String> properties) {
         ConnectionFactoryConfigurator.load(this, properties);
+        return this;
     }
 
     /**
@@ -1123,8 +1128,9 @@ public class ConnectionFactory implements Cloneable {
      * @since 4.4.0
      * @see ConnectionFactoryConfigurator
      */
-    public void load(Map<String, String> properties, String prefix) {
+    public ConnectionFactory load(Map<String, String> properties, String prefix) {
         ConnectionFactoryConfigurator.load(this, properties, prefix);
+        return this;
     }
 
     /**
