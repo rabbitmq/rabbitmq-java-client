@@ -57,9 +57,9 @@ public class ConnectionFactoryConfigurator {
     public static final String VIRTUAL_HOST = "virtual.host";
     public static final String HOST = "host";
     public static final String PORT = "port";
-    public static final String REQUESTED_CHANNEL_MAX = "requested.channel.max";
-    public static final String REQUESTED_FRAME_MAX = "requested.frame.max";
-    public static final String REQUESTED_HEARTBEAT = "requested.heartbeat";
+    public static final String CONNECTION_CHANNEL_MAX = "connection.channel.max";
+    public static final String CONNECTION_FRAME_MAX = "connection.frame.max";
+    public static final String CONNECTION_HEARTBEAT = "connection.heartbeat";
     public static final String CONNECTION_TIMEOUT = "connection.timeout";
     public static final String HANDSHAKE_TIMEOUT = "handshake.timeout";
     public static final String SHUTDOWN_TIMEOUT = "shutdown.timeout";
@@ -142,15 +142,15 @@ public class ConnectionFactoryConfigurator {
         if (port != null) {
             cf.setPort(Integer.valueOf(port));
         }
-        String requestedChannelMax = properties.get(prefix + REQUESTED_CHANNEL_MAX);
+        String requestedChannelMax = properties.get(prefix + CONNECTION_CHANNEL_MAX);
         if (requestedChannelMax != null) {
             cf.setRequestedChannelMax(Integer.valueOf(requestedChannelMax));
         }
-        String requestedFrameMax = properties.get(prefix + REQUESTED_FRAME_MAX);
+        String requestedFrameMax = properties.get(prefix + CONNECTION_FRAME_MAX);
         if (requestedFrameMax != null) {
             cf.setRequestedFrameMax(Integer.valueOf(requestedFrameMax));
         }
-        String requestedHeartbeat = properties.get(prefix + REQUESTED_HEARTBEAT);
+        String requestedHeartbeat = properties.get(prefix + CONNECTION_HEARTBEAT);
         if (requestedHeartbeat != null) {
             cf.setRequestedHeartbeat(Integer.valueOf(requestedHeartbeat));
         }
