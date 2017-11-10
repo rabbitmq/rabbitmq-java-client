@@ -149,22 +149,29 @@ public class NioLoop implements Runnable {
                                 state.prepareForReadSequence();
 
                                 while (state.continueReading()) {
-                                    Frame frame = Frame.readFrom(inputStream);
+                                    final Frame frame;
+                                    if (state.frameBuilder == null) {
+                                        frame = Frame.readFrom(inputStream);
+                                    } else {
+                                        frame = state.frameBuilder.readFrame();
+                                    }
 
-                                    try {
-                                        boolean noProblem = state.getConnection().handleReadFrame(frame);
-                                        if (noProblem && (!state.getConnection().isRunning() || state.getConnection().hasBrokerInitiatedShutdown())) {
-                                            // looks like the frame was Close-Ok or Close
-                                            dispatchShutdownToConnection(state);
+                                    if (frame != null) {
+                                        try {
+                                            boolean noProblem = state.getConnection().handleReadFrame(frame);
+                                            if (noProblem && (!state.getConnection().isRunning() || state.getConnection().hasBrokerInitiatedShutdown())) {
+                                                // looks like the frame was Close-Ok or Close
+                                                dispatchShutdownToConnection(state);
+                                                key.cancel();
+                                                break;
+                                            }
+                                        } catch (Throwable ex) {
+                                            // problem during frame processing, tell connection, and
+                                            // we can stop for this channel
+                                            handleIoError(state, ex);
                                             key.cancel();
                                             break;
                                         }
-                                    } catch (Throwable ex) {
-                                        // problem during frame processing, tell connection, and
-                                        // we can stop for this channel
-                                        handleIoError(state, ex);
-                                        key.cancel();
-                                        break;
                                     }
                                 }
 

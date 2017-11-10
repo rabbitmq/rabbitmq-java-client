@@ -77,6 +77,8 @@ public class SocketChannelFrameHandlerState {
 
     final DataInputStream inputStream;
 
+    final FrameBuilder frameBuilder;
+
     public SocketChannelFrameHandlerState(SocketChannel channel, NioLoopContext nioLoopsState, NioParams nioParams, SSLEngine sslEngine) {
         this.channel = channel;
         this.readSelectorState = nioLoopsState.readSelectorState;
@@ -98,6 +100,8 @@ public class SocketChannelFrameHandlerState {
                 new ByteBufferInputStream(channel, plainIn)
             );
 
+            this.frameBuilder = new FrameBuilder(channel, plainIn);
+
         } else {
             this.ssl = true;
             this.plainOut = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
@@ -111,6 +115,8 @@ public class SocketChannelFrameHandlerState {
             this.inputStream = new DataInputStream(
                 new SslEngineByteBufferInputStream(sslEngine, plainIn, cipherIn, channel)
             );
+
+            this.frameBuilder = null;
         }
 
     }

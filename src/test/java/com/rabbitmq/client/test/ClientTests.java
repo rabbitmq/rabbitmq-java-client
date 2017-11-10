@@ -16,6 +16,7 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.impl.nio.FrameBuilder;
 import com.rabbitmq.utility.IntAllocatorTests;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -49,7 +50,8 @@ import org.junit.runners.Suite;
     ConnectionFactoryTest.class,
     RecoveryAwareAMQConnectionFactoryTest.class,
     RpcTest.class,
-    RecoveryDelayHandlerTest.class
+    RecoveryDelayHandlerTest.class,
+    FrameBuilder.class
 })
 public class ClientTests {
 
