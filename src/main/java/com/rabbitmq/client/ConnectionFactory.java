@@ -1061,7 +1061,9 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Load settings from a property file.
-     * The default prefix for keys is <code>rabbitmq.</code>
+     * Keys must be prefixed with <code>rabbitmq.</code>,
+     * use {@link ConnectionFactory#load(String, String)} to
+     * specify your own prefix.
      * @param propertyFileLocation location of the property file to use
      * @throws IOException when something goes wrong reading the file
      * @since 4.4.0
@@ -1087,7 +1089,9 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Load settings from a {@link Properties} instance.
-     * The default prefix for keys is <code>rabbitmq.</code>
+     * Keys must be prefixed with <code>rabbitmq.</code>,
+     * use {@link ConnectionFactory#load(Properties, String)} to
+     * specify your own prefix.
      * @param properties source for settings
      * @since 4.4.0
      * @see ConnectionFactoryConfigurator
@@ -1111,7 +1115,9 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Load settings from a {@link Map} instance.
-     * The default prefix for keys is <code>rabbitmq.</code>
+     * Keys must be prefixed with <code>rabbitmq.</code>,
+     * use {@link ConnectionFactory#load(Map, String)} to
+     * specify your own prefix.
      * @param properties source for settings
      * @since 4.4.0
      * @see ConnectionFactoryConfigurator
