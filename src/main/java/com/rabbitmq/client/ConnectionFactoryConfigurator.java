@@ -65,9 +65,9 @@ public class ConnectionFactoryConfigurator {
     public static final String SHUTDOWN_TIMEOUT = "shutdown.timeout";
     public static final String USE_DEFAULT_CLIENT_PROPERTIES = "use.default.client.properties";
     public static final String CLIENT_PROPERTIES_PREFIX = "client.properties.";
-    public static final String AUTOMATIC_RECOVERY_ENABLED = "automatic.recovery.enabled";
+    public static final String CONNECTION_RECOVERY_ENABLED = "connection.recovery.enabled";
     public static final String TOPOLOGY_RECOVERY_ENABLED = "topology.recovery.enabled";
-    public static final String NETWORK_RECOVERY_INTERVAL = "network.recovery.interval";
+    public static final String CONNECTION_RECOVERY_INTERVAL = "connection.recovery.interval";
     public static final String CHANNEL_RPC_TIMEOUT = "channel.rpc.timeout";
     public static final String CHANNEL_SHOULD_CHECK_RPC_RESPONSE_TYPE = "channel.should.check.rpc.response.type";
     public static final String USE_NIO = "use.nio";
@@ -183,7 +183,7 @@ public class ConnectionFactoryConfigurator {
         }
         cf.setClientProperties(clientProperties);
 
-        String automaticRecovery = properties.get(prefix + AUTOMATIC_RECOVERY_ENABLED);
+        String automaticRecovery = properties.get(prefix + CONNECTION_RECOVERY_ENABLED);
         if (automaticRecovery != null) {
             cf.setAutomaticRecoveryEnabled(Boolean.valueOf(automaticRecovery));
         }
@@ -191,7 +191,7 @@ public class ConnectionFactoryConfigurator {
         if (topologyRecovery != null) {
             cf.setTopologyRecoveryEnabled(Boolean.getBoolean(topologyRecovery));
         }
-        String networkRecoveryInterval = properties.get(prefix + NETWORK_RECOVERY_INTERVAL);
+        String networkRecoveryInterval = properties.get(prefix + CONNECTION_RECOVERY_INTERVAL);
         if (networkRecoveryInterval != null) {
             cf.setNetworkRecoveryInterval(Long.valueOf(networkRecoveryInterval));
         }
