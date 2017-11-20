@@ -24,15 +24,23 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 
 /**
- *
+ * Class to create AMQP frames from a {@link ReadableByteChannel}.
+ * Supports partial frames: a frame can be read in several attempts
+ * from the {@link NioLoop}. This can happen when the channel won't
+ * read any more bytes in the middle of a frame building. The state
+ * of the outstanding frame is saved up, and the builder will
+ * start where it left off when the {@link NioLoop} comes back to
+ * this connection.
+ * This class is not thread safe.
+ * @since 4.4.0
  */
 public class FrameBuilder {
 
     private static final int PAYLOAD_OFFSET = 1 /* type */ + 2 /* channel */ + 4 /* payload size */;
 
-    private final ReadableByteChannel channel;
+    protected final ReadableByteChannel channel;
 
-    private final ByteBuffer buffer;
+    protected final ByteBuffer applicationBuffer;
 
     private int frameType;
     private int frameChannel;
@@ -40,15 +48,26 @@ public class FrameBuilder {
 
     private int bytesRead = 0;
 
+    // to store the bytes of the outstanding data
+    // 3 byte-long because the longest we read is an unsigned int
+    // (not need to store the latest byte)
     private final int [] frameBuffer = new int[3];
 
     public FrameBuilder(ReadableByteChannel channel, ByteBuffer buffer) {
         this.channel = channel;
-        this.buffer = buffer;
+        this.applicationBuffer = buffer;
     }
 
+    /**
+     * Read a frame from the network.
+     * This method returns null f a frame could not have been fully built from
+     * the network. The client must then retry later (typically
+     * when the channel notifies it has something to read).
+     * @return a complete frame or null if a frame couldn't have been fully built
+     * @throws IOException
+     */
     public Frame readFrame() throws IOException {
-        while(readFromNetworkIfNecessary()) {
+        while(somethingToRead()) {
             if (bytesRead == 0) {
                 // type
                 // FIXME check first byte isn't 'A' and thus a header indicating protocol version mismatch
@@ -90,18 +109,24 @@ public class FrameBuilder {
     }
 
     private int read() throws IOException {
-        return NioHelper.read(channel, buffer);
+        return NioHelper.read(channel, applicationBuffer);
     }
 
     private int readFromBuffer() {
-        return buffer.get() & 0xff;
+        return applicationBuffer.get() & 0xff;
     }
 
-    private boolean readFromNetworkIfNecessary() throws IOException {
-        if(!buffer.hasRemaining()) {
-            buffer.clear();
+    /**
+     * Tells whether there's something to read in the application buffer or not.
+     * Tries to read from the network if necessary.
+     * @return true if there's something to read in the application buffer
+     * @throws IOException
+     */
+    protected boolean somethingToRead() throws IOException {
+        if(!applicationBuffer.hasRemaining()) {
+            applicationBuffer.clear();
             int read = read();
-            buffer.flip();
+            applicationBuffer.flip();
             if (read > 0) {
                 return true;
             } else {

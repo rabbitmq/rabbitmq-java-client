@@ -20,7 +20,6 @@ import com.rabbitmq.client.impl.Frame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -144,17 +143,10 @@ public class NioLoop implements Runnable {
                                     continue;
                                 }
 
-                                DataInputStream inputStream = state.inputStream;
-
                                 state.prepareForReadSequence();
 
                                 while (state.continueReading()) {
-                                    final Frame frame;
-                                    if (state.frameBuilder == null) {
-                                        frame = Frame.readFrom(inputStream);
-                                    } else {
-                                        frame = state.frameBuilder.readFrame();
-                                    }
+                                    final Frame frame = state.frameBuilder.readFrame();
 
                                     if (frame != null) {
                                         try {

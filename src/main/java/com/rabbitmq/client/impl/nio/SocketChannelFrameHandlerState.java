@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -75,8 +74,6 @@ public class SocketChannelFrameHandlerState {
 
     final DataOutputStream outputStream;
 
-    final DataInputStream inputStream;
-
     final FrameBuilder frameBuilder;
 
     public SocketChannelFrameHandlerState(SocketChannel channel, NioLoopContext nioLoopsState, NioParams nioParams, SSLEngine sslEngine) {
@@ -96,9 +93,6 @@ public class SocketChannelFrameHandlerState {
             this.outputStream = new DataOutputStream(
                 new ByteBufferOutputStream(channel, plainOut)
             );
-            this.inputStream = new DataInputStream(
-                new ByteBufferInputStream(channel, plainIn)
-            );
 
             this.frameBuilder = new FrameBuilder(channel, plainIn);
 
@@ -112,11 +106,7 @@ public class SocketChannelFrameHandlerState {
             this.outputStream = new DataOutputStream(
                 new SslEngineByteBufferOutputStream(sslEngine, plainOut, cipherOut, channel)
             );
-            this.inputStream = new DataInputStream(
-                new SslEngineByteBufferInputStream(sslEngine, plainIn, cipherIn, channel)
-            );
-
-            this.frameBuilder = null;
+            this.frameBuilder = new SslEngineFrameBuilder(sslEngine, plainIn, cipherIn, channel);
         }
 
     }
@@ -202,6 +192,10 @@ public class SocketChannelFrameHandlerState {
             if (!plainIn.hasRemaining() && !cipherIn.hasRemaining()) {
                 // need to try to read something
                 cipherIn.clear();
+
+                // FIXME this logic may be simplified:
+                // flipping cipherIn and return cipherIn.hasRemaining should be enough
+
                 int bytesRead = NioHelper.read(channel, cipherIn);
                 if (bytesRead <= 0) {
                     return false;
