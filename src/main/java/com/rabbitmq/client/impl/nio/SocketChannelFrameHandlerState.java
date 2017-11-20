@@ -120,7 +120,7 @@ public class SocketChannelFrameHandlerState {
     }
 
     public void sendHeader() throws IOException {
-        sendWriteRequest(new HeaderWriteRequest());
+        sendWriteRequest(HeaderWriteRequest.SINGLETON);
     }
 
     public void write(Frame frame) throws IOException {
@@ -192,12 +192,8 @@ public class SocketChannelFrameHandlerState {
             if (!plainIn.hasRemaining() && !cipherIn.hasRemaining()) {
                 // need to try to read something
                 cipherIn.clear();
-
-                // FIXME this logic may be simplified:
-                // flipping cipherIn and return cipherIn.hasRemaining should be enough
-
                 int bytesRead = NioHelper.read(channel, cipherIn);
-                if (bytesRead <= 0) {
+                if (bytesRead == 0) {
                     return false;
                 } else {
                     cipherIn.flip();

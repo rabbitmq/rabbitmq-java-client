@@ -19,6 +19,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.impl.Frame;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
@@ -32,6 +33,7 @@ import java.nio.channels.ReadableByteChannel;
  * start where it left off when the {@link NioLoop} comes back to
  * this connection.
  * This class is not thread safe.
+ *
  * @since 4.4.0
  */
 public class FrameBuilder {
@@ -41,17 +43,14 @@ public class FrameBuilder {
     protected final ReadableByteChannel channel;
 
     protected final ByteBuffer applicationBuffer;
-
-    private int frameType;
-    private int frameChannel;
-    private byte [] framePayload;
-
-    private int bytesRead = 0;
-
     // to store the bytes of the outstanding data
     // 3 byte-long because the longest we read is an unsigned int
     // (not need to store the latest byte)
-    private final int [] frameBuffer = new int[3];
+    private final int[] frameBuffer = new int[3];
+    private int frameType;
+    private int frameChannel;
+    private byte[] framePayload;
+    private int bytesRead = 0;
 
     public FrameBuilder(ReadableByteChannel channel, ByteBuffer buffer) {
         this.channel = channel;
@@ -63,15 +62,19 @@ public class FrameBuilder {
      * This method returns null f a frame could not have been fully built from
      * the network. The client must then retry later (typically
      * when the channel notifies it has something to read).
+     *
      * @return a complete frame or null if a frame couldn't have been fully built
      * @throws IOException
+     * @see Frame#readFrom(DataInputStream)
      */
     public Frame readFrame() throws IOException {
-        while(somethingToRead()) {
+        while (somethingToRead()) {
             if (bytesRead == 0) {
                 // type
-                // FIXME check first byte isn't 'A' and thus a header indicating protocol version mismatch
                 frameType = readFromBuffer();
+                if (frameType == 'A') {
+                    handleProtocolVersionMismatch();
+                }
             } else if (bytesRead == 1) {
                 // channel 1/2
                 frameBuffer[0] = readFromBuffer();
@@ -108,24 +111,17 @@ public class FrameBuilder {
         return null;
     }
 
-    private int read() throws IOException {
-        return NioHelper.read(channel, applicationBuffer);
-    }
-
-    private int readFromBuffer() {
-        return applicationBuffer.get() & 0xff;
-    }
-
     /**
      * Tells whether there's something to read in the application buffer or not.
      * Tries to read from the network if necessary.
+     *
      * @return true if there's something to read in the application buffer
      * @throws IOException
      */
     protected boolean somethingToRead() throws IOException {
-        if(!applicationBuffer.hasRemaining()) {
+        if (!applicationBuffer.hasRemaining()) {
             applicationBuffer.clear();
-            int read = read();
+            int read = NioHelper.read(channel, applicationBuffer);
             applicationBuffer.flip();
             if (read > 0) {
                 return true;
@@ -135,5 +131,73 @@ public class FrameBuilder {
         } else {
             return true;
         }
+    }
+
+    private int readFromBuffer() {
+        return applicationBuffer.get() & 0xff;
+    }
+
+    /**
+     * Handle a protocol version mismatch.
+     * @return
+     * @throws IOException
+     * @see Frame#protocolVersionMismatch(DataInputStream)
+     */
+    private void handleProtocolVersionMismatch() throws IOException {
+        // Probably an AMQP.... header indicating a version mismatch
+        // Otherwise meaningless, so try to read the version,
+        // and throw an exception, whether we read the version
+        // okay or not.
+        // Try to read everything from the network, this header
+        // is small and should never require several network reads.
+        byte[] expectedBytes = new byte[] { 'M', 'Q', 'P' };
+        int expectedBytesCount = 0;
+        while (somethingToRead() && expectedBytesCount < 3) {
+            // We expect the letters M, Q, P in that order: generate an informative error if they're not found
+            int nextByte = readFromBuffer();
+            if (nextByte != expectedBytes[expectedBytesCount]) {
+                throw new MalformedFrameException("Invalid AMQP protocol header from server: expected character " +
+                    expectedBytes[expectedBytesCount] + ", got " + nextByte);
+            }
+            expectedBytesCount++;
+        }
+
+        if (expectedBytesCount != 3) {
+            throw new MalformedFrameException("Invalid AMQP protocol header from server: read only "
+                + (expectedBytesCount + 1) + " byte(s) instead of 4");
+        }
+
+        int[] signature = new int[4];
+
+        for (int i = 0; i < 4; i++) {
+            if (somethingToRead()) {
+                signature[i] = readFromBuffer();
+            } else {
+                throw new MalformedFrameException("Invalid AMQP protocol header from server");
+            }
+        }
+
+        MalformedFrameException x;
+
+        if (signature[0] == 1 &&
+            signature[1] == 1 &&
+            signature[2] == 8 &&
+            signature[3] == 0) {
+            x = new MalformedFrameException("AMQP protocol version mismatch; we are version " +
+                AMQP.PROTOCOL.MAJOR + "-" + AMQP.PROTOCOL.MINOR + "-" + AMQP.PROTOCOL.REVISION +
+                ", server is 0-8");
+        } else {
+            String sig = "";
+            for (int i = 0; i < 4; i++) {
+                if (i != 0)
+                    sig += ",";
+                sig += signature[i];
+            }
+
+            x = new MalformedFrameException("AMQP protocol version mismatch; we are version " +
+                AMQP.PROTOCOL.MAJOR + "-" + AMQP.PROTOCOL.MINOR + "-" + AMQP.PROTOCOL.REVISION +
+                ", server sent signature " + sig);
+        }
+        throw x;
     }
 }
