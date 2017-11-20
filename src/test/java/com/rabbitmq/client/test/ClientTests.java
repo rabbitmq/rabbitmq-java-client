@@ -52,7 +52,8 @@ import org.junit.runners.Suite;
     SslContextFactoryTest.class,
     LambdaCallbackTest.class,
     ChannelAsyncCompletableFutureTest.class,
-    RecoveryDelayHandlerTest.class
+    RecoveryDelayHandlerTest.class,
+    PropertyFileInitialisationTest.class
 })
 public class ClientTests {
 

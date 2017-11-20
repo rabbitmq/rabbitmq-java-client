@@ -1083,6 +1083,86 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
+     * Load settings from a property file.
+     * Keys must be prefixed with <code>rabbitmq.</code>,
+     * use {@link ConnectionFactory#load(String, String)} to
+     * specify your own prefix.
+     * @param propertyFileLocation location of the property file to use
+     * @throws IOException when something goes wrong reading the file
+     * @since 4.4.0
+     * @see ConnectionFactoryConfigurator
+     */
+    public ConnectionFactory load(String propertyFileLocation) throws IOException {
+        ConnectionFactoryConfigurator.load(this, propertyFileLocation);
+        return this;
+    }
+
+    /**
+     * Load settings from a property file.
+     * @param propertyFileLocation location of the property file to use
+     * @param prefix key prefix for the entries in the file
+     * @throws IOException when something goes wrong reading the file
+     * @since 4.4.0
+     * @see ConnectionFactoryConfigurator
+     */
+    public ConnectionFactory load(String propertyFileLocation, String prefix) throws IOException {
+        ConnectionFactoryConfigurator.load(this, propertyFileLocation, prefix);
+        return this;
+    }
+
+    /**
+     * Load settings from a {@link Properties} instance.
+     * Keys must be prefixed with <code>rabbitmq.</code>,
+     * use {@link ConnectionFactory#load(Properties, String)} to
+     * specify your own prefix.
+     * @param properties source for settings
+     * @since 4.4.0
+     * @see ConnectionFactoryConfigurator
+     */
+    public ConnectionFactory load(Properties properties) {
+        ConnectionFactoryConfigurator.load(this, properties);
+        return this;
+    }
+
+    /**
+     * Load settings from a {@link Properties} instance.
+     * @param properties source for settings
+     * @param prefix key prefix for properties entries
+     * @since 4.4.0
+     * @see ConnectionFactoryConfigurator
+     */
+    public ConnectionFactory load(Properties properties, String prefix) {
+        ConnectionFactoryConfigurator.load(this, (Map) properties, prefix);
+        return this;
+    }
+
+    /**
+     * Load settings from a {@link Map} instance.
+     * Keys must be prefixed with <code>rabbitmq.</code>,
+     * use {@link ConnectionFactory#load(Map, String)} to
+     * specify your own prefix.
+     * @param properties source for settings
+     * @since 4.4.0
+     * @see ConnectionFactoryConfigurator
+     */
+    public ConnectionFactory load(Map<String, String> properties) {
+        ConnectionFactoryConfigurator.load(this, properties);
+        return this;
+    }
+
+    /**
+     * Load settings from a {@link Map} instance.
+     * @param properties source for settings
+     * @param prefix key prefix for map entries
+     * @since 4.4.0
+     * @see ConnectionFactoryConfigurator
+     */
+    public ConnectionFactory load(Map<String, String> properties, String prefix) {
+        ConnectionFactoryConfigurator.load(this, properties, prefix);
+        return this;
+    }
+
+    /**
      * Returns automatic connection recovery interval in milliseconds.
      * @return how long will automatic recovery wait before attempting to reconnect, in ms; default is 5000
      */
@@ -1139,6 +1219,14 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setNioParams(NioParams nioParams) {
         this.nioParams = nioParams;
+    }
+
+    /**
+     * Retrieve the parameters for NIO mode.
+     * @return
+     */
+    public NioParams getNioParams() {
+        return nioParams;
     }
 
     /**
