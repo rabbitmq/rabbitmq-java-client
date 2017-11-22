@@ -89,7 +89,7 @@ public class SslEngineHelper {
                 cipherIn.compact();
                 int read = NioHelper.read(channel, cipherIn);
                 if(read <= 0) {
-                    NioHelper.retryRead(channel, cipherIn);
+                    retryRead(channel, cipherIn);
                 }
                 cipherIn.flip();
                 break;
@@ -104,6 +104,24 @@ public class SslEngineHelper {
 
         cipherIn.compact();
         return handshakeStatus;
+    }
+
+    private static int retryRead(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+        int attempt = 0;
+        int read = 0;
+        while(attempt < 3) {
+            try {
+                Thread.sleep(100L);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+            read = NioHelper.read(channel, buffer);
+            if(read > 0) {
+                break;
+            }
+            attempt++;
+        }
+        return read;
     }
 
     private static SSLEngineResult.HandshakeStatus wrap(ByteBuffer plainOut, ByteBuffer cipherOut,

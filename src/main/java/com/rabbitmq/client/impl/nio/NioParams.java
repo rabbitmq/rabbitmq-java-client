@@ -26,7 +26,7 @@ import java.util.concurrent.ThreadFactory;
 
 /**
  * Parameters used to configure the NIO mode of a {@link com.rabbitmq.client.ConnectionFactory}.
- *
+ * @since 4.0.0
  */
 public class NioParams {
 

@@ -53,6 +53,7 @@ import org.junit.runners.Suite;
     LambdaCallbackTest.class,
     ChannelAsyncCompletableFutureTest.class,
     RecoveryDelayHandlerTest.class,
+    FrameBuilderTest.class,
     PropertyFileInitialisationTest.class
 })
 public class ClientTests {
