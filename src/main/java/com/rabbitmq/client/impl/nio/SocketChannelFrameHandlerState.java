@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -75,7 +74,7 @@ public class SocketChannelFrameHandlerState {
 
     final DataOutputStream outputStream;
 
-    final DataInputStream inputStream;
+    final FrameBuilder frameBuilder;
 
     public SocketChannelFrameHandlerState(SocketChannel channel, NioLoopContext nioLoopsState, NioParams nioParams, SSLEngine sslEngine) {
         this.channel = channel;
@@ -94,9 +93,8 @@ public class SocketChannelFrameHandlerState {
             this.outputStream = new DataOutputStream(
                 new ByteBufferOutputStream(channel, plainOut)
             );
-            this.inputStream = new DataInputStream(
-                new ByteBufferInputStream(channel, plainIn)
-            );
+
+            this.frameBuilder = new FrameBuilder(channel, plainIn);
 
         } else {
             this.ssl = true;
@@ -108,9 +106,7 @@ public class SocketChannelFrameHandlerState {
             this.outputStream = new DataOutputStream(
                 new SslEngineByteBufferOutputStream(sslEngine, plainOut, cipherOut, channel)
             );
-            this.inputStream = new DataInputStream(
-                new SslEngineByteBufferInputStream(sslEngine, plainIn, cipherIn, channel)
-            );
+            this.frameBuilder = new SslEngineFrameBuilder(sslEngine, plainIn, cipherIn, channel);
         }
 
     }
@@ -124,7 +120,7 @@ public class SocketChannelFrameHandlerState {
     }
 
     public void sendHeader() throws IOException {
-        sendWriteRequest(new HeaderWriteRequest());
+        sendWriteRequest(HeaderWriteRequest.SINGLETON);
     }
 
     public void write(Frame frame) throws IOException {
@@ -197,7 +193,7 @@ public class SocketChannelFrameHandlerState {
                 // need to try to read something
                 cipherIn.clear();
                 int bytesRead = NioHelper.read(channel, cipherIn);
-                if (bytesRead <= 0) {
+                if (bytesRead == 0) {
                     return false;
                 } else {
                     cipherIn.flip();

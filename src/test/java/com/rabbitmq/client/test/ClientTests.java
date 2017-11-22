@@ -50,6 +50,7 @@ import org.junit.runners.Suite;
     RecoveryAwareAMQConnectionFactoryTest.class,
     RpcTest.class,
     RecoveryDelayHandlerTest.class,
+    FrameBuilderTest.class,
     PropertyFileInitialisationTest.class
 })
 public class ClientTests {
