@@ -165,7 +165,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             if (_checkRpcResponseType) {
                 synchronized (_channelMutex) {
                     // check if this reply command is intended for the current waiting request before calling nextOutstandingRpc()
-                    if (!_activeRpc.canHandleReply(command)) {
+                    if (_activeRpc != null && !_activeRpc.canHandleReply(command)) {
                         // this reply command is not intended for the current waiting request
                         // most likely a previous request timed out and this command is the reply for that.
                         // Throw this reply command away so we don't stop the current request from waiting for its reply
