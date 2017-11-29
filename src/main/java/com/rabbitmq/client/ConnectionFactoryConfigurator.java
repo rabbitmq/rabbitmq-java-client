@@ -77,6 +77,7 @@ public class ConnectionFactoryConfigurator {
     public static final String NIO_WRITE_ENQUEUING_TIMEOUT_IN_MS = "nio.write.enqueuing.timeout.in.ms";
     public static final String NIO_WRITE_QUEUE_CAPACITY = "nio.write.queue.capacity";
 
+    @SuppressWarnings("unchecked")
     public static void load(ConnectionFactory cf, String propertyFileLocation, String prefix) throws IOException {
         if (propertyFileLocation == null || propertyFileLocation.isEmpty()) {
             throw new IllegalArgumentException("Property file argument cannot be null or empty");
@@ -238,10 +239,12 @@ public class ConnectionFactoryConfigurator {
         load(connectionFactory, propertyFileLocation, DEFAULT_PREFIX);
     }
 
+    @SuppressWarnings("unchecked")
     public static void load(ConnectionFactory connectionFactory, Properties properties) {
         load(connectionFactory, (Map) properties, DEFAULT_PREFIX);
     }
 
+    @SuppressWarnings("unchecked")
     public static void load(ConnectionFactory connectionFactory, Properties properties, String prefix) {
         load(connectionFactory, (Map) properties, prefix);
     }
