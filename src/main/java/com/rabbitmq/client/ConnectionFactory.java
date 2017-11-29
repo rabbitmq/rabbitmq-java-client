@@ -1108,6 +1108,7 @@ public class ConnectionFactory implements Cloneable {
      * @since 4.4.0
      * @see ConnectionFactoryConfigurator
      */
+    @SuppressWarnings("unchecked")
     public ConnectionFactory load(Properties properties, String prefix) {
         ConnectionFactoryConfigurator.load(this, (Map) properties, prefix);
         return this;
