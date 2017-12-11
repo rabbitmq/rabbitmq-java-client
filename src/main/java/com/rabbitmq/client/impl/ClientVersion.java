@@ -15,12 +15,61 @@
 
 package com.rabbitmq.client.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.InputStream;
+import java.util.Properties;
+
 /**
  * Publicly available Client Version information
  */
 public class ClientVersion {
-    /** Full version string */
-    public static final String VERSION = ClientVersion.class.getPackage().getImplementationVersion() == null ?
-        "0.0.0" : ClientVersion.class.getPackage().getImplementationVersion();
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientVersion.class);
+
+    public static final String VERSION;
+
+    static {
+        String version;
+        try {
+            version = getVersionFromPropertyFile();
+        } catch (Exception e1) {
+            LOGGER.warn("Couldn't get version from property file", e1);
+            try {
+                version = getVersionFromPackage();
+            } catch (Exception e2) {
+                LOGGER.warn("Couldn't get version with Package#getImplementationVersion", e1);
+                version = getDefaultVersion();
+            }
+        }
+        VERSION = version;
+    }
+
+    private static final String getVersionFromPropertyFile() throws Exception {
+        InputStream inputStream = ClientVersion.class.getClassLoader().getResourceAsStream("rabbitmq-amqp-client.properties");
+        Properties version = new Properties();
+        try {
+            version.load(inputStream);
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+        }
+        if (version.getProperty("com.rabbitmq.client.version") == null) {
+            throw new IllegalStateException("Coulnd't find version property in property file");
+        }
+        return version.getProperty("com.rabbitmq.client.version");
+    }
+
+    private static final String getVersionFromPackage() {
+        if (ClientVersion.class.getPackage().getImplementationVersion() == null) {
+            throw new IllegalStateException("Couldn't get version with Package#getImplementationVersion");
+        }
+        return ClientVersion.class.getPackage().getImplementationVersion();
+    }
+
+    private static final String getDefaultVersion() {
+        return "0.0.0";
+    }
 }
