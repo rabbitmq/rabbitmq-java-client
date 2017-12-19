@@ -54,6 +54,10 @@ public class TestUtils {
         if (currentVersion.contains("~")) {
             currentVersion = currentVersion.substring(0, currentVersion.indexOf("~"));
         }
+        // alpha (snapshot) versions: 3.7.1-alpha.40
+        if (currentVersion.contains("-")) {
+            currentVersion = currentVersion.substring(0, currentVersion.indexOf("-"));
+        }
         return "0.0.0".equals(currentVersion) || versionCompare(currentVersion, "3.7.0") >= 0;
     }
 
