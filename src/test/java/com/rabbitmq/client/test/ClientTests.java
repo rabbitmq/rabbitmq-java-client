@@ -54,7 +54,8 @@ import org.junit.runners.Suite;
     ChannelAsyncCompletableFutureTest.class,
     RecoveryDelayHandlerTest.class,
     FrameBuilderTest.class,
-    PropertyFileInitialisationTest.class
+    PropertyFileInitialisationTest.class,
+    ClientVersionTest.class
 })
 public class ClientTests {
 
