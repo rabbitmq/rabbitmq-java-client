@@ -51,7 +51,8 @@ import org.junit.runners.Suite;
     RpcTest.class,
     RecoveryDelayHandlerTest.class,
     FrameBuilderTest.class,
-    PropertyFileInitialisationTest.class
+    PropertyFileInitialisationTest.class,
+    ClientVersionTest.class
 })
 public class ClientTests {
 
