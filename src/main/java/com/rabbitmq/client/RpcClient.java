@@ -209,6 +209,11 @@ public class RpcClient {
     }
 
     public Response doCall(AMQP.BasicProperties props, byte[] message)
+        throws IOException, TimeoutException {
+        return doCall(props, message, _timeout);
+    }
+
+    public Response doCall(AMQP.BasicProperties props, byte[] message, int timeout)
         throws IOException, ShutdownSignalException, TimeoutException {
         checkConsumer();
         BlockingCell<Object> k = new BlockingCell<Object>();
@@ -220,7 +225,7 @@ public class RpcClient {
             _continuationMap.put(replyId, k);
         }
         publish(props, message);
-        Object reply = k.uninterruptibleGet(_timeout);
+        Object reply = k.uninterruptibleGet(timeout);
         if (reply instanceof ShutdownSignalException) {
             ShutdownSignalException sig = (ShutdownSignalException) reply;
             ShutdownSignalException wrapper =
@@ -238,7 +243,13 @@ public class RpcClient {
     public byte[] primitiveCall(AMQP.BasicProperties props, byte[] message)
         throws IOException, ShutdownSignalException, TimeoutException
     {
-        return doCall(props, message).getBody();
+        return primitiveCall(props, message, _timeout);
+    }
+
+    public byte[] primitiveCall(AMQP.BasicProperties props, byte[] message, int timeout)
+        throws IOException, ShutdownSignalException, TimeoutException
+    {
+        return doCall(props, message, timeout).getBody();
     }
 
     /**
@@ -266,7 +277,23 @@ public class RpcClient {
      * @throws TimeoutException if a response is not received within the configured timeout
      */
     public Response responseCall(byte[] message) throws IOException, ShutdownSignalException, TimeoutException {
-        return doCall(null, message);
+        return responseCall(message, _timeout);
+    }
+
+    /**
+     * Perform a simple byte-array-based RPC roundtrip
+     *
+     * Useful if you need to get at more than just the body of the message
+     *
+     * @param message the byte array request message to send
+     * @param timeout milliseconds before timing out on wait for response
+     * @return The response object is an envelope that contains all of the data provided to the `handleDelivery` consumer
+     * @throws ShutdownSignalException if the connection dies during our wait
+     * @throws IOException if an error is encountered
+     * @throws TimeoutException if a response is not received within the configured timeout
+     */
+    public Response responseCall(byte[] message, int timeout) throws IOException, ShutdownSignalException, TimeoutException {
+        return doCall(null, message, timeout);
     }
 
     /**
