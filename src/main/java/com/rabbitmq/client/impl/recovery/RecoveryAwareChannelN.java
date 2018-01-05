@@ -22,6 +22,7 @@ import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.client.impl.ChannelN;
 import com.rabbitmq.client.impl.ConsumerWorkService;
+import com.rabbitmq.client.impl.AMQImpl.Basic;
 
 import java.io.IOException;
 
@@ -86,7 +87,8 @@ public class RecoveryAwareChannelN extends ChannelN {
         long realTag = deliveryTag - activeDeliveryTagOffset;
         // 0 tag means ack all
         if (realTag >= 0) {
-            super.basicAck(realTag, multiple);
+            transmit(new Basic.Ack(deliveryTag, multiple));
+            metricsCollector.basicAck(this, deliveryTag, multiple);
         }
     }
 
@@ -96,7 +98,8 @@ public class RecoveryAwareChannelN extends ChannelN {
         long realTag = deliveryTag - activeDeliveryTagOffset;
         // 0 tag means nack all
         if (realTag >= 0) {
-            super.basicNack(realTag, multiple, requeue);
+            transmit(new Basic.Nack(realTag, multiple, requeue));
+            metricsCollector.basicNack(this, deliveryTag);
         }
     }
 
@@ -104,7 +107,8 @@ public class RecoveryAwareChannelN extends ChannelN {
     public void basicReject(long deliveryTag, boolean requeue) throws IOException {
         long realTag = deliveryTag - activeDeliveryTagOffset;
         if (realTag > 0) {
-            super.basicReject(realTag, requeue);
+            transmit(new Basic.Reject(realTag, requeue));
+            metricsCollector.basicReject(this, deliveryTag);
         }
     }
 

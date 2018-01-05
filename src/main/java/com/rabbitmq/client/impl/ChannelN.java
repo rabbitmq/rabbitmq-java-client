@@ -93,7 +93,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Whether any nacks have been received since the last waitForConfirms(). */
     private volatile boolean onlyAcksReceived = true;
 
-    private final MetricsCollector metricsCollector;
+    protected final MetricsCollector metricsCollector;
 
     /**
      * Construct a new channel on the given connection with the given
