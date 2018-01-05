@@ -87,7 +87,7 @@ public class RecoveryAwareChannelN extends ChannelN {
         long realTag = deliveryTag - activeDeliveryTagOffset;
         // 0 tag means ack all
         if (realTag >= 0) {
-            transmit(new Basic.Ack(deliveryTag, multiple));
+            transmit(new Basic.Ack(realTag, multiple));
             metricsCollector.basicAck(this, deliveryTag, multiple);
         }
     }
