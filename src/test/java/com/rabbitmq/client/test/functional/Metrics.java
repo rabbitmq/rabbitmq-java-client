@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.awaitility.Awaitility.*;
 import static org.hamcrest.Matchers.*;
@@ -424,6 +425,57 @@ public class Metrics extends BrokerTestCase {
             safeClose(connection);
         }
 
+    }
+
+    @Test public void checkAcksWithAutomaticRecovery() throws Exception {
+        ConnectionFactory connectionFactory = createConnectionFactory();
+        connectionFactory.setNetworkRecoveryInterval(2000);
+        connectionFactory.setAutomaticRecoveryEnabled(true);
+        StandardMetricsCollector metrics = new StandardMetricsCollector();
+        connectionFactory.setMetricsCollector(metrics);
+
+        Connection connection = null;
+        try {
+            connection = connectionFactory.newConnection();
+
+            final Channel channel1 = connection.createChannel();
+            final AtomicInteger ackedMessages = new AtomicInteger(0);
+
+            channel1.basicConsume(QUEUE, false, new DefaultConsumer(channel1) {
+                @Override
+                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                    channel1.basicAck(envelope.getDeliveryTag(), false);
+                    ackedMessages.incrementAndGet();
+                }
+            });
+
+            Channel channel2 = connection.createChannel();
+            channel2.confirmSelect();
+            int nbMessages = 10;
+            for (int i = 0; i < nbMessages; i++) {
+                sendMessage(channel2);
+            }
+            channel2.waitForConfirms(1000);
+
+            closeAndWaitForRecovery((AutorecoveringConnection) connection);
+
+            for (int i = 0; i < nbMessages; i++) {
+                sendMessage(channel2);
+            }
+
+            waitAtMost(timeout()).until(new Callable<Integer>() {
+                @Override
+                public Integer call() {
+                    return ackedMessages.get();
+                }
+            }, equalTo(nbMessages * 2));
+
+            assertThat(metrics.getConsumedMessages().getCount(), is((long) (nbMessages * 2)));
+            assertThat(metrics.getAcknowledgedMessages().getCount(), is((long) (nbMessages * 2)));
+
+        } finally {
+            safeClose(connection);
+        }
     }
 
     private ConnectionFactory createConnectionFactory() {

@@ -231,8 +231,9 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
                     }
                 }
             } else {
-                channelState.unackedMessageDeliveryTags.remove(deliveryTag);
-                action.run();
+                if (channelState.unackedMessageDeliveryTags.remove(deliveryTag)) {
+                    action.run();
+                }
             }
         } finally {
             channelState.lock.unlock();
