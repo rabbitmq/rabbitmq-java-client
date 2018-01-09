@@ -38,21 +38,11 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractMetricsCollector.class);
 
-    private final ConcurrentMap<String, ConnectionState> connectionState = new ConcurrentHashMap<String, ConnectionState>();
+    private final ConcurrentMap<String, ConnectionState> connectionState = new ConcurrentHashMap<>();
 
-    private final Runnable markAcknowledgedMessageAction = new Runnable() {
-        @Override
-        public void run() {
-            markAcknowledgedMessage();
-        }
-    };
+    private final Runnable markAcknowledgedMessageAction = () -> markAcknowledgedMessage();
 
-    private final Runnable markRejectedMessageAction = new Runnable() {
-        @Override
-        public void run() {
-            markRejectedMessage();
-        }
-    };
+    private final Runnable markRejectedMessageAction = () -> markRejectedMessage();
 
     @Override
     public void newConnection(final Connection connection) {
@@ -62,12 +52,7 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
             }
             incrementConnectionCount(connection);
             connectionState.put(connection.getId(), new ConnectionState(connection));
-            connection.addShutdownListener(new ShutdownListener() {
-                @Override
-                public void shutdownCompleted(ShutdownSignalException cause) {
-                    closeConnection(connection);
-                }
-            });
+            connection.addShutdownListener(cause -> closeConnection(connection));
         } catch(Exception e) {
             LOGGER.info("Error while computing metrics in newConnection: " + e.getMessage());
         }
@@ -89,12 +74,7 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     public void newChannel(final Channel channel) {
         try {
             incrementChannelCount(channel);
-            channel.addShutdownListener(new ShutdownListener() {
-                @Override
-                public void shutdownCompleted(ShutdownSignalException cause) {
-                    closeChannel(channel);
-                }
-            });
+            channel.addShutdownListener(cause -> closeChannel(channel));
             connectionState(channel.getConnection()).channelState.put(channel.getChannelNumber(), new ChannelState(channel));
         } catch(Exception e) {
             LOGGER.info("Error while computing metrics in newChannel: " + e.getMessage());
@@ -231,8 +211,9 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
                     }
                 }
             } else {
-                channelState.unackedMessageDeliveryTags.remove(deliveryTag);
-                action.run();
+                if (channelState.unackedMessageDeliveryTags.remove(deliveryTag)) {
+                    action.run();
+                }
             }
         } finally {
             channelState.lock.unlock();
