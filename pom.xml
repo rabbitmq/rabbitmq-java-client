@@ -57,7 +57,7 @@
     <slf4j.version>1.7.25</slf4j.version>
     <metrics.version>3.2.4</metrics.version>
     <logback.version>1.2.3</logback.version>
-    <micrometer.version>1.0.0-rc.2</micrometer.version>
+    <micrometer.version>1.0.0-rc.6</micrometer.version>
     <commons-cli.version>1.1</commons-cli.version>
     <junit.version>4.12</junit.version>
     <awaitility.version>3.0.0</awaitility.version>

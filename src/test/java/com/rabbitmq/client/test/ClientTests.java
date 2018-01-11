@@ -44,6 +44,7 @@ import org.junit.runners.Suite;
     SharedThreadPoolTest.class,
     DnsRecordIpAddressResolverTests.class,
     MetricsCollectorTest.class,
+    MicrometerMetricsCollectorTest.class,
     DnsSrvRecordAddressResolverTest.class,
     JavaNioTest.class,
     ConnectionFactoryTest.class,

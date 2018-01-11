@@ -20,7 +20,11 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.MetricsCollector;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
@@ -62,7 +66,11 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
     }
 
     public MicrometerMetricsCollector(final MeterRegistry registry, final String prefix) {
-        this(metric -> metric.create(registry, prefix));
+        this(metric -> metric.create(registry, prefix, new String[] {}));
+    }
+
+    public MicrometerMetricsCollector(final MeterRegistry registry, final String prefix, final String... tags) {
+        this(metric -> metric.create(registry, prefix, tags));
     }
 
     public MicrometerMetricsCollector(Function<Metrics, Object> metricsCreator) {
@@ -141,42 +149,56 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
     public enum Metrics {
         CONNECTIONS {
             @Override
-            Object create(MeterRegistry registry, String prefix) {
-                return registry.gauge(prefix + ".connections", new AtomicLong(0));
+            Object create(MeterRegistry registry, String prefix, String... tags) {
+                return registry.gauge(prefix + ".connections", tags(tags), new AtomicLong(0));
             }
         },
         CHANNELS {
             @Override
-            Object create(MeterRegistry registry, String prefix) {
-                return registry.gauge(prefix + ".channels", new AtomicLong(0));
+            Object create(MeterRegistry registry, String prefix, String... tags) {
+                return registry.gauge(prefix + ".channels", tags(tags), new AtomicLong(0));
             }
         },
         PUBLISHED_MESSAGES {
             @Override
-            Object create(MeterRegistry registry, String prefix) {
-                return registry.counter(prefix + ".published");
+            Object create(MeterRegistry registry, String prefix, String... tags) {
+                return registry.counter(prefix + ".published", tags);
             }
         },
         CONSUMED_MESSAGES {
             @Override
-            Object create(MeterRegistry registry, String prefix) {
-                return registry.counter(prefix + ".consumed");
+            Object create(MeterRegistry registry, String prefix, String... tags) {
+                return registry.counter(prefix + ".consumed", tags);
             }
         },
         ACKNOWLEDGED_MESSAGES {
             @Override
-            Object create(MeterRegistry registry, String prefix) {
-                return registry.counter(prefix + ".acknowledged");
+            Object create(MeterRegistry registry, String prefix, String... tags) {
+                return registry.counter(prefix + ".acknowledged", tags);
             }
         },
         REJECTED_MESSAGES {
             @Override
-            Object create(MeterRegistry registry, String prefix) {
-                return registry.counter(prefix + ".rejected");
+            Object create(MeterRegistry registry, String prefix, String... tags) {
+                return registry.counter(prefix + ".rejected", tags);
             }
         };
 
-        abstract Object create(MeterRegistry registry, String prefix);
+        Object create(MeterRegistry registry, String prefix) {
+            return this.create(registry, prefix, new String[] {});
+        }
+
+        abstract Object create(MeterRegistry registry, String prefix, String... tags);
+
+        private static Iterable<Tag> tags(String... tagStrings) {
+            Collection<Tag> tags;
+            if (tagStrings != null && tagStrings.length > 0) {
+                tags = Tags.zip(tagStrings);
+            } else {
+                tags = Collections.emptyList();
+            }
+            return tags;
+        }
     }
 
 }
