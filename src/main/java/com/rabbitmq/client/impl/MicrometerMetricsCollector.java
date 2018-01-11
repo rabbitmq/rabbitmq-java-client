@@ -23,7 +23,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -66,10 +65,14 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
     }
 
     public MicrometerMetricsCollector(final MeterRegistry registry, final String prefix) {
-        this(metric -> metric.create(registry, prefix, new String[] {}));
+        this(registry, prefix, Collections.emptyList());
     }
 
-    public MicrometerMetricsCollector(final MeterRegistry registry, final String prefix, final String... tags) {
+    public MicrometerMetricsCollector(final MeterRegistry registry, final String prefix, final String ... tags) {
+        this(registry, prefix, Tags.zip(tags));
+    }
+
+    public MicrometerMetricsCollector(final MeterRegistry registry, final String prefix, final Iterable<Tag> tags) {
         this(metric -> metric.create(registry, prefix, tags));
     }
 
@@ -149,56 +152,55 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
     public enum Metrics {
         CONNECTIONS {
             @Override
-            Object create(MeterRegistry registry, String prefix, String... tags) {
-                return registry.gauge(prefix + ".connections", tags(tags), new AtomicLong(0));
+            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
+                return registry.gauge(prefix + ".connections", tags, new AtomicLong(0));
             }
         },
         CHANNELS {
             @Override
-            Object create(MeterRegistry registry, String prefix, String... tags) {
-                return registry.gauge(prefix + ".channels", tags(tags), new AtomicLong(0));
+            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
+                return registry.gauge(prefix + ".channels", tags, new AtomicLong(0));
             }
         },
         PUBLISHED_MESSAGES {
             @Override
-            Object create(MeterRegistry registry, String prefix, String... tags) {
+            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
                 return registry.counter(prefix + ".published", tags);
             }
         },
         CONSUMED_MESSAGES {
             @Override
-            Object create(MeterRegistry registry, String prefix, String... tags) {
+            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
                 return registry.counter(prefix + ".consumed", tags);
             }
         },
         ACKNOWLEDGED_MESSAGES {
             @Override
-            Object create(MeterRegistry registry, String prefix, String... tags) {
+            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
                 return registry.counter(prefix + ".acknowledged", tags);
             }
         },
         REJECTED_MESSAGES {
             @Override
-            Object create(MeterRegistry registry, String prefix, String... tags) {
+            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
                 return registry.counter(prefix + ".rejected", tags);
             }
         };
 
+        /**
+         *
+         * @param registry
+         * @param prefix
+         * @deprecated will be removed in 6.0.0
+         * @return
+         */
+        @Deprecated
         Object create(MeterRegistry registry, String prefix) {
-            return this.create(registry, prefix, new String[] {});
+            return this.create(registry, prefix, Collections.EMPTY_LIST);
         }
 
-        abstract Object create(MeterRegistry registry, String prefix, String... tags);
+        abstract Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags);
 
-        private static Iterable<Tag> tags(String... tagStrings) {
-            Collection<Tag> tags;
-            if (tagStrings != null && tagStrings.length > 0) {
-                tags = Tags.zip(tagStrings);
-            } else {
-                tags = Collections.emptyList();
-            }
-            return tags;
-        }
     }
 
 }
