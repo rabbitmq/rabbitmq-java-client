@@ -761,6 +761,28 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             this.maybeDeleteRecordedAutoDeleteExchange(b.getSource());
         }
     }
+    
+    /**
+     * Exclude the queue from the list of queues to recover after connection failure.
+     * Intended to be used in usecases where you want to remove the queue from this connection's recovery list but don't want to delete the queue from the server.
+     * 
+     * @param queue queue name to exclude from recorded recovery queues
+     * @param ifUnused if true, the RecordedQueue will only be excluded if no local consumers are using it.
+     */
+    public void excludeQueueFromRecovery(final String queue, final boolean ifUnused) {
+        if (ifUnused) {
+            // Note: This is basically the same as maybeDeleteRecordedAutoDeleteQueue except it works for non auto-delete queues as well.
+            synchronized (this.consumers) {
+                synchronized (this.recordedQueues) {
+                    if (!hasMoreConsumersOnQueue(this.consumers.values(), queue)) {
+                        deleteRecordedQueue(queue);
+                    }
+                }
+            }
+        } else {
+            deleteRecordedQueue(queue);
+        }
+    }
 
     void recordExchange(String exchange, RecordedExchange x) {
         this.recordedExchanges.put(exchange, x);
@@ -789,7 +811,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
                     RecordedQueue q = this.recordedQueues.get(queue);
                     // last consumer on this connection is gone, remove recorded queue
                     // if it is auto-deleted. See bug 26364.
-                    if((q != null) && q.isAutoDelete()) {
+                    if(q != null && q.isAutoDelete()) {
                         deleteRecordedQueue(queue);
                     }
                 }
@@ -804,7 +826,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
                     RecordedExchange x = this.recordedExchanges.get(exchange);
                     // last binding where this exchange is the source is gone, remove recorded exchange
                     // if it is auto-deleted. See bug 26364.
-                    if((x != null) && x.isAutoDelete()) {
+                    if(x != null && x.isAutoDelete()) {
                         deleteRecordedExchange(exchange);
                     }
                 }
