@@ -559,6 +559,28 @@ public class ConnectionRecovery extends BrokerTestCase {
             // expected
         }
     }
+    
+    @Test public void thatExcludedQueueDoesNotReappearOnRecover() throws IOException, InterruptedException {
+        final String q = "java-client.test.recovery.excludedQueue1";
+        channel.queueDeclare(q, true, false, false, null);
+        // now delete it using the delegate so AutorecoveringConnection and AutorecoveringChannel are not aware of it
+        ((AutorecoveringChannel)channel).getDelegate().queueDelete(q);
+        assertNotNull(((AutorecoveringConnection)connection).getRecordedQueues().get(q));
+        // exclude the queue from recovery
+        ((AutorecoveringConnection)connection).excludeQueueFromRecovery(q, true);
+        // verify its not there
+        assertNull(((AutorecoveringConnection)connection).getRecordedQueues().get(q));
+        // reconnect
+        closeAndWaitForRecovery();
+        expectChannelRecovery(channel);
+        // verify queue was not recreated
+        try {
+            channel.queueDeclarePassive(q);
+            fail("Expected passive declare to fail");
+        } catch (IOException ioe) {
+            // expected
+        }
+    }
 
     @Test public void thatCancelledConsumerDoesNotReappearOnRecover() throws IOException, InterruptedException {
         String q = UUID.randomUUID().toString();
