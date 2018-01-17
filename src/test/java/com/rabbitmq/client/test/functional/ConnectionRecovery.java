@@ -567,8 +567,11 @@ public class ConnectionRecovery extends BrokerTestCase {
         try {
             // now delete it using the delegate so AutorecoveringConnection and AutorecoveringChannel are not aware of it
             ((AutorecoveringChannel)channel).getDelegate().queueDelete(q);
+            assertNotNull(((AutorecoveringConnection)connection).getRecordedQueues().get(q));
             // exclude the queue from recovery
             ((AutorecoveringConnection)connection).excludeQueueFromRecovery(q, true);
+            // verify its not there
+            assertNull(((AutorecoveringConnection)connection).getRecordedQueues().get(q));
             // reconnect
             closeAndWaitForRecovery();
             expectChannelRecovery(channel);
