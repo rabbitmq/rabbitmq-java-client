@@ -34,8 +34,8 @@ import java.io.IOException;
  * @since 3.3.0
  */
 public class RecoveryAwareChannelN extends ChannelN {
-    private long maxSeenDeliveryTag = 0;
-    private long activeDeliveryTagOffset = 0;
+    private volatile long maxSeenDeliveryTag = 0;
+    private volatile long activeDeliveryTagOffset = 0;
 
     /**
      * Construct a new channel on the given connection with the given
@@ -83,10 +83,9 @@ public class RecoveryAwareChannelN extends ChannelN {
 
     @Override
     public void basicAck(long deliveryTag, boolean multiple) throws IOException {
-        // FIXME no check if deliveryTag = 0 (ack all)
         long realTag = deliveryTag - activeDeliveryTagOffset;
-        // 0 tag means ack all
-        if (realTag >= 0) {
+        // 0 tag means ack all when multiple is set
+        if (realTag > 0 || (multiple && realTag == 0)) {
             transmit(new Basic.Ack(realTag, multiple));
             metricsCollector.basicAck(this, deliveryTag, multiple);
         }
@@ -94,10 +93,9 @@ public class RecoveryAwareChannelN extends ChannelN {
 
     @Override
     public void basicNack(long deliveryTag, boolean multiple, boolean requeue) throws IOException {
-        // FIXME no check if deliveryTag = 0 (nack all)
         long realTag = deliveryTag - activeDeliveryTagOffset;
-        // 0 tag means nack all
-        if (realTag >= 0) {
+        // 0 tag means nack all when multiple is set
+        if (realTag > 0 || (multiple && realTag == 0)) {
             transmit(new Basic.Nack(realTag, multiple, requeue));
             metricsCollector.basicNack(this, deliveryTag);
         }
