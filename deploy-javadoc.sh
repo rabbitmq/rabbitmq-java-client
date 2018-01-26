@@ -32,7 +32,7 @@ done
 
 set -e -x
 
-mvn -q clean javadoc:javadoc -Dmaven.javadoc.failOnError=false
+./mvnw -q clean javadoc:javadoc -Dmaven.javadoc.failOnError=false
 
 ssh $DEPLOY_USERHOST \
 		"rm -rf $DEPLOY_PATH; \
