@@ -53,7 +53,8 @@ import org.junit.runners.Suite;
     RecoveryDelayHandlerTest.class,
     FrameBuilderTest.class,
     PropertyFileInitialisationTest.class,
-    ClientVersionTest.class
+    ClientVersionTest.class,
+    StrictExceptionHandlerTest.class
 })
 public class ClientTests {
 
