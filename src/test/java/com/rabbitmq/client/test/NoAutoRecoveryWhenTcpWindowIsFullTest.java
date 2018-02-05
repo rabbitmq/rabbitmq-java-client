@@ -45,14 +45,14 @@ import static org.junit.Assert.assertThat;
 /**
  * Test to trigger and check the fix of https://github.com/rabbitmq/rabbitmq-java-client/issues/341.
  * Conditions:
- *   - client registers consumer and a call QoS after
- *   - client get many messages and the consumer is slow
- *   - the work pool queue is full, the reading thread is stuck
- *   - more messages come from the network and saturates the TCP buffer
- *   - the connection dies but the client doesn't detect it
- *   - acks of messages fail
- *   - connection recovery is never triggered
- *
+ * - client registers consumer and a call QoS after
+ * - client get many messages and the consumer is slow
+ * - the work pool queue is full, the reading thread is stuck
+ * - more messages come from the network and saturates the TCP buffer
+ * - the connection dies but the client doesn't detect it
+ * - acks of messages fail
+ * - connection recovery is never triggered
+ * <p>
  * The fix consists in triggering connection recovery when writing
  * to the socket fails. As the socket is dead, the closing
  * sequence can take some time, hence the setup of the shutdown
@@ -88,7 +88,7 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
         factory.setShutdownExecutor(shutdownService);
         factory.setShutdownTimeout(10000);
         factory.setRequestedHeartbeat(5);
-        factory.setShutdownExecutor(dispatchingService);
+        factory.setSharedExecutor(dispatchingService);
         factory.setNetworkRecoveryInterval(1000);
 
         producingConnection = (AutorecoveringConnection) factory.newConnection("Producer Connection");
@@ -101,15 +101,19 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
 
     @After
     public void tearDown() throws IOException {
+        closeConnectionIfOpen(consumingConnection);
+        closeConnectionIfOpen(producingConnection);
+
         dispatchingService.shutdownNow();
         producerService.shutdownNow();
         shutdownService.shutdownNow();
-        closeConnectionIfOpen(consumingConnection);
-        closeConnectionIfOpen(producingConnection);
     }
 
     @Test
     public void failureAndRecovery() throws IOException, InterruptedException {
+        if (TestUtils.USE_NIO) {
+            return;
+        }
         final String queue = UUID.randomUUID().toString();
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -152,7 +156,7 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
         channel.queueDeclare(queue, false, false, false, queueArguments);
     }
 
-    private void produceMessagesInBackground(final Channel channel, final String queue) {
+    private void produceMessagesInBackground(final Channel channel, final String queue) throws IOException {
         final AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder().deliveryMode(1).build();
         producerService.submit(new Callable<Void>() {
 
@@ -178,7 +182,11 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
                 consumerWork();
-                consumingChannel.basicAck(envelope.getDeliveryTag(), false);
+                try {
+                    consumingChannel.basicAck(envelope.getDeliveryTag(), false);
+                } catch (Exception e) {
+                    // application should handle writing exceptions
+                }
             }
         });
         try {

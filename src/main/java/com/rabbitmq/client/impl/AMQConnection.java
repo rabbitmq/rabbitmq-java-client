@@ -567,8 +567,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public void flush() throws IOException {
         try {
             _frameHandler.flush();
-        } catch (Throwable throwable) {
-            this.errorOnWriteListener.handle(this, throwable);
+        } catch (IOException ioe) {
+            this.errorOnWriteListener.handle(this, ioe);
+            throw ioe;
         }
     }
 
