@@ -18,6 +18,7 @@ package com.rabbitmq.client.impl.recovery;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
+import com.rabbitmq.client.impl.ErrorOnWriteListener;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.utility.Utility;
@@ -86,6 +87,14 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, AddressResolver addressResolver, MetricsCollector metricsCollector) {
         this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addressResolver, metricsCollector);
         this.params = params;
+
+        this.params.setErrorOnWriteListener(new ErrorOnWriteListener() {
+            @Override
+            public void handle(Connection connection, Throwable exception) {
+                AMQConnection c = (AMQConnection) connection;
+                c.handleIoError(exception);
+            }
+        });
 
         this.channels = new ConcurrentHashMap<Integer, AutorecoveringChannel>();
     }

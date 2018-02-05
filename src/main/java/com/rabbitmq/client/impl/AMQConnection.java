@@ -61,6 +61,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final List<RecoveryCanBeginListener> recoveryCanBeginListeners =
             Collections.synchronizedList(new ArrayList<RecoveryCanBeginListener>());
 
+    private final ErrorOnWriteListener errorOnWriteListener;
+
     /**
      * Retrieve a copy of the default table of client properties that
      * will be sent to the server during connection startup. This
@@ -245,6 +247,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
 
         this.metricsCollector = metricsCollector;
+
+        this.errorOnWriteListener = params.getErrorOnWriteListener() != null ? params.getErrorOnWriteListener() :
+            new ErrorOnWriteListener() {
+                @Override
+                public void handle(Connection connection, Throwable exception) { }
+            };
+
     }
 
     private void initializeConsumerWorkService() {
@@ -556,7 +565,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Public API - flush the output buffers
      */
     public void flush() throws IOException {
-        _frameHandler.flush();
+        try {
+            _frameHandler.flush();
+        } catch (Throwable throwable) {
+            this.errorOnWriteListener.handle(this, throwable);
+        }
     }
 
     private static int negotiatedMaxValue(int clientValue, int serverValue) {
@@ -879,7 +892,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         _heartbeatSender.shutdown();
 
         _channel0.processShutdownSignal(sse, !initiatedByApplication, notifyRpc);
-
         return sse;
     }
 
