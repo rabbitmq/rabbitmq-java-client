@@ -32,6 +32,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 final class Copyright {
     final static String COPYRIGHT="Copyright (c) 2007-2017 Pivotal Software, Inc.";
@@ -62,6 +63,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             Collections.synchronizedList(new ArrayList<RecoveryCanBeginListener>());
 
     private final ErrorOnWriteListener errorOnWriteListener;
+
+    private final AtomicBoolean finalShutdownStarted = new AtomicBoolean(false);
 
     /**
      * Retrieve a copy of the default table of client properties that
@@ -700,14 +703,16 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /** private API */
     public void doFinalShutdown() {
-        _frameHandler.close();
-        _appContinuation.set(null);
-        notifyListeners();
-        // assuming that shutdown listeners do not do anything
-        // asynchronously, e.g. start new threads, this effectively
-        // guarantees that we only begin recovery when all shutdown
-        // listeners have executed
-        notifyRecoveryCanBeginListeners();
+        if (finalShutdownStarted.compareAndSet(false, true)) {
+            _frameHandler.close();
+            _appContinuation.set(null);
+            notifyListeners();
+            // assuming that shutdown listeners do not do anything
+            // asynchronously, e.g. start new threads, this effectively
+            // guarantees that we only begin recovery when all shutdown
+            // listeners have executed
+            notifyRecoveryCanBeginListeners();
+        }
     }
 
     private void notifyRecoveryCanBeginListeners() {
