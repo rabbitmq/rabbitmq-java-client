@@ -24,6 +24,7 @@ import com.rabbitmq.client.DefaultSocketConfigurator;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.Recoverable;
 import com.rabbitmq.client.RecoveryListener;
+import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import org.junit.After;
@@ -79,6 +80,7 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
         final ConnectionFactory factory = TestUtils.connectionFactory();
         factory.setSocketConfigurator(new DefaultSocketConfigurator() {
 
+            /* default value on a Linux platform */
             int DEFAULT_RECEIVE_BUFFER_SIZE = 43690;
 
             @Override
@@ -94,9 +96,14 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
         factory.setRequestedHeartbeat(5);
         factory.setSharedExecutor(executorService);
         // we need the shutdown executor: channel shutting down depends on the work pool,
-        // which is full. Channel shutting down will time out with the shutdown executor
+        // which is full. Channel shutting down will time out with the shutdown executor.
         factory.setShutdownExecutor(executorService);
         factory.setNetworkRecoveryInterval(2000);
+
+        if (TestUtils.USE_NIO) {
+            factory.setWorkPoolTimeout(10 * 1000);
+            factory.setNioParams(new NioParams().setWriteQueueCapacity(10 * 1000 * 1000).setNbIoThreads(4));
+        }
 
         producingConnection = (AutorecoveringConnection) factory.newConnection("Producer Connection");
         producingChannel = (AutorecoveringChannel) producingConnection.createChannel();
@@ -116,9 +123,6 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
 
     @Test
     public void failureAndRecovery() throws IOException, InterruptedException {
-        if (TestUtils.USE_NIO) {
-            return;
-        }
         final String queue = UUID.randomUUID().toString();
 
         final CountDownLatch recoveryLatch = new CountDownLatch(1);

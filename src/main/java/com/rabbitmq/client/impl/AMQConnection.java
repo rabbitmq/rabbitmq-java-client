@@ -64,6 +64,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     private final ErrorOnWriteListener errorOnWriteListener;
 
+    private final int workPoolTimeout;
+
     private final AtomicBoolean finalShutdownStarted = new AtomicBoolean(false);
 
     /**
@@ -255,12 +257,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             new ErrorOnWriteListener() {
                 @Override
                 public void handle(Connection connection, IOException exception) { }
-            };
-
+        };
+        this.workPoolTimeout = params.getWorkPoolTimeout();
     }
 
     private void initializeConsumerWorkService() {
-        this._workService  = new ConsumerWorkService(consumerWorkServiceExecutor, threadFactory, shutdownTimeout);
+        this._workService  = new ConsumerWorkService(consumerWorkServiceExecutor, threadFactory, workPoolTimeout, shutdownTimeout);
     }
 
     private void initializeHeartbeatSender() {
@@ -619,6 +621,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             try {
                 readFrame(frame);
                 return true;
+            } catch (WorkPoolFullException e) {
+                // work pool is full, we propagate this one.
+                throw e;
             } catch (Throwable ex) {
                 try {
                     handleFailure(ex);
