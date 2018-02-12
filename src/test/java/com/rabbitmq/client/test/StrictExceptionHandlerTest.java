@@ -39,6 +39,7 @@ public class StrictExceptionHandlerTest {
         ConnectionFactory cf = TestUtils.connectionFactory();
         final CountDownLatch latch = new CountDownLatch(1);
         cf.setExceptionHandler(new StrictExceptionHandler() {
+
             @Override
             public void handleConsumerException(Channel channel, Throwable exception, Consumer consumer, String consumerTag, String methodName) {
                 try {
@@ -49,9 +50,7 @@ public class StrictExceptionHandlerTest {
                 latch.countDown();
             }
         });
-        Connection c = null;
-        try {
-            c = cf.newConnection();
+        try (Connection c = cf.newConnection()) {
             Channel channel = c.createChannel();
             String queue = channel.queueDeclare().getQueue();
             channel.basicConsume(queue,
@@ -60,10 +59,6 @@ public class StrictExceptionHandlerTest {
                 ));
             channel.basicPublish("", queue, null, new byte[0]);
             assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
-        } finally {
-            if (c != null) {
-                c.close();
-            }
         }
     }
 
