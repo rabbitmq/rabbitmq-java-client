@@ -20,6 +20,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.DefaultSocketConfigurator;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.Recoverable;
 import com.rabbitmq.client.RecoveryListener;
@@ -30,6 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -45,58 +47,63 @@ import static org.junit.Assert.assertThat;
 /**
  * Test to trigger and check the fix of https://github.com/rabbitmq/rabbitmq-java-client/issues/341.
  * Conditions:
- * - client registers consumer and a call QoS after
- * - client get many messages and the consumer is slow
+ * - client registers consumer
+ * - client get many messages as the consumer is slow
  * - the work pool queue is full, the reading thread is stuck
  * - more messages come from the network and saturates the TCP buffer
  * - the connection dies but the client doesn't detect it
- * - acks of messages fail
+ * - sending in the consumer fails
  * - connection recovery is never triggered
  * <p>
  * The fix consists in triggering connection recovery when writing
- * to the socket fails. As the socket is dead, the closing
- * sequence can take some time, hence the setup of the shutdown
- * listener, which avoids waiting for the socket termination by
- * the OS (can take 15 minutes on linux).
+ * to the socket fails.
  */
 public class NoAutoRecoveryWhenTcpWindowIsFullTest {
 
-    private static final int QOS_PREFETCH = 64;
-    private static final int NUM_MESSAGES_TO_PRODUCE = 100000;
+    private static final int NUM_MESSAGES_TO_PRODUCE = 50000;
     private static final int MESSAGE_PROCESSING_TIME_MS = 3000;
+    private static final byte[] MESSAGE_CONTENT = ("MESSAGE CONTENT " + NUM_MESSAGES_TO_PRODUCE).getBytes();
 
-    private ExecutorService dispatchingService;
-    private ExecutorService producerService;
-    private ExecutorService shutdownService;
+    private ExecutorService executorService;
     private AutorecoveringConnection producingConnection;
     private AutorecoveringChannel producingChannel;
     private AutorecoveringConnection consumingConnection;
     private AutorecoveringChannel consumingChannel;
 
-    private CountDownLatch consumerRecoverOkLatch;
+    private CountDownLatch consumerOkLatch;
 
     @Before
     public void setUp() throws Exception {
-        dispatchingService = Executors.newSingleThreadExecutor();
-        shutdownService = Executors.newSingleThreadExecutor();
-        producerService = Executors.newSingleThreadExecutor();
+        // we need several threads to publish, dispatch deliveries, handle RPC responses, etc.
+        executorService = Executors.newFixedThreadPool(10);
         final ConnectionFactory factory = TestUtils.connectionFactory();
+        factory.setSocketConfigurator(new DefaultSocketConfigurator() {
+
+            int DEFAULT_RECEIVE_BUFFER_SIZE = 43690;
+
+            @Override
+            public void configure(Socket socket) throws IOException {
+                super.configure(socket);
+                socket.setReceiveBufferSize(DEFAULT_RECEIVE_BUFFER_SIZE);
+            }
+        });
         factory.setAutomaticRecoveryEnabled(true);
         factory.setTopologyRecoveryEnabled(true);
         // we try to set the lower values for closing timeouts, etc.
         // this makes the test execute faster.
-        factory.setShutdownExecutor(shutdownService);
-        factory.setShutdownTimeout(10000);
         factory.setRequestedHeartbeat(5);
-        factory.setSharedExecutor(dispatchingService);
-        factory.setNetworkRecoveryInterval(1000);
+        factory.setSharedExecutor(executorService);
+        // we need the shutdown executor: channel shutting down depends on the work pool,
+        // which is full. Channel shutting down will time out with the shutdown executor
+        factory.setShutdownExecutor(executorService);
+        factory.setNetworkRecoveryInterval(2000);
 
         producingConnection = (AutorecoveringConnection) factory.newConnection("Producer Connection");
         producingChannel = (AutorecoveringChannel) producingConnection.createChannel();
         consumingConnection = (AutorecoveringConnection) factory.newConnection("Consuming Connection");
         consumingChannel = (AutorecoveringChannel) consumingConnection.createChannel();
 
-        consumerRecoverOkLatch = new CountDownLatch(1);
+        consumerOkLatch = new CountDownLatch(2);
     }
 
     @After
@@ -104,9 +111,7 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
         closeConnectionIfOpen(consumingConnection);
         closeConnectionIfOpen(producingConnection);
 
-        dispatchingService.shutdownNow();
-        producerService.shutdownNow();
-        shutdownService.shutdownNow();
+        executorService.shutdownNow();
     }
 
     @Test
@@ -116,17 +121,17 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
         }
         final String queue = UUID.randomUUID().toString();
 
-        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch recoveryLatch = new CountDownLatch(1);
 
         consumingConnection.addRecoveryListener(new RecoveryListener() {
 
             @Override
             public void handleRecovery(Recoverable recoverable) {
+                recoveryLatch.countDown();
             }
 
             @Override
             public void handleRecoveryStarted(Recoverable recoverable) {
-                latch.countDown();
             }
         });
 
@@ -136,12 +141,12 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
 
         assertThat(
             "Connection should have been closed and should have recovered by now",
-            latch.await(60, TimeUnit.SECONDS), is(true)
+            recoveryLatch.await(60, TimeUnit.SECONDS), is(true)
         );
 
         assertThat(
             "Consumer should have recovered by now",
-            latch.await(5, TimeUnit.SECONDS), is(true)
+            consumerOkLatch.await(5, TimeUnit.SECONDS), is(true)
         );
     }
 
@@ -158,12 +163,12 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
 
     private void produceMessagesInBackground(final Channel channel, final String queue) throws IOException {
         final AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder().deliveryMode(1).build();
-        producerService.submit(new Callable<Void>() {
+        executorService.submit(new Callable<Void>() {
 
             @Override
             public Void call() throws Exception {
                 for (int i = 0; i < NUM_MESSAGES_TO_PRODUCE; i++) {
-                    channel.basicPublish("", queue, false, properties, ("MSG NUM" + i).getBytes());
+                    channel.basicPublish("", queue, false, properties, MESSAGE_CONTENT);
                 }
                 closeConnectionIfOpen(producingConnection);
                 return null;
@@ -172,36 +177,29 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
     }
 
     private void startConsumer(final String queue) throws IOException {
-        consumingChannel.basicConsume(queue, false, "", false, false, null, new DefaultConsumer(consumingChannel) {
+        consumingChannel.basicConsume(queue, true, new DefaultConsumer(consumingChannel) {
 
             @Override
-            public void handleRecoverOk(String consumerTag) {
-                consumerRecoverOkLatch.countDown();
+            public void handleConsumeOk(String consumerTag) {
+                consumerOkLatch.countDown();
             }
 
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
                 consumerWork();
                 try {
-                    consumingChannel.basicAck(envelope.getDeliveryTag(), false);
+                    consumingChannel.basicPublish("", "", null, "".getBytes());
                 } catch (Exception e) {
                     // application should handle writing exceptions
                 }
             }
         });
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        consumingChannel.basicQos(QOS_PREFETCH);
     }
 
     private void consumerWork() {
         try {
             Thread.sleep(MESSAGE_PROCESSING_TIME_MS);
         } catch (InterruptedException e) {
-            e.printStackTrace();
         }
     }
 }

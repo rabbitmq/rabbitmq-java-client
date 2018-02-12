@@ -254,7 +254,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.errorOnWriteListener = params.getErrorOnWriteListener() != null ? params.getErrorOnWriteListener() :
             new ErrorOnWriteListener() {
                 @Override
-                public void handle(Connection connection, Throwable exception) { }
+                public void handle(Connection connection, IOException exception) { }
             };
 
     }
@@ -572,7 +572,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             _frameHandler.flush();
         } catch (IOException ioe) {
             this.errorOnWriteListener.handle(this, ioe);
-            throw ioe;
         }
     }
 
@@ -592,15 +591,24 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
          */
         @Override
         public void run() {
+            boolean shouldDoFinalShutdown = true;
             try {
                 while (_running) {
                     Frame frame = _frameHandler.readFrame();
                     readFrame(frame);
                 }
             } catch (Throwable ex) {
-                handleFailure(ex);
+                if (ex instanceof InterruptedException) {
+                    // loop has been interrupted during shutdown,
+                    // no need to do it again
+                    shouldDoFinalShutdown = false;
+                } else {
+                    handleFailure(ex);
+                }
             } finally {
-                doFinalShutdown();
+                if (shouldDoFinalShutdown) {
+                    doFinalShutdown();
+                }
             }
         }
     }
@@ -706,6 +714,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         if (finalShutdownStarted.compareAndSet(false, true)) {
             _frameHandler.close();
             _appContinuation.set(null);
+            closeMainLoopThreadIfNecessary();
             notifyListeners();
             // assuming that shutdown listeners do not do anything
             // asynchronously, e.g. start new threads, this effectively
@@ -713,6 +722,22 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             // listeners have executed
             notifyRecoveryCanBeginListeners();
         }
+    }
+
+    private void closeMainLoopThreadIfNecessary() {
+        if (mainLoopReadThreadNotNull() && notInMainLoopThread()) {
+            if (this.mainLoopThread.isAlive()) {
+                this.mainLoopThread.interrupt();
+            }
+        }
+    }
+
+    private boolean notInMainLoopThread() {
+        return Thread.currentThread() != this.mainLoopThread;
+    }
+
+    private boolean mainLoopReadThreadNotNull() {
+        return this.mainLoopThread != null;
     }
 
     private void notifyRecoveryCanBeginListeners() {

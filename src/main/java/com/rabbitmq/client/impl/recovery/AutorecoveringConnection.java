@@ -22,13 +22,18 @@ import com.rabbitmq.client.impl.ErrorOnWriteListener;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.utility.Utility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Connection implementation that performs automatic recovery when
@@ -52,6 +57,9 @@ import java.util.concurrent.TimeoutException;
  * @since 3.3.0
  */
 public class AutorecoveringConnection implements RecoverableConnection, NetworkConnection {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AutorecoveringConnection.class);
+
     private final RecoveryAwareAMQConnectionFactory cf;
     private final Map<Integer, AutorecoveringChannel> channels;
     private final ConnectionParams params;
@@ -88,15 +96,37 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addressResolver, metricsCollector);
         this.params = params;
 
-        this.params.setErrorOnWriteListener(new ErrorOnWriteListener() {
-            @Override
-            public void handle(Connection connection, Throwable exception) {
-                AMQConnection c = (AMQConnection) connection;
-                c.handleIoError(exception);
-            }
-        });
+        setupErrorOnWriteListenerForPotentialRecovery();
 
         this.channels = new ConcurrentHashMap<Integer, AutorecoveringChannel>();
+    }
+
+    private void setupErrorOnWriteListenerForPotentialRecovery() {
+        final ThreadFactory threadFactory = this.params.getThreadFactory();
+        final Lock errorOnWriteLock = new ReentrantLock();
+        this.params.setErrorOnWriteListener(new ErrorOnWriteListener() {
+            @Override
+            public void handle(final Connection connection, final IOException exception) throws IOException {
+                // this is called for any write error
+                // we should trigger the error handling and the recovery only once
+                if (errorOnWriteLock.tryLock()) {
+                    try {
+                        Thread recoveryThread = threadFactory.newThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                AMQConnection c = (AMQConnection) connection;
+                                c.handleIoError(exception);
+                            }
+                        });
+                        recoveryThread.setName("RabbitMQ Error On Write Thread");
+                        recoveryThread.start();
+                    } finally {
+                        errorOnWriteLock.unlock();
+                    }
+                }
+                throw exception;
+            }
+        });
     }
 
     /**
@@ -661,7 +691,9 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         for (Map.Entry<String, RecordedConsumer> entry : Utility.copy(this.consumers).entrySet()) {
             String tag = entry.getKey();
             RecordedConsumer consumer = entry.getValue();
-
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Recovering consumer {}", consumer);
+            }
             try {
                 String newTag = consumer.recover();
                 // make sure server-generated tags are re-added. MK.
@@ -675,6 +707,9 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 
                 for(ConsumerRecoveryListener crl : Utility.copy(this.consumerRecoveryListeners)) {
                     crl.consumerRecovered(tag, newTag);
+                }
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Consumer {} has recovered", consumer);
                 }
             } catch (Exception cause) {
                 final String message = "Caught an exception while recovering consumer " + tag +
