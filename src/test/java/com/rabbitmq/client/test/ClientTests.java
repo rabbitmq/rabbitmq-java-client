@@ -57,7 +57,8 @@ import org.junit.runners.Suite;
     FrameBuilderTest.class,
     PropertyFileInitialisationTest.class,
     ClientVersionTest.class,
-    TestUtilsTest.class
+    TestUtilsTest.class,
+    StrictExceptionHandlerTest.class
 })
 public class ClientTests {
 

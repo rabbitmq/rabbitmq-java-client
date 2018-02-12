@@ -50,25 +50,36 @@ public class StrictExceptionHandler extends ForgivingExceptionHandler implements
                                         Consumer consumer, String consumerTag,
                                         String methodName)
     {
-        handleChannelKiller(channel, exception, "Consumer " + consumer
-                                                        + " (" + consumerTag + ")"
-                                                        + " method " + methodName
-                                                        + " for channel " + channel);
+        String logMessage = "Consumer " + consumer
+            + " (" + consumerTag + ")"
+            + " method " + methodName
+            + " for channel " + channel;
+        String closeMessage = "Consumer"
+            + " (" + consumerTag + ")"
+            + " method " + methodName
+            + " for channel " + channel;
+        handleChannelKiller(channel, exception, logMessage, closeMessage);
     }
 
     @Override
     protected void handleChannelKiller(Channel channel, Throwable exception, String what) {
-        log(what + " threw an exception for channel " + channel, exception);
+        handleChannelKiller(channel, exception, what, what);
+    }
+
+    protected void handleChannelKiller(Channel channel, Throwable exception, String logMessage, String closeMessage) {
+        log(logMessage + " threw an exception for channel " + channel, exception);
         try {
-            channel.close(AMQP.REPLY_SUCCESS, "Closed due to exception from " + what);
+            channel.close(AMQP.REPLY_SUCCESS, "Closed due to exception from " + closeMessage);
         } catch (AlreadyClosedException ace) {
             // noop
         } catch (TimeoutException ace) {
             // noop
         } catch (IOException ioe) {
             log("Failure during close of channel " + channel + " after " + exception, ioe);
-            channel.getConnection().abort(AMQP.INTERNAL_ERROR, "Internal error closing channel for " + what);
+            channel.getConnection().abort(AMQP.INTERNAL_ERROR, "Internal error closing channel for " + closeMessage);
         }
     }
+
+
 
 }
