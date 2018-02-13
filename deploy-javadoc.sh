@@ -1,43 +1,14 @@
 #!/usr/bin/env bash
 
-DEPLOY_PATH=/home/rabbitmq/extras/releases/rabbitmq-java-client/current-javadoc
+DEPLOY_DIRECTORY=api/4.x.x
+TAG=$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))
 
-# RSync user/host to deploy to.  Mandatory.
-DEPLOY_USERHOST=
-
-
-# Imitate make-style variable settings as arguments
-while [[ $# -gt 0 ]] ; do
-  declare "$1"
-  shift
-done
-
-mandatory_vars="DEPLOY_USERHOST"
-optional_vars="DEPLOY_PATH"
-
-function die () {
-  echo "$@" 2>&1
-  exit 1
-}
-
-# Check mandatory settings
-for v in $mandatory_vars ; do
-    [[ -n "${!v}" ]] || die "$v not set"
-done
-
-echo "Settings:"
-for v in $mandatory_vars $optional_vars ; do
-    echo "${v}=${!v}"
-done
-
-set -e -x
-
-./mvnw -q clean javadoc:javadoc -Dmaven.javadoc.failOnError=false
-
-ssh $DEPLOY_USERHOST \
-		"rm -rf $DEPLOY_PATH; \
-		 mkdir -p $DEPLOY_PATH"
-
-rsync -rpl --exclude '*.sh'  target/site/apidocs/ $DEPLOY_USERHOST:$DEPLOY_PATH
+mvn -q clean javadoc:javadoc -Dmaven.javadoc.failOnError=false
+git co gh-pages
+rm -rf $DEPLOY_DIRECTORY/*
+cp -r target/site/apidocs/* $DEPLOY_DIRECTORY
+git add $DEPLOY_DIRECTORY
+git commit -m "Add Javadoc for $TAG"
+git push origin gh-pages
 
 
