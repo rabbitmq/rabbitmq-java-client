@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DEPLOY_DIRECTORY=api/4.x.x
+DEPLOY_DIRECTORY=api/current
 TAG=$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))
 
 mvn -q clean javadoc:javadoc -Dmaven.javadoc.failOnError=false
