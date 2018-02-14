@@ -81,6 +81,9 @@ public class ConnectionFactory implements Cloneable {
     /** The default network recovery interval: 5000 millis */
     public static final long   DEFAULT_NETWORK_RECOVERY_INTERVAL = 5000;
 
+    /** The default timeout for work pool enqueueing: no timeout */
+    public static final int    DEFAULT_WORK_POOL_TIMEOUT = -1;
+
     private static final String PREFERRED_TLS_PROTOCOL = "TLSv1.2";
 
     private static final String FALLBACK_TLS_PROTOCOL = "TLSv1";
@@ -137,6 +140,12 @@ public class ConnectionFactory implements Cloneable {
      * @since 4.2.0
      */
     private boolean channelShouldCheckRpcResponseType = false;
+
+    /**
+     * Timeout in ms for work pool enqueuing.
+     * @since 4.5.0
+     */
+    private int workPoolTimeout = DEFAULT_WORK_POOL_TIMEOUT;
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -974,6 +983,7 @@ public class ConnectionFactory implements Cloneable {
         result.setHeartbeatExecutor(heartbeatExecutor);
         result.setChannelRpcTimeout(channelRpcTimeout);
         result.setChannelShouldCheckRpcResponseType(channelShouldCheckRpcResponseType);
+        result.setWorkPoolTimeout(workPoolTimeout);
         return result;
     }
 
@@ -1269,5 +1279,26 @@ public class ConnectionFactory implements Cloneable {
 
     public boolean isChannelShouldCheckRpcResponseType() {
         return channelShouldCheckRpcResponseType;
+    }
+
+    /**
+     * Timeout (in ms) for work pool enqueueing.
+     * The {@link WorkPool} dispatches several types of responses
+     * from the broker (e.g. deliveries). A high-traffic
+     * client with slow consumers can exhaust the work pool and
+     * compromise the whole connection (by e.g. letting the broker
+     * saturate the receive TCP buffers). Setting a timeout
+     * would make the connection fail early and avoid hard-to-diagnose
+     * TCP connection failure. Note this shouldn't happen
+     * with clients that set appropriate QoS values.
+     * Default is no timeout.
+     * @param workPoolTimeout timeout in ms
+     */
+    public void setWorkPoolTimeout(int workPoolTimeout) {
+        this.workPoolTimeout = workPoolTimeout;
+    }
+
+    public int getWorkPoolTimeout() {
+        return workPoolTimeout;
     }
 }

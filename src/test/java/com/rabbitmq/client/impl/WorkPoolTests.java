@@ -30,7 +30,7 @@ import org.junit.Test;
  */
 public class WorkPoolTests {
 
-    private final WorkPool<String, Object> pool = new WorkPool<String, Object>();
+    private final WorkPool<String, Object> pool = new WorkPool<String, Object>(-1);
 
     /**
      * Test unknown key tolerated silently

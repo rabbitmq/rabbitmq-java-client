@@ -44,6 +44,8 @@ public class ConnectionParams {
     private boolean topologyRecovery;
     private int channelRpcTimeout;
     private boolean channelShouldCheckRpcResponseType;
+    private ErrorOnWriteListener errorOnWriteListener;
+    private int workPoolTimeout = -1;
 
     private ExceptionHandler exceptionHandler;
     private ThreadFactory threadFactory;
@@ -212,5 +214,21 @@ public class ConnectionParams {
 
     public void setChannelShouldCheckRpcResponseType(boolean channelShouldCheckRpcResponseType) {
         this.channelShouldCheckRpcResponseType = channelShouldCheckRpcResponseType;
+    }
+
+    public void setErrorOnWriteListener(ErrorOnWriteListener errorOnWriteListener) {
+        this.errorOnWriteListener = errorOnWriteListener;
+    }
+
+    public ErrorOnWriteListener getErrorOnWriteListener() {
+        return errorOnWriteListener;
+    }
+
+    public void setWorkPoolTimeout(int workPoolTimeout) {
+        this.workPoolTimeout = workPoolTimeout;
+    }
+
+    public int getWorkPoolTimeout() {
+        return workPoolTimeout;
     }
 }
