@@ -1080,7 +1080,9 @@ public class ConnectionFactory implements Cloneable {
 
     @Override public ConnectionFactory clone(){
         try {
-            return (ConnectionFactory)super.clone();
+            ConnectionFactory clone = (ConnectionFactory)super.clone();
+            clone.credentialsProv = (CredentialsProvider)clone.credentialsProv.clone();
+            return clone;
         } catch (CloneNotSupportedException e) {
             throw new Error(e);
         }

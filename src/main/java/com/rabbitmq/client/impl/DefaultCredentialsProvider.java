@@ -28,5 +28,5 @@ public class DefaultCredentialsProvider extends AbstractCredentialsProvider {
     public void setPassword(String password) {
         this.password = password;
     }
-
+    
 }

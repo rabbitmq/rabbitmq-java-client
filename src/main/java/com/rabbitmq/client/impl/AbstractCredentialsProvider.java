@@ -35,5 +35,14 @@ public abstract class AbstractCredentialsProvider implements CredentialsProvider
     public void setPassword(String password) {
         throw new UnsupportedOperationException();
     }
+    
+    /**
+     * Default clone() behavior is to call Object's clone() method. If you need more custom
+     * behavior, override clone().
+     */
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
 
 }
