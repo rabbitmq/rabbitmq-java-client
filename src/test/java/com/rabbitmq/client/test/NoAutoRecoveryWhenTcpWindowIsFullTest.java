@@ -46,18 +46,24 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * Test to trigger and check the fix of https://github.com/rabbitmq/rabbitmq-java-client/issues/341.
- * Conditions:
- * - client registers consumer
- * - client get many messages as the consumer is slow
- * - the work pool queue is full, the reading thread is stuck
- * - more messages come from the network and saturates the TCP buffer
- * - the connection dies but the client doesn't detect it
- * - sending in the consumer fails
- * - connection recovery is never triggered
+ * Test to trigger and check the fix of rabbitmq/rabbitmq-java-client#341,
+ * which can be summarized as
+ *
+ * <ul>
+ *   <li>client registers a slow consumer in automatic acknowledgement mode</li>
+ *   <li>there's a fast enough publisher</li>
+ *   <li>the consumer gets flooded with deliveries</li>
+ *   <li>the work pool queue is full, the reading thread is stuck</li>
+ *   <li>more messages come from the network and it fills up the TCP buffer</li>
+ *   <li>the connection is closed by the server due to missed heartbeats but the client doesn't detect it</li>
+ *   <li>a write operation fails because the socket is closed</li>
+ *   <li>connection recovery is never triggered</li>
+ * </ul>
+ *
  * <p>
  * The fix consists in triggering connection recovery when writing
  * to the socket fails.
+ * </p>
  */
 public class NoAutoRecoveryWhenTcpWindowIsFullTest {
 
@@ -80,7 +86,7 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
         final ConnectionFactory factory = TestUtils.connectionFactory();
         factory.setSocketConfigurator(new DefaultSocketConfigurator() {
 
-            /* default value on a Linux platform */
+            /* default value on Linux */
             int DEFAULT_RECEIVE_BUFFER_SIZE = 43690;
 
             @Override
