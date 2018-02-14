@@ -16,7 +16,7 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
-
+import com.rabbitmq.client.impl.AbstractCredentialsProvider;
 import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.client.impl.recovery.*;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -34,6 +34,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
@@ -117,6 +118,42 @@ public class ConnectionRecovery extends BrokerTestCase {
             fail("expected passive declaration to throw");
         } catch (java.io.IOException e) {
             // expected
+        } finally {
+            c.abort();
+        }
+    }
+    
+    // See https://github.com/rabbitmq/rabbitmq-java-client/pull/350 . We want to request fresh creds when recovering.
+    @Test public void connectionRecoveryRequestsCredentialsAgain() throws Exception {
+        ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(false);
+        final String username = cf.getUsername();
+        final String password = cf.getPassword();
+        final AtomicLong usernameRequested = new AtomicLong(0);
+        final AtomicLong passwordRequested = new AtomicLong(0);
+        cf.setCredentialsProvider(new AbstractCredentialsProvider() {
+            
+            @Override
+            public String getUsername() {
+                usernameRequested.incrementAndGet();
+                return username;
+            }
+            
+            @Override
+            public String getPassword() {
+                passwordRequested.incrementAndGet();
+                return password;
+            }
+        });
+        RecoverableConnection c = (RecoverableConnection) cf.newConnection();
+        try {
+            assertTrue(c.isOpen());
+            assertEquals(1, usernameRequested.get());
+            assertEquals(1, passwordRequested.get());
+            
+            closeAndWaitForRecovery(c);
+            assertTrue(c.isOpen());
+            assertEquals(2, usernameRequested.get());
+            assertEquals(2, passwordRequested.get());
         } finally {
             c.abort();
         }
