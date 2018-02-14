@@ -15,25 +15,40 @@
 
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.*;
+import static java.util.concurrent.TimeUnit.*;
+
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.ConnectionParams;
+import com.rabbitmq.client.impl.CredentialsProvider;
+import com.rabbitmq.client.impl.DefaultCredentialsProvider;
+import com.rabbitmq.client.impl.DefaultExceptionHandler;
+import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.FrameHandlerFactory;
+import com.rabbitmq.client.impl.SocketFrameHandlerFactory;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.nio.SocketChannelFrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
-
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import java.util.concurrent.*;
-
-import static java.util.concurrent.TimeUnit.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeoutException;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 
 /**
  * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
@@ -85,8 +100,6 @@ public class ConnectionFactory implements Cloneable {
 
     private static final String FALLBACK_TLS_PROTOCOL = "TLSv1";
 
-    private String username                       = DEFAULT_USER;
-    private String password                       = DEFAULT_PASS;
     private String virtualHost                    = DEFAULT_VHOST;
     private String host                           = DEFAULT_HOST;
     private int port                              = USE_DEFAULT_PORT;
@@ -107,6 +120,11 @@ public class ConnectionFactory implements Cloneable {
     private ScheduledExecutorService heartbeatExecutor;
     private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
     private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
+    private CredentialsProvider credentialsProv   = new DefaultCredentialsProvider();
+    {
+        credentialsProv.setUsername(DEFAULT_USER);
+        credentialsProv.setPassword(DEFAULT_PASS);
+    }
 
     private boolean automaticRecovery             = true;
     private boolean topologyRecovery              = true;
@@ -172,7 +190,7 @@ public class ConnectionFactory implements Cloneable {
      * @return the AMQP user name to use when connecting to the broker
      */
     public String getUsername() {
-        return this.username;
+        return credentialsProv.getUsername();
     }
 
     /**
@@ -180,7 +198,7 @@ public class ConnectionFactory implements Cloneable {
      * @param username the AMQP user name to use when connecting to the broker
      */
     public void setUsername(String username) {
-        this.username = username;
+        credentialsProv.setUsername(username);
     }
 
     /**
@@ -188,7 +206,7 @@ public class ConnectionFactory implements Cloneable {
      * @return the password to use when connecting to the broker
      */
     public String getPassword() {
-        return this.password;
+        return credentialsProv.getPassword();
     }
 
     /**
@@ -196,9 +214,19 @@ public class ConnectionFactory implements Cloneable {
      * @param password the password to use when connecting to the broker
      */
     public void setPassword(String password) {
-        this.password = password;
+        credentialsProv.setPassword(password);
     }
 
+    /**
+     * Set a custom credentials provider.
+     * @param credentialsProvider The custom implementation of CredentialsProvider to use when connecting to the broker.
+     * @see com.rabbitmq.client.impl.DefaultCredentialsProvider
+     * @see com.rabbitmq.client.impl.AbstractCredentialsProvider
+     */
+    public void setCredentialsProvider(CredentialsProvider credentialsProvider) {
+        this.credentialsProv = credentialsProvider;
+    }
+    
     /**
      * Retrieve the virtual host.
      * @return the virtual host to use when connecting to the broker
@@ -954,8 +982,7 @@ public class ConnectionFactory implements Cloneable {
     public ConnectionParams params(ExecutorService consumerWorkServiceExecutor) {
         ConnectionParams result = new ConnectionParams();
 
-        result.setUsername(username);
-        result.setPassword(password);
+        result.setCredentialsProvider(credentialsProv);
         result.setConsumerWorkServiceExecutor(consumerWorkServiceExecutor);
         result.setVirtualHost(virtualHost);
         result.setClientProperties(getClientProperties());
