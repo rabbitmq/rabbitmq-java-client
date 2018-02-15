@@ -142,6 +142,14 @@ public class ConnectionFactory implements Cloneable {
     private boolean channelShouldCheckRpcResponseType = false;
 
     /**
+     * Listener called when a connection gets an IO error trying to write on the socket.
+     * Default listener triggers connection recovery asynchronously and propagates
+     * the exception.
+     * @since 4.5.0
+     */
+    private ErrorOnWriteListener errorOnWriteListener;
+
+    /**
      * Timeout in ms for work pool enqueuing.
      * @since 4.5.0
      */
@@ -984,6 +992,7 @@ public class ConnectionFactory implements Cloneable {
         result.setChannelRpcTimeout(channelRpcTimeout);
         result.setChannelShouldCheckRpcResponseType(channelShouldCheckRpcResponseType);
         result.setWorkPoolTimeout(workPoolTimeout);
+        result.setErrorOnWriteListener(errorOnWriteListener);
         return result;
     }
 
@@ -1292,7 +1301,9 @@ public class ConnectionFactory implements Cloneable {
      * TCP connection failure. Note this shouldn't happen
      * with clients that set appropriate QoS values.
      * Default is no timeout.
+     *
      * @param workPoolTimeout timeout in ms
+     * @since 4.5.0
      */
     public void setWorkPoolTimeout(int workPoolTimeout) {
         this.workPoolTimeout = workPoolTimeout;
@@ -1300,5 +1311,18 @@ public class ConnectionFactory implements Cloneable {
 
     public int getWorkPoolTimeout() {
         return workPoolTimeout;
+    }
+
+    /**
+     * Set a listener to be called when connection gets an IO error trying to write on the socket.
+     * Default listener triggers connection recovery asynchronously and propagates
+     * the exception. Override the default listener to disable or
+     * customise automatic connection triggering on write operations.
+     *
+     * @param errorOnWriteListener the listener
+     * @since 4.5.0
+     */
+    public void setErrorOnWriteListener(ErrorOnWriteListener errorOnWriteListener) {
+        this.errorOnWriteListener = errorOnWriteListener;
     }
 }

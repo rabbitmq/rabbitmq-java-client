@@ -20,8 +20,10 @@ import com.rabbitmq.client.Connection;
 import java.io.IOException;
 
 /**
- * Listener called when a connection gets an error trying to write on the socket.
+ * Listener called when a connection gets an IO error trying to write on the socket.
  * This can be used to trigger connection recovery.
+ *
+ * @since 4.5.0
  */
 public interface ErrorOnWriteListener {
 
