@@ -53,7 +53,6 @@ import javax.net.ssl.TrustManager;
 /**
  * Convenience "factory" class to facilitate opening a {@link Connection} to an AMQP broker.
  */
-
 public class ConnectionFactory implements Cloneable {
 
     /** Default user name */
@@ -100,34 +99,30 @@ public class ConnectionFactory implements Cloneable {
 
     private static final String FALLBACK_TLS_PROTOCOL = "TLSv1";
 
-    private String virtualHost                    = DEFAULT_VHOST;
-    private String host                           = DEFAULT_HOST;
-    private int port                              = USE_DEFAULT_PORT;
-    private int requestedChannelMax               = DEFAULT_CHANNEL_MAX;
-    private int requestedFrameMax                 = DEFAULT_FRAME_MAX;
-    private int requestedHeartbeat                = DEFAULT_HEARTBEAT;
-    private int connectionTimeout                 = DEFAULT_CONNECTION_TIMEOUT;
-    private int handshakeTimeout                  = DEFAULT_HANDSHAKE_TIMEOUT;
-    private int shutdownTimeout                   = DEFAULT_SHUTDOWN_TIMEOUT;
-    private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
-    private SocketFactory factory                 = SocketFactory.getDefault();
-    private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
+    private String virtualHost                      = DEFAULT_VHOST;
+    private String host                             = DEFAULT_HOST;
+    private int port                                = USE_DEFAULT_PORT;
+    private int requestedChannelMax                 = DEFAULT_CHANNEL_MAX;
+    private int requestedFrameMax                   = DEFAULT_FRAME_MAX;
+    private int requestedHeartbeat                  = DEFAULT_HEARTBEAT;
+    private int connectionTimeout                   = DEFAULT_CONNECTION_TIMEOUT;
+    private int handshakeTimeout                    = DEFAULT_HANDSHAKE_TIMEOUT;
+    private int shutdownTimeout                     = DEFAULT_SHUTDOWN_TIMEOUT;
+    private Map<String, Object> _clientProperties   = AMQConnection.defaultClientProperties();
+    private SocketFactory factory                   = SocketFactory.getDefault();
+    private SaslConfig saslConfig                   = DefaultSaslConfig.PLAIN;
     private ExecutorService sharedExecutor;
-    private ThreadFactory threadFactory           = Executors.defaultThreadFactory();
+    private ThreadFactory threadFactory             = Executors.defaultThreadFactory();
     // minimises the number of threads rapid closure of many
     // connections uses, see rabbitmq/rabbitmq-java-client#86
     private ExecutorService shutdownExecutor;
     private ScheduledExecutorService heartbeatExecutor;
-    private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
-    private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
-    private CredentialsProvider credentialsProv   = new DefaultCredentialsProvider();
-    {
-        credentialsProv.setUsername(DEFAULT_USER);
-        credentialsProv.setPassword(DEFAULT_PASS);
-    }
+    private SocketConfigurator socketConf           = new DefaultSocketConfigurator();
+    private ExceptionHandler exceptionHandler       = new DefaultExceptionHandler();
+    private CredentialsProvider credentialsProvider = new DefaultCredentialsProvider(DEFAULT_USER, DEFAULT_PASS);
 
-    private boolean automaticRecovery             = true;
-    private boolean topologyRecovery              = true;
+    private boolean automaticRecovery               = true;
+    private boolean topologyRecovery                = true;
 
     // long is used to make sure the users can use both ints
     // and longs safely. It is unlikely that anybody'd need
@@ -190,7 +185,7 @@ public class ConnectionFactory implements Cloneable {
      * @return the AMQP user name to use when connecting to the broker
      */
     public String getUsername() {
-        return credentialsProv.getUsername();
+        return credentialsProvider.getUsername();
     }
 
     /**
@@ -198,7 +193,10 @@ public class ConnectionFactory implements Cloneable {
      * @param username the AMQP user name to use when connecting to the broker
      */
     public void setUsername(String username) {
-        credentialsProv.setUsername(username);
+        this.credentialsProvider = new DefaultCredentialsProvider(
+            username,
+            this.credentialsProvider.getPassword()
+        );
     }
 
     /**
@@ -206,7 +204,7 @@ public class ConnectionFactory implements Cloneable {
      * @return the password to use when connecting to the broker
      */
     public String getPassword() {
-        return credentialsProv.getPassword();
+        return credentialsProvider.getPassword();
     }
 
     /**
@@ -214,17 +212,21 @@ public class ConnectionFactory implements Cloneable {
      * @param password the password to use when connecting to the broker
      */
     public void setPassword(String password) {
-        credentialsProv.setPassword(password);
+        this.credentialsProvider = new DefaultCredentialsProvider(
+            this.credentialsProvider.getUsername(),
+            password
+        );
     }
 
     /**
      * Set a custom credentials provider.
+     * Default implementation uses static username and password.
      * @param credentialsProvider The custom implementation of CredentialsProvider to use when connecting to the broker.
      * @see com.rabbitmq.client.impl.DefaultCredentialsProvider
-     * @see com.rabbitmq.client.impl.AbstractCredentialsProvider
+     * @since 4.5.0
      */
     public void setCredentialsProvider(CredentialsProvider credentialsProvider) {
-        this.credentialsProv = credentialsProvider;
+        this.credentialsProvider = credentialsProvider;
     }
     
     /**
@@ -982,7 +984,7 @@ public class ConnectionFactory implements Cloneable {
     public ConnectionParams params(ExecutorService consumerWorkServiceExecutor) {
         ConnectionParams result = new ConnectionParams();
 
-        result.setCredentialsProvider(credentialsProv);
+        result.setCredentialsProvider(credentialsProvider);
         result.setConsumerWorkServiceExecutor(consumerWorkServiceExecutor);
         result.setVirtualHost(virtualHost);
         result.setClientProperties(getClientProperties());
@@ -1081,7 +1083,6 @@ public class ConnectionFactory implements Cloneable {
     @Override public ConnectionFactory clone(){
         try {
             ConnectionFactory clone = (ConnectionFactory)super.clone();
-            clone.credentialsProv = (CredentialsProvider)clone.credentialsProv.clone();
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new Error(e);

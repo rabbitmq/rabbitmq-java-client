@@ -1021,7 +1021,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     @Override public String toString() {
         final String virtualHost = "/".equals(_virtualHost) ? _virtualHost : "/" + _virtualHost;
-        return "amqp://" + credentialsProvider.getUsername() + "@" + getHostAddress() + ":" + getPort() + virtualHost;
+        return "amqp://" + this.credentialsProvider.getUsername() + "@" + getHostAddress() + ":" + getPort() + virtualHost;
     }
 
     private String getHostAddress() {

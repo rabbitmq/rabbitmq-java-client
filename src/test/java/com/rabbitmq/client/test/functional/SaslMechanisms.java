@@ -122,7 +122,7 @@ public class SaslMechanisms extends BrokerTestCase {
     // to be reported by the broker by closing the connection
     private Connection connectionWithoutCapabilities(String username, String password)
             throws IOException, TimeoutException {
-        ConnectionFactory customFactory = connectionFactory.clone();
+        ConnectionFactory customFactory = TestUtils.connectionFactory();
         customFactory.setUsername(username);
         customFactory.setPassword(password);
         Map<String, Object> customProperties = AMQConnection.defaultClientProperties();
