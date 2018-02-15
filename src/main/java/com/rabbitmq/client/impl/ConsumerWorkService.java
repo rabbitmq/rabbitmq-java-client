@@ -34,8 +34,8 @@ final public class ConsumerWorkService {
     public ConsumerWorkService(ExecutorService executor, ThreadFactory threadFactory, int queueingTimeout, int shutdownTimeout) {
         this.privateExecutor = (executor == null);
         this.executor = (executor == null) ? Executors.newFixedThreadPool(DEFAULT_NUM_THREADS, threadFactory)
-            : executor;
-        this.workPool = new WorkPool<Channel, Runnable>(queueingTimeout);
+                                           : executor;
+        this.workPool = new WorkPool<>(queueingTimeout);
         this.shutdownTimeout = shutdownTimeout;
     }
 

@@ -220,7 +220,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._virtualHost = params.getVirtualHost();
         this._exceptionHandler = params.getExceptionHandler();
 
-        this._clientProperties = new HashMap<String, Object>(params.getClientProperties());
+        this._clientProperties = new HashMap<>(params.getClientProperties());
         this.requestedFrameMax = params.getRequestedFrameMax();
         this.requestedChannelMax = params.getRequestedChannelMax();
         this.requestedHeartbeat = params.getRequestedHeartbeat();
@@ -252,10 +252,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.metricsCollector = metricsCollector;
 
         this.errorOnWriteListener = params.getErrorOnWriteListener() != null ? params.getErrorOnWriteListener() :
-            new ErrorOnWriteListener() {
-                @Override
-                public void handle(Connection connection, IOException exception) { }
-        };
+            (connection, exception) -> { };
         this.workPoolTimeout = params.getWorkPoolTimeout();
     }
 
