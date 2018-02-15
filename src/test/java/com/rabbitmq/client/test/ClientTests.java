@@ -58,7 +58,8 @@ import org.junit.runners.Suite;
     PropertyFileInitialisationTest.class,
     ClientVersionTest.class,
     TestUtilsTest.class,
-    StrictExceptionHandlerTest.class
+    StrictExceptionHandlerTest.class,
+    NoAutoRecoveryWhenTcpWindowIsFullTest.class
 })
 public class ClientTests {
 

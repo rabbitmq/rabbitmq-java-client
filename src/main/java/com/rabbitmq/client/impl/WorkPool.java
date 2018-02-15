@@ -21,6 +21,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>This is a generic implementation of the channels specification
@@ -61,6 +64,37 @@ public class WorkPool<K, W> {
     private final Map<K, VariableLinkedBlockingQueue<W>> pool = new HashMap<K, VariableLinkedBlockingQueue<W>>();
     /** Those keys which want limits to be removed. We do not limit queue size if this is non-empty. */
     private final Set<K> unlimited = new HashSet<K>();
+    private final EnqueueingCallback<W> enqueueingCallback;
+
+    public WorkPool(final int queueingTimeout) {
+        if (queueingTimeout > 0) {
+            this.enqueueingCallback = new EnqueueingCallback<W>() {
+                @Override
+                public void enqueue(BlockingQueue<W> queue, W item) {
+                    try {
+                        boolean offered = queue.offer(item, queueingTimeout, TimeUnit.MILLISECONDS);
+                        if (!offered) {
+                            throw new WorkPoolFullException("Could not enqueue in work pool after " + queueingTimeout + " ms.");
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread();
+                    }
+                }
+            };
+        } else {
+            this.enqueueingCallback = new EnqueueingCallback<W>() {
+
+                @Override
+                public void enqueue(BlockingQueue<W> queue, W item) {
+                    try {
+                        queue.put(item);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            };
+        }
+    }
 
     /**
      * Add client <code><b>key</b></code> to pool of item queues, with an empty queue.
@@ -178,11 +212,7 @@ public class WorkPool<K, W> {
         }
         // The put operation may block. We need to make sure we are not holding the lock while that happens.
         if (queue != null) {
-            try {
-                queue.put(item);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            enqueueingCallback.enqueue(queue, item);
 
             synchronized (this) {
                 if (isDormant(key)) {
@@ -242,5 +272,11 @@ public class WorkPool<K, W> {
             this.inProgress.add(key);
         }
         return key;
+    }
+
+    private interface EnqueueingCallback<W> {
+
+        void enqueue(BlockingQueue<W> queue, W item);
+
     }
 }
