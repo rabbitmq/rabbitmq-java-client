@@ -26,8 +26,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 public class ConnectionParams {
-    private String username;
-    private String password;
+    private CredentialsProvider credentialsProvider;
     private ExecutorService consumerWorkServiceExecutor;
     private ScheduledExecutorService heartbeatExecutor;
     private ExecutorService shutdownExecutor;
@@ -52,12 +51,8 @@ public class ConnectionParams {
 
     public ConnectionParams() {}
 
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
+    public CredentialsProvider getCredentialsProvider() {
+        return credentialsProvider;
     }
 
     public ExecutorService getConsumerWorkServiceExecutor() {
@@ -132,12 +127,8 @@ public class ConnectionParams {
         return channelShouldCheckRpcResponseType;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
+    public void setCredentialsProvider(CredentialsProvider credentialsProvider) {
+        this.credentialsProvider = credentialsProvider;
     }
 
     public void setConsumerWorkServiceExecutor(ExecutorService consumerWorkServiceExecutor) {

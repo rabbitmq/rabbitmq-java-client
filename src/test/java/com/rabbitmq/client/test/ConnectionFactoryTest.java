@@ -21,6 +21,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MetricsCollector;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
+import com.rabbitmq.client.impl.CredentialsProvider;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import org.junit.Test;
@@ -29,8 +30,9 @@ import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class ConnectionFactoryTest {
@@ -61,6 +63,31 @@ public class ConnectionFactoryTest {
             new Address[] { new Address("host1"), new Address("host2") }
         );
         assertSame(connectionThatSucceeds, returnedConnection);
+    }
+    
+    // see https://github.com/rabbitmq/rabbitmq-java-client/pull/350
+    @Test public void customizeCredentialsProvider() throws Exception {
+        final CredentialsProvider provider = mock(CredentialsProvider.class);
+        final AMQConnection connection = mock(AMQConnection.class);
+        final AtomicBoolean createCalled = new AtomicBoolean(false);
+        
+        ConnectionFactory connectionFactory = new ConnectionFactory() {
+            @Override
+            protected AMQConnection createConnection(ConnectionParams params, FrameHandler frameHandler,
+                    MetricsCollector metricsCollector) {
+                assertSame(provider, params.getCredentialsProvider());
+                createCalled.set(true);
+                return connection;
+            }
+        };
+        connectionFactory.setCredentialsProvider(provider);
+        connectionFactory.setAutomaticRecoveryEnabled(false);
+        
+        doNothing().when(connection).start();
+        
+        Connection returnedConnection = connectionFactory.newConnection();
+        assertSame(returnedConnection, connection);
+        assertTrue(createCalled.get());
     }
 
 }
