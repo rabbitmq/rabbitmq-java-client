@@ -15,25 +15,41 @@
 
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.*;
+import static java.util.concurrent.TimeUnit.*;
+
+import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.ConnectionParams;
+import com.rabbitmq.client.impl.CredentialsProvider;
+import com.rabbitmq.client.impl.DefaultCredentialsProvider;
+import com.rabbitmq.client.impl.DefaultExceptionHandler;
+import com.rabbitmq.client.impl.ErrorOnWriteListener;
+import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.FrameHandlerFactory;
+import com.rabbitmq.client.impl.SocketFrameHandlerFactory;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.nio.SocketChannelFrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
-
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import java.util.concurrent.*;
-
-import static java.util.concurrent.TimeUnit.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeoutException;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 
 /**
  * Convenience factory class to facilitate opening a {@link Connection} to a RabbitMQ node.
@@ -42,7 +58,6 @@ import static java.util.concurrent.TimeUnit.*;
  * Some settings that apply to connections can also be configured here
  * and will apply to all connections produced by this factory.
  */
-
 public class ConnectionFactory implements Cloneable {
 
     /** Default user name */
@@ -92,8 +107,6 @@ public class ConnectionFactory implements Cloneable {
 
     private static final String FALLBACK_TLS_PROTOCOL = "TLSv1";
 
-    private String username                       = DEFAULT_USER;
-    private String password                       = DEFAULT_PASS;
     private String virtualHost                    = DEFAULT_VHOST;
     private String host                           = DEFAULT_HOST;
     private int port                              = USE_DEFAULT_PORT;
@@ -106,17 +119,19 @@ public class ConnectionFactory implements Cloneable {
     private Map<String, Object> _clientProperties = AMQConnection.defaultClientProperties();
     private SocketFactory socketFactory           = null;
     private SaslConfig saslConfig                 = DefaultSaslConfig.PLAIN;
+
     private ExecutorService sharedExecutor;
-    private ThreadFactory threadFactory           = Executors.defaultThreadFactory();
+    private ThreadFactory threadFactory             = Executors.defaultThreadFactory();
     // minimises the number of threads rapid closure of many
     // connections uses, see rabbitmq/rabbitmq-java-client#86
     private ExecutorService shutdownExecutor;
     private ScheduledExecutorService heartbeatExecutor;
-    private SocketConfigurator socketConf         = new DefaultSocketConfigurator();
-    private ExceptionHandler exceptionHandler     = new DefaultExceptionHandler();
+    private SocketConfigurator socketConf           = new DefaultSocketConfigurator();
+    private ExceptionHandler exceptionHandler       = new DefaultExceptionHandler();
+    private CredentialsProvider credentialsProvider = new DefaultCredentialsProvider(DEFAULT_USER, DEFAULT_PASS);
 
-    private boolean automaticRecovery             = true;
-    private boolean topologyRecovery              = true;
+    private boolean automaticRecovery               = true;
+    private boolean topologyRecovery                = true;
 
     // long is used to make sure the users can use both ints
     // and longs safely. It is unlikely that anybody'd need
@@ -193,7 +208,7 @@ public class ConnectionFactory implements Cloneable {
      * @return the AMQP user name to use when connecting to the broker
      */
     public String getUsername() {
-        return this.username;
+        return credentialsProvider.getUsername();
     }
 
     /**
@@ -201,7 +216,10 @@ public class ConnectionFactory implements Cloneable {
      * @param username the AMQP user name to use when connecting to the broker
      */
     public void setUsername(String username) {
-        this.username = username;
+        this.credentialsProvider = new DefaultCredentialsProvider(
+            username,
+            this.credentialsProvider.getPassword()
+        );
     }
 
     /**
@@ -209,7 +227,7 @@ public class ConnectionFactory implements Cloneable {
      * @return the password to use when connecting to the broker
      */
     public String getPassword() {
-        return this.password;
+        return credentialsProvider.getPassword();
     }
 
     /**
@@ -217,9 +235,23 @@ public class ConnectionFactory implements Cloneable {
      * @param password the password to use when connecting to the broker
      */
     public void setPassword(String password) {
-        this.password = password;
+        this.credentialsProvider = new DefaultCredentialsProvider(
+            this.credentialsProvider.getUsername(),
+            password
+        );
     }
 
+    /**
+     * Set a custom credentials provider.
+     * Default implementation uses static username and password.
+     * @param credentialsProvider The custom implementation of CredentialsProvider to use when connecting to the broker.
+     * @see com.rabbitmq.client.impl.DefaultCredentialsProvider
+     * @since 4.5.0
+     */
+    public void setCredentialsProvider(CredentialsProvider credentialsProvider) {
+        this.credentialsProvider = credentialsProvider;
+    }
+    
     /**
      * Retrieve the virtual host.
      * @return the virtual host to use when connecting to the broker
@@ -994,8 +1026,7 @@ public class ConnectionFactory implements Cloneable {
     public ConnectionParams params(ExecutorService consumerWorkServiceExecutor) {
         ConnectionParams result = new ConnectionParams();
 
-        result.setUsername(username);
-        result.setPassword(password);
+        result.setCredentialsProvider(credentialsProvider);
         result.setConsumerWorkServiceExecutor(consumerWorkServiceExecutor);
         result.setVirtualHost(virtualHost);
         result.setClientProperties(getClientProperties());
@@ -1095,7 +1126,8 @@ public class ConnectionFactory implements Cloneable {
 
     @Override public ConnectionFactory clone(){
         try {
-            return (ConnectionFactory)super.clone();
+            ConnectionFactory clone = (ConnectionFactory)super.clone();
+            return clone;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e);
         }
@@ -1331,7 +1363,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Timeout (in ms) for work pool enqueueing.
-     * The {@link WorkPool} dispatches several types of responses
+     * The {@link com.rabbitmq.client.impl.WorkPool} dispatches several types of responses
      * from the broker (e.g. deliveries). A high-traffic
      * client with slow consumers can exhaust the work pool and
      * compromise the whole connection (by e.g. letting the broker
