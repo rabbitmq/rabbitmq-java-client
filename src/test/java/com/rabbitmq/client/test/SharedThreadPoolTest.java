@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.Connection;
 import org.junit.Test;
 
 import com.rabbitmq.client.ConnectionFactory;
@@ -32,34 +33,50 @@ public class SharedThreadPoolTest extends BrokerTestCase {
     @Test public void willShutDownExecutor() throws IOException, TimeoutException {
         ExecutorService executor1 = null;
         ExecutorService executor2 = null;
+        AMQConnection conn1 = null;
+        AMQConnection conn2 = null;
+        AMQConnection conn3 = null;
+        AMQConnection conn4 = null;
         try {
             ConnectionFactory cf = TestUtils.connectionFactory();
             cf.setAutomaticRecoveryEnabled(false);
             executor1 = Executors.newFixedThreadPool(8);
             cf.setSharedExecutor(executor1);
 
-            AMQConnection conn1 = (AMQConnection)cf.newConnection();
+            conn1 = (AMQConnection)cf.newConnection();
             assertFalse(conn1.willShutDownConsumerExecutor());
 
             executor2 = Executors.newSingleThreadExecutor();
-            AMQConnection conn2 = (AMQConnection)cf.newConnection(executor2);
+            conn2 = (AMQConnection)cf.newConnection(executor2);
             assertFalse(conn2.willShutDownConsumerExecutor());
 
-            AMQConnection conn3 = (AMQConnection)cf.newConnection((ExecutorService)null);
+            conn3 = (AMQConnection)cf.newConnection((ExecutorService)null);
             assertTrue(conn3.willShutDownConsumerExecutor());
 
             cf.setSharedExecutor(null);
 
-            AMQConnection conn4 = (AMQConnection)cf.newConnection();
+            conn4 = (AMQConnection)cf.newConnection();
             assertTrue(conn4.willShutDownConsumerExecutor());
         } finally {
-            if (executor1 != null) {
-                executor1.shutdownNow();
-            }
-            if (executor2 != null) {
-                executor2.shutdownNow();
-            }
+            close(conn1);
+            close(conn2);
+            close(conn3);
+            close(conn4);
+            close(executor1);
+            close(executor2);
         }
         
+    }
+
+    void close(ExecutorService executor) {
+        if (executor != null) {
+            executor.shutdownNow();
+        }
+    }
+
+    void close(Connection connection) throws IOException {
+        if (connection != null) {
+            connection.close();
+        }
     }
 }

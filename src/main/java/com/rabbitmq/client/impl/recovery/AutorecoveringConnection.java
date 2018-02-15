@@ -18,7 +18,6 @@ package com.rabbitmq.client.impl.recovery;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
-import com.rabbitmq.client.impl.ErrorOnWriteListener;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.utility.Utility;
@@ -104,28 +103,25 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     private void setupErrorOnWriteListenerForPotentialRecovery() {
         final ThreadFactory threadFactory = this.params.getThreadFactory();
         final Lock errorOnWriteLock = new ReentrantLock();
-        this.params.setErrorOnWriteListener(new ErrorOnWriteListener() {
-            @Override
-            public void handle(final Connection connection, final IOException exception) throws IOException {
-                // this is called for any write error
-                // we should trigger the error handling and the recovery only once
-                if (errorOnWriteLock.tryLock()) {
-                    try {
-                        Thread recoveryThread = threadFactory.newThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                AMQConnection c = (AMQConnection) connection;
-                                c.handleIoError(exception);
-                            }
-                        });
-                        recoveryThread.setName("RabbitMQ Error On Write Thread");
-                        recoveryThread.start();
-                    } finally {
-                        errorOnWriteLock.unlock();
-                    }
+        this.params.setErrorOnWriteListener((connection, exception) -> {
+            // this is called for any write error
+            // we should trigger the error handling and the recovery only once
+            if (errorOnWriteLock.tryLock()) {
+                try {
+                    Thread recoveryThread = threadFactory.newThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            AMQConnection c = (AMQConnection) connection;
+                            c.handleIoError(exception);
+                        }
+                    });
+                    recoveryThread.setName("RabbitMQ Error On Write Thread");
+                    recoveryThread.start();
+                } finally {
+                    errorOnWriteLock.unlock();
                 }
-                throw exception;
             }
+            throw exception;
         });
     }
 

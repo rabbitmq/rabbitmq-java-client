@@ -453,10 +453,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             // in case a manual ack in the callback, the stats will be able to record the ack
             metricsCollector.consumedMessage(this, m.getDeliveryTag(), m.getConsumerTag());
             this.dispatcher.handleDelivery(callback,
-                m.getConsumerTag(),
-                envelope,
-                (BasicProperties) command.getContentHeader(),
-                command.getContentBody());
+                                           m.getConsumerTag(),
+                                           envelope,
+                                           (BasicProperties) command.getContentHeader(),
+                                           command.getContentBody());
         } catch (WorkPoolFullException e) {
             // couldn't enqueue in work pool, propagating
             throw e;
