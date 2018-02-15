@@ -16,7 +16,7 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.*;
-
+import com.rabbitmq.client.impl.CredentialsProvider;
 import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.client.impl.recovery.*;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -34,8 +34,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 @SuppressWarnings("ThrowFromFinallyBlock")
@@ -117,6 +120,44 @@ public class ConnectionRecovery extends BrokerTestCase {
             fail("expected passive declaration to throw");
         } catch (java.io.IOException e) {
             // expected
+        } finally {
+            c.abort();
+        }
+    }
+    
+    // See https://github.com/rabbitmq/rabbitmq-java-client/pull/350 .
+    // We want to request fresh creds when recovering.
+    @Test public void connectionRecoveryRequestsCredentialsAgain() throws Exception {
+        ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(false);
+        final String username = cf.getUsername();
+        final String password = cf.getPassword();
+        final AtomicInteger usernameRequested = new AtomicInteger(0);
+        final AtomicInteger passwordRequested = new AtomicInteger(0);
+        cf.setCredentialsProvider(new CredentialsProvider() {
+            
+            @Override
+            public String getUsername() {
+                usernameRequested.incrementAndGet();
+                return username;
+            }
+            
+            @Override
+            public String getPassword() {
+                passwordRequested.incrementAndGet();
+                return password;
+            }
+        });
+        RecoverableConnection c = (RecoverableConnection) cf.newConnection();
+        try {
+            assertTrue(c.isOpen());
+            assertThat(usernameRequested.get(), is(1));
+            assertThat(passwordRequested.get(), is(1));
+
+            closeAndWaitForRecovery(c);
+            assertTrue(c.isOpen());
+            // username is requested in AMQConnection#toString, so it can be accessed at any time
+            assertThat(usernameRequested.get(), greaterThanOrEqualTo(2));
+            assertThat(passwordRequested.get(), is(2));
         } finally {
             c.abort();
         }

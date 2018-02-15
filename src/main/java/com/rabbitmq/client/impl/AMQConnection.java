@@ -129,8 +129,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final int requestedFrameMax;
     private final int handshakeTimeout;
     private final int shutdownTimeout;
-    private final String username;
-    private final String password;
+    private final CredentialsProvider credentialsProvider;
     private final Collection<BlockedListener> blockedListeners = new CopyOnWriteArrayList<BlockedListener>();
     protected final MetricsCollector metricsCollector;
     private final int channelRpcTimeout;
@@ -209,8 +208,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     public AMQConnection(ConnectionParams params, FrameHandler frameHandler, MetricsCollector metricsCollector)
     {
         checkPreconditions();
-        this.username = params.getUsername();
-        this.password = params.getPassword();
+        this.credentialsProvider = params.getCredentialsProvider();
         this._frameHandler = frameHandler;
         this._virtualHost = params.getVirtualHost();
         this._exceptionHandler = params.getExceptionHandler();
@@ -323,8 +321,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                               "server offered [" + connStart.getMechanisms() + "]");
             }
 
+            String username = credentialsProvider.getUsername();
+            String password = credentialsProvider.getPassword();
             LongString challenge = null;
-            LongString response = sm.handleChallenge(null, this.username, this.password);
+            LongString response = sm.handleChallenge(null, username, password);
 
             do {
                 Method method = (challenge == null)
@@ -341,7 +341,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                         connTune = (AMQP.Connection.Tune) serverResponse;
                     } else {
                         challenge = ((AMQP.Connection.Secure) serverResponse).getChallenge();
-                        response = sm.handleChallenge(challenge, this.username, this.password);
+                        response = sm.handleChallenge(challenge, username, password);
                     }
                 } catch (ShutdownSignalException e) {
                     Method shutdownMethod = e.getReason();
@@ -1021,7 +1021,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     @Override public String toString() {
         final String virtualHost = "/".equals(_virtualHost) ? _virtualHost : "/" + _virtualHost;
-        return "amqp://" + this.username + "@" + getHostAddress() + ":" + getPort() + virtualHost;
+        return "amqp://" + this.credentialsProvider.getUsername() + "@" + getHostAddress() + ":" + getPort() + virtualHost;
     }
 
     private String getHostAddress() {
