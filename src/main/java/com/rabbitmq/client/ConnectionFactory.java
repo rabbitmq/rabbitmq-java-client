@@ -22,6 +22,7 @@ import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.CredentialsProvider;
 import com.rabbitmq.client.impl.DefaultCredentialsProvider;
 import com.rabbitmq.client.impl.DefaultExceptionHandler;
+import com.rabbitmq.client.impl.ErrorOnWriteListener;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.SocketFrameHandlerFactory;
@@ -1322,7 +1323,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Timeout (in ms) for work pool enqueueing.
-     * The {@link WorkPool} dispatches several types of responses
+     * The {@link com.rabbitmq.client.impl.WorkPool} dispatches several types of responses
      * from the broker (e.g. deliveries). A high-traffic
      * client with slow consumers can exhaust the work pool and
      * compromise the whole connection (by e.g. letting the broker
