@@ -35,7 +35,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 final class Copyright {
-    final static String COPYRIGHT="Copyright (c) 2007-2017 Pivotal Software, Inc.";
+    final static String COPYRIGHT="Copyright (c) 2007-2018 Pivotal Software, Inc.";
     final static String LICENSE="Licensed under the MPL. See http://www.rabbitmq.com/";
 }
 
@@ -252,7 +252,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.metricsCollector = metricsCollector;
 
         this.errorOnWriteListener = params.getErrorOnWriteListener() != null ? params.getErrorOnWriteListener() :
-            (connection, exception) -> { };
+            (connection, exception) -> { throw exception; }; // we just propagate the exception for non-recoverable connections
         this.workPoolTimeout = params.getWorkPoolTimeout();
     }
 
