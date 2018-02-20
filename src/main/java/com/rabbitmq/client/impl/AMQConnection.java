@@ -254,7 +254,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.errorOnWriteListener = params.getErrorOnWriteListener() != null ? params.getErrorOnWriteListener() :
             new ErrorOnWriteListener() {
                 @Override
-                public void handle(Connection connection, IOException exception) { }
+                public void handle(Connection connection, IOException exception) throws IOException {
+                    // we just propagate the exception for non-recoverable connections
+                    throw exception;
+                }
         };
         this.workPoolTimeout = params.getWorkPoolTimeout();
     }
