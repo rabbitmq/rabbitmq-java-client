@@ -63,7 +63,7 @@
     <awaitility.version>2.0.0</awaitility.version>
     <mockito.version>2.7.9</mockito.version>
 
-    <maven.javadoc.plugin.version>3.0.0-M1</maven.javadoc.plugin.version>
+    <maven.javadoc.plugin.version>3.0.0</maven.javadoc.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
     <versions.maven.plugin.version>2.3</versions.maven.plugin.version>
     <maven.resources.plugin.version>3.0.1</maven.resources.plugin.version>
