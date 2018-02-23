@@ -3,7 +3,7 @@
 DEPLOY_DIRECTORY=api/current
 TAG=$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))
 
-mvn -q clean javadoc:javadoc -Dmaven.javadoc.failOnError=false
+./mvnw -q clean javadoc:javadoc -Dmaven.javadoc.failOnError=false
 git co gh-pages
 rm -rf $DEPLOY_DIRECTORY/*
 cp -r target/site/apidocs/* $DEPLOY_DIRECTORY
