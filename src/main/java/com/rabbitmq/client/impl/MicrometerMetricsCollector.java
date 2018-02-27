@@ -68,7 +68,7 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
     }
 
     public MicrometerMetricsCollector(final MeterRegistry registry, final String prefix, final String ... tags) {
-        this(registry, prefix, Tags.zip(tags));
+        this(registry, prefix, Tags.of(tags));
     }
 
     public MicrometerMetricsCollector(final MeterRegistry registry, final String prefix, final Iterable<Tag> tags) {
