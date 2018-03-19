@@ -54,14 +54,14 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <slf4j.version>1.7.21</slf4j.version>
-    <metrics.version>3.1.2</metrics.version>
+    <slf4j.version>1.7.25</slf4j.version>
+    <metrics.version>3.2.6</metrics.version>
     <micrometer.version>1.0.2</micrometer.version>
-    <logback.version>1.1.7</logback.version>
+    <logback.version>1.2.3</logback.version>
     <commons-cli.version>1.1</commons-cli.version>
     <junit.version>4.12</junit.version>
-    <awaitility.version>2.0.0</awaitility.version>
-    <mockito.version>2.7.9</mockito.version>
+    <awaitility.version>3.1.0</awaitility.version>
+    <mockito.version>2.16.0</mockito.version>
 
     <maven.javadoc.plugin.version>3.0.0</maven.javadoc.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
