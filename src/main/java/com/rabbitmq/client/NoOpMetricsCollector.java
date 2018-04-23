@@ -76,12 +76,12 @@ public class NoOpMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void basicPublishAck(Channel channel) {
+    public void basicPublishAck(Channel channel, long deliveryTag, boolean multiple) {
 
     }
 
     @Override
-    public void basicPublishNack(Channel channel) {
+    public void basicPublishNack(Channel channel, long deliveryTag, boolean multiple) {
 
     }
 
