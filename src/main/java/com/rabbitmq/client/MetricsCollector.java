@@ -36,7 +36,7 @@ public interface MetricsCollector {
 
     void basicPublish(Channel channel);
 
-    void basicPublishFailure(Channel channel);
+    void basicPublishFailure(Channel channel, Throwable cause);
 
     void consumedMessage(Channel channel, long deliveryTag, boolean autoAck);
 

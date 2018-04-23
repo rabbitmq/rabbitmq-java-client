@@ -71,7 +71,7 @@ public class NoOpMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void basicPublishFailure(Channel channel) {
+    public void basicPublishFailure(Channel channel, Throwable cause) {
 
     }
 

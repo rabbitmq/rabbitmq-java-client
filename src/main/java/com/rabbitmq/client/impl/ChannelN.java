@@ -697,7 +697,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         try {
             transmit(command);
         } catch (IOException e) {
-            metricsCollector.basicPublishFailure(this);
+            metricsCollector.basicPublishFailure(this, e);
             throw e;
         }
         metricsCollector.basicPublish(this);
