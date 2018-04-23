@@ -26,9 +26,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import java.io.IOException;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -116,7 +119,34 @@ public class MetricsCollectorTest {
 
         metrics.basicAck(channel, 10, true);
         assertThat(acknowledgedMessages(metrics), is(1L+2L+1L));
+    }
 
+    @Test public void publishingAndPublishingFailures() {
+        AbstractMetricsCollector metrics = factory.create();
+        Channel channel = mock(Channel.class);
+
+        assertThat(failedToPublishMessages(metrics), is(0L));
+        assertThat(publishedMessages(metrics), is(0L));
+
+        metrics.basicPublishFailure(channel, new IOException());
+        assertThat(failedToPublishMessages(metrics), is(1L));
+        assertThat(publishedMessages(metrics), is(0L));
+
+        metrics.basicPublish(channel);
+        assertThat(failedToPublishMessages(metrics), is(1L));
+        assertThat(publishedMessages(metrics), is(1L));
+
+        metrics.basicPublishFailure(channel, new IOException());
+        assertThat(failedToPublishMessages(metrics), is(2L));
+        assertThat(publishedMessages(metrics), is(1L));
+
+        metrics.basicPublish(channel);
+        assertThat(failedToPublishMessages(metrics), is(2L));
+        assertThat(publishedMessages(metrics), is(2L));
+
+        metrics.cleanStaleState();
+        assertThat(failedToPublishMessages(metrics), is(2L));
+        assertThat(publishedMessages(metrics), is(2L));
     }
 
     @Test public void cleanStaleState() {
@@ -157,6 +187,22 @@ public class MetricsCollectorTest {
 
         assertThat(connections(metrics), is(1L));
         assertThat(channels(metrics), is(1L));
+    }
+
+    long publishedMessages(MetricsCollector metrics) {
+        if (metrics instanceof StandardMetricsCollector) {
+            return ((StandardMetricsCollector) metrics).getPublishedMessages().getCount();
+        } else {
+            return (long) ((MicrometerMetricsCollector) metrics).getPublishedMessages().count();
+        }
+    }
+
+    long failedToPublishMessages(MetricsCollector metrics) {
+        if (metrics instanceof StandardMetricsCollector) {
+            return ((StandardMetricsCollector) metrics).getFailedToPublishMessages().getCount();
+        } else {
+            return (long) ((MicrometerMetricsCollector) metrics).getFailedToPublishMessages().count();
+        }
     }
 
     long consumedMessages(MetricsCollector metrics) {
