@@ -116,7 +116,7 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
 
     @Override
     protected void markMessagePublishAcknowledged() {
-        acknowledgedMessages.mark();
+        publishAcknowledgedMessages.mark();
     }
 
     @Override
