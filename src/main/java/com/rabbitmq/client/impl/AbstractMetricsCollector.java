@@ -113,6 +113,10 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
     @Override
     public void basicPublishAck(Channel channel, long deliveryTag, boolean multiple) {
+        if (multiple) {
+            // this is a naive approach, as it does not handle multiple nacks
+            return;
+        }
         try {
             markMessagePublishAcknowledged();
         } catch(Exception e) {
@@ -122,6 +126,10 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
     @Override
     public void basicPublishNack(Channel channel, long deliveryTag, boolean multiple) {
+        if (multiple) {
+            // this is a naive approach, as it does not handle multiple nacks
+            return;
+        }
         try {
             markMessagePublishNotAcknowledged();
         } catch(Exception e) {
