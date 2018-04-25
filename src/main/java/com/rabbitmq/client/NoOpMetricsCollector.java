@@ -71,6 +71,11 @@ public class NoOpMetricsCollector implements MetricsCollector {
     }
 
     @Override
+    public void basicPublishFailure(Channel channel, Throwable cause) {
+
+    }
+
+    @Override
     public void consumedMessage(Channel channel, long deliveryTag, boolean autoAck) {
 
     }

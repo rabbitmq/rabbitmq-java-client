@@ -684,21 +684,24 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             unconfirmedSet.add(getNextPublishSeqNo());
             nextPublishSeqNo++;
         }
-        BasicProperties useProps = props;
         if (props == null) {
-            useProps = MessageProperties.MINIMAL_BASIC;
+            props = MessageProperties.MINIMAL_BASIC;
         }
-        transmit(new AMQCommand(new Basic.Publish.Builder()
-                                        .exchange(exchange)
-                                        .routingKey(routingKey)
-                                        .mandatory(mandatory)
-                                        .immediate(immediate)
-                                        .build(),
-                                       useProps, body));
+        AMQCommand command = new AMQCommand(
+            new Basic.Publish.Builder()
+                .exchange(exchange)
+                .routingKey(routingKey)
+                .mandatory(mandatory)
+                .immediate(immediate)
+                .build(), props, body);
+        try {
+            transmit(command);
+        } catch (IOException e) {
+            metricsCollector.basicPublishFailure(this, e);
+            throw e;
+        }
         metricsCollector.basicPublish(this);
     }
-
-
 
     /** Public API - {@inheritDoc} */
     @Override

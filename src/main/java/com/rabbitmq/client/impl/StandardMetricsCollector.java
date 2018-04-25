@@ -41,6 +41,7 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
     private final Meter consumedMessages;
     private final Meter acknowledgedMessages;
     private final Meter rejectedMessages;
+    private final Meter failedToPublishMessages;
 
 
     public StandardMetricsCollector(MetricRegistry registry, String metricsPrefix) {
@@ -48,6 +49,7 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
         this.connections = registry.counter(metricsPrefix+".connections");
         this.channels = registry.counter(metricsPrefix+".channels");
         this.publishedMessages = registry.meter(metricsPrefix+".published");
+        this.failedToPublishMessages = registry.meter(metricsPrefix+".failed_to_publish");
         this.consumedMessages = registry.meter(metricsPrefix+".consumed");
         this.acknowledgedMessages = registry.meter(metricsPrefix+".acknowledged");
         this.rejectedMessages = registry.meter(metricsPrefix+".rejected");
@@ -84,6 +86,11 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
     @Override
     protected void markPublishedMessage() {
         publishedMessages.mark();
+    }
+
+    @Override
+    protected void markMessagePublishFailed() {
+        failedToPublishMessages.mark();
     }
 
     @Override
@@ -129,5 +136,9 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
 
     public Meter getRejectedMessages() {
         return rejectedMessages;
+    }
+
+    public Meter getFailedToPublishMessages() {
+        return failedToPublishMessages;
     }
 }

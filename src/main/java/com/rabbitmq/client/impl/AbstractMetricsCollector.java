@@ -103,6 +103,15 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     }
 
     @Override
+    public void basicPublishFailure(Channel channel, Throwable cause) {
+        try {
+            markMessagePublishFailed();
+        } catch(Exception e) {
+            LOGGER.info("Error while computing metrics in basicPublishFailure: " + e.getMessage());
+        }
+    }
+
+    @Override
     public void basicConsume(Channel channel, String consumerTag, boolean autoAck) {
         try {
             if(!autoAck) {
@@ -330,6 +339,11 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
      * Marks the event of a published message.
      */
     protected abstract void markPublishedMessage();
+
+    /**
+     * Marks the event of a message publishing failure.
+     */
+    protected abstract void markMessagePublishFailed();
 
     /**
      * Marks the event of a consumed message.

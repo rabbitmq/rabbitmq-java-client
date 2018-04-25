@@ -27,12 +27,7 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
-import static com.rabbitmq.client.impl.MicrometerMetricsCollector.Metrics.ACKNOWLEDGED_MESSAGES;
-import static com.rabbitmq.client.impl.MicrometerMetricsCollector.Metrics.CHANNELS;
-import static com.rabbitmq.client.impl.MicrometerMetricsCollector.Metrics.CONNECTIONS;
-import static com.rabbitmq.client.impl.MicrometerMetricsCollector.Metrics.CONSUMED_MESSAGES;
-import static com.rabbitmq.client.impl.MicrometerMetricsCollector.Metrics.PUBLISHED_MESSAGES;
-import static com.rabbitmq.client.impl.MicrometerMetricsCollector.Metrics.REJECTED_MESSAGES;
+import static com.rabbitmq.client.impl.MicrometerMetricsCollector.Metrics.*;
 
 /**
  * Micrometer implementation of {@link MetricsCollector}.
@@ -53,6 +48,8 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
     private final AtomicLong channels;
 
     private final Counter publishedMessages;
+
+    private final Counter failedToPublishMessages;
 
     private final Counter consumedMessages;
 
@@ -83,6 +80,7 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
         this.consumedMessages = (Counter) metricsCreator.apply(CONSUMED_MESSAGES);
         this.acknowledgedMessages = (Counter) metricsCreator.apply(ACKNOWLEDGED_MESSAGES);
         this.rejectedMessages = (Counter) metricsCreator.apply(REJECTED_MESSAGES);
+        this.failedToPublishMessages = (Counter) metricsCreator.apply(FAILED_TO_PUBLISH_MESSAGES);
     }
 
     @Override
@@ -111,6 +109,11 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
     }
 
     @Override
+    protected void markMessagePublishFailed() {
+        failedToPublishMessages.increment();
+    }
+
+    @Override
     protected void markConsumedMessage() {
         consumedMessages.increment();
     }
@@ -135,6 +138,10 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
 
     public Counter getPublishedMessages() {
         return publishedMessages;
+    }
+
+    public Counter getFailedToPublishMessages() {
+        return failedToPublishMessages;
     }
 
     public Counter getConsumedMessages() {
@@ -185,6 +192,12 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
             Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
                 return registry.counter(prefix + ".rejected", tags);
             }
+        },
+        FAILED_TO_PUBLISH_MESSAGES {
+            @Override
+            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
+                return registry.counter(prefix + ".failed_to_publish", tags);
+            }
         };
 
         /**
@@ -192,7 +205,6 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
          * @param registry
          * @param prefix
          * @deprecated will be removed in 6.0.0
-         * @return
          */
         @Deprecated
         Object create(MeterRegistry registry, String prefix) {

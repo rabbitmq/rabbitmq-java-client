@@ -36,6 +36,8 @@ public interface MetricsCollector {
 
     void basicPublish(Channel channel);
 
+    void basicPublishFailure(Channel channel, Throwable cause);
+
     void consumedMessage(Channel channel, long deliveryTag, boolean autoAck);
 
     void consumedMessage(Channel channel, long deliveryTag, String consumerTag);
@@ -49,4 +51,5 @@ public interface MetricsCollector {
     void basicConsume(Channel channel, String consumerTag, boolean autoAck);
 
     void basicCancel(Channel channel, String consumerTag);
+
 }
