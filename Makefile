@@ -27,7 +27,7 @@ $(DEPS_DIR)/rabbit:
 	$(MAKE) -C $@ fetch-deps DEPS_DIR="$(abspath $(DEPS_DIR))"
 
 $(DEPS_DIR)/rabbitmq_ct_helpers:
-	git clone https://github.com/rabbitmq/rabbitmq-ct-helpers.git $(DEPS_DIR)/rabbitmq_ct_helpers
+	git clone https://github.com/rabbitmq/rabbitmq-ct-helpers.git "$@"
 
 tests: deps
 	$(MVN) $(MVN_FLAGS) verify
