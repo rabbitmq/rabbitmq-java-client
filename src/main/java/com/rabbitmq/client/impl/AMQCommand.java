@@ -101,16 +101,21 @@ public class AMQCommand implements Command {
 
         synchronized (assembler) {
             Method m = this.assembler.getMethod();
-            connection.writeFrame(m.toFrame(channelNumber));
             if (m.hasContent()) {
                 byte[] body = this.assembler.getContentBody();
 
-                connection.writeFrame(this.assembler.getContentHeader()
-                        .toFrame(channelNumber, body.length));
+                Frame headerFrame = this.assembler.getContentHeader().toFrame(channelNumber, body.length);
 
                 int frameMax = connection.getFrameMax();
                 int bodyPayloadMax = (frameMax == 0) ? body.length : frameMax
                         - EMPTY_FRAME_SIZE;
+
+                if (headerFrame.size() > frameMax) {
+                    throw new IllegalArgumentException("Content headers exceeded max frame size: " +
+                            headerFrame.size() + " > " + frameMax);
+                }
+                connection.writeFrame(m.toFrame(channelNumber));
+                connection.writeFrame(headerFrame);
 
                 for (int offset = 0; offset < body.length; offset += bodyPayloadMax) {
                     int remaining = body.length - offset;
@@ -121,6 +126,8 @@ public class AMQCommand implements Command {
                             offset, fragmentLength);
                     connection.writeFrame(frame);
                 }
+            } else {
+                connection.writeFrame(m.toFrame(channelNumber));
             }
         }
 
