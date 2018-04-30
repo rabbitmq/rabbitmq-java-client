@@ -17,11 +17,16 @@
 package com.rabbitmq.client.test.functional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
@@ -35,6 +40,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.impl.AMQCommand;
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.ContentHeaderPropertyWriter;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.LongStringHelper;
@@ -103,6 +109,47 @@ public class FrameMax extends BrokerTestCase {
         basicPublishVolatile(new byte[connection.getFrameMax()], "void");
         expectError(AMQP.FRAME_ERROR);
     }
+
+    /* client should throw exception if headers exceed negotiated
+     * frame size */
+    @Test public void rejectHeadersExceedingFrameMax()
+            throws IOException, TimeoutException {
+        declareTransientTopicExchange("x");
+        String queueName = channel.queueDeclare().getQueue();
+        channel.queueBind(queueName, "x", "foobar");
+
+        Map<String, Object> headers = new HashMap<String, Object>();
+        String headerName = "x-huge-header";
+
+        // create headers with zero-length value to calculate maximum header value size before exceeding frame_max
+        headers.put(headerName, LongStringHelper.asLongString(new byte[0]));
+        AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder().headers(headers).build();
+        Frame minimalHeaderFrame = properties.toFrame(0, 0);
+        int maxHeaderValueSize = FRAME_MAX - minimalHeaderFrame.size();
+
+        // create headers with maximum header value size (frame size equals frame_max)
+        headers.put(headerName, LongStringHelper.asLongString(new byte[maxHeaderValueSize]));
+        properties = new AMQP.BasicProperties.Builder().headers(headers).build();
+
+        basicPublishVolatile(new byte[100], "x", "foobar", properties);
+        assertDelivered(queueName, 1);
+
+        // create headers with frame size exceeding frame_max by 1
+        headers.put(headerName, LongStringHelper.asLongString(new byte[maxHeaderValueSize + 1]));
+        properties = new AMQP.BasicProperties.Builder().headers(headers).build();
+        try {
+            basicPublishVolatile(new byte[100], "x", "foobar", properties);
+            fail("expected rejectHeadersExceedingFrameMax to throw");
+        } catch (IllegalArgumentException iae) {
+            assertTrue(iae.getMessage().startsWith("Content headers exceeded max frame size"));
+            // check that the channel is still operational
+            assertDelivered(queueName, 0);
+        }
+
+        // cleanup
+        deleteExchange("x");
+    }
+
 
     /* ConnectionFactory that uses MyFrameHandler rather than
      * SocketFrameHandler. */
