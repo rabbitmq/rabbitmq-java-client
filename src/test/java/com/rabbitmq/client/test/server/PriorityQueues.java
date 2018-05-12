@@ -48,6 +48,40 @@ public class PriorityQueues extends BrokerTestCase {
         channel.queueDelete(q);
     }
 
+    @Test public void negativeMaxPriority() throws IOException, TimeoutException, InterruptedException {
+        String q = "with-minus-10-priorities";
+        int n = -10;
+        try {
+            channel.queueDeclare(q, true, false, false, argsWithPriorities(n));
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
+        }
+    }
+
+    @Test public void excessiveMaxPriority() throws IOException, TimeoutException, InterruptedException {
+        String q = "with-260-priorities";
+        int n = 260;
+        try {
+            channel.queueDeclare(q, true, false, false, argsWithPriorities(n));
+        } catch (IOException ioe) {
+            checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
+        }
+    }
+
+    @Test public void maxAllowedPriority() throws IOException, TimeoutException, InterruptedException {
+        String q = "with-255-priorities";
+        int n = 255;
+        channel.queueDeclare(q, true, false, false, argsWithPriorities(n));
+        publishWithPriorities(q, n);
+
+        List<Integer> xs = prioritiesOfEnqueuedMessages(q, n);
+        assertEquals(Integer.valueOf(255), xs.get(0));
+        assertEquals(Integer.valueOf(254), xs.get(1));
+        assertEquals(Integer.valueOf(253), xs.get(2));
+
+        channel.queueDelete(q);
+    }
+
     private List<Integer> prioritiesOfEnqueuedMessages(String q, int n) throws InterruptedException, IOException {
         final List<Integer> xs = new ArrayList<Integer>();
         final CountDownLatch latch = new CountDownLatch(n);
