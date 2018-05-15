@@ -16,6 +16,7 @@
 package com.rabbitmq.client.test.server;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ public class PriorityQueues extends BrokerTestCase {
         int n = -10;
         try {
             channel.queueDeclare(q, true, false, false, argsWithPriorities(n));
+            fail("Negative priority, the queue creation should have failed");
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
         }
@@ -63,6 +65,7 @@ public class PriorityQueues extends BrokerTestCase {
         int n = 260;
         try {
             channel.queueDeclare(q, true, false, false, argsWithPriorities(n));
+            fail("Priority too high (> 255), the queue creation should have failed");
         } catch (IOException ioe) {
             checkShutdownSignal(AMQP.PRECONDITION_FAILED, ioe);
         }
