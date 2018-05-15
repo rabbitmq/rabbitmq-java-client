@@ -127,7 +127,8 @@ public class ConnectionFactory implements Cloneable {
 
     private boolean automaticRecovery               = true;
     private boolean topologyRecovery                = true;
-
+    private int topologyRecoveryThreads           = 1;
+    
     // long is used to make sure the users can use both ints
     // and longs safely. It is unlikely that anybody'd need
     // to use recovery intervals > Integer.MAX_VALUE in practice.
@@ -339,7 +340,7 @@ public class ConnectionFactory implements Cloneable {
         setUri(new URI(uriString));
     }
 
-    private String uriDecode(String s) {
+    private static String uriDecode(String s) {
         try {
             // URLDecode decodes '+' to a space, as for
             // form encoding.  So protect plus signs.
@@ -523,7 +524,6 @@ public class ConnectionFactory implements Cloneable {
      *
      * @see #setSocketConfigurator(SocketConfigurator)
      */
-    @SuppressWarnings("unused")
     public SocketConfigurator getSocketConfigurator() {
         return socketConf;
     }
@@ -701,7 +701,6 @@ public class ConnectionFactory implements Cloneable {
      * @return true if topology recovery is enabled, false otherwise
      * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
-    @SuppressWarnings("unused")
     public boolean isTopologyRecoveryEnabled() {
         return topologyRecovery;
     }
@@ -713,6 +712,15 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setTopologyRecoveryEnabled(boolean topologyRecovery) {
         this.topologyRecovery = topologyRecovery;
+    }
+    
+    public int getTopologyRecoveryThreadCount() {
+        return topologyRecoveryThreads;
+    }
+    
+    // TODO Document that your exception handler method should be thread safe
+    public void setTopologyRecoveryThreadCount(final int topologyRecoveryThreads) {
+        this.topologyRecoveryThreads = topologyRecoveryThreads;
     }
 
     public void setMetricsCollector(MetricsCollector metricsCollector) {
@@ -1013,6 +1021,7 @@ public class ConnectionFactory implements Cloneable {
         result.setNetworkRecoveryInterval(networkRecoveryInterval);
         result.setRecoveryDelayHandler(recoveryDelayHandler);
         result.setTopologyRecovery(topologyRecovery);
+        result.setTopologyRecoveryThreadCount(topologyRecoveryThreads);
         result.setExceptionHandler(exceptionHandler);
         result.setThreadFactory(threadFactory);
         result.setHandshakeTimeout(handshakeTimeout);

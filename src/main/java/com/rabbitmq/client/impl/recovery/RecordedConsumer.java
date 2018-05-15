@@ -77,4 +77,9 @@ public class RecordedConsumer extends RecordedEntity {
     public String getConsumerTag() {
         return consumerTag;
     }
+    
+    @Override
+    public String toString() {
+        return "RecordedConsumer[tag=" + consumerTag + ", queue=" + queue + ", autoAck=" + autoAck + ", exclusive=" + exclusive + ", arguments=" + arguments + ", consumer=" + consumer + ", channel=" + channel;
+    }
 }
