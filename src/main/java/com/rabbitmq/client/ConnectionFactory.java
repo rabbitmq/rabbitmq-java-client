@@ -63,8 +63,10 @@ public class ConnectionFactory implements Cloneable {
     /** Default virtual host */
     public static final String DEFAULT_VHOST = "/";
     /** Default maximum channel number;
-     *  zero for unlimited */
-    public static final int    DEFAULT_CHANNEL_MAX = 0;
+     *  2047 because it's 2048 on the server side minus channel 0,
+     *  which each connection uses for negotiation
+     *  and error communication */
+    public static final int    DEFAULT_CHANNEL_MAX = 2047;
     /** Default maximum frame size;
      *  zero means no limit */
     public static final int    DEFAULT_FRAME_MAX = 0;

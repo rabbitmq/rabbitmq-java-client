@@ -119,4 +119,10 @@ public class ChannelNumberAllocationTests {
     assertNotNull(connection.createChannel(5));
     assertNotNull(connection.createChannel(1));
   }
+
+  @Test public void channelMaxIs2047() {
+    int channelMaxServerSide = 2048;
+    int defaultChannelCount = 1;
+    assertEquals(channelMaxServerSide - defaultChannelCount, connection.getChannelMax());
+  }
 }
