@@ -536,7 +536,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         if (newConn == null) {
             return;
         }
-
+        LOGGER.debug("Connection {} has recovered", newConn);
         this.addAutomaticRecoveryListener(newConn);
 	    this.recoverShutdownListeners(newConn);
 	    this.recoverBlockedListeners(newConn);
@@ -591,7 +591,6 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 
     private void recoverChannels(final RecoveryAwareAMQConnection newConn) {
         for (AutorecoveringChannel ch : this.channels.values()) {
-            LOGGER.debug("Recovering channel {}", ch);
             try {
                 ch.automaticallyRecover(this, newConn);
                 LOGGER.debug("Channel {} has recovered", ch);
@@ -652,10 +651,9 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 
     private void recoverExchange(final RecordedExchange x) {
         // recorded exchanges are guaranteed to be non-predefined (we filter out predefined ones in exchangeDeclare). MK.
-        LOGGER.debug("Recovering exchange {}", x);
         try {
             x.recover();
-            LOGGER.debug("Exchange {} has recovered", x);
+            LOGGER.debug("{} has recovered", x);
         } catch (Exception cause) {
             final String message = "Caught an exception while recovering exchange " + x.getName() +
                     ": " + cause.getMessage();
@@ -665,7 +663,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     private void recoverQueue(final String oldName, final RecordedQueue q) {
-        LOGGER.debug("Recovering queue {}", q);
+        LOGGER.debug("Recovering {}", q);
         try {
             q.recover();
             String newName = q.getName();
@@ -688,7 +686,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             for (QueueRecoveryListener qrl : Utility.copy(this.queueRecoveryListeners)) {
                 qrl.queueRecovered(oldName, newName);
             }
-            LOGGER.debug("Queue {} has recovered", q);
+            LOGGER.debug("{} has recovered", q);
         } catch (Exception cause) {
             final String message = "Caught an exception while recovering queue " + oldName +
                                            ": " + cause.getMessage();
@@ -698,10 +696,9 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     private void recoverBinding(final RecordedBinding b) {
-        LOGGER.debug("Recovering binding {}", b);
         try {
             b.recover();
-            LOGGER.debug("Binding {} has recovered", b);
+            LOGGER.debug("{} has recovered", b);
         } catch (Exception cause) {
             String message = "Caught an exception while recovering binding between " + b.getSource() +
                                      " and " + b.getDestination() + ": " + cause.getMessage();
@@ -711,7 +708,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     private void recoverConsumer(final String tag, final RecordedConsumer consumer) {
-        LOGGER.debug("Recovering consumer {}", consumer);
+        LOGGER.debug("Recovering {}", consumer);
         try {
             String newTag = consumer.recover();
             // make sure server-generated tags are re-added. MK.
@@ -726,7 +723,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             for (ConsumerRecoveryListener crl : Utility.copy(this.consumerRecoveryListeners)) {
                 crl.consumerRecovered(tag, newTag);
             }
-            LOGGER.debug("Consumer {} has recovered", consumer);
+            LOGGER.debug("{} has recovered", consumer);
         } catch (Exception cause) {
             final String message = "Caught an exception while recovering consumer " + tag +
                     ": " + cause.getMessage();

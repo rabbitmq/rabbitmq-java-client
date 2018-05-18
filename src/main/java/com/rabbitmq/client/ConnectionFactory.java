@@ -127,7 +127,7 @@ public class ConnectionFactory implements Cloneable {
 
     private boolean automaticRecovery               = true;
     private boolean topologyRecovery                = true;
-    private int topologyRecoveryThreads           = 1;
+    private int topologyRecoveryThreads             = 1;
     
     // long is used to make sure the users can use both ints
     // and longs safely. It is unlikely that anybody'd need
