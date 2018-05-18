@@ -45,6 +45,8 @@ import static org.junit.Assert.*;
 public class ConnectionRecovery extends BrokerTestCase {
     private static final long RECOVERY_INTERVAL = 2000;
 
+    private static final int MANY_DECLARATIONS_LOOP_COUNT = 500;
+
     @Test public void connectionRecovery() throws IOException, InterruptedException {
         assertTrue(connection.isOpen());
         closeAndWaitForRecovery();
@@ -416,7 +418,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     @Test public void declarationOfManyAutoDeleteQueuesWithTransientConsumer() throws IOException, TimeoutException {
         Channel ch = connection.createChannel();
         assertRecordedQueues(connection, 0);
-        for(int i = 0; i < 5000; i++) {
+        for(int i = 0; i < MANY_DECLARATIONS_LOOP_COUNT; i++) {
             String q = UUID.randomUUID().toString();
             ch.queueDeclare(q, false, false, true, null);
             DefaultConsumer dummy = new DefaultConsumer(ch);
@@ -430,7 +432,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     @Test public void declarationOfManyAutoDeleteExchangesWithTransientQueuesThatAreUnbound() throws IOException, TimeoutException {
         Channel ch = connection.createChannel();
         assertRecordedExchanges(connection, 0);
-        for(int i = 0; i < 5000; i++) {
+        for(int i = 0; i < MANY_DECLARATIONS_LOOP_COUNT; i++) {
             String x = UUID.randomUUID().toString();
             ch.exchangeDeclare(x, "fanout", false, true, null);
             String q = ch.queueDeclare().getQueue();
@@ -446,7 +448,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     @Test public void declarationOfManyAutoDeleteExchangesWithTransientQueuesThatAreDeleted() throws IOException, TimeoutException {
         Channel ch = connection.createChannel();
         assertRecordedExchanges(connection, 0);
-        for(int i = 0; i < 5000; i++) {
+        for(int i = 0; i < MANY_DECLARATIONS_LOOP_COUNT; i++) {
             String x = UUID.randomUUID().toString();
             ch.exchangeDeclare(x, "fanout", false, true, null);
             String q = ch.queueDeclare().getQueue();
@@ -460,7 +462,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     @Test public void declarationOfManyAutoDeleteExchangesWithTransientExchangesThatAreUnbound() throws IOException, TimeoutException {
         Channel ch = connection.createChannel();
         assertRecordedExchanges(connection, 0);
-        for(int i = 0; i < 5000; i++) {
+        for(int i = 0; i < MANY_DECLARATIONS_LOOP_COUNT; i++) {
             String src = "src-" + UUID.randomUUID().toString();
             String dest = "dest-" + UUID.randomUUID().toString();
             ch.exchangeDeclare(src, "fanout", false, true, null);
@@ -477,7 +479,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     @Test public void declarationOfManyAutoDeleteExchangesWithTransientExchangesThatAreDeleted() throws IOException, TimeoutException {
         Channel ch = connection.createChannel();
         assertRecordedExchanges(connection, 0);
-        for(int i = 0; i < 5000; i++) {
+        for(int i = 0; i < MANY_DECLARATIONS_LOOP_COUNT; i++) {
             String src = "src-" + UUID.randomUUID().toString();
             String dest = "dest-" + UUID.randomUUID().toString();
             ch.exchangeDeclare(src, "fanout", false, true, null);
