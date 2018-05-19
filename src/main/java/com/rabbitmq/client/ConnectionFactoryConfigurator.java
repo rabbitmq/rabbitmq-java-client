@@ -182,7 +182,8 @@ public class ConnectionFactoryConfigurator {
                 );
             }
         }
-        cf.setClientProperties(clientProperties);
+
+        cf.getClientProperties().putAll(clientProperties);
 
         String automaticRecovery = properties.get(prefix + CONNECTION_RECOVERY_ENABLED);
         if (automaticRecovery != null) {
