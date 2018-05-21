@@ -91,22 +91,34 @@ public class PropertyFileInitialisationTest {
         assertThat(cf.getPort(), is(5673));
     }
 
-    @Test public void propertyInitialisationIncludeDefaultClientProperties() {
+    @Test public void propertyInitialisationIncludeDefaultClientPropertiesByDefault() {
+        cf.load(new HashMap<String, String>());
+        assertThat(cf.getClientProperties().entrySet(), hasSize(defaultClientProperties().size()));
+    }
+
+    @Test public void propertyInitialisationAddCustomClientProperty() {
         cf.load(new HashMap<String, String>() {{
-            put("rabbitmq.use.default.client.properties", "true");
             put("rabbitmq.client.properties.foo", "bar");
         }});
         assertThat(cf.getClientProperties().entrySet(), hasSize(defaultClientProperties().size() + 1));
         assertThat(cf.getClientProperties().get("foo").toString(), is("bar"));
     }
 
-    @Test public void propertyInitialisationDoNotIncludeDefaultClientProperties() {
+    @Test public void propertyInitialisationGetRidOfDefaultClientPropertyWithEmptyValue() {
+        final String key = defaultClientProperties().entrySet().iterator().next().getKey();
         cf.load(new HashMap<String, String>() {{
-            put("rabbitmq.use.default.client.properties", "false");
-            put("rabbitmq.client.properties.foo", "bar");
+            put("rabbitmq.client.properties." + key, "");
         }});
-        assertThat(cf.getClientProperties().entrySet(), hasSize(1));
-        assertThat(cf.getClientProperties().get("foo").toString(), is("bar"));
+        assertThat(cf.getClientProperties().entrySet(), hasSize(defaultClientProperties().size() - 1));
+    }
+
+    @Test public void propertyInitialisationOverrideDefaultClientProperty() {
+        final String key = defaultClientProperties().entrySet().iterator().next().getKey();
+        cf.load(new HashMap<String, String>() {{
+            put("rabbitmq.client.properties." + key, "whatever");
+        }});
+        assertThat(cf.getClientProperties().entrySet(), hasSize(defaultClientProperties().size()));
+        assertThat(cf.getClientProperties().get(key).toString(), is("whatever"));
     }
 
     @Test public void propertyInitialisationDoNotUseNio() throws Exception {
