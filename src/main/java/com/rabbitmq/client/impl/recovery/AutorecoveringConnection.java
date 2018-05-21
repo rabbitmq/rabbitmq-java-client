@@ -540,25 +540,12 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         this.addAutomaticRecoveryListener(newConn);
 	    this.recoverShutdownListeners(newConn);
 	    this.recoverBlockedListeners(newConn);
-	    
-	    // Optionally support recovering channels & entities in parallel for connections that have a lot of channels, queues, bindings, etc.
-	    ExecutorService executor = null;
-        if (params.getRecoveryThreadCount() > 1) {
-            executor = Executors.newFixedThreadPool(params.getRecoveryThreadCount(), delegate.getThreadFactory());
-        }
-        try {
-    	    this.recoverChannels(newConn, executor);
-    	    // don't assign new delegate connection until channel recovery is complete
-    	    this.delegate = newConn;
-    	    // recover topology
-    	    if (this.params.isTopologyRecoveryEnabled()) {
-    	        recoverTopology(executor);
-    	    }
-        } finally {
-            if (executor != null) {
-                executor.shutdownNow();
-            }
-        }
+	    this.recoverChannels(newConn);
+	    // don't assign new delegate connection until channel recovery is complete
+	    this.delegate = newConn;
+	    if (this.params.isTopologyRecoveryEnabled()) {
+	        recoverTopology(params.getTopologyRecoveryThreadCount());
+	    }
 		this.notifyRecoveryListenersComplete();
     }
 
@@ -602,32 +589,14 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 		return null;
     }
 
-    private void recoverChannels(final RecoveryAwareAMQConnection newConn, final ExecutorService executor) throws InterruptedException {
-        if (executor != null) {
-            final List<Callable<Object>> tasks = new ArrayList<Callable<Object>>();
-            for (final AutorecoveringChannel ch : this.channels.values()) {
-                tasks.add(Executors.callable(new Runnable() {
-                    @Override
-                    public void run() {
-                        recoverChannel(newConn, ch);
-                    }
-                }));
+    private void recoverChannels(final RecoveryAwareAMQConnection newConn) {
+        for (AutorecoveringChannel ch : this.channels.values()) {
+            try {
+                ch.automaticallyRecover(this, newConn);
+                LOGGER.debug("Channel {} has recovered", ch);
+            } catch (Throwable t) {
+                newConn.getExceptionHandler().handleChannelRecoveryException(ch, t);
             }
-            // invokeAll will block until all callables are completed
-            executor.invokeAll(tasks);
-        } else {
-            for (final AutorecoveringChannel ch : this.channels.values()) {
-                recoverChannel(newConn, ch);
-            }
-        }
-    }
-    
-    private void recoverChannel(final RecoveryAwareAMQConnection newConn, final AutorecoveringChannel ch) {
-        try {
-            ch.automaticallyRecover(this, newConn);
-            LOGGER.debug("Channel {} has recovered", ch);
-        } catch (Throwable t) {
-            newConn.getExceptionHandler().handleChannelRecoveryException(ch, t);
         }
     }
 
@@ -643,20 +612,26 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
     }
     
-    private void recoverTopology(final ExecutorService executor) throws InterruptedException {
+    private void recoverTopology(final int recoveryThreads) throws InterruptedException {
         // The recovery sequence is the following:
         // 1. Recover exchanges
         // 2. Recover queues
         // 3. Recover bindings
         // 4. Recover consumers
-        if (executor != null) {
+        if (recoveryThreads > 1) {
+            // Support recovering entities in parallel for connections that have a lot of queues, bindings, & consumers
             // A channel is single threaded, so group things by channel and recover 1 entity at a time per channel
             // We still need to recover 1 type of entity at a time in case channel1 has a binding to a queue that is currently owned and being recovered by channel2 for example
-            // invokeAll will block until all callables are completed
-            executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedExchanges).values()));
-            executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedQueues).values()));
-            executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedBindings)));
-            executor.invokeAll(groupEntitiesByChannel(Utility.copy(consumers).values()));
+            final ExecutorService executor = Executors.newFixedThreadPool(recoveryThreads, delegate.getThreadFactory());
+            try {
+                // invokeAll will block until all callables are completed
+                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedExchanges).values()));
+                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedQueues).values()));
+                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedBindings)));
+                executor.invokeAll(groupEntitiesByChannel(Utility.copy(consumers).values()));
+            } finally {
+                executor.shutdownNow();
+            }
         } else {
             // recover entities in serial on the main connection thread
             for (final RecordedExchange exchange : Utility.copy(recordedExchanges).values()) {
@@ -785,9 +760,9 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             list.add(entity);
         }
         // now create a runnable per channel
-        final List<Callable<Object>> tasks = new ArrayList<Callable<Object>>();
+        final List<Callable<Object>> callables = new ArrayList<Callable<Object>>();
         for (final List<E> entityList : map.values()) {
-            tasks.add(Executors.callable(new Runnable() {
+            callables.add(Executors.callable(new Runnable() {
                 @Override
                 public void run() {
                     for (final E entity : entityList) {
@@ -806,7 +781,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
                 }
             }));
         }
-        return tasks;
+        return callables;
     }
 
     void recordQueueBinding(AutorecoveringChannel ch,

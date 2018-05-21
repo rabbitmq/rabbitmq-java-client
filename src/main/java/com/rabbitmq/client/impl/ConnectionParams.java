@@ -41,7 +41,7 @@ public class ConnectionParams {
     private long networkRecoveryInterval;
     private RecoveryDelayHandler recoveryDelayHandler;
     private boolean topologyRecovery;
-    private int recoveryThreads = 1;
+    private int topologyRecoveryThreads = 1;
     private int channelRpcTimeout;
     private boolean channelShouldCheckRpcResponseType;
     private ErrorOnWriteListener errorOnWriteListener;
@@ -116,8 +116,8 @@ public class ConnectionParams {
         return topologyRecovery;
     }
     
-    public int getRecoveryThreadCount() {
-        return recoveryThreads;
+    public int getTopologyRecoveryThreadCount() {
+        return topologyRecoveryThreads;
     }
 
     public ThreadFactory getThreadFactory() {
@@ -180,8 +180,8 @@ public class ConnectionParams {
         this.topologyRecovery = topologyRecovery;
     }
     
-    public void setRecoveryThreadCount(final int recoveryThreads) {
-        this.recoveryThreads = recoveryThreads;
+    public void setTopologyRecoveryThreadCount(final int topologyRecoveryThreads) {
+        this.topologyRecoveryThreads = topologyRecoveryThreads;
     }
 
     public void setExceptionHandler(ExceptionHandler exceptionHandler) {
