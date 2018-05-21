@@ -127,7 +127,7 @@ public class ConnectionFactory implements Cloneable {
 
     private boolean automaticRecovery               = true;
     private boolean topologyRecovery                = true;
-    private int topologyRecoveryThreads             = 1;
+    private int recoveryThreads                     = 1;
     
     // long is used to make sure the users can use both ints
     // and longs safely. It is unlikely that anybody'd need
@@ -714,13 +714,13 @@ public class ConnectionFactory implements Cloneable {
         this.topologyRecovery = topologyRecovery;
     }
     
-    public int getTopologyRecoveryThreadCount() {
-        return topologyRecoveryThreads;
+    public int getRecoveryThreadCount() {
+        return recoveryThreads;
     }
     
     // TODO Document that your exception handler method should be thread safe
-    public void setTopologyRecoveryThreadCount(final int topologyRecoveryThreads) {
-        this.topologyRecoveryThreads = topologyRecoveryThreads;
+    public void setRecoveryThreadCount(final int recoveryThreads) {
+        this.recoveryThreads = recoveryThreads;
     }
 
     public void setMetricsCollector(MetricsCollector metricsCollector) {
@@ -1021,7 +1021,7 @@ public class ConnectionFactory implements Cloneable {
         result.setNetworkRecoveryInterval(networkRecoveryInterval);
         result.setRecoveryDelayHandler(recoveryDelayHandler);
         result.setTopologyRecovery(topologyRecovery);
-        result.setTopologyRecoveryThreadCount(topologyRecoveryThreads);
+        result.setRecoveryThreadCount(recoveryThreads);
         result.setExceptionHandler(exceptionHandler);
         result.setThreadFactory(threadFactory);
         result.setHandshakeTimeout(handshakeTimeout);
