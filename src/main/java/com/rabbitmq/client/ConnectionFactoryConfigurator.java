@@ -41,9 +41,10 @@ import java.util.Properties;
  * but also from the classpath, by using the <code>classpath:</code> prefix
  * in the location.
  *
- * If default client properties should be set, set the <code>use.default.client.properties</code>
- * key to <code>true</code>. Custom client properties can be set by using
- * the <code>client.properties.</code>, e.g. <code>client.properties.app.name</code>.
+ * Client properties can be set by using
+ * the <code>client.properties.</code> prefix, e.g. <code>client.properties.app.name</code>.
+ * Default client properties and custom client properties are merged. To remove
+ * a default client property, set its key to an empty value.
  *
  * @since 4.4.0
  * @see ConnectionFactory#load(String, String)
@@ -63,7 +64,6 @@ public class ConnectionFactoryConfigurator {
     public static final String CONNECTION_TIMEOUT = "connection.timeout";
     public static final String HANDSHAKE_TIMEOUT = "handshake.timeout";
     public static final String SHUTDOWN_TIMEOUT = "shutdown.timeout";
-    public static final String USE_DEFAULT_CLIENT_PROPERTIES = "use.default.client.properties";
     public static final String CLIENT_PROPERTIES_PREFIX = "client.properties.";
     public static final String CONNECTION_RECOVERY_ENABLED = "connection.recovery.enabled";
     public static final String TOPOLOGY_RECOVERY_ENABLED = "topology.recovery.enabled";
@@ -169,17 +169,21 @@ public class ConnectionFactoryConfigurator {
         }
 
         Map<String, Object> clientProperties = new HashMap<String, Object>();
-        String useDefaultClientProperties = properties.get(prefix + USE_DEFAULT_CLIENT_PROPERTIES);
-        if (useDefaultClientProperties != null && Boolean.valueOf(useDefaultClientProperties)) {
-            clientProperties.putAll(AMQConnection.defaultClientProperties());
-        }
+        Map<String, Object> defaultClientProperties = AMQConnection.defaultClientProperties();
+        clientProperties.putAll(defaultClientProperties);
 
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             if (entry.getKey().startsWith(prefix + CLIENT_PROPERTIES_PREFIX)) {
-                clientProperties.put(
-                    entry.getKey().substring((prefix + CLIENT_PROPERTIES_PREFIX).length()),
-                    entry.getValue()
-                );
+                String clientPropertyKey = entry.getKey().substring((prefix + CLIENT_PROPERTIES_PREFIX).length());
+                if (defaultClientProperties.containsKey(clientPropertyKey) && (entry.getValue() == null || entry.getValue().trim().isEmpty())) {
+                    // if default property and value is empty, remove this property
+                    clientProperties.remove(clientPropertyKey);
+                } else {
+                    clientProperties.put(
+                        clientPropertyKey,
+                        entry.getValue()
+                    );
+                }
             }
         }
         cf.setClientProperties(clientProperties);
