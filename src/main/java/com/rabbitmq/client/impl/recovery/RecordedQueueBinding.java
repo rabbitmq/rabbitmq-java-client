@@ -32,6 +32,6 @@ public class RecordedQueueBinding extends RecordedBinding {
     
     @Override
     public String toString() {
-        return "RecordedQueueBinding[source=" + source + ", destination=" + destination + ", routingKey=" + routingKey + ", arguments=" + arguments + ", channel=" + channel;
+        return "RecordedQueueBinding[source=" + source + ", destination=" + destination + ", routingKey=" + routingKey + ", arguments=" + arguments + ", channel=" + channel + "]";
     }
 }

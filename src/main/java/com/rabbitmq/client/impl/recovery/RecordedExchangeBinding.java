@@ -32,6 +32,6 @@ public class RecordedExchangeBinding extends RecordedBinding {
     
     @Override
     public String toString() {
-        return "RecordedExchangeBinding[source=" + source + ", destination=" + destination + ", routingKey=" + routingKey + ", arguments=" + arguments + ", channel=" + channel;
+        return "RecordedExchangeBinding[source=" + source + ", destination=" + destination + ", routingKey=" + routingKey + ", arguments=" + arguments + ", channel=" + channel + "]";
     }
 }
