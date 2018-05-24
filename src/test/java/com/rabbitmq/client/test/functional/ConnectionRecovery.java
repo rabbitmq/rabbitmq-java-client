@@ -32,6 +32,9 @@ import java.util.*;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -809,8 +812,12 @@ public class ConnectionRecovery extends BrokerTestCase {
     
     @Test public void recoveryWithMultipleThreads() throws Exception {
         // test with 8 recovery threads
-        ConnectionFactory connectionFactory = buildConnectionFactoryWithRecoveryEnabled(false, 8);
-        assertEquals(8, connectionFactory.getTopologyRecoveryThreadCount());
+        final ThreadPoolExecutor executor = new ThreadPoolExecutor(8, 8, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        executor.allowCoreThreadTimeOut(true);
+        ConnectionFactory connectionFactory = buildConnectionFactoryWithRecoveryEnabled(false);
+        assertNull(connectionFactory.getTopologyRecoveryExecutor());
+        connectionFactory.setTopologyRecoveryExecutor(executor);
+        assertEquals(executor, connectionFactory.getTopologyRecoveryExecutor());
         RecoverableConnection testConnection = (RecoverableConnection) connectionFactory.newConnection();
         try {
             final List<Channel> channels = new ArrayList<Channel>();
@@ -822,6 +829,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             final CountDownLatch latch = new CountDownLatch(channelCount * queuesPerChannel);
             for (int i=0; i < channelCount; i++) {
                 final Channel testChannel = testConnection.createChannel();
+                channels.add(testChannel);
                 String x = "tmp-x-topic-" + i;
                 exchanges.add(x);
                 testChannel.exchangeDeclare(x, "topic");
@@ -1019,17 +1027,12 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
     
     private static ConnectionFactory buildConnectionFactoryWithRecoveryEnabled(boolean disableTopologyRecovery) {
-        return buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery, 1);
-    }
-
-    private static ConnectionFactory buildConnectionFactoryWithRecoveryEnabled(boolean disableTopologyRecovery, final int recoveryThreads) {
         ConnectionFactory cf = TestUtils.connectionFactory();
         cf.setNetworkRecoveryInterval(RECOVERY_INTERVAL);
         cf.setAutomaticRecoveryEnabled(true);
         if (disableTopologyRecovery) {
             cf.setTopologyRecoveryEnabled(false);
         }
-        cf.setTopologyRecoveryThreadCount(recoveryThreads);
         return cf;
     }
 

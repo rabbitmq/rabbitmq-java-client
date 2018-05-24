@@ -544,7 +544,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 	    // don't assign new delegate connection until channel recovery is complete
 	    this.delegate = newConn;
 	    if (this.params.isTopologyRecoveryEnabled()) {
-	        recoverTopology(params.getTopologyRecoveryThreadCount());
+	        recoverTopology(params.getTopologyRecoveryExecutor());
 	    }
 		this.notifyRecoveryListenersComplete();
     }
@@ -612,27 +612,13 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
     }
     
-    private void recoverTopology(final int recoveryThreads) throws InterruptedException {
+    private void recoverTopology(final ExecutorService executor) {
         // The recovery sequence is the following:
         // 1. Recover exchanges
         // 2. Recover queues
         // 3. Recover bindings
         // 4. Recover consumers
-        if (recoveryThreads > 1) {
-            // Support recovering entities in parallel for connections that have a lot of queues, bindings, & consumers
-            // A channel is single threaded, so group things by channel and recover 1 entity at a time per channel
-            // We still need to recover 1 type of entity at a time in case channel1 has a binding to a queue that is currently owned and being recovered by channel2 for example
-            final ExecutorService executor = Executors.newFixedThreadPool(recoveryThreads, delegate.getThreadFactory());
-            try {
-                // invokeAll will block until all callables are completed
-                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedExchanges).values()));
-                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedQueues).values()));
-                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedBindings)));
-                executor.invokeAll(groupEntitiesByChannel(Utility.copy(consumers).values()));
-            } finally {
-                executor.shutdownNow();
-            }
-        } else {
+        if (executor == null) {
             // recover entities in serial on the main connection thread
             for (final RecordedExchange exchange : Utility.copy(recordedExchanges).values()) {
                 recoverExchange(exchange);
@@ -645,6 +631,21 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             }
             for (final Map.Entry<String, RecordedConsumer> entry : Utility.copy(consumers).entrySet()) {
                 recoverConsumer(entry.getKey(), entry.getValue());
+            }
+        } else {
+            // Support recovering entities in parallel for connections that have a lot of queues, bindings, & consumers
+            // A channel is single threaded, so group things by channel and recover 1 entity at a time per channel
+            // We also need to recover 1 type of entity at a time in case channel1 has a binding to a queue that is currently owned and being recovered by channel2 for example
+            // Note: invokeAll will block until all callables are completed and all returned futures will be complete 
+            try {
+                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedExchanges).values()));
+                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedQueues).values()));
+                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedBindings)));
+                executor.invokeAll(groupEntitiesByChannel(Utility.copy(consumers).values()));
+            } catch (final Exception cause) {
+                final String message = "Caught an exception while recovering toplogy: " + cause.getMessage();
+                final TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
+                getExceptionHandler().handleTopologyRecoveryException(delegate, null, e);
             }
         }
     }

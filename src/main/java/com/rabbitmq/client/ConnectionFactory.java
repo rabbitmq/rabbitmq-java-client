@@ -127,7 +127,7 @@ public class ConnectionFactory implements Cloneable {
 
     private boolean automaticRecovery               = true;
     private boolean topologyRecovery                = true;
-    private int topologyRecoveryThreads             = 1;
+    private ExecutorService topologyRecoveryExecutor;
     
     // long is used to make sure the users can use both ints
     // and longs safely. It is unlikely that anybody'd need
@@ -714,13 +714,22 @@ public class ConnectionFactory implements Cloneable {
         this.topologyRecovery = topologyRecovery;
     }
     
-    public int getTopologyRecoveryThreadCount() {
-        return topologyRecoveryThreads;
+    /**
+     * Get the executor to use for parallel topology recovery. If null (the default), recovery is done single threaded on the main connection thread.
+     * @return thread pool executor
+     */
+    public ExecutorService getTopologyRecoveryExecutor() {
+        return topologyRecoveryExecutor;
     }
     
-    // TODO Document that your exception handler method should be thread safe
-    public void setTopologyRecoveryThreadCount(final int topologyRecoveryThreads) {
-        this.topologyRecoveryThreads = topologyRecoveryThreads;
+    /**
+     * Set the executor to use for parallel topology recovery. If null (the default), recovery is done single threaded on the main connection thread.
+     * It is recommended to pass a ThreadPoolExecutor that will allow its core threads to timeout so these threads can die when recovery is complete.
+     * Note: your {@link ExceptionHandler#handleTopologyRecoveryException(Connection, Channel, TopologyRecoveryException)} method should be thread-safe.
+     * @param topologyRecoveryExecutor thread pool executor
+     */
+    public void setTopologyRecoveryExecutor(final ExecutorService topologyRecoveryExecutor) {
+        this.topologyRecoveryExecutor = topologyRecoveryExecutor;
     }
 
     public void setMetricsCollector(MetricsCollector metricsCollector) {
@@ -1021,7 +1030,7 @@ public class ConnectionFactory implements Cloneable {
         result.setNetworkRecoveryInterval(networkRecoveryInterval);
         result.setRecoveryDelayHandler(recoveryDelayHandler);
         result.setTopologyRecovery(topologyRecovery);
-        result.setTopologyRecoveryThreadCount(topologyRecoveryThreads);
+        result.setTopologyRecoveryExecutor(topologyRecoveryExecutor);
         result.setExceptionHandler(exceptionHandler);
         result.setThreadFactory(threadFactory);
         result.setHandshakeTimeout(handshakeTimeout);
