@@ -28,8 +28,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
@@ -525,7 +527,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         this.consumerRecoveryListeners.remove(listener);
     }
 
-    synchronized private void beginAutomaticRecovery() throws InterruptedException {
+    private synchronized void beginAutomaticRecovery() throws InterruptedException {
         Thread.sleep(this.params.getRecoveryDelayHandler().getDelay(0));
 
         this.notifyRecoveryListenersStarted();
@@ -534,18 +536,16 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         if (newConn == null) {
             return;
         }
-
+        LOGGER.debug("Connection {} has recovered", newConn);
         this.addAutomaticRecoveryListener(newConn);
 	    this.recoverShutdownListeners(newConn);
 	    this.recoverBlockedListeners(newConn);
 	    this.recoverChannels(newConn);
 	    // don't assign new delegate connection until channel recovery is complete
 	    this.delegate = newConn;
-	    if(this.params.isTopologyRecoveryEnabled()) {
-		      this.recoverEntities();
-		      this.recoverConsumers();
+	    if (this.params.isTopologyRecoveryEnabled()) {
+	        recoverTopology(params.getTopologyRecoveryExecutor());
 	    }
-
 		this.notifyRecoveryListenersComplete();
     }
 
@@ -593,6 +593,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         for (AutorecoveringChannel ch : this.channels.values()) {
             try {
                 ch.automaticallyRecover(this, newConn);
+                LOGGER.debug("Channel {} has recovered", ch);
             } catch (Throwable t) {
                 newConn.getExceptionHandler().handleChannelRecoveryException(ch, t);
             }
@@ -610,113 +611,125 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             f.handleRecoveryStarted(this);
         }
     }
-
-    private void recoverEntities() {
+    
+    private void recoverTopology(final ExecutorService executor) {
         // The recovery sequence is the following:
-        //
         // 1. Recover exchanges
         // 2. Recover queues
         // 3. Recover bindings
         // 4. Recover consumers
-        recoverExchanges();
-        recoverQueues();
-        recoverBindings();
-    }
-
-    private void recoverExchanges() {
-        // recorded exchanges are guaranteed to be
-        // non-predefined (we filter out predefined ones
-        // in exchangeDeclare). MK.
-        for (RecordedExchange x : Utility.copy(this.recordedExchanges).values()) {
+        if (executor == null) {
+            // recover entities in serial on the main connection thread
+            for (final RecordedExchange exchange : Utility.copy(recordedExchanges).values()) {
+                recoverExchange(exchange);
+            }
+            for (final Map.Entry<String, RecordedQueue> entry : Utility.copy(recordedQueues).entrySet()) {
+                recoverQueue(entry.getKey(), entry.getValue());
+            }
+            for (final RecordedBinding b : Utility.copy(recordedBindings)) {
+                recoverBinding(b);
+            }
+            for (final Map.Entry<String, RecordedConsumer> entry : Utility.copy(consumers).entrySet()) {
+                recoverConsumer(entry.getKey(), entry.getValue());
+            }
+        } else {
+            // Support recovering entities in parallel for connections that have a lot of queues, bindings, & consumers
+            // A channel is single threaded, so group things by channel and recover 1 entity at a time per channel
+            // We also need to recover 1 type of entity at a time in case channel1 has a binding to a queue that is currently owned and being recovered by channel2 for example
+            // Note: invokeAll will block until all callables are completed and all returned futures will be complete 
             try {
-                x.recover();
-            } catch (Exception cause) {
-                final String message = "Caught an exception while recovering exchange " + x.getName() +
-                        ": " + cause.getMessage();
-                TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
-                this.getExceptionHandler().handleTopologyRecoveryException(delegate, x.getDelegateChannel(), e);
+                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedExchanges).values()));
+                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedQueues).values()));
+                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedBindings)));
+                executor.invokeAll(groupEntitiesByChannel(Utility.copy(consumers).values()));
+            } catch (final Exception cause) {
+                final String message = "Caught an exception while recovering toplogy: " + cause.getMessage();
+                final TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
+                getExceptionHandler().handleTopologyRecoveryException(delegate, null, e);
             }
         }
     }
 
-    private void recoverQueues() {
-        for (Map.Entry<String, RecordedQueue> entry : Utility.copy(this.recordedQueues).entrySet()) {
-            String oldName = entry.getKey();
-            RecordedQueue q = entry.getValue();
-            try {
-                q.recover();
-                String newName = q.getName();
-                if (!oldName.equals(newName)) {
-                    // make sure server-named queues are re-added with
-                    // their new names. MK.
-                    synchronized (this.recordedQueues) {
-                        this.propagateQueueNameChangeToBindings(oldName, newName);
-                        this.propagateQueueNameChangeToConsumers(oldName, newName);
-                        // bug26552:
-                        // remove old name after we've updated the bindings and consumers,
-                        // plus only for server-named queues, both to make sure we don't lose
-                        // anything to recover. MK.
-                        if(q.isServerNamed()) {
-                            deleteRecordedQueue(oldName);
-                        }
-                        this.recordedQueues.put(newName, q);
+    private void recoverExchange(final RecordedExchange x) {
+        // recorded exchanges are guaranteed to be non-predefined (we filter out predefined ones in exchangeDeclare). MK.
+        try {
+            x.recover();
+            LOGGER.debug("{} has recovered", x);
+        } catch (Exception cause) {
+            final String message = "Caught an exception while recovering exchange " + x.getName() +
+                    ": " + cause.getMessage();
+            TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
+            this.getExceptionHandler().handleTopologyRecoveryException(delegate, x.getDelegateChannel(), e);
+        }
+    }
+
+    private void recoverQueue(final String oldName, final RecordedQueue q) {
+        LOGGER.debug("Recovering {}", q);
+        try {
+            q.recover();
+            String newName = q.getName();
+            if (!oldName.equals(newName)) {
+                // make sure server-named queues are re-added with
+                // their new names. MK.
+                synchronized (this.recordedQueues) {
+                    this.propagateQueueNameChangeToBindings(oldName, newName);
+                    this.propagateQueueNameChangeToConsumers(oldName, newName);
+                    // bug26552:
+                    // remove old name after we've updated the bindings and consumers,
+                    // plus only for server-named queues, both to make sure we don't lose
+                    // anything to recover. MK.
+                    if(q.isServerNamed()) {
+                        deleteRecordedQueue(oldName);
                     }
+                    this.recordedQueues.put(newName, q);
                 }
-                for(QueueRecoveryListener qrl : Utility.copy(this.queueRecoveryListeners)) {
-                    qrl.queueRecovered(oldName, newName);
-                }
-            } catch (Exception cause) {
-                final String message = "Caught an exception while recovering queue " + oldName +
-                                               ": " + cause.getMessage();
-                TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
-                this.getExceptionHandler().handleTopologyRecoveryException(delegate, q.getDelegateChannel(), e);
             }
+            for (QueueRecoveryListener qrl : Utility.copy(this.queueRecoveryListeners)) {
+                qrl.queueRecovered(oldName, newName);
+            }
+            LOGGER.debug("{} has recovered", q);
+        } catch (Exception cause) {
+            final String message = "Caught an exception while recovering queue " + oldName +
+                                           ": " + cause.getMessage();
+            TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
+            this.getExceptionHandler().handleTopologyRecoveryException(delegate, q.getDelegateChannel(), e);
         }
     }
 
-    private void recoverBindings() {
-        for (RecordedBinding b : Utility.copy(this.recordedBindings)) {
-            try {
-                b.recover();
-            } catch (Exception cause) {
-                String message = "Caught an exception while recovering binding between " + b.getSource() +
-                                         " and " + b.getDestination() + ": " + cause.getMessage();
-                TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
-                this.getExceptionHandler().handleTopologyRecoveryException(delegate, b.getDelegateChannel(), e);
-            }
+    private void recoverBinding(final RecordedBinding b) {
+        try {
+            b.recover();
+            LOGGER.debug("{} has recovered", b);
+        } catch (Exception cause) {
+            String message = "Caught an exception while recovering binding between " + b.getSource() +
+                                     " and " + b.getDestination() + ": " + cause.getMessage();
+            TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
+            this.getExceptionHandler().handleTopologyRecoveryException(delegate, b.getDelegateChannel(), e);
         }
     }
 
-    private void recoverConsumers() {
-        for (Map.Entry<String, RecordedConsumer> entry : Utility.copy(this.consumers).entrySet()) {
-            String tag = entry.getKey();
-            RecordedConsumer consumer = entry.getValue();
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Recovering consumer {}", consumer);
-            }
-            try {
-                String newTag = consumer.recover();
-                // make sure server-generated tags are re-added. MK.
-                if(tag != null && !tag.equals(newTag)) {
-                    synchronized (this.consumers) {
-                        this.consumers.remove(tag);
-                        this.consumers.put(newTag, consumer);
-                    }
-                    consumer.getChannel().updateConsumerTag(tag, newTag);
+    private void recoverConsumer(final String tag, final RecordedConsumer consumer) {
+        LOGGER.debug("Recovering {}", consumer);
+        try {
+            String newTag = consumer.recover();
+            // make sure server-generated tags are re-added. MK.
+            if(tag != null && !tag.equals(newTag)) {
+                synchronized (this.consumers) {
+                    this.consumers.remove(tag);
+                    this.consumers.put(newTag, consumer);
                 }
+                consumer.getChannel().updateConsumerTag(tag, newTag);
+            }
 
-                for(ConsumerRecoveryListener crl : Utility.copy(this.consumerRecoveryListeners)) {
-                    crl.consumerRecovered(tag, newTag);
-                }
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Consumer {} has recovered", consumer);
-                }
-            } catch (Exception cause) {
-                final String message = "Caught an exception while recovering consumer " + tag +
-                        ": " + cause.getMessage();
-                TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
-                this.getExceptionHandler().handleTopologyRecoveryException(delegate, consumer.getDelegateChannel(), e);
+            for (ConsumerRecoveryListener crl : Utility.copy(this.consumerRecoveryListeners)) {
+                crl.consumerRecovered(tag, newTag);
             }
+            LOGGER.debug("{} has recovered", consumer);
+        } catch (Exception cause) {
+            final String message = "Caught an exception while recovering consumer " + tag +
+                    ": " + cause.getMessage();
+            TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
+            this.getExceptionHandler().handleTopologyRecoveryException(delegate, consumer.getDelegateChannel(), e);
         }
     }
 
@@ -734,6 +747,42 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
                 c.setQueue(newName);
             }
         }
+    }
+    
+    private <E extends RecordedEntity> List<Callable<Object>> groupEntitiesByChannel(final Collection<E> entities) {
+        // map entities by channel
+        final Map<AutorecoveringChannel, List<E>> map = new LinkedHashMap<AutorecoveringChannel, List<E>>();
+        for (final E entity : entities) {
+            final AutorecoveringChannel channel = entity.getChannel();
+            List<E> list = map.get(channel);
+            if (list == null) {
+                map.put(channel, list = new ArrayList<E>());
+            }
+            list.add(entity);
+        }
+        // now create a runnable per channel
+        final List<Callable<Object>> callables = new ArrayList<Callable<Object>>();
+        for (final List<E> entityList : map.values()) {
+            callables.add(Executors.callable(new Runnable() {
+                @Override
+                public void run() {
+                    for (final E entity : entityList) {
+                        if (entity instanceof RecordedExchange) {
+                            recoverExchange((RecordedExchange)entity);
+                        } else if (entity instanceof RecordedQueue) {
+                            final RecordedQueue q = (RecordedQueue) entity;
+                            recoverQueue(q.getName(), q);
+                        } else if (entity instanceof RecordedBinding) {
+                            recoverBinding((RecordedBinding) entity);
+                        } else if (entity instanceof RecordedConsumer) {
+                            final RecordedConsumer c = (RecordedConsumer) entity;
+                            recoverConsumer(c.getConsumerTag(), c);
+                        }
+                    }
+                }
+            }));
+        }
+        return callables;
     }
 
     void recordQueueBinding(AutorecoveringChannel ch,

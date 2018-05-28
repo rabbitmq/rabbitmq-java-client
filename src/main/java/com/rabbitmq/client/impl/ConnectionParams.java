@@ -41,6 +41,7 @@ public class ConnectionParams {
     private long networkRecoveryInterval;
     private RecoveryDelayHandler recoveryDelayHandler;
     private boolean topologyRecovery;
+    private ExecutorService topologyRecoveryExecutor;
     private int channelRpcTimeout;
     private boolean channelShouldCheckRpcResponseType;
     private ErrorOnWriteListener errorOnWriteListener;
@@ -114,10 +115,18 @@ public class ConnectionParams {
     public boolean isTopologyRecoveryEnabled() {
         return topologyRecovery;
     }
+    
+    /**
+     * Get the topology recovery executor. If null, the main connection thread should be used.
+     * @return executor. May be null.
+     */
+    public ExecutorService getTopologyRecoveryExecutor() {
+        return topologyRecoveryExecutor;
+    }
 
     public ThreadFactory getThreadFactory() {
-    return threadFactory;
-  }
+        return threadFactory;
+    }
 
     public int getChannelRpcTimeout() {
         return channelRpcTimeout;
@@ -173,6 +182,10 @@ public class ConnectionParams {
 
     public void setTopologyRecovery(boolean topologyRecovery) {
         this.topologyRecovery = topologyRecovery;
+    }
+    
+    public void setTopologyRecoveryExecutor(final ExecutorService topologyRecoveryExecutor) {
+        this.topologyRecoveryExecutor = topologyRecoveryExecutor;
     }
 
     public void setExceptionHandler(ExceptionHandler exceptionHandler) {

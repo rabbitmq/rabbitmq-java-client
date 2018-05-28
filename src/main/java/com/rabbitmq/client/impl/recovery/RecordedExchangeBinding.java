@@ -29,4 +29,9 @@ public class RecordedExchangeBinding extends RecordedBinding {
     public void recover() throws IOException {
         this.channel.getDelegate().exchangeBind(this.destination, this.source, this.routingKey, this.arguments);
     }
+    
+    @Override
+    public String toString() {
+        return "RecordedExchangeBinding[source=" + source + ", destination=" + destination + ", routingKey=" + routingKey + ", arguments=" + arguments + ", channel=" + channel + "]";
+    }
 }

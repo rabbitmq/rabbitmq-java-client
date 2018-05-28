@@ -129,7 +129,8 @@ public class ConnectionFactory implements Cloneable {
 
     private boolean automaticRecovery               = true;
     private boolean topologyRecovery                = true;
-
+    private ExecutorService topologyRecoveryExecutor;
+    
     // long is used to make sure the users can use both ints
     // and longs safely. It is unlikely that anybody'd need
     // to use recovery intervals > Integer.MAX_VALUE in practice.
@@ -341,7 +342,7 @@ public class ConnectionFactory implements Cloneable {
         setUri(new URI(uriString));
     }
 
-    private String uriDecode(String s) {
+    private static String uriDecode(String s) {
         try {
             // URLDecode decodes '+' to a space, as for
             // form encoding.  So protect plus signs.
@@ -525,7 +526,6 @@ public class ConnectionFactory implements Cloneable {
      *
      * @see #setSocketConfigurator(SocketConfigurator)
      */
-    @SuppressWarnings("unused")
     public SocketConfigurator getSocketConfigurator() {
         return socketConf;
     }
@@ -703,7 +703,6 @@ public class ConnectionFactory implements Cloneable {
      * @return true if topology recovery is enabled, false otherwise
      * @see <a href="http://www.rabbitmq.com/api-guide.html#recovery">Automatic Recovery</a>
      */
-    @SuppressWarnings("unused")
     public boolean isTopologyRecoveryEnabled() {
         return topologyRecovery;
     }
@@ -715,6 +714,24 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setTopologyRecoveryEnabled(boolean topologyRecovery) {
         this.topologyRecovery = topologyRecovery;
+    }
+    
+    /**
+     * Get the executor to use for parallel topology recovery. If null (the default), recovery is done single threaded on the main connection thread.
+     * @return thread pool executor
+     */
+    public ExecutorService getTopologyRecoveryExecutor() {
+        return topologyRecoveryExecutor;
+    }
+    
+    /**
+     * Set the executor to use for parallel topology recovery. If null (the default), recovery is done single threaded on the main connection thread.
+     * It is recommended to pass a ThreadPoolExecutor that will allow its core threads to timeout so these threads can die when recovery is complete.
+     * Note: your {@link ExceptionHandler#handleTopologyRecoveryException(Connection, Channel, TopologyRecoveryException)} method should be thread-safe.
+     * @param topologyRecoveryExecutor thread pool executor
+     */
+    public void setTopologyRecoveryExecutor(final ExecutorService topologyRecoveryExecutor) {
+        this.topologyRecoveryExecutor = topologyRecoveryExecutor;
     }
 
     public void setMetricsCollector(MetricsCollector metricsCollector) {
@@ -1015,6 +1032,7 @@ public class ConnectionFactory implements Cloneable {
         result.setNetworkRecoveryInterval(networkRecoveryInterval);
         result.setRecoveryDelayHandler(recoveryDelayHandler);
         result.setTopologyRecovery(topologyRecovery);
+        result.setTopologyRecoveryExecutor(topologyRecoveryExecutor);
         result.setExceptionHandler(exceptionHandler);
         result.setThreadFactory(threadFactory);
         result.setHandshakeTimeout(handshakeTimeout);

@@ -58,4 +58,9 @@ public class RecordedExchange extends RecordedNamedEntity {
     public boolean isAutoDelete() {
         return autoDelete;
     }
+    
+    @Override
+    public String toString() {
+        return "RecordedExchange[name=" + name + ", type=" + type + ", durable=" + durable + ", autoDelete=" + autoDelete + ", arguments=" + arguments + ", channel=" + channel + "]";
+    }
 }

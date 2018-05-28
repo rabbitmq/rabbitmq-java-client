@@ -29,4 +29,9 @@ public class RecordedQueueBinding extends RecordedBinding {
     public void recover() throws IOException {
         this.channel.getDelegate().queueBind(this.getDestination(), this.getSource(), this.routingKey, this.arguments);
     }
+    
+    @Override
+    public String toString() {
+        return "RecordedQueueBinding[source=" + source + ", destination=" + destination + ", routingKey=" + routingKey + ", arguments=" + arguments + ", channel=" + channel + "]";
+    }
 }
