@@ -719,6 +719,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Get the executor to use for parallel topology recovery. If null (the default), recovery is done single threaded on the main connection thread.
      * @return thread pool executor
+     * @since 4.7.0
      */
     public ExecutorService getTopologyRecoveryExecutor() {
         return topologyRecoveryExecutor;
@@ -727,8 +728,10 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Set the executor to use for parallel topology recovery. If null (the default), recovery is done single threaded on the main connection thread.
      * It is recommended to pass a ThreadPoolExecutor that will allow its core threads to timeout so these threads can die when recovery is complete.
+     * It's developer's responsibility to shut down the executor when it is no longer needed.
      * Note: your {@link ExceptionHandler#handleTopologyRecoveryException(Connection, Channel, TopologyRecoveryException)} method should be thread-safe.
      * @param topologyRecoveryExecutor thread pool executor
+     * @since 4.7.0
      */
     public void setTopologyRecoveryExecutor(final ExecutorService topologyRecoveryExecutor) {
         this.topologyRecoveryExecutor = topologyRecoveryExecutor;

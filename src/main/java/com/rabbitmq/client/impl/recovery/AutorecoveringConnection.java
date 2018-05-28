@@ -32,7 +32,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -638,10 +640,10 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             // We also need to recover 1 type of entity at a time in case channel1 has a binding to a queue that is currently owned and being recovered by channel2 for example
             // Note: invokeAll will block until all callables are completed and all returned futures will be complete 
             try {
-                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedExchanges).values()));
-                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedQueues).values()));
-                executor.invokeAll(groupEntitiesByChannel(Utility.copy(recordedBindings)));
-                executor.invokeAll(groupEntitiesByChannel(Utility.copy(consumers).values()));
+                recoverEntitiesAsynchronously(executor, Utility.copy(recordedExchanges).values());
+                recoverEntitiesAsynchronously(executor, Utility.copy(recordedQueues).values());
+                recoverEntitiesAsynchronously(executor, Utility.copy(recordedBindings));
+                recoverEntitiesAsynchronously(executor, Utility.copy(consumers).values());
             } catch (final Exception cause) {
                 final String message = "Caught an exception while recovering toplogy: " + cause.getMessage();
                 final TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
@@ -748,7 +750,22 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             }
         }
     }
-    
+
+    private void recoverEntitiesAsynchronously(ExecutorService executor, Collection<? extends RecordedEntity> recordedEntities) throws InterruptedException {
+        List<Future<Object>> tasks = executor.invokeAll(groupEntitiesByChannel(recordedEntities));
+        for (Future<Object> task : tasks) {
+            if (!task.isDone()) {
+                LOGGER.warn("Recovery task should be done {}", task);
+            } else {
+                try {
+                    task.get(1, TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    LOGGER.warn("Recovery task is done but returned an exception", e);
+                }
+            }
+        }
+    }
+
     private <E extends RecordedEntity> List<Callable<Object>> groupEntitiesByChannel(final Collection<E> entities) {
         // map entities by channel
         final Map<AutorecoveringChannel, List<E>> map = new LinkedHashMap<AutorecoveringChannel, List<E>>();
