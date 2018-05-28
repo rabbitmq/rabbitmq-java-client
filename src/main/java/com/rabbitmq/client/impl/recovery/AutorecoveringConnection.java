@@ -792,23 +792,20 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             list.add(entity);
         }
         // now create a runnable per channel
-        final List<Callable<Object>> callables = new ArrayList<Callable<Object>>();
+        final List<Callable<Object>> callables = new ArrayList<>();
         for (final List<E> entityList : map.values()) {
-            callables.add(Executors.callable(new Runnable() {
-                @Override
-                public void run() {
-                    for (final E entity : entityList) {
-                        if (entity instanceof RecordedExchange) {
-                            recoverExchange((RecordedExchange)entity);
-                        } else if (entity instanceof RecordedQueue) {
-                            final RecordedQueue q = (RecordedQueue) entity;
-                            recoverQueue(q.getName(), q);
-                        } else if (entity instanceof RecordedBinding) {
-                            recoverBinding((RecordedBinding) entity);
-                        } else if (entity instanceof RecordedConsumer) {
-                            final RecordedConsumer c = (RecordedConsumer) entity;
-                            recoverConsumer(c.getConsumerTag(), c);
-                        }
+            callables.add(Executors.callable(() -> {
+                for (final E entity : entityList) {
+                    if (entity instanceof RecordedExchange) {
+                        recoverExchange((RecordedExchange)entity);
+                    } else if (entity instanceof RecordedQueue) {
+                        final RecordedQueue q = (RecordedQueue) entity;
+                        recoverQueue(q.getName(), q);
+                    } else if (entity instanceof RecordedBinding) {
+                        recoverBinding((RecordedBinding) entity);
+                    } else if (entity instanceof RecordedConsumer) {
+                        final RecordedConsumer c = (RecordedConsumer) entity;
+                        recoverConsumer(c.getConsumerTag(), c);
                     }
                 }
             }));
