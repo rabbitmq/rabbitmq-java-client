@@ -98,7 +98,7 @@ public interface ExceptionHandler {
      * during topology (exchanges, queues, bindings, consumers) recovery
      * that it can't otherwise deal with.
      * @param conn the Connection that caught the exception
-     * @param ch the Channel that caught the exception
+     * @param ch the Channel that caught the exception. May be null.
      * @param exception the exception caught in the driver thread
      */
 

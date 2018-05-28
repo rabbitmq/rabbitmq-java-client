@@ -79,4 +79,9 @@ public class RecordedQueue extends RecordedNamedEntity {
         this.arguments = value;
         return this;
     }
+    
+    @Override
+    public String toString() {
+        return "RecordedQueue[name=" + name + ", durable=" + durable + ", autoDelete=" + autoDelete + ", exclusive=" + exclusive + ", arguments=" + arguments + "serverNamed=" + serverNamed + ", channel=" + channel + "]";
+    }
 }
