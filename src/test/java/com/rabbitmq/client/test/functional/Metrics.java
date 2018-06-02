@@ -150,14 +150,18 @@ public class Metrics extends BrokerTestCase {
             channel.confirmSelect();
             assertThat(metrics.getPublishUnroutedMessages().getCount(), is(1L));
             // when
+            channel.exchangeDeclare("any-exchange", "direct");
             channel.basicPublish(
                     "any-exchange",
                     "any-routing-key",
                     MessageProperties.MINIMAL_BASIC,
                     "any-message".getBytes()
             );
-            channel.waitForConfirms(30 * 60 * 1000);
             // then
+            waitAtMost(timeout()).until(
+                    () -> metrics.getPublishUnroutedMessages().getCount(),
+                    equalTo(1L)
+            );
             assertThat(metrics.getPublishUnroutedMessages().getCount(), is(1L));
         } finally {
             safeClose(connection);
