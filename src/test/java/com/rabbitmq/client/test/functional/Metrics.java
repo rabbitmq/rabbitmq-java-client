@@ -148,7 +148,7 @@ public class Metrics extends BrokerTestCase {
             connection = connectionFactory.newConnection();
             Channel channel = connection.createChannel();
             channel.confirmSelect();
-            assertThat(metrics.getPublishUnroutedMessages(), is(1L));
+            assertThat(metrics.getPublishUnroutedMessages().getCount(), is(1L));
             // when
             channel.basicPublish(
                     "any-exchange",
@@ -158,7 +158,7 @@ public class Metrics extends BrokerTestCase {
             );
             channel.waitForConfirms(30 * 60 * 1000);
             // then
-            assertThat(metrics.getPublishUnroutedMessages(), is(1L));
+            assertThat(metrics.getPublishUnroutedMessages().getCount(), is(1L));
         } finally {
             safeClose(connection);
         }
@@ -172,13 +172,13 @@ public class Metrics extends BrokerTestCase {
             connection = connectionFactory.newConnection();
             Channel channel = connection.createChannel();
             channel.confirmSelect();
-            assertThat(metrics.getPublishAcknowledgedMessages(), is(0L));
+            assertThat(metrics.getPublishAcknowledgedMessages().getCount(), is(0L));
             channel.basicConsume(QUEUE, false, new MultipleAckConsumer(channel, false));
             // when
             sendMessage(channel);
             channel.waitForConfirms(30 * 60 * 1000);
             // then
-            assertThat(metrics.getPublishAcknowledgedMessages(), is(1L));
+            assertThat(metrics.getPublishAcknowledgedMessages().getCount(), is(1L));
         } finally {
             safeClose(connection);
         }
