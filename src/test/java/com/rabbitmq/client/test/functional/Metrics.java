@@ -139,6 +139,49 @@ public class Metrics extends BrokerTestCase {
         }
     }
 
+    @Test public void metricsPublisherUnrouted() throws IOException, TimeoutException, InterruptedException {
+        StandardMetricsCollector metrics = new StandardMetricsCollector();
+        connectionFactory.setMetricsCollector(metrics);
+        Connection connection = null;
+        try {
+            connection = connectionFactory.newConnection();
+            Channel channel = connection.createChannel();
+            channel.confirmSelect();
+            assertThat(metrics.getPublishUnroutedMessages(), is(1L));
+            // when
+            channel.basicPublish(
+                    "any-exchange",
+                    "any-routing-key",
+                    MessageProperties.MINIMAL_BASIC,
+                    "any-message".getBytes()
+            );
+            channel.waitForConfirms(30 * 60 * 1000);
+            // then
+            assertThat(metrics.getPublishUnroutedMessages(), is(1L));
+        } finally {
+            safeClose(connection);
+        }
+    }
+
+    @Test public void metricsPublisherAck() throws IOException, TimeoutException, InterruptedException {
+        StandardMetricsCollector metrics = new StandardMetricsCollector();
+        connectionFactory.setMetricsCollector(metrics);
+        Connection connection = null;
+        try {
+            connection = connectionFactory.newConnection();
+            Channel channel = connection.createChannel();
+            channel.confirmSelect();
+            assertThat(metrics.getPublishAcknowledgedMessages(), is(0L));
+            channel.basicConsume(QUEUE, false, new MultipleAckConsumer(channel, false));
+            // when
+            sendMessage(channel);
+            channel.waitForConfirms(30 * 60 * 1000);
+            // then
+            assertThat(metrics.getPublishAcknowledgedMessages(), is(1L));
+        } finally {
+            safeClose(connection);
+        }
+    }
 
     @Test public void metricsAck() throws IOException, TimeoutException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
