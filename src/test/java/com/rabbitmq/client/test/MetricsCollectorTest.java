@@ -149,7 +149,6 @@ public class MetricsCollectorTest {
         assertThat(publishedMessages(metrics), is(2L));
     }
 
-
     @Test public void publishingAcknowledgements() {
         long anyDeliveryTag = 123L;
         AbstractMetricsCollector metrics = factory.create();
