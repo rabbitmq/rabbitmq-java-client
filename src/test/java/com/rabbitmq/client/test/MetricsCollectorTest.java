@@ -147,9 +147,6 @@ public class MetricsCollectorTest {
         metrics.cleanStaleState();
         assertThat(failedToPublishMessages(metrics), is(2L));
         assertThat(publishedMessages(metrics), is(2L));
-
-        long anyDeliveryTag = 123L;
-        metrics.basicNack(channel, anyDeliveryTag);
     }
 
 
@@ -158,19 +155,19 @@ public class MetricsCollectorTest {
         AbstractMetricsCollector metrics = factory.create();
         Channel channel = mock(Channel.class);
         // begins with no messages acknowledged
-        assertThat(publishAck(metrics), is(0));
+        assertThat(publishAck(metrics), is(0L));
         // first acknowledgement gets tracked
         metrics.basicPublishAck(channel, anyDeliveryTag, false);
-        assertThat(publishAck(metrics), is(1));
+        assertThat(publishAck(metrics), is(1L));
         // second acknowledgement gets tracked
         metrics.basicPublishAck(channel, anyDeliveryTag, false);
-        assertThat(publishAck(metrics), is(2));
+        assertThat(publishAck(metrics), is(2L));
         // multiple deliveries aren't tracked
         metrics.basicPublishAck(channel, anyDeliveryTag, true);
-        assertThat(publishAck(metrics), is(2));
+        assertThat(publishAck(metrics), is(2L));
         // cleaning stale state doesn't affect the metric
         metrics.cleanStaleState();
-        assertThat(publishAck(metrics), is(2));
+        assertThat(publishAck(metrics), is(2L));
     }
 
     @Test public void publishingNotAcknowledgements() {
@@ -178,35 +175,35 @@ public class MetricsCollectorTest {
         AbstractMetricsCollector metrics = factory.create();
         Channel channel = mock(Channel.class);
         // begins with no messages not-acknowledged
-        assertThat(publishNack(metrics), is(0));
+        assertThat(publishNack(metrics), is(0L));
         // first not-acknowledgement gets tracked
         metrics.basicPublishNack(channel, anyDeliveryTag, false);
-        assertThat(publishNack(metrics), is(1));
+        assertThat(publishNack(metrics), is(1L));
         // second not-acknowledgement gets tracked
         metrics.basicPublishNack(channel, anyDeliveryTag, false);
-        assertThat(publishNack(metrics), is(2));
+        assertThat(publishNack(metrics), is(2L));
         // multiple deliveries aren't tracked
         metrics.basicPublishNack(channel, anyDeliveryTag, true);
-        assertThat(publishNack(metrics), is(2));
+        assertThat(publishNack(metrics), is(2L));
         // cleaning stale state doesn't affect the metric
         metrics.cleanStaleState();
-        assertThat(publishNack(metrics), is(2));
+        assertThat(publishNack(metrics), is(2L));
     }
 
     @Test public void publishingUnrouted() {
         AbstractMetricsCollector metrics = factory.create();
         Channel channel = mock(Channel.class);
         // begins with no messages not-acknowledged
-        assertThat(publishUnrouted(metrics), is(0));
+        assertThat(publishUnrouted(metrics), is(0L));
         // first unrouted gets tracked
         metrics.basicPublishUnrouted(channel);
-        assertThat(publishUnrouted(metrics), is(1));
+        assertThat(publishUnrouted(metrics), is(1L));
         // second unrouted gets tracked
         metrics.basicPublishUnrouted(channel);
-        assertThat(publishUnrouted(metrics), is(2));
+        assertThat(publishUnrouted(metrics), is(2L));
         // cleaning stale state doesn't affect the metric
         metrics.cleanStaleState();
-        assertThat(publishUnrouted(metrics), is(2));
+        assertThat(publishUnrouted(metrics), is(2L));
     }
 
     @Test public void cleanStaleState() {
