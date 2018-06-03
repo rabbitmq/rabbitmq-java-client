@@ -140,7 +140,7 @@ public class Metrics extends BrokerTestCase {
         }
     }
 
-    @Test public void metricsPublisherUnrouted() throws IOException, TimeoutException, InterruptedException {
+    @Test public void metricsPublisherUnrouted() throws IOException, TimeoutException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
         Connection connection = null;
@@ -148,12 +148,11 @@ public class Metrics extends BrokerTestCase {
             connection = connectionFactory.newConnection();
             Channel channel = connection.createChannel();
             channel.confirmSelect();
-            assertThat(metrics.getPublishUnroutedMessages().getCount(), is(1L));
+            assertThat(metrics.getPublishUnroutedMessages().getCount(), is(0L));
             // when
-            channel.exchangeDeclare("any-exchange", "direct");
             channel.basicPublish(
-                    "any-exchange",
-                    "any-routing-key",
+                    "amq.direct",
+                    "any-unroutable-routing-key",
                     /* basic.return will be sent back only if the message is mandatory */ true,
                     MessageProperties.MINIMAL_BASIC,
                     "any-message".getBytes()
