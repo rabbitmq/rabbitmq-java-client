@@ -154,6 +154,7 @@ public class Metrics extends BrokerTestCase {
             channel.basicPublish(
                     "any-exchange",
                     "any-routing-key",
+                    /* basic.return will be sent back only if the message is mandatory */ true,
                     MessageProperties.MINIMAL_BASIC,
                     "any-message".getBytes()
             );
@@ -162,7 +163,6 @@ public class Metrics extends BrokerTestCase {
                     () -> metrics.getPublishUnroutedMessages().getCount(),
                     equalTo(1L)
             );
-            assertThat(metrics.getPublishUnroutedMessages().getCount(), is(1L));
         } finally {
             safeClose(connection);
         }
