@@ -51,6 +51,12 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
 
     private final Counter failedToPublishMessages;
 
+    private final Counter ackedPublishedMessages;
+
+    private final Counter nackedPublishedMessages;
+
+    private final Counter unroutedPublishedMessages;
+
     private final Counter consumedMessages;
 
     private final Counter acknowledgedMessages;
@@ -81,6 +87,9 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
         this.acknowledgedMessages = (Counter) metricsCreator.apply(ACKNOWLEDGED_MESSAGES);
         this.rejectedMessages = (Counter) metricsCreator.apply(REJECTED_MESSAGES);
         this.failedToPublishMessages = (Counter) metricsCreator.apply(FAILED_TO_PUBLISH_MESSAGES);
+        this.ackedPublishedMessages = (Counter) metricsCreator.apply(ACKED_PUBLISHED_MESSAGES);
+        this.nackedPublishedMessages = (Counter) metricsCreator.apply(NACKED_PUBLISHED_MESSAGES);
+        this.unroutedPublishedMessages = (Counter) metricsCreator.apply(UNROUTED_PUBLISHED_MESSAGES);
     }
 
     @Override
@@ -128,6 +137,21 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
         rejectedMessages.increment();
     }
 
+    @Override
+    protected void markMessagePublishAcknowledged() {
+        ackedPublishedMessages.increment();
+    }
+
+    @Override
+    protected void markMessagePublishNotAcknowledged() {
+        nackedPublishedMessages.increment();
+    }
+
+    @Override
+    protected void markPublishedMessageNotRouted() {
+        unroutedPublishedMessages.increment();
+    }
+
     public AtomicLong getConnections() {
         return connections;
     }
@@ -142,6 +166,18 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
 
     public Counter getFailedToPublishMessages() {
         return failedToPublishMessages;
+    }
+
+    public Counter getAckedPublishedMessages() {
+        return ackedPublishedMessages;
+    }
+
+    public Counter getNackedPublishedMessages() {
+        return nackedPublishedMessages;
+    }
+
+    public Counter getUnroutedPublishedMessages() {
+        return unroutedPublishedMessages;
     }
 
     public Counter getConsumedMessages() {
@@ -197,6 +233,24 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
             @Override
             Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
                 return registry.counter(prefix + ".failed_to_publish", tags);
+            }
+        },
+        ACKED_PUBLISHED_MESSAGES {
+            @Override
+            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
+                return registry.counter(prefix + ".acknowledged_published", tags);
+            }
+        },
+        NACKED_PUBLISHED_MESSAGES {
+            @Override
+            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
+                return registry.counter(prefix + ".not_acknowledged_published", tags);
+            }
+        },
+        UNROUTED_PUBLISHED_MESSAGES {
+            @Override
+            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
+                return registry.counter(prefix + ".unrouted_published", tags);
             }
         };
 

@@ -38,6 +38,12 @@ public interface MetricsCollector {
 
     void basicPublishFailure(Channel channel, Throwable cause);
 
+    void basicPublishAck(Channel channel, long deliveryTag, boolean multiple);
+
+    void basicPublishNack(Channel channel, long deliveryTag, boolean multiple);
+
+    void basicPublishUnrouted(Channel channel);
+
     void consumedMessage(Channel channel, long deliveryTag, boolean autoAck);
 
     void consumedMessage(Channel channel, long deliveryTag, String consumerTag);
