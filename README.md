@@ -17,7 +17,7 @@ a [Maven repository with milestone releases](https://bintray.com/rabbitmq/maven-
 #### 5.x Series
 
 This client releases are independent from RabbitMQ server releases and can be used with RabbitMQ server `3.x`.
-They require Java 8 or more.
+They require Java 8 or higher.
 
 ``` xml
 <dependency>
@@ -36,7 +36,7 @@ compile 'com.rabbitmq:amqp-client:5.2.0'
 #### 4.x Series
 
 This client releases are independent from RabbitMQ server releases and can be used with RabbitMQ server `3.x`.
-They require Java 6 or more.
+They require Java 6 or higher.
 
 ``` xml
 <dependency>
