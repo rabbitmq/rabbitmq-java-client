@@ -112,6 +112,41 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     }
 
     @Override
+    public void basicPublishAck(Channel channel, long deliveryTag, boolean multiple) {
+        if (multiple) {
+            // this is a naive approach, as it does not handle multiple nacks
+            return;
+        }
+        try {
+            markMessagePublishAcknowledged();
+        } catch(Exception e) {
+            LOGGER.info("Error while computing metrics in basicPublishAck: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void basicPublishNack(Channel channel, long deliveryTag, boolean multiple) {
+        if (multiple) {
+            // this is a naive approach, as it does not handle multiple nacks
+            return;
+        }
+        try {
+            markMessagePublishNotAcknowledged();
+        } catch(Exception e) {
+            LOGGER.info("Error while computing metrics in basicPublishNack: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void basicPublishUnrouted(Channel channel) {
+        try {
+            markPublishedMessageNotRouted();
+        } catch(Exception e) {
+            LOGGER.info("Error while computing metrics in markPublishedMessageNotRouted: " + e.getMessage());
+        }
+    }
+
+    @Override
     public void basicConsume(Channel channel, String consumerTag, boolean autoAck) {
         try {
             if(!autoAck) {
@@ -360,6 +395,17 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
      */
     protected abstract void markRejectedMessage();
 
+    /**
+     * Marks the event of a message publishing acknowledgement.
+     */
+    protected abstract void markMessagePublishAcknowledged();
 
-
+    /**
+     * Marks the event of a message publishing not being acknowledged.
+     */
+    protected abstract void markMessagePublishNotAcknowledged();
+    /**
+     * Marks the event of a published message not being routed.
+     */
+    protected abstract void markPublishedMessageNotRouted();
 }

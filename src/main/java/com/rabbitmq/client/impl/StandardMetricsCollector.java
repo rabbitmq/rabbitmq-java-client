@@ -42,6 +42,9 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
     private final Meter acknowledgedMessages;
     private final Meter rejectedMessages;
     private final Meter failedToPublishMessages;
+    private final Meter publishAcknowledgedMessages;
+    private final Meter publishNacknowledgedMessages;
+    private final Meter publishUnroutedMessages;
 
 
     public StandardMetricsCollector(MetricRegistry registry, String metricsPrefix) {
@@ -50,6 +53,9 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
         this.channels = registry.counter(metricsPrefix+".channels");
         this.publishedMessages = registry.meter(metricsPrefix+".published");
         this.failedToPublishMessages = registry.meter(metricsPrefix+".failed_to_publish");
+        this.publishAcknowledgedMessages = registry.meter(metricsPrefix+".publish_ack");
+        this.publishNacknowledgedMessages = registry.meter(metricsPrefix+".publish_nack");
+        this.publishUnroutedMessages = registry.meter(metricsPrefix+".publish_unrouted");
         this.consumedMessages = registry.meter(metricsPrefix+".consumed");
         this.acknowledgedMessages = registry.meter(metricsPrefix+".acknowledged");
         this.rejectedMessages = registry.meter(metricsPrefix+".rejected");
@@ -108,8 +114,21 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
         rejectedMessages.mark();
     }
 
+    @Override
+    protected void markMessagePublishAcknowledged() {
+        publishAcknowledgedMessages.mark();
+    }
 
-    
+    @Override
+    protected void markMessagePublishNotAcknowledged() {
+        publishNacknowledgedMessages.mark();
+    }
+
+    @Override
+    protected void markPublishedMessageNotRouted() {
+        publishUnroutedMessages.mark();
+    }
+
     public MetricRegistry getMetricRegistry() {
         return registry;
     }
@@ -141,4 +160,17 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
     public Meter getFailedToPublishMessages() {
         return failedToPublishMessages;
     }
+
+    public Meter getPublishAcknowledgedMessages() {
+        return publishAcknowledgedMessages;
+    }
+
+    public Meter getPublishNotAcknowledgedMessages() {
+        return publishNacknowledgedMessages;
+    }
+
+    public Meter getPublishUnroutedMessages() {
+        return publishUnroutedMessages;
+    }
+
 }

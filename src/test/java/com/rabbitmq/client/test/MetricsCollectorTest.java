@@ -149,6 +149,62 @@ public class MetricsCollectorTest {
         assertThat(publishedMessages(metrics), is(2L));
     }
 
+    @Test public void publishingAcknowledgements() {
+        long anyDeliveryTag = 123L;
+        AbstractMetricsCollector metrics = factory.create();
+        Channel channel = mock(Channel.class);
+        // begins with no messages acknowledged
+        assertThat(publishAck(metrics), is(0L));
+        // first acknowledgement gets tracked
+        metrics.basicPublishAck(channel, anyDeliveryTag, false);
+        assertThat(publishAck(metrics), is(1L));
+        // second acknowledgement gets tracked
+        metrics.basicPublishAck(channel, anyDeliveryTag, false);
+        assertThat(publishAck(metrics), is(2L));
+        // multiple deliveries aren't tracked
+        metrics.basicPublishAck(channel, anyDeliveryTag, true);
+        assertThat(publishAck(metrics), is(2L));
+        // cleaning stale state doesn't affect the metric
+        metrics.cleanStaleState();
+        assertThat(publishAck(metrics), is(2L));
+    }
+
+    @Test public void publishingNotAcknowledgements() {
+        long anyDeliveryTag = 123L;
+        AbstractMetricsCollector metrics = factory.create();
+        Channel channel = mock(Channel.class);
+        // begins with no messages not-acknowledged
+        assertThat(publishNack(metrics), is(0L));
+        // first not-acknowledgement gets tracked
+        metrics.basicPublishNack(channel, anyDeliveryTag, false);
+        assertThat(publishNack(metrics), is(1L));
+        // second not-acknowledgement gets tracked
+        metrics.basicPublishNack(channel, anyDeliveryTag, false);
+        assertThat(publishNack(metrics), is(2L));
+        // multiple deliveries aren't tracked
+        metrics.basicPublishNack(channel, anyDeliveryTag, true);
+        assertThat(publishNack(metrics), is(2L));
+        // cleaning stale state doesn't affect the metric
+        metrics.cleanStaleState();
+        assertThat(publishNack(metrics), is(2L));
+    }
+
+    @Test public void publishingUnrouted() {
+        AbstractMetricsCollector metrics = factory.create();
+        Channel channel = mock(Channel.class);
+        // begins with no messages not-acknowledged
+        assertThat(publishUnrouted(metrics), is(0L));
+        // first unrouted gets tracked
+        metrics.basicPublishUnrouted(channel);
+        assertThat(publishUnrouted(metrics), is(1L));
+        // second unrouted gets tracked
+        metrics.basicPublishUnrouted(channel);
+        assertThat(publishUnrouted(metrics), is(2L));
+        // cleaning stale state doesn't affect the metric
+        metrics.cleanStaleState();
+        assertThat(publishUnrouted(metrics), is(2L));
+    }
+
     @Test public void cleanStaleState() {
         AbstractMetricsCollector metrics = factory.create();
         Connection openConnection = mock(Connection.class);
@@ -187,6 +243,31 @@ public class MetricsCollectorTest {
 
         assertThat(connections(metrics), is(1L));
         assertThat(channels(metrics), is(1L));
+    }
+
+
+    long publishAck(MetricsCollector metrics) {
+        if (metrics instanceof StandardMetricsCollector) {
+            return ((StandardMetricsCollector) metrics).getPublishAcknowledgedMessages().getCount();
+        } else {
+            return (long) ((MicrometerMetricsCollector) metrics).getAckedPublishedMessages().count();
+        }
+    }
+
+    long publishNack(MetricsCollector metrics) {
+        if (metrics instanceof StandardMetricsCollector) {
+            return ((StandardMetricsCollector) metrics).getPublishNotAcknowledgedMessages().getCount();
+        } else {
+            return (long) ((MicrometerMetricsCollector) metrics).getNackedPublishedMessages().count();
+        }
+    }
+
+    long publishUnrouted(MetricsCollector metrics) {
+        if (metrics instanceof StandardMetricsCollector) {
+            return ((StandardMetricsCollector) metrics).getPublishUnroutedMessages().getCount();
+        } else {
+            return (long) ((MicrometerMetricsCollector) metrics).getUnroutedPublishedMessages().count();
+        }
     }
 
     long publishedMessages(MetricsCollector metrics) {
