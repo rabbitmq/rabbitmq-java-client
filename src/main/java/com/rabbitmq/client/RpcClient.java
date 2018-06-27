@@ -192,10 +192,10 @@ public class RpcClient {
                     String replyId = properties.getCorrelationId();
                     BlockingCell<Object> blocker =_continuationMap.remove(replyId);
                     if (blocker != null) {
-	                    blocker.set(new Response(consumerTag, envelope, properties, body));
+                        blocker.set(new Response(consumerTag, envelope, properties, body));
                     } else {
-						// Not an error. Entry will have been removed if request timed out.
-					}
+                        // Not an error. Entry will have been removed if request timed out.
+                    }
                 }
             }
         };
@@ -218,7 +218,7 @@ public class RpcClient {
         throws IOException, ShutdownSignalException, TimeoutException {
         checkConsumer();
         BlockingCell<Object> k = new BlockingCell<Object>();
-		String replyId;
+        String replyId;
         synchronized (_continuationMap) {
             _correlationId++;
             replyId = "" + _correlationId;
@@ -227,14 +227,14 @@ public class RpcClient {
             _continuationMap.put(replyId, k);
         }
         publish(props, message);
-		Object reply;
+        Object reply;
         try {
-			reply = k.uninterruptibleGet(timeout);
-		} catch (TimeoutException ex) {
-			// Avoid potential leak.  This entry is no longer needed by caller.
-			_continuationMap.remove(replyId);
-			throw ex;
-		}
+            reply = k.uninterruptibleGet(timeout);
+        } catch (TimeoutException ex) {
+            // Avoid potential leak.  This entry is no longer needed by caller.
+            _continuationMap.remove(replyId);
+            throw ex;
+        }
         if (reply instanceof ShutdownSignalException) {
             ShutdownSignalException sig = (ShutdownSignalException) reply;
             ShutdownSignalException wrapper =
