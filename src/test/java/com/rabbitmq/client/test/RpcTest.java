@@ -24,6 +24,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -69,6 +70,17 @@ public class RpcTest {
         assertEquals("*** hello ***", new String(response.getBody()));
         assertEquals("pre-hello", response.getProperties().getHeaders().get("pre").toString());
         assertEquals("post-hello", response.getProperties().getHeaders().get("post").toString());
+        client.close();
+    }
+
+    @Test public void rpcResponseTimeout() throws Exception {
+        RpcClient client = new RpcClient(clientChannel, "", queue);
+        try {
+            client.doCall(null, "hello".getBytes(), 200);
+        } catch (TimeoutException e) {
+            // OK
+        }
+        assertEquals(0, client.getContinuationMap().size());
         client.close();
     }
 
