@@ -191,10 +191,11 @@ public class RpcClient {
                 synchronized (_continuationMap) {
                     String replyId = properties.getCorrelationId();
                     BlockingCell<Object> blocker =_continuationMap.remove(replyId);
-                    if (blocker == null) {
-                        throw new IllegalStateException("No outstanding request for correlation ID " + replyId);
+                    if (blocker != null) {
+                        blocker.set(new Response(consumerTag, envelope, properties, body));
+                    } else {
+                        // Not an error. Entry will have been removed if request timed out.
                     }
-                    blocker.set(new Response(consumerTag, envelope, properties, body));
                 }
             }
         };
@@ -217,15 +218,23 @@ public class RpcClient {
         throws IOException, ShutdownSignalException, TimeoutException {
         checkConsumer();
         BlockingCell<Object> k = new BlockingCell<Object>();
+        String replyId;
         synchronized (_continuationMap) {
             _correlationId++;
-            String replyId = "" + _correlationId;
+            replyId = "" + _correlationId;
             props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
                 .correlationId(replyId).replyTo(_replyTo).build();
             _continuationMap.put(replyId, k);
         }
         publish(props, message);
-        Object reply = k.uninterruptibleGet(timeout);
+        Object reply;
+        try {
+            reply = k.uninterruptibleGet(timeout);
+        } catch (TimeoutException ex) {
+            // Avoid potential leak.  This entry is no longer needed by caller.
+            _continuationMap.remove(replyId);
+            throw ex;
+        }
         if (reply instanceof ShutdownSignalException) {
             ShutdownSignalException sig = (ShutdownSignalException) reply;
             ShutdownSignalException wrapper =
