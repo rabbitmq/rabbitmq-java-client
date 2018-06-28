@@ -33,6 +33,8 @@ import com.rabbitmq.client.impl.MethodArgumentWriter;
 import com.rabbitmq.client.impl.ValueReader;
 import com.rabbitmq.client.impl.ValueWriter;
 import com.rabbitmq.utility.BlockingCell;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Convenience class which manages simple RPC-style communication.
@@ -41,6 +43,9 @@ import com.rabbitmq.utility.BlockingCell;
  * and waiting for a response.
 */
 public class RpcClient {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RpcClient.class);
+
     /** Channel we are communicating on */
     private final Channel _channel;
     /** Exchange to send requests to */
@@ -191,10 +196,12 @@ public class RpcClient {
                 synchronized (_continuationMap) {
                     String replyId = properties.getCorrelationId();
                     BlockingCell<Object> blocker =_continuationMap.remove(replyId);
-                    if (blocker != null) {
-                        blocker.set(new Response(consumerTag, envelope, properties, body));
+                    if (blocker == null) {
+                        // Entry should have been removed if request timed out,
+                        // log a warning nevertheless.
+                        LOGGER.warn("No outstanding request for correlation ID {}", replyId);
                     } else {
-                        // Not an error. Entry will have been removed if request timed out.
+                        blocker.set(new Response(consumerTag, envelope, properties, body));
                     }
                 }
             }
