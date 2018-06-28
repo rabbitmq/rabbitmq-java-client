@@ -33,6 +33,8 @@ import com.rabbitmq.client.impl.MethodArgumentWriter;
 import com.rabbitmq.client.impl.ValueReader;
 import com.rabbitmq.client.impl.ValueWriter;
 import com.rabbitmq.utility.BlockingCell;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Convenience class which manages simple RPC-style communication.
@@ -41,6 +43,9 @@ import com.rabbitmq.utility.BlockingCell;
  * and waiting for a response.
 */
 public class RpcClient {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RpcClient.class);
+
     /** Channel we are communicating on */
     private final Channel _channel;
     /** Exchange to send requests to */
@@ -192,9 +197,12 @@ public class RpcClient {
                     String replyId = properties.getCorrelationId();
                     BlockingCell<Object> blocker =_continuationMap.remove(replyId);
                     if (blocker == null) {
-                        throw new IllegalStateException("No outstanding request for correlation ID " + replyId);
+                        // Entry should have been removed if request timed out,
+                        // log a warning nevertheless.
+                        LOGGER.warn("No outstanding request for correlation ID {}", replyId);
+                    } else {
+                        blocker.set(new Response(consumerTag, envelope, properties, body));
                     }
-                    blocker.set(new Response(consumerTag, envelope, properties, body));
                 }
             }
         };
@@ -217,15 +225,23 @@ public class RpcClient {
         throws IOException, ShutdownSignalException, TimeoutException {
         checkConsumer();
         BlockingCell<Object> k = new BlockingCell<Object>();
+        String replyId;
         synchronized (_continuationMap) {
             _correlationId++;
-            String replyId = "" + _correlationId;
+            replyId = "" + _correlationId;
             props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
                 .correlationId(replyId).replyTo(_replyTo).build();
             _continuationMap.put(replyId, k);
         }
         publish(props, message);
-        Object reply = k.uninterruptibleGet(timeout);
+        Object reply;
+        try {
+            reply = k.uninterruptibleGet(timeout);
+        } catch (TimeoutException ex) {
+            // Avoid potential leak.  This entry is no longer needed by caller.
+            _continuationMap.remove(replyId);
+            throw ex;
+        }
         if (reply instanceof ShutdownSignalException) {
             ShutdownSignalException sig = (ShutdownSignalException) reply;
             ShutdownSignalException wrapper =
