@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 
 /**
  * Connection implementation that performs automatic recovery when
@@ -60,6 +61,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * @since 3.3.0
  */
 public class AutorecoveringConnection implements RecoverableConnection, NetworkConnection {
+
+    public static final Predicate<ShutdownSignalException> DEFAULT_CONNECTION_RECOVERY_TRIGGERING_CONDITION =
+        cause -> !cause.isInitiatedByApplication() || (cause.getCause() instanceof MissedHeartbeatException);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AutorecoveringConnection.class);
 
@@ -87,6 +91,8 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 	// be created after application code has initiated shutdown.  
 	private final Object recoveryLock = new Object();
 
+	private final Predicate<ShutdownSignalException> connectionRecoveryTriggeringCondition;
+
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, List<Address> addrs) {
         this(params, f, new ListAddressResolver(addrs));
     }
@@ -99,9 +105,14 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addressResolver, metricsCollector);
         this.params = params;
 
+        this.connectionRecoveryTriggeringCondition = params.getConnectionRecoveryTriggeringCondition() == null ?
+            DEFAULT_CONNECTION_RECOVERY_TRIGGERING_CONDITION : params.getConnectionRecoveryTriggeringCondition();
+
+        System.out.println(this.connectionRecoveryTriggeringCondition);
+
         setupErrorOnWriteListenerForPotentialRecovery();
 
-        this.channels = new ConcurrentHashMap<Integer, AutorecoveringChannel>();
+        this.channels = new ConcurrentHashMap<>();
     }
 
     private void setupErrorOnWriteListenerForPotentialRecovery() {
@@ -484,16 +495,13 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         final AutorecoveringConnection c = this;
         // this listener will run after shutdown listeners,
         // see https://github.com/rabbitmq/rabbitmq-java-client/issues/135
-        RecoveryCanBeginListener starter = new RecoveryCanBeginListener() {
-            @Override
-            public void recoveryCanBegin(ShutdownSignalException cause) {
-                try {
-                    if (shouldTriggerConnectionRecovery(cause)) {
-                        c.beginAutomaticRecovery();
-                    }
-                } catch (Exception e) {
-                    newConn.getExceptionHandler().handleConnectionRecoveryException(c, e);
+        RecoveryCanBeginListener starter = cause -> {
+            try {
+                if (shouldTriggerConnectionRecovery(cause)) {
+                    c.beginAutomaticRecovery();
                 }
+            } catch (Exception e) {
+                newConn.getExceptionHandler().handleConnectionRecoveryException(c, e);
             }
         };
         synchronized (this) {
@@ -502,7 +510,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     protected boolean shouldTriggerConnectionRecovery(ShutdownSignalException cause) {
-        return !cause.isInitiatedByApplication() || (cause.getCause() instanceof MissedHeartbeatException);
+        return connectionRecoveryTriggeringCondition.test(cause);
     }
 
     /**

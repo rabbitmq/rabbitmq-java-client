@@ -46,6 +46,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -176,6 +177,12 @@ public class ConnectionFactory implements Cloneable {
      * @since 4.5.0
      */
     private int workPoolTimeout = DEFAULT_WORK_POOL_TIMEOUT;
+
+    /**
+     * Condition to trigger automatic connection recovery.
+     * @since 5.4.0
+     */
+    private Predicate<ShutdownSignalException> connectionRecoveryTriggeringCondition;
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -1070,6 +1077,7 @@ public class ConnectionFactory implements Cloneable {
         result.setChannelShouldCheckRpcResponseType(channelShouldCheckRpcResponseType);
         result.setWorkPoolTimeout(workPoolTimeout);
         result.setErrorOnWriteListener(errorOnWriteListener);
+        result.setConnectionRecoveryTriggeringCondition(connectionRecoveryTriggeringCondition);
         return result;
     }
 
@@ -1419,4 +1427,14 @@ public class ConnectionFactory implements Cloneable {
     public void setErrorOnWriteListener(ErrorOnWriteListener errorOnWriteListener) {
         this.errorOnWriteListener = errorOnWriteListener;
     }
+
+    /**
+     * Allows to decide on automatic connection recovery is triggered.
+     * Default is for shutdown not initiated by application or missed heartbeat errors.
+     * @param connectionRecoveryTriggeringCondition
+     */
+    public void setConnectionRecoveryTriggeringCondition(Predicate<ShutdownSignalException> connectionRecoveryTriggeringCondition) {
+        this.connectionRecoveryTriggeringCondition = connectionRecoveryTriggeringCondition;
+    }
+
 }
