@@ -16,6 +16,7 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.JsonRpcTest;
 import com.rabbitmq.utility.IntAllocatorTests;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -55,7 +56,8 @@ import org.junit.runners.Suite;
     PropertyFileInitialisationTest.class,
     ClientVersionTest.class,
     StrictExceptionHandlerTest.class,
-    NoAutoRecoveryWhenTcpWindowIsFullTest.class
+    NoAutoRecoveryWhenTcpWindowIsFullTest.class,
+    JsonRpcTest.class
 })
 public class ClientTests {
 
