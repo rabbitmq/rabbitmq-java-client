@@ -18,6 +18,8 @@ package com.rabbitmq.tools.jsonrpc;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,8 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.StringRpcServer;
 import com.rabbitmq.tools.json.JSONReader;
 import com.rabbitmq.tools.json.JSONWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * JSON-RPC Server class.
@@ -41,6 +45,9 @@ import com.rabbitmq.tools.json.JSONWriter;
  * @see JsonRpcClient
  */
 public class JsonRpcServer extends StringRpcServer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcServer.class);
+
     /** Holds the JSON-RPC service description for this client. */
     public ServiceDescription serviceDescription;
     /** The interface this server implements. */
@@ -114,38 +121,62 @@ public class JsonRpcServer extends StringRpcServer {
         Object id;
         String method;
         Object[] params;
+        String response;
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Request: {}", requestBody);
+        }
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> request = (Map<String,Object>) new JSONReader().read(requestBody);
             if (request == null) {
-                return errorResponse(null, 400, "Bad Request", null);
+                response = errorResponse(null, 400, "Bad Request", null);
+            } else if (!ServiceDescription.JSON_RPC_VERSION.equals(request.get("version"))) {
+                response = errorResponse(null, 505, "JSONRPC version not supported", null);
+            } else {
+                id = request.get("id");
+                method = (String) request.get("method");
+                List<?> parmList = (List<?>) request.get("params");
+                params = parmList.toArray();
+                if (method.equals("system.describe")) {
+                    response = resultResponse(id, serviceDescription);
+                } else if (method.startsWith("system.")) {
+                    response = errorResponse(id, 403, "System methods forbidden", null);
+                } else {
+                    Object result;
+                    try {
+                        Method matchingMethod = matchingMethod(method, params);
+                        if (LOGGER.isDebugEnabled()) {
+                            Collection<String> parametersValuesAndTypes = new ArrayList<String>();
+                            if (params != null) {
+                                for (Object param : params) {
+                                    parametersValuesAndTypes.add(
+                                        String.format("%s (%s)", param, param == null ? "?" : param.getClass())
+                                    );
+                                }
+                            }
+                            LOGGER.debug("About to invoke {} method with parameters {}", matchingMethod, parametersValuesAndTypes);
+                        }
+                        result = matchingMethod.invoke(interfaceInstance, params);
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Invocation returned {} ({})", result, result == null ? "?" : result.getClass());
+                        }
+                        response = resultResponse(id, result);
+                    } catch (Throwable t) {
+                        LOGGER.info("Error while processing JSON RPC request", t);
+                        response = errorResponse(id, 500, "Internal Server Error", t);
+                    }
+                }
             }
-            if (!ServiceDescription.JSON_RPC_VERSION.equals(request.get("version"))) {
-                return errorResponse(null, 505, "JSONRPC version not supported", null);
-            }
-
-            id = request.get("id");
-            method = (String) request.get("method");
-            List<?> parmList = (List<?>) request.get("params");
-            params = parmList.toArray();
         } catch (ClassCastException cce) {
             // Bogus request!
-            return errorResponse(null, 400, "Bad Request", null);
+            response =  errorResponse(null, 400, "Bad Request", null);
         }
 
-        if (method.equals("system.describe")) {
-            return resultResponse(id, serviceDescription);
-        } else if (method.startsWith("system.")) {
-            return errorResponse(id, 403, "System methods forbidden", null);
-        } else {
-            Object result;
-            try {
-                result = matchingMethod(method, params).invoke(interfaceInstance, params);
-            } catch (Throwable t) {
-                return errorResponse(id, 500, "Internal Server Error", t);
-            }
-            return resultResponse(id, result);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Response: {}", response);
         }
+
+        return response;
     }
 
     /**

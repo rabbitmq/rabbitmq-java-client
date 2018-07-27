@@ -28,6 +28,8 @@ import com.rabbitmq.client.RpcClient;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.tools.json.JSONReader;
 import com.rabbitmq.tools.json.JSONWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
 	  <a href="http://json-rpc.org">JSON-RPC</a> is a lightweight
@@ -54,6 +56,9 @@ import com.rabbitmq.tools.json.JSONWriter;
 	  @see #call(String[])
  */
 public class JsonRpcClient extends RpcClient implements InvocationHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcClient.class);
+
     /** Holds the JSON-RPC service description for this client. */
     private ServiceDescription serviceDescription;
 
@@ -92,7 +97,6 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
         }
 
         Object result = reply.get("result");
-        //System.out.println(new JSONWriter().write(result));
         return result;
     }
 
@@ -113,8 +117,12 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
         String requestStr = new JSONWriter().write(request);
         try {
             String replyStr = this.stringCall(requestStr);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Reply string: {}", replyStr);
+            }
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) (new JSONReader().read(replyStr));
+
             return checkReply(map);
         } catch(ShutdownSignalException ex) {
             throw new IOException(ex.getMessage()); // wrap, re-throw
@@ -137,10 +145,11 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     /**
      * Public API - gets a dynamic proxy for a particular interface class.
      */
-    public Object createProxy(Class<?> klass)
+    @SuppressWarnings("unchecked")
+    public <T> T createProxy(Class<T> klass)
         throws IllegalArgumentException
     {
-        return Proxy.newProxyInstance(klass.getClassLoader(),
+        return (T) Proxy.newProxyInstance(klass.getClassLoader(),
                                       new Class[] { klass },
                                       this);
     }
@@ -161,8 +170,8 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
 		return Double.valueOf(val);
 	    }
 	} else if ("str".equals(type)) {
-	    return val;
-	} else if ("arr".equals(type) || "obj".equals(type) || "any".equals(type)) {
+        return val;
+    } else if ("arr".equals(type) || "obj".equals(type) || "any".equals(type)) {
 	    return new JSONReader().read(val);
 	} else if ("nil".equals(type)) {
 	    return null;
