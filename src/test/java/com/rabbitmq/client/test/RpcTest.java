@@ -17,16 +17,21 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.NetworkConnection;
+import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
+import com.rabbitmq.tools.Host;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class RpcTest {
 
@@ -34,7 +39,6 @@ public class RpcTest {
     Channel clientChannel, serverChannel;
     String queue = "rpc.queue";
     RpcServer rpcServer;
-
 
     @Before public void init() throws Exception {
         clientConnection = TestUtils.connectionFactory().newConnection();
@@ -75,6 +79,54 @@ public class RpcTest {
         assertEquals("pre-hello", response.getProperties().getHeaders().get("pre").toString());
         assertEquals("post-hello", response.getProperties().getHeaders().get("post").toString());
         client.close();
+    }
+
+    @Test public void brokenAfterBrokerRestart() throws Exception {
+        // see https://github.com/rabbitmq/rabbitmq-java-client/issues/382
+        rpcServer = new TestRpcServer(serverChannel, queue);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    rpcServer.mainloop();
+                } catch (Exception e) {
+                    // safe to ignore when loops ends/server is canceled
+                }
+            }
+        }).start();
+
+        ConnectionFactory cf = TestUtils.connectionFactory();
+        cf.setTopologyRecoveryEnabled(false);
+        cf.setNetworkRecoveryInterval(2000);
+        Connection connection = null;
+        try {
+            connection = cf.newConnection();
+            Channel channel = connection.createChannel();
+            RpcClient client = new RpcClient(channel, "", queue, 1000);
+            RpcClient.Response response = client.doCall(null, "hello".getBytes());
+            assertEquals("*** hello ***", new String(response.getBody()));
+            final CountDownLatch recoveryLatch = new CountDownLatch(1);
+            ((AutorecoveringConnection) connection).addRecoveryListener(new RecoveryListener() {
+                @Override
+                public void handleRecovery(Recoverable recoverable) {
+                    recoveryLatch.countDown();
+                }
+                @Override
+                public void handleRecoveryStarted(Recoverable recoverable) {
+
+                }
+            });
+            Host.closeConnection((NetworkConnection) connection);
+            assertTrue("Connection should have recovered by now", recoveryLatch.await(10, TimeUnit.SECONDS));
+            client = new RpcClient(channel, "", queue, 1000);
+            response = client.doCall(null, "hello".getBytes());
+            assertEquals("*** hello ***", new String(response.getBody()));
+        } finally {
+            if (connection != null) {
+                connection.close();
+            }
+        }
+
     }
 
     private static class TestRpcServer extends RpcServer {
