@@ -19,6 +19,7 @@ import com.rabbitmq.client.ExceptionHandler;
 import com.rabbitmq.client.RecoveryDelayHandler;
 import com.rabbitmq.client.RecoveryDelayHandler.DefaultRecoveryDelayHandler;
 import com.rabbitmq.client.SaslConfig;
+import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -46,6 +47,7 @@ public class ConnectionParams {
     private boolean channelShouldCheckRpcResponseType;
     private ErrorOnWriteListener errorOnWriteListener;
     private int workPoolTimeout = -1;
+    private TopologyRecoveryFilter topologyRecoveryFilter;
 
     private ExceptionHandler exceptionHandler;
     private ThreadFactory threadFactory;
@@ -234,5 +236,13 @@ public class ConnectionParams {
 
     public int getWorkPoolTimeout() {
         return workPoolTimeout;
+    }
+
+    public void setTopologyRecoveryFilter(TopologyRecoveryFilter topologyRecoveryFilter) {
+        this.topologyRecoveryFilter = topologyRecoveryFilter;
+    }
+
+    public TopologyRecoveryFilter getTopologyRecoveryFilter() {
+        return topologyRecoveryFilter;
     }
 }

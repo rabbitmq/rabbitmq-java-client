@@ -59,6 +59,10 @@ public abstract class RecordedBinding extends RecordedEntity {
         return destination;
     }
 
+    public String getRoutingKey() {
+        return routingKey;
+    }
+
     public Map<String, Object> getArguments() {
         return arguments;
     }

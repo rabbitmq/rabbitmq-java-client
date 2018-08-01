@@ -300,8 +300,24 @@ public class BrokerTestCase {
         channel.exchangeDelete(x);
     }
 
+    protected void deleteExchanges(String [] exchanges) throws IOException {
+        if (exchanges != null) {
+            for (String exchange : exchanges) {
+                deleteExchange(exchange);
+            }
+        }
+    }
+
     protected void deleteQueue(String q) throws IOException {
         channel.queueDelete(q);
+    }
+
+    protected void deleteQueues(String [] queues) throws IOException {
+        if (queues != null) {
+            for (String queue : queues) {
+                deleteQueue(queue);
+            }
+        }
     }
 
     protected void clearAllResourceAlarms() throws IOException, InterruptedException {
