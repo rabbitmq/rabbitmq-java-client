@@ -54,11 +54,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class TopologyRecoveryFiltering extends BrokerTestCase {
 
-    static {
-        System.setProperty("rabbitmqctl.bin", "/home/acogoluegnes/Downloads/rabbitmq_server-3.7.7/sbin/rabbitmqctl");
-        System.setProperty("test-broker.A.nodename", "rabbit@acogoluegnes-xps");
-    }
-
     String[] exchangesToDelete = new String[] {
         "recovered.exchange", "filtered.exchange", "topology.recovery.exchange"
     };
