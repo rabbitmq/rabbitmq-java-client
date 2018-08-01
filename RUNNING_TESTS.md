@@ -41,7 +41,7 @@ For details on running specific tests, see below.
 
 ## Running a Specific Test Suite
 
-To run a specific test suite you should execute one of the following in the
+To run a specific test suite, execute one of the following in the
 top-level directory of the source tree:
 
 * To run the client unit tests:
@@ -59,7 +59,14 @@ top-level directory of the source tree:
 * To run a single test:
 
 ```
-./mvnw -Ddeps.dir=$(pwd)/deps/deps verify -Dit.test=DeadLetterExchange
+./mvnw -Ddeps.dir=$(pwd)/deps verify -Dit.test=DeadLetterExchange
+```
+
+When running from the repository cloned as part of the [RabbitMQ public umbrella](https://github.com/rabbitmq/rabbitmq-public-umbrella),
+the `deps.dir` property path may have to change, e.g.
+
+```
+./mvnw -Ddeps.dir=$(pwd)/.. verify -Dit.test=ConnectionRecovery
 ```
 
 For example, to run the client tests:
