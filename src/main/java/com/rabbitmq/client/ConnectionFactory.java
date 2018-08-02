@@ -29,6 +29,8 @@ import com.rabbitmq.client.impl.SocketFrameHandlerFactory;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.nio.SocketChannelFrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
+import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -177,6 +179,12 @@ public class ConnectionFactory implements Cloneable {
      * @since 4.5.0
      */
     private int workPoolTimeout = DEFAULT_WORK_POOL_TIMEOUT;
+
+    /**
+     * Filter to include/exclude entities from topology recovery.
+     * @since 4.8.0
+     */
+    private TopologyRecoveryFilter topologyRecoveryFilter;
 
     /**
      * Condition to trigger automatic connection recovery.
@@ -1077,6 +1085,7 @@ public class ConnectionFactory implements Cloneable {
         result.setChannelShouldCheckRpcResponseType(channelShouldCheckRpcResponseType);
         result.setWorkPoolTimeout(workPoolTimeout);
         result.setErrorOnWriteListener(errorOnWriteListener);
+        result.setTopologyRecoveryFilter(topologyRecoveryFilter);
         result.setConnectionRecoveryTriggeringCondition(connectionRecoveryTriggeringCondition);
         return result;
     }
@@ -1426,6 +1435,14 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setErrorOnWriteListener(ErrorOnWriteListener errorOnWriteListener) {
         this.errorOnWriteListener = errorOnWriteListener;
+    }
+
+    /**
+     * Set filter to include/exclude entities from topology recovery.
+     * @since 4.8.0
+     */
+    public void setTopologyRecoveryFilter(TopologyRecoveryFilter topologyRecoveryFilter) {
+        this.topologyRecoveryFilter = topologyRecoveryFilter;
     }
 
     /**
