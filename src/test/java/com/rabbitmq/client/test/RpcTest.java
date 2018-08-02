@@ -13,10 +13,26 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Delivery;
+import com.rabbitmq.client.Recoverable;
+import com.rabbitmq.client.RecoveryListener;
+import com.rabbitmq.client.RpcClient;
+import com.rabbitmq.client.RpcServer;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.NetworkConnection;
+import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
+import com.rabbitmq.client.impl.recovery.RecordedBinding;
+import com.rabbitmq.client.impl.recovery.RecordedConsumer;
+import com.rabbitmq.client.impl.recovery.RecordedExchange;
+import com.rabbitmq.client.impl.recovery.RecordedQueue;
+import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
+import com.rabbitmq.tools.Host;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,9 +40,13 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class RpcTest {
 
@@ -35,8 +55,8 @@ public class RpcTest {
     String queue = "rpc.queue";
     RpcServer rpcServer;
 
-
-    @Before public void init() throws Exception {
+    @Before
+    public void init() throws Exception {
         clientConnection = TestUtils.connectionFactory().newConnection();
         clientChannel = clientConnection.createChannel();
         serverConnection = TestUtils.connectionFactory().newConnection();
@@ -44,11 +64,12 @@ public class RpcTest {
         serverChannel.queueDeclare(queue, false, false, false, null);
     }
 
-    @After public void tearDown() throws Exception {
-        if(rpcServer != null) {
+    @After
+    public void tearDown() throws Exception {
+        if (rpcServer != null) {
             rpcServer.terminateMainloop();
         }
-        if(serverChannel != null) {
+        if (serverChannel != null) {
             serverChannel.queueDelete(queue);
         }
         TestUtils.close(clientConnection);
@@ -73,7 +94,8 @@ public class RpcTest {
         client.close();
     }
 
-    @Test public void rpcResponseTimeout() throws Exception {
+    @Test
+    public void rpcResponseTimeout() throws Exception {
         RpcClient client = new RpcClient(clientChannel, "", queue);
         try {
             client.doCall(null, "hello".getBytes(), 200);
@@ -84,6 +106,105 @@ public class RpcTest {
         client.close();
     }
 
+    @Test
+    public void givenConsumerNotRecoveredCanCreateNewClientOnSameChannelAfterConnectionFailure() throws Exception {
+        // see https://github.com/rabbitmq/rabbitmq-java-client/issues/382
+        rpcServer = new TestRpcServer(serverChannel, queue);
+        new Thread(() -> {
+            try {
+                rpcServer.mainloop();
+            } catch (Exception e) {
+                // safe to ignore when loops ends/server is canceled
+            }
+        }).start();
+
+        ConnectionFactory cf = TestUtils.connectionFactory();
+        cf.setTopologyRecoveryFilter(new NoDirectReplyToConsumerTopologyRecoveryFilter());
+        cf.setNetworkRecoveryInterval(1000);
+        Connection connection = null;
+        try {
+            connection = cf.newConnection();
+            Channel channel = connection.createChannel();
+            RpcClient client = new RpcClient(channel, "", queue, 1000);
+            RpcClient.Response response = client.doCall(null, "hello".getBytes());
+            assertEquals("*** hello ***", new String(response.getBody()));
+            final CountDownLatch recoveryLatch = new CountDownLatch(1);
+            ((AutorecoveringConnection) connection).addRecoveryListener(new RecoveryListener() {
+
+                @Override
+                public void handleRecovery(Recoverable recoverable) {
+                    recoveryLatch.countDown();
+                }
+
+                @Override
+                public void handleRecoveryStarted(Recoverable recoverable) {
+
+                }
+            });
+            Host.closeConnection((NetworkConnection) connection);
+            assertTrue("Connection should have recovered by now", recoveryLatch.await(10, TimeUnit.SECONDS));
+            client = new RpcClient(channel, "", queue, 1000);
+            response = client.doCall(null, "hello".getBytes());
+            assertEquals("*** hello ***", new String(response.getBody()));
+        } finally {
+            if (connection != null) {
+                connection.close();
+            }
+        }
+    }
+
+    @Test
+    public void givenConsumerIsRecoveredCanNotCreateNewClientOnSameChannelAfterConnectionFailure() throws Exception {
+        // see https://github.com/rabbitmq/rabbitmq-java-client/issues/382
+        rpcServer = new TestRpcServer(serverChannel, queue);
+        new Thread(() -> {
+            try {
+                rpcServer.mainloop();
+            } catch (Exception e) {
+                // safe to ignore when loops ends/server is canceled
+            }
+        }).start();
+
+        ConnectionFactory cf = TestUtils.connectionFactory();
+        cf.setNetworkRecoveryInterval(1000);
+        Connection connection = null;
+        try {
+            connection = cf.newConnection();
+            Channel channel = connection.createChannel();
+            RpcClient client = new RpcClient(channel, "", queue, 1000);
+            RpcClient.Response response = client.doCall(null, "hello".getBytes());
+            assertEquals("*** hello ***", new String(response.getBody()));
+            final CountDownLatch recoveryLatch = new CountDownLatch(1);
+            ((AutorecoveringConnection) connection).addRecoveryListener(new RecoveryListener() {
+
+                @Override
+                public void handleRecovery(Recoverable recoverable) {
+                    recoveryLatch.countDown();
+                }
+
+                @Override
+                public void handleRecoveryStarted(Recoverable recoverable) {
+
+                }
+            });
+            Host.closeConnection((NetworkConnection) connection);
+            assertTrue("Connection should have recovered by now", recoveryLatch.await(10, TimeUnit.SECONDS));
+            try {
+                new RpcClient(channel, "", queue, 1000);
+                fail("Cannot create RPC client on same channel, an exception should have been thrown");
+            } catch (IOException e) {
+                assertTrue(e.getCause() instanceof ShutdownSignalException);
+                ShutdownSignalException cause = (ShutdownSignalException) e.getCause();
+                assertTrue(cause.getReason() instanceof AMQP.Channel.Close);
+                assertEquals(406, ((AMQP.Channel.Close) cause.getReason()).getReplyCode());
+            }
+        } finally {
+            if (connection != null) {
+                connection.close();
+            }
+        }
+    }
+
     private static class TestRpcServer extends RpcServer {
 
         public TestRpcServer(Channel channel, String queueName) throws IOException {
@@ -92,7 +213,7 @@ public class RpcTest {
 
         @Override
         protected AMQP.BasicProperties preprocessReplyProperties(Delivery request, AMQP.BasicProperties.Builder builder) {
-            Map<String, Object> headers = new HashMap<String, Object>();
+            Map<String, Object> headers = new HashMap<>();
             headers.put("pre", "pre-" + new String(request.getBody()));
             builder.headers(headers);
             return builder.build();
@@ -113,4 +234,26 @@ public class RpcTest {
         }
     }
 
+    private static class NoDirectReplyToConsumerTopologyRecoveryFilter implements TopologyRecoveryFilter {
+
+        @Override
+        public boolean filterExchange(RecordedExchange recordedExchange) {
+            return true;
+        }
+
+        @Override
+        public boolean filterQueue(RecordedQueue recordedQueue) {
+            return true;
+        }
+
+        @Override
+        public boolean filterBinding(RecordedBinding recordedBinding) {
+            return true;
+        }
+
+        @Override
+        public boolean filterConsumer(RecordedConsumer recordedConsumer) {
+            return !"amq.rabbitmq.reply-to".equals(recordedConsumer.getQueue());
+        }
+    }
 }

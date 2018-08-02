@@ -83,6 +83,8 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     private final Map<String, RecordedConsumer> consumers = Collections.synchronizedMap(new LinkedHashMap<String, RecordedConsumer>());
     private final List<ConsumerRecoveryListener> consumerRecoveryListeners = Collections.synchronizedList(new ArrayList<ConsumerRecoveryListener>());
     private final List<QueueRecoveryListener> queueRecoveryListeners = Collections.synchronizedList(new ArrayList<QueueRecoveryListener>());
+
+    private final TopologyRecoveryFilter topologyRecoveryFilter;
 	
 	// Used to block connection recovery attempts after close() is invoked.
 	private volatile boolean manuallyClosed = false;
@@ -108,11 +110,11 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         this.connectionRecoveryTriggeringCondition = params.getConnectionRecoveryTriggeringCondition() == null ?
             DEFAULT_CONNECTION_RECOVERY_TRIGGERING_CONDITION : params.getConnectionRecoveryTriggeringCondition();
 
-        System.out.println(this.connectionRecoveryTriggeringCondition);
-
         setupErrorOnWriteListenerForPotentialRecovery();
 
         this.channels = new ConcurrentHashMap<>();
+        this.topologyRecoveryFilter = params.getTopologyRecoveryFilter() == null ?
+            letAllPassFilter() : params.getTopologyRecoveryFilter();
     }
 
     private void setupErrorOnWriteListenerForPotentialRecovery() {
@@ -138,6 +140,31 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             }
             throw exception;
         });
+    }
+
+    private TopologyRecoveryFilter letAllPassFilter() {
+        return new TopologyRecoveryFilter() {
+
+            @Override
+            public boolean filterExchange(RecordedExchange recordedExchange) {
+                return true;
+            }
+
+            @Override
+            public boolean filterQueue(RecordedQueue recordedQueue) {
+                return true;
+            }
+
+            @Override
+            public boolean filterBinding(RecordedBinding recordedBinding) {
+                return true;
+            }
+
+            @Override
+            public boolean filterConsumer(RecordedConsumer recordedConsumer) {
+                return true;
+            }
+        };
     }
 
     /**
@@ -677,8 +704,10 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     private void recoverExchange(final RecordedExchange x) {
         // recorded exchanges are guaranteed to be non-predefined (we filter out predefined ones in exchangeDeclare). MK.
         try {
-            x.recover();
-            LOGGER.debug("{} has recovered", x);
+            if (topologyRecoveryFilter.filterExchange(x)) {
+                x.recover();
+                LOGGER.debug("{} has recovered", x);
+            }
         } catch (Exception cause) {
             final String message = "Caught an exception while recovering exchange " + x.getName() +
                     ": " + cause.getMessage();
@@ -688,30 +717,33 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     private void recoverQueue(final String oldName, final RecordedQueue q) {
-        LOGGER.debug("Recovering {}", q);
+
         try {
-            q.recover();
-            String newName = q.getName();
-            if (!oldName.equals(newName)) {
-                // make sure server-named queues are re-added with
-                // their new names. MK.
-                synchronized (this.recordedQueues) {
-                    this.propagateQueueNameChangeToBindings(oldName, newName);
-                    this.propagateQueueNameChangeToConsumers(oldName, newName);
-                    // bug26552:
-                    // remove old name after we've updated the bindings and consumers,
-                    // plus only for server-named queues, both to make sure we don't lose
-                    // anything to recover. MK.
-                    if(q.isServerNamed()) {
-                        deleteRecordedQueue(oldName);
+            if (topologyRecoveryFilter.filterQueue(q)) {
+                LOGGER.debug("Recovering {}", q);
+                q.recover();
+                String newName = q.getName();
+                if (!oldName.equals(newName)) {
+                    // make sure server-named queues are re-added with
+                    // their new names. MK.
+                    synchronized (this.recordedQueues) {
+                        this.propagateQueueNameChangeToBindings(oldName, newName);
+                        this.propagateQueueNameChangeToConsumers(oldName, newName);
+                        // bug26552:
+                        // remove old name after we've updated the bindings and consumers,
+                        // plus only for server-named queues, both to make sure we don't lose
+                        // anything to recover. MK.
+                        if(q.isServerNamed()) {
+                            deleteRecordedQueue(oldName);
+                        }
+                        this.recordedQueues.put(newName, q);
                     }
-                    this.recordedQueues.put(newName, q);
                 }
+                for (QueueRecoveryListener qrl : Utility.copy(this.queueRecoveryListeners)) {
+                    qrl.queueRecovered(oldName, newName);
+                }
+                LOGGER.debug("{} has recovered", q);
             }
-            for (QueueRecoveryListener qrl : Utility.copy(this.queueRecoveryListeners)) {
-                qrl.queueRecovered(oldName, newName);
-            }
-            LOGGER.debug("{} has recovered", q);
         } catch (Exception cause) {
             final String message = "Caught an exception while recovering queue " + oldName +
                                            ": " + cause.getMessage();
@@ -722,8 +754,10 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 
     private void recoverBinding(final RecordedBinding b) {
         try {
-            b.recover();
-            LOGGER.debug("{} has recovered", b);
+            if (this.topologyRecoveryFilter.filterBinding(b)) {
+                b.recover();
+                LOGGER.debug("{} has recovered", b);
+            }
         } catch (Exception cause) {
             String message = "Caught an exception while recovering binding between " + b.getSource() +
                                      " and " + b.getDestination() + ": " + cause.getMessage();
@@ -733,22 +767,24 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     private void recoverConsumer(final String tag, final RecordedConsumer consumer) {
-        LOGGER.debug("Recovering {}", consumer);
         try {
-            String newTag = consumer.recover();
-            // make sure server-generated tags are re-added. MK.
-            if(tag != null && !tag.equals(newTag)) {
-                synchronized (this.consumers) {
-                    this.consumers.remove(tag);
-                    this.consumers.put(newTag, consumer);
+            if (this.topologyRecoveryFilter.filterConsumer(consumer)) {
+                LOGGER.debug("Recovering {}", consumer);
+                String newTag = consumer.recover();
+                // make sure server-generated tags are re-added. MK.
+                if(tag != null && !tag.equals(newTag)) {
+                    synchronized (this.consumers) {
+                        this.consumers.remove(tag);
+                        this.consumers.put(newTag, consumer);
+                    }
+                    consumer.getChannel().updateConsumerTag(tag, newTag);
                 }
-                consumer.getChannel().updateConsumerTag(tag, newTag);
-            }
 
-            for (ConsumerRecoveryListener crl : Utility.copy(this.consumerRecoveryListeners)) {
-                crl.consumerRecovered(tag, newTag);
+                for (ConsumerRecoveryListener crl : Utility.copy(this.consumerRecoveryListeners)) {
+                    crl.consumerRecovered(tag, newTag);
+                }
+                LOGGER.debug("{} has recovered", consumer);
             }
-            LOGGER.debug("{} has recovered", consumer);
         } catch (Exception cause) {
             final String message = "Caught an exception while recovering consumer " + tag +
                     ": " + cause.getMessage();
