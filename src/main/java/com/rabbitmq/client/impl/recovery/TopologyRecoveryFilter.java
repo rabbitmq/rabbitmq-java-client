@@ -26,27 +26,35 @@ public interface TopologyRecoveryFilter {
      * @param recordedExchange
      * @return true to recover the exchange, false otherwise
      */
-    boolean filterExchange(RecordedExchange recordedExchange);
+    default boolean filterExchange(RecordedExchange recordedExchange) {
+        return true;
+    }
 
     /**
      * Decides whether a queue is recovered or not.
      * @param recordedQueue
      * @return true to recover the queue, false otherwise
      */
-    boolean filterQueue(RecordedQueue recordedQueue);
+    default boolean filterQueue(RecordedQueue recordedQueue) {
+        return true;
+    }
 
     /**
      * Decides whether a binding is recovered or not.
      * @param recordedBinding
      * @return true to recover the binding, false otherwise
      */
-    boolean filterBinding(RecordedBinding recordedBinding);
+    default boolean filterBinding(RecordedBinding recordedBinding) {
+        return true;
+    }
 
     /**
      * Decides whether a consumer is recovered or not.
      * @param recordedConsumer
      * @return true to recover the consumer, false otherwise
      */
-    boolean filterConsumer(RecordedConsumer recordedConsumer);
+    default boolean filterConsumer(RecordedConsumer recordedConsumer) {
+        return true;
+    }
 
 }

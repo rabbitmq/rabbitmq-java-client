@@ -112,26 +112,18 @@ public class TopologyRecoveryFiltering extends BrokerTestCase {
     }
 
     private static boolean queueExists(final String queue, final Connection connection) throws Exception {
-        return resourceExists(new Callable<Channel>() {
-
-            @Override
-            public Channel call() throws Exception {
-                Channel channel = connection.createChannel();
-                channel.queueDeclarePassive(queue);
-                return channel;
-            }
+        return resourceExists(() -> {
+            Channel channel = connection.createChannel();
+            channel.queueDeclarePassive(queue);
+            return channel;
         });
     }
 
     private static boolean exchangeExists(final String exchange, final Connection connection) throws Exception {
-        return resourceExists(new Callable<Channel>() {
-
-            @Override
-            public Channel call() throws Exception {
-                Channel channel = connection.createChannel();
-                channel.exchangeDeclarePassive(exchange);
-                return channel;
-            }
+        return resourceExists(() -> {
+            Channel channel = connection.createChannel();
+            channel.exchangeDeclarePassive(exchange);
+            return channel;
         });
     }
 

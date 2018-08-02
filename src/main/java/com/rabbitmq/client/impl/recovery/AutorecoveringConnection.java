@@ -72,17 +72,17 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     private final ConnectionParams params;
     private volatile RecoveryAwareAMQConnection delegate;
 
-    private final List<ShutdownListener> shutdownHooks  = Collections.synchronizedList(new ArrayList<ShutdownListener>());
-    private final List<RecoveryListener> recoveryListeners = Collections.synchronizedList(new ArrayList<RecoveryListener>());
-    private final List<BlockedListener> blockedListeners = Collections.synchronizedList(new ArrayList<BlockedListener>());
+    private final List<ShutdownListener> shutdownHooks  = Collections.synchronizedList(new ArrayList<>());
+    private final List<RecoveryListener> recoveryListeners = Collections.synchronizedList(new ArrayList<>());
+    private final List<BlockedListener> blockedListeners = Collections.synchronizedList(new ArrayList<>());
 
     // Records topology changes
-    private final Map<String, RecordedQueue> recordedQueues = Collections.synchronizedMap(new LinkedHashMap<String, RecordedQueue>());
-    private final List<RecordedBinding> recordedBindings = Collections.synchronizedList(new ArrayList<RecordedBinding>());
-    private final Map<String, RecordedExchange> recordedExchanges = Collections.synchronizedMap(new LinkedHashMap<String, RecordedExchange>());
-    private final Map<String, RecordedConsumer> consumers = Collections.synchronizedMap(new LinkedHashMap<String, RecordedConsumer>());
-    private final List<ConsumerRecoveryListener> consumerRecoveryListeners = Collections.synchronizedList(new ArrayList<ConsumerRecoveryListener>());
-    private final List<QueueRecoveryListener> queueRecoveryListeners = Collections.synchronizedList(new ArrayList<QueueRecoveryListener>());
+    private final Map<String, RecordedQueue> recordedQueues = Collections.synchronizedMap(new LinkedHashMap<>());
+    private final List<RecordedBinding> recordedBindings = Collections.synchronizedList(new ArrayList<>());
+    private final Map<String, RecordedExchange> recordedExchanges = Collections.synchronizedMap(new LinkedHashMap<>());
+    private final Map<String, RecordedConsumer> consumers = Collections.synchronizedMap(new LinkedHashMap<>());
+    private final List<ConsumerRecoveryListener> consumerRecoveryListeners = Collections.synchronizedList(new ArrayList<>());
+    private final List<QueueRecoveryListener> queueRecoveryListeners = Collections.synchronizedList(new ArrayList<>());
 
     private final TopologyRecoveryFilter topologyRecoveryFilter;
 	
@@ -143,28 +143,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     private TopologyRecoveryFilter letAllPassFilter() {
-        return new TopologyRecoveryFilter() {
-
-            @Override
-            public boolean filterExchange(RecordedExchange recordedExchange) {
-                return true;
-            }
-
-            @Override
-            public boolean filterQueue(RecordedQueue recordedQueue) {
-                return true;
-            }
-
-            @Override
-            public boolean filterBinding(RecordedBinding recordedBinding) {
-                return true;
-            }
-
-            @Override
-            public boolean filterConsumer(RecordedConsumer recordedConsumer) {
-                return true;
-            }
-        };
+        return new TopologyRecoveryFilter() {};
     }
 
     /**
