@@ -36,6 +36,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -734,6 +735,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
     }
 
+    AtomicInteger bindingCounter = new AtomicInteger(0);
     private void recoverBinding(final RecordedBinding b) {
         try {
             if (this.topologyRecoveryFilter.filterBinding(b)) {
@@ -741,6 +743,20 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
                 LOGGER.debug("{} has recovered", b);
             }
         } catch (Exception cause) {
+            try {
+                b.channel.automaticallyRecover(this, this.delegate);
+                if (b instanceof RecordedQueueBinding) {
+                    // FIXME make sure the queue belongs to this connection (check null)
+                    RecordedQueue queue = this.recordedQueues.get(b.getDestination());
+                    // FIXME retry recovery only auto-delete queues
+                    recoverQueue(queue.getName(), queue);
+                    b.recover();
+                    LOGGER.warn("Binding retry: {}", bindingCounter.incrementAndGet());
+                }
+                return;
+            } catch (IOException e) {
+                LOGGER.warn("Error while retrying to recover binding");
+            }
             String message = "Caught an exception while recovering binding between " + b.getSource() +
                                      " and " + b.getDestination() + ": " + cause.getMessage();
             TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
@@ -748,11 +764,28 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
     }
 
+    AtomicInteger consumerCounter = new AtomicInteger(0);
     private void recoverConsumer(final String tag, final RecordedConsumer consumer) {
         try {
             if (this.topologyRecoveryFilter.filterConsumer(consumer)) {
                 LOGGER.debug("Recovering {}", consumer);
-                String newTag = consumer.recover();
+                String newTag = null;
+                try {
+                    newTag = consumer.recover();
+                } catch (Exception e) {
+                    try {
+                        consumer.channel.automaticallyRecover(this, this.delegate);
+                        // FIXME make sure the queue belongs to this connection (check null)
+                        RecordedQueue queue = this.recordedQueues.get(consumer.getQueue());
+                        // FIXME retry recovery only auto-delete queues
+                        recoverQueue(queue.getName(), queue);
+                        newTag = consumer.recover();
+                        LOGGER.warn("Consumer retry: {}", consumerCounter.incrementAndGet());
+                    } catch (Exception ex) {
+                        LOGGER.warn("Error while retrying to recover consumer");
+                    }
+                }
+
                 // make sure server-generated tags are re-added. MK.
                 if(tag != null && !tag.equals(newTag)) {
                     synchronized (this.consumers) {
