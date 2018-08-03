@@ -57,7 +57,8 @@ import org.junit.runners.Suite;
     ClientVersionTest.class,
     StrictExceptionHandlerTest.class,
     NoAutoRecoveryWhenTcpWindowIsFullTest.class,
-    JsonRpcTest.class
+    JsonRpcTest.class,
+    AddressTest.class
 })
 public class ClientTests {
 
