@@ -78,7 +78,8 @@ import org.junit.runners.Suite;
 	Nack.class,
 	ExceptionMessages.class,
 	Metrics.class,
-	TopologyRecoveryFiltering.class
+	TopologyRecoveryFiltering.class,
+	TopologyRecoveryRetry.class
 })
 public class FunctionalTests {
 

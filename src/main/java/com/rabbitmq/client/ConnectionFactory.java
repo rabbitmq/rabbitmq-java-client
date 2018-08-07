@@ -29,6 +29,7 @@ import com.rabbitmq.client.impl.SocketFrameHandlerFactory;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.nio.SocketChannelFrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
+import com.rabbitmq.client.impl.recovery.RetryHandler;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 
 import java.io.IOException;
@@ -191,6 +192,13 @@ public class ConnectionFactory implements Cloneable {
      * @since 5.4.0
      */
     private Predicate<ShutdownSignalException> connectionRecoveryTriggeringCondition;
+
+    /**
+     * Retry handler for topology recovery.
+     * Default is no retry.
+     * @since 5.4.0
+     */
+    private RetryHandler topologyRecoveryRetryHandler;
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -1087,6 +1095,7 @@ public class ConnectionFactory implements Cloneable {
         result.setErrorOnWriteListener(errorOnWriteListener);
         result.setTopologyRecoveryFilter(topologyRecoveryFilter);
         result.setConnectionRecoveryTriggeringCondition(connectionRecoveryTriggeringCondition);
+        result.setTopologyRecoveryRetryHandler(topologyRecoveryRetryHandler);
         return result;
     }
 
@@ -1454,4 +1463,13 @@ public class ConnectionFactory implements Cloneable {
         this.connectionRecoveryTriggeringCondition = connectionRecoveryTriggeringCondition;
     }
 
+    /**
+     * Set retry handler for topology recovery.
+     * Default is no retry.
+     * @param topologyRecoveryRetryHandler
+     * @since 5.4.0
+     */
+    public void setTopologyRecoveryRetryHandler(RetryHandler topologyRecoveryRetryHandler) {
+        this.topologyRecoveryRetryHandler = topologyRecoveryRetryHandler;
+    }
 }

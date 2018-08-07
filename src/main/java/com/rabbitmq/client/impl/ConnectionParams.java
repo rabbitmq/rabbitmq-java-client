@@ -20,6 +20,7 @@ import com.rabbitmq.client.RecoveryDelayHandler;
 import com.rabbitmq.client.RecoveryDelayHandler.DefaultRecoveryDelayHandler;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.recovery.RetryHandler;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 
 import java.util.Map;
@@ -51,6 +52,7 @@ public class ConnectionParams {
     private int workPoolTimeout = -1;
     private TopologyRecoveryFilter topologyRecoveryFilter;
     private Predicate<ShutdownSignalException> connectionRecoveryTriggeringCondition;
+    private RetryHandler topologyRecoveryRetryHandler;
 
     private ExceptionHandler exceptionHandler;
     private ThreadFactory threadFactory;
@@ -257,4 +259,11 @@ public class ConnectionParams {
         return connectionRecoveryTriggeringCondition;
     }
 
+    public void setTopologyRecoveryRetryHandler(RetryHandler topologyRecoveryRetryHandler) {
+        this.topologyRecoveryRetryHandler = topologyRecoveryRetryHandler;
+    }
+
+    public RetryHandler getTopologyRecoveryRetryHandler() {
+        return topologyRecoveryRetryHandler;
+    }
 }
