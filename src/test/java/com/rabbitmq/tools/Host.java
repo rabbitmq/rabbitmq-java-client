@@ -169,6 +169,10 @@ public class Host {
         rabbitmqctl("close_connection '" + pid + "' 'Closed via rabbitmqctl'");
     }
 
+    public static void closeAllConnections() throws IOException {
+        rabbitmqctl("close_all_connections 'Closed via rabbitmqctl'");
+    }
+
     public static void closeConnection(NetworkConnection c) throws IOException {
         Host.ConnectionInfo ci = findConnectionInfoFor(Host.listConnections(), c);
         closeConnection(ci.getPid());
