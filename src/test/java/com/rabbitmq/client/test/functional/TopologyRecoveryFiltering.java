@@ -21,12 +21,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.Recoverable;
 import com.rabbitmq.client.RecoverableConnection;
-import com.rabbitmq.client.RecoveryListener;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.impl.NetworkConnection;
-import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.impl.recovery.RecordedBinding;
 import com.rabbitmq.client.impl.recovery.RecordedConsumer;
 import com.rabbitmq.client.impl.recovery.RecordedExchange;
@@ -34,16 +29,18 @@ import com.rabbitmq.client.impl.recovery.RecordedQueue;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
-import com.rabbitmq.tools.Host;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.rabbitmq.client.test.TestUtils.closeAndWaitForRecovery;
+import static com.rabbitmq.client.test.TestUtils.exchangeExists;
+import static com.rabbitmq.client.test.TestUtils.queueExists;
+import static com.rabbitmq.client.test.TestUtils.sendAndConsumeMessage;
 import static org.awaitility.Awaitility.waitAtMost;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
@@ -61,106 +58,6 @@ public class TopologyRecoveryFiltering extends BrokerTestCase {
         "topology.recovery.queue.1", "topology.recovery.queue.2"
     };
     Connection c;
-
-    private static boolean sendAndConsumeMessage(String exchange, String routingKey, String queue, Connection c)
-        throws IOException, TimeoutException, InterruptedException {
-        Channel ch = c.createChannel();
-        try {
-            ch.confirmSelect();
-            final CountDownLatch latch = new CountDownLatch(1);
-            ch.basicConsume(queue, true, new DefaultConsumer(ch) {
-
-                @Override
-                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-                    latch.countDown();
-                }
-            });
-            ch.basicPublish(exchange, routingKey, null, "".getBytes());
-            ch.waitForConfirmsOrDie(5000);
-            return latch.await(5, TimeUnit.SECONDS);
-        } finally {
-            if (ch != null && ch.isOpen()) {
-                ch.close();
-            }
-        }
-    }
-
-    private static boolean resourceExists(Callable<Channel> callback) throws Exception {
-        Channel declarePassiveChannel = null;
-        try {
-            declarePassiveChannel = callback.call();
-            return true;
-        } catch (IOException e) {
-            if (e.getCause() instanceof ShutdownSignalException) {
-                ShutdownSignalException cause = (ShutdownSignalException) e.getCause();
-                if (cause.getReason() instanceof AMQP.Channel.Close) {
-                    if (((AMQP.Channel.Close) cause.getReason()).getReplyCode() == 404) {
-                        return false;
-                    } else {
-                        throw e;
-                    }
-                }
-                return false;
-            } else {
-                throw e;
-            }
-        } finally {
-            if (declarePassiveChannel != null && declarePassiveChannel.isOpen()) {
-                declarePassiveChannel.close();
-            }
-        }
-    }
-
-    private static boolean queueExists(final String queue, final Connection connection) throws Exception {
-        return resourceExists(new Callable<Channel>() {
-
-            @Override
-            public Channel call() throws Exception {
-                Channel channel = connection.createChannel();
-                channel.queueDeclarePassive(queue);
-                return channel;
-            }
-        });
-    }
-
-    private static boolean exchangeExists(final String exchange, final Connection connection) throws Exception {
-        return resourceExists(new Callable<Channel>() {
-
-            @Override
-            public Channel call() throws Exception {
-                Channel channel = connection.createChannel();
-                channel.exchangeDeclarePassive(exchange);
-                return channel;
-            }
-        });
-    }
-
-    private static void closeAndWaitForRecovery(RecoverableConnection connection) throws IOException, InterruptedException {
-        CountDownLatch latch = prepareForRecovery(connection);
-        Host.closeConnection((NetworkConnection) connection);
-        wait(latch);
-    }
-
-    private static CountDownLatch prepareForRecovery(Connection conn) {
-        final CountDownLatch latch = new CountDownLatch(1);
-        ((AutorecoveringConnection) conn).addRecoveryListener(new RecoveryListener() {
-
-            @Override
-            public void handleRecovery(Recoverable recoverable) {
-                latch.countDown();
-            }
-
-            @Override
-            public void handleRecoveryStarted(Recoverable recoverable) {
-                // No-op
-            }
-        });
-        return latch;
-    }
-
-    private static void wait(CountDownLatch latch) throws InterruptedException {
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
-    }
 
     @Override
     protected ConnectionFactory newConnectionFactory() {

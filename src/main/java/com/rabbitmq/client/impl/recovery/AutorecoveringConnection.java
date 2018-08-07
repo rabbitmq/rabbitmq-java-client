@@ -90,6 +90,8 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 	// be created after application code has initiated shutdown.  
 	private final Object recoveryLock = new Object();
 
+	private final RetryHandler retryHandler;
+
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, List<Address> addrs) {
         this(params, f, new ListAddressResolver(addrs));
     }
@@ -109,6 +111,8 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 
         this.topologyRecoveryFilter = params.getTopologyRecoveryFilter() == null ?
             letAllPassFilter() : params.getTopologyRecoveryFilter();
+
+        this.retryHandler = params.getTopologyRecoveryRetryHandler();
     }
 
     private void setupErrorOnWriteListenerForPotentialRecovery() {
@@ -633,6 +637,10 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
     }
 
+    void recoverChannel(AutorecoveringChannel channel) throws IOException {
+        channel.automaticallyRecover(this, this.delegate);
+    }
+
     private void notifyRecoveryListenersComplete() {
         for (RecoveryListener f : Utility.copy(this.recoveryListeners)) {
             f.handleRecovery(this);
@@ -654,16 +662,16 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         if (executor == null) {
             // recover entities in serial on the main connection thread
             for (final RecordedExchange exchange : Utility.copy(recordedExchanges).values()) {
-                recoverExchange(exchange);
+                recoverExchange(exchange, true);
             }
             for (final Map.Entry<String, RecordedQueue> entry : Utility.copy(recordedQueues).entrySet()) {
-                recoverQueue(entry.getKey(), entry.getValue());
+                recoverQueue(entry.getKey(), entry.getValue(), true);
             }
             for (final RecordedBinding b : Utility.copy(recordedBindings)) {
-                recoverBinding(b);
+                recoverBinding(b, true);
             }
             for (final Map.Entry<String, RecordedConsumer> entry : Utility.copy(consumers).entrySet()) {
-                recoverConsumer(entry.getKey(), entry.getValue());
+                recoverConsumer(entry.getKey(), entry.getValue(), true);
             }
         } else {
             // Support recovering entities in parallel for connections that have a lot of queues, bindings, & consumers
@@ -683,11 +691,22 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
     }
 
-    private void recoverExchange(final RecordedExchange x) {
+    private void recoverExchange(RecordedExchange x, boolean retry) {
         // recorded exchanges are guaranteed to be non-predefined (we filter out predefined ones in exchangeDeclare). MK.
         try {
             if (topologyRecoveryFilter.filterExchange(x)) {
-                x.recover();
+                if (retry) {
+                    final RecordedExchange entity = x;
+                    x = (RecordedExchange) wrapRetryIfNecessary(x, new Callable<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            entity.recover();
+                            return null;
+                        }
+                    }).getRecordedEntity();
+                } else {
+                    x.recover();
+                }
                 LOGGER.debug("{} has recovered", x);
             }
         } catch (Exception cause) {
@@ -698,12 +717,23 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
     }
 
-    private void recoverQueue(final String oldName, final RecordedQueue q) {
 
+    void recoverQueue(final String oldName, RecordedQueue q, boolean retry) {
         try {
             if (topologyRecoveryFilter.filterQueue(q)) {
                 LOGGER.debug("Recovering {}", q);
-                q.recover();
+                if (retry) {
+                    final RecordedQueue entity = q;
+                    q = (RecordedQueue) wrapRetryIfNecessary(q, new Callable<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            entity.recover();
+                            return null;
+                        }
+                    }).getRecordedEntity();
+                } else {
+                    q.recover();
+                }
                 String newName = q.getName();
                 if (!oldName.equals(newName)) {
                     // make sure server-named queues are re-added with
@@ -734,10 +764,21 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
     }
 
-    private void recoverBinding(final RecordedBinding b) {
+    private void recoverBinding(RecordedBinding b, boolean retry) {
         try {
             if (this.topologyRecoveryFilter.filterBinding(b)) {
-                b.recover();
+                if (retry) {
+                    final RecordedBinding entity = b;
+                    b = (RecordedBinding) wrapRetryIfNecessary(b, new Callable<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            entity.recover();
+                            return null;
+                        }
+                    }).getRecordedEntity();
+                } else {
+                    b.recover();
+                }
                 LOGGER.debug("{} has recovered", b);
             }
         } catch (Exception cause) {
@@ -748,11 +789,25 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
     }
 
-    private void recoverConsumer(final String tag, final RecordedConsumer consumer) {
+    private void recoverConsumer(final String tag, RecordedConsumer consumer, boolean retry) {
         try {
             if (this.topologyRecoveryFilter.filterConsumer(consumer)) {
                 LOGGER.debug("Recovering {}", consumer);
-                String newTag = consumer.recover();
+                String newTag = null;
+                if (retry) {
+                    final RecordedConsumer entity = consumer;
+                    RetryResult retryResult = wrapRetryIfNecessary(consumer, new Callable<String>() {
+                        @Override
+                        public String call() throws Exception {
+                            return entity.recover();
+                        }
+                    });
+                    consumer = (RecordedConsumer) retryResult.getRecordedEntity();
+                    newTag = (String) retryResult.getResult();
+                } else {
+                    newTag = consumer.recover();
+                }
+
                 // make sure server-generated tags are re-added. MK.
                 if(tag != null && !tag.equals(newTag)) {
                     synchronized (this.consumers) {
@@ -772,6 +827,33 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
                     ": " + cause.getMessage();
             TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
             this.getExceptionHandler().handleTopologyRecoveryException(delegate, consumer.getDelegateChannel(), e);
+        }
+    }
+
+    private <T> RetryResult wrapRetryIfNecessary(RecordedEntity entity, Callable<T> recoveryAction) throws Exception {
+        if (this.retryHandler == null) {
+            T result = recoveryAction.call();
+            return new RetryResult(entity, result);
+        } else {
+            try {
+                T result = recoveryAction.call();
+                return new RetryResult(entity, result);
+            } catch (Exception e) {
+                RetryContext retryContext = new RetryContext(entity, e, this);
+                RetryResult retryResult;
+                if (entity instanceof RecordedQueue) {
+                    retryResult = this.retryHandler.retryQueueRecovery(retryContext);
+                } else if (entity instanceof RecordedExchange) {
+                    retryResult = this.retryHandler.retryExchangeRecovery(retryContext);
+                } else if (entity instanceof RecordedBinding) {
+                    retryResult = this.retryHandler.retryBindingRecovery(retryContext);
+                } else if (entity instanceof RecordedConsumer) {
+                    retryResult = this.retryHandler.retryConsumerRecovery(retryContext);
+                } else {
+                    throw new IllegalArgumentException("Unknown type of recorded entity: " + entity);
+                }
+                return retryResult;
+            }
         }
     }
 
@@ -825,15 +907,15 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
                 public void run() {
                     for (final E entity : entityList) {
                         if (entity instanceof RecordedExchange) {
-                            recoverExchange((RecordedExchange)entity);
+                            recoverExchange((RecordedExchange)entity, true);
                         } else if (entity instanceof RecordedQueue) {
                             final RecordedQueue q = (RecordedQueue) entity;
-                            recoverQueue(q.getName(), q);
+                            recoverQueue(q.getName(), q, true);
                         } else if (entity instanceof RecordedBinding) {
-                            recoverBinding((RecordedBinding) entity);
+                            recoverBinding((RecordedBinding) entity, true);
                         } else if (entity instanceof RecordedConsumer) {
                             final RecordedConsumer c = (RecordedConsumer) entity;
-                            recoverConsumer(c.getConsumerTag(), c);
+                            recoverConsumer(c.getConsumerTag(), c, true);
                         }
                     }
                 }
