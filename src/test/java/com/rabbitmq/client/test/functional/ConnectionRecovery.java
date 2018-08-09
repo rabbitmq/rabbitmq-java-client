@@ -39,6 +39,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.rabbitmq.client.test.TestUtils.prepareForRecovery;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
@@ -62,7 +63,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         try {
             assertTrue(c.isOpen());
             assertEquals(connectionName, c.getClientProvidedName());
-            closeAndWaitForRecovery(c);
+            TestUtils.closeAndWaitForRecovery(c);
             assertTrue(c.isOpen());
             assertEquals(connectionName, c.getClientProvidedName());
         } finally {
@@ -82,7 +83,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         RecoverableConnection c = newRecoveringConnection(addresses);
         try {
             assertTrue(c.isOpen());
-            closeAndWaitForRecovery(c);
+            TestUtils.closeAndWaitForRecovery(c);
             assertTrue(c.isOpen());
         } finally {
             c.abort();
@@ -98,7 +99,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         RecoverableConnection c = newRecoveringConnection(addresses);
         try {
             assertTrue(c.isOpen());
-            closeAndWaitForRecovery(c);
+            TestUtils.closeAndWaitForRecovery(c);
             assertTrue(c.isOpen());
         } finally {
             c.abort();
@@ -157,7 +158,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             assertThat(usernameRequested.get(), is(1));
             assertThat(passwordRequested.get(), is(1));
 
-            closeAndWaitForRecovery(c);
+            TestUtils.closeAndWaitForRecovery(c);
             assertTrue(c.isOpen());
             // username is requested in AMQConnection#toString, so it can be accessed at any time
             assertThat(usernameRequested.get(), greaterThanOrEqualTo(2));
@@ -804,7 +805,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         Connection testConnection = connectionFactory.newConnection();
         try {
             assertTrue(testConnection.isOpen());
-            closeAndWaitForRecovery((RecoverableConnection) testConnection);
+            TestUtils.closeAndWaitForRecovery((RecoverableConnection) testConnection);
             assertTrue(testConnection.isOpen());
         } finally {
             connection.close();
@@ -851,7 +852,7 @@ public class ConnectionRecovery extends BrokerTestCase {
                 }
             }
             // now do recovery
-            closeAndWaitForRecovery(testConnection);
+            TestUtils.closeAndWaitForRecovery(testConnection);
             
             // verify channels & topology recovered by publishing a message to each
             for (int i=0; i < channelCount; i++) {
@@ -935,21 +936,6 @@ public class ConnectionRecovery extends BrokerTestCase {
         ch.exchangeDeclarePassive(x);
     }
 
-    private static CountDownLatch prepareForRecovery(Connection conn) {
-        final CountDownLatch latch = new CountDownLatch(1);
-        ((AutorecoveringConnection)conn).addRecoveryListener(new RecoveryListener() {
-            @Override
-            public void handleRecovery(Recoverable recoverable) {
-                latch.countDown();
-            }
-            @Override
-            public void handleRecoveryStarted(Recoverable recoverable) {
-                // No-op
-            }
-        });
-        return latch;
-    }
-
     private static CountDownLatch prepareForShutdown(Connection conn) {
         final CountDownLatch latch = new CountDownLatch(1);
         conn.addShutdownListener(new ShutdownListener() {
@@ -962,13 +948,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     private void closeAndWaitForRecovery() throws IOException, InterruptedException {
-        closeAndWaitForRecovery((AutorecoveringConnection)this.connection);
-    }
-
-    private static void closeAndWaitForRecovery(RecoverableConnection connection) throws IOException, InterruptedException {
-        CountDownLatch latch = prepareForRecovery(connection);
-        Host.closeConnection((NetworkConnection) connection);
-        wait(latch);
+        TestUtils.closeAndWaitForRecovery((AutorecoveringConnection)this.connection);
     }
 
     private void restartPrimaryAndWaitForRecovery() throws IOException, InterruptedException {

@@ -15,11 +15,28 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.Recoverable;
+import com.rabbitmq.client.RecoverableConnection;
+import com.rabbitmq.client.RecoveryListener;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.impl.NetworkConnection;
+import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
+import com.rabbitmq.tools.Host;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static org.junit.Assert.assertTrue;
 
 public class TestUtils {
 
@@ -27,7 +44,7 @@ public class TestUtils {
 
     public static ConnectionFactory connectionFactory() {
         ConnectionFactory connectionFactory = new ConnectionFactory();
-        if(USE_NIO) {
+        if (USE_NIO) {
             connectionFactory.useNio();
         } else {
             connectionFactory.useBlockingIo();
@@ -36,7 +53,7 @@ public class TestUtils {
     }
 
     public static void close(Connection connection) {
-        if(connection != null) {
+        if (connection != null) {
             try {
                 connection.close();
             } catch (IOException e) {
@@ -66,12 +83,108 @@ public class TestUtils {
             LoggerFactory.getLogger(TestUtils.class).warn("Unable to parse broker version {}", currentVersion, e);
             throw e;
         }
+    }
 
+    public static boolean sendAndConsumeMessage(String exchange, String routingKey, String queue, Connection c)
+        throws IOException, TimeoutException, InterruptedException {
+        Channel ch = c.createChannel();
+        try {
+            ch.confirmSelect();
+            final CountDownLatch latch = new CountDownLatch(1);
+            ch.basicConsume(queue, true, new DefaultConsumer(ch) {
+
+                @Override
+                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                    latch.countDown();
+                }
+            });
+            ch.basicPublish(exchange, routingKey, null, "".getBytes());
+            ch.waitForConfirmsOrDie(5000);
+            return latch.await(5, TimeUnit.SECONDS);
+        } finally {
+            if (ch != null && ch.isOpen()) {
+                ch.close();
+            }
+        }
+    }
+
+    public static boolean resourceExists(Callable<Channel> callback) throws Exception {
+        Channel declarePassiveChannel = null;
+        try {
+            declarePassiveChannel = callback.call();
+            return true;
+        } catch (IOException e) {
+            if (e.getCause() instanceof ShutdownSignalException) {
+                ShutdownSignalException cause = (ShutdownSignalException) e.getCause();
+                if (cause.getReason() instanceof AMQP.Channel.Close) {
+                    if (((AMQP.Channel.Close) cause.getReason()).getReplyCode() == 404) {
+                        return false;
+                    } else {
+                        throw e;
+                    }
+                }
+                return false;
+            } else {
+                throw e;
+            }
+        } finally {
+            if (declarePassiveChannel != null && declarePassiveChannel.isOpen()) {
+                declarePassiveChannel.close();
+            }
+        }
+    }
+
+    public static boolean queueExists(final String queue, final Connection connection) throws Exception {
+        return resourceExists(() -> {
+            Channel channel = connection.createChannel();
+            channel.queueDeclarePassive(queue);
+            return channel;
+        });
+    }
+
+    public static boolean exchangeExists(final String exchange, final Connection connection) throws Exception {
+        return resourceExists(() -> {
+            Channel channel = connection.createChannel();
+            channel.exchangeDeclarePassive(exchange);
+            return channel;
+        });
+    }
+
+    public static void closeAndWaitForRecovery(RecoverableConnection connection) throws IOException, InterruptedException {
+        CountDownLatch latch = prepareForRecovery(connection);
+        Host.closeConnection((NetworkConnection) connection);
+        wait(latch);
+    }
+
+    public static void closeAllConnectionsAndWaitForRecovery(Connection connection) throws IOException, InterruptedException {
+        CountDownLatch latch = prepareForRecovery(connection);
+        Host.closeAllConnections();
+        wait(latch);
+    }
+
+    public static CountDownLatch prepareForRecovery(Connection conn) {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ((AutorecoveringConnection) conn).addRecoveryListener(new RecoveryListener() {
+
+            @Override
+            public void handleRecovery(Recoverable recoverable) {
+                latch.countDown();
+            }
+
+            @Override
+            public void handleRecoveryStarted(Recoverable recoverable) {
+                // No-op
+            }
+        });
+        return latch;
+    }
+
+    private static void wait(CountDownLatch latch) throws InterruptedException {
+        assertTrue(latch.await(90, TimeUnit.SECONDS));
     }
 
     /**
      * http://stackoverflow.com/questions/6701948/efficient-way-to-compare-version-strings-in-java
-     *
      */
     static int versionCompare(String str1, String str2) {
         String[] vals1 = str1.split("\\.");
@@ -90,5 +203,4 @@ public class TestUtils {
         // e.g. "1.2.3" = "1.2.3" or "1.2.3" < "1.2.3.4"
         return Integer.signum(vals1.length - vals2.length);
     }
-
 }
