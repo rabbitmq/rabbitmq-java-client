@@ -35,10 +35,10 @@ import java.util.function.BiPredicate;
  */
 public class DefaultRetryHandler implements RetryHandler {
 
-    private final BiPredicate<RecordedQueue, Exception> queueRecoveryRetryCondition;
-    private final BiPredicate<RecordedExchange, Exception> exchangeRecoveryRetryCondition;
-    private final BiPredicate<RecordedBinding, Exception> bindingRecoveryRetryCondition;
-    private final BiPredicate<RecordedConsumer, Exception> consumerRecoveryRetryCondition;
+    private final BiPredicate<? super RecordedQueue, Exception> queueRecoveryRetryCondition;
+    private final BiPredicate<? super RecordedExchange, Exception> exchangeRecoveryRetryCondition;
+    private final BiPredicate<? super RecordedBinding, Exception> bindingRecoveryRetryCondition;
+    private final BiPredicate<? super RecordedConsumer, Exception> consumerRecoveryRetryCondition;
 
     private final RetryOperation<?> queueRecoveryRetryOperation;
     private final RetryOperation<?> exchangeRecoveryRetryOperation;
@@ -49,10 +49,10 @@ public class DefaultRetryHandler implements RetryHandler {
 
     private final BackoffPolicy backoffPolicy;
 
-    public DefaultRetryHandler(BiPredicate<RecordedQueue, Exception> queueRecoveryRetryCondition,
-        BiPredicate<RecordedExchange, Exception> exchangeRecoveryRetryCondition,
-        BiPredicate<RecordedBinding, Exception> bindingRecoveryRetryCondition,
-        BiPredicate<RecordedConsumer, Exception> consumerRecoveryRetryCondition,
+    public DefaultRetryHandler(BiPredicate<? super RecordedQueue, Exception> queueRecoveryRetryCondition,
+        BiPredicate<? super RecordedExchange, Exception> exchangeRecoveryRetryCondition,
+        BiPredicate<? super RecordedBinding, Exception> bindingRecoveryRetryCondition,
+        BiPredicate<? super RecordedConsumer, Exception> consumerRecoveryRetryCondition,
         RetryOperation<?> queueRecoveryRetryOperation,
         RetryOperation<?> exchangeRecoveryRetryOperation,
         RetryOperation<?> bindingRecoveryRetryOperation,
@@ -72,27 +72,31 @@ public class DefaultRetryHandler implements RetryHandler {
         this.retryAttempts = retryAttempts;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public RetryResult retryQueueRecovery(RetryContext context) throws Exception {
-        return doRetry(queueRecoveryRetryCondition, queueRecoveryRetryOperation, context.queue(), context);
+        return doRetry((BiPredicate<RecordedEntity, Exception>) queueRecoveryRetryCondition, queueRecoveryRetryOperation, context.queue(), context);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public RetryResult retryExchangeRecovery(RetryContext context) throws Exception {
-        return doRetry(exchangeRecoveryRetryCondition, exchangeRecoveryRetryOperation, context.exchange(), context);
+        return doRetry((BiPredicate<RecordedEntity, Exception>) exchangeRecoveryRetryCondition, exchangeRecoveryRetryOperation, context.exchange(), context);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public RetryResult retryBindingRecovery(RetryContext context) throws Exception {
-        return doRetry(bindingRecoveryRetryCondition, bindingRecoveryRetryOperation, context.binding(), context);
+        return doRetry((BiPredicate<RecordedEntity, Exception>) bindingRecoveryRetryCondition, bindingRecoveryRetryOperation, context.binding(), context);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public RetryResult retryConsumerRecovery(RetryContext context) throws Exception {
-        return doRetry(consumerRecoveryRetryCondition, consumerRecoveryRetryOperation, context.consumer(), context);
+        return doRetry((BiPredicate<RecordedEntity, Exception>) consumerRecoveryRetryCondition, consumerRecoveryRetryOperation, context.consumer(), context);
     }
 
-    protected <T extends RecordedEntity> RetryResult doRetry(BiPredicate<T, Exception> condition, RetryOperation<?> operation, T entity, RetryContext context)
+    protected RetryResult doRetry(BiPredicate<RecordedEntity, Exception> condition, RetryOperation<?> operation, RecordedEntity entity, RetryContext context)
         throws Exception {
         int attempts = 0;
         Exception exception = context.exception();
@@ -107,7 +111,6 @@ public class DefaultRetryHandler implements RetryHandler {
                 } catch (Exception e) {
                     exception = e;
                     attempts++;
-                    continue;
                 }
             } else {
                 throw exception;
