@@ -21,7 +21,7 @@ import java.util.function.BiPredicate;
  * Builder to ease creation of {@link DefaultRetryHandler} instances.
  * <p>
  * Just override what you need. By default, retry conditions don't trigger retry,
- * retry operations are no-op, the number of retry attempts is 1, and the backoff
+ * retry operations are no-op, the number of retry attempts is 2, and the backoff
  * policy doesn't wait at all.
  *
  * @see DefaultRetryHandler
@@ -40,7 +40,7 @@ public class TopologyRecoveryRetryHandlerBuilder {
     private DefaultRetryHandler.RetryOperation<?> bindingRecoveryRetryOperation = context -> null;
     private DefaultRetryHandler.RetryOperation<?> consumerRecoveryRetryOperation = context -> null;
 
-    private int retryAttempts = 1;
+    private int retryAttempts = 2;
 
     private BackoffPolicy backoffPolicy = nbAttempts -> {
     };
