@@ -104,7 +104,6 @@ public class DefaultRetryHandler implements RetryHandler {
                 } catch (Exception e) {
                     exception = e;
                     attempts++;
-                    continue;
                 }
             } else {
                 throw exception;
