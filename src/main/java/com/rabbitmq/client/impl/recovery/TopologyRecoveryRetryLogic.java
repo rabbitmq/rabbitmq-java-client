@@ -18,6 +18,7 @@ package com.rabbitmq.client.impl.recovery;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ShutdownSignalException;
 
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 /**
@@ -31,9 +32,9 @@ import java.util.function.Predicate;
  */
 public abstract class TopologyRecoveryRetryLogic {
 
-    public static final Predicate<Exception> CHANNEL_CLOSED_NOT_FOUND = e -> {
-        if (e.getCause() instanceof ShutdownSignalException) {
-            ShutdownSignalException cause = (ShutdownSignalException) e.getCause();
+    public static final BiPredicate<RecordedEntity, Exception> CHANNEL_CLOSED_NOT_FOUND = (entity, ex) -> {
+        if (ex.getCause() instanceof ShutdownSignalException) {
+            ShutdownSignalException cause = (ShutdownSignalException) ex.getCause();
             if (cause.getReason() instanceof AMQP.Channel.Close) {
                 return ((AMQP.Channel.Close) cause.getReason()).getReplyCode() == 404;
             }

@@ -30,10 +30,10 @@ import java.util.function.BiPredicate;
  */
 public class TopologyRecoveryRetryHandlerBuilder {
 
-    private BiPredicate<RecordedQueue, Exception> queueRecoveryRetryCondition = (q, e) -> false;
-    private BiPredicate<RecordedExchange, Exception> exchangeRecoveryRetryCondition = (ex, e) -> false;
-    private BiPredicate<RecordedBinding, Exception> bindingRecoveryRetryCondition = (b, e) -> false;
-    private BiPredicate<RecordedConsumer, Exception> consumerRecoveryRetryCondition = (c, e) -> false;
+    private BiPredicate<? super RecordedQueue, Exception> queueRecoveryRetryCondition = (q, e) -> false;
+    private BiPredicate<? super RecordedExchange, Exception> exchangeRecoveryRetryCondition = (ex, e) -> false;
+    private BiPredicate<? super RecordedBinding, Exception> bindingRecoveryRetryCondition = (b, e) -> false;
+    private BiPredicate<? super RecordedConsumer, Exception> consumerRecoveryRetryCondition = (c, e) -> false;
 
     private DefaultRetryHandler.RetryOperation<?> queueRecoveryRetryOperation = context -> null;
     private DefaultRetryHandler.RetryOperation<?> exchangeRecoveryRetryOperation = context -> null;
@@ -50,25 +50,25 @@ public class TopologyRecoveryRetryHandlerBuilder {
     }
 
     public TopologyRecoveryRetryHandlerBuilder queueRecoveryRetryCondition(
-        BiPredicate<RecordedQueue, Exception> queueRecoveryRetryCondition) {
+        BiPredicate<? super RecordedQueue, Exception> queueRecoveryRetryCondition) {
         this.queueRecoveryRetryCondition = queueRecoveryRetryCondition;
         return this;
     }
 
     public TopologyRecoveryRetryHandlerBuilder exchangeRecoveryRetryCondition(
-        BiPredicate<RecordedExchange, Exception> exchangeRecoveryRetryCondition) {
+        BiPredicate<? super RecordedExchange, Exception> exchangeRecoveryRetryCondition) {
         this.exchangeRecoveryRetryCondition = exchangeRecoveryRetryCondition;
         return this;
     }
 
     public TopologyRecoveryRetryHandlerBuilder bindingRecoveryRetryCondition(
-        BiPredicate<RecordedBinding, Exception> bindingRecoveryRetryCondition) {
+        BiPredicate<? super RecordedBinding, Exception> bindingRecoveryRetryCondition) {
         this.bindingRecoveryRetryCondition = bindingRecoveryRetryCondition;
         return this;
     }
 
     public TopologyRecoveryRetryHandlerBuilder consumerRecoveryRetryCondition(
-        BiPredicate<RecordedConsumer, Exception> consumerRecoveryRetryCondition) {
+        BiPredicate<? super RecordedConsumer, Exception> consumerRecoveryRetryCondition) {
         this.consumerRecoveryRetryCondition = consumerRecoveryRetryCondition;
         return this;
     }
