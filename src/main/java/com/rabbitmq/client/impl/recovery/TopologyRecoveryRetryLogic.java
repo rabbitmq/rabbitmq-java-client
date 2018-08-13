@@ -18,8 +18,11 @@ package com.rabbitmq.client.impl.recovery;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ShutdownSignalException;
 
+import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
+
+import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryHandlerBuilder.builder;
 
 /**
  * Useful ready-to-use conditions and operations for {@link DefaultRetryHandler}.
@@ -32,6 +35,9 @@ import java.util.function.Predicate;
  */
 public abstract class TopologyRecoveryRetryLogic {
 
+    /**
+     * Channel has been closed because of a resource that doesn't exist.
+     */
     public static final BiPredicate<RecordedEntity, Exception> CHANNEL_CLOSED_NOT_FOUND = (entity, ex) -> {
         if (ex.getCause() instanceof ShutdownSignalException) {
             ShutdownSignalException cause = (ShutdownSignalException) ex.getCause();
@@ -42,6 +48,9 @@ public abstract class TopologyRecoveryRetryLogic {
         return false;
     };
 
+    /**
+     * Recover a channel.
+     */
     public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_CHANNEL = context -> {
         if (!context.entity().getChannel().isOpen()) {
             context.connection().recoverChannel(context.entity().getChannel());
@@ -49,6 +58,9 @@ public abstract class TopologyRecoveryRetryLogic {
         return null;
     };
 
+    /**
+     * Recover the destination queue of a binding.
+     */
     public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_BINDING_QUEUE = context -> {
         if (context.entity() instanceof RecordedQueueBinding) {
             RecordedBinding binding = context.binding();
@@ -63,11 +75,17 @@ public abstract class TopologyRecoveryRetryLogic {
         return null;
     };
 
+    /**
+     * Recover a binding.
+     */
     public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_BINDING = context -> {
         context.binding().recover();
         return null;
     };
 
+    /**
+     * Recover the queue of a consumer.
+     */
     public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_CONSUMER_QUEUE = context -> {
         if (context.entity() instanceof RecordedConsumer) {
             RecordedConsumer consumer = context.consumer();
@@ -82,5 +100,37 @@ public abstract class TopologyRecoveryRetryLogic {
         return null;
     };
 
+    /**
+     * Recover all the bindings of the queue of a consumer.
+     */
+    public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_CONSUMER_QUEUE_BINDINGS = context -> {
+        if (context.entity() instanceof RecordedConsumer) {
+            String queue = context.consumer().getQueue();
+            for (RecordedBinding recordedBinding : context.connection().getRecordedBindings()) {
+                if (recordedBinding instanceof RecordedQueueBinding && queue.equals(recordedBinding.getDestination())) {
+                    recordedBinding.recover();
+                }
+            }
+        }
+        return null;
+    };
+
+    /**
+     * Recover a consumer.
+     */
     public static final DefaultRetryHandler.RetryOperation<String> RECOVER_CONSUMER = context -> context.consumer().recover();
+
+    /**
+     * Pre-configured {@link DefaultRetryHandler} that retries recovery of bindings and consumers
+     * when their respective queue is not found.
+     * This retry handler can be useful for long recovery processes, whereby auto-delete queues
+     * can be deleted between queue recovery and binding/consumer recovery.
+     */
+    public static final RetryHandler RETRY_ON_QUEUE_NOT_FOUND_RETRY_HANDLER = builder()
+        .bindingRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
+        .consumerRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
+        .bindingRecoveryRetryOperation(RECOVER_CHANNEL.andThen(RECOVER_BINDING_QUEUE).andThen(RECOVER_BINDING))
+        .consumerRecoveryRetryOperation(RECOVER_CHANNEL.andThen(RECOVER_CONSUMER_QUEUE.andThen(RECOVER_CONSUMER)
+            .andThen(RECOVER_CONSUMER_QUEUE_BINDINGS)))
+        .build();
 }

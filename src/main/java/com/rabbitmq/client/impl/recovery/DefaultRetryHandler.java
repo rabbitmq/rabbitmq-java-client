@@ -15,6 +15,9 @@
 
 package com.rabbitmq.client.impl.recovery;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Objects;
 import java.util.function.BiPredicate;
 
@@ -34,6 +37,8 @@ import java.util.function.BiPredicate;
  * @since 5.4.0
  */
 public class DefaultRetryHandler implements RetryHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultRetryHandler.class);
 
     private final BiPredicate<? super RecordedQueue, Exception> queueRecoveryRetryCondition;
     private final BiPredicate<? super RecordedExchange, Exception> exchangeRecoveryRetryCondition;
@@ -98,6 +103,7 @@ public class DefaultRetryHandler implements RetryHandler {
 
     protected RetryResult doRetry(BiPredicate<RecordedEntity, Exception> condition, RetryOperation<?> operation, RecordedEntity entity, RetryContext context)
         throws Exception {
+        log(entity, context.exception());
         int attempts = 0;
         Exception exception = context.exception();
         while (attempts < retryAttempts) {
@@ -117,6 +123,10 @@ public class DefaultRetryHandler implements RetryHandler {
             }
         }
         throw context.exception();
+    }
+
+    protected void log(RecordedEntity entity, Exception exception) {
+        LOGGER.info("Error while recovering {}, retrying with {} attempt(s).", entity, retryAttempts, exception);
     }
 
     public interface RetryOperation<T> {
