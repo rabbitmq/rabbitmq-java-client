@@ -61,7 +61,6 @@ public class JSONUtil {
 		String name = prop.getName();
 		Method setter = prop.getWriteMethod();
 		if (setter != null && !Modifier.isStatic(setter.getModifiers())) {
-		    //System.out.println(target + " " + name + " <- " + source.get(name));
 		    setter.invoke(target, source.get(name));
 		}
 	    }
@@ -74,7 +73,6 @@ public class JSONUtil {
 	    if (Modifier.isPublic(fieldMod) && !(Modifier.isFinal(fieldMod) ||
                                                  Modifier.isStatic(fieldMod)))
             {
-		//System.out.println(target + " " + field.getName() + " := " + source.get(field.getName()));
 		try {
 		    field.set(target, source.get(field.getName()));
 		} catch (IllegalArgumentException iae) {

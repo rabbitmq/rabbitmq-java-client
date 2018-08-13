@@ -62,6 +62,8 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     /** Holds the JSON-RPC service description for this client. */
     private ServiceDescription serviceDescription;
 
+    private final JsonRpcMapper mapper;
+
     /**
      * Construct a new JsonRpcClient, passing the parameters through
      * to RpcClient's constructor. The service description record is
@@ -72,6 +74,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
         throws IOException, JsonRpcException, TimeoutException
     {
 	super(channel, exchange, routingKey, timeout);
+	this.mapper = new DefaultJsonRpcMapper();
 	retrieveServiceDescription();
     }
 
@@ -86,18 +89,14 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * @return the result contained within the reply, if no exception is found
      * Throws JsonRpcException if the reply object contained an exception
      */
-    public static Object checkReply(Map<String, Object> reply)
+    private Object checkReply(JsonRpcMapper.JsonRpcResponse reply)
         throws JsonRpcException
     {
-	if (reply.containsKey("error")) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) reply.get("error");
-            // actually a Map<String, Object>
-            throw new JsonRpcException(map);
-        }
+	if (reply.getError() != null) {
+	    throw reply.getException();
+    }
 
-        Object result = reply.get("result");
-        return result;
+        return reply.getResult();
     }
 
     /**
@@ -114,16 +113,16 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
         request.put("method", method);
         request.put("version", ServiceDescription.JSON_RPC_VERSION);
         request.put("params", (params == null) ? new Object[0] : params);
-        String requestStr = new JSONWriter().write(request);
+        String requestStr = mapper.write(request);
         try {
             String replyStr = this.stringCall(requestStr);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Reply string: {}", replyStr);
             }
-            @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) (new JSONReader().read(replyStr));
 
-            return checkReply(map);
+            JsonRpcMapper.JsonRpcResponse reply = mapper.parse(replyStr);
+
+            return checkReply(reply);
         } catch(ShutdownSignalException ex) {
             throw new IOException(ex.getMessage()); // wrap, re-throw
         }
