@@ -709,7 +709,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
 
-    void recoverQueue(final String oldName, RecordedQueue q, boolean retry) {
+    public void recoverQueue(final String oldName, RecordedQueue q, boolean retry) {
         try {
             if (topologyRecoveryFilter.filterQueue(q)) {
                 LOGGER.debug("Recovering {}", q);
@@ -774,7 +774,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
     }
 
-    private void recoverConsumer(final String tag, RecordedConsumer consumer, boolean retry) {
+    public void recoverConsumer(final String tag, RecordedConsumer consumer, boolean retry) {
         try {
             if (this.topologyRecoveryFilter.filterConsumer(consumer)) {
                 LOGGER.debug("Recovering {}", consumer);
@@ -1085,6 +1085,10 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 
     public Map<String, RecordedExchange> getRecordedExchanges() {
         return recordedExchanges;
+    }
+
+    public List<RecordedBinding> getRecordedBindings() {
+        return recordedBindings;
     }
 
     @Override
