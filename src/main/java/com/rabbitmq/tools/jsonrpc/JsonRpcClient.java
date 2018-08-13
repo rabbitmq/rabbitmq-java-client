@@ -15,6 +15,13 @@
 
 package com.rabbitmq.tools.jsonrpc;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.RpcClient;
+import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.tools.json.JSONReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -23,78 +30,106 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.RpcClient;
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.tools.json.JSONReader;
-import com.rabbitmq.tools.json.JSONWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
-	  <a href="http://json-rpc.org">JSON-RPC</a> is a lightweight
-	  RPC mechanism using <a href="http://www.json.org/">JSON</a>
-	  as a data language for request and reply messages. It is
-	  rapidly becoming a standard in web development, where it is
-	  used to make RPC requests over HTTP. RabbitMQ provides an
-	  AMQP transport binding for JSON-RPC in the form of the
-	  <code>JsonRpcClient</code> class.
-
-	  JSON-RPC services are self-describing - each service is able
-	  to list its supported procedures, and each procedure
-	  describes its parameters and types. An instance of
-	  JsonRpcClient retrieves its service description using the
-	  standard <code>system.describe</code> procedure when it is
-	  constructed, and uses the information to coerce parameter
-	  types appropriately. A JSON service description is parsed
-	  into instances of <code>ServiceDescription</code>. Client
-	  code can access the service description by reading the
-	  <code>serviceDescription</code> field of
-	  <code>JsonRpcClient</code> instances.
-
-	  @see #call(String, Object[])
-	  @see #call(String[])
+ * <a href="http://json-rpc.org">JSON-RPC</a> is a lightweight
+ * RPC mechanism using <a href="http://www.json.org/">JSON</a>
+ * as a data language for request and reply messages. It is
+ * rapidly becoming a standard in web development, where it is
+ * used to make RPC requests over HTTP. RabbitMQ provides an
+ * AMQP transport binding for JSON-RPC in the form of the
+ * <code>JsonRpcClient</code> class.
+ * <p>
+ * JSON-RPC services are self-describing - each service is able
+ * to list its supported procedures, and each procedure
+ * describes its parameters and types. An instance of
+ * JsonRpcClient retrieves its service description using the
+ * standard <code>system.describe</code> procedure when it is
+ * constructed, and uses the information to coerce parameter
+ * types appropriately. A JSON service description is parsed
+ * into instances of <code>ServiceDescription</code>. Client
+ * code can access the service description by reading the
+ * <code>serviceDescription</code> field of
+ * <code>JsonRpcClient</code> instances.
+ *
+ * @see #call(String, Object[])
+ * @see #call(String[])
  */
 public class JsonRpcClient extends RpcClient implements InvocationHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcClient.class);
-
-    /** Holds the JSON-RPC service description for this client. */
-    private ServiceDescription serviceDescription;
-
     private final JsonRpcMapper mapper;
+    /**
+     * Holds the JSON-RPC service description for this client.
+     */
+    private ServiceDescription serviceDescription;
 
     /**
      * Construct a new JsonRpcClient, passing the parameters through
      * to RpcClient's constructor. The service description record is
      * retrieved from the server during construction.
+     *
+     * @throws TimeoutException if a response is not received within the timeout specified, if any
+     */
+    public JsonRpcClient(Channel channel, String exchange, String routingKey, int timeout, JsonRpcMapper mapper)
+        throws IOException, JsonRpcException, TimeoutException {
+        super(channel, exchange, routingKey, timeout);
+        this.mapper = mapper;
+        retrieveServiceDescription();
+    }
+
+    /**
+     * Construct a new JsonRpcClient, passing the parameters through
+     * to RpcClient's constructor. The service description record is
+     * retrieved from the server during construction.
+     *
      * @throws TimeoutException if a response is not received within the timeout specified, if any
      */
     public JsonRpcClient(Channel channel, String exchange, String routingKey, int timeout)
-        throws IOException, JsonRpcException, TimeoutException
-    {
-	super(channel, exchange, routingKey, timeout);
-	this.mapper = new DefaultJsonRpcMapper();
-	retrieveServiceDescription();
+        throws IOException, JsonRpcException, TimeoutException {
+        this(channel, exchange, routingKey, timeout, new DefaultJsonRpcMapper());
     }
 
     public JsonRpcClient(Channel channel, String exchange, String routingKey)
-    throws IOException, JsonRpcException, TimeoutException
-    {
+        throws IOException, JsonRpcException, TimeoutException {
         this(channel, exchange, routingKey, RpcClient.NO_TIMEOUT);
     }
 
     /**
+     * Private API - used by {@link #call(String[])} to ad-hoc convert
+     * strings into the required data types for a call.
+     */
+    public static Object coerce(String val, String type)
+        throws NumberFormatException {
+        if ("bit".equals(type)) {
+            return Boolean.getBoolean(val) ? Boolean.TRUE : Boolean.FALSE;
+        } else if ("num".equals(type)) {
+            try {
+                return Integer.valueOf(val);
+            } catch (NumberFormatException nfe) {
+                return Double.valueOf(val);
+            }
+        } else if ("str".equals(type)) {
+            return val;
+        } else if ("arr".equals(type) || "obj".equals(type) || "any".equals(type)) {
+            return new JSONReader().read(val);
+        } else if ("nil".equals(type)) {
+            return null;
+        } else {
+            throw new IllegalArgumentException("Bad type: " + type);
+        }
+    }
+
+    /**
      * Private API - parses a JSON-RPC reply object, checking it for exceptions.
+     *
      * @return the result contained within the reply, if no exception is found
      * Throws JsonRpcException if the reply object contained an exception
      */
     private Object checkReply(JsonRpcMapper.JsonRpcResponse reply)
-        throws JsonRpcException
-    {
-	if (reply.getError() != null) {
-	    throw reply.getException();
-    }
+        throws JsonRpcException {
+        if (reply.getError() != null) {
+            throw reply.getException();
+        }
 
         return reply.getResult();
     }
@@ -102,31 +137,37 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     /**
      * Public API - builds, encodes and sends a JSON-RPC request, and
      * waits for the response.
+     *
      * @return the result contained within the reply, if no exception is found
      * @throws JsonRpcException if the reply object contained an exception
      * @throws TimeoutException if a response is not received within the timeout specified, if any
      */
-    public Object call(String method, Object[] params) throws IOException, JsonRpcException, TimeoutException
-    {
-        HashMap<String, Object> request = new HashMap<String, Object>();
+    public Object call(String method, Object[] params) throws IOException, JsonRpcException, TimeoutException {
+        Map<String, Object> request = new HashMap<String, Object>();
         request.put("id", null);
         request.put("method", method);
         request.put("version", ServiceDescription.JSON_RPC_VERSION);
-        request.put("params", (params == null) ? new Object[0] : params);
+        params = (params == null) ? new Object[0] : params;
+        request.put("params", params);
         String requestStr = mapper.write(request);
         try {
             String replyStr = this.stringCall(requestStr);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Reply string: {}", replyStr);
             }
-
-            JsonRpcMapper.JsonRpcResponse reply = mapper.parse(replyStr);
+            Class<?> expectedType;
+            if ("system.describe".equals(method) && params.length == 0) {
+                expectedType = Map.class;
+            } else {
+                ProcedureDescription proc = serviceDescription.getProcedure(method, params.length);
+                expectedType = proc.getReturnType();
+            }
+            JsonRpcMapper.JsonRpcResponse reply = mapper.parse(replyStr, expectedType);
 
             return checkReply(reply);
-        } catch(ShutdownSignalException ex) {
+        } catch (ShutdownSignalException ex) {
             throw new IOException(ex.getMessage()); // wrap, re-throw
         }
-
     }
 
     /**
@@ -136,8 +177,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable
-    {
+        throws Throwable {
         return call(method.getName(), args);
     }
 
@@ -146,69 +186,42 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      */
     @SuppressWarnings("unchecked")
     public <T> T createProxy(Class<T> klass)
-        throws IllegalArgumentException
-    {
+        throws IllegalArgumentException {
         return (T) Proxy.newProxyInstance(klass.getClassLoader(),
-                                      new Class[] { klass },
-                                      this);
+            new Class[] { klass },
+            this);
     }
 
     /**
-     * Private API - used by {@link #call(String[])} to ad-hoc convert
-     * strings into the required data types for a call.
-     */
-    public static Object coerce(String val, String type)
-	throws NumberFormatException
-    {
-	if ("bit".equals(type)) {
-	    return Boolean.getBoolean(val) ? Boolean.TRUE : Boolean.FALSE;
-	} else if ("num".equals(type)) {
-	    try {
-		return Integer.valueOf(val);
-	    } catch (NumberFormatException nfe) {
-		return Double.valueOf(val);
-	    }
-	} else if ("str".equals(type)) {
-        return val;
-    } else if ("arr".equals(type) || "obj".equals(type) || "any".equals(type)) {
-	    return new JSONReader().read(val);
-	} else if ("nil".equals(type)) {
-	    return null;
-	} else {
-	    throw new IllegalArgumentException("Bad type: " + type);
-	}
-    }
-
-    /**
-     * Public API - as {@link #call(String,Object[])}, but takes the
+     * Public API - as {@link #call(String, Object[])}, but takes the
      * method name from the first entry in <code>args</code>, and the
      * parameters from subsequent entries. All parameter values are
      * passed through coerce() to attempt to make them the types the
      * server is expecting.
+     *
      * @return the result contained within the reply, if no exception is found
-     * @throws JsonRpcException if the reply object contained an exception
+     * @throws JsonRpcException      if the reply object contained an exception
      * @throws NumberFormatException if a coercion failed
-     * @throws TimeoutException if a response is not received within the timeout specified, if any
+     * @throws TimeoutException      if a response is not received within the timeout specified, if any
      * @see #coerce
      */
     public Object call(String[] args)
-	throws NumberFormatException, IOException, JsonRpcException, TimeoutException
-    {
-	if (args.length == 0) {
-	    throw new IllegalArgumentException("First string argument must be method name");
-	}
+        throws NumberFormatException, IOException, JsonRpcException, TimeoutException {
+        if (args.length == 0) {
+            throw new IllegalArgumentException("First string argument must be method name");
+        }
 
-	String method = args[0];
+        String method = args[0];
         int arity = args.length - 1;
-	ProcedureDescription proc = serviceDescription.getProcedure(method, arity);
-	ParameterDescription[] params = proc.getParams();
+        ProcedureDescription proc = serviceDescription.getProcedure(method, arity);
+        ParameterDescription[] params = proc.getParams();
 
-	Object[] actuals = new Object[arity];
-	for (int count = 0; count < params.length; count++) {
-	    actuals[count] = coerce(args[count + 1], params[count].type);
-	}
+        Object[] actuals = new Object[arity];
+        for (int count = 0; count < params.length; count++) {
+            actuals[count] = coerce(args[count + 1], params[count].type);
+        }
 
-	return call(method, actuals);
+        return call(method, actuals);
     }
 
     /**
@@ -216,7 +229,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * service loaded from the server itself at construction time.
      */
     public ServiceDescription getServiceDescription() {
-	return serviceDescription;
+        return serviceDescription;
     }
 
     /**
@@ -224,10 +237,10 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * server, and parses and stores the resulting service description
      * in this object.
      * TODO: Avoid calling this from the constructor.
+     *
      * @throws TimeoutException if a response is not received within the timeout specified, if any
      */
-    private void retrieveServiceDescription() throws IOException, JsonRpcException, TimeoutException
-    {
+    private void retrieveServiceDescription() throws IOException, JsonRpcException, TimeoutException {
         @SuppressWarnings("unchecked")
         Map<String, Object> rawServiceDescription = (Map<String, Object>) call("system.describe", null);
         serviceDescription = new ServiceDescription(rawServiceDescription);

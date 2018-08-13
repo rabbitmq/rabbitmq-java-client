@@ -1,6 +1,19 @@
-package com.rabbitmq.tools.jsonrpc;
+// Copyright (c) 2018 Pivotal Software, Inc.  All rights reserved.
+//
+// This software, the RabbitMQ Java client library, is triple-licensed under the
+// Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
+// ("GPL") and the Apache License version 2 ("ASL"). For the MPL, please see
+// LICENSE-MPL-RabbitMQ. For the GPL, please see LICENSE-GPL2.  For the ASL,
+// please see LICENSE-APACHE2.
+//
+// This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND,
+// either express or implied. See the LICENSE file for specific language governing
+// rights and limitations of this software.
+//
+// If you have any questions regarding licensing, please contact us at
+// info@rabbitmq.com.
 
-import java.lang.reflect.Method;
+package com.rabbitmq.tools.jsonrpc;
 
 /**
  *
@@ -9,9 +22,7 @@ public interface JsonRpcMapper {
 
     JsonRpcRequest parse(String requestBody, ServiceDescription description);
 
-    JsonRpcResponse parse(String responseBody);
-
-    Object[] parameters(JsonRpcRequest request, Method method);
+    JsonRpcResponse parse(String responseBody, Class<?> expectedType);
 
     String write(Object input);
 
@@ -52,7 +63,6 @@ public interface JsonRpcMapper {
         public boolean isSystemDescribe() {
             return "system.describe".equals(method);
         }
-
     }
 
     class JsonRpcResponse {
@@ -85,5 +95,4 @@ public interface JsonRpcMapper {
             return exception;
         }
     }
-
 }
