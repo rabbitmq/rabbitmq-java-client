@@ -44,15 +44,11 @@ public class JsonRpcTest {
         serverChannel = serverConnection.createChannel();
         serverChannel.queueDeclare(queue, false, false, false, null);
         server = new JsonRpcServer(serverChannel, queue, RpcService.class, new DefaultRpcservice());
-        new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    server.mainloop();
-                } catch (Exception e) {
-                    // safe to ignore when loops ends/server is canceled
-                }
+        new Thread(() -> {
+            try {
+                server.mainloop();
+            } catch (Exception e) {
+                // safe to ignore when loops ends/server is canceled
             }
         }).start();
         client = new JsonRpcClient(clientChannel, "", queue, 1000);
@@ -103,6 +99,23 @@ public class JsonRpcTest {
         } catch (UndeclaredThrowableException e) {
             // OK
         }
+
+        try {
+            assertEquals("123", service.procedureIntegerToPojo(123).getStringProperty());
+            fail("Complex return type not supported");
+        } catch (ClassCastException e) {
+            // OK
+        }
+
+        try {
+            Pojo pojo = new Pojo();
+            pojo.setStringProperty("hello");
+            assertEquals("hello", service.procedurePojoToString(pojo));
+            fail("Complex type argument not supported");
+        } catch (UndeclaredThrowableException e) {
+            // OK
+        }
+
     }
 
     public interface RpcService {
@@ -124,9 +137,14 @@ public class JsonRpcTest {
         Long procedureLong(Long input);
 
         long procedurePrimitiveLong(long input);
+
+        Pojo procedureIntegerToPojo(Integer id);
+
+        String procedurePojoToString(Pojo pojo);
+
     }
 
-    public class DefaultRpcservice implements RpcService {
+    public static class DefaultRpcservice implements RpcService {
 
         @Override
         public String procedureString(String input) {
@@ -171,6 +189,31 @@ public class JsonRpcTest {
         @Override
         public int procedurePrimitiveLongToInteger(long input) {
             return (int) input + 1;
+        }
+
+        @Override
+        public Pojo procedureIntegerToPojo(Integer id) {
+            Pojo pojo = new Pojo();
+            pojo.setStringProperty(id.toString());
+            return pojo;
+        }
+
+        @Override
+        public String procedurePojoToString(Pojo pojo) {
+            return pojo.getStringProperty();
+        }
+    }
+
+    public static class Pojo {
+
+        private String stringProperty;
+
+        public String getStringProperty() {
+            return stringProperty;
+        }
+
+        public void setStringProperty(String stringProperty) {
+            this.stringProperty = stringProperty;
         }
     }
 }

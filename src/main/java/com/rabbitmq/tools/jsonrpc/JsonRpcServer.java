@@ -55,6 +55,8 @@ public class JsonRpcServer extends StringRpcServer {
     /** The instance backing this server. */
     public Object interfaceInstance;
 
+    private final JsonRpcMapper mapper;
+
     /**
      * Construct a server that talks to the outside world using the
      * given channel, and constructs a fresh temporary
@@ -70,6 +72,7 @@ public class JsonRpcServer extends StringRpcServer {
         throws IOException
     {
         super(channel);
+        this.mapper = new DefaultJsonRpcMapper();
         init(interfaceClass, interfaceInstance);
     }
 
@@ -98,6 +101,7 @@ public class JsonRpcServer extends StringRpcServer {
         throws IOException
     {
         super(channel, queueName);
+        this.mapper = new DefaultJsonRpcMapper();
         init(interfaceClass, interfaceInstance);
     }
 
@@ -126,25 +130,24 @@ public class JsonRpcServer extends StringRpcServer {
             LOGGER.debug("Request: {}", requestBody);
         }
         try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> request = (Map<String,Object>) new JSONReader().read(requestBody);
+            JsonRpcMapper.JsonRpcRequest request = mapper.parse(requestBody, serviceDescription);
             if (request == null) {
                 response = errorResponse(null, 400, "Bad Request", null);
-            } else if (!ServiceDescription.JSON_RPC_VERSION.equals(request.get("version"))) {
+            } else if (!ServiceDescription.JSON_RPC_VERSION.equals(request.getVersion())) {
                 response = errorResponse(null, 505, "JSONRPC version not supported", null);
             } else {
-                id = request.get("id");
-                method = (String) request.get("method");
-                List<?> parmList = (List<?>) request.get("params");
-                params = parmList.toArray();
-                if (method.equals("system.describe")) {
+                id = request.getId();
+                method = request.getMethod();
+                params = request.getParameters();
+                if (request.isSystemDescribe()) {
                     response = resultResponse(id, serviceDescription);
-                } else if (method.startsWith("system.")) {
+                } else if (request.isSystem()) {
                     response = errorResponse(id, 403, "System methods forbidden", null);
                 } else {
                     Object result;
                     try {
                         Method matchingMethod = matchingMethod(method, params);
+                        params = mapper.parameters(request, matchingMethod);
                         if (LOGGER.isDebugEnabled()) {
                             Collection<String> parametersValuesAndTypes = new ArrayList<String>();
                             if (params != null) {
@@ -197,7 +200,7 @@ public class JsonRpcServer extends StringRpcServer {
      * ID given, using the code, message, and possible
      * (JSON-encodable) argument passed in.
      */
-    public static String errorResponse(Object id, int code, String message, Object errorArg) {
+    private String errorResponse(Object id, int code, String message, Object errorArg) {
         Map<String, Object> err = new HashMap<String, Object>();
         err.put("name", "JSONRPCError");
         err.put("code", code);
@@ -210,22 +213,21 @@ public class JsonRpcServer extends StringRpcServer {
      * Construct and encode a JSON-RPC success response for the
      * request ID given, using the result value passed in.
      */
-    public static String resultResponse(Object id, Object result) {
+    private String resultResponse(Object id, Object result) {
         return response(id, "result", result);
     }
 
     /**
      * Private API - used by errorResponse and resultResponse.
      */
-    public static String response(Object id, String label, Object value) {
+    private String response(Object id, String label, Object value) {
         Map<String, Object> resp = new HashMap<String, Object>();
         resp.put("version", ServiceDescription.JSON_RPC_VERSION);
         if (id != null) {
             resp.put("id", id);
         }
         resp.put(label, value);
-        String respStr = new JSONWriter().write(resp);
-        //System.err.println(respStr);
+        String respStr = mapper.write(resp);
         return respStr;
     }
 
