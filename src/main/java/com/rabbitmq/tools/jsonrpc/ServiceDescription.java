@@ -48,7 +48,7 @@ public class ServiceDescription {
     }
 
     public ServiceDescription(Class<?> klass) {
-        this.procedures = new HashMap<String, ProcedureDescription>();
+        this.procedures = new HashMap<>();
         for (Method m: klass.getMethods()) {
             ProcedureDescription proc = new ProcedureDescription(m);
             addProcedure(proc);
@@ -66,7 +66,7 @@ public class ServiceDescription {
 
     /** Private API - used via reflection during parsing/loading */
     public void setProcs(Collection<Map<String, Object>> p) {
-        procedures = new HashMap<String, ProcedureDescription>();
+        procedures = new HashMap<>();
         for (Map<String, Object> pm: p) {
             ProcedureDescription proc = new ProcedureDescription(pm);
             addProcedure(proc);
