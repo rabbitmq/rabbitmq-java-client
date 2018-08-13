@@ -15,6 +15,9 @@
 
 package com.rabbitmq.client.impl.recovery;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Composable topology recovery retry handler.
  * This retry handler implementations let the user choose the condition
@@ -31,6 +34,8 @@ package com.rabbitmq.client.impl.recovery;
  * @since 4.8.0
  */
 public class DefaultRetryHandler implements RetryHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultRetryHandler.class);
 
     private final RetryCondition<? super RecordedQueue> queueRecoveryRetryCondition;
     private final RetryCondition<? super RecordedExchange> exchangeRecoveryRetryCondition;
@@ -91,6 +96,7 @@ public class DefaultRetryHandler implements RetryHandler {
 
     protected <T extends RecordedEntity> RetryResult doRetry(RetryCondition<T> condition, RetryOperation<?> operation, T entity, RetryContext context)
         throws Exception {
+        log(entity, context.exception());
         int attempts = 0;
         Exception exception = context.exception();
         while (attempts < retryAttempts) {
@@ -110,6 +116,10 @@ public class DefaultRetryHandler implements RetryHandler {
             }
         }
         throw context.exception();
+    }
+
+    protected void log(RecordedEntity entity, Exception exception) {
+        LOGGER.info("Error while recovering {}, retrying with {} attempt(s).", entity, retryAttempts, exception);
     }
 
     public static abstract class RetryOperation<T> {
@@ -154,19 +164,6 @@ public class DefaultRetryHandler implements RetryHandler {
                 @Override
                 public boolean test(E entity, Exception ex) {
                     return !RetryCondition.this.test(entity, ex);
-                }
-            };
-        }
-
-        public RetryCondition<E> or(final RetryCondition<? super E> other) {
-            if (other == null) {
-                throw new IllegalArgumentException("Condition cannot be null");
-            }
-            return new RetryCondition<E>() {
-
-                @Override
-                public boolean test(E entity, Exception ex) {
-                    return RetryCondition.this.test(entity, ex) || other.test(entity, ex);
                 }
             };
         }

@@ -27,13 +27,7 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
-import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryHandlerBuilder.builder;
-import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryLogic.CHANNEL_CLOSED_NOT_FOUND;
-import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryLogic.RECOVER_BINDING;
-import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryLogic.RECOVER_BINDING_QUEUE;
-import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryLogic.RECOVER_CHANNEL;
-import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryLogic.RECOVER_CONSUMER;
-import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryLogic.RECOVER_CONSUMER_QUEUE;
+import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryLogic.RETRY_ON_QUEUE_NOT_FOUND_RETRY_HANDLER;
 import static com.rabbitmq.client.test.TestUtils.closeAllConnectionsAndWaitForRecovery;
 import static org.junit.Assert.assertTrue;
 
@@ -61,13 +55,7 @@ public class TopologyRecoveryRetry extends BrokerTestCase {
     @Override
     protected ConnectionFactory newConnectionFactory() {
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
-        connectionFactory.setTopologyRecoveryRetryHandler(
-            builder().bindingRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
-                .consumerRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
-                .bindingRecoveryRetryOperation(RECOVER_CHANNEL.andThen(RECOVER_BINDING_QUEUE).andThen(RECOVER_BINDING))
-                .consumerRecoveryRetryOperation(RECOVER_CHANNEL.andThen(RECOVER_CONSUMER_QUEUE.andThen(RECOVER_CONSUMER)))
-                .build()
-        );
+        connectionFactory.setTopologyRecoveryRetryHandler(RETRY_ON_QUEUE_NOT_FOUND_RETRY_HANDLER);
         connectionFactory.setNetworkRecoveryInterval(1000);
         return connectionFactory;
     }

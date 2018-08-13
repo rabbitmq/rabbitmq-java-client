@@ -18,6 +18,8 @@ package com.rabbitmq.client.impl.recovery;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ShutdownSignalException;
 
+import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryHandlerBuilder.builder;
+
 /**
  * Useful ready-to-use conditions and operations for {@link DefaultRetryHandler}.
  * They're composed and used with the {@link TopologyRecoveryRetryHandlerBuilder}.
@@ -29,6 +31,9 @@ import com.rabbitmq.client.ShutdownSignalException;
  */
 public abstract class TopologyRecoveryRetryLogic {
 
+    /**
+     * Channel has been closed because of a resource that doesn't exist.
+     */
     public static final DefaultRetryHandler.RetryCondition<RecordedEntity> CHANNEL_CLOSED_NOT_FOUND = new DefaultRetryHandler.RetryCondition<RecordedEntity>() {
 
         @Override
@@ -43,6 +48,9 @@ public abstract class TopologyRecoveryRetryLogic {
         }
     };
 
+    /**
+     * Recover a channel.
+     */
     public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_CHANNEL = new DefaultRetryHandler.RetryOperation<Void>() {
 
         @Override
@@ -54,6 +62,9 @@ public abstract class TopologyRecoveryRetryLogic {
         }
     };
 
+    /**
+     * Recover the destination queue of a binding.
+     */
     public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_BINDING_QUEUE = new DefaultRetryHandler.RetryOperation<Void>() {
 
         @Override
@@ -72,6 +83,9 @@ public abstract class TopologyRecoveryRetryLogic {
         }
     };
 
+    /**
+     * Recover a binding.
+     */
     public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_BINDING = new DefaultRetryHandler.RetryOperation<Void>() {
 
         @Override
@@ -81,6 +95,9 @@ public abstract class TopologyRecoveryRetryLogic {
         }
     };
 
+    /**
+     * Recover the queue of a consumer.
+     */
     public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_CONSUMER_QUEUE = new DefaultRetryHandler.RetryOperation<Void>() {
 
         @Override
@@ -99,6 +116,9 @@ public abstract class TopologyRecoveryRetryLogic {
         }
     };
 
+    /**
+     * Recover a consumer.
+     */
     public static final DefaultRetryHandler.RetryOperation<String> RECOVER_CONSUMER = new DefaultRetryHandler.RetryOperation<String>() {
 
         @Override
@@ -106,4 +126,37 @@ public abstract class TopologyRecoveryRetryLogic {
             return context.consumer().recover();
         }
     };
+
+    /**
+     * Recover all the bindings of the queue of a consumer.
+     */
+    public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_CONSUMER_QUEUE_BINDINGS = new DefaultRetryHandler.RetryOperation<Void>() {
+
+        @Override
+        public Void call(RetryContext context) throws Exception {
+            if (context.entity() instanceof RecordedConsumer) {
+                String queue = context.consumer().getQueue();
+                for (RecordedBinding recordedBinding : context.connection().getRecordedBindings()) {
+                    if (recordedBinding instanceof RecordedQueueBinding && queue.equals(recordedBinding.getDestination())) {
+                        recordedBinding.recover();
+                    }
+                }
+            }
+            return null;
+        }
+    };
+
+    /**
+     * Pre-configured {@link DefaultRetryHandler} that retries recovery of bindings and consumers
+     * when their respective queue is not found.
+     * This retry handler can be useful for long recovery processes, whereby auto-delete queues
+     * can be deleted between queue recovery and binding/consumer recovery.
+     */
+    public static final RetryHandler RETRY_ON_QUEUE_NOT_FOUND_RETRY_HANDLER = builder()
+        .bindingRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
+        .consumerRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
+        .bindingRecoveryRetryOperation(RECOVER_CHANNEL.andThen(RECOVER_BINDING_QUEUE).andThen(RECOVER_BINDING))
+        .consumerRecoveryRetryOperation(RECOVER_CHANNEL.andThen(RECOVER_CONSUMER_QUEUE.andThen(RECOVER_CONSUMER)
+            .andThen(RECOVER_CONSUMER_QUEUE_BINDINGS)))
+        .build();
 }
