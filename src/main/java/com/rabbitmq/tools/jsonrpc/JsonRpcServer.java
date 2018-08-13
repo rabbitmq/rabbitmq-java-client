@@ -57,6 +57,16 @@ public class JsonRpcServer extends StringRpcServer {
 
     private final JsonRpcMapper mapper;
 
+    public JsonRpcServer(Channel channel,
+        Class<?> interfaceClass,
+        Object interfaceInstance, JsonRpcMapper mapper)
+        throws IOException
+    {
+        super(channel);
+        this.mapper = mapper;
+        init(interfaceClass, interfaceInstance);
+    }
+
     /**
      * Construct a server that talks to the outside world using the
      * given channel, and constructs a fresh temporary
@@ -71,9 +81,7 @@ public class JsonRpcServer extends StringRpcServer {
                          Object interfaceInstance)
         throws IOException
     {
-        super(channel);
-        this.mapper = new DefaultJsonRpcMapper();
-        init(interfaceClass, interfaceInstance);
+        this(channel, interfaceClass, interfaceInstance, new DefaultJsonRpcMapper());
     }
 
     private void init(Class<?> interfaceClass, Object interfaceInstance)
@@ -81,6 +89,17 @@ public class JsonRpcServer extends StringRpcServer {
         this.interfaceClass = interfaceClass;
         this.interfaceInstance = interfaceInstance;
         this.serviceDescription = new ServiceDescription(interfaceClass);
+    }
+
+    public JsonRpcServer(Channel channel,
+        String queueName,
+        Class<?> interfaceClass,
+        Object interfaceInstance, JsonRpcMapper mapper)
+        throws IOException
+    {
+        super(channel, queueName);
+        this.mapper = mapper;
+        init(interfaceClass, interfaceInstance);
     }
 
     /**
@@ -100,9 +119,7 @@ public class JsonRpcServer extends StringRpcServer {
                          Object interfaceInstance)
         throws IOException
     {
-        super(channel, queueName);
-        this.mapper = new DefaultJsonRpcMapper();
-        init(interfaceClass, interfaceInstance);
+        this(channel, queueName, interfaceClass, interfaceInstance, new DefaultJsonRpcMapper());
     }
 
     /**
@@ -147,7 +164,6 @@ public class JsonRpcServer extends StringRpcServer {
                     Object result;
                     try {
                         Method matchingMethod = matchingMethod(method, params);
-                        params = mapper.parameters(request, matchingMethod);
                         if (LOGGER.isDebugEnabled()) {
                             Collection<String> parametersValuesAndTypes = new ArrayList<String>();
                             if (params != null) {

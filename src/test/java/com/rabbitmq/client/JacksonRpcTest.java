@@ -15,7 +15,6 @@
 
 package com.rabbitmq.client;
 
-import com.rabbitmq.tools.jsonrpc.DefaultJsonRpcMapper;
 import com.rabbitmq.tools.jsonrpc.JacksonJsonRpcMapper;
 import com.rabbitmq.tools.jsonrpc.JsonRpcException;
 import com.rabbitmq.tools.jsonrpc.JsonRpcMapper;
@@ -28,11 +27,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class JsonRpcTest extends AbstractJsonRpcTest {
+public class JacksonRpcTest extends AbstractJsonRpcTest {
 
     @Override
     JsonRpcMapper createMapper() {
-        return new DefaultJsonRpcMapper();
+        return new JacksonJsonRpcMapper();
     }
 
     @Test
@@ -40,55 +39,26 @@ public class JsonRpcTest extends AbstractJsonRpcTest {
         assertFalse(service.procedurePrimitiveBoolean(true));
         assertFalse(service.procedureBoolean(Boolean.TRUE).booleanValue());
         assertEquals("hello1", service.procedureString("hello"));
+        assertEquals("hello1hello2", service.procedureStringString("hello1", "hello2"));
         assertEquals(2, service.procedureInteger(1).intValue());
         assertEquals(2, service.procedurePrimitiveInteger(1));
         assertEquals(2, service.procedureDouble(1.0).intValue());
         assertEquals(2, (int) service.procedurePrimitiveDouble(1.0));
+        assertEquals(2, (int) service.procedureLongToInteger(1L));
+        assertEquals(2, service.procedurePrimitiveLongToInteger(1L));
+        assertEquals(2, service.procedurePrimitiveLong(1L));
+        assertEquals(2, service.procedureLong(1L).longValue());
+        assertEquals("123", service.procedureIntegerToPojo(123).getStringProperty());
+
+        Pojo pojo = new Pojo();
+        pojo.setStringProperty("hello");
+        assertEquals("hello", service.procedurePojoToString(pojo));
 
         try {
             service.procedureException();
             fail("Remote procedure throwing exception, an exception should have been thrown");
         } catch (UndeclaredThrowableException e) {
             assertTrue(e.getCause() instanceof JsonRpcException);
-        }
-
-
-        try {
-            assertEquals(2, (int) service.procedureLongToInteger(1L));
-            fail("Long argument isn't supported");
-        } catch (UndeclaredThrowableException e) {
-            // OK
-        }
-        assertEquals(2, service.procedurePrimitiveLongToInteger(1L));
-
-        try {
-            assertEquals(2, service.procedurePrimitiveLong(1L));
-            fail("Long return type not supported");
-        } catch (ClassCastException e) {
-            // OK
-        }
-
-        try {
-            assertEquals(2, service.procedureLong(1L).longValue());
-            fail("Long argument isn't supported");
-        } catch (UndeclaredThrowableException e) {
-            // OK
-        }
-
-        try {
-            assertEquals("123", service.procedureIntegerToPojo(123).getStringProperty());
-            fail("Complex return type not supported");
-        } catch (ClassCastException e) {
-            // OK
-        }
-
-        try {
-            Pojo pojo = new Pojo();
-            pojo.setStringProperty("hello");
-            assertEquals("hello", service.procedurePojoToString(pojo));
-            fail("Complex type argument not supported");
-        } catch (UndeclaredThrowableException e) {
-            // OK
         }
     }
 }

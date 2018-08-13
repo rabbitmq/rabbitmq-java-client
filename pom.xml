@@ -57,6 +57,7 @@
     <slf4j.version>1.7.25</slf4j.version>
     <metrics.version>3.2.6</metrics.version>
     <micrometer.version>1.0.2</micrometer.version>
+    <jackson.version>2.9.6</jackson.version>
     <logback.version>1.2.3</logback.version>
     <commons-cli.version>1.1</commons-cli.version>
     <junit.version>4.12</junit.version>
@@ -638,6 +639,12 @@
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-core</artifactId>
       <version>${micrometer.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
