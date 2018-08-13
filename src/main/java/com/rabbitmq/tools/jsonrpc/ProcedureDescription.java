@@ -39,6 +39,8 @@ public class ProcedureDescription {
     private ParameterDescription[] params;
     /** Return type for this procedure */
     private String returnType;
+    private String javaReturnType;
+    private Class<?> _javaReturnTypeAsClass;
 
     /** Reflected method object, used for service invocation */
     private Method method;
@@ -68,6 +70,7 @@ public class ProcedureDescription {
             params[i] = new ParameterDescription(i, parameterTypes[i]);
         }
         this.returnType = ParameterDescription.lookup(m.getReturnType());
+        this.javaReturnType = m.getReturnType().getName();
     }
 
     public ProcedureDescription() {
@@ -81,6 +84,47 @@ public class ProcedureDescription {
 
     /** Private API - used to get the reflected method object, for servers */
     public Method internal_getMethod() { return method; }
+
+    public String getJavaReturnType() {
+        return javaReturnType;
+    }
+
+    public void setJavaReturnType(String javaReturnType) {
+        this.javaReturnType = javaReturnType;
+        this._javaReturnTypeAsClass = computeReturnTypeAsJavaClass();
+    }
+
+    public Class<?> getReturnType() {
+        return _javaReturnTypeAsClass;
+    }
+
+    private Class<?> computeReturnTypeAsJavaClass() {
+        try {
+            if ("int".equals(javaReturnType)) {
+                return Integer.TYPE;
+            } else if ("double".equals(javaReturnType)) {
+                return Double.TYPE;
+            } else if ("long".equals(javaReturnType)) {
+                return Long.TYPE;
+            } else if ("boolean".equals(javaReturnType)) {
+                return Boolean.TYPE;
+            } else if ("char".equals(javaReturnType)) {
+                return Character.TYPE;
+            } else if ("byte".equals(javaReturnType)) {
+                return Byte.TYPE;
+            } else if ("short".equals(javaReturnType)) {
+                return Short.TYPE;
+            } else if ("float".equals(javaReturnType)) {
+                return Float.TYPE;
+            } else if ("void".equals(javaReturnType)) {
+                return Void.TYPE;
+            } else {
+                return Class.forName(javaReturnType);
+            }
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Unable to load class: " + javaReturnType, e);
+        }
+    }
 
     /** Gets an array of parameter descriptions for all this procedure's parameters */
     public ParameterDescription[] internal_getParams() {
