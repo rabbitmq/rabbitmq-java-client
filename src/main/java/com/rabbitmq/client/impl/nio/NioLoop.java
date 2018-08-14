@@ -41,9 +41,12 @@ public class NioLoop implements Runnable {
 
     private final NioParams nioParams;
 
+    private final ExecutorService connectionShutdownExecutor;
+
     public NioLoop(NioParams nioParams, NioLoopContext loopContext) {
         this.nioParams = nioParams;
         this.context = loopContext;
+        this.connectionShutdownExecutor = nioParams.getConnectionShutdownExecutor();
     }
 
     @Override
@@ -296,19 +299,15 @@ public class NioLoop implements Runnable {
     }
 
     protected void dispatchShutdownToConnection(final SocketChannelFrameHandlerState state) {
-        Runnable shutdown = new Runnable() {
-
-            @Override
-            public void run() {
-                state.getConnection().doFinalShutdown();
-            }
-        };
-        if (executorService() == null) {
+        Runnable shutdown = () -> state.getConnection().doFinalShutdown();
+        if (this.connectionShutdownExecutor != null) {
+            connectionShutdownExecutor.execute(shutdown);
+        } else if (executorService() != null) {
+            executorService().execute(shutdown);
+        } else {
             String name = "rabbitmq-connection-shutdown-" + state.getConnection();
             Thread shutdownThread = Environment.newThread(threadFactory(), shutdown, name);
             shutdownThread.start();
-        } else {
-            executorService().submit(shutdown);
         }
     }
 
