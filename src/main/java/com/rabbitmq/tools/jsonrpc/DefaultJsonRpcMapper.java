@@ -38,6 +38,7 @@ public class DefaultJsonRpcMapper implements JsonRpcMapper {
 
     @Override
     public JsonRpcRequest parse(String requestBody, ServiceDescription description) {
+        @SuppressWarnings("unchecked")
         Map<String, Object> request = (Map<String, Object>) new JSONReader().read(requestBody);
         return new JsonRpcRequest(
             request.get("id"), request.get("version").toString(), request.get("method").toString(),
@@ -47,6 +48,7 @@ public class DefaultJsonRpcMapper implements JsonRpcMapper {
 
     @Override
     public JsonRpcResponse parse(String responseBody, Class<?> expectedType) {
+        @SuppressWarnings("unchecked")
         Map<String, Object> map = (Map<String, Object>) (new JSONReader().read(responseBody));
         Map<String, Object> error;
         JsonRpcException exception = null;

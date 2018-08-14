@@ -47,7 +47,7 @@ import java.util.Map;
 /**
  * Will be removed in 6.0
  *
- * @deprecated Use a third-party JSON library, e.g. Jackson or GJSON
+ * @deprecated Use a third-party JSON library, e.g. Jackson or Gson
  */
 public class JSONReader {
 

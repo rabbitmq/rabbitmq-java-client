@@ -58,13 +58,6 @@ public class JacksonJsonRpcTest extends AbstractJsonRpcTest {
         Date returnedDate = service.procedureDateDate(date);
         assertEquals(date.getTime(), returnedDate.getTime());
 
-        try {
-            service.procedureException();
-            fail("Remote procedure throwing exception, an exception should have been thrown");
-        } catch (UndeclaredThrowableException e) {
-            assertTrue(e.getCause() instanceof JsonRpcException);
-        }
-
         Pojo pojo = new Pojo();
         pojo.setStringProperty("hello");
         assertEquals("hello", service.procedurePojoToString(pojo));
