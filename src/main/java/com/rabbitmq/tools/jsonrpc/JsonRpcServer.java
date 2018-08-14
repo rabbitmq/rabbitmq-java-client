@@ -13,55 +13,59 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.tools.jsonrpc;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.StringRpcServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.StringRpcServer;
-import com.rabbitmq.tools.json.JSONReader;
-import com.rabbitmq.tools.json.JSONWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * JSON-RPC Server class.
- *
+ * <p>
  * Given a Java {@link Class}, representing an interface, and an
  * implementation of that interface, JsonRpcServer will reflect on the
  * class to construct the {@link ServiceDescription}, and will route
  * incoming requests for methods on the interface to the
  * implementation object while the mainloop() is running.
+ * <p>
+ * {@link JsonRpcServer} delegates JSON parsing and generating to
+ * a {@link JsonRpcMapper}.
  *
  * @see com.rabbitmq.client.RpcServer
  * @see JsonRpcClient
+ * @see JsonRpcMapper
+ * @see JacksonJsonRpcMapper
  */
 public class JsonRpcServer extends StringRpcServer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcServer.class);
-
-    /** Holds the JSON-RPC service description for this client. */
-    public ServiceDescription serviceDescription;
-    /** The interface this server implements. */
-    public Class<?> interfaceClass;
-    /** The instance backing this server. */
-    public Object interfaceInstance;
-
     private final JsonRpcMapper mapper;
+    /**
+     * Holds the JSON-RPC service description for this client.
+     */
+    public ServiceDescription serviceDescription;
+    /**
+     * The interface this server implements.
+     */
+    public Class<?> interfaceClass;
+    /**
+     * The instance backing this server.
+     */
+    public Object interfaceInstance;
 
     public JsonRpcServer(Channel channel,
         Class<?> interfaceClass,
         Object interfaceInstance, JsonRpcMapper mapper)
-        throws IOException
-    {
+        throws IOException {
         super(channel);
         this.mapper = mapper;
         init(interfaceClass, interfaceInstance);
@@ -71,32 +75,24 @@ public class JsonRpcServer extends StringRpcServer {
      * Construct a server that talks to the outside world using the
      * given channel, and constructs a fresh temporary
      * queue. Use getQueueName() to discover the created queue name.
-     * @param channel AMQP channel to use
-     * @param interfaceClass Java interface that this server is exposing to the world
+     *
+     * @param channel           AMQP channel to use
+     * @param interfaceClass    Java interface that this server is exposing to the world
      * @param interfaceInstance Java instance (of interfaceClass) that is being exposed
      * @throws IOException if something goes wrong during an AMQP operation
      */
     public JsonRpcServer(Channel channel,
-                         Class<?> interfaceClass,
-                         Object interfaceInstance)
-        throws IOException
-    {
+        Class<?> interfaceClass,
+        Object interfaceInstance)
+        throws IOException {
         this(channel, interfaceClass, interfaceInstance, new DefaultJsonRpcMapper());
-    }
-
-    private void init(Class<?> interfaceClass, Object interfaceInstance)
-    {
-        this.interfaceClass = interfaceClass;
-        this.interfaceInstance = interfaceInstance;
-        this.serviceDescription = new ServiceDescription(interfaceClass);
     }
 
     public JsonRpcServer(Channel channel,
         String queueName,
         Class<?> interfaceClass,
         Object interfaceInstance, JsonRpcMapper mapper)
-        throws IOException
-    {
+        throws IOException {
         super(channel, queueName);
         this.mapper = mapper;
         init(interfaceClass, interfaceInstance);
@@ -107,38 +103,43 @@ public class JsonRpcServer extends StringRpcServer {
      * given channel and queue name. Our superclass,
      * RpcServer, expects the queue to exist at the time of
      * construction.
-     * @param channel AMQP channel to use
-     * @param queueName AMQP queue name to listen for requests on
-     * @param interfaceClass Java interface that this server is exposing to the world
+     *
+     * @param channel           AMQP channel to use
+     * @param queueName         AMQP queue name to listen for requests on
+     * @param interfaceClass    Java interface that this server is exposing to the world
      * @param interfaceInstance Java instance (of interfaceClass) that is being exposed
      * @throws IOException if something goes wrong during an AMQP operation
      */
     public JsonRpcServer(Channel channel,
-                         String queueName,
-                         Class<?> interfaceClass,
-                         Object interfaceInstance)
-        throws IOException
-    {
+        String queueName,
+        Class<?> interfaceClass,
+        Object interfaceInstance)
+        throws IOException {
         this(channel, queueName, interfaceClass, interfaceInstance, new DefaultJsonRpcMapper());
+    }
+
+    private void init(Class<?> interfaceClass, Object interfaceInstance) {
+        this.interfaceClass = interfaceClass;
+        this.interfaceInstance = interfaceInstance;
+        this.serviceDescription = new ServiceDescription(interfaceClass);
     }
 
     /**
      * Override our superclass' method, dispatching to doCall.
      */
     @Override
-    public String handleStringCall(String requestBody, AMQP.BasicProperties replyProperties)
-    {
+    public String handleStringCall(String requestBody, AMQP.BasicProperties replyProperties) {
         String replyBody = doCall(requestBody);
         return replyBody;
     }
 
     /**
      * Runs a single JSON-RPC request.
+     *
      * @param requestBody the JSON-RPC request string (a JSON encoded value)
      * @return a JSON-RPC response string (a JSON encoded value)
      */
-    public String doCall(String requestBody)
-    {
+    public String doCall(String requestBody) {
         Object id;
         String method;
         Object[] params;
@@ -188,7 +189,7 @@ public class JsonRpcServer extends StringRpcServer {
             }
         } catch (ClassCastException cce) {
             // Bogus request!
-            response =  errorResponse(null, 400, "Bad Request", null);
+            response = errorResponse(null, 400, "Bad Request", null);
         }
 
         if (LOGGER.isDebugEnabled()) {
@@ -200,13 +201,12 @@ public class JsonRpcServer extends StringRpcServer {
 
     /**
      * Retrieves the best matching method for the given method name and parameters.
-     *
+     * <p>
      * Subclasses may override this if they have specialised
      * dispatching requirements, so long as they continue to honour
      * their ServiceDescription.
      */
-    public Method matchingMethod(String methodName, Object[] params)
-    {
+    public Method matchingMethod(String methodName, Object[] params) {
         ProcedureDescription proc = serviceDescription.getProcedure(methodName, params.length);
         return proc.internal_getMethod();
     }

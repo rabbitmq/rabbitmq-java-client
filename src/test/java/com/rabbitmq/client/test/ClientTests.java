@@ -16,8 +16,8 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.JacksonRpcTest;
-import com.rabbitmq.client.JsonRpcTest;
+import com.rabbitmq.client.JacksonJsonRpcTest;
+import com.rabbitmq.client.DefaultJsonRpcTest;
 import com.rabbitmq.utility.IntAllocatorTests;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -58,8 +58,8 @@ import org.junit.runners.Suite;
     ClientVersionTest.class,
     StrictExceptionHandlerTest.class,
     NoAutoRecoveryWhenTcpWindowIsFullTest.class,
-    JsonRpcTest.class,
-    JacksonRpcTest.class,
+    DefaultJsonRpcTest.class,
+    JacksonJsonRpcTest.class,
     AddressTest.class,
     DefaultRetryHandlerTest.class,
     NioDeadlockOnConnectionClosing.class

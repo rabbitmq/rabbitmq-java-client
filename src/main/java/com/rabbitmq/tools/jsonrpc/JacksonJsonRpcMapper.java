@@ -23,8 +23,8 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ValueNode;
-import com.rabbitmq.tools.json.JSONReader;
-import com.rabbitmq.tools.json.JSONWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -33,9 +33,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * {@link JsonRpcMapper} based on Jackson.
+ * Uses the streaming and databind modules.
  *
+ * @see JsonRpcMapper
+ * @since 5.4.0
  */
 public class JacksonJsonRpcMapper implements JsonRpcMapper {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JacksonJsonRpcMapper.class);
 
     private final ObjectMapper mapper;
 
@@ -62,7 +68,21 @@ public class JacksonJsonRpcMapper implements JsonRpcMapper {
                     if ("method".equals(name)) {
                         method = parser.getValueAsString();
                     } else if ("id".equals(name)) {
-                        // FIXME parse id, can be any type (handle only primitive and wrapper)
+                        TreeNode node = parser.readValueAsTree();
+                        if (node instanceof ValueNode) {
+                            ValueNode idNode = (ValueNode) node;
+                            if (idNode.isNull()) {
+                                id = null;
+                            } else if (idNode.isTextual()) {
+                                id = idNode.asText();
+                            } else if (idNode.isNumber()) {
+                                id = Long.valueOf(idNode.asLong());
+                            } else {
+                                LOGGER.warn("ID type not null, text, or number {}, ignoring", idNode);
+                            }
+                        } else {
+                            LOGGER.warn("ID not a scalar value {}, ignoring", node);
+                        }
                     } else if ("version".equals(name)) {
                         version = parser.getValueAsString();
                     } else if ("params".equals(name)) {
@@ -78,6 +98,10 @@ public class JacksonJsonRpcMapper implements JsonRpcMapper {
             }
         } catch (IOException e) {
             throw new JsonRpcMappingException("Error during JSON parsing", e);
+        }
+
+        if (method == null) {
+            throw new IllegalArgumentException("Could not find method to invoke in request");
         }
 
         List<Object> convertedParameters = new ArrayList<>(parameters.size());
@@ -100,6 +124,51 @@ public class JacksonJsonRpcMapper implements JsonRpcMapper {
             id, version, method,
             convertedParameters.toArray()
         );
+    }
+
+    @Override
+    public JsonRpcResponse parse(String responseBody, Class<?> expectedReturnType) {
+        JsonFactory jsonFactory = new MappingJsonFactory();
+        Object result = null;
+        JsonRpcException exception = null;
+        Map<String, Object> errorMap = null;
+        try (JsonParser parser = jsonFactory.createParser(responseBody)) {
+            while (parser.nextToken() != null) {
+                JsonToken token = parser.currentToken();
+                if (token == JsonToken.FIELD_NAME) {
+                    String name = parser.currentName();
+                    if ("result".equals(name)) {
+                        parser.nextToken();
+                        if (expectedReturnType == Void.TYPE) {
+                            result = null;
+                        } else {
+                            result = convert(parser.readValueAsTree(), expectedReturnType);
+                        }
+                    } else if ("error".equals(name)) {
+                        errorMap = (Map<String, Object>) convert(parser.readValueAsTree(), Map.class);
+                        exception = new JsonRpcException(
+                            errorMap.toString(),
+                            (String) errorMap.get("name"),
+                            errorMap.get("code") == null ? 0 : (Integer) errorMap.get("code"),
+                            (String) errorMap.get("message"),
+                            errorMap
+                        );
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new JsonRpcMappingException("Error during JSON parsing", e);
+        }
+        return new JsonRpcResponse(result, errorMap, exception);
+    }
+
+    @Override
+    public String write(Object input) {
+        try {
+            return mapper.writeValueAsString(input);
+        } catch (JsonProcessingException e) {
+            throw new JsonRpcMappingException("Error during JSON serialization", e);
+        }
     }
 
     protected Object convert(TreeNode node, Class<?> expectedType) throws IOException {
@@ -127,52 +196,5 @@ public class JacksonJsonRpcMapper implements JsonRpcMapper {
             value = mapper.readValue(node.traverse(), expectedType);
         }
         return value;
-    }
-
-    @Override
-    public JsonRpcResponse parse(String responseBody, Class<?> expectedReturnType) {
-        JsonFactory jsonFactory = new MappingJsonFactory();
-        Object result = null;
-        try (JsonParser parser = jsonFactory.createParser(responseBody)) {
-            while (parser.nextToken() != null) {
-                JsonToken token = parser.currentToken();
-                if (token == JsonToken.FIELD_NAME) {
-                    String name = parser.currentName();
-                    parser.nextToken();
-                    if ("result".equals(name)) {
-                        if (expectedReturnType == Void.TYPE) {
-                            result = null;
-                        } else {
-                            result = convert(parser.readValueAsTree(), expectedReturnType);
-                        }
-                    }
-                }
-            }
-        } catch (IOException e) {
-            throw new JsonRpcMappingException("Error during JSON parsing", e);
-        }
-        Map<String, Object> map = (Map<String, Object>) (new JSONReader().read(responseBody));
-        Map<String, Object> error;
-        JsonRpcException exception = null;
-        if (map.containsKey("error")) {
-            error = (Map<String, Object>) map.get("error");
-            exception = new JsonRpcException(
-                new JSONWriter().write(error),
-                (String) error.get("name"),
-                error.get("code") == null ? 0 : (Integer) error.get("code"),
-                (String) error.get("message"),
-                error
-            );
-        }
-        return new JsonRpcResponse(map, result, map.get("error"), exception);
-    }
-
-    @Override
-    public String write(Object input) {
-        try {
-            return mapper.writeValueAsString(input);
-        } catch (JsonProcessingException e) {
-            throw new JsonRpcMappingException("Error during JSON serialization", e);
-        }
     }
 }

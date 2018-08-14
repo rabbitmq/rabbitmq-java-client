@@ -21,12 +21,8 @@ import com.rabbitmq.tools.jsonrpc.JsonRpcMapper;
 import com.rabbitmq.tools.jsonrpc.JsonRpcServer;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 
-import java.lang.reflect.UndeclaredThrowableException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import java.util.Date;
 
 public abstract class AbstractJsonRpcTest {
 
@@ -105,6 +101,9 @@ public abstract class AbstractJsonRpcTest {
 
         void procedureException();
 
+        void procedureNoArgumentVoid();
+
+        Date procedureDateDate(Date date);
     }
 
     public static class DefaultRpcservice implements RpcService {
@@ -184,6 +183,16 @@ public abstract class AbstractJsonRpcTest {
         @Override
         public void procedureException() {
             throw new RuntimeException();
+        }
+
+        @Override
+        public void procedureNoArgumentVoid() {
+
+        }
+
+        @Override
+        public Date procedureDateDate(Date date) {
+            return date;
         }
     }
 
