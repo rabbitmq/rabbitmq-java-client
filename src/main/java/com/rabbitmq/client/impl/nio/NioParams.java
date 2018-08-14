@@ -55,10 +55,10 @@ public class NioParams {
     private SocketChannelConfigurator socketChannelConfigurator = new DefaultSocketChannelConfigurator();
 
     /** the hook to configure the SSL engine before the connection is open */
-    private SslEngineConfigurator sslEngineConfigurator = new SslEngineConfigurator() {
-        @Override
-        public void configure(SSLEngine sslEngine) throws IOException { }
-    };
+    private SslEngineConfigurator sslEngineConfigurator = sslEngine -> { };
+
+    /** the executor service used for connection shutdown */
+    private ExecutorService connectionShutdownExecutor;
 
     public NioParams() {
     }
@@ -72,6 +72,7 @@ public class NioParams {
         setNioExecutor(nioParams.getNioExecutor());
         setThreadFactory(nioParams.getThreadFactory());
         setSslEngineConfigurator(nioParams.getSslEngineConfigurator());
+        setConnectionShutdownExecutor(nioParams.getConnectionShutdownExecutor());
     }
 
     public int getReadByteBufferSize() {
@@ -186,6 +187,9 @@ public class NioParams {
      * number of requested IO threads, plus a few more, as it's also
      * used to dispatch the shutdown of connections.
      *
+     * Connection shutdown can also be handled by a dedicated {@link ExecutorService},
+     * see {@link #setConnectionShutdownExecutor(ExecutorService)}.
+     *
      * It's developer's responsibility to shut down the executor
      * when it is no longer needed.
      *
@@ -195,6 +199,7 @@ public class NioParams {
      * @return this {@link NioParams} instance
      * @see NioParams#setNbIoThreads(int)
      * @see NioParams#setThreadFactory(ThreadFactory)
+     * @see NioParams#setConnectionShutdownExecutor(ExecutorService)
      */
     public NioParams setNioExecutor(ExecutorService nioExecutor) {
         this.nioExecutor = nioExecutor;
@@ -274,5 +279,37 @@ public class NioParams {
 
     public SslEngineConfigurator getSslEngineConfigurator() {
         return sslEngineConfigurator;
+    }
+
+    /**
+     * Set the {@link ExecutorService} used for connection shutdown.
+     * If not set, falls back to the NIO executor and then the thread factory.
+     * This executor service is useful when strict control of the number of threads
+     * is necessary, the application can experience the closing of several connections
+     * at once, and automatic recovery is enabled. In such cases, the connection recovery
+     * can take place in the same pool of threads as the NIO operations, which can
+     * create deadlocks (all the threads of the pool are busy recovering, and there's no
+     * thread left for NIO, so connections never recover).
+     * <p>
+     * Note it's developer's responsibility to shut down the executor
+     * when it is no longer needed.
+     * <p>
+     * Using the thread factory for such scenarios avoid the deadlocks, at the price
+     * of potentially creating many short-lived threads in case of massive connection lost.
+     * <p>
+     * With both the NIO and connection shutdown executor services set and configured
+     * accordingly, the application can control reliably the number of threads used.
+     *
+     * @param connectionShutdownExecutor the executor service to use
+     * @return this {@link NioParams} instance
+     * @see NioParams#setNioExecutor(ExecutorService)
+     */
+    public NioParams setConnectionShutdownExecutor(ExecutorService connectionShutdownExecutor) {
+        this.connectionShutdownExecutor = connectionShutdownExecutor;
+        return this;
+    }
+
+    public ExecutorService getConnectionShutdownExecutor() {
+        return connectionShutdownExecutor;
     }
 }
