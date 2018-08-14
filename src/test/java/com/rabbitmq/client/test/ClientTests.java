@@ -63,7 +63,8 @@ import org.junit.runners.Suite;
     NoAutoRecoveryWhenTcpWindowIsFullTest.class,
     JsonRpcTest.class,
     AddressTest.class,
-    DefaultRetryHandlerTest.class
+    DefaultRetryHandlerTest.class,
+    NioDeadlockOnConnectionClosing.class
 })
 public class ClientTests {
 
