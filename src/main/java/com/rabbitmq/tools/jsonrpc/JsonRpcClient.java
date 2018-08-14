@@ -50,9 +50,14 @@ import java.util.concurrent.TimeoutException;
  * code can access the service description by reading the
  * <code>serviceDescription</code> field of
  * <code>JsonRpcClient</code> instances.
+ * <p>
+ * {@link JsonRpcClient} delegates JSON parsing and generating to
+ * a {@link JsonRpcMapper}.
  *
  * @see #call(String, Object[])
  * @see #call(String[])
+ * @see JsonRpcMapper
+ * @see JacksonJsonRpcMapper
  */
 public class JsonRpcClient extends RpcClient implements InvocationHandler {
 

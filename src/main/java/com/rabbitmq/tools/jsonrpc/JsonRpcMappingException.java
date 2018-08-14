@@ -17,6 +17,7 @@ package com.rabbitmq.tools.jsonrpc;
 
 /**
  *
+ * @since 5.4.0
  */
 public class JsonRpcMappingException extends RuntimeException {
 

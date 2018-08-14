@@ -16,7 +16,6 @@
 package com.rabbitmq.client;
 
 import com.rabbitmq.tools.jsonrpc.DefaultJsonRpcMapper;
-import com.rabbitmq.tools.jsonrpc.JacksonJsonRpcMapper;
 import com.rabbitmq.tools.jsonrpc.JsonRpcException;
 import com.rabbitmq.tools.jsonrpc.JsonRpcMapper;
 import org.junit.Test;
@@ -28,7 +27,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class JsonRpcTest extends AbstractJsonRpcTest {
+public class DefaultJsonRpcTest extends AbstractJsonRpcTest {
 
     @Override
     JsonRpcMapper createMapper() {
@@ -44,6 +43,7 @@ public class JsonRpcTest extends AbstractJsonRpcTest {
         assertEquals(2, service.procedurePrimitiveInteger(1));
         assertEquals(2, service.procedureDouble(1.0).intValue());
         assertEquals(2, (int) service.procedurePrimitiveDouble(1.0));
+        service.procedureNoArgumentVoid();
 
         try {
             service.procedureException();
@@ -51,7 +51,6 @@ public class JsonRpcTest extends AbstractJsonRpcTest {
         } catch (UndeclaredThrowableException e) {
             assertTrue(e.getCause() instanceof JsonRpcException);
         }
-
 
         try {
             assertEquals(2, (int) service.procedureLongToInteger(1L));

@@ -21,13 +21,15 @@ import com.rabbitmq.tools.jsonrpc.JsonRpcMapper;
 import org.junit.Test;
 
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Calendar;
+import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class JacksonRpcTest extends AbstractJsonRpcTest {
+public class JacksonJsonRpcTest extends AbstractJsonRpcTest {
 
     @Override
     JsonRpcMapper createMapper() {
@@ -49,6 +51,19 @@ public class JacksonRpcTest extends AbstractJsonRpcTest {
         assertEquals(2, service.procedurePrimitiveLong(1L));
         assertEquals(2, service.procedureLong(1L).longValue());
         assertEquals("123", service.procedureIntegerToPojo(123).getStringProperty());
+        service.procedureNoArgumentVoid();
+
+        Calendar calendar = Calendar.getInstance();
+        Date date = calendar.getTime();
+        Date returnedDate = service.procedureDateDate(date);
+        assertEquals(date.getTime(), returnedDate.getTime());
+
+        try {
+            service.procedureException();
+            fail("Remote procedure throwing exception, an exception should have been thrown");
+        } catch (UndeclaredThrowableException e) {
+            assertTrue(e.getCause() instanceof JsonRpcException);
+        }
 
         Pojo pojo = new Pojo();
         pojo.setStringProperty("hello");
