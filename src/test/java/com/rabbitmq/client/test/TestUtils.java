@@ -31,6 +31,8 @@ import com.rabbitmq.tools.Host;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -156,26 +158,36 @@ public class TestUtils {
         wait(latch);
     }
 
-    public static void closeAllConnectionsAndWaitForRecovery(Connection connection) throws IOException, InterruptedException {
-        CountDownLatch latch = prepareForRecovery(connection);
+    public static void closeAllConnectionsAndWaitForRecovery(Collection<Connection> connections) throws IOException, InterruptedException {
+        CountDownLatch latch = prepareForRecovery(connections);
         Host.closeAllConnections();
         wait(latch);
     }
 
-    public static CountDownLatch prepareForRecovery(Connection conn) {
-        final CountDownLatch latch = new CountDownLatch(1);
-        ((AutorecoveringConnection) conn).addRecoveryListener(new RecoveryListener() {
+    public static void closeAllConnectionsAndWaitForRecovery(Connection connection) throws IOException, InterruptedException {
+        closeAllConnectionsAndWaitForRecovery(Collections.singletonList(connection));
+    }
 
-            @Override
-            public void handleRecovery(Recoverable recoverable) {
-                latch.countDown();
-            }
+    public static CountDownLatch prepareForRecovery(Connection connection) {
+        return prepareForRecovery(Collections.singletonList(connection));
+    }
 
-            @Override
-            public void handleRecoveryStarted(Recoverable recoverable) {
-                // No-op
-            }
-        });
+    public static CountDownLatch prepareForRecovery(Collection<Connection> connections) {
+        final CountDownLatch latch = new CountDownLatch(connections.size());
+        for (Connection conn : connections) {
+            ((AutorecoveringConnection) conn).addRecoveryListener(new RecoveryListener() {
+
+                @Override
+                public void handleRecovery(Recoverable recoverable) {
+                    latch.countDown();
+                }
+
+                @Override
+                public void handleRecoveryStarted(Recoverable recoverable) {
+                    // No-op
+                }
+            });
+        }
         return latch;
     }
 
