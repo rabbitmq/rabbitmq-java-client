@@ -16,14 +16,37 @@
 package com.rabbitmq.tools.jsonrpc;
 
 /**
+ * Abstraction to handle JSON parsing and generation.
+ * Used by {@link JsonRpcServer} and {@link JsonRpcClient}.
  *
+ * @since 5.4.0
  */
 public interface JsonRpcMapper {
 
+    /**
+     * Parses a JSON RPC request.
+     * The {@link ServiceDescription} can be used
+     * to look up the invoked procedure and learn about
+     * its signature.
+     * @param requestBody
+     * @param description
+     * @return
+     */
     JsonRpcRequest parse(String requestBody, ServiceDescription description);
 
+    /**
+     * Parses a JSON RPC response.
+     * @param responseBody
+     * @param expectedType
+     * @return
+     */
     JsonRpcResponse parse(String responseBody, Class<?> expectedType);
 
+    /**
+     * Serialize an object into JSON.
+     * @param input
+     * @return
+     */
     String write(Object input);
 
     class JsonRpcRequest {
@@ -67,20 +90,14 @@ public interface JsonRpcMapper {
 
     class JsonRpcResponse {
 
-        private final Object reply;
         private final Object result;
         private final Object error;
         private final JsonRpcException exception;
 
-        public JsonRpcResponse(Object reply, Object result, Object error, JsonRpcException exception) {
-            this.reply = reply;
+        public JsonRpcResponse(Object result, Object error, JsonRpcException exception) {
             this.result = result;
             this.error = error;
             this.exception = exception;
-        }
-
-        public Object getReply() {
-            return reply;
         }
 
         public Object getError() {
