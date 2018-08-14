@@ -21,7 +21,7 @@ package com.rabbitmq.tools.json;
  *
  * Will be removed in 6.0
  *
- * @deprecated Use a third-party JSON library, e.g. Jackson or GJSON
+ * @deprecated Use a third-party JSON library, e.g. Jackson or Gson
  */
 public interface JSONSerializable {
     /**
