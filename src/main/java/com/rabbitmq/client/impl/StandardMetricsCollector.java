@@ -125,7 +125,7 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
     }
 
     @Override
-    protected void markPublishedMessageNotRouted() {
+    protected void markPublishedMessageUnrouted() {
         publishUnroutedMessages.mark();
     }
 
