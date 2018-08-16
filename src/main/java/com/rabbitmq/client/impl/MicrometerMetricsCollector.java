@@ -254,17 +254,6 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
             }
         };
 
-        /**
-         *
-         * @param registry
-         * @param prefix
-         * @deprecated will be removed in 6.0.0
-         */
-        @Deprecated
-        Object create(MeterRegistry registry, String prefix) {
-            return this.create(registry, prefix, Collections.emptyList());
-        }
-
         abstract Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags);
 
     }
