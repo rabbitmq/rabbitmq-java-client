@@ -57,9 +57,11 @@ public class JacksonJsonRpcMapper implements JsonRpcMapper {
     public JsonRpcRequest parse(String requestBody, ServiceDescription description) {
         JsonFactory jsonFactory = new MappingJsonFactory();
         String method = null, version = null;
-        final List<TreeNode> parameters = new ArrayList<>();
+        final List<TreeNode> parameters = new ArrayList<TreeNode>();
         Object id = null;
-        try (JsonParser parser = jsonFactory.createParser(requestBody)) {
+        JsonParser parser = null;
+        try {
+            parser = jsonFactory.createParser(requestBody);
             while (parser.nextToken() != null) {
                 JsonToken token = parser.currentToken();
                 if (token == JsonToken.FIELD_NAME) {
@@ -98,17 +100,25 @@ public class JacksonJsonRpcMapper implements JsonRpcMapper {
             }
         } catch (IOException e) {
             throw new JsonRpcMappingException("Error during JSON parsing", e);
+        } finally {
+            if (parser != null) {
+                try {
+                    parser.close();
+                } catch (IOException e) {
+                    throw new JsonRpcMappingException("Error while closing JSON parser", e);
+                }
+            }
         }
 
         if (method == null) {
             throw new IllegalArgumentException("Could not find method to invoke in request");
         }
 
-        List<Object> convertedParameters = new ArrayList<>(parameters.size());
+        List<Object> convertedParameters = new ArrayList<Object>(parameters.size());
         if (!parameters.isEmpty()) {
             ProcedureDescription proc = description.getProcedure(method, parameters.size());
             Method internalMethod = proc.internal_getMethod();
-            for (int i = 0; i < internalMethod.getParameterCount(); i++) {
+            for (int i = 0; i < internalMethod.getParameterTypes().length; i++) {
                 TreeNode parameterNode = parameters.get(i);
                 try {
                     Class<?> parameterType = internalMethod.getParameterTypes()[i];
@@ -132,7 +142,9 @@ public class JacksonJsonRpcMapper implements JsonRpcMapper {
         Object result = null;
         JsonRpcException exception = null;
         Map<String, Object> errorMap = null;
-        try (JsonParser parser = jsonFactory.createParser(responseBody)) {
+        JsonParser parser = null;
+        try {
+            parser = jsonFactory.createParser(responseBody);
             while (parser.nextToken() != null) {
                 JsonToken token = parser.currentToken();
                 if (token == JsonToken.FIELD_NAME) {
@@ -158,6 +170,14 @@ public class JacksonJsonRpcMapper implements JsonRpcMapper {
             }
         } catch (IOException e) {
             throw new JsonRpcMappingException("Error during JSON parsing", e);
+        } finally {
+            if (parser != null) {
+                try {
+                    parser.close();
+                } catch (IOException e) {
+                    throw new JsonRpcMappingException("Error while closing JSON parser", e);
+                }
+            }
         }
         return new JsonRpcResponse(result, errorMap, exception);
     }

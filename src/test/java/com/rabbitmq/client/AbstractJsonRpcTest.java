@@ -43,11 +43,14 @@ public abstract class AbstractJsonRpcTest {
         serverChannel = serverConnection.createChannel();
         serverChannel.queueDeclare(queue, false, false, false, null);
         server = new JsonRpcServer(serverChannel, queue, RpcService.class, new DefaultRpcservice(), createMapper());
-        new Thread(() -> {
-            try {
-                server.mainloop();
-            } catch (Exception e) {
-                // safe to ignore when loops ends/server is canceled
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    server.mainloop();
+                } catch (Exception e) {
+                    // safe to ignore when loops ends/server is canceled
+                }
             }
         }).start();
         client = new JsonRpcClient(clientChannel, "", queue, 1000, createMapper());

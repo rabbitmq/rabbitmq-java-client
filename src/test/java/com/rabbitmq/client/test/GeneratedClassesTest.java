@@ -45,7 +45,7 @@ public class GeneratedClassesTest {
         checkEquals(
             new AMQP.BasicProperties.Builder()
                 .deliveryMode(1)
-                .headers(singletonMap("one", "two"))
+                .headers(singletonMap("one", (Object) "two"))
                 .correlationId("123")
                 .expiration("later")
                 .priority(10)
@@ -61,7 +61,7 @@ public class GeneratedClassesTest {
                 .build(),
             new AMQP.BasicProperties.Builder()
                 .deliveryMode(1)
-                .headers(singletonMap("one", "two"))
+                .headers(singletonMap("one",  (Object) "two"))
                 .correlationId("123")
                 .expiration("later")
                 .priority(10)
@@ -79,7 +79,7 @@ public class GeneratedClassesTest {
         checkNotEquals(
             new AMQP.BasicProperties.Builder()
                 .deliveryMode(1)
-                .headers(singletonMap("one", "two"))
+                .headers(singletonMap("one",  (Object) "two"))
                 .correlationId("123")
                 .expiration("later")
                 .priority(10)
@@ -95,7 +95,7 @@ public class GeneratedClassesTest {
                 .build(),
             new AMQP.BasicProperties.Builder()
                 .deliveryMode(2)
-                .headers(singletonMap("one", "two"))
+                .headers(singletonMap("one",  (Object) "two"))
                 .correlationId("123")
                 .expiration("later")
                 .priority(10)
