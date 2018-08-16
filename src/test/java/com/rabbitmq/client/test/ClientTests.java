@@ -64,7 +64,8 @@ import org.junit.runners.Suite;
     JsonRpcTest.class,
     AddressTest.class,
     DefaultRetryHandlerTest.class,
-    NioDeadlockOnConnectionClosing.class
+    NioDeadlockOnConnectionClosing.class,
+    GeneratedClassesTest.class
 })
 public class ClientTests {
 

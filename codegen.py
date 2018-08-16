@@ -368,6 +368,9 @@ def genJavaApi(spec):
         print("        public int getClassId() { return %i; }" % (c.index))
         print("        public String getClassName() { return \"%s\"; }" % (c.name))
 
+        if c.fields:
+            equalsHashCode(spec, c.fields, java_class_name(c.name), 'Properties', False)
+
         printPropertiesBuilder(c)
 
         #accessor methods
@@ -399,6 +402,49 @@ def genJavaApi(spec):
     print("}")
 
 #--------------------------------------------------------------------------------
+
+def equalsHashCode(spec, fields, jClassName, classSuffix, usePrimitiveType):
+        print()
+        print()
+        print("        @Override")
+        print("        public boolean equals(Object o) {")
+        print("            if (this == o)")
+        print("                return true;")
+        print("            if (o == null || getClass() != o.getClass())")
+        print("               return false;")
+        print("            %s%s that = (%s%s) o;" % (jClassName, classSuffix, jClassName, classSuffix))
+
+        for f in fields:
+            (fType, fName) = (java_field_type(spec, f.domain), java_field_name(f.name))
+            if usePrimitiveType and fType in javaScalarTypes:
+                print("            if (%s != that.%s)" % (fName, fName))
+            else:
+                print("            if (%s != null ? !%s.equals(that.%s) : that.%s != null)" % (fName, fName, fName, fName))
+
+            print("                return false;")
+
+        print("            return true;")
+        print("        }")
+
+        print()
+        print("        @Override")
+        print("        public int hashCode() {")
+        print("            int result = 0;")
+
+        for f in fields:
+            (fType, fName) = (java_field_type(spec, f.domain), java_field_name(f.name))
+            if usePrimitiveType and fType in javaScalarTypes:
+                if fType == 'boolean':
+                    print("            result = 31 * result + (%s ? 1 : 0);" % fName)
+                elif fType == 'long':
+                    print("            result = 31 * result + (int) (%s ^ (%s >>> 32));" % (fName, fName))
+                else:
+                    print("            result = 31 * result + %s;" % fName)
+            else:
+                print("            result = 31 * result + (%s != null ? %s.hashCode() : 0);" % (fName, fName))
+
+        print("            return result;")
+        print("        }")
 
 def genJavaImpl(spec):
     def printHeader():
@@ -503,6 +549,8 @@ def genJavaImpl(spec):
             getters()
             constructors()
             others()
+            if m.arguments:
+                equalsHashCode(spec, m.arguments, java_class_name(m.name), '', True)
 
             argument_debug_string()
             write_arguments()
