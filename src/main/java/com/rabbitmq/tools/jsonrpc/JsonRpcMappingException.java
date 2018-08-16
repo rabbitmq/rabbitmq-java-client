@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2018 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -13,19 +13,15 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
-package com.rabbitmq.tools.json;
+package com.rabbitmq.tools.jsonrpc;
 
 /**
- * Interface for classes that wish to control their own serialization.
  *
- * Will be removed in 6.0
- *
- * @deprecated Use a third-party JSON library, e.g. Jackson or Gson
+ * @since 5.4.0
  */
-public interface JSONSerializable {
-    /**
-     * Called during serialization to JSON.
-     */
-    void jsonSerialize(JSONWriter w);
+public class JsonRpcMappingException extends RuntimeException {
+
+    public JsonRpcMappingException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

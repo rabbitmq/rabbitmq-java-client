@@ -13,7 +13,6 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.tools.json;
 
 import org.slf4j.Logger;
@@ -34,15 +33,15 @@ import java.util.Map;
  */
 public class JSONUtil {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(JSONUtil.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JSONUtil.class);
+
     /**
      * Uses reflection to fill public fields and Bean properties of
      * the target object from the source Map.
      */
     public static Object fill(Object target, Map<String, Object> source)
-	throws IntrospectionException, IllegalAccessException, InvocationTargetException
-    {
-	return fill(target, source, true);
+        throws IntrospectionException, IllegalAccessException, InvocationTargetException {
+        return fill(target, source, true);
     }
 
     /**
@@ -50,40 +49,36 @@ public class JSONUtil {
      * properties of the target object from the source Map.
      */
     public static Object fill(Object target, Map<String, Object> source, boolean useProperties)
-	throws IntrospectionException, IllegalAccessException, InvocationTargetException
-    {
-	if (useProperties) {
-	    BeanInfo info = Introspector.getBeanInfo(target.getClass());
+        throws IntrospectionException, IllegalAccessException, InvocationTargetException {
+        if (useProperties) {
+            BeanInfo info = Introspector.getBeanInfo(target.getClass());
 
-	    PropertyDescriptor[] props = info.getPropertyDescriptors();
-	    for (int i = 0; i < props.length; ++i) {
-		PropertyDescriptor prop = props[i];
-		String name = prop.getName();
-		Method setter = prop.getWriteMethod();
-		if (setter != null && !Modifier.isStatic(setter.getModifiers())) {
-		    //System.out.println(target + " " + name + " <- " + source.get(name));
-		    setter.invoke(target, source.get(name));
-		}
-	    }
-	}
-
-	Field[] ff = target.getClass().getDeclaredFields();
-	for (int i = 0; i < ff.length; ++i) {
-	    Field field = ff[i];
-            int fieldMod = field.getModifiers();
-	    if (Modifier.isPublic(fieldMod) && !(Modifier.isFinal(fieldMod) ||
-                                                 Modifier.isStatic(fieldMod)))
-            {
-		//System.out.println(target + " " + field.getName() + " := " + source.get(field.getName()));
-		try {
-		    field.set(target, source.get(field.getName()));
-		} catch (IllegalArgumentException iae) {
-		    // no special error processing required
+            PropertyDescriptor[] props = info.getPropertyDescriptors();
+            for (int i = 0; i < props.length; ++i) {
+                PropertyDescriptor prop = props[i];
+                String name = prop.getName();
+                Method setter = prop.getWriteMethod();
+                if (setter != null && !Modifier.isStatic(setter.getModifiers())) {
+                    setter.invoke(target, source.get(name));
                 }
-	    }
-	}
+            }
+        }
 
-	return target;
+        Field[] ff = target.getClass().getDeclaredFields();
+        for (int i = 0; i < ff.length; ++i) {
+            Field field = ff[i];
+            int fieldMod = field.getModifiers();
+            if (Modifier.isPublic(fieldMod) && !(Modifier.isFinal(fieldMod) ||
+                Modifier.isStatic(fieldMod))) {
+                try {
+                    field.set(target, source.get(field.getName()));
+                } catch (IllegalArgumentException iae) {
+                    // no special error processing required
+                }
+            }
+        }
+
+        return target;
     }
 
     /**
@@ -92,14 +87,14 @@ public class JSONUtil {
      * source Map.
      */
     public static void tryFill(Object target, Map<String, Object> source) {
-	try {
-	    fill(target, source);
-	} catch (IntrospectionException ie) {
-	    LOGGER.error("Error in tryFill", ie);
-	} catch (IllegalAccessException iae) {
-		LOGGER.error("Error in tryFill", iae);
-	} catch (InvocationTargetException ite) {
-	    LOGGER.error("Error in tryFill", ite);
-	}
+        try {
+            fill(target, source);
+        } catch (IntrospectionException ie) {
+            LOGGER.error("Error in tryFill", ie);
+        } catch (IllegalAccessException iae) {
+            LOGGER.error("Error in tryFill", iae);
+        } catch (InvocationTargetException ite) {
+            LOGGER.error("Error in tryFill", ite);
+        }
     }
 }

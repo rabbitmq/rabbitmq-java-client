@@ -44,6 +44,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Will be removed in 6.0
+ *
+ * @deprecated Use a third-party JSON library, e.g. Jackson or Gson
+ */
 public class JSONReader {
 
     private static final Object OBJECT_END = new Object();

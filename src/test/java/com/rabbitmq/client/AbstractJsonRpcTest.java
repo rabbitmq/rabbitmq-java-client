@@ -17,17 +17,14 @@ package com.rabbitmq.client;
 
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.jsonrpc.JsonRpcClient;
+import com.rabbitmq.tools.jsonrpc.JsonRpcMapper;
 import com.rabbitmq.tools.jsonrpc.JsonRpcServer;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 
-import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Date;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-public class JsonRpcTest {
+public abstract class AbstractJsonRpcTest {
 
     Connection clientConnection, serverConnection;
     Channel clientChannel, serverChannel;
@@ -36,6 +33,8 @@ public class JsonRpcTest {
     JsonRpcClient client;
     RpcService service;
 
+    abstract JsonRpcMapper createMapper();
+
     @Before
     public void init() throws Exception {
         clientConnection = TestUtils.connectionFactory().newConnection();
@@ -43,19 +42,15 @@ public class JsonRpcTest {
         serverConnection = TestUtils.connectionFactory().newConnection();
         serverChannel = serverConnection.createChannel();
         serverChannel.queueDeclare(queue, false, false, false, null);
-        server = new JsonRpcServer(serverChannel, queue, RpcService.class, new DefaultRpcservice());
-        new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    server.mainloop();
-                } catch (Exception e) {
-                    // safe to ignore when loops ends/server is canceled
-                }
+        server = new JsonRpcServer(serverChannel, queue, RpcService.class, new DefaultRpcservice(), createMapper());
+        new Thread(() -> {
+            try {
+                server.mainloop();
+            } catch (Exception e) {
+                // safe to ignore when loops ends/server is canceled
             }
         }).start();
-        client = new JsonRpcClient(clientChannel, "", queue, 1000);
+        client = new JsonRpcClient(clientChannel, "", queue, 1000, createMapper());
         service = client.createProxy(RpcService.class);
     }
 
@@ -74,40 +69,15 @@ public class JsonRpcTest {
         serverConnection.close();
     }
 
-    @Test
-    public void rpc() {
-        assertEquals("hello1", service.procedureString("hello"));
-        assertEquals(2, service.procedureInteger(1).intValue());
-        assertEquals(2, service.procedurePrimitiveInteger(1));
-        assertEquals(2, service.procedureDouble(1.0).intValue());
-        assertEquals(2, (int) service.procedurePrimitiveDouble(1.0));
-
-        try {
-            assertEquals(2, (int) service.procedureLongToInteger(1L));
-            fail("Long argument isn't supported");
-        } catch (UndeclaredThrowableException e) {
-            // OK
-        }
-        assertEquals(2, service.procedurePrimitiveLongToInteger(1L));
-
-        try {
-            assertEquals(2, service.procedurePrimitiveLong(1L));
-            fail("Long return type not supported");
-        } catch (ClassCastException e) {
-            // OK
-        }
-
-        try {
-            assertEquals(2, service.procedureLong(1L).longValue());
-            fail("Long argument isn't supported");
-        } catch (UndeclaredThrowableException e) {
-            // OK
-        }
-    }
-
     public interface RpcService {
 
+        boolean procedurePrimitiveBoolean(boolean input);
+
+        Boolean procedureBoolean(Boolean input);
+
         String procedureString(String input);
+
+        String procedureStringString(String input1, String input2);
 
         int procedurePrimitiveInteger(int input);
 
@@ -124,13 +94,38 @@ public class JsonRpcTest {
         Long procedureLong(Long input);
 
         long procedurePrimitiveLong(long input);
+
+        Pojo procedureIntegerToPojo(Integer id);
+
+        String procedurePojoToString(Pojo pojo);
+
+        void procedureException();
+
+        void procedureNoArgumentVoid();
+
+        Date procedureDateDate(Date date);
     }
 
-    public class DefaultRpcservice implements RpcService {
+    public static class DefaultRpcservice implements RpcService {
+
+        @Override
+        public boolean procedurePrimitiveBoolean(boolean input) {
+            return !input;
+        }
+
+        @Override
+        public Boolean procedureBoolean(Boolean input) {
+            return Boolean.valueOf(!input.booleanValue());
+        }
 
         @Override
         public String procedureString(String input) {
             return input + 1;
+        }
+
+        @Override
+        public String procedureStringString(String input1, String input2) {
+            return input1 + input2;
         }
 
         @Override
@@ -171,6 +166,46 @@ public class JsonRpcTest {
         @Override
         public int procedurePrimitiveLongToInteger(long input) {
             return (int) input + 1;
+        }
+
+        @Override
+        public Pojo procedureIntegerToPojo(Integer id) {
+            Pojo pojo = new Pojo();
+            pojo.setStringProperty(id.toString());
+            return pojo;
+        }
+
+        @Override
+        public String procedurePojoToString(Pojo pojo) {
+            return pojo.getStringProperty();
+        }
+
+        @Override
+        public void procedureException() {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public void procedureNoArgumentVoid() {
+
+        }
+
+        @Override
+        public Date procedureDateDate(Date date) {
+            return date;
+        }
+    }
+
+    public static class Pojo {
+
+        private String stringProperty;
+
+        public String getStringProperty() {
+            return stringProperty;
+        }
+
+        public void setStringProperty(String stringProperty) {
+            this.stringProperty = stringProperty;
         }
     }
 }
