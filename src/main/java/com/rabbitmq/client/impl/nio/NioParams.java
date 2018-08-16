@@ -26,38 +26,66 @@ import java.util.concurrent.ThreadFactory;
 
 /**
  * Parameters used to configure the NIO mode of a {@link com.rabbitmq.client.ConnectionFactory}.
+ *
  * @since 4.0.0
  */
 public class NioParams {
 
-    /** size of the byte buffer used for inbound data */
+    /**
+     * size of the byte buffer used for inbound data
+     */
     private int readByteBufferSize = 32768;
 
-    /** size of the byte buffer used for outbound data */
+    /**
+     * size of the byte buffer used for outbound data
+     */
     private int writeByteBufferSize = 32768;
 
-    /** the max number of IO threads */
+    /**
+     * the max number of IO threads
+     */
     private int nbIoThreads = 1;
 
-    /** the timeout to enqueue outbound frames */
+    /**
+     * the timeout to enqueue outbound frames
+     */
     private int writeEnqueuingTimeoutInMs = 10 * 1000;
 
-    /** the capacity of the queue used for outbound frames */
+    /**
+     * the capacity of the queue used for outbound frames
+     */
     private int writeQueueCapacity = 10000;
 
-    /** the executor service used for IO threads and connections shutdown */
+    /**
+     * the executor service used for IO threads and connections shutdown
+     */
     private ExecutorService nioExecutor;
 
-    /** the thread factory used for IO threads and connections shutdown */
+    /**
+     * the thread factory used for IO threads and connections shutdown
+     */
     private ThreadFactory threadFactory;
 
-    /** the hook to configure the socket channel before it's open */
+    /**
+     * the hook to configure the socket channel before it's open
+     */
     private SocketChannelConfigurator socketChannelConfigurator = new DefaultSocketChannelConfigurator();
 
-    /** the hook to configure the SSL engine before the connection is open */
-    private SslEngineConfigurator sslEngineConfigurator = sslEngine -> { };
+    /**
+     * the hook to configure the SSL engine before the connection is open
+     */
+    private SslEngineConfigurator sslEngineConfigurator = new SslEngineConfigurator() {
 
-    /** the executor service used for connection shutdown */
+        @Override
+        public void configure(SSLEngine sslEngine) throws IOException {
+        }
+    };
+
+    /**
+     * the executor service used for connection shutdown
+     *
+     * @since 4.8.0
+     */
     private ExecutorService connectionShutdownExecutor;
 
     public NioParams() {
@@ -82,7 +110,7 @@ public class NioParams {
     /**
      * Sets the size in byte of the read {@link java.nio.ByteBuffer} used in the NIO loop.
      * Default is 32768.
-     *
+     * <p>
      * This parameter isn't used when using SSL/TLS, where {@link java.nio.ByteBuffer}
      * size is set up according to the {@link javax.net.ssl.SSLSession} packet size.
      *
@@ -104,7 +132,7 @@ public class NioParams {
     /**
      * Sets the size in byte of the write {@link java.nio.ByteBuffer} used in the NIO loop.
      * Default is 32768.
-     *
+     * <p>
      * This parameter isn't used when using SSL/TLS, where {@link java.nio.ByteBuffer}
      * size is set up according to the {@link javax.net.ssl.SSLSession} packet size.
      *
@@ -131,7 +159,7 @@ public class NioParams {
      * 10 connections have been created).
      * Once a connection is created, it's assigned to a thread/task and
      * all its IO activity is handled by this thread/task.
-     *
+     * <p>
      * When idle for a few seconds (i.e. without any connection to perform IO for),
      * a thread/task stops and is recreated if necessary.
      *
@@ -155,14 +183,14 @@ public class NioParams {
      * Every requests to the server is divided into frames
      * that are then queued in a {@link java.util.concurrent.BlockingQueue} before
      * being sent on the network by a IO thread.
-     *
+     * <p>
      * If the IO thread cannot cope with the frames dispatch, the
      * {@link java.util.concurrent.BlockingQueue} gets filled up and blocks
      * (blocking the calling thread by the same occasion). This timeout is the
      * time the {@link java.util.concurrent.BlockingQueue} will wait before
      * rejecting the outbound frame. The calling thread will then received
      * an exception.
-     *
+     * <p>
      * The appropriate value depends on the application scenarios:
      * rate of outbound data (published messages, acknowledgment, etc), network speed...
      *
@@ -182,17 +210,17 @@ public class NioParams {
     /**
      * Sets the {@link ExecutorService} to use for NIO threads/tasks.
      * Default is to use the thread factory.
-     *
+     * <p>
      * The {@link ExecutorService} should be able to run the
      * number of requested IO threads, plus a few more, as it's also
      * used to dispatch the shutdown of connections.
-     *
+     * <p>
      * Connection shutdown can also be handled by a dedicated {@link ExecutorService},
      * see {@link #setConnectionShutdownExecutor(ExecutorService)}.
-     *
+     * <p>
      * It's developer's responsibility to shut down the executor
      * when it is no longer needed.
-     *
+     * <p>
      * The thread factory isn't used if an executor service is set up.
      *
      * @param nioExecutor {@link ExecutorService} used for IO threads and connection shutdown
@@ -214,7 +242,7 @@ public class NioParams {
      * Sets the {@link ThreadFactory} to use for NIO threads/tasks.
      * Default is to use the {@link com.rabbitmq.client.ConnectionFactory}'s
      * {@link ThreadFactory}.
-     *
+     * <p>
      * The {@link ThreadFactory} is used to spawn the IO threads
      * and dispatch the shutdown of connections.
      *
@@ -248,6 +276,10 @@ public class NioParams {
         return this;
     }
 
+    public SocketChannelConfigurator getSocketChannelConfigurator() {
+        return socketChannelConfigurator;
+    }
+
     /**
      * Set the {@link java.nio.channels.SocketChannel} configurator.
      * This gets a chance to "configure" a socket channel
@@ -260,8 +292,8 @@ public class NioParams {
         this.socketChannelConfigurator = configurator;
     }
 
-    public SocketChannelConfigurator getSocketChannelConfigurator() {
-        return socketChannelConfigurator;
+    public SslEngineConfigurator getSslEngineConfigurator() {
+        return sslEngineConfigurator;
     }
 
     /**
@@ -277,8 +309,8 @@ public class NioParams {
         this.sslEngineConfigurator = configurator;
     }
 
-    public SslEngineConfigurator getSslEngineConfigurator() {
-        return sslEngineConfigurator;
+    public ExecutorService getConnectionShutdownExecutor() {
+        return connectionShutdownExecutor;
     }
 
     /**
@@ -303,13 +335,10 @@ public class NioParams {
      * @param connectionShutdownExecutor the executor service to use
      * @return this {@link NioParams} instance
      * @see NioParams#setNioExecutor(ExecutorService)
+     * @since 4.8.0
      */
     public NioParams setConnectionShutdownExecutor(ExecutorService connectionShutdownExecutor) {
         this.connectionShutdownExecutor = connectionShutdownExecutor;
         return this;
-    }
-
-    public ExecutorService getConnectionShutdownExecutor() {
-        return connectionShutdownExecutor;
     }
 }

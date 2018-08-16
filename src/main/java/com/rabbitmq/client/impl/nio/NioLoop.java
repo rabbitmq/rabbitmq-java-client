@@ -299,7 +299,12 @@ public class NioLoop implements Runnable {
     }
 
     protected void dispatchShutdownToConnection(final SocketChannelFrameHandlerState state) {
-        Runnable shutdown = () -> state.getConnection().doFinalShutdown();
+        Runnable shutdown = new Runnable() {
+            @Override
+            public void run() {
+                state.getConnection().doFinalShutdown();
+            }
+        };
         if (this.connectionShutdownExecutor != null) {
             connectionShutdownExecutor.execute(shutdown);
         } else if (executorService() != null) {

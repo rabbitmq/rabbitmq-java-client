@@ -57,7 +57,7 @@ public class NioDeadlockOnConnectionClosing {
             .setConnectionShutdownExecutor(connectionShutdownExecutorService)
             .setNbIoThreads(2);
         cf.setNioParams(params);
-        connections = new ArrayList<>();
+        connections = new ArrayList<Connection>();
     }
 
     @After
