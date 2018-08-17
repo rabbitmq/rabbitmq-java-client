@@ -22,16 +22,18 @@ import javax.net.ssl.X509TrustManager;
 import java.security.cert.X509Certificate;
 
 /**
- * Convenience class providing a default implementation of javax.net.ssl.X509TrustManager.
- * Trusts every single certificate presented to it.
+ * Convenience class providing a default implementation of {@link javax.net.ssl.X509TrustManager}.
+ * Trusts every single certificate presented to it. This implementation does not perform peer
+ * verification and <strong>provides no protection against Man-in-the-Middle (MITM) attacks</strong> and therefore
+ * <strong>only suitable for some development and QA environments</strong>.
  */
 public class TrustEverythingTrustManager implements X509TrustManager {
 
     public TrustEverythingTrustManager() {
         LoggerFactory.getLogger(TrustEverythingTrustManager.class).warn(
-            "This trust manager trusts every certificate, effectively disabling peer verification. " +
-            "This is convenient for local development but prone to man-in-the-middle attacks. " +
-            "Please see http://www.rabbitmq.com/ssl.html#validating-cerficates to learn more about peer certificate validation."
+            "SECURITY ALERT: this trust manager trusts every certificate, effectively disabling peer verification. " +
+            "This is convenient for local development but offers no protection against man-in-the-middle attacks. " +
+            "Please see https://www.rabbitmq.com/ssl.html#validating-cerficates to learn more about peer certificate verification."
         );
     }
 
