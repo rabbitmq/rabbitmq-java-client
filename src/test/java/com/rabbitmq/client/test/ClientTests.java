@@ -17,7 +17,6 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.JacksonJsonRpcTest;
-import com.rabbitmq.client.DefaultJsonRpcTest;
 import com.rabbitmq.utility.IntAllocatorTests;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -42,7 +41,6 @@ import org.junit.runners.Suite;
     IntAllocatorTests.class,
     AMQBuilderApiTest.class,
     AmqpUriTest.class,
-    JSONReadWriteTest.class,
     SharedThreadPoolTest.class,
     DnsRecordIpAddressResolverTests.class,
     MetricsCollectorTest.class,
@@ -62,7 +60,6 @@ import org.junit.runners.Suite;
     TestUtilsTest.class,
     StrictExceptionHandlerTest.class,
     NoAutoRecoveryWhenTcpWindowIsFullTest.class,
-    DefaultJsonRpcTest.class,
     JacksonJsonRpcTest.class,
     AddressTest.class,
     DefaultRetryHandlerTest.class,

@@ -18,7 +18,6 @@ package com.rabbitmq.tools.jsonrpc;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.RpcClient;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.tools.json.JSONReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +54,6 @@ import java.util.concurrent.TimeoutException;
  * a {@link JsonRpcMapper}.
  *
  * @see #call(String, Object[])
- * @see #call(String[])
  * @see JsonRpcMapper
  * @see JacksonJsonRpcMapper
  */
@@ -91,37 +89,12 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      */
     public JsonRpcClient(Channel channel, String exchange, String routingKey, int timeout)
         throws IOException, JsonRpcException, TimeoutException {
-        this(channel, exchange, routingKey, timeout, new DefaultJsonRpcMapper());
+        this(channel, exchange, routingKey, timeout, new JacksonJsonRpcMapper());
     }
 
     public JsonRpcClient(Channel channel, String exchange, String routingKey)
         throws IOException, JsonRpcException, TimeoutException {
         this(channel, exchange, routingKey, RpcClient.NO_TIMEOUT);
-    }
-
-    /**
-     * Private API - used by {@link #call(String[])} to ad-hoc convert
-     * strings into the required data types for a call.
-     */
-    public static Object coerce(String val, String type)
-        throws NumberFormatException {
-        if ("bit".equals(type)) {
-            return Boolean.getBoolean(val) ? Boolean.TRUE : Boolean.FALSE;
-        } else if ("num".equals(type)) {
-            try {
-                return Integer.valueOf(val);
-            } catch (NumberFormatException nfe) {
-                return Double.valueOf(val);
-            }
-        } else if ("str".equals(type)) {
-            return val;
-        } else if ("arr".equals(type) || "obj".equals(type) || "any".equals(type)) {
-            return new JSONReader().read(val);
-        } else if ("nil".equals(type)) {
-            return null;
-        } else {
-            throw new IllegalArgumentException("Bad type: " + type);
-        }
     }
 
     /**
@@ -197,37 +170,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
             this);
     }
 
-    /**
-     * Public API - as {@link #call(String, Object[])}, but takes the
-     * method name from the first entry in <code>args</code>, and the
-     * parameters from subsequent entries. All parameter values are
-     * passed through coerce() to attempt to make them the types the
-     * server is expecting.
-     *
-     * @return the result contained within the reply, if no exception is found
-     * @throws JsonRpcException      if the reply object contained an exception
-     * @throws NumberFormatException if a coercion failed
-     * @throws TimeoutException      if a response is not received within the timeout specified, if any
-     * @see #coerce
-     */
-    public Object call(String[] args)
-        throws NumberFormatException, IOException, JsonRpcException, TimeoutException {
-        if (args.length == 0) {
-            throw new IllegalArgumentException("First string argument must be method name");
-        }
 
-        String method = args[0];
-        int arity = args.length - 1;
-        ProcedureDescription proc = serviceDescription.getProcedure(method, arity);
-        ParameterDescription[] params = proc.getParams();
-
-        Object[] actuals = new Object[arity];
-        for (int count = 0; count < params.length; count++) {
-            actuals[count] = coerce(args[count + 1], params[count].type);
-        }
-
-        return call(method, actuals);
-    }
 
     /**
      * Public API - gets the service description record that this

@@ -85,7 +85,7 @@ public class JsonRpcServer extends StringRpcServer {
         Class<?> interfaceClass,
         Object interfaceInstance)
         throws IOException {
-        this(channel, interfaceClass, interfaceInstance, new DefaultJsonRpcMapper());
+        this(channel, interfaceClass, interfaceInstance, new JacksonJsonRpcMapper());
     }
 
     public JsonRpcServer(Channel channel,
@@ -115,7 +115,7 @@ public class JsonRpcServer extends StringRpcServer {
         Class<?> interfaceClass,
         Object interfaceInstance)
         throws IOException {
-        this(channel, queueName, interfaceClass, interfaceInstance, new DefaultJsonRpcMapper());
+        this(channel, queueName, interfaceClass, interfaceInstance, new JacksonJsonRpcMapper());
     }
 
     private void init(Class<?> interfaceClass, Object interfaceInstance) {
