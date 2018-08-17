@@ -55,7 +55,6 @@ import java.util.concurrent.TimeoutException;
  * a {@link JsonRpcMapper}.
  *
  * @see #call(String, Object[])
- * @see #call(String[])
  * @see JsonRpcMapper
  * @see JacksonJsonRpcMapper
  */
@@ -102,7 +101,15 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     /**
      * Private API - used by {@link #call(String[])} to ad-hoc convert
      * strings into the required data types for a call.
+     *
+     * This method is deprecated because it uses homegrown JSON utilities
+     * that don't deal correctly with complex types. The {@link JacksonJsonRpcMapper}
+     * has been introduced to handle primitive and complex types, as well
+     * as primitive wrappers correctly.
+     *
+     * @deprecated This method will be removed in the next major version
      */
+    @Deprecated
     public static Object coerce(String val, String type)
         throws NumberFormatException {
         if ("bit".equals(type)) {
@@ -204,12 +211,19 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      * passed through coerce() to attempt to make them the types the
      * server is expecting.
      *
+     * This method is deprecated because it uses homegrown JSON utilities
+     * that don't deal correctly with complex types. The {@link JacksonJsonRpcMapper}
+     * has been introduced to handle primitive and complex types, as well
+     * as primitive wrappers correctly.
+     *
      * @return the result contained within the reply, if no exception is found
      * @throws JsonRpcException      if the reply object contained an exception
      * @throws NumberFormatException if a coercion failed
      * @throws TimeoutException      if a response is not received within the timeout specified, if any
      * @see #coerce
+     * @deprecated This method will be removed in the next major version
      */
+    @Deprecated
     public Object call(String[] args)
         throws NumberFormatException, IOException, JsonRpcException, TimeoutException {
         if (args.length == 0) {
