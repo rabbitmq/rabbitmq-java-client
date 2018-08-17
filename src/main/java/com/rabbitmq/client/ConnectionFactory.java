@@ -640,8 +640,14 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Convenience method for setting up a SSL socket factory/engine, using
-     * the DEFAULT_SSL_PROTOCOL and a trusting TrustManager.
+     * Convenience method for configuring TLS using
+     * the default set of TLS protocols and a trusting TrustManager.
+     * This setup is <strong>only suitable for development
+     * and QA environments</strong>.
+     * The trust manager will <strong>trust every server certificate presented</strong>
+     * to it, this is convenient for local development but
+     * <strong>not recommended to use in production</strong> as it provides no protection
+     * against man-in-the-middle attacks. Prefer {@link #useSslProtocol(SSLContext)}.
      */
     public void useSslProtocol()
         throws NoSuchAlgorithmException, KeyManagementException
@@ -650,8 +656,17 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Convenience method for setting up a SSL socket factory/engine, using
-     * the supplied protocol and a very trusting TrustManager.
+     * Convenience method for configuring TLS using
+     * the supplied protocol and a very trusting TrustManager. This setup is <strong>only suitable for development
+     * and QA environments</strong>.
+     * The trust manager <strong>will trust every server certificate presented</strong>
+     * to it, this is convenient for local development but
+     * not recommended to use in production as it <strong>provides no protection
+     * against man-in-the-middle attacks</strong>.
+     *
+     * Use {@link #useSslProtocol(SSLContext)} in production environments.
+     * The produced {@link SSLContext} instance will be shared by all
+     * the connections created by this connection factory.
      */
     public void useSslProtocol(String protocol)
         throws NoSuchAlgorithmException, KeyManagementException
@@ -660,10 +675,16 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Convenience method for setting up an SSL socket factory/engine.
-     * Pass in the SSL protocol to use, e.g. "TLSv1" or "TLSv1.2".
+     * Convenience method for configuring TLS.
+     * Pass in the TLS protocol version to use, e.g. "TLSv1.2" or "TLSv1.1", and
+     * a desired {@link TrustManager}.
      *
-     * @param protocol SSL protocol to use.
+     *
+     * The produced {@link SSLContext} instance will be shared with all
+     * the connections created by this connection factory.
+     * @param protocol the TLS protocol to use.
+     * @param trustManager the {@link TrustManager} implementation to use.
+     * @see #useSslProtocol(SSLContext)
      */
     public void useSslProtocol(String protocol, TrustManager trustManager)
         throws NoSuchAlgorithmException, KeyManagementException
@@ -674,9 +695,12 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Convenience method for setting up an SSL socket factory/engine.
-     * Pass in an initialized SSLContext.
+     * Sets up TLS with an initialized {@link SSLContext}. The caller is responsible
+     * for setting up the context with a {@link TrustManager} with suitable security guarantees,
+     * e.g. peer verification.
      *
+     * The {@link SSLContext} instance will be shared with all
+     * the connections created by this connection factory.
      * @param context An initialized SSLContext
      */
     public void useSslProtocol(SSLContext context) {
