@@ -15,13 +15,15 @@
 
 package com.rabbitmq.client.impl.nio;
 
-import com.rabbitmq.client.DefaultSocketChannelConfigurator;
 import com.rabbitmq.client.SocketChannelConfigurator;
+import com.rabbitmq.client.SocketChannelConfigurators;
 import com.rabbitmq.client.SslEngineConfigurator;
 
 import javax.net.ssl.SSLEngine;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
+
+import static com.rabbitmq.client.SslEngineConfigurators.ENABLE_HOSTNAME_VERIFICATION;
 
 /**
  * Parameters used to configure the NIO mode of a {@link com.rabbitmq.client.ConnectionFactory}.
@@ -68,7 +70,7 @@ public class NioParams {
     /**
      * the hook to configure the socket channel before it's open
      */
-    private SocketChannelConfigurator socketChannelConfigurator = new DefaultSocketChannelConfigurator();
+    private SocketChannelConfigurator socketChannelConfigurator = SocketChannelConfigurators.defaultConfigurator();
 
     /**
      * the hook to configure the SSL engine before the connection is open
@@ -94,8 +96,25 @@ public class NioParams {
         setWriteQueueCapacity(nioParams.getWriteQueueCapacity());
         setNioExecutor(nioParams.getNioExecutor());
         setThreadFactory(nioParams.getThreadFactory());
+        setSocketChannelConfigurator(nioParams.getSocketChannelConfigurator());
         setSslEngineConfigurator(nioParams.getSslEngineConfigurator());
         setConnectionShutdownExecutor(nioParams.getConnectionShutdownExecutor());
+    }
+
+    /**
+     * Enable server hostname verification for TLS connections.
+     *
+     * @return this {@link NioParams} instance
+     * @see NioParams#setSslEngineConfigurator(SslEngineConfigurator)
+     * @see com.rabbitmq.client.SslEngineConfigurators#ENABLE_HOSTNAME_VERIFICATION
+     */
+    public NioParams enableHostnameVerification() {
+        if (this.sslEngineConfigurator == null) {
+            this.sslEngineConfigurator = ENABLE_HOSTNAME_VERIFICATION;
+        } else {
+            this.sslEngineConfigurator = this.sslEngineConfigurator.andThen(ENABLE_HOSTNAME_VERIFICATION);
+        }
+        return this;
     }
 
     public int getReadByteBufferSize() {

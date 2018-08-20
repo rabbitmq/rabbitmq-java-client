@@ -17,7 +17,9 @@ package com.rabbitmq.client;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.Objects;
 
+@FunctionalInterface
 public interface SocketChannelConfigurator {
 
     /**
@@ -25,5 +27,19 @@ public interface SocketChannelConfigurator {
      * used to connect to an AMQP server before they connect.
      */
     void configure(SocketChannel socketChannel) throws IOException;
+
+    /**
+     * Returns a composed configurator that performs, in sequence, this
+     * operation followed by the {@code after} operation.
+     *
+     * @param after the operation to perform after this operation
+     * @return a composed configurator that performs in sequence this
+     * operation followed by the {@code after} operation
+     * @throws NullPointerException if {@code after} is null
+     */
+    default SocketChannelConfigurator andThen(SocketChannelConfigurator after) {
+        Objects.requireNonNull(after);
+        return t -> { configure(t); after.configure(t); };
+    }
 
 }

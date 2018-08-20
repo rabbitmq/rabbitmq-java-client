@@ -17,7 +17,9 @@ package com.rabbitmq.client;
 
 import javax.net.ssl.SSLEngine;
 import java.io.IOException;
+import java.util.Objects;
 
+@FunctionalInterface
 public interface SslEngineConfigurator {
 
     /**
@@ -26,5 +28,19 @@ public interface SslEngineConfigurator {
      * Note this is used only when NIO are in use.
      */
     void configure(SSLEngine sslEngine) throws IOException;
+
+    /**
+     * Returns a composed configurator that performs, in sequence, this
+     * operation followed by the {@code after} operation.
+     *
+     * @param after the operation to perform after this operation
+     * @return a composed configurator that performs in sequence this
+     * operation followed by the {@code after} operation
+     * @throws NullPointerException if {@code after} is null
+     */
+    default SslEngineConfigurator andThen(SslEngineConfigurator after) {
+        Objects.requireNonNull(after);
+        return t -> { configure(t); after.configure(t); };
+    }
 
 }

@@ -54,7 +54,7 @@ public class UnverifiedConnection extends BrokerTestCase {
             }
         }
         if(connection == null) {
-            fail("Couldn't open TLS connection after 3 attemps");
+            fail("Couldn't open TLS connection after 3 attempts");
         }
     }
 
