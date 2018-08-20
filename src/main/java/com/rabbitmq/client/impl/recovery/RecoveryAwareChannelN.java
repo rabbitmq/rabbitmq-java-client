@@ -84,21 +84,27 @@ public class RecoveryAwareChannelN extends ChannelN {
     @Override
     public void basicAck(long deliveryTag, boolean multiple) throws IOException {
         long realTag = deliveryTag - activeDeliveryTagOffset;
-        // 0 tag means ack all when multiple is set
-        if (realTag > 0 || (multiple && realTag == 0)) {
-            transmit(new Basic.Ack(realTag, multiple));
-            metricsCollector.basicAck(this, deliveryTag, multiple);
+        if(multiple && deliveryTag == 0) {
+            // 0 tag means ack all when multiple is set
+            realTag = 0;
+        } else if(realTag <= 0) {
+            return;
         }
+        transmit(new Basic.Ack(realTag, multiple));
+        metricsCollector.basicAck(this, deliveryTag, multiple);
     }
 
     @Override
     public void basicNack(long deliveryTag, boolean multiple, boolean requeue) throws IOException {
         long realTag = deliveryTag - activeDeliveryTagOffset;
-        // 0 tag means nack all when multiple is set
-        if (realTag > 0 || (multiple && realTag == 0)) {
-            transmit(new Basic.Nack(realTag, multiple, requeue));
-            metricsCollector.basicNack(this, deliveryTag);
+        if(multiple && deliveryTag == 0) {
+            // 0 tag means nack all when multiple is set
+            realTag = 0;
+        } else if(realTag <= 0) {
+            return;
         }
+        transmit(new Basic.Nack(realTag, multiple, requeue));
+        metricsCollector.basicNack(this, deliveryTag);
     }
 
     @Override
