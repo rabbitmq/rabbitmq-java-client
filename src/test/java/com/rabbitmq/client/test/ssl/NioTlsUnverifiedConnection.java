@@ -83,6 +83,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
         NioParams nioParams = new NioParams();
         final AtomicBoolean sslEngineHasBeenCalled = new AtomicBoolean(false);
         nioParams.setSslEngineConfigurator(new SslEngineConfigurator() {
+
             @Override
             public void configure(SSLEngine sslEngine) throws IOException {
                 sslEngineHasBeenCalled.set(true);

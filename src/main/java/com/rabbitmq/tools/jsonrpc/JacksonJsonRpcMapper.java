@@ -37,7 +37,7 @@ import java.util.Map;
  * Uses the streaming and databind modules.
  *
  * @see JsonRpcMapper
- * @since 5.4.0
+ * @since 4.8.0
  */
 public class JacksonJsonRpcMapper implements JsonRpcMapper {
 
@@ -137,6 +137,7 @@ public class JacksonJsonRpcMapper implements JsonRpcMapper {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public JsonRpcResponse parse(String responseBody, Class<?> expectedReturnType) {
         JsonFactory jsonFactory = new MappingJsonFactory();
         Object result = null;

@@ -15,9 +15,16 @@
 
 package com.rabbitmq.client.test.ssl;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import com.rabbitmq.client.Address;
+import com.rabbitmq.client.AddressResolver;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.test.TestUtils;
+import org.junit.Test;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyManagementException;
@@ -26,30 +33,23 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.test.TestUtils;
-import org.slf4j.LoggerFactory;
-
-/**
- * Test for bug 19356 - SSL Support in rabbitmq
- *
- */
-public class VerifiedConnection extends UnverifiedConnection {
+public class HostnameVerification extends UnverifiedConnection {
 
     public void openConnection()
-            throws IOException, TimeoutException {
+        throws IOException, TimeoutException {
         try {
             String keystorePath = System.getProperty("test-keystore.ca");
             assertNotNull(keystorePath);
             String keystorePasswd = System.getProperty("test-keystore.password");
             assertNotNull(keystorePasswd);
-            char [] keystorePassword = keystorePasswd.toCharArray();
+            char[] keystorePassword = keystorePasswd.toCharArray();
 
             KeyStore tks = KeyStore.getInstance("JKS");
             tks.load(new FileInputStream(keystorePath), keystorePassword);
@@ -62,7 +62,7 @@ public class VerifiedConnection extends UnverifiedConnection {
             String p12Passwd = System.getProperty("test-client-cert.password");
             assertNotNull(p12Passwd);
             KeyStore ks = KeyStore.getInstance("PKCS12");
-            char [] p12Password = p12Passwd.toCharArray();
+            char[] p12Password = p12Passwd.toCharArray();
             ks.load(new FileInputStream(p12Path), p12Password);
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
@@ -70,9 +70,11 @@ public class VerifiedConnection extends UnverifiedConnection {
 
             SSLContext c = getSSLContext();
             c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            c.init(null, tmf.getTrustManagers(), null);
 
             connectionFactory = TestUtils.connectionFactory();
             connectionFactory.useSslProtocol(c);
+            connectionFactory.enableHostnameVerification();
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException(ex.toString());
         } catch (KeyManagementException ex) {
@@ -85,18 +87,25 @@ public class VerifiedConnection extends UnverifiedConnection {
             throw new IOException(ex.toString());
         }
 
-        int attempt = 0;
-        while(attempt < 3) {
-            try {
-                connection = connectionFactory.newConnection();
-                break;
-            } catch(Exception e) {
-                LoggerFactory.getLogger(getClass()).warn("Error when opening TLS connection");
-                attempt++;
-            }
+        try {
+            connection = connectionFactory.newConnection(
+                new AddressResolver() {
+                    @Override
+                    public List<Address> getAddresses() throws IOException {
+                        return singletonList(new Address("127.0.0.1", ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT));
+                    }
+                });
+            fail("The server certificate isn't issued for 127.0.0.1, the TLS handshake should have failed");
+        } catch (SSLHandshakeException ignored) {
+        } catch (IOException e) {
+            fail();
         }
-        if(connection == null) {
-            fail("Couldn't open TLS connection after 3 attempts");
-        }
+    }
+
+    public void openChannel() {
+    }
+
+    @Test
+    public void sSL() {
     }
 }
