@@ -31,6 +31,15 @@ import java.io.IOException;
  * tags and avoids sending <pre>basic.ack</pre>, <pre>basic.nack</pre>, and <pre>basic.reject</pre>
  * for stale tags.
  *
+ * Consider a long running task a consumer has to perform. Say, it takes 15 minutes to complete. In the
+ * 15 minute window there is a reasonable chance of connection failure and recovery events. All delivery tags
+ * for the deliveries being processed won't be valid after recovery because they are "reset" for
+ * newly opened channels. This channel implementation will avoid sending out acknowledgements for such
+ * stale delivery tags and avoid a guaranteed channel-level exception (and thus channel closure).
+ *
+ * This is a sufficient solution in practice because all unacknowledged deliveries will be requeued
+ * by RabbitMQ automatically when it detects client connection loss.
+ *
  * @since 3.3.0
  */
 public class RecoveryAwareChannelN extends ChannelN {
@@ -84,25 +93,43 @@ public class RecoveryAwareChannelN extends ChannelN {
     @Override
     public void basicAck(long deliveryTag, boolean multiple) throws IOException {
         long realTag = deliveryTag - activeDeliveryTagOffset;
-        // 0 tag means ack all when multiple is set
-        if (realTag > 0 || (multiple && realTag == 0)) {
-            transmit(new Basic.Ack(realTag, multiple));
-            metricsCollector.basicAck(this, deliveryTag, multiple);
+        // Last delivery is likely the same one a long running consumer is still processing,
+        // so realTag might end up being 0.
+        //  has a special meaning in the protocol ("acknowledge all unacknowledged tags),
+        // so if the user explicitly asks for that with multiple = true, do it.
+        if(multiple && deliveryTag == 0) {
+            // 0 tag means ack all when multiple is set
+            realTag = 0;
+        } else if(realTag <= 0) {
+            // delivery tags start at 1, so the real tag is stale
+            // therefore we should do nothing
+            return;
         }
+        transmit(new Basic.Ack(realTag, multiple));
+        metricsCollector.basicAck(this, deliveryTag, multiple);
     }
 
     @Override
     public void basicNack(long deliveryTag, boolean multiple, boolean requeue) throws IOException {
+        // See the comment in basicAck above.
         long realTag = deliveryTag - activeDeliveryTagOffset;
-        // 0 tag means nack all when multiple is set
-        if (realTag > 0 || (multiple && realTag == 0)) {
-            transmit(new Basic.Nack(realTag, multiple, requeue));
-            metricsCollector.basicNack(this, deliveryTag);
+        if(multiple && deliveryTag == 0) {
+            // 0 tag means nack all when multiple is set
+            realTag = 0;
+        } else if(realTag <= 0) {
+            // delivery tags start at 1, so the real tag is stale
+            // therefore we should do nothing
+            return;
         }
+        transmit(new Basic.Nack(realTag, multiple, requeue));
+        metricsCollector.basicNack(this, deliveryTag);
     }
 
     @Override
     public void basicReject(long deliveryTag, boolean requeue) throws IOException {
+        // note that the basicAck comment above does not apply
+        // here since basic.reject doesn't support rejecting
+        // multiple deliveries at once
         long realTag = deliveryTag - activeDeliveryTagOffset;
         if (realTag > 0) {
             transmit(new Basic.Reject(realTag, requeue));

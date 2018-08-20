@@ -127,6 +127,7 @@ public class JacksonJsonRpcMapper implements JsonRpcMapper {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public JsonRpcResponse parse(String responseBody, Class<?> expectedReturnType) {
         JsonFactory jsonFactory = new MappingJsonFactory();
         Object result = null;
