@@ -34,7 +34,7 @@ public class TopologyRecoveryRetry extends BrokerTestCase {
 
     @Test
     public void topologyRecoveryRetry() throws Exception {
-        int nbQueues = 2000;
+        int nbQueues = 200;
         String prefix = "topology-recovery-retry-" + System.currentTimeMillis();
         for (int i = 0; i < nbQueues; i++) {
             String queue = prefix + i;
