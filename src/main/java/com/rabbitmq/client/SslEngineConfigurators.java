@@ -41,6 +41,10 @@ public abstract class SslEngineConfigurators {
 
     /**
      * {@link SslEngineConfigurator} that enables server hostname verification.
+     *
+     * <p>
+     * Requires Java 7 or more.
+     *
      */
     public static AbstractSslEngineConfigurator ENABLE_HOSTNAME_VERIFICATION = new AbstractSslEngineConfigurator() {
 
@@ -62,6 +66,9 @@ public abstract class SslEngineConfigurators {
 
     /**
      * {@link SslEngineConfigurator} that enables server hostname verification.
+     *
+     * <p>
+     * Requires Java 7 or more.
      *
      * @return
      */
@@ -127,6 +134,9 @@ public abstract class SslEngineConfigurators {
 
         /**
          * Enables server hostname verification.
+         *
+         * <p>
+         * Requires Java 7 or more.
          *
          * @return
          */

@@ -29,8 +29,10 @@ import com.rabbitmq.client.impl.nio.SocketChannelFrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.impl.recovery.RetryHandler;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 
 import javax.net.SocketFactory;
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -187,6 +189,19 @@ public class ConnectionFactory implements Cloneable {
      * @since 4.8.0
      */
     private RetryHandler topologyRecoveryRetryHandler;
+
+    /**
+     * Hook to post-process the freshly open TCP connection.
+     *
+     * @since 4.8.0
+     */
+    private ConnectionPostProcessor connectionPostProcessor = new ConnectionPostProcessor() {
+
+        @Override
+        public void postProcess(ConnectionContext context) {
+
+        }
+    };
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -679,12 +694,19 @@ public class ConnectionFactory implements Cloneable {
      * Pass in the TLS protocol version to use, e.g. "TLSv1.2" or "TLSv1.1", and
      * a desired {@link TrustManager}.
      *
+     * Note <strong>you must explicitly enable hostname verification</strong> with the
+     * {@link ConnectionFactory#enableHostnameVerification()} or the
+     * {@link ConnectionFactory#enableHostnameVerification(HostnameVerifier)}
+     * method.
+     *
      *
      * The produced {@link SSLContext} instance will be shared with all
      * the connections created by this connection factory.
      * @param protocol the TLS protocol to use.
      * @param trustManager the {@link TrustManager} implementation to use.
      * @see #useSslProtocol(SSLContext)
+     * @see #enableHostnameVerification()
+     * @see #enableHostnameVerification(HostnameVerifier)
      */
     public void useSslProtocol(String protocol, TrustManager trustManager)
         throws NoSuchAlgorithmException, KeyManagementException
@@ -699,9 +721,16 @@ public class ConnectionFactory implements Cloneable {
      * for setting up the context with a {@link TrustManager} with suitable security guarantees,
      * e.g. peer verification.
      *
+     * Note <strong>you must explicitly enable hostname verification</strong> with the
+     * {@link ConnectionFactory#enableHostnameVerification()} or the
+     * {@link ConnectionFactory#enableHostnameVerification(HostnameVerifier)}
+     * method.
+     *
      * The {@link SSLContext} instance will be shared with all
      * the connections created by this connection factory.
      * @param context An initialized SSLContext
+     * @see #enableHostnameVerification()
+     * @see #enableHostnameVerification(HostnameVerifier)
      */
     public void useSslProtocol(SSLContext context) {
         setSocketFactory(context.getSocketFactory());
@@ -716,6 +745,15 @@ public class ConnectionFactory implements Cloneable {
      * <p>
      * This can be called typically after setting the {@link SSLContext}
      * with one of the <code>useSslProtocol</code> methods.
+     * <p>
+     * If <strong>using Java 7 or more</strong>, the hostname verification will be
+     * performed by Java, as part of the TLS handshake.
+     * <p>
+     * If <strong>using Java 6</strong>, the hostname verification will be handled after
+     * the TLS handshake, using the {@link HostnameVerifier} from the
+     * Commons HttpClient project. This requires to add Commons HttpClient
+     * and its dependencies to the classpath. To use a custom {@link HostnameVerifier},
+     * use {@link ConnectionFactory#enableHostnameVerification(HostnameVerifier)}.
      *
      * @see NioParams#enableHostnameVerification()
      * @see NioParams#setSslEngineConfigurator(SslEngineConfigurator)
@@ -725,10 +763,43 @@ public class ConnectionFactory implements Cloneable {
      * @see ConnectionFactory#useSslProtocol(SSLContext)
      * @see ConnectionFactory#useSslProtocol()
      * @see ConnectionFactory#useSslProtocol(String, TrustManager)
+     * @see ConnectionFactory#enableHostnameVerification(HostnameVerifier)
+     * @since 4.8.0
      */
     public void enableHostnameVerification() {
-        enableHostnameVerificationForNio();
-        enableHostnameVerificationForBlockingIo();
+        if (isJava6()) {
+            enableHostnameVerification(new DefaultHostnameVerifier());
+        } else {
+            enableHostnameVerificationForNio();
+            enableHostnameVerificationForBlockingIo();
+        }
+    }
+
+    /**
+     * Enable TLS hostname verification performed by the passed-in {@link HostnameVerifier}.
+     * <p>
+     * Using an {@link HostnameVerifier} is relevant only for Java 6, for Java 7 or more,
+     * calling ConnectionFactory{@link #enableHostnameVerification()} is enough.
+     *
+     * @param hostnameVerifier
+     * @since 4.8.0
+     * @see ConnectionFactory#enableHostnameVerification()
+     */
+    public void enableHostnameVerification(HostnameVerifier hostnameVerifier) {
+        if (this.connectionPostProcessor == null) {
+            this.connectionPostProcessor = ConnectionPostProcessors.builder()
+                .enableHostnameVerification(hostnameVerifier)
+                .build();
+        } else {
+            this.connectionPostProcessor = ConnectionPostProcessors.builder()
+                .add(this.connectionPostProcessor)
+                .enableHostnameVerification(hostnameVerifier)
+                .build();
+        }
+    }
+
+    protected boolean isJava6() {
+        return System.getProperty("java.specification.version").startsWith("1.6");
     }
 
     protected void enableHostnameVerificationForNio() {
@@ -835,11 +906,11 @@ public class ConnectionFactory implements Cloneable {
                 if(this.nioParams.getNioExecutor() == null && this.nioParams.getThreadFactory() == null) {
                     this.nioParams.setThreadFactory(getThreadFactory());
                 }
-                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, nioParams, isSSL(), sslContext);
+                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, nioParams, isSSL(), sslContext, connectionPostProcessor);
             }
             return this.frameHandlerFactory;
         } else {
-            return new SocketFrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor);
+            return new SocketFrameHandlerFactory(connectionTimeout, factory, socketConf, isSSL(), this.shutdownExecutor, connectionPostProcessor);
         }
 
     }
@@ -1482,5 +1553,16 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setTopologyRecoveryRetryHandler(RetryHandler topologyRecoveryRetryHandler) {
         this.topologyRecoveryRetryHandler = topologyRecoveryRetryHandler;
+    }
+
+    /**
+     * Hook to post-process the freshly open TCP connection.
+     *
+     * @param connectionPostProcessor
+     * @see #enableHostnameVerification()
+     * @see #enableHostnameVerification(HostnameVerifier)
+     */
+    public void setConnectionPostProcessor(ConnectionPostProcessor connectionPostProcessor) {
+        this.connectionPostProcessor = connectionPostProcessor;
     }
 }

@@ -48,6 +48,8 @@ public abstract class SocketConfigurators {
 
     /**
      * Enable server hostname validation for TLS connections.
+     * <p>
+     * Requires Java 7 or more.
      */
     public static final AbstractSocketConfigurator ENABLE_HOSTNAME_VERIFICATION = new AbstractSocketConfigurator() {
 
@@ -91,6 +93,9 @@ public abstract class SocketConfigurators {
 
     /**
      * {@link SocketConfigurator} that enable server hostname verification for TLS connections.
+     *
+     * <p>
+     * Requires Java 7 or more.
      *
      * @return
      */
@@ -164,6 +169,9 @@ public abstract class SocketConfigurators {
 
         /**
          * Enable server hostname verification for TLS connections.
+         *
+         * <p>
+         * Requires Java 7 or more.
          *
          * @return
          */
