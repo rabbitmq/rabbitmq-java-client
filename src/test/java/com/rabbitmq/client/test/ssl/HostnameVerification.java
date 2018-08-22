@@ -18,87 +18,93 @@ package com.rabbitmq.client.test.ssl;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.test.TestUtils;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.KeyManagementException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
+import static com.rabbitmq.client.test.TestUtils.getSSLContext;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-public class HostnameVerification extends UnverifiedConnection {
+@RunWith(Parameterized.class)
+public class HostnameVerification {
 
-    public void openConnection()
-        throws IOException, TimeoutException {
-        try {
-            String keystorePath = System.getProperty("test-keystore.ca");
-            assertNotNull(keystorePath);
-            String keystorePasswd = System.getProperty("test-keystore.password");
-            assertNotNull(keystorePasswd);
-            char[] keystorePassword = keystorePasswd.toCharArray();
+    static SSLContext sslContext;
+    @Parameterized.Parameter
+    public Consumer<ConnectionFactory> customizer;
 
-            KeyStore tks = KeyStore.getInstance("JKS");
-            tks.load(new FileInputStream(keystorePath), keystorePassword);
-
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-            tmf.init(tks);
-
-            String p12Path = System.getProperty("test-client-cert.path");
-            assertNotNull(p12Path);
-            String p12Passwd = System.getProperty("test-client-cert.password");
-            assertNotNull(p12Passwd);
-            KeyStore ks = KeyStore.getInstance("PKCS12");
-            char[] p12Password = p12Passwd.toCharArray();
-            ks.load(new FileInputStream(p12Path), p12Password);
-
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, p12Password);
-
-            SSLContext c = getSSLContext();
-            c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-            c.init(null, tmf.getTrustManagers(), null);
-
-            connectionFactory = TestUtils.connectionFactory();
-            connectionFactory.useSslProtocol(c);
-            connectionFactory.enableHostnameVerification();
-        } catch (NoSuchAlgorithmException ex) {
-            throw new IOException(ex.toString());
-        } catch (KeyManagementException ex) {
-            throw new IOException(ex.toString());
-        } catch (KeyStoreException ex) {
-            throw new IOException(ex.toString());
-        } catch (CertificateException ex) {
-            throw new IOException(ex.toString());
-        } catch (UnrecoverableKeyException ex) {
-            throw new IOException(ex.toString());
-        }
-
-        try {
-            connection = connectionFactory.newConnection(
-                () -> singletonList(new Address("127.0.0.1", ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT)));
-            fail("The server certificate isn't issued for 127.0.0.1, the TLS handshake should have failed");
-        } catch (SSLHandshakeException ignored) {
-        } catch (IOException e) {
-            fail();
-        }
+    @Parameterized.Parameters
+    public static Object[] data() {
+        return new Object[] {
+            blockingIo(enableHostnameVerification()),
+            nio(enableHostnameVerification()),
+        };
     }
 
-    public void openChannel() {
+    private static Consumer<ConnectionFactory> blockingIo(final Consumer<ConnectionFactory> customizer) {
+        return connectionFactory -> {
+            connectionFactory.useBlockingIo();
+            customizer.accept(connectionFactory);
+        };
     }
 
-    @Test
-    public void sSL() {
+    private static Consumer<ConnectionFactory> nio(final Consumer<ConnectionFactory> customizer) {
+        return connectionFactory -> {
+            connectionFactory.useNio();
+            customizer.accept(connectionFactory);
+        };
+    }
+
+    private static Consumer<ConnectionFactory> enableHostnameVerification() {
+        return connectionFactory -> connectionFactory.enableHostnameVerification();
+    }
+
+    @BeforeClass
+    public static void initCrypto() throws Exception {
+        String keystorePath = System.getProperty("test-keystore.ca");
+        assertNotNull(keystorePath);
+        String keystorePasswd = System.getProperty("test-keystore.password");
+        assertNotNull(keystorePasswd);
+        char[] keystorePassword = keystorePasswd.toCharArray();
+
+        KeyStore tks = KeyStore.getInstance("JKS");
+        tks.load(new FileInputStream(keystorePath), keystorePassword);
+
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(tks);
+
+        String p12Path = System.getProperty("test-client-cert.path");
+        assertNotNull(p12Path);
+        String p12Passwd = System.getProperty("test-client-cert.password");
+        assertNotNull(p12Passwd);
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        char[] p12Password = p12Passwd.toCharArray();
+        ks.load(new FileInputStream(p12Path), p12Password);
+
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, p12Password);
+
+        sslContext = getSSLContext();
+        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+    }
+
+    @Test(expected = SSLHandshakeException.class)
+    public void hostnameVerificationFailsBecauseCertificateNotIssuedForLoopbackInterface() throws Exception {
+        ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+        connectionFactory.useSslProtocol(sslContext);
+        customizer.accept(connectionFactory);
+        connectionFactory.newConnection(
+            () -> singletonList(new Address("127.0.0.1", ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT)));
+        fail("The server certificate isn't issued for 127.0.0.1, the TLS handshake should have failed");
     }
 }
