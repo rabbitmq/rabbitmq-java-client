@@ -16,8 +16,10 @@
 package com.rabbitmq.client.test.ssl;
 
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.test.TestUtils;
+import com.rabbitmq.tools.Host;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,6 +36,7 @@ import java.util.function.Consumer;
 import static com.rabbitmq.client.test.TestUtils.getSSLContext;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
@@ -106,5 +109,15 @@ public class HostnameVerification {
         connectionFactory.newConnection(
             () -> singletonList(new Address("127.0.0.1", ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT)));
         fail("The server certificate isn't issued for 127.0.0.1, the TLS handshake should have failed");
+    }
+
+    public void hostnameVerificationSucceeds() throws Exception {
+        ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+        connectionFactory.useSslProtocol(sslContext);
+        customizer.accept(connectionFactory);
+        Connection conn = connectionFactory.newConnection(
+            () -> singletonList(new Address(Host.systemHostname(), ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT)));
+        assertTrue(conn.isOpen());
+        conn.close();
     }
 }
