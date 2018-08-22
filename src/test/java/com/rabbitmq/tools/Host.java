@@ -120,6 +120,11 @@ public class Host {
                               " " + command);
     }
 
+    public static String systemHostname() throws IOException {
+        Process process = executeCommandIgnoringErrors("hostname");
+        return capture(process.getInputStream());
+    }
+
     public static String makeCommand()
     {
         return System.getProperty("make.bin", "make");
