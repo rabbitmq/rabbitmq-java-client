@@ -24,7 +24,7 @@ import javax.net.ssl.SSLSocket;
  * Note {@link SocketConfigurator}s can be combined with
  * {@link SocketConfigurator#andThen(SocketConfigurator)}.
  *
- * @since 5.5.0
+ * @since 5.4.0
  */
 public abstract class SocketConfigurators {
 

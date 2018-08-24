@@ -23,7 +23,7 @@ import javax.net.ssl.SSLParameters;
  * Note {@link SslEngineConfigurator}s can be combined with
  * {@link SslEngineConfigurator#andThen(SslEngineConfigurator)}.
  *
- * @since 5.5.0
+ * @since 5.4.0
  */
 public abstract class SslEngineConfigurators {
 
