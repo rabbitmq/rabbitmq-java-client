@@ -15,8 +15,6 @@
 
 package com.rabbitmq.client;
 
-import static java.util.concurrent.TimeUnit.*;
-
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.CredentialsProvider;
@@ -32,6 +30,10 @@ import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.impl.recovery.RetryHandler;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -50,10 +52,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * Convenience factory class to facilitate opening a {@link Connection} to a RabbitMQ node.
@@ -132,7 +132,7 @@ public class ConnectionFactory implements Cloneable {
     // connections uses, see rabbitmq/rabbitmq-java-client#86
     private ExecutorService shutdownExecutor;
     private ScheduledExecutorService heartbeatExecutor;
-    private SocketConfigurator socketConf           = new DefaultSocketConfigurator();
+    private SocketConfigurator socketConf           = SocketConfigurators.defaultConfigurator();
     private ExceptionHandler exceptionHandler       = new DefaultExceptionHandler();
     private CredentialsProvider credentialsProvider = new DefaultCredentialsProvider(DEFAULT_USER, DEFAULT_PASS);
 
@@ -727,6 +727,44 @@ public class ConnectionFactory implements Cloneable {
     public void useSslProtocol(SSLContext context) {
         this.sslContextFactory = name -> context;
         setSocketFactory(context.getSocketFactory());
+    }
+
+    /**
+     * Enable server hostname verification for TLS connections.
+     * <p>
+     * This enables hostname verification regardless of the IO mode
+     * used (blocking or non-blocking IO).
+     * <p>
+     * This can be called typically after setting the {@link SSLContext}
+     * with one of the <code>useSslProtocol</code> methods.
+     *
+     * @see NioParams#enableHostnameVerification()
+     * @see NioParams#setSslEngineConfigurator(SslEngineConfigurator)
+     * @see SslEngineConfigurators#ENABLE_HOSTNAME_VERIFICATION
+     * @see SocketConfigurators#ENABLE_HOSTNAME_VERIFICATION
+     * @see ConnectionFactory#useSslProtocol(String)
+     * @see ConnectionFactory#useSslProtocol(SSLContext)
+     * @see ConnectionFactory#useSslProtocol()
+     * @see ConnectionFactory#useSslProtocol(String, TrustManager)
+     */
+    public void enableHostnameVerification() {
+        enableHostnameVerificationForNio();
+        enableHostnameVerificationForBlockingIo();
+    }
+
+    protected void enableHostnameVerificationForNio() {
+        if (this.nioParams == null) {
+            this.nioParams = new NioParams();
+        }
+        this.nioParams = this.nioParams.enableHostnameVerification();
+    }
+
+    protected void enableHostnameVerificationForBlockingIo() {
+        if (this.socketConf == null) {
+            this.socketConf = SocketConfigurators.builder().defaultConfigurator().enableHostnameVerification().build();
+        } else {
+            this.socketConf = this.socketConf.andThen(SocketConfigurators.enableHostnameVerification());
+        }
     }
 
     public static String computeDefaultTlsProcotol(String[] supportedProtocols) {
