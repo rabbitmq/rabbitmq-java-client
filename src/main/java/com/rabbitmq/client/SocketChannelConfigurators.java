@@ -21,7 +21,7 @@ package com.rabbitmq.client;
  * Note {@link SocketChannelConfigurator}s can be combined with
  * {@link SocketChannelConfigurator#andThen(SocketChannelConfigurator)}.
  *
- * @since 5.5.0
+ * @since 5.4.0
  */
 public abstract class SocketChannelConfigurators {
 
