@@ -96,7 +96,7 @@ public class VerifiedConnection extends UnverifiedConnection {
             }
         }
         if(connection == null) {
-            fail("Couldn't open TLS connection after 3 attemps");
+            fail("Couldn't open TLS connection after 3 attempts");
         }
     }
 }

@@ -19,7 +19,7 @@ package com.rabbitmq.tools.jsonrpc;
  * Abstraction to handle JSON parsing and generation.
  * Used by {@link JsonRpcServer} and {@link JsonRpcClient}.
  *
- * @since 5.4.0
+ * @since 4.8.0
  */
 public interface JsonRpcMapper {
 

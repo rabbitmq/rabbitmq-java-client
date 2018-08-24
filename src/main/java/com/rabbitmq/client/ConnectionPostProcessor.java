@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2018 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -16,14 +16,21 @@
 package com.rabbitmq.client;
 
 import java.io.IOException;
-import java.net.Socket;
 
-public interface SocketConfigurator {
+/**
+ * Hook to add processing on the open TCP connection.
+ * <p>
+ * Used e.g. to add hostname verification on TLS connection.
+ *
+ * @since 4.8.0
+ */
+public interface ConnectionPostProcessor {
 
     /**
-     * Provides a hook to insert custom configuration of the sockets
-     * used to connect to an AMQP server before they connect.
+     * Post-process the open TCP connection.
+     *
+     * @param context some TCP connection context (e.g. socket)
+     * @throws IOException
      */
-    void configure(Socket socket) throws IOException;
-
+    void postProcess(ConnectionContext context) throws IOException;
 }

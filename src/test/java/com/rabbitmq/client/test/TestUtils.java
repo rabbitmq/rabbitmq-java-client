@@ -30,7 +30,10 @@ import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.tools.Host;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.Callable;
@@ -62,6 +65,22 @@ public class TestUtils {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    public static SSLContext getSSLContext() throws NoSuchAlgorithmException {
+        SSLContext c = null;
+
+        // pick the first protocol available, preferring TLSv1.2, then TLSv1,
+        // falling back to SSLv3 if running on an ancient/crippled JDK
+        for(String proto : Arrays.asList("TLSv1.2", "TLSv1", "SSLv3")) {
+            try {
+                c = SSLContext.getInstance(proto);
+                return c;
+            } catch (NoSuchAlgorithmException x) {
+                // keep trying
+            }
+        }
+        throw new NoSuchAlgorithmException();
     }
 
     public static boolean isVersion37orLater(Connection connection) {

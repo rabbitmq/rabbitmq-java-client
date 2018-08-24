@@ -16,7 +16,9 @@
 package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.ConnectionContext;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ConnectionPostProcessor;
 import com.rabbitmq.client.SocketConfigurator;
 
 import javax.net.SocketFactory;
@@ -35,7 +37,12 @@ public class SocketFrameHandlerFactory extends AbstractFrameHandlerFactory {
     }
 
     public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator, boolean ssl, ExecutorService shutdownExecutor) {
-        super(connectionTimeout, configurator, ssl);
+        this(connectionTimeout, factory, configurator, ssl, shutdownExecutor, null);
+    }
+
+    public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory factory, SocketConfigurator configurator,
+            boolean ssl, ExecutorService shutdownExecutor, ConnectionPostProcessor connectionPostProcessor) {
+        super(connectionTimeout, configurator, ssl, connectionPostProcessor);
         this.factory = factory;
         this.shutdownExecutor = shutdownExecutor;
     }
@@ -49,6 +56,11 @@ public class SocketFrameHandlerFactory extends AbstractFrameHandlerFactory {
             configurator.configure(socket);
             socket.connect(new InetSocketAddress(hostName, portNumber),
                     connectionTimeout);
+
+            this.connectionPostProcessor.postProcess(new ConnectionContext(
+                socket, addr,
+                ssl, null
+            ));
             return create(socket);
         } catch (IOException ioe) {
             quietTrySocketClose(socket);

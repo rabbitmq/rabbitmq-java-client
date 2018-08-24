@@ -16,7 +16,9 @@
 package com.rabbitmq.client.impl.nio;
 
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.ConnectionContext;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ConnectionPostProcessor;
 import com.rabbitmq.client.impl.AbstractFrameHandlerFactory;
 import com.rabbitmq.client.impl.FrameHandler;
 
@@ -48,15 +50,19 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
     private final List<NioLoopContext> nioLoopContexts;
 
-    public SocketChannelFrameHandlerFactory(int connectionTimeout, NioParams nioParams, boolean ssl, SSLContext sslContext)
-        throws IOException {
-        super(connectionTimeout, null, ssl);
+    public SocketChannelFrameHandlerFactory(int connectionTimeout, NioParams nioParams, boolean ssl, SSLContext sslContext,
+                ConnectionPostProcessor connectionPostProcessor) {
+        super(connectionTimeout, null, ssl, connectionPostProcessor);
         this.nioParams = new NioParams(nioParams);
         this.sslContext = sslContext;
         this.nioLoopContexts = new ArrayList<NioLoopContext>(this.nioParams.getNbIoThreads());
         for (int i = 0; i < this.nioParams.getNbIoThreads(); i++) {
             this.nioLoopContexts.add(new NioLoopContext(this, this.nioParams));
         }
+    }
+
+    public SocketChannelFrameHandlerFactory(int connectionTimeout, NioParams nioParams, boolean ssl, SSLContext sslContext) {
+        this(connectionTimeout, nioParams, ssl, sslContext, null);
     }
 
     @Override
@@ -91,6 +97,11 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                     throw new SSLException("TLS handshake failed");
                 }
             }
+
+            this.connectionPostProcessor.postProcess(new ConnectionContext(
+                channel.socket(), addr,
+                ssl, sslEngine == null ? null : sslEngine.getSession()
+            ));
 
             channel.configureBlocking(false);
 
