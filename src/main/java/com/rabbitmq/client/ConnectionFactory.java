@@ -1273,7 +1273,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     protected AddressResolver createAddressResolver(List<Address> addresses) {
-        if(addresses.size() == 1) {
+        if(addresses.size() == 1 && !isSSL()) {
             return new DnsRecordIpAddressResolver(addresses.get(0), isSSL());
         } else {
             return new ListAddressResolver(addresses);
