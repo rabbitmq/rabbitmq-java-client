@@ -111,13 +111,14 @@ public class HostnameVerification {
         fail("The server certificate isn't issued for 127.0.0.1, the TLS handshake should have failed");
     }
 
+    @Test
     public void hostnameVerificationSucceeds() throws Exception {
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
         connectionFactory.useSslProtocol(sslContext);
         customizer.accept(connectionFactory);
-        Connection conn = connectionFactory.newConnection(
-            () -> singletonList(new Address(Host.systemHostname(), ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT)));
-        assertTrue(conn.isOpen());
-        conn.close();
+        try (Connection conn = connectionFactory.newConnection(
+            () -> singletonList(new Address(Host.systemHostname(), ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT)))) {
+            assertTrue(conn.isOpen());
+        }
     }
 }
