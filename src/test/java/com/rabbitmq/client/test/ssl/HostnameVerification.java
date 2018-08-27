@@ -17,9 +17,11 @@ package com.rabbitmq.client.test.ssl;
 
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.AddressResolver;
+import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.ConnectionPostProcessors;
 import com.rabbitmq.client.test.TestUtils;
+import com.rabbitmq.tools.Host;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.bouncycastle.est.jcajce.JsseDefaultHostnameAuthorizer;
 import org.bouncycastle.est.jcajce.JsseHostnameAuthorizer;
@@ -43,6 +45,7 @@ import java.util.List;
 import static com.rabbitmq.client.test.TestUtils.getSSLContext;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
@@ -181,6 +184,27 @@ public class HostnameVerification {
                 }
             });
         fail("The server certificate isn't issued for 127.0.0.1, the TLS handshake should have failed");
+    }
+
+    @Test
+    public void hostnameVerificationSucceeds() throws Exception {
+        Connection conn = null;
+        ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+        connectionFactory.useSslProtocol(sslContext);
+        try {
+            customizer.customize(connectionFactory);
+            conn = connectionFactory.newConnection(
+                new AddressResolver() {
+
+                    @Override
+                    public List<Address> getAddresses() throws IOException {
+                        return singletonList(new Address(Host.systemHostname(), ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT));
+                    }
+                });
+            assertTrue(conn.isOpen());
+        } finally {
+            TestUtils.close(conn);
+        }
     }
 
     interface ConnectionFactoryCustomizer {
