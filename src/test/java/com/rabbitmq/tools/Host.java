@@ -122,7 +122,7 @@ public class Host {
 
     public static String systemHostname() throws IOException {
         Process process = executeCommandIgnoringErrors("hostname");
-        return capture(process.getInputStream());
+        return capture(process.getInputStream()).trim();
     }
 
     public static String makeCommand()
