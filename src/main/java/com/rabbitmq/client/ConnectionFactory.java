@@ -746,6 +746,7 @@ public class ConnectionFactory implements Cloneable {
      * @see ConnectionFactory#useSslProtocol(SSLContext)
      * @see ConnectionFactory#useSslProtocol()
      * @see ConnectionFactory#useSslProtocol(String, TrustManager)
+     * @since 5.4.0
      */
     public void enableHostnameVerification() {
         enableHostnameVerificationForNio();
