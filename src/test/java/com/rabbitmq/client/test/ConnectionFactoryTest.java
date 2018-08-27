@@ -124,7 +124,7 @@ public class ConnectionFactoryTest {
         assertThat(addressResolver.get(), allOf(notNullValue(), instanceOf(DnsRecordIpAddressResolver.class)));
     }
 
-    @Test public void shouldNotUseDnsResolutionWhenOneAddressAndNoTls() throws Exception {
+    @Test public void shouldNotUseDnsResolutionWhenOneAddressAndTls() throws Exception {
         AMQConnection connection = mock(AMQConnection.class);
         AtomicReference<AddressResolver> addressResolver = new AtomicReference<>();
 
