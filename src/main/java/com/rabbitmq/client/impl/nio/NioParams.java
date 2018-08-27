@@ -301,9 +301,11 @@ public class NioParams {
      * Nagle's algorithm.
      *
      * @param configurator the configurator to use
+     * @return this {@link NioParams} instance
      */
-    public void setSocketChannelConfigurator(SocketChannelConfigurator configurator) {
+    public NioParams setSocketChannelConfigurator(SocketChannelConfigurator configurator) {
         this.socketChannelConfigurator = configurator;
+        return this;
     }
 
     public SslEngineConfigurator getSslEngineConfigurator() {
@@ -318,9 +320,11 @@ public class NioParams {
      * The default implementation doesn't do anything.
      *
      * @param configurator the configurator to use
+     * @return this {@link NioParams} instance
      */
-    public void setSslEngineConfigurator(SslEngineConfigurator configurator) {
+    public NioParams setSslEngineConfigurator(SslEngineConfigurator configurator) {
         this.sslEngineConfigurator = configurator;
+        return this;
     }
 
     public ExecutorService getConnectionShutdownExecutor() {
