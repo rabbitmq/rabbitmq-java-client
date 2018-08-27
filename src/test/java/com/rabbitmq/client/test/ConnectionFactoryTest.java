@@ -101,8 +101,8 @@ public class ConnectionFactoryTest {
     }
 
     @Test public void shouldUseDnsResolutionWhenOneAddressAndNoTls() throws Exception {
-        AMQConnection connection = mock(AMQConnection.class);
-        AtomicReference<AddressResolver> addressResolver = new AtomicReference<>();
+        final AMQConnection connection = mock(AMQConnection.class);
+        final AtomicReference<AddressResolver> addressResolver = new AtomicReference<AddressResolver>();
 
         ConnectionFactory connectionFactory = new ConnectionFactory() {
             @Override
@@ -125,8 +125,8 @@ public class ConnectionFactoryTest {
     }
 
     @Test public void shouldNotUseDnsResolutionWhenOneAddressAndNoTls() throws Exception {
-        AMQConnection connection = mock(AMQConnection.class);
-        AtomicReference<AddressResolver> addressResolver = new AtomicReference<>();
+        final AMQConnection connection = mock(AMQConnection.class);
+        final AtomicReference<AddressResolver> addressResolver = new AtomicReference<AddressResolver>();
 
         ConnectionFactory connectionFactory = new ConnectionFactory() {
             @Override
