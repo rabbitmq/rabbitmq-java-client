@@ -1219,11 +1219,7 @@ public class ConnectionFactory implements Cloneable {
     }
 
     protected AddressResolver createAddressResolver(List<Address> addresses) {
-        if(addresses.size() == 1) {
-            return new DnsRecordIpAddressResolver(addresses.get(0), isSSL());
-        } else {
-            return new ListAddressResolver(addresses);
-        }
+        return new ListAddressResolver(addresses);
     }
 
     @Override public ConnectionFactory clone(){

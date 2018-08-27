@@ -16,8 +16,11 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.AddressResolver;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DnsRecordIpAddressResolver;
+import com.rabbitmq.client.ListAddressResolver;
 import com.rabbitmq.client.MetricsCollector;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
@@ -27,11 +30,16 @@ import com.rabbitmq.client.impl.FrameHandlerFactory;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -88,6 +96,55 @@ public class ConnectionFactoryTest {
         Connection returnedConnection = connectionFactory.newConnection();
         assertSame(returnedConnection, connection);
         assertTrue(createCalled.get());
+    }
+
+    @Test public void shouldNotUseDnsResolutionWhenOneAddressAndNoTls() throws Exception {
+        AMQConnection connection = mock(AMQConnection.class);
+        AtomicReference<AddressResolver> addressResolver = new AtomicReference<>();
+
+        ConnectionFactory connectionFactory = new ConnectionFactory() {
+            @Override
+            protected AMQConnection createConnection(ConnectionParams params, FrameHandler frameHandler,
+                MetricsCollector metricsCollector) {
+                return connection;
+            }
+
+            @Override
+            protected AddressResolver createAddressResolver(List<Address> addresses) {
+                addressResolver.set(super.createAddressResolver(addresses));
+                return addressResolver.get();
+            }
+        };
+
+        doNothing().when(connection).start();
+        connectionFactory.newConnection();
+
+        assertThat(addressResolver.get(), allOf(notNullValue(), instanceOf(ListAddressResolver.class)));
+    }
+
+    @Test public void shouldNotUseDnsResolutionWhenOneAddressAndTls() throws Exception {
+        AMQConnection connection = mock(AMQConnection.class);
+        AtomicReference<AddressResolver> addressResolver = new AtomicReference<>();
+
+        ConnectionFactory connectionFactory = new ConnectionFactory() {
+            @Override
+            protected AMQConnection createConnection(ConnectionParams params, FrameHandler frameHandler,
+                MetricsCollector metricsCollector) {
+                return connection;
+            }
+
+            @Override
+            protected AddressResolver createAddressResolver(List<Address> addresses) {
+                addressResolver.set(super.createAddressResolver(addresses));
+                return addressResolver.get();
+            }
+        };
+
+        doNothing().when(connection).start();
+        connectionFactory.useSslProtocol();
+        connectionFactory.newConnection();
+
+        assertThat(addressResolver.get(), allOf(notNullValue(), instanceOf(ListAddressResolver.class)));
     }
 
 }
