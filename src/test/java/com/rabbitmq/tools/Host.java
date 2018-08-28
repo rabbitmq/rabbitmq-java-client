@@ -109,6 +109,14 @@ public class Host {
                                             " " + command);
     }
 
+    public static void setResourceAlarm(String source) throws IOException {
+        rabbitmqctl("eval 'rabbit_alarm:set_alarm({{resource_limit, " + source +  ", node()}, []}).'");
+    }
+
+    public static void clearResourceAlarm(String source) throws IOException {
+        rabbitmqctl("eval 'rabbit_alarm:clear_alarm({resource_limit, " + source + ", node()}).'");
+    }
+
     public static Process invokeMakeTarget(String command) throws IOException {
         File rabbitmqctl = new File(rabbitmqctlCommand());
         return executeCommand(makeCommand() +
