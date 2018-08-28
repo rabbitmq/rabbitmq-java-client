@@ -19,7 +19,6 @@ import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.test.TestUtils;
-import com.rabbitmq.tools.Host;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
