@@ -51,7 +51,7 @@ public class TopologyRecoveryRetry extends BrokerTestCase {
     @Override
     protected ConnectionFactory newConnectionFactory() {
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
-        connectionFactory.setTopologyRecoveryRetryHandler(RETRY_ON_QUEUE_NOT_FOUND_RETRY_HANDLER);
+        connectionFactory.setTopologyRecoveryRetryHandler(RETRY_ON_QUEUE_NOT_FOUND_RETRY_HANDLER.build());
         connectionFactory.setNetworkRecoveryInterval(1000);
         return connectionFactory;
     }
