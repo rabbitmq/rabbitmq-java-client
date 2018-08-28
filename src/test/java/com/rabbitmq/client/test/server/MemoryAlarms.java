@@ -47,6 +47,7 @@ public class MemoryAlarms extends BrokerTestCase {
 
     @Override
     public void tearDown() throws IOException, TimeoutException {
+        clearAllResourceAlarms();
         if (channel2 != null) {
             channel2.abort();
             channel2 = null;
@@ -66,13 +67,7 @@ public class MemoryAlarms extends BrokerTestCase {
 
     @Override
     protected void releaseResources() throws IOException {
-        try {
-            clearAllResourceAlarms();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            channel.queueDelete(Q);
-        }
+        channel.queueDelete(Q);
     }
 
     @Test public void flowControl() throws IOException, InterruptedException {

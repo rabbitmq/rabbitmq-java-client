@@ -320,17 +320,17 @@ public class BrokerTestCase {
         }
     }
 
-    protected void clearAllResourceAlarms() throws IOException, InterruptedException {
+    protected void clearAllResourceAlarms() throws IOException {
         clearResourceAlarm("memory");
         clearResourceAlarm("disk");
     }
 
-    protected void setResourceAlarm(String source) throws IOException, InterruptedException {
-        Host.invokeMakeTarget("set-resource-alarm SOURCE=" + source);
+    protected void setResourceAlarm(String source) throws IOException {
+        Host.setResourceAlarm(source);
     }
 
-    protected void clearResourceAlarm(String source) throws IOException, InterruptedException {
-        Host.invokeMakeTarget("clear-resource-alarm SOURCE=" + source);
+    protected void clearResourceAlarm(String source) throws IOException {
+        Host.clearResourceAlarm(source);
     }
 
     protected void block() throws IOException, InterruptedException {
