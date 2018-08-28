@@ -100,7 +100,7 @@ public class DefaultRetryHandler implements RetryHandler {
         Exception exception = context.exception();
         while (attempts < retryAttempts) {
             if (condition.test(entity, exception)) {
-                log(entity, context.exception(), attempts);
+                log(entity, exception, attempts);
                 backoffPolicy.backoff(attempts + 1);
                 try {
                     Object result = operation.call(context);
