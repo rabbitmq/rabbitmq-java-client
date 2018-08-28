@@ -117,7 +117,7 @@ public class HostnameVerification {
         connectionFactory.useSslProtocol(sslContext);
         customizer.accept(connectionFactory);
         try (Connection conn = connectionFactory.newConnection(
-            () -> singletonList(new Address(Host.systemHostname(), ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT)))) {
+            () -> singletonList(new Address("localhost", ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT)))) {
             assertTrue(conn.isOpen());
         }
     }
