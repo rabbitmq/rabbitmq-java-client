@@ -21,7 +21,6 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.ConnectionPostProcessors;
 import com.rabbitmq.client.test.TestUtils;
-import com.rabbitmq.tools.Host;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.bouncycastle.est.jcajce.JsseDefaultHostnameAuthorizer;
 import org.bouncycastle.est.jcajce.JsseHostnameAuthorizer;
@@ -197,8 +196,8 @@ public class HostnameVerification {
                 new AddressResolver() {
 
                     @Override
-                    public List<Address> getAddresses() throws IOException {
-                        return singletonList(new Address(Host.systemHostname(), ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT));
+                    public List<Address> getAddresses() {
+                        return singletonList(new Address("localhost", ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT));
                     }
                 });
             assertTrue(conn.isOpen());
