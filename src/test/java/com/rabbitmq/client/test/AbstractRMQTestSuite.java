@@ -43,23 +43,6 @@ public abstract class AbstractRMQTestSuite {
   }
 
   public static boolean requiredProperties() {
-    /* GNU Make. */
-    String make = Host.makeCommand();
-    boolean isGNUMake = false;
-    if (make != null) {
-      try {
-        Process makeProc = Host.executeCommandIgnoringErrors(make + " --version");
-        String makeVersion = Host.capture(makeProc.getInputStream());
-        isGNUMake = makeVersion.startsWith("GNU Make");
-      } catch (IOException e) {}
-    }
-    if (!isGNUMake) {
-      System.err.println(
-          "GNU Make required; please set \"make.bin\" system property" +
-          " or \"$MAKE\" environment variable");
-      return false;
-    }
-
     /* Path to RabbitMQ. */
     String rabbitmq = Host.rabbitmqDir();
     if (rabbitmq == null || !new File(rabbitmq).isDirectory()) {

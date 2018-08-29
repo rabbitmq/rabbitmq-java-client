@@ -124,10 +124,10 @@ public class ClusteredTestBase extends BrokerTestCase {
     }
 
     protected void stopSecondary() throws IOException {
-        Host.invokeMakeTarget("stop-rabbit-on-node RABBITMQ_NODENAME=\'" + Host.nodenameB() + "\'");
+        Host.stopRabbitOnNode(Host.nodenameB());
     }
 
     protected void startSecondary() throws IOException {
-        Host.invokeMakeTarget("start-rabbit-on-node RABBITMQ_NODENAME=\'" + Host.nodenameB() + "\'");
+        Host.startRabbitOnNode(Host.nodenameB());
     }
 }
