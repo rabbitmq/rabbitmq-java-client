@@ -103,11 +103,11 @@ public class DefaultRetryHandler implements RetryHandler {
 
     protected RetryResult doRetry(BiPredicate<RecordedEntity, Exception> condition, RetryOperation<?> operation, RecordedEntity entity, RetryContext context)
         throws Exception {
-        log(entity, context.exception());
         int attempts = 0;
         Exception exception = context.exception();
         while (attempts < retryAttempts) {
             if (condition.test(entity, exception)) {
+                log(entity, exception, attempts);
                 backoffPolicy.backoff(attempts + 1);
                 try {
                     Object result = operation.call(context);
@@ -122,11 +122,11 @@ public class DefaultRetryHandler implements RetryHandler {
                 throw exception;
             }
         }
-        throw context.exception();
+        throw exception;
     }
 
-    protected void log(RecordedEntity entity, Exception exception) {
-        LOGGER.info("Error while recovering {}, retrying with {} attempt(s).", entity, retryAttempts, exception);
+    protected void log(RecordedEntity entity, Exception exception, int attempts) {
+        LOGGER.info("Error while recovering {}, retrying with {} more attempt(s).", entity, retryAttempts - attempts, exception);
     }
 
     public interface RetryOperation<T> {
