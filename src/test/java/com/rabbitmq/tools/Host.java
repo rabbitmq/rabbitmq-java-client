@@ -17,16 +17,14 @@
 package com.rabbitmq.tools;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
-import com.rabbitmq.client.test.TestUtils;
 
 public class Host {
 
@@ -105,12 +103,6 @@ public class Host {
                               " " + command);
     }
 
-    public static Process rabbitmqctl(String command, String node) throws IOException {
-        return executeCommand(rabbitmqctlCommand() +
-            " -n \'" + node + "\'" +
-            " " + command);
-    }
-
     public static Process rabbitmqctlIgnoreErrors(String command) throws IOException {
         return executeCommandIgnoringErrors(rabbitmqctlCommand() +
                                             " -n \'" + nodenameA() + "\'" +
@@ -125,43 +117,25 @@ public class Host {
         rabbitmqctl("eval 'rabbit_alarm:clear_alarm({resource_limit, " + source + ", node()}).'");
     }
 
-    public static void startRabbitOnNode(String node) throws IOException {
-        rabbitmqctl("eval 'rabbit:start().'", node);
-        String port = nodenameA().equals(node) ? node_portA() : node_portB();
-        tryConnectFor(10_000, Integer.parseInt(port));
+    public static Process invokeMakeTarget(String command) throws IOException {
+        File rabbitmqctl = new File(rabbitmqctlCommand());
+        return executeCommand(makeCommand() +
+                              " -C \'" + rabbitmqDir() + "\'" +
+                              " RABBITMQCTL=\'" + rabbitmqctl.getAbsolutePath() + "\'" +
+                              " RABBITMQ_NODENAME=\'" + nodenameA() + "\'" +
+                              " RABBITMQ_NODE_PORT=" + node_portA() +
+                              " RABBITMQ_CONFIG_FILE=\'" + config_fileA() + "\'" +
+                              " " + command);
     }
 
-    public static void startRabbitOnNode() throws IOException {
-        startRabbitOnNode(nodenameA());
+    public static String systemHostname() throws IOException {
+        Process process = executeCommandIgnoringErrors("hostname");
+        return capture(process.getInputStream()).trim();
     }
 
-    public static void stopRabbitOnNode(String node) throws IOException {
-        rabbitmqctl("eval 'rabbit:stop().'", node);
-    }
-
-    public static void stopRabbitOnNode() throws IOException {
-        stopRabbitOnNode(nodenameA());
-    }
-
-    public static void tryConnectFor(int timeoutInMs, int port) throws IOException {
-        int waitTime = 100;
-        int totalWaitTime = 0;
-        while (totalWaitTime <= timeoutInMs) {
-            try {
-                Thread.sleep(waitTime);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            totalWaitTime += waitTime;
-            ConnectionFactory connectionFactory = TestUtils.connectionFactory();
-            connectionFactory.setPort(port);
-            try (Connection ignored = connectionFactory.newConnection()) {
-                return;
-            } catch (Exception e) {
-                // retrying
-            }
-        }
-        throw new IOException("Could not connect to broker for " + timeoutInMs + " ms");
+    public static String makeCommand()
+    {
+        return System.getProperty("make.bin", "make");
     }
 
     public static String nodenameA()
@@ -174,6 +148,11 @@ public class Host {
         return System.getProperty("test-broker.A.node_port");
     }
 
+    public static String config_fileA()
+    {
+        return System.getProperty("test-broker.A.config_file");
+    }
+
     public static String nodenameB()
     {
         return System.getProperty("test-broker.B.nodename");
@@ -182,6 +161,11 @@ public class Host {
     public static String node_portB()
     {
         return System.getProperty("test-broker.B.node_port");
+    }
+
+    public static String config_fileB()
+    {
+        return System.getProperty("test-broker.B.config_file");
     }
 
     public static String rabbitmqctlCommand()

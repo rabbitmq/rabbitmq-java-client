@@ -143,8 +143,8 @@ public class BrokerTestCase {
 
     protected void bareRestart()
             throws IOException {
-        Host.stopRabbitOnNode();
-        Host.startRabbitOnNode();
+        Host.invokeMakeTarget(
+          "stop-rabbit-on-node start-rabbit-on-node");
     }
 
     public void openConnection()

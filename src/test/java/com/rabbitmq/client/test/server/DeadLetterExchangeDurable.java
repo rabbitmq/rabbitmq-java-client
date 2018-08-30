@@ -58,9 +58,9 @@ public class DeadLetterExchangeDurable extends BrokerTestCase {
         }
 
         closeConnection();
-        Host.stopRabbitOnNode();
+        Host.invokeMakeTarget("stop-rabbit-on-node");
         Thread.sleep(5000);
-        Host.startRabbitOnNode();
+        Host.invokeMakeTarget("start-rabbit-on-node");
         openConnection();
         openChannel();
 
