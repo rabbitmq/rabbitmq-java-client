@@ -132,12 +132,12 @@ public class Host {
     }
 
     public static void startRabbitOnNode() throws IOException {
-        rabbitmqctl("eval 'rabbit:start().'");
+        rabbitmqctl("start_app");
         tryConnectFor(10_000);
     }
 
     public static void stopRabbitOnNode() throws IOException {
-        rabbitmqctl("eval 'rabbit:stop().'");
+        rabbitmqctl("stop_app");
     }
 
     public static void tryConnectFor(int timeoutInMs) throws IOException {
