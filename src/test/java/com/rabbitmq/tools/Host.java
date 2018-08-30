@@ -24,7 +24,10 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
+import com.rabbitmq.client.test.TestUtils;
 
 public class Host {
 
@@ -128,9 +131,34 @@ public class Host {
                               " " + command);
     }
 
-    public static String systemHostname() throws IOException {
-        Process process = executeCommandIgnoringErrors("hostname");
-        return capture(process.getInputStream()).trim();
+    public static void startRabbitOnNode() throws IOException {
+        rabbitmqctl("eval 'rabbit:start().'");
+        tryConnectFor(10_000);
+    }
+
+    public static void stopRabbitOnNode() throws IOException {
+        rabbitmqctl("eval 'rabbit:stop().'");
+    }
+
+    public static void tryConnectFor(int timeoutInMs) throws IOException {
+        int waitTime = 100;
+        int totalWaitTime = 0;
+        while (totalWaitTime <= timeoutInMs) {
+            try {
+                Thread.sleep(waitTime);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            totalWaitTime += waitTime;
+            ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+            try (Connection ignored = connectionFactory.newConnection()) {
+                return;
+
+            } catch (Exception e) {
+                // retrying
+            }
+        }
+        throw new IOException("Could not connect to broker for " + timeoutInMs + " ms");
     }
 
     public static String makeCommand()
