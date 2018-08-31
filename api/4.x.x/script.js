@@ -1,26 +1,26 @@
 /*
  * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 var moduleSearchIndex;
@@ -134,6 +134,21 @@ function showPkgs(type)
     updatePkgsTabs(type);
 }
 
+function showGroups(type)
+{
+    count = 0;
+    for (var key in groups) {
+        var row = document.getElementById(key);
+        if ((groups[key] &  type) !== 0) {
+            row.style.display = '';
+            row.className = (count++ % 2) ? rowColor : altColor;
+        }
+        else
+            row.style.display = 'none';
+    }
+    updateGroupsTabs(type);
+}
+
 function updateTabs(type)
 {
     for (var value in tabs) {
@@ -168,6 +183,22 @@ function updatePkgsTabs(type)
         else {
             sNode.className = tableTab;
             spanNode.innerHTML = "<a href=\"javascript:showPkgs(" + value + ");\">" + tabs[value][1] + "</a>";
+        }
+    }
+}
+
+function updateGroupsTabs(type)
+{
+    for (var value in tabs) {
+        var sNode = document.getElementById(tabs[value][0]);
+        var spanNode = sNode.firstChild;
+        if (value == type) {
+            sNode.className = activeTableTab;
+            spanNode.innerHTML = tabs[value][1];
+        }
+        else {
+            sNode.className = tableTab;
+            spanNode.innerHTML = "<a href=\"javascript:showGroups(" + value + ");\">" + tabs[value][1] + "</a>";
         }
     }
 }
