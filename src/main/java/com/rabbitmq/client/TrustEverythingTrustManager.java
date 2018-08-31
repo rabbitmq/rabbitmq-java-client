@@ -33,7 +33,7 @@ public class TrustEverythingTrustManager implements X509TrustManager {
         LoggerFactory.getLogger(TrustEverythingTrustManager.class).warn(
             "SECURITY ALERT: this trust manager trusts every certificate, effectively disabling peer verification. " +
             "This is convenient for local development but offers no protection against man-in-the-middle attacks. " +
-            "Please see https://www.rabbitmq.com/ssl.html#validating-cerficates to learn more about peer certificate verification."
+            "Please see https://www.rabbitmq.com/ssl.html to learn more about peer certificate verification."
         );
     }
 
