@@ -133,7 +133,7 @@ public class Host {
 
     public static void startRabbitOnNode() throws IOException {
         rabbitmqctl("start_app");
-        tryConnectFor(10 * 000);
+        tryConnectFor(10 * 1000);
     }
 
     public static void stopRabbitOnNode() throws IOException {
@@ -154,6 +154,7 @@ public class Host {
             Connection c = null;
             try {
                 c = connectionFactory.newConnection();
+                return;
             } catch (Exception e) {
                 // retrying
             } finally {
