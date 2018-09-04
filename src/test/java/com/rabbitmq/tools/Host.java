@@ -133,7 +133,7 @@ public class Host {
 
     public static void startRabbitOnNode() throws IOException {
         rabbitmqctl("start_app");
-        tryConnectFor(10_000);
+        tryConnectFor(10 * 000);
     }
 
     public static void stopRabbitOnNode() throws IOException {
@@ -151,11 +151,13 @@ public class Host {
             }
             totalWaitTime += waitTime;
             ConnectionFactory connectionFactory = TestUtils.connectionFactory();
-            try (Connection ignored = connectionFactory.newConnection()) {
-                return;
-
+            Connection c = null;
+            try {
+                c = connectionFactory.newConnection();
             } catch (Exception e) {
                 // retrying
+            } finally {
+                TestUtils.close(c);
             }
         }
         throw new IOException("Could not connect to broker for " + timeoutInMs + " ms");
