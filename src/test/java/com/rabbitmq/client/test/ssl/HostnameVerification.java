@@ -158,7 +158,7 @@ public class HostnameVerification {
         assertNotNull(p12Path);
         String p12Passwd = System.getProperty("test-client-cert.password");
         assertNotNull(p12Passwd);
-System.out.println(p12Passwd);
+
         KeyStore ks = KeyStore.getInstance("PKCS12");
         char[] p12Password = p12Passwd.toCharArray();
         ks.load(new FileInputStream(p12Path), p12Password);
