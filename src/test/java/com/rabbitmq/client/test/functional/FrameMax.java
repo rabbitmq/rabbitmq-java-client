@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.impl.AMQBasicProperties;
 import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
@@ -104,9 +105,10 @@ public class FrameMax extends BrokerTestCase {
         closeChannel();
         closeConnection();
         ConnectionFactory cf = new GenerousConnectionFactory();
+        cf.setRequestedFrameMax(8192);
         connection = cf.newConnection();
         openChannel();
-        basicPublishVolatile(new byte[connection.getFrameMax()], "void");
+        basicPublishVolatile(new byte[connection.getFrameMax() * 2], "void");
         expectError(AMQP.FRAME_ERROR);
     }
 
@@ -123,7 +125,9 @@ public class FrameMax extends BrokerTestCase {
 
         // create headers with zero-length value to calculate maximum header value size before exceeding frame_max
         headers.put(headerName, LongStringHelper.asLongString(new byte[0]));
-        AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder().headers(headers).build();
+        AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
+                                                  .headers(headers)
+                                                  .build();
         Frame minimalHeaderFrame = properties.toFrame(0, 0);
         int maxHeaderValueSize = FRAME_MAX - minimalHeaderFrame.size();
 
@@ -150,6 +154,33 @@ public class FrameMax extends BrokerTestCase {
         deleteExchange("x");
     }
 
+
+    // see rabbitmq/rabbitmq-java-client#407
+    @Test public void unlimitedFrameMaxWithHeaders()
+            throws IOException, TimeoutException {
+        closeChannel();
+        closeConnection();
+        ConnectionFactory cf = newConnectionFactory();
+        cf.setRequestedFrameMax(0);
+        connection = cf.newConnection();
+        openChannel();
+
+        Map<String, Object> headers = new HashMap<String, Object>();
+        headers.put("h1", LongStringHelper.asLongString(new byte[250]));
+        headers.put("h1", LongStringHelper.asLongString(new byte[500]));
+        headers.put("h1", LongStringHelper.asLongString(new byte[750]));
+        headers.put("h1", LongStringHelper.asLongString(new byte[5000]));
+        headers.put("h1", LongStringHelper.asLongString(new byte[50000]));
+        AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
+                                                  .headers(headers)
+                                                  .build();
+        basicPublishVolatile(new byte[500000], "", "", properties);
+    }
+
+    @Override
+    protected boolean isAutomaticRecoveryEnabled() {
+        return false;
+    }
 
     /* ConnectionFactory that uses MyFrameHandler rather than
      * SocketFrameHandler. */
