@@ -107,12 +107,12 @@ public class AMQCommand implements Command {
                 Frame headerFrame = this.assembler.getContentHeader().toFrame(channelNumber, body.length);
 
                 int frameMax = connection.getFrameMax();
-                int bodyPayloadMax = (frameMax == 0) ? body.length : frameMax
-                        - EMPTY_FRAME_SIZE;
+                boolean cappedFrameMax = frameMax > 0;
+                int bodyPayloadMax = cappedFrameMax ? frameMax - EMPTY_FRAME_SIZE : body.length;
 
-                if (headerFrame.size() > frameMax) {
-                    throw new IllegalArgumentException("Content headers exceeded max frame size: " +
-                            headerFrame.size() + " > " + frameMax);
+                if (cappedFrameMax && headerFrame.size() > frameMax) {
+                    String msg = String.format("Content headers exceeded max frame size: %d > %d", headerFrame.size(), frameMax);
+                    throw new IllegalArgumentException(msg);
                 }
                 connection.writeFrame(m.toFrame(channelNumber));
                 connection.writeFrame(headerFrame);
