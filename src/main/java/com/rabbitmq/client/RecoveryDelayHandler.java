@@ -67,10 +67,10 @@ public interface RecoveryDelayHandler {
         private final List<Long> sequence;
         
         /**
-         * Default Constructor. Uses the fibonacci sequence: {0, 1000, 1000, 2000, 3000, 5000, 8000, 13000, 21000}.
+         * Default Constructor. Uses the following sequence: 2000, 3000, 5000, 8000, 13000, 21000, 34000
          */
         public ExponentialBackoffDelayHandler() {
-            sequence = Arrays.asList(0L, 1000L, 1000L, 2000L, 3000L, 5000L, 8000L, 13000L, 21000L);
+            sequence = Arrays.asList(2000L, 3000L, 5000L, 8000L, 13000L, 21000L, 34000L);
         }
         
         /**
@@ -88,7 +88,8 @@ public interface RecoveryDelayHandler {
         
         @Override
         public long getDelay(int recoveryAttempts) {
-            return sequence.get(recoveryAttempts >= sequence.size() ? sequence.size() - 1 : recoveryAttempts);
+            int index = recoveryAttempts >= sequence.size() ? sequence.size() - 1 : recoveryAttempts;
+            return sequence.get(index);
         }
     }
 }
