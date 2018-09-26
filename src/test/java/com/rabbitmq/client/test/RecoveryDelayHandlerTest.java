@@ -37,23 +37,23 @@ public class RecoveryDelayHandlerTest {
     }
     
     @Test
-    public void testExponentialBackoffDelayHandler_default() {
+    public void testExponentialBackoffDelayHandlerDefaults() {
         final RecoveryDelayHandler handler = new ExponentialBackoffDelayHandler();
-        assertEquals(0, handler.getDelay(0));
-        assertEquals(1000L, handler.getDelay(1));
-        assertEquals(1000L, handler.getDelay(2));
-        assertEquals(2000L, handler.getDelay(3));
-        assertEquals(3000L, handler.getDelay(4));
-        assertEquals(5000L, handler.getDelay(5));
-        assertEquals(8000L, handler.getDelay(6));
-        assertEquals(13000L, handler.getDelay(7));
-        assertEquals(21000L, handler.getDelay(8));
-        assertEquals(21000L, handler.getDelay(9));
-        assertEquals(21000L, handler.getDelay(Integer.MAX_VALUE));
+        assertEquals(2000L, handler.getDelay(0));
+        assertEquals(3000L, handler.getDelay(1));
+        assertEquals(5000L, handler.getDelay(2));
+        assertEquals(8000L, handler.getDelay(3));
+        assertEquals(13000L, handler.getDelay(4));
+        assertEquals(21000L, handler.getDelay(5));
+        assertEquals(34000L, handler.getDelay(6));
+        assertEquals(34000L, handler.getDelay(7));
+        assertEquals(34000L, handler.getDelay(8));
+        assertEquals(34000L, handler.getDelay(9));
+        assertEquals(34000L, handler.getDelay(Integer.MAX_VALUE));
     }
     
     @Test
-    public void testExponentialBackoffDelayHandler_sequence() {
+    public void testExponentialBackoffDelayHandlerSequence() {
         final RecoveryDelayHandler handler = new ExponentialBackoffDelayHandler(Arrays.asList(1L, 2L));
         assertEquals(1, handler.getDelay(0));
         assertEquals(2, handler.getDelay(1));
@@ -62,12 +62,12 @@ public class RecoveryDelayHandlerTest {
     }
     
     @Test(expected=IllegalArgumentException.class)
-    public void testExponentialBackoffDelayHandler_sequence_null() {
+    public void testExponentialBackoffDelayHandlerWithNullSequence() {
         new ExponentialBackoffDelayHandler(null);
     }
     
     @Test(expected=IllegalArgumentException.class)
-    public void testExponentialBackoffDelayHandler_sequence_empty() {
+    public void testExponentialBackoffDelayHandlerWithEmptySequence() {
         new ExponentialBackoffDelayHandler(Collections.<Long>emptyList());
     }
 }
