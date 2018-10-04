@@ -81,6 +81,8 @@
     <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
     <maven.jar.plugin.version>3.0.2</maven.jar.plugin.version>
     <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
+    <maven.packagecloud.wagon.version>0.0.6</maven.packagecloud.wagon.version>
+    <checksum.maven.plugin.version>1.8</checksum.maven.plugin.version>
 
     <!--
     These groovy scripts are used later in this POM file to generate
@@ -572,7 +574,7 @@
 
     <!--
       The "milestone" Maven profile is used to push release artifacts to the
-      Bintray Milestones Maven Repository.
+      PackageCloud Milestones Maven Repository.
     -->
     <profile>
       <id>milestone</id>
@@ -591,6 +593,36 @@
                 <goals>
                   <goal>jar</goal>
                 </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>net.nicoulaj.maven.plugins</groupId>
+            <artifactId>checksum-maven-plugin</artifactId>
+            <version>${checksum.maven.plugin.version}</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>files</goal>
+                </goals>
+                <configuration>
+                  <fileSets>
+                    <fileSet>
+                      <directory>${project.build.directory}</directory>
+                      <includes>
+                        <include>*.jar</include>
+                        <include>*.pom</include>
+                      </includes>
+                    </fileSet>
+                  </fileSets>
+                  <algorithms>
+                    <algorithm>MD5</algorithm>
+                    <algorithm>SHA-1</algorithm>
+                  </algorithms>
+                </configuration>
               </execution>
             </executions>
           </plugin>
@@ -616,9 +648,8 @@
       </build>
       <distributionManagement>
         <repository>
-          <id>bintray-rabbitmq-maven-milestones</id>
-          <name>rabbitmq-maven-milestones</name>
-          <url>https://api.bintray.com/maven/rabbitmq/maven-milestones/com.rabbitmq:amqp-client/;publish=1</url>
+          <id>packagecloud-rabbitmq-maven-milestones</id>
+          <url>packagecloud+https://packagecloud.io/rabbitmq/maven-milestones</url>
         </repository>
       </distributionManagement>
     </profile>
@@ -956,6 +987,13 @@
       </plugin>
 
     </plugins>
+    <extensions>
+      <extension>
+        <groupId>io.packagecloud.maven.wagon</groupId>
+        <artifactId>maven-packagecloud-wagon</artifactId>
+        <version>${maven.packagecloud.wagon.version}</version>
+      </extension>
+    </extensions>
   </build>
 
 </project>
