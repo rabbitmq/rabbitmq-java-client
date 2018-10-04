@@ -1,5 +1,5 @@
 @GrabResolver(name = 'rabbitmq-bintray', root = 'http://dl.bintray.com/rabbitmq/maven')
-@GrabResolver(name = 'rabbitmq-bintray-milestones', root = 'http://dl.bintray.com/rabbitmq/maven-milestones')
+@GrabResolver(name = 'rabbitmq-packagecloud-milestones', root = 'https://packagecloud.io/rabbitmq/maven-milestones/maven2')
 @Grab(group = 'com.rabbitmq', module = 'amqp-client', version = "${version}")
 @Grab(group = 'org.slf4j', module = 'slf4j-simple', version = '1.7.25')
 import com.rabbitmq.client.AMQP
