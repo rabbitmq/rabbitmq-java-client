@@ -64,7 +64,7 @@
     <awaitility.version>3.1.0</awaitility.version>
     <mockito.version>2.21.0</mockito.version>
 
-    <maven.javadoc.plugin.version>3.0.0</maven.javadoc.plugin.version>
+    <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
     <versions.maven.plugin.version>2.3</versions.maven.plugin.version>
     <maven.resources.plugin.version>3.0.2</maven.resources.plugin.version>
@@ -174,6 +174,20 @@
       </activation>
       <properties>
         <javadoc.opts>-Xdoclint:none</javadoc.opts>
+      </properties>
+    </profile>
+
+    <profile>
+      <!--
+      We need this option in Java 11+ to avoid an
+      extra 'undefined' segment in the URL
+      -->
+      <id>javadoc-no-module-dir-java-11</id>
+      <activation>
+        <jdk>[11,)</jdk>
+      </activation>
+      <properties>
+        <javadoc.joption>--no-module-directories</javadoc.joption>
       </properties>
     </profile>
 
@@ -479,6 +493,7 @@
             <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <additionalOptions>${javadoc.opts}</additionalOptions>
+              <additionalJOption>${javadoc.joption}</additionalJOption>
               <quiet>true</quiet>
             </configuration>
             <executions>
@@ -531,6 +546,7 @@
             <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <additionalOptions>${javadoc.opts}</additionalOptions>
+              <additionalJOption>${javadoc.joption}</additionalJOption>
               <quiet>true</quiet>
             </configuration>
             <executions>
@@ -584,6 +600,7 @@
             <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <additionalOptions>${javadoc.opts}</additionalOptions>
+              <additionalJOption>${javadoc.joption}</additionalJOption>
               <quiet>true</quiet>
             </configuration>
             <executions>
@@ -968,6 +985,7 @@
         <version>${maven.javadoc.plugin.version}</version>
         <configuration>
           <additionalOptions>${javadoc.opts}</additionalOptions>
+          <additionalJOption>${javadoc.joption}</additionalJOption>
           <quiet>true</quiet>
         </configuration>
       </plugin>
