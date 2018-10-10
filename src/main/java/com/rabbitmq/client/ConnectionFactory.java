@@ -200,6 +200,15 @@ public class ConnectionFactory implements Cloneable {
      */
     private RetryHandler topologyRecoveryRetryHandler;
 
+    /**
+     * Traffic listener notified of inbound and outbound {@link Command}s.
+     * <p>
+     * Useful for debugging purposes. Default is no-op.
+     *
+     * @since 5.5.0
+     */
+    private TrafficListener trafficListener = TrafficListener.NO_OP;
+
     /** @return the default host to use for connections */
     public String getHost() {
         return host;
@@ -1149,6 +1158,7 @@ public class ConnectionFactory implements Cloneable {
         result.setTopologyRecoveryFilter(topologyRecoveryFilter);
         result.setConnectionRecoveryTriggeringCondition(connectionRecoveryTriggeringCondition);
         result.setTopologyRecoveryRetryHandler(topologyRecoveryRetryHandler);
+        result.setTrafficListener(trafficListener);
         return result;
     }
 
@@ -1497,6 +1507,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Set filter to include/exclude entities from topology recovery.
+     *
      * @since 4.8.0
      */
     public void setTopologyRecoveryFilter(TopologyRecoveryFilter topologyRecoveryFilter) {
@@ -1506,6 +1517,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Allows to decide on automatic connection recovery is triggered.
      * Default is for shutdown not initiated by application or missed heartbeat errors.
+     *
      * @param connectionRecoveryTriggeringCondition
      */
     public void setConnectionRecoveryTriggeringCondition(Predicate<ShutdownSignalException> connectionRecoveryTriggeringCondition) {
@@ -1515,10 +1527,26 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Set retry handler for topology recovery.
      * Default is no retry.
+     *
      * @param topologyRecoveryRetryHandler
      * @since 5.4.0
      */
     public void setTopologyRecoveryRetryHandler(RetryHandler topologyRecoveryRetryHandler) {
         this.topologyRecoveryRetryHandler = topologyRecoveryRetryHandler;
+    }
+
+    /**
+     * Traffic listener notified of inbound and outbound {@link Command}s.
+     * <p>
+     * Useful for debugging purposes, e.g. logging all sent and received messages.
+     * Default is no-op.
+     *
+     * @param trafficListener
+     * @see TrafficListener
+     * @see com.rabbitmq.client.impl.LogTrafficListener
+     * @since 5.5.0
+     */
+    public void setTrafficListener(TrafficListener trafficListener) {
+        this.trafficListener = trafficListener;
     }
 }
