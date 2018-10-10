@@ -141,6 +141,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     protected final MetricsCollector metricsCollector;
     private final int channelRpcTimeout;
     private final boolean channelShouldCheckRpcResponseType;
+    private final TrafficListener trafficListener;
 
     /* State modified after start - all volatile */
 
@@ -237,6 +238,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.channelRpcTimeout = params.getChannelRpcTimeout();
         this.channelShouldCheckRpcResponseType = params.channelShouldCheckRpcResponseType();
 
+        this.trafficListener = params.getTrafficListener() == null ? TrafficListener.NO_OP : params.getTrafficListener();
         this._channel0 = new AMQChannel(this, 0) {
             @Override public boolean processAsync(Command c) throws IOException {
                 return getConnection().processControlCommand(c);
@@ -1112,5 +1114,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     public boolean willCheckRpcResponseType() {
         return channelShouldCheckRpcResponseType;
+    }
+
+    TrafficListener getTrafficListener() {
+        return trafficListener;
     }
 }

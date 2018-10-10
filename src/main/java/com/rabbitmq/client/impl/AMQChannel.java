@@ -73,6 +73,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
 
     private final boolean _checkRpcResponseType;
 
+    private final TrafficListener _trafficListener;
+
     /**
      * Construct a channel on the given connection, with the given channel number.
      * @param connection the underlying connection for this channel
@@ -86,6 +88,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
         this._rpcTimeout = connection.getChannelRpcTimeout();
         this._checkRpcResponseType = connection.willCheckRpcResponseType();
+        this._trafficListener = connection.getTrafficListener();
     }
 
     /**
@@ -159,6 +162,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         // asynchronous commands (deliveries/returns/other events),
         // and false for commands that should be passed on to some
         // waiting RPC continuation.
+        this._trafficListener.read(command);
         if (!processAsync(command)) {
             // The filter decided not to handle/consume the command,
             // so it must be a response to an earlier RPC.
@@ -393,6 +397,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                     ensureIsOpen();
                 }
             }
+            this._trafficListener.write(c);
             c.transmit(this);
         }
     }

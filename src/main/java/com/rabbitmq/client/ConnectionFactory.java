@@ -203,6 +203,15 @@ public class ConnectionFactory implements Cloneable {
         }
     };
 
+    /*
+     * Traffic listener notified of inbound and outbound {@link Command}s.
+     * <p>
+     * Useful for debugging purposes. Default is no-op.
+     *
+     * @since 4.9.0
+     */
+    private TrafficListener trafficListener = TrafficListener.NO_OP;
+
     /** @return the default host to use for connections */
     public String getHost() {
         return host;
@@ -1203,6 +1212,7 @@ public class ConnectionFactory implements Cloneable {
         result.setErrorOnWriteListener(errorOnWriteListener);
         result.setTopologyRecoveryFilter(topologyRecoveryFilter);
         result.setTopologyRecoveryRetryHandler(topologyRecoveryRetryHandler);
+        result.setTrafficListener(trafficListener);
         return result;
     }
 
@@ -1539,6 +1549,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Set filter to include/exclude entities from topology recovery.
+     *
      * @since 4.8.0
      */
     public void setTopologyRecoveryFilter(TopologyRecoveryFilter topologyRecoveryFilter) {
@@ -1548,6 +1559,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Set retry handler for topology recovery.
      * Default is no retry.
+     *
      * @param topologyRecoveryRetryHandler
      * @since 4.8.0
      */
@@ -1564,5 +1576,20 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setConnectionPostProcessor(ConnectionPostProcessor connectionPostProcessor) {
         this.connectionPostProcessor = connectionPostProcessor;
+    }
+
+    /**
+     * Traffic listener notified of inbound and outbound {@link Command}s.
+     * <p>
+     * Useful for debugging purposes, e.g. logging all sent and received messages.
+     * Default is no-op.
+     *
+     * @param trafficListener
+     * @see TrafficListener
+     * @see com.rabbitmq.client.impl.LogTrafficListener
+     * @since 4.9.0
+     */
+    public void setTrafficListener(TrafficListener trafficListener) {
+        this.trafficListener = trafficListener;
     }
 }
