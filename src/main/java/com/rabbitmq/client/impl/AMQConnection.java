@@ -1128,7 +1128,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return channelShouldCheckRpcResponseType;
     }
 
-    TrafficListener getTrafficListener() {
+    public TrafficListener getTrafficListener() {
         return trafficListener;
     }
 }
