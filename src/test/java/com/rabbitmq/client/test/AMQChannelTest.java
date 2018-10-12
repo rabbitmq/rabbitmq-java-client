@@ -18,6 +18,7 @@ package com.rabbitmq.client.test;
 import com.rabbitmq.client.ChannelContinuationTimeoutException;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Method;
+import com.rabbitmq.client.TrafficListener;
 import com.rabbitmq.client.impl.AMQChannel;
 import com.rabbitmq.client.impl.AMQCommand;
 import com.rabbitmq.client.impl.AMQConnection;
@@ -52,6 +53,7 @@ public class AMQChannelTest {
         int rpcTimeout = 100;
         AMQConnection connection = mock(AMQConnection.class);
         when(connection.getChannelRpcTimeout()).thenReturn(rpcTimeout);
+        when(connection.getTrafficListener()).thenReturn(TrafficListener.NO_OP);
 
         DummyAmqChannel channel = new DummyAmqChannel(connection, 1);
         Method method = new AMQImpl.Queue.Declare.Builder()
@@ -78,6 +80,7 @@ public class AMQChannelTest {
         int rpcTimeout = 1000;
         AMQConnection connection = mock(AMQConnection.class);
         when(connection.getChannelRpcTimeout()).thenReturn(rpcTimeout);
+        when(connection.getTrafficListener()).thenReturn(TrafficListener.NO_OP);
 
         final DummyAmqChannel channel = new DummyAmqChannel(connection, 1);
         Method method = new AMQImpl.Queue.Declare.Builder()
@@ -111,6 +114,7 @@ public class AMQChannelTest {
         AMQConnection connection = mock(AMQConnection.class);
         when(connection.getChannelRpcTimeout()).thenReturn(rpcTimeout);
         when(connection.willCheckRpcResponseType()).thenReturn(Boolean.TRUE);
+        when(connection.getTrafficListener()).thenReturn(TrafficListener.NO_OP);
 
         final DummyAmqChannel channel = new DummyAmqChannel(connection, 1);
         Method method = new AMQImpl.Queue.Declare.Builder()
