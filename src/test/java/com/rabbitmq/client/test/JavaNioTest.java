@@ -1,14 +1,20 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.nio.DefaultByteBufferFactory;
 import com.rabbitmq.client.impl.nio.NioParams;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.*;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.isOneOf;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -125,6 +131,38 @@ public class JavaNioTest {
     @Test public void messageSize() throws Exception {
         for (int i = 0; i < 50; i++) {
             sendAndVerifyMessage(testConnection, 76390);
+        }
+    }
+
+    @Test public void byteBufferFactory() throws Exception {
+        ConnectionFactory cf = new ConnectionFactory();
+        cf.useNio();
+        int baseCapacity = 32768;
+        NioParams nioParams = new NioParams();
+        nioParams.setReadByteBufferSize(baseCapacity / 2);
+        nioParams.setWriteByteBufferSize(baseCapacity / 4);
+        List<ByteBuffer> byteBuffers = new CopyOnWriteArrayList<>();
+        cf.setNioParams(nioParams.setByteBufferFactory(new DefaultByteBufferFactory(capacity -> {
+            ByteBuffer bb = ByteBuffer.allocate(capacity);
+            byteBuffers.add(bb);
+            return bb;
+        })));
+
+        try (Connection c = cf.newConnection()) {
+            sendAndVerifyMessage(c, 100);
+        }
+
+        assertThat(byteBuffers, hasSize(2));
+        assertThat(byteBuffers.get(0).capacity(), isOneOf(nioParams.getReadByteBufferSize(), nioParams.getWriteByteBufferSize()));
+        assertThat(byteBuffers.get(1).capacity(), isOneOf(nioParams.getReadByteBufferSize(), nioParams.getWriteByteBufferSize()));
+    }
+
+    @Test public void directByteBuffers() throws Exception {
+        ConnectionFactory cf = new ConnectionFactory();
+        cf.useNio();
+        cf.setNioParams(new NioParams().setByteBufferFactory(new DefaultByteBufferFactory(capacity -> ByteBuffer.allocateDirect(capacity))));
+        try (Connection c = cf.newConnection()) {
+            sendAndVerifyMessage(c, 100);
         }
     }
 
