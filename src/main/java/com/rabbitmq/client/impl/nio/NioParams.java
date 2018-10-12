@@ -20,8 +20,10 @@ import com.rabbitmq.client.SocketChannelConfigurators;
 import com.rabbitmq.client.SslEngineConfigurator;
 
 import javax.net.ssl.SSLEngine;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Function;
 
 import static com.rabbitmq.client.SslEngineConfigurators.ENABLE_HOSTNAME_VERIFICATION;
 
@@ -31,6 +33,12 @@ import static com.rabbitmq.client.SslEngineConfigurators.ENABLE_HOSTNAME_VERIFIC
  * @since 4.0.0
  */
 public class NioParams {
+
+    static Function<? super NioContext, ? extends NioQueue> DEFAULT_WRITE_QUEUE_FACTORY =
+        ctx -> new BlockingQueueNioQueue(
+            new ArrayBlockingQueue<>(ctx.getNioParams().getWriteQueueCapacity(), true),
+            ctx.getNioParams().getWriteEnqueuingTimeoutInMs()
+        );
 
     /**
      * size of the byte buffer used for inbound data
@@ -85,6 +93,22 @@ public class NioParams {
      */
     private ExecutorService connectionShutdownExecutor;
 
+    /**
+     * The factory to create {@link java.nio.ByteBuffer}s.
+     * The default is to create heap-based {@link java.nio.ByteBuffer}s.
+     *
+     * @since 5.5.0
+     */
+    private ByteBufferFactory byteBufferFactory = new DefaultByteBufferFactory();
+
+    /**
+     * Factory to create a {@link NioQueue}.
+     *
+     * @since 5.5.0
+     */
+    private Function<? super NioContext, ? extends NioQueue> writeQueueFactory =
+        DEFAULT_WRITE_QUEUE_FACTORY;
+
     public NioParams() {
     }
 
@@ -99,6 +123,8 @@ public class NioParams {
         setSocketChannelConfigurator(nioParams.getSocketChannelConfigurator());
         setSslEngineConfigurator(nioParams.getSslEngineConfigurator());
         setConnectionShutdownExecutor(nioParams.getConnectionShutdownExecutor());
+        setByteBufferFactory(nioParams.getByteBufferFactory());
+        setWriteQueueFactory(nioParams.getWriteQueueFactory());
     }
 
     /**
@@ -358,5 +384,45 @@ public class NioParams {
     public NioParams setConnectionShutdownExecutor(ExecutorService connectionShutdownExecutor) {
         this.connectionShutdownExecutor = connectionShutdownExecutor;
         return this;
+    }
+
+    /**
+     * Set the factory to create {@link java.nio.ByteBuffer}s.
+     * <p>
+     * The default implementation creates heap-based {@link java.nio.ByteBuffer}s.
+     *
+     * @param byteBufferFactory the factory to use
+     * @return this {@link NioParams} instance
+     * @see ByteBufferFactory
+     * @see DefaultByteBufferFactory
+     * @since 5.5.0
+     */
+    public NioParams setByteBufferFactory(ByteBufferFactory byteBufferFactory) {
+        this.byteBufferFactory = byteBufferFactory;
+        return this;
+    }
+
+    public ByteBufferFactory getByteBufferFactory() {
+        return byteBufferFactory;
+    }
+
+    /**
+     * Set the factory to create {@link NioQueue}s.
+     * <p>
+     * The default uses a {@link ArrayBlockingQueue}.
+     *
+     * @param writeQueueFactory the factory to use
+     * @return this {@link NioParams} instance
+     * @see NioQueue
+     * @since 5.5.0
+     */
+    public NioParams setWriteQueueFactory(
+        Function<? super NioContext, ? extends NioQueue> writeQueueFactory) {
+        this.writeQueueFactory = writeQueueFactory;
+        return this;
+    }
+
+    public Function<? super NioContext, ? extends NioQueue> getWriteQueueFactory() {
+        return writeQueueFactory;
     }
 }

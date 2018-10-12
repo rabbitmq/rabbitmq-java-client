@@ -26,10 +26,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -43,7 +39,7 @@ public class SocketChannelFrameHandlerState {
 
     private final SocketChannel channel;
 
-    private final BlockingQueue<WriteRequest> writeQueue;
+    private final NioQueue writeQueue;
 
     private volatile AMQConnection connection;
 
@@ -53,8 +49,6 @@ public class SocketChannelFrameHandlerState {
     private final SelectorHolder writeSelectorState;
 
     private final SelectorHolder readSelectorState;
-
-    private final int writeEnqueuingTimeoutInMs;
 
     final boolean ssl;
 
@@ -80,8 +74,13 @@ public class SocketChannelFrameHandlerState {
         this.channel = channel;
         this.readSelectorState = nioLoopsState.readSelectorState;
         this.writeSelectorState = nioLoopsState.writeSelectorState;
-        this.writeQueue = new ArrayBlockingQueue<WriteRequest>(nioParams.getWriteQueueCapacity(), true);
-        this.writeEnqueuingTimeoutInMs = nioParams.getWriteEnqueuingTimeoutInMs();
+
+        NioContext nioContext = new NioContext(nioParams, sslEngine);
+
+        this.writeQueue = nioParams.getWriteQueueFactory() == null ?
+            NioParams.DEFAULT_WRITE_QUEUE_FACTORY.apply(nioContext) :
+            nioParams.getWriteQueueFactory().apply(nioContext);
+
         this.sslEngine = sslEngine;
         if(this.sslEngine == null) {
             this.ssl = false;
@@ -98,10 +97,10 @@ public class SocketChannelFrameHandlerState {
 
         } else {
             this.ssl = true;
-            this.plainOut = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
-            this.cipherOut = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
-            this.plainIn = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
-            this.cipherIn = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
+            this.plainOut = nioParams.getByteBufferFactory().createWriteBuffer(nioContext);
+            this.cipherOut = nioParams.getByteBufferFactory().createEncryptedWriteBuffer(nioContext);
+            this.plainIn = nioParams.getByteBufferFactory().createReadBuffer(nioContext);
+            this.cipherIn = nioParams.getByteBufferFactory().createEncryptedReadBuffer(nioContext);
 
             this.outputStream = new DataOutputStream(
                 new SslEngineByteBufferOutputStream(sslEngine, plainOut, cipherOut, channel)
@@ -115,7 +114,7 @@ public class SocketChannelFrameHandlerState {
         return channel;
     }
 
-    public Queue<WriteRequest> getWriteQueue() {
+    public NioQueue getWriteQueue() {
         return writeQueue;
     }
 
@@ -129,7 +128,7 @@ public class SocketChannelFrameHandlerState {
 
     private void sendWriteRequest(WriteRequest writeRequest) throws IOException {
         try {
-            boolean offered = this.writeQueue.offer(writeRequest, writeEnqueuingTimeoutInMs, TimeUnit.MILLISECONDS);
+            boolean offered = this.writeQueue.offer(writeRequest);
             if(offered) {
                 this.writeSelectorState.registerFrameHandlerState(this, SelectionKey.OP_WRITE);
                 this.readSelectorState.selector.wakeup();
