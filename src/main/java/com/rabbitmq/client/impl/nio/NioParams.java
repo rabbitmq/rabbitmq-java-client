@@ -22,8 +22,10 @@ import com.rabbitmq.client.SslEngineConfigurators;
 
 import javax.net.ssl.SSLEngine;
 import java.io.IOException;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Function;
 
 import static com.rabbitmq.client.SslEngineConfigurators.ENABLE_HOSTNAME_VERIFICATION;
 
@@ -33,6 +35,12 @@ import static com.rabbitmq.client.SslEngineConfigurators.ENABLE_HOSTNAME_VERIFIC
  * @since 4.0.0
  */
 public class NioParams {
+
+    static Function<? super NioContext, ? extends NioQueue> DEFAULT_WRITE_QUEUE_FACTORY =
+        ctx -> new BlockingQueueNioQueue(
+            new ArrayBlockingQueue<>(ctx.getNioParams().getWriteQueueCapacity(), true),
+            ctx.getNioParams().getWriteEnqueuingTimeoutInMs()
+        );
 
     /**
      * size of the byte buffer used for inbound data
@@ -99,6 +107,14 @@ public class NioParams {
      */
     private ByteBufferFactory byteBufferFactory = new DefaultByteBufferFactory();
 
+    /**
+     * Factory to create a {@link NioQueue}.
+     *
+     * @since 5.5.0
+     */
+    private Function<? super NioContext, ? extends NioQueue> writeQueueFactory =
+        DEFAULT_WRITE_QUEUE_FACTORY;
+
     public NioParams() {
     }
 
@@ -114,6 +130,7 @@ public class NioParams {
         setSslEngineConfigurator(nioParams.getSslEngineConfigurator());
         setConnectionShutdownExecutor(nioParams.getConnectionShutdownExecutor());
         setByteBufferFactory(nioParams.getByteBufferFactory());
+        setWriteQueueFactory(nioParams.getWriteQueueFactory());
     }
 
     /**
@@ -392,5 +409,25 @@ public class NioParams {
 
     public ByteBufferFactory getByteBufferFactory() {
         return byteBufferFactory;
+    }
+
+    /**
+     * Set the factory to create {@link NioQueue}s.
+     * <p>
+     * The default uses a {@link ArrayBlockingQueue}.
+     *
+     * @param writeQueueFactory the factory to use
+     * @return this {@link NioParams} instance
+     * @see NioQueue
+     * @since 5.5.0
+     */
+    public NioParams setWriteQueueFactory(
+        Function<? super NioContext, ? extends NioQueue> writeQueueFactory) {
+        this.writeQueueFactory = writeQueueFactory;
+        return this;
+    }
+
+    public Function<? super NioContext, ? extends NioQueue> getWriteQueueFactory() {
+        return writeQueueFactory;
     }
 }
