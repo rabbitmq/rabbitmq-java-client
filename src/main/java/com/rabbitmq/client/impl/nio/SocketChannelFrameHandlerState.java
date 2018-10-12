@@ -98,10 +98,11 @@ public class SocketChannelFrameHandlerState {
 
         } else {
             this.ssl = true;
-            this.plainOut = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
-            this.cipherOut = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
-            this.plainIn = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
-            this.cipherIn = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
+            NioContext nioContext = new NioContext(nioParams, sslEngine);
+            this.plainOut = nioParams.getByteBufferFactory().createWriteBuffer(nioContext);
+            this.cipherOut = nioParams.getByteBufferFactory().createEncryptedWriteBuffer(nioContext);
+            this.plainIn = nioParams.getByteBufferFactory().createReadBuffer(nioContext);
+            this.cipherIn = nioParams.getByteBufferFactory().createEncryptedReadBuffer(nioContext);
 
             this.outputStream = new DataOutputStream(
                 new SslEngineByteBufferOutputStream(sslEngine, plainOut, cipherOut, channel)

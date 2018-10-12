@@ -85,6 +85,14 @@ public class NioParams {
      */
     private ExecutorService connectionShutdownExecutor;
 
+    /**
+     * The factory to create {@link java.nio.ByteBuffer}s.
+     * The default is to create heap-based {@link java.nio.ByteBuffer}s.
+     *
+     * @since 5.5.0
+     */
+    private ByteBufferFactory byteBufferFactory = new DefaultByteBufferFactory();
+
     public NioParams() {
     }
 
@@ -99,6 +107,7 @@ public class NioParams {
         setSocketChannelConfigurator(nioParams.getSocketChannelConfigurator());
         setSslEngineConfigurator(nioParams.getSslEngineConfigurator());
         setConnectionShutdownExecutor(nioParams.getConnectionShutdownExecutor());
+        setByteBufferFactory(nioParams.getByteBufferFactory());
     }
 
     /**
@@ -358,5 +367,25 @@ public class NioParams {
     public NioParams setConnectionShutdownExecutor(ExecutorService connectionShutdownExecutor) {
         this.connectionShutdownExecutor = connectionShutdownExecutor;
         return this;
+    }
+
+    /**
+     * Set the factory to create {@link java.nio.ByteBuffer}s.
+     * <p>
+     * The default implementation creates heap-based {@link java.nio.ByteBuffer}s.
+     *
+     * @param byteBufferFactory the factory to use
+     * @return this {@link NioParams} instance
+     * @see ByteBufferFactory
+     * @see DefaultByteBufferFactory
+     * @since 5.5.0
+     */
+    public NioParams setByteBufferFactory(ByteBufferFactory byteBufferFactory) {
+        this.byteBufferFactory = byteBufferFactory;
+        return this;
+    }
+
+    public ByteBufferFactory getByteBufferFactory() {
+        return byteBufferFactory;
     }
 }

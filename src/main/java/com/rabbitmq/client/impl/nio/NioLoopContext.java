@@ -48,8 +48,9 @@ public class NioLoopContext {
         this.socketChannelFrameHandlerFactory = socketChannelFrameHandlerFactory;
         this.executorService = nioParams.getNioExecutor();
         this.threadFactory = nioParams.getThreadFactory();
-        this.readBuffer = ByteBuffer.allocate(nioParams.getReadByteBufferSize());
-        this.writeBuffer = ByteBuffer.allocate(nioParams.getWriteByteBufferSize());
+        NioContext nioContext = new NioContext(nioParams, null);
+        this.readBuffer = nioParams.getByteBufferFactory().createReadBuffer(nioContext);
+        this.writeBuffer = nioParams.getByteBufferFactory().createWriteBuffer(nioContext);
     }
 
     void initStateIfNecessary() throws IOException {
