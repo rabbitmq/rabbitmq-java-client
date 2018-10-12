@@ -77,7 +77,7 @@ public class NioLoop implements Runnable {
                         long now = System.currentTimeMillis();
                         if ((now - state.getLastActivity()) > state.getConnection().getHeartbeat() * 1000 * 2) {
                             try {
-                                state.getConnection().handleHeartbeatFailure();
+                                handleHeartbeatFailure(state);
                             } catch (Exception e) {
                                 LOGGER.warn("Error after heartbeat failure of connection {}", state.getConnection());
                             } finally {
@@ -267,33 +267,50 @@ public class NioLoop implements Runnable {
         }
     }
 
+    protected void handleHeartbeatFailure(SocketChannelFrameHandlerState state) {
+        if (needToDispatchIoError(state)) {
+            dispatchShutdownToConnection(
+                () -> state.getConnection().handleHeartbeatFailure(),
+                state.getConnection().toString()
+            );
+        } else {
+            try {
+                state.close();
+            } catch (IOException e) {
+
+            }
+        }
+    }
+
     protected boolean needToDispatchIoError(final SocketChannelFrameHandlerState state) {
         return state.getConnection().isOpen();
     }
 
     protected void dispatchIoErrorToConnection(final SocketChannelFrameHandlerState state, final Throwable ex) {
-        // In case of recovery after the shutdown,
-        // the new connection shouldn't be initialized in
-        // the NIO thread, to avoid a deadlock.
-        Runnable shutdown = () -> state.getConnection().handleIoError(ex);
-        if (executorService() == null) {
-            String name = "rabbitmq-connection-shutdown-" + state.getConnection();
-            Thread shutdownThread = Environment.newThread(threadFactory(), shutdown, name);
-            shutdownThread.start();
-        } else {
-            executorService().submit(shutdown);
-        }
+        dispatchShutdownToConnection(
+            () -> state.getConnection().handleIoError(ex),
+            state.getConnection().toString()
+        );
     }
 
     protected void dispatchShutdownToConnection(final SocketChannelFrameHandlerState state) {
-        Runnable shutdown = () -> state.getConnection().doFinalShutdown();
+        dispatchShutdownToConnection(
+            () -> state.getConnection().doFinalShutdown(),
+            state.getConnection().toString()
+        );
+    }
+
+    protected void dispatchShutdownToConnection(Runnable connectionShutdownRunnable, String connectionName) {
+        // In case of recovery after the shutdown,
+        // the new connection shouldn't be initialized in
+        // the NIO thread, to avoid a deadlock.
         if (this.connectionShutdownExecutor != null) {
-            connectionShutdownExecutor.execute(shutdown);
+            connectionShutdownExecutor.execute(connectionShutdownRunnable);
         } else if (executorService() != null) {
-            executorService().execute(shutdown);
+            executorService().execute(connectionShutdownRunnable);
         } else {
-            String name = "rabbitmq-connection-shutdown-" + state.getConnection();
-            Thread shutdownThread = Environment.newThread(threadFactory(), shutdown, name);
+            String name = "rabbitmq-connection-shutdown-" + connectionName;
+            Thread shutdownThread = Environment.newThread(threadFactory(), connectionShutdownRunnable, name);
             shutdownThread.start();
         }
     }
