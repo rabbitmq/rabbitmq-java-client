@@ -36,7 +36,7 @@ import static com.rabbitmq.client.SslEngineConfigurators.ENABLE_HOSTNAME_VERIFIC
  */
 public class NioParams {
 
-    static Function<? super NioContext, ? extends NioQueue> DEFAULT_WRITE_QUEUE_FACTORY =
+    static Function<NioContext, NioQueue> DEFAULT_WRITE_QUEUE_FACTORY =
         ctx -> new BlockingQueueNioQueue(
             new ArrayBlockingQueue<>(ctx.getNioParams().getWriteQueueCapacity(), true),
             ctx.getNioParams().getWriteEnqueuingTimeoutInMs()
@@ -112,7 +112,7 @@ public class NioParams {
      *
      * @since 5.5.0
      */
-    private Function<? super NioContext, ? extends NioQueue> writeQueueFactory =
+    private Function<NioContext, NioQueue> writeQueueFactory =
         DEFAULT_WRITE_QUEUE_FACTORY;
 
     public NioParams() {
@@ -422,12 +422,12 @@ public class NioParams {
      * @since 5.5.0
      */
     public NioParams setWriteQueueFactory(
-        Function<? super NioContext, ? extends NioQueue> writeQueueFactory) {
+        Function<NioContext, NioQueue> writeQueueFactory) {
         this.writeQueueFactory = writeQueueFactory;
         return this;
     }
 
-    public Function<? super NioContext, ? extends NioQueue> getWriteQueueFactory() {
+    public Function<NioContext, NioQueue> getWriteQueueFactory() {
         return writeQueueFactory;
     }
 }
