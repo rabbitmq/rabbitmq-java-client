@@ -20,17 +20,19 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.TrafficListener;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -42,19 +44,31 @@ import static org.junit.Assert.assertTrue;
 public class TrafficListenerTest {
 
     @Parameterized.Parameter
-    public Consumer<ConnectionFactory> configurator;
+    public ConnectionFactoryConfigurator configurator;
 
     @Parameterized.Parameters
     public static Object[] data() {
         return new Object[] { automaticRecoveryEnabled(), automaticRecoveryDisabled() };
     }
 
-    static Consumer<ConnectionFactory> automaticRecoveryEnabled() {
-        return cf -> cf.setAutomaticRecoveryEnabled(true);
+    static ConnectionFactoryConfigurator automaticRecoveryEnabled() {
+        return new ConnectionFactoryConfigurator() {
+
+            @Override
+            public void configure(ConnectionFactory cf) {
+                cf.setAutomaticRecoveryEnabled(true);
+            }
+        };
     }
 
-    static Consumer<ConnectionFactory> automaticRecoveryDisabled() {
-        return cf -> cf.setAutomaticRecoveryEnabled(false);
+    static ConnectionFactoryConfigurator automaticRecoveryDisabled() {
+        return new ConnectionFactoryConfigurator() {
+
+            @Override
+            public void configure(ConnectionFactory cf) {
+                cf.setAutomaticRecoveryEnabled(false);
+            }
+        };
     }
 
     @Test
@@ -62,14 +76,20 @@ public class TrafficListenerTest {
         ConnectionFactory cf = TestUtils.connectionFactory();
         TestTrafficListener testTrafficListener = new TestTrafficListener();
         cf.setTrafficListener(testTrafficListener);
-        configurator.accept(cf);
-        try (Connection c = cf.newConnection()) {
+        configurator.configure(cf);
+        Connection c = cf.newConnection();
+        try {
             Channel ch = c.createChannel();
             String queue = ch.queueDeclare().getQueue();
-            CountDownLatch latch = new CountDownLatch(1);
-            ch.basicConsume(queue, true,
-                (consumerTag, message) -> latch.countDown(), consumerTag -> {
-                });
+            final CountDownLatch latch = new CountDownLatch(1);
+            ch.basicConsume(queue, true, new DefaultConsumer(ch) {
+
+                    @Override
+                    public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                        latch.countDown();
+                    }
+                }
+            );
             String messageContent = UUID.randomUUID().toString();
             ch.basicPublish("", queue, null, messageContent.getBytes());
             assertTrue(latch.await(5, TimeUnit.SECONDS));
@@ -77,13 +97,20 @@ public class TrafficListenerTest {
             assertEquals(messageContent, testTrafficListener.outboundContent.get(0));
             assertEquals(1, testTrafficListener.inboundContent.size());
             assertEquals(messageContent, testTrafficListener.inboundContent.get(0));
+        } finally {
+            TestUtils.close(c);
         }
+    }
+
+    interface ConnectionFactoryConfigurator {
+
+        void configure(ConnectionFactory connectionFactory);
     }
 
     private static class TestTrafficListener implements TrafficListener {
 
-        final List<String> outboundContent = new CopyOnWriteArrayList<>();
-        final List<String> inboundContent = new CopyOnWriteArrayList<>();
+        final List<String> outboundContent = new CopyOnWriteArrayList<String>();
+        final List<String> inboundContent = new CopyOnWriteArrayList<String>();
 
         @Override
         public void write(Command outboundCommand) {
