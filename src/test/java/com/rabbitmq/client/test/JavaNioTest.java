@@ -3,7 +3,11 @@ package com.rabbitmq.client.test;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.nio.BlockingQueueNioQueue;
 import com.rabbitmq.client.impl.nio.DefaultByteBufferFactory;
+import com.rabbitmq.client.impl.nio.NioContext;
 import com.rabbitmq.client.impl.nio.NioParams;
+import com.rabbitmq.client.impl.nio.NioQueue;
+import com.rabbitmq.client.impl.nio.NioQueueFactory;
+import com.rabbitmq.client.impl.nio.WriteRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -144,15 +148,22 @@ public class JavaNioTest {
         NioParams nioParams = new NioParams();
         nioParams.setReadByteBufferSize(baseCapacity / 2);
         nioParams.setWriteByteBufferSize(baseCapacity / 4);
-        List<ByteBuffer> byteBuffers = new CopyOnWriteArrayList<>();
-        cf.setNioParams(nioParams.setByteBufferFactory(new DefaultByteBufferFactory(capacity -> {
-            ByteBuffer bb = ByteBuffer.allocate(capacity);
-            byteBuffers.add(bb);
-            return bb;
+        final List<ByteBuffer> byteBuffers = new CopyOnWriteArrayList<ByteBuffer>();
+        cf.setNioParams(nioParams.setByteBufferFactory(new DefaultByteBufferFactory(new DefaultByteBufferFactory.ByteBufferAllocator() {
+
+            @Override
+            public ByteBuffer allocate(int capacity) {
+                ByteBuffer bb = ByteBuffer.allocate(capacity);
+                byteBuffers.add(bb);
+                return bb;
+            }
         })));
 
-        try (Connection c = cf.newConnection()) {
+        Connection c = cf.newConnection();
+        try {
             sendAndVerifyMessage(c, 100);
+        } finally {
+            TestUtils.close(c);
         }
 
         assertThat(byteBuffers, hasSize(2));
@@ -163,25 +174,41 @@ public class JavaNioTest {
     @Test public void directByteBuffers() throws Exception {
         ConnectionFactory cf = new ConnectionFactory();
         cf.useNio();
-        cf.setNioParams(new NioParams().setByteBufferFactory(new DefaultByteBufferFactory(capacity -> ByteBuffer.allocateDirect(capacity))));
-        try (Connection c = cf.newConnection()) {
+        cf.setNioParams(new NioParams().setByteBufferFactory(new DefaultByteBufferFactory(new DefaultByteBufferFactory.ByteBufferAllocator() {
+
+            @Override
+            public ByteBuffer allocate(int capacity) {
+                return ByteBuffer.allocateDirect(capacity);
+            }
+        })));
+        Connection c = cf.newConnection();
+        try {
             sendAndVerifyMessage(c, 100);
+        } finally {
+            TestUtils.close(c);
         }
     }
 
     @Test public void customWriteQueue() throws Exception {
         ConnectionFactory cf = new ConnectionFactory();
         cf.useNio();
-        AtomicInteger count = new AtomicInteger(0);
-        cf.setNioParams(new NioParams().setWriteQueueFactory(ctx -> {
-            count.incrementAndGet();
-            return new BlockingQueueNioQueue(
-                new LinkedBlockingQueue<>(ctx.getNioParams().getWriteQueueCapacity()),
-                ctx.getNioParams().getWriteEnqueuingTimeoutInMs()
-            );
+        final AtomicInteger count = new AtomicInteger(0);
+        cf.setNioParams(new NioParams().setWriteQueueFactory(new NioQueueFactory() {
+
+            @Override
+            public NioQueue create(NioContext ctx) {
+                count.incrementAndGet();
+                return new BlockingQueueNioQueue(
+                    new LinkedBlockingQueue<WriteRequest>(ctx.getNioParams().getWriteQueueCapacity()),
+                    ctx.getNioParams().getWriteEnqueuingTimeoutInMs()
+                );
+            }
         }));
-        try (Connection c = cf.newConnection()) {
+        Connection c = cf.newConnection();
+        try {
             sendAndVerifyMessage(c, 100);
+        } finally {
+            TestUtils.close(c);
         }
         assertEquals(1, count.get());
     }

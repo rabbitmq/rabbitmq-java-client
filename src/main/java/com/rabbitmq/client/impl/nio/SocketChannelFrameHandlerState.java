@@ -78,8 +78,8 @@ public class SocketChannelFrameHandlerState {
         NioContext nioContext = new NioContext(nioParams, sslEngine);
 
         this.writeQueue = nioParams.getWriteQueueFactory() == null ?
-            NioParams.DEFAULT_WRITE_QUEUE_FACTORY.apply(nioContext) :
-            nioParams.getWriteQueueFactory().apply(nioContext);
+            NioParams.DEFAULT_WRITE_QUEUE_FACTORY.create(nioContext) :
+            nioParams.getWriteQueueFactory().create(nioContext);
 
         this.sslEngine = sslEngine;
         if(this.sslEngine == null) {

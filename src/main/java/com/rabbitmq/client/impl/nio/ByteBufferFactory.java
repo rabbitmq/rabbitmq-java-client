@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
  * Contract to create {@link ByteBuffer}s.
  *
  * @see NioParams
- * @since 5.5.0
+ * @since 4.9.0
  */
 public interface ByteBufferFactory {
 
