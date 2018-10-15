@@ -47,8 +47,8 @@ public class DefaultJsonRpcMapper implements JsonRpcMapper {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public JsonRpcResponse parse(String responseBody, Class<?> expectedType) {
-        @SuppressWarnings("unchecked")
         Map<String, Object> map = (Map<String, Object>) (new JSONReader().read(responseBody));
         Map<String, Object> error;
         JsonRpcException exception = null;
