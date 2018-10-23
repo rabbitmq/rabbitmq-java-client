@@ -4,7 +4,7 @@ package com.rabbitmq.client;
  * Contract to log outbound and inbound {@link Command}s.
  *
  * @see ConnectionFactory#setTrafficListener(TrafficListener)
- * @since 5.5.0
+ * @since 4.9.0
  */
 public interface TrafficListener {
 

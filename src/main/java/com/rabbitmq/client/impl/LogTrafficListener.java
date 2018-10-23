@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  *
  * @see TrafficListener
  * @see com.rabbitmq.client.ConnectionFactory#setTrafficListener(TrafficListener)
- * @since 5.5.0
+ * @since 4.9.0
  */
 public class LogTrafficListener implements TrafficListener {
 
