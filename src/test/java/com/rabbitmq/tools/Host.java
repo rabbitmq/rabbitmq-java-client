@@ -239,13 +239,21 @@ public class Host {
 
     public static List<ConnectionInfo> listConnections() throws IOException {
         String output = capture(rabbitmqctl("list_connections -q pid peer_port").getInputStream());
+        // output (header line presence depends on broker version):
+        // pid	peer_port
+        // <rabbit@mercurio.1.11491.0>	58713
         String[] allLines = output.split("\n");
 
         ArrayList<ConnectionInfo> result = new ArrayList<ConnectionInfo>();
         for (String line : allLines) {
             // line: <rabbit@mercurio.1.11491.0>	58713
             String[] columns = line.split("\t");
-            result.add(new ConnectionInfo(columns[0], Integer.valueOf(columns[1])));
+            // can be also header line, so ignoring NumberFormatException
+            try {
+                result.add(new ConnectionInfo(columns[0], Integer.valueOf(columns[1])));
+            } catch (NumberFormatException e) {
+                // OK
+            }
         }
         return result;
     }
