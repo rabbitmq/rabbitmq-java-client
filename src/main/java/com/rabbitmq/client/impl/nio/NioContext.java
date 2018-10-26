@@ -6,7 +6,7 @@ import javax.net.ssl.SSLEngine;
  * Context when creating resources for a NIO-based connection.
  *
  * @see ByteBufferFactory
- * @since 5.5.0
+ * @since 4.9.0
  */
 public class NioContext {
 

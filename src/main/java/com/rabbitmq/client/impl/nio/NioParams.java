@@ -405,7 +405,7 @@ public class NioParams {
      * @return this {@link NioParams} instance
      * @see ByteBufferFactory
      * @see DefaultByteBufferFactory
-     * @since 5.5.0
+     * @since 4.9.0
      */
     public NioParams setByteBufferFactory(ByteBufferFactory byteBufferFactory) {
         this.byteBufferFactory = byteBufferFactory;

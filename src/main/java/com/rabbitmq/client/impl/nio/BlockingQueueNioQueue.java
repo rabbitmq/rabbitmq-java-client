@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
  * Bridge between {@link NioQueue} and JDK's {@link BlockingQueue}.
  *
  * @see NioQueue
- * @since 5.5.0
+ * @since 4.9.0
  */
 public class BlockingQueueNioQueue implements NioQueue {
 

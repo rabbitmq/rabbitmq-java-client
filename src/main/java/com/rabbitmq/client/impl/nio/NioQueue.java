@@ -8,7 +8,7 @@ package com.rabbitmq.client.impl.nio;
  * minor and patch releases.
  *
  * @see NioParams
- * @since 5.5.0
+ * @since 4.9.0
  */
 public interface NioQueue {
 

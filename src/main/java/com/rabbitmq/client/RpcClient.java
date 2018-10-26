@@ -33,6 +33,8 @@ import com.rabbitmq.client.impl.MethodArgumentWriter;
 import com.rabbitmq.client.impl.ValueReader;
 import com.rabbitmq.client.impl.ValueWriter;
 import com.rabbitmq.utility.BlockingCell;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Convenience class which manages simple RPC-style communication.
@@ -41,6 +43,9 @@ import com.rabbitmq.utility.BlockingCell;
  * and waiting for a response.
 */
 public class RpcClient {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RpcClient.class);
+
     /** Channel we are communicating on */
     private final Channel _channel;
     /** Exchange to send requests to */
@@ -53,6 +58,30 @@ public class RpcClient {
     private final int _timeout;
     /** NO_TIMEOUT value must match convention on {@link BlockingCell#uninterruptibleGet(int)} */
     protected final static int NO_TIMEOUT = -1;
+    /** Whether to publish RPC requests with the mandatory flag or not. */
+    private final boolean _useMandatory;
+
+    public final static RpcClientReplyHandler DEFAULT_REPLY_HANDLER = new RpcClientReplyHandler() {
+        @Override
+        public Response handle(Object reply) {
+            if (reply instanceof ShutdownSignalException) {
+                ShutdownSignalException sig = (ShutdownSignalException) reply;
+                ShutdownSignalException wrapper =
+                        new ShutdownSignalException(sig.isHardError(),
+                                sig.isInitiatedByApplication(),
+                                sig.getReason(),
+                                sig.getReference());
+                wrapper.initCause(sig);
+                throw wrapper;
+            } else if (reply instanceof UnroutableRpcRequestException) {
+                throw (UnroutableRpcRequestException) reply;
+            } else {
+                return (Response) reply;
+            }
+        }
+    };
+
+    private final RpcClientReplyHandler _replyHandler;
 
     /** Map from request correlation ID to continuation BlockingCell */
     private final Map<String, BlockingCell<Object>> _continuationMap = new HashMap<String, BlockingCell<Object>>();
@@ -61,6 +90,52 @@ public class RpcClient {
 
     /** Consumer attached to our reply queue */
     private DefaultConsumer _consumer;
+
+    /**
+     * Construct a {@link RpcClient} with the passed-in {@link RpcClientParams}.
+     *
+     * @param params
+     * @throws IOException
+     * @see RpcClientParams
+     * @since 4.10.0
+     */
+    public RpcClient(RpcClientParams params) throws
+            IOException {
+        _channel = params.getChannel();
+        _exchange = params.getExchange();
+        _routingKey = params.getRoutingKey();
+        _replyTo = params.getReplyTo();
+        if (params.getTimeout() < NO_TIMEOUT) {
+            throw new IllegalArgumentException("Timeout argument must be NO_TIMEOUT(-1) or non-negative.");
+        }
+        _timeout = params.getTimeout();
+        _useMandatory = params.isUseMandatory();
+        _replyHandler = params.getReplyHandler();
+        _correlationId = 0;
+
+        _consumer = setupConsumer();
+        if (_useMandatory) {
+            this._channel.addReturnListener(new ReturnListener() {
+                @Override
+                public void handleReturn(int replyCode, String replyText, String exchange, String routingKey, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                    synchronized (_continuationMap) {
+                        String replyId = properties.getCorrelationId();
+                        BlockingCell<Object> blocker = _continuationMap.remove(replyId);
+                        if (blocker == null) {
+                            // Entry should have been removed if request timed out,
+                            // log a warning nevertheless.
+                            LOGGER.warn("No outstanding request for correlation ID {}", replyId);
+                        } else {
+                            blocker.set(new UnroutableRpcRequestException(
+                                    replyCode, replyText, exchange,
+                                    routingKey, properties, body
+                            ));
+                        }
+                    }
+                }
+            });
+        }
+    }
 
     /**
      * Construct a new RpcClient that will communicate on the given channel, sending
@@ -73,15 +148,19 @@ public class RpcClient {
      * @param replyTo the queue where the server should put the reply
      * @param timeout milliseconds before timing out on wait for response
      * @throws IOException if an error is encountered
+     * @deprecated use {@link RpcClient#RpcClient(RpcClientParams)} instead
      */
+    @Deprecated
     public RpcClient(Channel channel, String exchange, String routingKey, String replyTo, int timeout) throws
             IOException {
         _channel = channel;
         _exchange = exchange;
         _routingKey = routingKey;
         _replyTo = replyTo;
-        if (timeout < NO_TIMEOUT) throw new IllegalArgumentException("Timeout arguument must be NO_TIMEOUT(-1) or non-negative.");
+        if (timeout < NO_TIMEOUT) throw new IllegalArgumentException("Timeout argument must be NO_TIMEOUT(-1) or non-negative.");
         _timeout = timeout;
+        _useMandatory = false;
+        _replyHandler = DEFAULT_REPLY_HANDLER;
         _correlationId = 0;
 
         _consumer = setupConsumer();
@@ -101,7 +180,9 @@ public class RpcClient {
      * @param routingKey the routing key
      * @param replyTo the queue where the server should put the reply
      * @throws IOException if an error is encountered
+     * @deprecated use {@link RpcClient#RpcClient(RpcClientParams)} instead
      */
+    @Deprecated
     public RpcClient(Channel channel, String exchange, String routingKey, String replyTo) throws IOException {
         this(channel, exchange, routingKey, replyTo, NO_TIMEOUT);
     }
@@ -118,7 +199,9 @@ public class RpcClient {
      * @param exchange the exchange to connect to
      * @param routingKey the routing key
      * @throws IOException if an error is encountered
+     * @deprecated use {@link RpcClient#RpcClient(RpcClientParams)} instead
      */
+    @Deprecated
     public RpcClient(Channel channel, String exchange, String routingKey) throws IOException {
         this(channel, exchange, routingKey, "amq.rabbitmq.reply-to", NO_TIMEOUT);
     }
@@ -137,7 +220,9 @@ public class RpcClient {
      * @param routingKey the routing key
      * @param timeout milliseconds before timing out on wait for response
      * @throws IOException if an error is encountered
+     * @deprecated use {@link RpcClient#RpcClient(RpcClientParams)} instead
      */
+    @Deprecated
     public RpcClient(Channel channel, String exchange, String routingKey, int timeout) throws IOException {
         this(channel, exchange, routingKey, "amq.rabbitmq.reply-to", timeout);
     }
@@ -186,8 +271,7 @@ public class RpcClient {
             public void handleDelivery(String consumerTag,
                                        Envelope envelope,
                                        AMQP.BasicProperties properties,
-                                       byte[] body)
-                    throws IOException {
+                                       byte[] body) {
                 synchronized (_continuationMap) {
                     String replyId = properties.getCorrelationId();
                     BlockingCell<Object> blocker =_continuationMap.remove(replyId);
@@ -205,7 +289,7 @@ public class RpcClient {
     public void publish(AMQP.BasicProperties props, byte[] message)
         throws IOException
     {
-        _channel.basicPublish(_exchange, _routingKey, props, message);
+        _channel.basicPublish(_exchange, _routingKey, _useMandatory, props, message);
     }
 
     public Response doCall(AMQP.BasicProperties props, byte[] message)
@@ -217,27 +301,24 @@ public class RpcClient {
         throws IOException, ShutdownSignalException, TimeoutException {
         checkConsumer();
         BlockingCell<Object> k = new BlockingCell<Object>();
+        String replyId;
         synchronized (_continuationMap) {
             _correlationId++;
-            String replyId = "" + _correlationId;
+            replyId = "" + _correlationId;
             props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
                 .correlationId(replyId).replyTo(_replyTo).build();
             _continuationMap.put(replyId, k);
         }
         publish(props, message);
-        Object reply = k.uninterruptibleGet(timeout);
-        if (reply instanceof ShutdownSignalException) {
-            ShutdownSignalException sig = (ShutdownSignalException) reply;
-            ShutdownSignalException wrapper =
-                new ShutdownSignalException(sig.isHardError(),
-                                            sig.isInitiatedByApplication(),
-                                            sig.getReason(),
-                                            sig.getReference());
-            wrapper.initCause(sig);
-            throw wrapper;
-        } else {
-            return (Response) reply;
+        Object reply;
+        try {
+            reply = k.uninterruptibleGet(timeout);
+        } catch (TimeoutException ex) {
+            // Avoid potential leak.  This entry is no longer needed by caller.
+            _continuationMap.remove(replyId);
+            throw ex;
         }
+        return _replyHandler.handle(reply);
     }
 
     public byte[] primitiveCall(AMQP.BasicProperties props, byte[] message)
@@ -455,6 +536,12 @@ public class RpcClient {
         public byte[] getBody() {
             return body;
         }
+    }
+
+    public interface RpcClientReplyHandler {
+
+        Response handle(Object reply);
+
     }
 }
 
