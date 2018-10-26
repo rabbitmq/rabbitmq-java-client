@@ -15,8 +15,6 @@
 
 package com.rabbitmq.utility;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -73,22 +71,6 @@ public class Utility {
       System.arraycopy(existing, 1, newTrace, 0, newTrace.length);
       throwable.setStackTrace(newTrace);
       return throwable;
-    }
-
-    /**
-     *
-     * @param throwable
-     * @return
-     * @deprecated use logging library instead for logging stack traces somewhere
-     */
-    public static String makeStackTrace(Throwable throwable) {
-        ByteArrayOutputStream baOutStream = new ByteArrayOutputStream();
-        PrintStream printStream = new PrintStream(baOutStream, false);
-        throwable.printStackTrace(printStream);
-        printStream.flush(); // since we don't automatically do so
-        String text = baOutStream.toString();
-        printStream.close(); // closes baOutStream
-        return text;
     }
     
     /**
