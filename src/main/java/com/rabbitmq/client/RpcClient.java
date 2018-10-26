@@ -109,7 +109,7 @@ public class RpcClient {
             throw new IllegalArgumentException("Timeout argument must be NO_TIMEOUT(-1) or non-negative.");
         }
         _timeout = params.getTimeout();
-        _useMandatory = params.isUseMandatory();
+        _useMandatory = params.shouldUseMandatory();
         _replyHandler = params.getReplyHandler();
         _correlationId = 0;
 
@@ -153,17 +153,11 @@ public class RpcClient {
     @Deprecated
     public RpcClient(Channel channel, String exchange, String routingKey, String replyTo, int timeout) throws
             IOException {
-        _channel = channel;
-        _exchange = exchange;
-        _routingKey = routingKey;
-        _replyTo = replyTo;
-        if (timeout < NO_TIMEOUT) throw new IllegalArgumentException("Timeout argument must be NO_TIMEOUT(-1) or non-negative.");
-        _timeout = timeout;
-        _useMandatory = false;
-        _replyHandler = DEFAULT_REPLY_HANDLER;
-        _correlationId = 0;
-
-        _consumer = setupConsumer();
+        this(new RpcClientParams()
+            .channel(channel).exchange(exchange).routingKey(routingKey)
+            .replyTo(replyTo).timeout(timeout)
+            .useMandatory(false)
+        );
     }
 
     /**

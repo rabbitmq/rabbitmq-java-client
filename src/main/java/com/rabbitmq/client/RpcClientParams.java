@@ -164,7 +164,7 @@ public class RpcClientParams {
         return useMandatory(true);
     }
 
-    public boolean isUseMandatory() {
+    public boolean shouldUseMandatory() {
         return useMandatory;
     }
 
