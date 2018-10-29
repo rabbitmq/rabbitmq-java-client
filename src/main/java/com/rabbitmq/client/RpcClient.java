@@ -532,8 +532,22 @@ public class RpcClient {
         }
     }
 
+    /**
+     * Behavior to handle RPC reply.
+     * <p>
+     * Can be used to convert the reply in a {@link Response} and
+     * to handle exceptions.
+     *
+     * @since 4.10.0
+     */
     public interface RpcClientReplyHandler {
 
+        /**
+         * Handle reply.
+         *
+         * @param reply
+         * @return
+         */
         Response handle(Object reply);
 
     }
