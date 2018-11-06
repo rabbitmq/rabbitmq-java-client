@@ -50,7 +50,10 @@ public abstract class AbstractJsonRpcTest {
                 // safe to ignore when loops ends/server is canceled
             }
         }).start();
-        client = new JsonRpcClient(clientChannel, "", queue, 1000, createMapper());
+        client = new JsonRpcClient(
+                    new RpcClientParams().channel(clientChannel).exchange("").routingKey(queue).timeout(1000),
+                    createMapper()
+        );
         service = client.createProxy(RpcService.class);
     }
 
