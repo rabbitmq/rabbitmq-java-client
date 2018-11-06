@@ -17,6 +17,7 @@ package com.rabbitmq.tools.jsonrpc;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.RpcClient;
+import com.rabbitmq.client.RpcClientParams;
 import com.rabbitmq.client.ShutdownSignalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +68,25 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     private ServiceDescription serviceDescription;
 
     /**
+     * Construct a new {@link JsonRpcClient}, passing the {@link RpcClientParams} through {@link RpcClient}'s constructor.
+     * <p>
+     * The service description record is
+     * retrieved from the server during construction.
+     *
+     * @param rpcClientParams
+     * @param mapper
+     * @throws IOException
+     * @throws JsonRpcException
+     * @throws TimeoutException
+     */
+    public JsonRpcClient(RpcClientParams rpcClientParams, JsonRpcMapper mapper)
+            throws IOException, JsonRpcException, TimeoutException {
+        super(rpcClientParams);
+        this.mapper = mapper;
+        retrieveServiceDescription();
+    }
+
+    /**
      * Construct a new JsonRpcClient, passing the parameters through
      * to RpcClient's constructor. The service description record is
      * retrieved from the server during construction.
@@ -75,7 +95,12 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
      */
     public JsonRpcClient(Channel channel, String exchange, String routingKey, int timeout, JsonRpcMapper mapper)
         throws IOException, JsonRpcException, TimeoutException {
-        super(channel, exchange, routingKey, timeout);
+        super(new RpcClientParams()
+                .channel(channel)
+                .exchange(exchange)
+                .routingKey(routingKey)
+                .timeout(timeout)
+        );
         this.mapper = mapper;
         retrieveServiceDescription();
     }
