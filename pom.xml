@@ -75,7 +75,7 @@
     <groovy.all.version>2.4.8</groovy.all.version>
     <keytool.maven.plugin.version>1.5</keytool.maven.plugin.version>
     <build.helper.maven-plugin.version>1.12</build.helper.maven-plugin.version>
-    <maven.compiler.plugin.version>3.5.1</maven.compiler.plugin.version>
+    <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
     <maven.surefire.plugin.version>2.19.1</maven.surefire.plugin.version>
     <maven.failsafe.plugin.version>2.19.1</maven.failsafe.plugin.version>
     <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
@@ -83,6 +83,7 @@
     <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
     <maven.packagecloud.wagon.version>0.0.6</maven.packagecloud.wagon.version>
     <checksum.maven.plugin.version>1.8</checksum.maven.plugin.version>
+    <animal-sniffer-maven-plugin.version>1.16</animal-sniffer-maven-plugin.version>
 
     <!--
     These groovy scripts are used later in this POM file to generate
@@ -872,10 +873,48 @@
         <configuration>
           <source>1.6</source>
           <target>1.6</target>
+          <testSource>1.8</testSource>
+          <testTarget>1.8</testTarget>
           <compilerArgs>
             <arg>-Xlint:deprecation</arg>
             <arg>-Xlint:unchecked</arg>
           </compilerArgs>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>animal-sniffer-maven-plugin</artifactId>
+        <version>${animal-sniffer-maven-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>signature-check-in-verify</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>signature-check-before-packaging</id>
+            <phase>package</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <ignores>
+            <!--
+              To avoid failure because of call to SSLParameters#setEndpointIdentificationAlgorithm (Java 7)
+              It is mentioned in the Javadoc that the class making this call requires Java 7.
+            -->
+            <ignore>javax.net.ssl.SSLParameters</ignore>
+          </ignores>
+          <signature>
+            <groupId>org.codehaus.mojo.signature</groupId>
+            <artifactId>java16</artifactId>
+            <version>1.0</version>
+          </signature>
         </configuration>
       </plugin>
 

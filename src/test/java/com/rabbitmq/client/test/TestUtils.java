@@ -67,6 +67,16 @@ public class TestUtils {
         }
     }
 
+    public static void close(Channel channel) {
+        if (channel != null && channel.isOpen()) {
+            try {
+                channel.close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     public static SSLContext getSSLContext() throws NoSuchAlgorithmException {
         SSLContext c = null;
 
