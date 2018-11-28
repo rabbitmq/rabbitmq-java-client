@@ -60,7 +60,7 @@ public class ConnectionFactoryTest {
             }
 
             @Override
-            protected synchronized FrameHandlerFactory createFrameHandlerFactory() throws IOException {
+            protected synchronized FrameHandlerFactory createFrameHandlerFactory() {
                 return mock(FrameHandlerFactory.class);
             }
         };
@@ -86,6 +86,11 @@ public class ConnectionFactoryTest {
                 assertSame(provider, params.getCredentialsProvider());
                 createCalled.set(true);
                 return connection;
+            }
+
+            @Override
+            protected synchronized FrameHandlerFactory createFrameHandlerFactory() {
+                return mock(FrameHandlerFactory.class);
             }
         };
         connectionFactory.setCredentialsProvider(provider);
@@ -114,7 +119,14 @@ public class ConnectionFactoryTest {
                 addressResolver.set(super.createAddressResolver(addresses));
                 return addressResolver.get();
             }
+
+            @Override
+            protected synchronized FrameHandlerFactory createFrameHandlerFactory() {
+                return mock(FrameHandlerFactory.class);
+            }
         };
+        // connection recovery makes the creation path more complex
+        connectionFactory.setAutomaticRecoveryEnabled(false);
 
         doNothing().when(connection).start();
         connectionFactory.newConnection();
@@ -138,7 +150,14 @@ public class ConnectionFactoryTest {
                 addressResolver.set(super.createAddressResolver(addresses));
                 return addressResolver.get();
             }
+
+            @Override
+            protected synchronized FrameHandlerFactory createFrameHandlerFactory() {
+                return mock(FrameHandlerFactory.class);
+            }
         };
+        // connection recovery makes the creation path more complex
+        connectionFactory.setAutomaticRecoveryEnabled(false);
 
         doNothing().when(connection).start();
         connectionFactory.useSslProtocol();
