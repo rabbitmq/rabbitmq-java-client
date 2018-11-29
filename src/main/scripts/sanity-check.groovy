@@ -7,13 +7,14 @@ import com.rabbitmq.client.Channel
 import com.rabbitmq.client.ConnectionFactory
 import com.rabbitmq.client.DefaultConsumer
 import com.rabbitmq.client.Envelope
+import com.rabbitmq.client.impl.ClientVersion
 import org.slf4j.LoggerFactory
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-def connection = new ConnectionFactory().newConnection()
 try {
+    def connection = new ConnectionFactory().newConnection()
     Channel ch = connection.createChannel()
     def queue = ch.queueDeclare().getQueue()
     CountDownLatch latch = new CountDownLatch(1);
@@ -27,9 +28,9 @@ try {
     def received = latch.await(5, TimeUnit.SECONDS)
     if (!received)
         throw new IllegalStateException("Didn't receive message in 5 seconds")
-    LoggerFactory.getLogger("rabbitmq").info("Test succeeded")
+    LoggerFactory.getLogger("rabbitmq").info("Test succeeded with Java client {}", ClientVersion.VERSION)
     System.exit 0
 } catch (Exception e) {
-    LoggerFactory.getLogger("rabbitmq").info("Test failed", e)
+    LoggerFactory.getLogger("rabbitmq").info("Test failed  with Java client {}", ClientVersion.VERSION, e)
     System.exit 1
 }
