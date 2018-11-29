@@ -16,7 +16,9 @@
 package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.*;
-import com.rabbitmq.client.RecoverableChannel;
+import com.rabbitmq.client.impl.AMQCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -31,6 +33,9 @@ import java.util.concurrent.TimeoutException;
  * @since 3.3.0
  */
 public class AutorecoveringChannel implements RecoverableChannel {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AutorecoveringChannel.class);
+
     private volatile RecoveryAwareChannelN delegate;
     private volatile AutorecoveringConnection connection;
     private final List<ShutdownListener> shutdownHooks  = new CopyOnWriteArrayList<ShutdownListener>();
@@ -235,12 +240,7 @@ public class AutorecoveringChannel implements RecoverableChannel {
     @Override
     public AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, String type, boolean durable, boolean autoDelete, boolean internal, Map<String, Object> arguments) throws IOException {
         final AMQP.Exchange.DeclareOk ok = delegate.exchangeDeclare(exchange, type, durable, autoDelete, internal, arguments);
-        RecordedExchange x = new RecordedExchange(this, exchange).
-          type(type).
-          durable(durable).
-          autoDelete(autoDelete).
-          arguments(arguments);
-        recordExchange(exchange, x);
+        recordExchange(ok, exchange, type, durable, autoDelete, arguments);
         return ok;
     }
 
@@ -331,15 +331,7 @@ public class AutorecoveringChannel implements RecoverableChannel {
     @Override
     public AMQP.Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive, boolean autoDelete, Map<String, Object> arguments) throws IOException {
         final AMQP.Queue.DeclareOk ok = delegate.queueDeclare(queue, durable, exclusive, autoDelete, arguments);
-        RecordedQueue q = new RecordedQueue(this, ok.getQueue()).
-            durable(durable).
-            exclusive(exclusive).
-            autoDelete(autoDelete).
-            arguments(arguments);
-        if (queue.equals(RecordedQueue.EMPTY_STRING)) {
-            q.serverNamed(true);
-        }
-        recordQueue(ok, q);
+        recordQueue(ok, queue, durable, exclusive, autoDelete, arguments);
         return ok;
     }
 
@@ -714,7 +706,10 @@ public class AutorecoveringChannel implements RecoverableChannel {
 
     @Override
     public Command rpc(Method method) throws IOException {
-        return delegate.rpc(method);
+        recordOnRpcRequest(method);
+        AMQCommand response = delegate.rpc(method);
+        recordOnRpcResponse(response.getMethod(), method);
+        return response;
     }
 
     /**
@@ -840,6 +835,18 @@ public class AutorecoveringChannel implements RecoverableChannel {
         return this.connection.deleteRecordedExchangeBinding(this, destination, source, routingKey, arguments);
     }
 
+    private void recordQueue(AMQP.Queue.DeclareOk ok, String queue, boolean durable, boolean exclusive, boolean autoDelete, Map<String, Object> arguments) {
+        RecordedQueue q = new RecordedQueue(this, ok.getQueue()).
+                durable(durable).
+                exclusive(exclusive).
+                autoDelete(autoDelete).
+                arguments(arguments);
+        if (queue.equals(RecordedQueue.EMPTY_STRING)) {
+            q.serverNamed(true);
+        }
+        recordQueue(ok, q);
+    }
+
     private void recordQueue(AMQP.Queue.DeclareOk ok, RecordedQueue q) {
         this.connection.recordQueue(ok, q);
     }
@@ -850,6 +857,15 @@ public class AutorecoveringChannel implements RecoverableChannel {
 
     private void deleteRecordedQueue(String queue) {
         this.connection.deleteRecordedQueue(queue);
+    }
+
+    private void recordExchange(AMQP.Exchange.DeclareOk ok, String exchange, String type, boolean durable, boolean autoDelete, Map<String, Object> arguments) {
+        RecordedExchange x = new RecordedExchange(this, exchange).
+                type(type).
+                durable(durable).
+                autoDelete(autoDelete).
+                arguments(arguments);
+        recordExchange(exchange, x);
     }
 
     private void recordExchange(String exchange, RecordedExchange x) {
@@ -898,7 +914,82 @@ public class AutorecoveringChannel implements RecoverableChannel {
 
     @Override
     public CompletableFuture<Command> asyncCompletableRpc(Method method) throws IOException {
-        return this.delegate.asyncCompletableRpc(method);
+        recordOnRpcRequest(method);
+        CompletableFuture<Command> future = this.delegate.asyncCompletableRpc(method);
+        future.thenAccept(command -> {
+            if (command != null) {
+                recordOnRpcResponse(command.getMethod(), method);
+            }
+        });
+        return future;
+    }
+
+    private void recordOnRpcRequest(Method method) {
+        if (method instanceof AMQP.Queue.Delete) {
+            deleteRecordedQueue(((AMQP.Queue.Delete) method).getQueue());
+        } else if (method instanceof AMQP.Exchange.Delete) {
+            deleteRecordedExchange(((AMQP.Exchange.Delete) method).getExchange());
+        } else if (method instanceof AMQP.Queue.Unbind) {
+            AMQP.Queue.Unbind unbind = (AMQP.Queue.Unbind) method;
+            deleteRecordedQueueBinding(
+                    unbind.getQueue(), unbind.getExchange(),
+                    unbind.getRoutingKey(), unbind.getArguments()
+            );
+            this.maybeDeleteRecordedAutoDeleteExchange(unbind.getExchange());
+        } else if (method instanceof AMQP.Exchange.Unbind) {
+            AMQP.Exchange.Unbind unbind = (AMQP.Exchange.Unbind) method;
+            deleteRecordedExchangeBinding(
+                    unbind.getDestination(), unbind.getSource(),
+                    unbind.getRoutingKey(), unbind.getArguments()
+            );
+            this.maybeDeleteRecordedAutoDeleteExchange(unbind.getSource());
+        }
+    }
+
+    private void recordOnRpcResponse(Method response, Method request) {
+        if (response instanceof AMQP.Queue.DeclareOk) {
+            if (request instanceof AMQP.Queue.Declare) {
+                AMQP.Queue.DeclareOk ok = (AMQP.Queue.DeclareOk) response;
+                AMQP.Queue.Declare declare = (AMQP.Queue.Declare) request;
+                recordQueue(
+                        ok, declare.getQueue(),
+                        declare.getDurable(), declare.getExclusive(), declare.getAutoDelete(),
+                        declare.getArguments()
+                );
+            } else {
+                LOGGER.warn("RPC response {} and RPC request {} not compatible, topology not recorded.",
+                        response.getClass(), request.getClass());
+            }
+        } else if (response instanceof AMQP.Exchange.DeclareOk) {
+            if (request instanceof AMQP.Exchange.Declare) {
+                AMQP.Exchange.DeclareOk ok = (AMQP.Exchange.DeclareOk) response;
+                AMQP.Exchange.Declare declare = (AMQP.Exchange.Declare) request;
+                recordExchange(
+                        ok, declare.getExchange(), declare.getType(),
+                        declare.getDurable(), declare.getAutoDelete(),
+                        declare.getArguments()
+                );
+            } else {
+                LOGGER.warn("RPC response {} and RPC request {} not compatible, topology not recorded.",
+                        response.getClass(), request.getClass());
+            }
+        } else if (response instanceof AMQP.Queue.BindOk) {
+            if (request instanceof AMQP.Queue.Bind) {
+                AMQP.Queue.Bind bind = (AMQP.Queue.Bind) request;
+                recordQueueBinding(bind.getQueue(), bind.getExchange(), bind.getRoutingKey(), bind.getArguments());
+            } else {
+                LOGGER.warn("RPC response {} and RPC request {} not compatible, topology not recorded.",
+                        response.getClass(), request.getClass());
+            }
+        } else if (response instanceof AMQP.Exchange.BindOk) {
+            if (request instanceof AMQP.Exchange.Bind) {
+                AMQP.Exchange.Bind bind = (AMQP.Exchange.Bind) request;
+                recordExchangeBinding(bind.getDestination(), bind.getSource(), bind.getRoutingKey(), bind.getArguments());
+            } else {
+                LOGGER.warn("RPC response {} and RPC request {} not compatible, topology not recorded.",
+                        response.getClass(), request.getClass());
+            }
+        }
     }
 
     @Override
