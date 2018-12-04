@@ -82,7 +82,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
             }
 
             SocketAddress address = new InetSocketAddress(addr.getHost(), portNumber);
-            channel = SocketChannel.open();
+            channel = SocketChannel.open(); //NOSONAR
             channel.configureBlocking(true);
             if(nioParams.getSocketChannelConfigurator() != null) {
                 nioParams.getSocketChannelConfigurator().configure(channel);
@@ -131,7 +131,9 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                 if(sslEngine != null && channel != null) {
                     SslEngineHelper.close(channel, sslEngine);
                 }
-                channel.close();
+                if (channel != null) {
+                    channel.close();
+                }
             } catch(IOException closingException) {
                 // ignore
             }
