@@ -744,6 +744,17 @@
   </dependencies>
 
   <build>
+
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.sonarsource.scanner.maven</groupId>
+          <artifactId>sonar-maven-plugin</artifactId>
+          <version>3.5.0.1254</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <!-- We store the client version in a Java properties file. -->
     <resources>
       <resource>

@@ -28,7 +28,7 @@ public class BlockingCell<T> {
     /** Will be null until a value is supplied, and possibly still then. */
     private T _value;
 
-    private static final long NANOS_IN_MILLI = 1000 * 1000;
+    private static final long NANOS_IN_MILLI = 1000L * 1000L;
 
     private static final long INFINITY = -1;
 
