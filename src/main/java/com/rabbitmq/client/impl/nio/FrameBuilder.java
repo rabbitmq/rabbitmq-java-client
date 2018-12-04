@@ -80,7 +80,7 @@ public class FrameBuilder {
                 frameBuffer[0] = readFromBuffer();
             } else if (bytesRead == 2) {
                 // channel 2/2
-                frameChannel = (frameBuffer[0] << 8) + (readFromBuffer() << 0);
+                frameChannel = (frameBuffer[0] << 8) + readFromBuffer();
             } else if (bytesRead == 3) {
                 // payload size 1/4
                 frameBuffer[0] = readFromBuffer();
@@ -92,7 +92,7 @@ public class FrameBuilder {
                 frameBuffer[2] = readFromBuffer();
             } else if (bytesRead == 6) {
                 // payload size 4/4
-                int framePayloadSize = ((frameBuffer[0] << 24) + (frameBuffer[1] << 16) + (frameBuffer[2] << 8) + (readFromBuffer() << 0));
+                int framePayloadSize = (frameBuffer[0] << 24) + (frameBuffer[1] << 16) + (frameBuffer[2] << 8) + readFromBuffer();
                 framePayload = new byte[framePayloadSize];
             } else if (bytesRead >= PAYLOAD_OFFSET && bytesRead < framePayload.length + PAYLOAD_OFFSET) {
                 framePayload[bytesRead - PAYLOAD_OFFSET] = (byte) readFromBuffer();
