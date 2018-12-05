@@ -78,7 +78,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
             }
 
             SocketAddress address = new InetSocketAddress(addr.getHost(), portNumber);
-            channel = SocketChannel.open(); //NOSONAR
+            channel = SocketChannel.open();
             channel.configureBlocking(true);
             if(nioParams.getSocketChannelConfigurator() != null) {
                 nioParams.getSocketChannelConfigurator().configure(channel);

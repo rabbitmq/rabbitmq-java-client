@@ -137,6 +137,7 @@ public class SocketChannelFrameHandlerState {
             }
         } catch (InterruptedException e) {
             LOGGER.warn("Thread interrupted during enqueuing frame in write queue");
+            Thread.currentThread().interrupt();
         }
     }
 

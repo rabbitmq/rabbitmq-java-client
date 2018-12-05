@@ -74,7 +74,7 @@ public class WorkPool<K, W> {
                         throw new WorkPoolFullException("Could not enqueue in work pool after " + queueingTimeout + " ms.");
                     }
                 } catch (InterruptedException e) {
-                    Thread.currentThread();
+                    Thread.currentThread().interrupt();
                 }
             };
         } else {
