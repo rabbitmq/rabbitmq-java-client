@@ -592,7 +592,7 @@ public class AutorecoveringChannel implements RecoverableChannel {
         this.connection = connection;
 
         final RecoveryAwareChannelN newChannel = (RecoveryAwareChannelN) connDelegate.createChannel(this.getChannelNumber());
-        if (newChannel == null) //NOSONAR
+        if (newChannel == null)
             throw new IOException("Failed to create new channel for channel number=" + this.getChannelNumber() + " during recovery");
         newChannel.inheritOffsetFrom(defunctChannel);
         this.delegate = newChannel;

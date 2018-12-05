@@ -184,7 +184,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     @Override
     public Channel createChannel() throws IOException {
         RecoveryAwareChannelN ch = (RecoveryAwareChannelN) delegate.createChannel();
-        if (ch == null) { //NOSONAR
+        if (ch == null) {
             return null;
         } else {
             return this.wrapChannel(ch);
@@ -565,7 +565,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     private synchronized void beginAutomaticRecovery() throws InterruptedException {
-        Thread.sleep(this.params.getRecoveryDelayHandler().getDelay(0));
+        this.wait(this.params.getRecoveryDelayHandler().getDelay(0));
 
         this.notifyRecoveryListenersStarted();
 
