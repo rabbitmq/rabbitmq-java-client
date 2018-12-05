@@ -34,6 +34,8 @@ import com.rabbitmq.client.impl.recovery.RecordedExchange;
 import com.rabbitmq.client.impl.recovery.RecordedQueue;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 import com.rabbitmq.tools.Host;
+import org.awaitility.Awaitility;
+import org.awaitility.Duration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.awaitility.Awaitility.waitAtMost;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -313,6 +316,28 @@ public class RpcTest {
                 connection.close();
             }
         }
+    }
+
+    @Test public void interruptingServerThreadShouldStopIt() throws Exception {
+        rpcServer = new TestRpcServer(serverChannel, queue);
+        Thread serverThread = new Thread(() -> {
+            try {
+                rpcServer.mainloop();
+            } catch (Exception e) {
+                // safe to ignore when loops ends/server is canceled
+            }
+        });
+        serverThread.start();
+        RpcClient client = new RpcClient(new RpcClientParams()
+                .channel(clientChannel).exchange("").routingKey(queue).timeout(1000));
+        RpcClient.Response response = client.doCall(null, "hello".getBytes());
+        assertEquals("*** hello ***", new String(response.getBody()));
+
+        serverThread.interrupt();
+
+        waitAtMost(Duration.ONE_SECOND).until(() -> !serverThread.isAlive()) ;
+
+        client.close();
     }
 
     private static class TestRpcServer extends RpcServer {

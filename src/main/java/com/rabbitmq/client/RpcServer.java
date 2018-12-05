@@ -92,7 +92,8 @@ public class RpcServer {
      * Public API - main server loop. Call this to begin processing
      * requests. Request processing will continue until the Channel
      * (or its underlying Connection) is shut down, or until
-     * terminateMainloop() is called.
+     * terminateMainloop() is called, or until the thread running the loop
+     * is interrupted.
      *
      * Note that if the mainloop is blocked waiting for a request, the
      * termination flag is not checked until a request is received, so
@@ -110,6 +111,8 @@ public class RpcServer {
                 try {
                     request = _consumer.nextDelivery();
                 } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    _mainloopRunning = false;
                     continue;
                 }
                 processRequest(request);
