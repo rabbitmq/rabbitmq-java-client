@@ -573,7 +573,7 @@ public class DeadLetterExchange extends BrokerTestCase {
        publication time + TTL + latency */
     private void checkPromptArrival(AccumulatingMessageConsumer c,
                                     int count, long latency) throws Exception {
-        long epsilon = TTL / 10;
+        long epsilon = TTL / 5;
         for (int i = 0; i < count; i++) {
             byte[] body = c.nextDelivery(TTL + TTL + latency + epsilon);
             assertNotNull("message #" + i + " did not expire", body);
