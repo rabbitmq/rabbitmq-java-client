@@ -113,7 +113,7 @@ public class SslEngineHelper {
             try {
                 Thread.sleep(100L);
             } catch (InterruptedException e) {
-                // ignore
+                Thread.currentThread().interrupt();
             }
             read = NioHelper.read(channel, buffer);
             if(read > 0) {

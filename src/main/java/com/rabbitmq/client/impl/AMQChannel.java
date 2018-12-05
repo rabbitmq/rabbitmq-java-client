@@ -440,7 +440,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                 while (_blockContent) {
                     try {
                         _channelMutex.wait();
-                    } catch (InterruptedException ignored) {}
+                    } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
+                    }
 
                     // This is to catch a situation when the thread wakes up during
                     // shutdown. Currently, no command that has content is allowed
