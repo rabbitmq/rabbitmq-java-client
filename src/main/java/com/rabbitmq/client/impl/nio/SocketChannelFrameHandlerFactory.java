@@ -78,7 +78,10 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
             }
 
             SocketAddress address = new InetSocketAddress(addr.getHost(), portNumber);
-            channel = SocketChannel.open();
+            // No Sonar: the channel is closed in case of error and it cannot
+            // be closed here because it's part of the state of the connection
+            // to be returned.
+            channel = SocketChannel.open(); //NOSONAR
             channel.configureBlocking(true);
             if(nioParams.getSocketChannelConfigurator() != null) {
                 nioParams.getSocketChannelConfigurator().configure(channel);

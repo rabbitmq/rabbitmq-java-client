@@ -68,7 +68,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     private RpcWrapper _activeRpc = null;
 
     /** Whether transmission of content-bearing methods should be blocked */
-    public volatile boolean _blockContent = false;
+    protected volatile boolean _blockContent = false;
 
     /** Timeout for RPC calls */
     protected final int _rpcTimeout;
@@ -218,8 +218,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             while (_activeRpc != null) {
                 try {
                     _channelMutex.wait();
-                } catch (InterruptedException e) {
+                } catch (InterruptedException e) { //NOSONAR
                     waitClearedInterruptStatus = true;
+                    // No Sonar: we re-interrupt the thread later
                 }
             }
             if (waitClearedInterruptStatus) {

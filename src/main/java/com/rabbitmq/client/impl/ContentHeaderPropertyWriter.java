@@ -33,10 +33,10 @@ public class ContentHeaderPropertyWriter {
     private final ValueWriter out;
 
     /** Current flags word being accumulated */
-    public int flagWord;
+    private int flagWord;
 
     /** Position within current flags word */
-    public int bitCount;
+    private int bitCount;
 
     /**
      * Constructs a fresh ContentHeaderPropertyWriter.

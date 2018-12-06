@@ -82,7 +82,8 @@ public class Utility {
      * @return ArrayList copy of the list
      */
     public static <E> List<E> copy(final List<E> list) {
-        synchronized (list) {
+        // No Sonar: this very list instance can be synchronized in other places of its owning class
+        synchronized (list) { //NOSONAR
             return new ArrayList<E>(list);
         }
     }
@@ -96,7 +97,8 @@ public class Utility {
      * @return LinkedHashMap copy of the map
      */
     public static <K, V> Map<K, V> copy(final Map<K, V> map) {
-        synchronized (map) {
+        // No Sonar: this very map instance can be synchronized in other places of its owning class
+        synchronized (map) { //NOSONAR
             return new LinkedHashMap<K, V>(map);
         }
     }
