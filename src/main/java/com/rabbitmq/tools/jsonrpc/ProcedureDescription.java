@@ -27,13 +27,13 @@ import com.rabbitmq.tools.json.JSONUtil;
  */
 public class ProcedureDescription {
     /** Procedure name */
-    public String name;
+    private String name;
     /** Human-readable procedure summary */
-    public String summary;
+    private String summary;
     /** Human-readable instructions for how to get information on the procedure's operation */
-    public String help;
+    private String help;
     /** True if this procedure is idempotent, that is, can be accessed via HTTP GET */
-    public boolean idempotent;
+    private boolean idempotent;
 
     /** Descriptions of parameters for this procedure */
     private ParameterDescription[] params;
@@ -138,5 +138,21 @@ public class ProcedureDescription {
 
     public ParameterDescription[] getParams() {
         return params;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public String getHelp() {
+        return help;
+    }
+
+    public boolean isIdempotent() {
+        return idempotent;
     }
 }
