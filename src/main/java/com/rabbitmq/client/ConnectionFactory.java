@@ -1099,7 +1099,9 @@ public class ConnectionFactory implements Cloneable {
 
         if (isAutomaticRecoveryEnabled()) {
             // see com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnectionFactory#newConnection
-            AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addressResolver, metricsCollector);
+            // No Sonar: no need to close this resource because we're the one that creates it
+            // and hands it over to the user
+            AutorecoveringConnection conn = new AutorecoveringConnection(params, fhFactory, addressResolver, metricsCollector); //NOSONAR
 
             conn.init();
             return conn;

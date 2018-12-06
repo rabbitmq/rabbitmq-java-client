@@ -30,13 +30,13 @@ public abstract class SslEngineConfigurators {
     /**
      * Default {@link SslEngineConfigurator}, does nothing.
      */
-    public static SslEngineConfigurator DEFAULT = sslEngine -> {
+    public static final SslEngineConfigurator DEFAULT = sslEngine -> {
     };
 
     /**
      * {@link SslEngineConfigurator} that enables server hostname verification.
      */
-    public static SslEngineConfigurator ENABLE_HOSTNAME_VERIFICATION = sslEngine -> {
+    public static final SslEngineConfigurator ENABLE_HOSTNAME_VERIFICATION = sslEngine -> {
         SSLParameters sslParameters = SocketConfigurators.enableHostnameVerification(sslEngine.getSSLParameters());
         sslEngine.setSSLParameters(sslParameters);
     };
