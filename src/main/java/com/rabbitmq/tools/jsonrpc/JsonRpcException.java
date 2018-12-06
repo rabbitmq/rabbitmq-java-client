@@ -27,22 +27,25 @@ public class JsonRpcException extends Exception {
     /**
      * Usually the constant string, "JSONRPCError"
      */
-    private String name;
+    private final String name;
     /**
      * Error code
      */
-    private int code;
+    private final int code;
     /**
      * Error message
      */
-    private String message;
+    private final String message;
     /**
      * Error detail object - may not always be present or meaningful
      */
-    private Object error;
+    private final Object error;
 
     public JsonRpcException() {
-        // no work needed in default no-arg constructor
+        this.name = null;
+        this.code = -1;
+        this.message = null;
+        this.error = null;
     }
 
     public JsonRpcException(String detailMessage, String name, int code, String message, Object error) {
