@@ -26,12 +26,12 @@ import com.rabbitmq.tools.json.JSONUtil;
  */
 public class ParameterDescription {
     /** The parameter name. */
-    public String name;
+    private String name;
     /**
      * The parameter type - one of "bit", "num", "str", "arr",
      * "obj", "any" or "nil".
      */
-    public String type;
+    private String type;
 
     public ParameterDescription() {
         // Nothing to do here.
@@ -56,5 +56,13 @@ public class ParameterDescription {
         if (Map.class.isAssignableFrom(c)) return "obj";
         if (Collection.class.isAssignableFrom(c)) return "arr";
         return "any";
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getType() {
+        return type;
     }
 }

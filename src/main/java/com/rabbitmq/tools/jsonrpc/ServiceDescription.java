@@ -30,15 +30,15 @@ public class ServiceDescription {
     public static final String JSON_RPC_VERSION = "1.1";
 
     /** The service name */
-    public String name;
+    private String name;
     /** ID for the service */
-    public String id;
+    private String id;
     /** Version of the service */
-    public String version;
+    private String version;
     /** Human-readable summary for the service */
-    public String summary;
+    private String summary;
     /** Human-readable instructions for how to get information on the service's operation */
-    public String help;
+    private String help;
 
     /** Map from procedure name to {@link ProcedureDescription} */
     private Map<String, ProcedureDescription> procedures;
@@ -75,7 +75,7 @@ public class ServiceDescription {
 
     /** Private API - used during initialization */
     private void addProcedure(ProcedureDescription proc) {
-        procedures.put(proc.name + "/" + proc.arity(), proc);
+        procedures.put(proc.getName() + "/" + proc.arity(), proc);
     }
 
     /**
@@ -90,5 +90,25 @@ public class ServiceDescription {
                                                ", arity " + arity);
         }
         return proc;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public String getHelp() {
+        return help;
     }
 }

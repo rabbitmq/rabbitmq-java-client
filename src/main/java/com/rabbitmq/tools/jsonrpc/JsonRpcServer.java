@@ -52,15 +52,11 @@ public class JsonRpcServer extends StringRpcServer {
     /**
      * Holds the JSON-RPC service description for this client.
      */
-    public ServiceDescription serviceDescription;
-    /**
-     * The interface this server implements.
-     */
-    public Class<?> interfaceClass;
+    private ServiceDescription serviceDescription;
     /**
      * The instance backing this server.
      */
-    public Object interfaceInstance;
+    private Object interfaceInstance;
 
     public JsonRpcServer(Channel channel,
         Class<?> interfaceClass,
@@ -119,7 +115,9 @@ public class JsonRpcServer extends StringRpcServer {
     }
 
     private void init(Class<?> interfaceClass, Object interfaceInstance) {
-        this.interfaceClass = interfaceClass;
+        /**
+         * The interface this server implements.
+         */
         this.interfaceInstance = interfaceInstance;
         this.serviceDescription = new ServiceDescription(interfaceClass);
     }
