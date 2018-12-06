@@ -111,4 +111,24 @@ public class ServiceDescription {
     public String getHelp() {
         return help;
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
+
+    public void setHelp(String help) {
+        this.help = help;
+    }
 }

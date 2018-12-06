@@ -155,4 +155,20 @@ public class ProcedureDescription {
     public boolean isIdempotent() {
         return idempotent;
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
+
+    public void setHelp(String help) {
+        this.help = help;
+    }
+
+    public void setIdempotent(boolean idempotent) {
+        this.idempotent = idempotent;
+    }
 }
