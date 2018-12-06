@@ -184,7 +184,8 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     @Override
     public Channel createChannel() throws IOException {
         RecoveryAwareChannelN ch = (RecoveryAwareChannelN) delegate.createChannel();
-        if (ch == null) {
+        // No Sonar: the channel could be null
+        if (ch == null) { //NOSONAR
             return null;
         } else {
             return this.wrapChannel(ch);
@@ -605,7 +606,9 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         while (!manuallyClosed) {
             try {
                 attempts++;
-				RecoveryAwareAMQConnection newConn = this.cf.newConnection();
+                // No Sonar: no need to close this resource because we're the one that creates it
+                // and hands it over to the user
+				RecoveryAwareAMQConnection newConn = this.cf.newConnection(); //NOSONAR
 				synchronized(recoveryLock) {
 					if (!manuallyClosed) {
 						// This is the standard case.				

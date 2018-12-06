@@ -143,8 +143,14 @@ public class ChannelManager {
                 for (CountDownLatch latch : sdSet) {
                     try {
                         int shutdownTimeout = ssWorkService.getShutdownTimeout();
-                        if (shutdownTimeout == 0) latch.await();
-                        else                      latch.await(shutdownTimeout, TimeUnit.MILLISECONDS);
+                        if (shutdownTimeout == 0) {
+                            latch.await();
+                        } else {
+                            boolean completed = latch.await(shutdownTimeout, TimeUnit.MILLISECONDS);
+                            if (!completed) {
+                                LOGGER.warn("Consumer dispatcher for channel didn't shutdown after waiting for {} ms", shutdownTimeout);
+                            }
+                        }
                     } catch (Throwable e) {
                          /*ignored*/
                     }

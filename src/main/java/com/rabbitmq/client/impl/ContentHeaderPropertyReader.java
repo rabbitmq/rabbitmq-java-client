@@ -34,10 +34,10 @@ public class ContentHeaderPropertyReader {
     private final ValueReader in;
 
     /** Current field flag word */
-    public int flagWord;
+    private int flagWord;
 
     /** Current flag position counter */
-    public int bitCount;
+    private int bitCount;
 
     /**
      * Protected API - Constructs a reader from the given input stream

@@ -54,7 +54,7 @@ public class ConnectionFactoryConfigurator {
     public static final String DEFAULT_PREFIX = "rabbitmq.";
 
     public static final String USERNAME = "username";
-    public static final String PASSWORD = "password";
+    public static final String PASSWORD = "password"; //NOSONAR
     public static final String VIRTUAL_HOST = "virtual.host";
     public static final String HOST = "host";
     public static final String PORT = "port";

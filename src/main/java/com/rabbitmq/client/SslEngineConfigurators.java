@@ -32,7 +32,7 @@ public abstract class SslEngineConfigurators {
     /**
      * Default {@link SslEngineConfigurator}, does nothing.
      */
-    public static AbstractSslEngineConfigurator DEFAULT = new AbstractSslEngineConfigurator() {
+    public static final AbstractSslEngineConfigurator DEFAULT = new AbstractSslEngineConfigurator() {
 
         @Override
         public void configure(SSLEngine sslEngine) {
@@ -46,7 +46,7 @@ public abstract class SslEngineConfigurators {
      * Requires Java 7 or more.
      *
      */
-    public static AbstractSslEngineConfigurator ENABLE_HOSTNAME_VERIFICATION = new AbstractSslEngineConfigurator() {
+    public static final AbstractSslEngineConfigurator ENABLE_HOSTNAME_VERIFICATION = new AbstractSslEngineConfigurator() {
 
         @Override
         public void configure(SSLEngine sslEngine) throws IOException {
