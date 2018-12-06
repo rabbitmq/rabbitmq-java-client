@@ -262,7 +262,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
 
         Object[] actuals = new Object[arity];
         for (int count = 0; count < params.length; count++) {
-            actuals[count] = coerce(args[count + 1], params[count].type);
+            actuals[count] = coerce(args[count + 1], params[count].getType());
         }
 
         return call(method, actuals);
