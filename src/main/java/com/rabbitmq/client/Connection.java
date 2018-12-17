@@ -19,6 +19,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -117,6 +118,9 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
      * Create a new channel, using an internally allocated channel number.
      * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
      * is enabled, the channel returned by this method will be {@link Recoverable}.
+     * <p>
+     * Use {@link #openChannel()} if you want to use an {@link Optional} to deal
+     * with a {@null} value.
      *
      * @return a new channel descriptor, or null if none is available
      * @throws IOException if an I/O problem is encountered
@@ -125,11 +129,50 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
 
     /**
      * Create a new channel, using the specified channel number if possible.
+     * <p>
+     * Use {@link #openChannel(int)} if you want to use an {@link Optional} to deal
+     * with a {@null} value.
+     *
      * @param channelNumber the channel number to allocate
      * @return a new channel descriptor, or null if this channel number is already in use
      * @throws IOException if an I/O problem is encountered
      */
     Channel createChannel(int channelNumber) throws IOException;
+
+    /**
+     * Create a new channel wrapped in an {@link Optional}.
+     * The channel number is allocated internally.
+     * <p>
+     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * is enabled, the channel returned by this method will be {@link Recoverable}.
+     * <p>
+     * Use {@link #createChannel()} to return directly a {@link Channel} or {@code null}.
+     *
+     * @return an {@link Optional} containing the channel;
+     * never {@code null} but potentially empty if no channel is available
+     * @throws IOException if an I/O problem is encountered
+     * @see #createChannel()
+     * @since 5.6.0
+     */
+    default Optional<Channel> openChannel() throws IOException {
+        return Optional.ofNullable(createChannel());
+    }
+
+    /**
+     * Create a new channel, using the specified channel number if possible.
+     * <p>
+     * Use {@link #createChannel(int)} to return directly a {@link Channel} or {@code null}.
+     *
+     * @param channelNumber the channel number to allocate
+     * @return an {@link Optional} containing the channel,
+     * never {@code null} but potentially empty if this channel number is already in use
+     * @throws IOException if an I/O problem is encountered
+     * @see #createChannel(int)
+     * @since 5.6.0
+     */
+    default Optional<Channel> openChannel(int channelNumber) throws IOException {
+        return Optional.ofNullable(createChannel(channelNumber));
+    }
 
     /**
      * Close this connection and all its channels
