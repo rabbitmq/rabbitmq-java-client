@@ -68,7 +68,8 @@ import org.junit.runners.Suite;
     DefaultRetryHandlerTest.class,
     NioDeadlockOnConnectionClosing.class,
     GeneratedClassesTest.class,
-    RpcTopologyRecordingTest.class
+    RpcTopologyRecordingTest.class,
+    ConnectionTest.class
 })
 public class ClientTests {
 
