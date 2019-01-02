@@ -28,6 +28,11 @@ public class ClientVersion {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientVersion.class);
 
+    // We store the version property in an unusual way because relocating the package can rewrite the key in the property
+    // file, which results in spurious warnings being emitted at start-up.
+    private static final char[] VERSION_PROPERTY = new char[] {'c', 'o', 'm', '.', 'r', 'a', 'b', 'b', 'i', 't', 'm', 'q', '.',
+            'c', 'l', 'i', 'e', 'n', 't', '.', 'v', 'e', 'r', 's', 'i', 'o', 'n'};
+
     public static final String VERSION;
 
     static {
@@ -56,10 +61,12 @@ public class ClientVersion {
                 inputStream.close();
             }
         }
-        if (version.getProperty("com.rabbitmq.client.version") == null) {
-            throw new IllegalStateException("Coulnd't find version property in property file");
+        String propertyName = new String(VERSION_PROPERTY);
+        String versionProperty = version.getProperty(propertyName);
+        if (versionProperty == null) {
+            throw new IllegalStateException("Couldn't find version property in property file");
         }
-        return version.getProperty("com.rabbitmq.client.version");
+        return versionProperty;
     }
 
     private static final String getVersionFromPackage() {
