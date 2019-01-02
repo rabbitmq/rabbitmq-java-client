@@ -30,6 +30,7 @@ public class ClientVersion {
 
     // We store the version property in an unusual way because relocating the package can rewrite the key in the property
     // file, which results in spurious warnings being emitted at start-up.
+    // see https://github.com/rabbitmq/rabbitmq-java-client/issues/436
     private static final char[] VERSION_PROPERTY = new char[] {'c', 'o', 'm', '.', 'r', 'a', 'b', 'b', 'i', 't', 'm', 'q', '.',
             'c', 'l', 'i', 'e', 'n', 't', '.', 'v', 'e', 'r', 's', 'i', 'o', 'n'};
 
