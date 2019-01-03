@@ -1,7 +1,0 @@
-com.rabbitmq.client
-com.rabbitmq.client.impl
-com.rabbitmq.client.impl.nio
-com.rabbitmq.client.impl.recovery
-com.rabbitmq.tools.json
-com.rabbitmq.tools.jsonrpc
-com.rabbitmq.utility
