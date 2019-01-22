@@ -39,7 +39,7 @@ public class ConnectionTest {
     @Parameterized.Parameter
     public TestConfigurator configurator;
     @Mock
-    Connection c = mock(Connection.class);
+    MyConnection c = mock(MyConnection.class);
     @Mock
     Channel ch = mock(Channel.class);
 
@@ -122,6 +122,11 @@ public class ConnectionTest {
         public Optional<Channel> open(Connection c) throws IOException {
             return c.openChannel(1);
         }
+    }
+
+    // trick to make Mockito call the optional method defined in the interface
+    static abstract class MyConnection implements Connection {
+
     }
 
 }
