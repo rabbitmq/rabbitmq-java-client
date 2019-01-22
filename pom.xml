@@ -75,8 +75,8 @@
     <keytool.maven.plugin.version>1.5</keytool.maven.plugin.version>
     <build.helper.maven-plugin.version>1.12</build.helper.maven-plugin.version>
     <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
-    <maven.surefire.plugin.version>2.19.1</maven.surefire.plugin.version>
-    <maven.failsafe.plugin.version>2.19.1</maven.failsafe.plugin.version>
+    <maven.surefire.plugin.version>2.22.1</maven.surefire.plugin.version>
+    <maven.failsafe.plugin.version>2.22.1</maven.failsafe.plugin.version>
     <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
     <maven.jar.plugin.version>3.0.2</maven.jar.plugin.version>
     <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
