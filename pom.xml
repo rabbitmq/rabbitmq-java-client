@@ -60,8 +60,8 @@
     <jackson.version>2.9.8</jackson.version>
     <logback.version>1.2.3</logback.version>
     <junit.version>4.12</junit.version>
-    <awaitility.version>3.1.0</awaitility.version>
-    <mockito.version>2.21.0</mockito.version>
+    <awaitility.version>3.1.5</awaitility.version>
+    <mockito.version>2.23.4</mockito.version>
 
     <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
