@@ -56,13 +56,13 @@
 
     <slf4j.version>1.7.25</slf4j.version>
     <metrics.version>3.2.6</metrics.version>
-    <micrometer.version>1.0.2</micrometer.version>
+    <micrometer.version>1.0.9</micrometer.version>
     <jackson.version>2.9.8</jackson.version>
     <httpclient.version>4.5.6</httpclient.version>
     <logback.version>1.2.3</logback.version>
     <junit.version>4.12</junit.version>
-    <awaitility.version>3.1.0</awaitility.version>
-    <mockito.version>2.16.0</mockito.version>
+    <awaitility.version>3.1.5</awaitility.version>
+    <mockito.version>2.23.4</mockito.version>
     <bouncycastle.version>1.60</bouncycastle.version>
 
     <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
