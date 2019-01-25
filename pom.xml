@@ -504,6 +504,7 @@
               <additionalOptions>${javadoc.opts}</additionalOptions>
               <additionalJOption>${javadoc.joption}</additionalJOption>
               <quiet>true</quiet>
+              <source>8</source>
             </configuration>
             <executions>
               <execution>
@@ -557,6 +558,7 @@
               <additionalOptions>${javadoc.opts}</additionalOptions>
               <additionalJOption>${javadoc.joption}</additionalJOption>
               <quiet>true</quiet>
+              <source>8</source>
             </configuration>
             <executions>
               <execution>
@@ -611,6 +613,7 @@
               <additionalOptions>${javadoc.opts}</additionalOptions>
               <additionalJOption>${javadoc.joption}</additionalJOption>
               <quiet>true</quiet>
+              <source>8</source>
             </configuration>
             <executions>
               <execution>
@@ -1001,6 +1004,7 @@
           <additionalOptions>${javadoc.opts}</additionalOptions>
           <additionalJOption>${javadoc.joption}</additionalJOption>
           <quiet>true</quiet>
+          <source>8</source>
         </configuration>
       </plugin>
 
