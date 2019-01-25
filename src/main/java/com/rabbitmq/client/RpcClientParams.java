@@ -146,7 +146,7 @@ public class RpcClientParams {
      *
      * @param useMandatory
      * @return
-     * @see #replyHandler(Function)
+     * @see #replyHandler(RpcClient.RpcClientReplyHandler)
      */
     public RpcClientParams useMandatory(boolean useMandatory) {
         this.useMandatory = useMandatory;
