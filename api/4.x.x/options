@@ -1,0 +1,26 @@
+-classpath
+'/home/acogoluegnes/.m2/repository/commons-logging/commons-logging/1.2/commons-logging-1.2.jar:/home/acogoluegnes/.m2/repository/org/latencyutils/LatencyUtils/2.0.3/LatencyUtils-2.0.3.jar:/home/acogoluegnes/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.9.0/jackson-annotations-2.9.0.jar:/home/acogoluegnes/.m2/repository/io/micrometer/micrometer-core/1.0.9/micrometer-core-1.0.9.jar:/home/acogoluegnes/.m2/repository/org/hdrhistogram/HdrHistogram/2.1.10/HdrHistogram-2.1.10.jar:/home/acogoluegnes/.m2/repository/org/apache/httpcomponents/httpcore/4.4.10/httpcore-4.4.10.jar:/home/acogoluegnes/.m2/repository/commons-codec/commons-codec/1.10/commons-codec-1.10.jar:/home/acogoluegnes/.m2/repository/org/apache/httpcomponents/httpclient/4.5.6/httpclient-4.5.6.jar:/home/acogoluegnes/.m2/repository/org/slf4j/slf4j-api/1.7.25/slf4j-api-1.7.25.jar:/home/acogoluegnes/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.9.8/jackson-databind-2.9.8.jar:/home/acogoluegnes/.m2/repository/io/dropwizard/metrics/metrics-core/3.2.6/metrics-core-3.2.6.jar:/home/acogoluegnes/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.9.8/jackson-core-2.9.8.jar'
+-encoding
+'UTF-8'
+-protected
+-quiet
+-sourcepath
+'/tmp/rabbitmq-java-client/src/main/java:/tmp/rabbitmq-java-client/target/generated-sources/src/main/java'
+-Xdoclint:none
+-author
+-bottom
+'Copyright &#169; 2019 <a href="http://www.rabbitmq.com">Pivotal Software, Inc.</a>. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/tmp/rabbitmq-java-client/target/site/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'RabbitMQ Java Client 4.10.0 API'
+-linkoffline
+'https://docs.oracle.com/javase/6/docs/api' '/tmp/rabbitmq-java-client/target/javadoc-bundle-options'
+-use
+-version
+-windowtitle
+'RabbitMQ Java Client 4.10.0 API'
