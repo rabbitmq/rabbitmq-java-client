@@ -33,7 +33,8 @@ import java.util.List;
 	BadVerifiedConnection.class,
 	ConnectionFactoryDefaultTlsVersion.class,
 	NioTlsUnverifiedConnection.class,
-	HostnameVerification.class
+	HostnameVerification.class,
+	TlsConnectionLogging.class
 })
 public class SSLTests {
 

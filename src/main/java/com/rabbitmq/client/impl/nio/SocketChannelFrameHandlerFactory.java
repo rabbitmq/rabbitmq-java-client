@@ -20,10 +20,14 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.SslContextFactory;
 import com.rabbitmq.client.impl.AbstractFrameHandlerFactory;
 import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.impl.TlsUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -38,6 +42,8 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  */
 public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactory {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SocketChannelFrameHandler.class);
 
     final NioParams nioParams;
 
@@ -91,10 +97,17 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
             if (ssl) {
                 sslEngine.beginHandshake();
-                boolean handshake = SslEngineHelper.doHandshake(channel, sslEngine);
-                if (!handshake) {
-                    throw new SSLException("TLS handshake failed");
+                try {
+                    boolean handshake = SslEngineHelper.doHandshake(channel, sslEngine);
+                    if (!handshake) {
+                        LOGGER.error("TLS connection failed");
+                        throw new SSLException("TLS handshake failed");
+                    }
+                } catch (SSLHandshakeException e) {
+                    LOGGER.error("TLS connection failed: {}", e.getMessage());
+                    throw e;
                 }
+                TlsUtils.logPeerCertificateInfo(sslEngine.getSession());
             }
 
             channel.configureBlocking(false);
