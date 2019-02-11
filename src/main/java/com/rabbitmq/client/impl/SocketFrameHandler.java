@@ -16,7 +16,11 @@
 package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.AMQP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSocket;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -31,6 +35,9 @@ import java.util.concurrent.TimeUnit;
  */
 
 public class SocketFrameHandler implements FrameHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SocketFrameHandler.class);
+
     /** The underlying socket */
     private final Socket _socket;
 
@@ -122,7 +129,12 @@ public class SocketFrameHandler implements FrameHandler {
             _outputStream.write(1);
             _outputStream.write(major);
             _outputStream.write(minor);
-            _outputStream.flush();
+            try {
+                _outputStream.flush();
+            } catch (SSLHandshakeException e) {
+                LOGGER.error("TLS connection failed: {}", e.getMessage());
+                throw e;
+            }
         }
     }
 
@@ -144,13 +156,21 @@ public class SocketFrameHandler implements FrameHandler {
             _outputStream.write(major);
             _outputStream.write(minor);
             _outputStream.write(revision);
-            _outputStream.flush();
+            try {
+                _outputStream.flush();
+            } catch (SSLHandshakeException e) {
+                LOGGER.error("TLS connection failed: {}", e.getMessage());
+                throw e;
+            }
         }
     }
 
     @Override
     public void sendHeader() throws IOException {
         sendHeader(AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR, AMQP.PROTOCOL.REVISION);
+        if (this._socket instanceof SSLSocket) {
+            TlsUtils.logPeerCertificateInfo(((SSLSocket) this._socket).getSession());
+        }
     }
 
     @Override
