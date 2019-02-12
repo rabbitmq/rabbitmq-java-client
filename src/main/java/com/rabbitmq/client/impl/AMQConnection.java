@@ -857,7 +857,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         SocketCloseWait scw = new SocketCloseWait(sse);
 
         // if shutdown executor is configured, use it. Otherwise
-        // execut socket close monitor the old fashioned way.
+        // execute socket close monitor the old fashioned way.
         // see rabbitmq/rabbitmq-java-client#91
         if(shutdownExecutor != null) {
             shutdownExecutor.execute(scw);
