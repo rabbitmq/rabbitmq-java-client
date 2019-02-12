@@ -85,9 +85,9 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
 
     /**
      * This tests whether the bindings attached to a durable exchange
-     * are correctly blown away when the exhange is nuked.
+     * are correctly blown away when the exchange is nuked.
      *
-     * This complements a unit test for testing non-durable exhanges.
+     * This complements a unit test for testing non-durable exchanges.
      * In that case, an exchange is deleted and you expect any
      * bindings hanging to it to be deleted as well. To verify this,
      * the exchange is deleted and then recreated.
