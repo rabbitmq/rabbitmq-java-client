@@ -153,7 +153,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * The unsubscribe should cause the queue to auto_delete, which in
      * turn should cause the exchange to auto_delete.
      *
-     * Then re-declare the queue again and try to rebind it to the same exhange.
+     * Then re-declare the queue again and try to rebind it to the same exchange.
      *
      * Because the exchange has been auto-deleted, the bind operation
      * should fail.
