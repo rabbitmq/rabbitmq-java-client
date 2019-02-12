@@ -96,7 +96,7 @@ public class AlternateExchange extends BrokerTestCase
      *
      * @param name the name of the exchange to be created, and queue
      *        to be bound
-     * @param ae the name of the alternate-exchage
+     * @param ae the name of the alternate-exchange
      */
     protected void setupRouting(String name, String ae) throws IOException {
         Map<String, Object> args = new HashMap<String, Object>();
