@@ -602,7 +602,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         boolean notify = false;
         try {
             // Synchronize the block below to avoid race conditions in case
-            // connnection wants to send Connection-CloseOK
+            // connection wants to send Connection-CloseOK
             synchronized (_channelMutex) {
                 startProcessShutdownSignal(signal, !initiatedByApplication, true);
                 quiescingRpc(reason, k);
