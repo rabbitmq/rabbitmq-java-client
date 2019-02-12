@@ -23,7 +23,7 @@ import java.util.BitSet;
  * {@link BitSet} representation of the free integers.
  * </p>
  *
- * <h2>Concurrecy Semantics:</h2>
+ * <h2>Concurrency Semantics:</h2>
  * This class is <b><i>not</i></b> thread safe.
  *
  * <h2>Implementation notes:</h2>
