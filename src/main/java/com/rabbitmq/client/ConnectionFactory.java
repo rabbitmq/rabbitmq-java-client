@@ -310,7 +310,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting the fields in an AMQP URI: host,
      * port, username, password and virtual host.  If any part of the
-     * URI is ommited, the ConnectionFactory's corresponding variable
+     * URI is omitted, the ConnectionFactory's corresponding variable
      * is left unchanged.
      * @param uri is the AMQP URI containing the data
      */
@@ -369,7 +369,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting the fields in an AMQP URI: host,
      * port, username, password and virtual host.  If any part of the
-     * URI is ommited, the ConnectionFactory's corresponding variable
+     * URI is omitted, the ConnectionFactory's corresponding variable
      * is left unchanged.  Note that not all valid AMQP URIs are
      * accepted; in particular, the hostname must be given if the
      * port, username or password are given, and escapes in the
