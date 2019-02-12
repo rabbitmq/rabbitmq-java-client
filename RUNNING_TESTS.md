@@ -21,7 +21,7 @@ can control the running node.
 
 `./mvnw verify` will start those nodes with the appropriate configuration.
 
-To easily fullfil all those requirements, you should use `make deps` to
+To easily fulfill all those requirements, you should use `make deps` to
 fetch the dependencies in the `deps` directory.
 
 You then run Maven with the `deps.dir` property set like this:
