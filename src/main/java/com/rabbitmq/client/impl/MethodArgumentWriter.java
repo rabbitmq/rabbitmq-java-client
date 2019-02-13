@@ -38,7 +38,7 @@ public class MethodArgumentWriter
     private int bitMask;
 
     /**
-     * Constructs a MethodArgumentWriter targetting the given DataOutputStream.
+     * Constructs a MethodArgumentWriter targeting the given DataOutputStream.
      */
     public MethodArgumentWriter(ValueWriter out)
     {
