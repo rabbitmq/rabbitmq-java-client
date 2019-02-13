@@ -23,13 +23,11 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 /**
  * Utility to extract information from X509 certificates.
  *
- * @since 5.7.0
+ * @since 4.11.0
  */
 public class TlsUtils {
 
@@ -47,25 +45,53 @@ public class TlsUtils {
         put("1.3.6.1.5.5.7.3.8", "Binding the hash of an object to a time from an agreed-upon time");
     }});
     private static String PARSING_ERROR = "<parsing-error>";
-    private static final Map<String, BiFunction<byte[], X509Certificate, String>> EXTENSIONS = Collections.unmodifiableMap(
-            new HashMap<String, BiFunction<byte[], X509Certificate, String>>() {{
-                put("2.5.29.14", (v, c) -> "SubjectKeyIdentifier = " + octetStringHexDump(v));
-                put("2.5.29.15", (v, c) -> "KeyUsage = " + keyUsageBitString(c.getKeyUsage(), v));
-                put("2.5.29.16", (v, c) -> "PrivateKeyUsage = " + hexDump(0, v));
-                put("2.5.29.17", (v, c) -> {
-                    try {
-                        return "SubjectAlternativeName = " + sans(c, "/");
-                    } catch (CertificateParsingException e) {
-                        return "SubjectAlternativeName = " + PARSING_ERROR;
+    private static final Map<String, ExtensionStringConverter> EXTENSIONS = Collections.unmodifiableMap(
+            new HashMap<String, ExtensionStringConverter>() {{
+                put("2.5.29.14", new ExtensionStringConverter() {
+                    @Override
+                    public String convert(byte[] derOctetString, X509Certificate certificate) {
+                        return "SubjectKeyIdentifier = " + octetStringHexDump(derOctetString);
                     }
                 });
-                put("2.5.29.18", (v, c) -> "IssuerAlternativeName = " + hexDump(0, v));
-                put("2.5.29.19", (v, c) -> "BasicConstraints = " + basicConstraints(v));
-                put("2.5.29.30", (v, c) -> "NameConstraints = " + hexDump(0, v));
-                put("2.5.29.33", (v, c) -> "PolicyMappings = " + hexDump(0, v));
-                put("2.5.29.35", (v, c) -> "AuthorityKeyIdentifier = " + authorityKeyIdentifier(v));
-                put("2.5.29.36", (v, c) -> "PolicyConstraints = " + hexDump(0, v));
-                put("2.5.29.37", (v, c) -> "ExtendedKeyUsage = " + extendedKeyUsage(v, c));
+                put("2.5.29.15", new ExtensionStringConverter() {
+                    @Override
+                    public String convert(byte[] derOctetString, X509Certificate certificate) {
+                        return "KeyUsage = " + keyUsageBitString(certificate.getKeyUsage(), derOctetString);
+                    }
+                });
+                put("2.5.29.16", new HexDumpConverter("PrivateKeyUsage"));
+                put("2.5.29.17", new ExtensionStringConverter() {
+                    @Override
+                    public String convert(byte[] derOctetString, X509Certificate certificate) {
+                        try {
+                            return "SubjectAlternativeName = " + sans(certificate, "/");
+                        } catch (CertificateParsingException e) {
+                            return "SubjectAlternativeName = " + PARSING_ERROR;
+                        }
+                    }
+                });
+                put("2.5.29.18", new HexDumpConverter("IssuerAlternativeName"));
+                put("2.5.29.19", new ExtensionStringConverter() {
+                    @Override
+                    public String convert(byte[] derOctetString, X509Certificate certificate) {
+                        return "BasicConstraints = " + basicConstraints(derOctetString);
+                    }
+                });
+                put("2.5.29.30", new HexDumpConverter("NameConstraints"));
+                put("2.5.29.33", new HexDumpConverter("PolicyMappings"));
+                put("2.5.29.35", new ExtensionStringConverter() {
+                    @Override
+                    public String convert(byte[] derOctetString, X509Certificate certificate) {
+                        return "AuthorityKeyIdentifier = " + authorityKeyIdentifier(derOctetString);
+                    }
+                });
+                put("2.5.29.36", new HexDumpConverter("PolicyConstraints"));
+                put("2.5.29.37", new ExtensionStringConverter() {
+                    @Override
+                    public String convert(byte[] derOctetString, X509Certificate certificate) {
+                        return "ExtendedKeyUsage = " + extendedKeyUsage(derOctetString, certificate);
+                    }
+                });
             }});
 
     /**
@@ -96,7 +122,7 @@ public class TlsUtils {
      * Get a string representation of certificate info.
      *
      * @param certificate the certificate to analyze
-     * @param prefix the line prefix
+     * @param prefix      the line prefix
      * @return information about the certificate
      */
     public static String peerCertificateInfo(Certificate certificate, String prefix) {
@@ -112,12 +138,11 @@ public class TlsUtils {
     }
 
     private static String sans(X509Certificate c, String separator) throws CertificateParsingException {
-        return String.join(separator, Optional.ofNullable(c.getSubjectAlternativeNames())
-                .orElse(new ArrayList<>())
-                .stream()
-                .map(v -> v.toString())
-                .collect(Collectors.toList()));
+        Collection<List<?>> sans = c.getSubjectAlternativeNames();
+        sans = sans == null ? new ArrayList<List<?>>() : sans;
+        return join(separator, new ArrayList<List<?>>(sans));
     }
+
 
     /**
      * Human-readable representation of an X509 certificate extension.
@@ -129,31 +154,34 @@ public class TlsUtils {
      * other DER-encoded objects, making a comprehensive support in this utility
      * impossible.
      *
-     * @param oid extension OID
+     * @param oid            extension OID
      * @param derOctetString the extension value as a DER octet string
-     * @param certificate the certificate
+     * @param certificate    the certificate
      * @return the OID and the value
      * @see <a href="http://luca.ntop.org/Teaching/Appunti/asn1.html">A Layman's Guide to a Subset of ASN.1, BER, and DER</a>
      * @see <a href="https://docs.microsoft.com/en-us/windows/desktop/seccertenroll/about-der-encoding-of-asn-1-types">DER Encoding of ASN.1 Types</a>
      */
     public static String extensionPrettyPrint(String oid, byte[] derOctetString, X509Certificate certificate) {
         try {
-            return EXTENSIONS.getOrDefault(oid, (v, c) -> oid + " = " + hexDump(0, derOctetString))
-                    .apply(derOctetString, certificate);
+            ExtensionStringConverter converter = EXTENSIONS.get(oid);
+            if (converter == null) {
+                converter = new HexDumpConverter(oid);
+            }
+            return converter.convert(derOctetString, certificate);
         } catch (Exception e) {
             return oid + " = " + PARSING_ERROR;
         }
     }
 
     private static String extensions(X509Certificate certificate) {
-        List<String> extensions = new ArrayList<>();
+        List<String> extensions = new ArrayList<String>();
         for (String oid : certificate.getCriticalExtensionOIDs()) {
             extensions.add(extensionPrettyPrint(oid, certificate.getExtensionValue(oid), certificate) + " (critical)");
         }
         for (String oid : certificate.getNonCriticalExtensionOIDs()) {
             extensions.add(extensionPrettyPrint(oid, certificate.getExtensionValue(oid), certificate) + " (non-critical)");
         }
-        return String.join(", ", extensions);
+        return join(", ", extensions);
     }
 
     private static String octetStringHexDump(byte[] derOctetString) {
@@ -166,22 +194,22 @@ public class TlsUtils {
     }
 
     private static String hexDump(int start, byte[] derOctetString) {
-        List<String> hexs = new ArrayList<>();
+        List<String> hexs = new ArrayList<String>();
         for (int i = start; i < derOctetString.length; i++) {
             hexs.add(String.format("%02X", derOctetString[i]));
         }
-        return String.join(":", hexs);
+        return join(":", hexs);
     }
 
     private static String keyUsageBitString(boolean[] keyUsage, byte[] derOctetString) {
         if (keyUsage != null) {
-            List<String> usage = new ArrayList<>();
+            List<String> usage = new ArrayList<String>();
             for (int i = 0; i < keyUsage.length; i++) {
                 if (keyUsage[i]) {
                     usage.add(KEY_USAGE.get(i));
                 }
             }
-            return String.join("/", usage);
+            return join("/", usage);
         } else {
             return hexDump(0, derOctetString);
         }
@@ -217,12 +245,48 @@ public class TlsUtils {
             if (extendedKeyUsage == null) {
                 return hexDump(0, derOctetString);
             } else {
-                return String.join("/", extendedKeyUsage.stream()
-                        .map(oid -> EXTENDED_KEY_USAGE.getOrDefault(oid, oid))
-                        .collect(Collectors.toList()));
+                List<String> extendedKeyUsageLiteral = new ArrayList<String>();
+                for (String oid : extendedKeyUsage) {
+                    String literal = EXTENDED_KEY_USAGE.get(oid);
+                    extendedKeyUsageLiteral.add(literal == null ? oid : literal);
+                }
+                return join("/", extendedKeyUsageLiteral);
             }
         } catch (CertificateParsingException e) {
             return PARSING_ERROR;
+        }
+    }
+
+    private static String join(String separator, List<?> items) {
+        StringBuilder builder = new StringBuilder();
+        if (items != null) {
+            for (int i = 0; i < items.size(); i++) {
+                if (i > 0) {
+                    builder.append(separator);
+                }
+                builder.append(items.get(i));
+            }
+        }
+        return builder.toString();
+    }
+
+    private interface ExtensionStringConverter {
+
+        String convert(byte[] derOctetString, X509Certificate certificate);
+
+    }
+
+    private static class HexDumpConverter implements ExtensionStringConverter {
+
+        private final String extension;
+
+        private HexDumpConverter(String extension) {
+            this.extension = extension;
+        }
+
+        @Override
+        public String convert(byte[] derOctetString, X509Certificate certificate) {
+            return extension + " = " + hexDump(0, derOctetString);
         }
     }
 
