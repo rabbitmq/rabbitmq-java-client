@@ -57,8 +57,9 @@ public class TlsConnectionLogging {
         return connectionFactory -> {
             connectionFactory.useNio();
             AtomicReference<SSLEngine> sslEngineCaptor = new AtomicReference<>();
-            connectionFactory.setNioParams(new NioParams()
-                    .setSslEngineConfigurator(sslEngine -> sslEngineCaptor.set(sslEngine)));
+            NioParams nioParams = new NioParams();
+            nioParams.setSslEngineConfigurator(sslEngine -> sslEngineCaptor.set(sslEngine));
+            connectionFactory.setNioParams(nioParams);
             return () -> sslEngineCaptor.get().getSession();
         };
     }
