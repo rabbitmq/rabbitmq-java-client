@@ -49,7 +49,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
         Binding binding = setupExchangeBindings(false);
         channel.basicPublish(binding.x, binding.k, null, payload);
 
-        // Purge the queue, and test that we don't recieve a message
+        // Purge the queue, and test that we don't receive a message
         channel.queuePurge(binding.q);
 
         GetResponse response = channel.basicGet(binding.q, true);
@@ -153,7 +153,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
      * The unsubscribe should cause the queue to auto_delete, which in
      * turn should cause the exchange to auto_delete.
      *
-     * Then re-declare the queue again and try to rebind it to the same exhange.
+     * Then re-declare the queue again and try to rebind it to the same exchange.
      *
      * Because the exchange has been auto-deleted, the bind operation
      * should fail.

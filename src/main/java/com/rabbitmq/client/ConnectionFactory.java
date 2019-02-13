@@ -307,7 +307,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting the fields in an AMQP URI: host,
      * port, username, password and virtual host.  If any part of the
-     * URI is ommited, the ConnectionFactory's corresponding variable
+     * URI is omitted, the ConnectionFactory's corresponding variable
      * is left unchanged.
      * @param uri is the AMQP URI containing the data
      */
@@ -366,7 +366,7 @@ public class ConnectionFactory implements Cloneable {
     /**
      * Convenience method for setting the fields in an AMQP URI: host,
      * port, username, password and virtual host.  If any part of the
-     * URI is ommited, the ConnectionFactory's corresponding variable
+     * URI is omitted, the ConnectionFactory's corresponding variable
      * is left unchanged.  Note that not all valid AMQP URIs are
      * accepted; in particular, the hostname must be given if the
      * port, username or password are given, and escapes in the
@@ -674,7 +674,7 @@ public class ConnectionFactory implements Cloneable {
     public void useSslProtocol()
         throws NoSuchAlgorithmException, KeyManagementException
     {
-        useSslProtocol(computeDefaultTlsProcotol(SSLContext.getDefault().getSupportedSSLParameters().getProtocols()));
+        useSslProtocol(computeDefaultTlsProtocol(SSLContext.getDefault().getSupportedSSLParameters().getProtocols()));
     }
 
     /**
@@ -777,7 +777,7 @@ public class ConnectionFactory implements Cloneable {
         }
     }
 
-    public static String computeDefaultTlsProcotol(String[] supportedProtocols) {
+    public static String computeDefaultTlsProtocol(String[] supportedProtocols) {
         if(supportedProtocols != null) {
             for (String supportedProtocol : supportedProtocols) {
                 if(PREFERRED_TLS_PROTOCOL.equalsIgnoreCase(supportedProtocol)) {

@@ -129,7 +129,7 @@ public class SslContextFactoryTest {
     }
 
     private String tlsProtocol() throws NoSuchAlgorithmException {
-        return ConnectionFactory.computeDefaultTlsProcotol(SSLContext.getDefault().getSupportedSSLParameters().getProtocols());
+        return ConnectionFactory.computeDefaultTlsProtocol(SSLContext.getDefault().getSupportedSSLParameters().getProtocols());
     }
 
     private static class TrustNothingTrustManager implements X509TrustManager {
