@@ -49,7 +49,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
         Binding binding = setupExchangeBindings(false);
         channel.basicPublish(binding.x, binding.k, null, payload);
 
-        // Purge the queue, and test that we don't recieve a message
+        // Purge the queue, and test that we don't receive a message
         channel.queuePurge(binding.q);
 
         GetResponse response = channel.basicGet(binding.q, true);
