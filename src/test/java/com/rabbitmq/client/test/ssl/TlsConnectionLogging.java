@@ -18,17 +18,50 @@ package com.rabbitmq.client.test.ssl;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.TlsUtils;
+import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.test.TestUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import javax.net.ssl.*;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertNotNull;
 
+@RunWith(Parameterized.class)
 public class TlsConnectionLogging {
+
+    @Parameterized.Parameter
+    public Function<ConnectionFactory, Supplier<SSLSession>> configurer;
+
+    @Parameterized.Parameters
+    public static Object[] data() {
+        return new Object[]{blockingIo(), nio()};
+    }
+
+    public static Function<ConnectionFactory, Supplier<SSLSession>> blockingIo() {
+        return connectionFactory -> {
+            connectionFactory.useBlockingIo();
+            AtomicReference<SSLSocket> socketCaptor = new AtomicReference<>();
+            connectionFactory.setSocketConfigurator(socket -> socketCaptor.set((SSLSocket) socket));
+            return () -> socketCaptor.get().getSession();
+        };
+    }
+
+    public static Function<ConnectionFactory, Supplier<SSLSession>> nio() {
+        return connectionFactory -> {
+            connectionFactory.useNio();
+            AtomicReference<SSLEngine> sslEngineCaptor = new AtomicReference<>();
+            connectionFactory.setNioParams(new NioParams()
+                    .setSslEngineConfigurator(sslEngine -> sslEngineCaptor.set(sslEngine)));
+            return () -> sslEngineCaptor.get().getSession();
+        };
+    }
 
     @Test
     public void certificateInfoAreProperlyExtracted() throws Exception {
@@ -36,11 +69,9 @@ public class TlsConnectionLogging {
         sslContext.init(null, new TrustManager[]{new AlwaysTrustTrustManager()}, null);
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
         connectionFactory.useSslProtocol(sslContext);
-        connectionFactory.useBlockingIo();
-        AtomicReference<SSLSocket> socketCaptor = new AtomicReference<>();
-        connectionFactory.setSocketConfigurator(socket -> socketCaptor.set((SSLSocket) socket));
+        Supplier<SSLSession> sslSessionSupplier = configurer.apply(connectionFactory);
         try (Connection ignored = connectionFactory.newConnection()) {
-            SSLSession session = socketCaptor.get().getSession();
+            SSLSession session = sslSessionSupplier.get();
             assertNotNull(session);
             String info = TlsUtils.peerCertificateInfo(session.getPeerCertificates()[0], "some prefix");
             Assertions.assertThat(info).contains("some prefix")
