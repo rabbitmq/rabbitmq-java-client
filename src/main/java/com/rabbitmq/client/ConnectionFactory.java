@@ -676,7 +676,7 @@ public class ConnectionFactory implements Cloneable {
     public void useSslProtocol()
         throws NoSuchAlgorithmException, KeyManagementException
     {
-        useSslProtocol(computeDefaultTlsProcotol(SSLContext.getDefault().getSupportedSSLParameters().getProtocols()));
+        useSslProtocol(computeDefaultTlsProtocol(SSLContext.getDefault().getSupportedSSLParameters().getProtocols()));
     }
 
     /**
@@ -832,7 +832,7 @@ public class ConnectionFactory implements Cloneable {
         }
     }
 
-    public static String computeDefaultTlsProcotol(String[] supportedProtocols) {
+    public static String computeDefaultTlsProtocol(String[] supportedProtocols) {
         if(supportedProtocols != null) {
             for (String supportedProtocol : supportedProtocols) {
                 if(PREFERRED_TLS_PROTOCOL.equalsIgnoreCase(supportedProtocol)) {
