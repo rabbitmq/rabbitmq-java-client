@@ -687,7 +687,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
                 recoverEntitiesAsynchronously(executor, Utility.copy(recordedBindings));
                 recoverEntitiesAsynchronously(executor, Utility.copy(consumers).values());
             } catch (final Exception cause) {
-                final String message = "Caught an exception while recovering toplogy: " + cause.getMessage();
+                final String message = "Caught an exception while recovering topology: " + cause.getMessage();
                 final TopologyRecoveryException e = new TopologyRecoveryException(message, cause);
                 getExceptionHandler().handleTopologyRecoveryException(delegate, null, e);
             }
