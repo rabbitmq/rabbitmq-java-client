@@ -39,28 +39,36 @@ import com.rabbitmq.client.test.BrokerTestCase;
 public class CcRoutes extends BrokerTestCase  {
 
     static private final String[] queues = new String[]{"queue1", "queue2", "queue3"};
-    protected final String exDirect = "direct_cc_exchange";
-    protected final String exTopic = "topic_cc_exchange";
-    protected BasicProperties.Builder propsBuilder;
+    private final String exDirect = "direct_cc_exchange";
+    private final String exTopic = "topic_cc_exchange";
+    private BasicProperties.Builder propsBuilder;
     protected Map<String, Object> headers;
-    protected List<String> ccList;
-    protected List<String> bccList;
+    private List<String> ccList;
+    private List<String> bccList;
 
     @Override public void setUp() throws IOException, TimeoutException {
         super.setUp();
         propsBuilder = new BasicProperties.Builder();
-        headers = new HashMap<String, Object>();
-        ccList = new ArrayList<String>();
-        bccList = new ArrayList<String>();
+        headers = new HashMap<>();
+        ccList = new ArrayList<>();
+        bccList = new ArrayList<>();
     }
 
     @Override protected void createResources() throws IOException, TimeoutException {
         super.createResources();
         for (String q : queues) {
-            channel.queueDeclare(q, false, true, true, null);
+            channel.queueDeclare(q, false, false, true, null);
         }
         channel.exchangeDeclare(exDirect, "direct", false, true, null);
         channel.exchangeDeclare(exTopic, "topic", false, true, null);
+    }
+
+    @Override
+    protected void releaseResources() throws IOException {
+        super.releaseResources();
+        for (String q : queues) {
+            channel.queueDelete(q);
+        }
     }
 
     @Test public void ccList() throws IOException {
