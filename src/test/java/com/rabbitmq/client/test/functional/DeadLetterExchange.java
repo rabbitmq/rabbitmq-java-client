@@ -77,9 +77,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         declareQueue(TEST_QUEUE_NAME, DLX, "routing_key", null);
     }
 
-    @Test public void declareQueueWithInvalidDeadLetterExchangeArg()
-        throws IOException
-    {
+    @Test public void declareQueueWithInvalidDeadLetterExchangeArg() {
         try {
             declareQueue(133);
             fail("x-dead-letter-exchange must be a valid exchange name");
@@ -101,9 +99,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         }
     }
 
-    @Test public void declareQueueWithInvalidDeadLetterRoutingKeyArg()
-        throws IOException
-    {
+    @Test public void declareQueueWithInvalidDeadLetterRoutingKeyArg() {
         try {
             declareQueue("foo", "amq.direct", 144, null);
             fail("x-dead-letter-routing-key must be a string");
@@ -125,11 +121,9 @@ public class DeadLetterExchange extends BrokerTestCase {
         }
     }
 
-    @Test public void declareQueueWithRoutingKeyButNoDeadLetterExchange()
-        throws IOException
-    {
+    @Test public void declareQueueWithRoutingKeyButNoDeadLetterExchange() {
         try {
-            Map<String, Object> args = new HashMap<String, Object>();
+            Map<String, Object> args = new HashMap<>();
             args.put(DLX_RK_ARG, "foo");
 
             channel.queueDeclare(randomQueueName(), false, true, false, args);
@@ -139,11 +133,10 @@ public class DeadLetterExchange extends BrokerTestCase {
         }
     }
 
-    @Test public void redeclareQueueWithRoutingKeyButNoDeadLetterExchange()
-        throws IOException, InterruptedException {
+    @Test public void redeclareQueueWithRoutingKeyButNoDeadLetterExchange() {
         try {
             String queueName = randomQueueName();
-            Map<String, Object> args = new HashMap<String, Object>();
+            Map<String, Object> args = new HashMap<>();
             channel.queueDeclare(queueName, false, true, false, args);
 
             args.put(DLX_RK_ARG, "foo");
@@ -165,7 +158,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     @Test public void deadLetterQueueTTLPromptExpiry() throws Exception {
-        Map<String, Object> args = new HashMap<String, Object>();
+        Map<String, Object> args = new HashMap<>();
         args.put("x-message-ttl", TTL);
         declareQueue(TEST_QUEUE_NAME, DLX, null, args);
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
@@ -205,7 +198,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         publishAt(start);
         basicGet(TEST_QUEUE_NAME);
         // publish a 2nd message and immediately fetch it in ack mode
-        publishAt(start + TTL * 1 / 2);
+        publishAt(start + TTL / 2);
         GetResponse r = channel.basicGet(TEST_QUEUE_NAME, false);
         // publish a 3rd message
         publishAt(start + TTL * 3 / 4);
@@ -250,20 +243,17 @@ public class DeadLetterExchange extends BrokerTestCase {
         // the DLQ *AND* should remain there, not getting removed after a subsequent
         // wait time > 100ms
         sleep(500);
-        consumeN(DLQ, 1, new WithResponse() {
-                @SuppressWarnings("unchecked")
-                public void process(GetResponse getResponse) {
-                    assertNull(getResponse.getProps().getExpiration());
-                    Map<String, Object> headers = getResponse.getProps().getHeaders();
-                    assertNotNull(headers);
-                    ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
-                    assertNotNull(death);
-                    assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired");
-                    final Map<String, Object> deathHeader =
-                        (Map<String, Object>)death.get(0);
-                    assertEquals("100", deathHeader.get("original-expiration").toString());
-                }
-            });
+        consumeN(DLQ, 1, getResponse -> {
+            assertNull(getResponse.getProps().getExpiration());
+            Map<String, Object> headers = getResponse.getProps().getHeaders();
+            assertNotNull(headers);
+            ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
+            assertNotNull(death);
+            assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired");
+            final Map<String, Object> deathHeader =
+                (Map<String, Object>)death.get(0);
+            assertEquals("100", deathHeader.get("original-expiration").toString());
+        });
     }
 
     @Test public void deadLetterOnReject() throws Exception {
@@ -315,23 +305,20 @@ public class DeadLetterExchange extends BrokerTestCase {
 
         // There should now be two copies of each message on DLQ2: one
         // with one set of death headers, and another with two sets.
-        consumeN(DLQ2, MSG_COUNT*2, new WithResponse() {
-                @SuppressWarnings("unchecked")
-                public void process(GetResponse getResponse) {
-                    Map<String, Object> headers = getResponse.getProps().getHeaders();
-                    assertNotNull(headers);
-                    ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
-                    assertNotNull(death);
-                    if (death.size() == 1) {
-                        assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired");
-                    } else if (death.size() == 2) {
-                        assertDeathReason(death, 0, DLQ, "expired");
-                        assertDeathReason(death, 1, TEST_QUEUE_NAME, "expired");
-                    } else {
-                        fail("message was dead-lettered more times than expected");
-                    }
-                }
-            });
+        consumeN(DLQ2, MSG_COUNT*2, getResponse -> {
+            Map<String, Object> headers = getResponse.getProps().getHeaders();
+            assertNotNull(headers);
+            ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
+            assertNotNull(death);
+            if (death.size() == 1) {
+                assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired");
+            } else if (death.size() == 2) {
+                assertDeathReason(death, 0, DLQ, "expired");
+                assertDeathReason(death, 1, TEST_QUEUE_NAME, "expired");
+            } else {
+                fail("message was dead-lettered more times than expected");
+            }
+        });
     }
 
     @Test public void deadLetterSelf() throws Exception {
@@ -379,9 +366,9 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(DLQ, DLX, "test");
         channel.queueBind(DLQ2, DLX, "test-other");
 
-        Map<String, Object> headers = new HashMap<String, Object>();
-        headers.put("CC", Arrays.asList("foo"));
-        headers.put("BCC", Arrays.asList("bar"));
+        Map<String, Object> headers = new HashMap<>();
+        headers.put("CC", Collections.singletonList("foo"));
+        headers.put("BCC", Collections.singletonList("bar"));
 
         publishN(MSG_COUNT, (new AMQP.BasicProperties.Builder())
                                .headers(headers)
@@ -390,27 +377,24 @@ public class DeadLetterExchange extends BrokerTestCase {
         sleep(100);
 
         consumeN(DLQ, 0, WithResponse.NULL);
-        consumeN(DLQ2, MSG_COUNT, new WithResponse() {
-                @SuppressWarnings("unchecked")
-                public void process(GetResponse getResponse) {
-                    Map<String, Object> headers = getResponse.getProps().getHeaders();
-                    assertNotNull(headers);
-                    assertNull(headers.get("CC"));
-                    assertNull(headers.get("BCC"));
+        consumeN(DLQ2, MSG_COUNT, getResponse -> {
+            Map<String, Object> headers1 = getResponse.getProps().getHeaders();
+            assertNotNull(headers1);
+            assertNull(headers1.get("CC"));
+            assertNull(headers1.get("BCC"));
 
-                    ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
-                    assertNotNull(death);
-                    assertEquals(1, death.size());
-                    assertDeathReason(death, 0, TEST_QUEUE_NAME,
-                                      "expired", "amq.direct",
-                                      Arrays.asList("test", "foo"));
-                }
-            });
+            ArrayList<Object> death = (ArrayList<Object>) headers1.get("x-death");
+            assertNotNull(death);
+            assertEquals(1, death.size());
+            assertDeathReason(death, 0, TEST_QUEUE_NAME,
+                              "expired", "amq.direct",
+                              Arrays.asList("test", "foo"));
+        });
     }
 
     @SuppressWarnings("unchecked")
     @Test public void republish() throws Exception {
-        Map<String, Object> args = new HashMap<String, Object>();
+        Map<String, Object> args = new HashMap<>();
         args.put("x-message-ttl", 100);
         declareQueue(TEST_QUEUE_NAME, DLX, null, args);
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
@@ -430,10 +414,10 @@ public class DeadLetterExchange extends BrokerTestCase {
         assertNotNull(death);
         assertEquals(1, death.size());
         assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired", "amq.direct",
-            Arrays.asList("test"));
+                Collections.singletonList("test"));
 
         // Make queue zero length
-        args = new HashMap<String, Object>();
+        args = new HashMap<>();
         args.put("x-max-length", 0);
         channel.queueDelete(TEST_QUEUE_NAME);
         declareQueue(TEST_QUEUE_NAME, DLX, null, args);
@@ -457,9 +441,9 @@ public class DeadLetterExchange extends BrokerTestCase {
         assertNotNull(death);
         assertEquals(2, death.size());
         assertDeathReason(death, 0, TEST_QUEUE_NAME, "maxlen", "amq.direct",
-            Arrays.asList("test"));
+                Collections.singletonList("test"));
         assertDeathReason(death, 1, TEST_QUEUE_NAME, "expired", "amq.direct",
-            Arrays.asList("test"));
+                Collections.singletonList("test"));
 
         //Set invalid headers
         headers.put("x-death", "[I, am, not, array]");
@@ -478,26 +462,24 @@ public class DeadLetterExchange extends BrokerTestCase {
         assertNotNull(death);
         assertEquals(1, death.size());
         assertDeathReason(death, 0, TEST_QUEUE_NAME, "maxlen", "amq.direct",
-            Arrays.asList("test"));
+                Collections.singletonList("test"));
 
     }
 
-    public void rejectionTest(final boolean useNack) throws Exception {
-        deadLetterTest(new Callable<Void>() {
-                public Void call() throws Exception {
-                    for (int x = 0; x < MSG_COUNT; x++) {
-                        GetResponse getResponse =
-                            channel.basicGet(TEST_QUEUE_NAME, false);
-                        long tag = getResponse.getEnvelope().getDeliveryTag();
-                        if (useNack) {
-                            channel.basicNack(tag, false, false);
-                        } else {
-                            channel.basicReject(tag, false);
-                        }
-                    }
-                    return null;
+    private void rejectionTest(final boolean useNack) throws Exception {
+        deadLetterTest((Callable<Void>) () -> {
+            for (int x = 0; x < MSG_COUNT; x++) {
+                GetResponse getResponse =
+                    channel.basicGet(TEST_QUEUE_NAME, false);
+                long tag = getResponse.getEnvelope().getDeliveryTag();
+                if (useNack) {
+                    channel.basicNack(tag, false, false);
+                } else {
+                    channel.basicReject(tag, false);
                 }
-            }, null, "rejected");
+            }
+            return null;
+        }, null, "rejected");
     }
 
     private void deadLetterTest(final Runnable deathTrigger,
@@ -505,12 +487,10 @@ public class DeadLetterExchange extends BrokerTestCase {
                                 String reason)
         throws Exception
     {
-        deadLetterTest(new Callable<Object>() {
-                public Object call() throws Exception {
-                    deathTrigger.run();
-                    return null;
-                }
-            }, queueDeclareArgs, reason);
+        deadLetterTest(() -> {
+            deathTrigger.run();
+            return null;
+        }, queueDeclareArgs, reason);
     }
 
     private void deadLetterTest(Callable<?> deathTrigger,
@@ -531,35 +511,30 @@ public class DeadLetterExchange extends BrokerTestCase {
     }
 
     public static void consume(final Channel channel, final String reason) throws IOException {
-        consumeN(channel, DLQ, MSG_COUNT, new WithResponse() {
-            @SuppressWarnings("unchecked")
-            public void process(GetResponse getResponse) {
-                Map<String, Object> headers = getResponse.getProps().getHeaders();
-                assertNotNull(headers);
-                ArrayList<Object> death = (ArrayList<Object>) headers.get("x-death");
-                assertNotNull(death);
-                // the following assertions shouldn't be checked on version lower than 3.7
-                // as the headers are new in 3.7
-                // see https://github.com/rabbitmq/rabbitmq-server/issues/1332
-                if(TestUtils.isVersion37orLater(channel.getConnection())) {
-                    assertNotNull(headers.get("x-first-death-queue"));
-                    assertNotNull(headers.get("x-first-death-reason"));
-                    assertNotNull(headers.get("x-first-death-exchange"));
-                }
-                assertEquals(1, death.size());
-                assertDeathReason(death, 0, TEST_QUEUE_NAME, reason,
-                        "amq.direct",
-                        Arrays.asList("test"));
+        consumeN(channel, DLQ, MSG_COUNT, getResponse -> {
+            Map<String, Object> headers = getResponse.getProps().getHeaders();
+            assertNotNull(headers);
+            ArrayList<Object> death = (ArrayList<Object>) headers.get("x-death");
+            assertNotNull(death);
+            // the following assertions shouldn't be checked on version lower than 3.7
+            // as the headers are new in 3.7
+            // see https://github.com/rabbitmq/rabbitmq-server/issues/1332
+            if(TestUtils.isVersion37orLater(channel.getConnection())) {
+                assertNotNull(headers.get("x-first-death-queue"));
+                assertNotNull(headers.get("x-first-death-reason"));
+                assertNotNull(headers.get("x-first-death-exchange"));
             }
+            assertEquals(1, death.size());
+            assertDeathReason(death, 0, TEST_QUEUE_NAME, reason,
+                    "amq.direct",
+                    Collections.singletonList("test"));
         });
     }
 
     private void ttlTest(final long ttl) throws Exception {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("x-message-ttl", ttl);
-        deadLetterTest(new Runnable() {
-                public void run() { sleep(ttl + 1500); }
-            }, args, "expired");
+        deadLetterTest(() -> sleep(ttl + 1500), args, "expired");
     }
 
     private void sleep(long millis) {
@@ -604,7 +579,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         throws IOException
     {
         if (args == null) {
-            args = new HashMap<String, Object>();
+            args = new HashMap<>();
         }
 
         if (ttl > 0){
@@ -674,7 +649,7 @@ public class DeadLetterExchange extends BrokerTestCase {
             (Map<String, Object>)death.get(num);
         assertEquals(exchange, deathHeader.get("exchange").toString());
 
-        List<String> deathRKs = new ArrayList<String>();
+        List<String> deathRKs = new ArrayList<>();
         for (Object rk : (ArrayList<?>)deathHeader.get("routing-keys")) {
             deathRKs.add(rk.toString());
         }
@@ -694,13 +669,11 @@ public class DeadLetterExchange extends BrokerTestCase {
         assertEquals(reason, deathHeader.get("reason").toString());
     }
 
-    private static interface WithResponse {
-        static final WithResponse NULL = new WithResponse() {
-                public void process(GetResponse getResponse) {
-                }
-            };
+    private interface WithResponse {
+        WithResponse NULL = getResponse -> {
+        };
 
-        public void process(GetResponse response);
+        void process(GetResponse response);
     }
 
     private static String randomQueueName() {
@@ -709,9 +682,9 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     class AccumulatingMessageConsumer extends DefaultConsumer {
 
-        BlockingQueue<byte[]> messages = new LinkedBlockingQueue<byte[]>();
+        BlockingQueue<byte[]> messages = new LinkedBlockingQueue<>();
 
-        public AccumulatingMessageConsumer(Channel channel) {
+        AccumulatingMessageConsumer(Channel channel) {
             super(channel);
         }
 
