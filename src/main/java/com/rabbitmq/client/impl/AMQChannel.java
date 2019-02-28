@@ -46,14 +46,14 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AMQChannel.class);
 
-    protected static final int NO_RPC_TIMEOUT = 0;
+    static final int NO_RPC_TIMEOUT = 0;
 
     /**
      * Protected; used instead of synchronizing on the channel itself,
      * so that clients can themselves use the channel to synchronize
      * on.
      */
-    protected final Object _channelMutex = new Object();
+    final Object _channelMutex = new Object();
 
     /** The connection this channel is associated with. */
     private final AMQConnection _connection;
@@ -68,10 +68,10 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     private RpcWrapper _activeRpc = null;
 
     /** Whether transmission of content-bearing methods should be blocked */
-    protected volatile boolean _blockContent = false;
+    volatile boolean _blockContent = false;
 
     /** Timeout for RPC calls */
-    protected final int _rpcTimeout;
+    final int _rpcTimeout;
 
     private final boolean _checkRpcResponseType;
 
@@ -107,7 +107,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * @param frame the incoming frame
      * @throws IOException if an error is encountered
      */
-    public void handleFrame(Frame frame) throws IOException {
+    void handleFrame(Frame frame) throws IOException {
         AMQCommand command = _command;
         if (command.handleFrame(frame)) { // a complete command has rolled off the assembly line
             _command = new AMQCommand(); // prepare for the next one
@@ -126,9 +126,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     public static IOException wrap(ShutdownSignalException ex, String message) {
-        IOException ioe = new IOException(message);
-        ioe.initCause(ex);
-        return ioe;
+        return new IOException(message, ex);
     }
 
     /**
@@ -148,7 +146,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public CompletableFuture<Command> exnWrappingAsyncRpc(Method m)
+    CompletableFuture<Command> exnWrappingAsyncRpc(Method m)
         throws IOException
     {
         try {
@@ -167,7 +165,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * @throws IOException if there's any problem
      *
      * @param command the incoming command
-     * @throws IOException
+     * @throws IOException when operation is interrupted by an I/O exception
      */
     public void handleCompleteInboundCommand(AMQCommand command) throws IOException {
         // First, offer the command to the asynchronous-command
@@ -208,7 +206,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         doEnqueueRpc(() -> new RpcContinuationRpcWrapper(k));
     }
 
-    public void enqueueAsyncRpc(Method method, CompletableFuture<Command> future) {
+    private void enqueueAsyncRpc(Method method, CompletableFuture<Command> future) {
         doEnqueueRpc(() -> new CompletableFutureRpcWrapper(method, future));
     }
 
@@ -230,7 +228,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public boolean isOutstandingRpc()
+    boolean isOutstandingRpc()
     {
         synchronized (_channelMutex) {
             return (_activeRpc != null);
@@ -251,7 +249,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         // no-op
     }
 
-    public void ensureIsOpen()
+    private void ensureIsOpen()
         throws AlreadyClosedException
     {
         if (!isOpen()) {
@@ -308,7 +306,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
     
     /** Cleans RPC channel state after a timeout and wraps the TimeoutException in a ChannelContinuationTimeoutException */
-    protected ChannelContinuationTimeoutException wrapTimeoutException(final Method m, final TimeoutException e)  {
+    ChannelContinuationTimeoutException wrapTimeoutException(final Method m, final TimeoutException e)  {
         cleanRpcChannelState();
         return new ChannelContinuationTimeoutException(e, this, this._channelNumber, m);
     }
@@ -343,7 +341,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public void quiescingRpc(Method m, RpcContinuation k)
+    void quiescingRpc(Method m, RpcContinuation k)
         throws IOException
     {
         synchronized (_channelMutex) {
@@ -352,7 +350,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public void asyncRpc(Method m, CompletableFuture<Command> future)
+    private void asyncRpc(Method m, CompletableFuture<Command> future)
         throws IOException
     {
         synchronized (_channelMutex) {
@@ -361,7 +359,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public void quiescingAsyncRpc(Method m, CompletableFuture<Command> future)
+    private void quiescingAsyncRpc(Method m, CompletableFuture<Command> future)
         throws IOException
     {
         synchronized (_channelMutex) {
@@ -409,33 +407,33 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
 
-    public void notifyOutstandingRpc(ShutdownSignalException signal) {
+    void notifyOutstandingRpc(ShutdownSignalException signal) {
         RpcWrapper k = nextOutstandingRpc();
         if (k != null) {
             k.shutdown(signal);
         }
     }
 
-    public void transmit(Method m) throws IOException {
+    protected void transmit(Method m) throws IOException {
         synchronized (_channelMutex) {
             transmit(new AMQCommand(m));
         }
     }
 
-    public void transmit(AMQCommand c) throws IOException {
+    void transmit(AMQCommand c) throws IOException {
         synchronized (_channelMutex) {
             ensureIsOpen();
             quiescingTransmit(c);
         }
     }
 
-    public void quiescingTransmit(Method m) throws IOException {
+    void quiescingTransmit(Method m) throws IOException {
         synchronized (_channelMutex) {
             quiescingTransmit(new AMQCommand(m));
         }
     }
 
-    public void quiescingTransmit(AMQCommand c) throws IOException {
+    private void quiescingTransmit(AMQCommand c) throws IOException {
         synchronized (_channelMutex) {
             if (c.getMethod().hasContent()) {
                 while (_blockContent) {
@@ -468,16 +466,16 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     public static abstract class BlockingRpcContinuation<T> implements RpcContinuation {
-        public final BlockingValueOrException<T, ShutdownSignalException> _blocker =
-            new BlockingValueOrException<T, ShutdownSignalException>();
+        final BlockingValueOrException<T, ShutdownSignalException> _blocker =
+                new BlockingValueOrException<>();
 
         protected final Method request;
 
-        public BlockingRpcContinuation() {
+        BlockingRpcContinuation() {
             request = null;
         }
 
-        public BlockingRpcContinuation(final Method request) {
+        BlockingRpcContinuation(final Method request) {
             this.request = request;
         }
 
@@ -496,7 +494,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             return _blocker.uninterruptibleGetValue();
         }
 
-        public T getReply(int timeout)
+        T getReply(int timeout)
             throws ShutdownSignalException, TimeoutException
         {
             return _blocker.uninterruptibleGetValue(timeout);
@@ -509,7 +507,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
 
         public abstract T transformReply(AMQCommand command);
         
-        public static boolean isResponseCompatibleWithRequest(Method request, Method response) {
+        static boolean isResponseCompatibleWithRequest(Method request, Method response) {
             // make a best effort attempt to ensure the reply was intended for this rpc request
             // Ideally each rpc request would tag an id on it that could be returned and referenced on its reply.
             // But because that would be a very large undertaking to add passively this logic at least protects against ClassCastExceptions
@@ -570,11 +568,11 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         extends BlockingRpcContinuation<AMQCommand>
     {
 
-        public SimpleBlockingRpcContinuation() {
+        SimpleBlockingRpcContinuation() {
             super();
         }
 
-        public SimpleBlockingRpcContinuation(final Method method) {
+        SimpleBlockingRpcContinuation(final Method method) {
             super(method);
         }
 
