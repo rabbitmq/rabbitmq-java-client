@@ -29,13 +29,13 @@ import static org.junit.Assert.*;
 
 public class DeadLetterExchange extends BrokerTestCase {
     public static final String DLX = "dead.letter.exchange";
-    public static final String DLX_ARG = "x-dead-letter-exchange";
-    public static final String DLX_RK_ARG = "x-dead-letter-routing-key";
+    private static final String DLX_ARG = "x-dead-letter-exchange";
+    private static final String DLX_RK_ARG = "x-dead-letter-routing-key";
     public static final String TEST_QUEUE_NAME = "test.queue.dead.letter";
     public static final String DLQ = "queue.dlq";
-    public static final String DLQ2 = "queue.dlq2";
+    private static final String DLQ2 = "queue.dlq2";
     public static final int MSG_COUNT = 10;
-    public static final int TTL = 1000;
+    private static final int TTL = 1000;
 
     @Override
     protected void createResources() throws IOException {
@@ -48,6 +48,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     @Override
     protected void releaseResources() throws IOException {
         channel.exchangeDelete(DLX);
+        channel.queueDelete(TEST_QUEUE_NAME);
     }
 
     @Test public void declareQueueWithExistingDeadLetterExchange()
@@ -614,7 +615,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         if (deadLetterRoutingKey != null) {
             args.put(DLX_RK_ARG, deadLetterRoutingKey);
         }
-        channel.queueDeclare(queue, false, true, false, args);
+        channel.queueDeclare(queue, false, false, false, args);
     }
 
     private void publishN(int n) throws IOException {
