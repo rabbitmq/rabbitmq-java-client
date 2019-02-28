@@ -50,7 +50,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private static final Logger LOGGER = LoggerFactory.getLogger(AMQConnection.class);
     // we want socket write and channel shutdown timeouts to kick in after
     // the heartbeat one, so we use a value of 105% of the effective heartbeat timeout
-    public static final double CHANNEL_SHUTDOWN_TIMEOUT_MULTIPLIER = 1.05;
+    static final double CHANNEL_SHUTDOWN_TIMEOUT_MULTIPLIER = 1.05;
 
     private final ExecutorService consumerWorkServiceExecutor;
     private final ScheduledExecutorService heartbeatExecutor;
@@ -60,7 +60,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private String id;
 
     private final List<RecoveryCanBeginListener> recoveryCanBeginListeners =
-            Collections.synchronizedList(new ArrayList<RecoveryCanBeginListener>());
+            Collections.synchronizedList(new ArrayList<>());
 
     private final ErrorOnWriteListener errorOnWriteListener;
 
@@ -77,14 +77,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * @see Connection#getClientProperties
      */
     public static Map<String, Object> defaultClientProperties() {
-        Map<String,Object> props = new HashMap<String, Object>();
+        Map<String,Object> props = new HashMap<>();
         props.put("product", LongStringHelper.asLongString("RabbitMQ"));
         props.put("version", LongStringHelper.asLongString(ClientVersion.VERSION));
         props.put("platform", LongStringHelper.asLongString("Java"));
         props.put("copyright", LongStringHelper.asLongString(Copyright.COPYRIGHT));
         props.put("information", LongStringHelper.asLongString(Copyright.LICENSE));
 
-        Map<String, Object> capabilities = new HashMap<String, Object>();
+        Map<String, Object> capabilities = new HashMap<>();
         capabilities.put("publisher_confirms", true);
         capabilities.put("exchange_exchange_bindings", true);
         capabilities.put("basic.nack", true);
@@ -117,7 +117,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /** Object used for blocking main application thread when doing all the necessary
      * connection shutdown operations
      */
-    private final BlockingCell<Object> _appContinuation = new BlockingCell<Object>();
+    private final BlockingCell<Object> _appContinuation = new BlockingCell<>();
 
     /** Flag indicating whether the client received Connection.Close message from the broker */
     private volatile boolean _brokerInitiatedShutdown;
@@ -137,7 +137,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final int handshakeTimeout;
     private final int shutdownTimeout;
     private final CredentialsProvider credentialsProvider;
-    private final Collection<BlockedListener> blockedListeners = new CopyOnWriteArrayList<BlockedListener>();
+    private final Collection<BlockedListener> blockedListeners = new CopyOnWriteArrayList<>();
     protected final MetricsCollector metricsCollector;
     private final int channelRpcTimeout;
     private final boolean channelShouldCheckRpcResponseType;
@@ -157,10 +157,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private volatile Map<String, Object> _serverProperties;
 
     /**
-     * Protected API - respond, in the driver thread, to a ShutdownSignal.
+     * Protected API - respond, in the main I/O loop thread, to a ShutdownSignal.
      * @param channel the channel to disconnect
      */
-    public final void disconnectChannel(ChannelN channel) {
+    final void disconnectChannel(ChannelN channel) {
         ChannelManager cm = _channelManager;
         if (cm != null)
             cm.releaseChannelNumber(channel);
@@ -367,15 +367,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                     throw new PossibleAuthenticationFailureException(e);
                 }
             } while (connTune == null);
-        } catch (TimeoutException te) {
+        } catch (TimeoutException | IOException te) {
             _frameHandler.close();
             throw te;
         } catch (ShutdownSignalException sse) {
             _frameHandler.close();
             throw AMQChannel.wrap(sse);
-        } catch(IOException ioe) {
-            _frameHandler.close();
-            throw ioe;
         }
 
         try {
@@ -509,7 +506,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     @Override
     public Map<String, Object> getClientProperties() {
-        return new HashMap<String, Object>(_clientProperties);
+        return new HashMap<>(_clientProperties);
     }
 
     @Override
@@ -560,7 +557,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     /**
      * Public API - sends a frame directly to the broker.
      */
-    public void writeFrame(Frame f) throws IOException {
+    void writeFrame(Frame f) throws IOException {
         _frameHandler.writeFrame(f);
         _heartbeatSender.signalActivity();
     }
@@ -755,6 +752,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.recoveryCanBeginListeners.add(fn);
     }
 
+    @SuppressWarnings("unused")
     public void removeRecoveryCanBeginListener(RecoveryCanBeginListener fn) {
         this.recoveryCanBeginListeners.remove(fn);
     }
@@ -842,7 +840,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
-    public void handleConnectionClose(Command closeCommand) {
+    private void handleConnectionClose(Command closeCommand) {
         ShutdownSignalException sse = shutdown(closeCommand.getMethod(), false, null, _inConnectionNegotiation);
         try {
             _channel0.quiescingTransmit(new AMQP.Connection.CloseOk.Builder().build());
@@ -863,13 +861,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
     }
 
-    // same as ConnectionFactory.DEFAULT_SHUTDOWN_TIMEOUT
-    private static long SOCKET_CLOSE_TIMEOUT = 10000;
-
     private class SocketCloseWait implements Runnable {
+        // same as ConnectionFactory.DEFAULT_SHUTDOWN_TIMEOUT
+        private long SOCKET_CLOSE_TIMEOUT = 10000;
+
         private final ShutdownSignalException cause;
 
-        public SocketCloseWait(ShutdownSignalException sse) {
+        SocketCloseWait(ShutdownSignalException sse) {
             cause = sse;
         }
 
@@ -1055,12 +1053,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 sse.initCause(cause);
                 throw sse;
             }
-        } catch (ShutdownSignalException sse) {
+        } catch (ShutdownSignalException | IOException sse) {
             if (!abort)
                 throw sse;
-        } catch (IOException ioe) {
-            if (!abort)
-                throw ioe;
         } finally {
             if(sync) _frameHandler.close();
         }
