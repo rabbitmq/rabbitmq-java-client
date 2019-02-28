@@ -52,7 +52,7 @@ public class ClientVersion {
         VERSION = version;
     }
 
-    private static final String getVersionFromPropertyFile() throws Exception {
+    private static String getVersionFromPropertyFile() throws Exception {
         InputStream inputStream = ClientVersion.class.getClassLoader().getResourceAsStream("rabbitmq-amqp-client.properties");
         Properties version = new Properties();
         try {
@@ -70,14 +70,14 @@ public class ClientVersion {
         return versionProperty;
     }
 
-    private static final String getVersionFromPackage() {
+    private static String getVersionFromPackage() {
         if (ClientVersion.class.getPackage().getImplementationVersion() == null) {
             throw new IllegalStateException("Couldn't get version with Package#getImplementationVersion");
         }
         return ClientVersion.class.getPackage().getImplementationVersion();
     }
 
-    private static final String getDefaultVersion() {
+    private static String getDefaultVersion() {
         return "0.0.0";
     }
 }

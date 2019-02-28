@@ -49,7 +49,7 @@ public abstract class SocketConfigurators {
         }
     };
 
-    static final SSLParameters enableHostnameVerification(SSLParameters sslParameters) {
+    static SSLParameters enableHostnameVerification(SSLParameters sslParameters) {
         if (sslParameters == null) {
             sslParameters = new SSLParameters();
         }
@@ -62,7 +62,7 @@ public abstract class SocketConfigurators {
     /**
      * The default {@link SocketConfigurator} that disables Nagle's algorithm.
      *
-     * @return
+     * @return Default configurator: only disables Nagle's algirithm
      */
     public static SocketConfigurator defaultConfigurator() {
         return DEFAULT;
@@ -71,7 +71,7 @@ public abstract class SocketConfigurators {
     /**
      * {@link SocketConfigurator} that disables Nagle's algorithm.
      *
-     * @return
+     * @return A composable configurator that diasbles Nagle's algirithm
      */
     public static SocketConfigurator disableNagleAlgorithm() {
         return DISABLE_NAGLE_ALGORITHM;
@@ -80,7 +80,7 @@ public abstract class SocketConfigurators {
     /**
      * {@link SocketConfigurator} that enable server hostname verification for TLS connections.
      *
-     * @return
+     * @return A composable configurator that enables peer hostname verification
      */
     public static SocketConfigurator enableHostnameVerification() {
         return ENABLE_HOSTNAME_VERIFICATION;
@@ -103,7 +103,7 @@ public abstract class SocketConfigurators {
         /**
          * Set default configuration.
          *
-         * @return
+         * @return this
          */
         public Builder defaultConfigurator() {
             configurator = configurator.andThen(DEFAULT);
@@ -113,7 +113,7 @@ public abstract class SocketConfigurators {
         /**
          * Disable Nagle's Algorithm.
          *
-         * @return
+         * @return this
          */
         public Builder disableNagleAlgorithm() {
             configurator = configurator.andThen(DISABLE_NAGLE_ALGORITHM);
@@ -123,7 +123,7 @@ public abstract class SocketConfigurators {
         /**
          * Enable server hostname verification for TLS connections.
          *
-         * @return
+         * @return this
          */
         public Builder enableHostnameVerification() {
             configurator = configurator.andThen(ENABLE_HOSTNAME_VERIFICATION);
@@ -134,7 +134,7 @@ public abstract class SocketConfigurators {
          * Add an extra configuration step.
          *
          * @param extraConfiguration
-         * @return
+         * @return this
          */
         public Builder add(SocketConfigurator extraConfiguration) {
             configurator = configurator.andThen(extraConfiguration);
@@ -144,7 +144,7 @@ public abstract class SocketConfigurators {
         /**
          * Return the configured {@link SocketConfigurator}.
          *
-         * @return
+         * @return the final configurator
          */
         public SocketConfigurator build() {
             return configurator;

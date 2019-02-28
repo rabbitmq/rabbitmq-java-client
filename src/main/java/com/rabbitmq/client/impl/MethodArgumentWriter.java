@@ -57,7 +57,7 @@ public class MethodArgumentWriter
      * Private API - called when we may be transitioning from encoding
      * a group of bits to encoding a non-bit value.
      */
-    private final void bitflush()
+    private void bitflush()
         throws IOException
     {
         if (needBitFlush) {
