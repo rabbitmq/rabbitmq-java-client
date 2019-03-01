@@ -22,12 +22,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -38,7 +36,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 public class CcRoutes extends BrokerTestCase  {
 
-    static private final String[] queues = new String[]{"queue1", "queue2", "queue3"};
+    private String[] queues;
     private final String exDirect = "direct_cc_exchange";
     private final String exTopic = "topic_cc_exchange";
     private BasicProperties.Builder propsBuilder;
@@ -56,6 +54,10 @@ public class CcRoutes extends BrokerTestCase  {
 
     @Override protected void createResources() throws IOException, TimeoutException {
         super.createResources();
+        queues = IntStream.range(1, 4)
+                .mapToObj(index -> CcRoutes.class.getSimpleName() + "." + UUID.randomUUID().toString())
+                .collect(Collectors.toList())
+                .toArray(new String[]{});
         for (String q : queues) {
             channel.queueDeclare(q, false, false, true, null);
         }
@@ -72,58 +74,58 @@ public class CcRoutes extends BrokerTestCase  {
     }
 
     @Test public void ccList() throws IOException {
-        ccList.add("queue2");
-        ccList.add("queue3");
-        headerPublish("", "queue1", ccList, null);
-        expect(new String []{"queue1", "queue2", "queue3"}, true);
+        ccList.add(queue2());
+        ccList.add(queue3());
+        headerPublish("", queue1(), ccList, null);
+        expect(new String []{queue1(), queue2(), queue3()}, true);
      }
 
     @Test public void ccIgnoreEmptyAndInvalidRoutes() throws IOException {
         bccList.add("frob");
-        headerPublish("", "queue1", ccList, bccList);
-        expect(new String []{"queue1"}, true);
+        headerPublish("", queue1(), ccList, bccList);
+        expect(new String []{queue1()}, true);
      }
 
     @Test public void bcc() throws IOException {
-        bccList.add("queue2");
-        headerPublish("", "queue1", null, bccList);
-        expect(new String []{"queue1", "queue2"}, false);
+        bccList.add(queue2());
+        headerPublish("", queue1(), null, bccList);
+        expect(new String []{queue1(), queue2()}, false);
      }
 
     @Test public void noDuplicates() throws IOException {
-        ccList.add("queue1");
-        ccList.add("queue1");
-        bccList.add("queue1");
-        headerPublish("", "queue1", ccList, bccList);
-        expect(new String[] {"queue1"}, true);
+        ccList.add(queue1());
+        ccList.add(queue1());
+        bccList.add(queue1());
+        headerPublish("", queue1(), ccList, bccList);
+        expect(new String[] {queue1()}, true);
      }
 
     @Test public void directExchangeWithoutBindings() throws IOException {
-        ccList.add("queue1");
-        headerPublish(exDirect, "queue2", ccList, null);
+        ccList.add(queue1());
+        headerPublish(exDirect, queue2(), ccList, null);
         expect(new String[] {}, true);
     }
 
     @Test public void topicExchange() throws IOException {
         ccList.add("routing_key");
-        channel.queueBind("queue2", exTopic, "routing_key");
+        channel.queueBind(queue2(), exTopic, "routing_key");
         headerPublish(exTopic, "", ccList, null);
-        expect(new String[] {"queue2"}, true);
+        expect(new String[] {queue2()}, true);
     }
 
     @Test public void boundExchanges() throws IOException {
         ccList.add("routing_key1");
         bccList.add("routing_key2");
         channel.exchangeBind(exTopic, exDirect, "routing_key1");
-        channel.queueBind("queue2", exTopic, "routing_key2");
+        channel.queueBind(queue2(), exTopic, "routing_key2");
         headerPublish(exDirect, "", ccList, bccList);
-        expect(new String[] {"queue2"}, true);
+        expect(new String[] {queue2()}, true);
     }
 
     @Test public void nonArray() throws IOException {
         headers.put("CC", 0);
         propsBuilder.headers(headers);
-        channel.basicPublish("", "queue1", propsBuilder.build(), new byte[0]);
+        channel.basicPublish("", queue1(), propsBuilder.build(), new byte[0]);
         try {
             expect(new String[] {}, false);
             fail();
@@ -160,5 +162,17 @@ public class CcRoutes extends BrokerTestCase  {
                 assertNull(getResponse);
             }
         }
+    }
+
+    String queue1() {
+        return queues[0];
+    }
+
+    String queue2() {
+        return queues[1];
+    }
+
+    String queue3() {
+        return queues[2];
     }
 }
