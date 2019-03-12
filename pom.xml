@@ -9,22 +9,22 @@
 
   <name>RabbitMQ Java Client</name>
   <description>The RabbitMQ Java client library allows Java applications to interface with RabbitMQ.</description>
-  <url>http://www.rabbitmq.com</url>
+  <url>https://www.rabbitmq.com</url>
 
   <licenses>
     <license>
       <name>ASL 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.html</url>
       <distribution>repo</distribution>
     </license>
     <license>
       <name>GPL v2</name>
-      <url>http://www.gnu.org/licenses/gpl-2.0.txt</url>
+      <url>https://www.gnu.org/licenses/gpl-2.0.txt</url>
       <distribution>repo</distribution>
     </license>
     <license>
       <name>MPL 1.1</name>
-      <url>http://www.mozilla.org/MPL/MPL-1.1.txt</url>
+      <url>https://www.mozilla.org/MPL/MPL-1.1.txt</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
@@ -47,7 +47,7 @@
 
   <organization>
     <name>Pivotal Software, Inc.</name>
-    <url>http://www.rabbitmq.com</url>
+    <url>https://www.rabbitmq.com</url>
   </organization>
 
   <properties>
