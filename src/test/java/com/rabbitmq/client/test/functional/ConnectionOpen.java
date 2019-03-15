@@ -43,13 +43,12 @@ import javax.net.SocketFactory;
  */
 public class ConnectionOpen {
     @Test public void correctProtocolHeader() throws IOException {
-        ConnectionFactory factory = TestUtils.connectionFactory();
         SocketFrameHandler fh = new SocketFrameHandler(SocketFactory.getDefault().createSocket("localhost", AMQP.PROTOCOL.PORT));
         fh.sendHeader();
         AMQCommand command = new AMQCommand();
         while (!command.handleFrame(fh.readFrame())) { }
         Method m = command.getMethod();
-        //    System.out.println(m.getClass());
+
         assertTrue("First command must be Connection.start",
                 m instanceof AMQP.Connection.Start);
         AMQP.Connection.Start start = (AMQP.Connection.Start) m;

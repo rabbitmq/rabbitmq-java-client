@@ -42,6 +42,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.tools.Host;
 
 public class ChannelLimitNegotiation extends BrokerTestCase {
+
     class SpecialConnection extends AMQConnection {
         private final int channelMax;
 
@@ -68,8 +69,9 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
         ConnectionFactory cf = TestUtils.connectionFactory();
         cf.setRequestedChannelMax(n);
 
-        Connection conn = cf.newConnection();
-        assertEquals(n, conn.getChannelMax());
+        try (Connection conn = cf.newConnection()) {
+            assertEquals(n, conn.getChannelMax());
+        }
     }
 
     @Test public void channelMaxGreaterThanServerValue() throws Exception {
@@ -91,10 +93,11 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
     @Test public void openingTooManyChannels() throws Exception {
         int n = 48;
 
+        Connection conn = null;
         try {
             Host.rabbitmqctl("eval 'application:set_env(rabbit, channel_max, " + n + ").'");
             ConnectionFactory cf = TestUtils.connectionFactory();
-            Connection conn = cf.newConnection();
+            conn = cf.newConnection();
             assertEquals(n, conn.getChannelMax());
 
             for (int i = 1; i <= n; i++) {
@@ -118,6 +121,7 @@ public class ChannelLimitNegotiation extends BrokerTestCase {
         } catch (IOException e) {
             checkShutdownSignal(530, e);
         } finally {
+            TestUtils.abort(conn);
             Host.rabbitmqctl("eval 'application:set_env(rabbit, channel_max, 0).'");
         }
     }

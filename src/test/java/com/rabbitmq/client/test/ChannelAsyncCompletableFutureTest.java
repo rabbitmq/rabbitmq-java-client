@@ -25,10 +25,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.junit.Assert.assertTrue;
 
@@ -39,13 +36,17 @@ public class ChannelAsyncCompletableFutureTest extends BrokerTestCase {
     String queue;
     String exchange;
 
-    @Before public void init() {
+    @Override
+    protected void createResources() throws IOException, TimeoutException {
+        super.createResources();
         executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         queue = UUID.randomUUID().toString();
         exchange = UUID.randomUUID().toString();
     }
 
-    @After public void tearDown() throws IOException {
+    @Override
+    protected void releaseResources() throws IOException {
+        super.releaseResources();
         executor.shutdownNow();
         channel.queueDelete(queue);
         channel.exchangeDelete(exchange);

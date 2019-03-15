@@ -51,14 +51,14 @@ public class AMQConnectionTest {
     private ConnectionFactory factory;
     private MyExceptionHandler exceptionHandler;
 
-    @Before public void setUp() throws Exception {
+    @Before public void setUp() {
         _mockFrameHandler = new MockFrameHandler();
         factory = TestUtils.connectionFactory();
         exceptionHandler = new MyExceptionHandler();
         factory.setExceptionHandler(exceptionHandler);
     }
 
-    @After public void tearDown() throws Exception {
+    @After public void tearDown() {
         factory = null;
         _mockFrameHandler = null;
     }
