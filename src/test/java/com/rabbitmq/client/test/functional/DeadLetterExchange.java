@@ -230,6 +230,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         consumeN(DLQ, MSG_COUNT, WithResponse.NULL);
     }
 
+    @SuppressWarnings("unchecked")
     @Test public void deadLetterPerMessageTTLRemoved() throws Exception {
         declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
         channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
@@ -247,11 +248,10 @@ public class DeadLetterExchange extends BrokerTestCase {
             assertNull(getResponse.getProps().getExpiration());
             Map<String, Object> headers = getResponse.getProps().getHeaders();
             assertNotNull(headers);
-            ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
+            ArrayList<Object> death = (ArrayList<Object>) headers.get("x-death");
             assertNotNull(death);
             assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired");
-            final Map<String, Object> deathHeader =
-                (Map<String, Object>)death.get(0);
+            final Map<String, Object> deathHeader = (Map<String, Object>) death.get(0);
             assertEquals("100", deathHeader.get("original-expiration").toString());
         });
     }
@@ -287,6 +287,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         publishN(MSG_COUNT);
     }
 
+    @SuppressWarnings("unchecked")
     @Test public void deadLetterTwice() throws Exception {
         declareQueue(TEST_QUEUE_NAME, DLX, null, null, 1);
 
@@ -308,7 +309,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         consumeN(DLQ2, MSG_COUNT*2, getResponse -> {
             Map<String, Object> headers = getResponse.getProps().getHeaders();
             assertNotNull(headers);
-            ArrayList<Object> death = (ArrayList<Object>)headers.get("x-death");
+            ArrayList<Object> death = (ArrayList<Object>) headers.get("x-death");
             assertNotNull(death);
             if (death.size() == 1) {
                 assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired");
@@ -357,6 +358,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
+    @SuppressWarnings("unchecked")
     @Test public void deadLetterNewRK() throws Exception {
         declareQueue(TEST_QUEUE_NAME, DLX, "test-other", null, 1);
 
@@ -510,6 +512,7 @@ public class DeadLetterExchange extends BrokerTestCase {
         consume(channel, reason);
     }
 
+    @SuppressWarnings("unchecked")
     public static void consume(final Channel channel, final String reason) throws IOException {
         consumeN(channel, DLQ, MSG_COUNT, getResponse -> {
             Map<String, Object> headers = getResponse.getProps().getHeaders();
