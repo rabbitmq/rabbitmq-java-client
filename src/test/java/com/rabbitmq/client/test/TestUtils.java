@@ -67,6 +67,12 @@ public class TestUtils {
         }
     }
 
+    public static void abort(Connection connection) {
+        if (connection != null) {
+            connection.abort();
+        }
+    }
+
     public static SSLContext getSSLContext() throws NoSuchAlgorithmException {
         SSLContext c = null;
 
