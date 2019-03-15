@@ -17,8 +17,6 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQImpl;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -52,8 +50,9 @@ public class RpcTopologyRecordingTest extends BrokerTestCase {
         return connectionFactory;
     }
 
-    @Before
-    public void init() {
+    @Override
+    protected void createResources() throws IOException, TimeoutException {
+        super.createResources();
         queue = UUID.randomUUID().toString();
         exchange = UUID.randomUUID().toString();
         routingKey = UUID.randomUUID().toString();
@@ -62,8 +61,9 @@ public class RpcTopologyRecordingTest extends BrokerTestCase {
         routingKey2 = "e2e-" + UUID.randomUUID().toString();
     }
 
-    @After
-    public void tearDown() throws IOException {
+    @Override
+    protected void releaseResources() throws IOException {
+        super.releaseResources();
         channel.exchangeDelete(exchange);
         channel.exchangeDelete(exchange2);
     }

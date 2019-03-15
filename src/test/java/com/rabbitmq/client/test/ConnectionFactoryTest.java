@@ -27,8 +27,6 @@ import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.CredentialsProvider;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;

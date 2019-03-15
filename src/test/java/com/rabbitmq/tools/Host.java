@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.rabbitmq.client.Connection;
@@ -225,10 +226,12 @@ public class Host {
     public static class ConnectionInfo {
         private final String pid;
         private final int peerPort;
+        private final String clientProperties;
 
-        public ConnectionInfo(String pid, int peerPort) {
+        public ConnectionInfo(String pid, int peerPort, String clientProperties) {
             this.pid = pid;
             this.peerPort = peerPort;
+            this.clientProperties = clientProperties;
         }
 
         public String getPid() {
@@ -238,10 +241,23 @@ public class Host {
         public int getPeerPort() {
             return peerPort;
         }
+
+        public String getClientProperties() {
+            return clientProperties;
+        }
+
+        @Override
+        public String toString() {
+            return "ConnectionInfo{" +
+                    "pid='" + pid + '\'' +
+                    ", peerPort=" + peerPort +
+                    ", clientProperties='" + clientProperties + '\'' +
+                    '}';
+        }
     }
 
     public static List<ConnectionInfo> listConnections() throws IOException {
-        String output = capture(rabbitmqctl("list_connections -q pid peer_port").getInputStream());
+        String output = capture(rabbitmqctl("list_connections -q pid peer_port client_properties").getInputStream());
         // output (header line presence depends on broker version):
         // pid	peer_port
         // <rabbit@mercurio.1.11491.0>	58713
@@ -249,13 +265,15 @@ public class Host {
 
         ArrayList<ConnectionInfo> result = new ArrayList<ConnectionInfo>();
         for (String line : allLines) {
-            // line: <rabbit@mercurio.1.11491.0>	58713
-            String[] columns = line.split("\t");
-            // can be also header line, so ignoring NumberFormatException
-            try {
-                result.add(new ConnectionInfo(columns[0], Integer.valueOf(columns[1])));
-            } catch (NumberFormatException e) {
-                // OK
+            if (line != null && !line.trim().isEmpty()) {
+                // line: <rabbit@mercurio.1.11491.0>	58713
+                String[] columns = line.split("\t");
+                // can be also header line, so ignoring NumberFormatException
+                try {
+                    result.add(new ConnectionInfo(columns[0], Integer.valueOf(columns[1]), columns[2]));
+                } catch (NumberFormatException e) {
+                    // OK
+                }
             }
         }
         return result;

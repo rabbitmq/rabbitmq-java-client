@@ -17,7 +17,6 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DefaultSocketConfigurator;
 import com.rabbitmq.client.SocketConfigurators;
 import com.rabbitmq.client.impl.*;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
@@ -35,7 +34,7 @@ import java.net.Socket;
 public class UnexpectedFrames extends BrokerTestCase {
 
     private interface Confuser {
-        public Frame confuse(Frame frame) throws IOException;
+        Frame confuse(Frame frame) throws IOException;
     }
 
     private static class ConfusedFrameHandler extends SocketFrameHandler {

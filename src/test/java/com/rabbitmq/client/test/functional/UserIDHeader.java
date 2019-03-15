@@ -20,6 +20,8 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -48,17 +50,18 @@ public class UserIDHeader extends BrokerTestCase {
 
     @Test public void impersonatedUserId() throws IOException, TimeoutException {
         Host.rabbitmqctl("set_user_tags guest administrator impersonator");
-        connection = null;
-        channel = null;
-        setUp();
-        try {
-            publish(BAD);
+        try (Connection c = connectionFactory.newConnection()){
+            publish(BAD, c.createChannel());
         } finally {
             Host.rabbitmqctl("set_user_tags guest administrator");
         }
     }
 
     private void publish(AMQP.BasicProperties properties) throws IOException {
+        publish(properties, this.channel);
+    }
+
+    private void publish(AMQP.BasicProperties properties, Channel channel) throws IOException {
         channel.basicPublish("amq.fanout", "", properties, "".getBytes());
         channel.queueDeclare(); // To flush the channel
     }

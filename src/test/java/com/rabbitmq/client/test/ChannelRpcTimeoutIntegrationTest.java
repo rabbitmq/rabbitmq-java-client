@@ -37,12 +37,12 @@ public class ChannelRpcTimeoutIntegrationTest {
     ConnectionFactory factory;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         factory = TestUtils.connectionFactory();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory = null;
     }
 

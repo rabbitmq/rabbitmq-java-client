@@ -16,6 +16,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
 import org.junit.Test;
@@ -26,19 +27,19 @@ import static org.junit.Assert.*;
 
 public class Heartbeat extends BrokerTestCase {
 
-    public Heartbeat()
-    {
-        super();
-        connectionFactory.setRequestedHeartbeat(1);
+    @Override
+    protected ConnectionFactory newConnectionFactory() {
+        ConnectionFactory cf = super.newConnectionFactory();
+        cf.setRequestedHeartbeat(1);
+        return cf;
     }
 
-    @Test public void heartbeat()
-        throws IOException, InterruptedException
-    {
+    @Test
+    public void heartbeat() throws InterruptedException {
         assertEquals(1, connection.getHeartbeat());
         Thread.sleep(3100);
         assertTrue(connection.isOpen());
-        ((AutorecoveringConnection)connection).getDelegate().setHeartbeat(0);
+        ((AutorecoveringConnection) connection).getDelegate().setHeartbeat(0);
         assertEquals(0, connection.getHeartbeat());
         Thread.sleep(3100);
         assertFalse(connection.isOpen());

@@ -42,12 +42,12 @@ public class BrokenFramesTest {
     private MyFrameHandler myFrameHandler;
     private ConnectionFactory factory;
 
-    @Before public void setUp() throws Exception {
+    @Before public void setUp() {
         myFrameHandler = new MyFrameHandler();
         factory = TestUtils.connectionFactory();
     }
 
-    @After public void tearDown() throws Exception {
+    @After public void tearDown() {
         factory = null;
         myFrameHandler = null;
     }
