@@ -20,7 +20,6 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.tools.Host;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
@@ -32,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
@@ -184,7 +182,6 @@ public class BrokerTestCase {
         Method method = sse.getReason();
         channel = null;
         if (sse.isHardError()) {
-            connection = null;
             AMQP.Connection.Close closeMethod = (AMQP.Connection.Close) method;
             assertEquals(expectedCode, closeMethod.getReplyCode());
         } else {

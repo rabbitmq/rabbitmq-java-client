@@ -50,7 +50,12 @@ public class BlockedConnection extends BrokerTestCase {
         block();
         publish(connection);
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        try {
+            assertTrue(latch.await(10, TimeUnit.SECONDS));
+        } finally {
+            TestUtils.abort(connection);
+        }
+
     }
 
     // this test first triggers an alarm, then opens a
@@ -62,7 +67,11 @@ public class BlockedConnection extends BrokerTestCase {
         Connection connection = connection(latch);
         publish(connection);
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        try {
+            assertTrue(latch.await(10, TimeUnit.SECONDS));
+        } finally {
+            TestUtils.abort(connection);
+        }
     }
 
     private Connection connection(final CountDownLatch latch) throws IOException, TimeoutException {
