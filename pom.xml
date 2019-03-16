@@ -7,22 +7,22 @@
   <packaging>jar</packaging>
   <name>RabbitMQ Java Client</name>
   <description>RabbitMQ Java client</description>
-  <url>http://www.rabbitmq.com</url>
+  <url>https://www.rabbitmq.com</url>
 
   <licenses>
     <license>
       <name>ASL 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.html</url>
       <distribution>repo</distribution>
     </license>
     <license>
       <name>GPL v2</name>
-      <url>http://www.gnu.org/licenses/gpl-2.0.txt</url>
+      <url>https://www.gnu.org/licenses/gpl-2.0.txt</url>
       <distribution>repo</distribution>
     </license>
     <license>
       <name>MPL 1.1</name>
-      <url>http://www.mozilla.org/MPL/MPL-1.1.txt</url>
+      <url>https://www.mozilla.org/MPL/MPL-1.1.txt</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
@@ -70,7 +70,7 @@
     <repository>
       <id>sonatype-nexus-staging</id>
       <name>Nexus Release Repository</name>
-      <url>http://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
   </distributionManagement>
 </project>
