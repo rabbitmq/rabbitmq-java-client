@@ -32,11 +32,11 @@ import com.rabbitmq.client.AMQP.Confirm;
  * this interface are part of the public API.
  *
  * <h2>Tutorials</h2>
- * <a href="http://www.rabbitmq.com/getstarted.html">RabbitMQ tutorials</a> demonstrate how
+ * <a href="https://www.rabbitmq.com/getstarted.html">RabbitMQ tutorials</a> demonstrate how
  * key methods of this interface are used.
  *
  * <h2>User Guide</h2>
- * See <a href="http://www.rabbitmq.com/api-guide.html">Java Client User Guide</a>.
+ * See <a href="https://www.rabbitmq.com/api-guide.html">Java Client User Guide</a>.
  *
  * <h2>Concurrency Considerations</h2>
  * <p>
@@ -47,13 +47,13 @@ import com.rabbitmq.client.AMQP.Confirm;
  * multiple threads. While some operations on channels are safe to invoke
  * concurrently, some are not and will result in incorrect frame interleaving
  * on the wire. Sharing channels between threads will also interfere with
- * <a href="http://www.rabbitmq.com/confirms.html">Publisher Confirms</a>.
+ * <a href="https://www.rabbitmq.com/confirms.html">Publisher Confirms</a>.
  *
  * As such, applications need to use a {@link Channel} per thread.
  * </p>
  *
- * @see <a href="http://www.rabbitmq.com/getstarted.html">RabbitMQ tutorials</a>
- * @see <a href="http://www.rabbitmq.com/api-guide.html">RabbitMQ Java Client User Guide</a>
+ * @see <a href="https://www.rabbitmq.com/getstarted.html">RabbitMQ tutorials</a>
+ * @see <a href="https://www.rabbitmq.com/api-guide.html">RabbitMQ Java Client User Guide</a>
  */
 public interface Channel extends ShutdownNotifier, AutoCloseable {
     /**
@@ -243,10 +243,10 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * protocol exception, which closes the channel.
      *
      * Invocations of <code>Channel#basicPublish</code> will eventually block if a
-     * <a href="http://www.rabbitmq.com/alarms.html">resource-driven alarm</a> is in effect.
+     * <a href="https://www.rabbitmq.com/alarms.html">resource-driven alarm</a> is in effect.
      *
      * @see com.rabbitmq.client.AMQP.Basic.Publish
-     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
+     * @see <a href="https://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
      * @param props other properties for the message - routing headers etc
@@ -259,10 +259,10 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * Publish a message.
      *
      * Invocations of <code>Channel#basicPublish</code> will eventually block if a
-     * <a href="http://www.rabbitmq.com/alarms.html">resource-driven alarm</a> is in effect.
+     * <a href="https://www.rabbitmq.com/alarms.html">resource-driven alarm</a> is in effect.
      *
      * @see com.rabbitmq.client.AMQP.Basic.Publish
-     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
+     * @see <a href="https://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
      * @param mandatory true if the 'mandatory' flag is to be set
@@ -280,10 +280,10 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * protocol exception, which closes the channel.
      *
      * Invocations of <code>Channel#basicPublish</code> will eventually block if a
-     * <a href="http://www.rabbitmq.com/alarms.html">resource-driven alarm</a> is in effect.
+     * <a href="https://www.rabbitmq.com/alarms.html">resource-driven alarm</a> is in effect.
      *
      * @see com.rabbitmq.client.AMQP.Basic.Publish
-     * @see <a href="http://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
+     * @see <a href="https://www.rabbitmq.com/alarms.html">Resource-driven alarms</a>
      * @param exchange the exchange to publish the message to
      * @param routingKey the routing key
      * @param mandatory true if the 'mandatory' flag is to be set
