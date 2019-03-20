@@ -5,8 +5,6 @@
         </encoder>
     </appender>
 
-    <logger name="com.rabbitmq.client.test.BrokerTestCase" level="info" />
-
     <root level="warn">
         <appender-ref ref="STDOUT" />
     </root>
