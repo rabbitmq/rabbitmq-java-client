@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Public API: Interface to an AMQ connection. See the see the <a href="http://www.amqp.org/">spec</a> for details.
+ * Public API: Interface to an AMQ connection. See the see the <a href="https://www.amqp.org/">spec</a> for details.
  * <p>
  * To connect to a broker, fill in a {@link ConnectionFactory} and use a {@link ConnectionFactory} as follows:
  *
@@ -116,7 +116,7 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
 
     /**
      * Create a new channel, using an internally allocated channel number.
-     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * If <a href="https://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
      * is enabled, the channel returned by this method will be {@link Recoverable}.
      * <p>
      * Use {@link #openChannel()} if you want to use an {@link Optional} to deal
@@ -143,7 +143,7 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
      * Create a new channel wrapped in an {@link Optional}.
      * The channel number is allocated internally.
      * <p>
-     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * If <a href="https://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
      * is enabled, the channel returned by this method will be {@link Recoverable}.
      * <p>
      * Use {@link #createChannel()} to return directly a {@link Channel} or {@code null}.
