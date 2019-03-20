@@ -18,7 +18,7 @@ package com.rabbitmq.client;
 
 /**
  * Public interface to objects representing an AMQP 0-9-1 method
- * @see http://www.rabbitmq.com/specification.html.
+ * @see https://www.rabbitmq.com/specification.html.
  */
 
 public interface Method {

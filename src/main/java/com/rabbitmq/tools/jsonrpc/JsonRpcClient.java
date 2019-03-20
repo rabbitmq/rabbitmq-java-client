@@ -31,8 +31,8 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 /**
- * <a href="http://json-rpc.org">JSON-RPC</a> is a lightweight
- * RPC mechanism using <a href="http://www.json.org/">JSON</a>
+ * <a href="https://www.jsonrpc.org/">JSON-RPC</a> is a lightweight
+ * RPC mechanism using <a href="https://www.json.org/">JSON</a>
  * as a data language for request and reply messages. It is
  * rapidly becoming a standard in web development, where it is
  * used to make RPC requests over HTTP. RabbitMQ provides an

@@ -237,7 +237,7 @@ public class TestUtils {
     }
 
     /**
-     * http://stackoverflow.com/questions/6701948/efficient-way-to-compare-version-strings-in-java
+     * https://stackoverflow.com/questions/6701948/efficient-way-to-compare-version-strings-in-java
      */
     static int versionCompare(String str1, String str2) {
         String[] vals1 = str1.split("\\.");

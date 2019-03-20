@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Public API: Interface to an AMQ connection. See the see the <a href="http://www.amqp.org/">spec</a> for details.
+ * Public API: Interface to an AMQ connection. See the see the <a href="https://www.amqp.org/">spec</a> for details.
  * <p>
  * To connect to a broker, fill in a {@link ConnectionFactory} and use a {@link ConnectionFactory} as follows:
  *
@@ -115,7 +115,7 @@ public interface Connection extends ShutdownNotifier, Closeable { // rename to A
 
     /**
      * Create a new channel, using an internally allocated channel number.
-     * If <a href="http://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
+     * If <a href="https://www.rabbitmq.com/api-guide.html#recovery">automatic connection recovery</a>
      * is enabled, the channel returned by this method will be {@link Recoverable}.
      *
      * @return a new channel descriptor, or null if none is available
