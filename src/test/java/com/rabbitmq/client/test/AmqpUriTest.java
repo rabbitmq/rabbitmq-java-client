@@ -63,7 +63,7 @@ public class AmqpUriTest extends BrokerTestCase
                      "user", "pass", "[::1]", 100, "/");
 
         /* Various failure cases */
-        parseFail("http://www.rabbitmq.com");
+        parseFail("https://www.rabbitmq.com");
         parseFail("amqp://foo[::1]");
         parseFail("amqp://foo:[::1]");
         parseFail("amqp://[::1]foo");
