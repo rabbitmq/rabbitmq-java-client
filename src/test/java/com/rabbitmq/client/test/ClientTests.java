@@ -69,7 +69,8 @@ import org.junit.runners.Suite;
     NioDeadlockOnConnectionClosing.class,
     GeneratedClassesTest.class,
     RpcTopologyRecordingTest.class,
-    ConnectionTest.class
+    ConnectionTest.class,
+    ChannelNTest.class
 })
 public class ClientTests {
 
