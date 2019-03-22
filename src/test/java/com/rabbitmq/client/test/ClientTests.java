@@ -70,7 +70,8 @@ import org.junit.runners.Suite;
     GeneratedClassesTest.class,
     RpcTopologyRecordingTest.class,
     ConnectionTest.class,
-    TlsUtilsTest.class
+    TlsUtilsTest.class,
+    ChannelNTest.class
 })
 public class ClientTests {
 
