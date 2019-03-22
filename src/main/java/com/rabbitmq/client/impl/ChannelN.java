@@ -381,6 +381,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 Basic.Cancel m = (Basic.Cancel)method;
                 String consumerTag = m.getConsumerTag();
                 Consumer callback = _consumers.remove(consumerTag);
+                // Not finding any matching consumer isn't necessarily an indication of an issue anywhere.
+                // Sometimes there's a natural race condition between consumer management on the server and client ends.
+                // E.g. Channel#basicCancel called just before a basic.cancel for the same consumer tag is received.
+                // See https://github.com/rabbitmq/rabbitmq-java-client/issues/525
                 if (callback == null) {
                     callback = defaultConsumer;
                 }
