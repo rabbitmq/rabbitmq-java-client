@@ -15,17 +15,13 @@
 
 package com.rabbitmq.client;
 
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.AMQP.*;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
-
-import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.AMQP.Exchange;
-import com.rabbitmq.client.AMQP.Queue;
-import com.rabbitmq.client.AMQP.Tx;
-import com.rabbitmq.client.AMQP.Basic;
-import com.rabbitmq.client.AMQP.Confirm;
 
 /**
  * Interface to a channel. All non-deprecated methods of
@@ -1220,8 +1216,11 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
     /**
      * Cancel a consumer. Calls the consumer's {@link Consumer#handleCancelOk}
      * method.
+     * <p>
+     * A consumer tag that does not match any consumer is ignored.
+     *
      * @param consumerTag a client- or server-generated consumer tag to establish context
-     * @throws IOException if an error is encountered, or if the consumerTag is unknown
+     * @throws IOException if an error is encountered
      * @see com.rabbitmq.client.AMQP.Basic.Cancel
      * @see com.rabbitmq.client.AMQP.Basic.CancelOk
      */

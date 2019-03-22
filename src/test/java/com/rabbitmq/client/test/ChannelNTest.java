@@ -22,7 +22,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -51,8 +50,8 @@ public class ChannelNTest {
         channel.processAsync(new AMQCommand(method));
     }
 
-    @Test(expected = IOException.class)
-    public void callingBasicCancelForUnknownConsumerThrowsException() throws Exception {
+    @Test
+    public void callingBasicCancelForUnknownConsumerDoesNotThrowException() throws Exception {
         AMQConnection connection = Mockito.mock(AMQConnection.class);
         ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
         channel.basicCancel("does-not-exist");
