@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -30,22 +31,31 @@ public class ChannelNTest {
     ConsumerWorkService consumerWorkService;
     ExecutorService executorService;
 
-    @Before public void init() {
+    @Before
+    public void init() {
         executorService = Executors.newSingleThreadExecutor();
         consumerWorkService = new ConsumerWorkService(executorService, null, 1000, 1000);
     }
 
-    @After public void tearDown() {
+    @After
+    public void tearDown() {
         consumerWorkService.shutdown();
         executorService.shutdownNow();
     }
 
     @Test
-    public void cancelUnknownConsumerDoesNotThrowException() throws Exception {
+    public void serverBasicCancelForUnknownConsumerDoesNotThrowException() throws Exception {
         AMQConnection connection = Mockito.mock(AMQConnection.class);
         ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
         Method method = new AMQImpl.Basic.Cancel.Builder().consumerTag("does-not-exist").build();
         channel.processAsync(new AMQCommand(method));
+    }
+
+    @Test(expected = IOException.class)
+    public void callingBasicCancelForUnknownConsumerThrowsException() throws Exception {
+        AMQConnection connection = Mockito.mock(AMQConnection.class);
+        ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
+        channel.basicCancel("does-not-exist");
     }
 
 }
