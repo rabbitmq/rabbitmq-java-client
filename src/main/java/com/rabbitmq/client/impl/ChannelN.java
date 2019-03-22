@@ -397,6 +397,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                                       consumerTag,
                                                                                       "handleCancel");
                     }
+                } else {
+                    LOGGER.warn("Could not cancel consumer with unknown tag {}", consumerTag);
                 }
                 return true;
             } else {
