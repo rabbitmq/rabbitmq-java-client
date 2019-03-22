@@ -1468,8 +1468,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         final Consumer originalConsumer = _consumers.get(consumerTag);
-        if (originalConsumer == null)
-            throw new IOException("Unknown consumerTag");
+        if (originalConsumer == null) {
+            LOGGER.warn("Tried to cancel consumer with unknown tag {}", consumerTag);
+            return;
+        }
 
         final Method m = new Basic.Cancel(consumerTag, false);
         BlockingRpcContinuation<Consumer> k = new BlockingRpcContinuation<Consumer>(m) {
