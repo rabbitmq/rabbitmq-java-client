@@ -132,7 +132,7 @@ public class MetricsCollectorTest {
         assertThat(failedToPublishMessages(metrics), is(1L));
         assertThat(publishedMessages(metrics), is(0L));
 
-        metrics.basicPublish(channel);
+        metrics.basicPublish(channel, 0L);
         assertThat(failedToPublishMessages(metrics), is(1L));
         assertThat(publishedMessages(metrics), is(1L));
 
@@ -140,7 +140,7 @@ public class MetricsCollectorTest {
         assertThat(failedToPublishMessages(metrics), is(2L));
         assertThat(publishedMessages(metrics), is(1L));
 
-        metrics.basicPublish(channel);
+        metrics.basicPublish(channel, 0L);
         assertThat(failedToPublishMessages(metrics), is(2L));
         assertThat(publishedMessages(metrics), is(2L));
 
@@ -150,43 +150,90 @@ public class MetricsCollectorTest {
     }
 
     @Test public void publishingAcknowledgements() {
-        long anyDeliveryTag = 123L;
         AbstractMetricsCollector metrics = factory.create();
+        Connection connection = mock(Connection.class);
+        when(connection.getId()).thenReturn("connection-1");
         Channel channel = mock(Channel.class);
+        when(channel.getConnection()).thenReturn(connection);
+        when(channel.getChannelNumber()).thenReturn(1);
+
+        metrics.newConnection(connection);
+        metrics.newChannel(channel);
+
         // begins with no messages acknowledged
         assertThat(publishAck(metrics), is(0L));
         // first acknowledgement gets tracked
-        metrics.basicPublishAck(channel, anyDeliveryTag, false);
+        metrics.basicPublish(channel, 1);
+        metrics.basicPublishAck(channel, 1, false);
         assertThat(publishAck(metrics), is(1L));
         // second acknowledgement gets tracked
-        metrics.basicPublishAck(channel, anyDeliveryTag, false);
+        metrics.basicPublish(channel, 2);
+        metrics.basicPublishAck(channel, 2, false);
         assertThat(publishAck(metrics), is(2L));
-        // multiple deliveries aren't tracked
-        metrics.basicPublishAck(channel, anyDeliveryTag, true);
+
+        // this is idempotent
+        metrics.basicPublishAck(channel, 2, false);
         assertThat(publishAck(metrics), is(2L));
+
+        // multi-ack
+        metrics.basicPublish(channel, 3);
+        metrics.basicPublish(channel, 4);
+        metrics.basicPublish(channel, 5);
+        // ack-ing in the middle
+        metrics.basicPublishAck(channel, 4, false);
+        assertThat(publishAck(metrics), is(3L));
+        // ack-ing several at once
+        metrics.basicPublishAck(channel, 5, true);
+        assertThat(publishAck(metrics), is(5L));
+
+        // ack-ing non existent doesn't affect metrics
+        metrics.basicPublishAck(channel, 123, true);
+        assertThat(publishAck(metrics), is(5L));
+
         // cleaning stale state doesn't affect the metric
         metrics.cleanStaleState();
-        assertThat(publishAck(metrics), is(2L));
+        assertThat(publishAck(metrics), is(5L));
     }
 
     @Test public void publishingNotAcknowledgements() {
-        long anyDeliveryTag = 123L;
         AbstractMetricsCollector metrics = factory.create();
+        Connection connection = mock(Connection.class);
+        when(connection.getId()).thenReturn("connection-1");
         Channel channel = mock(Channel.class);
+        when(channel.getConnection()).thenReturn(connection);
+        when(channel.getChannelNumber()).thenReturn(1);
+
+        metrics.newConnection(connection);
+        metrics.newChannel(channel);
         // begins with no messages not-acknowledged
         assertThat(publishNack(metrics), is(0L));
         // first not-acknowledgement gets tracked
-        metrics.basicPublishNack(channel, anyDeliveryTag, false);
+        metrics.basicPublish(channel, 1);
+        metrics.basicPublishNack(channel, 1, false);
         assertThat(publishNack(metrics), is(1L));
         // second not-acknowledgement gets tracked
-        metrics.basicPublishNack(channel, anyDeliveryTag, false);
+        metrics.basicPublish(channel, 2);
+        metrics.basicPublishNack(channel, 2, false);
         assertThat(publishNack(metrics), is(2L));
-        // multiple deliveries aren't tracked
-        metrics.basicPublishNack(channel, anyDeliveryTag, true);
-        assertThat(publishNack(metrics), is(2L));
+
+        // multi-nack
+        metrics.basicPublish(channel, 3);
+        metrics.basicPublish(channel, 4);
+        metrics.basicPublish(channel, 5);
+        // ack-ing in the middle
+        metrics.basicPublishNack(channel, 4, false);
+        assertThat(publishNack(metrics), is(3L));
+        // ack-ing several at once
+        metrics.basicPublishNack(channel, 5, true);
+        assertThat(publishNack(metrics), is(5L));
+
+        // ack-ing non existent doesn't affect metrics
+        metrics.basicPublishNack(channel, 123, true);
+        assertThat(publishNack(metrics), is(5L));
+
         // cleaning stale state doesn't affect the metric
         metrics.cleanStaleState();
-        assertThat(publishNack(metrics), is(2L));
+        assertThat(publishNack(metrics), is(5L));
     }
 
     @Test public void publishingUnrouted() {

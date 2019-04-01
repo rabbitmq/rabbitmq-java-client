@@ -692,9 +692,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
+        final long deliveryTag;
         if (nextPublishSeqNo > 0) {
-            unconfirmedSet.add(getNextPublishSeqNo());
+            deliveryTag = getNextPublishSeqNo();
+            unconfirmedSet.add(deliveryTag);
             nextPublishSeqNo++;
+        } else {
+            deliveryTag = 0;
         }
         if (props == null) {
             props = MessageProperties.MINIMAL_BASIC;
@@ -712,7 +716,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             metricsCollector.basicPublishFailure(this, e);
             throw e;
         }
-        metricsCollector.basicPublish(this);
+        metricsCollector.basicPublish(this, deliveryTag);
     }
 
     /** Public API - {@inheritDoc} */

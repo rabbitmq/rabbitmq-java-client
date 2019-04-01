@@ -34,7 +34,7 @@ public interface MetricsCollector {
 
     void closeChannel(Channel channel);
 
-    void basicPublish(Channel channel);
+    void basicPublish(Channel channel, long deliveryTag);
 
     void basicPublishFailure(Channel channel, Throwable cause);
 

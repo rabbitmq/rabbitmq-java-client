@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 
 /**
  * Base class for {@link MetricsCollector}.
@@ -43,6 +44,14 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     private final Runnable markAcknowledgedMessageAction = () -> markAcknowledgedMessage();
 
     private final Runnable markRejectedMessageAction = () -> markRejectedMessage();
+
+    private final Runnable markMessagePublishAcknowledgedAction = () -> markMessagePublishAcknowledged();
+
+    private final Runnable markMessagePublishNotAcknowledgedAction = () -> markMessagePublishNotAcknowledged();
+
+    private static final Function<ChannelState, Set<Long>> GET_UNACKED_DTAGS = channelState -> channelState.unackedMessageDeliveryTags;
+
+    private static final Function<ChannelState, Set<Long>> GET_UNCONFIRMED_DTAGS = channelState -> channelState.unconfirmedMessageDeliveryTags;
 
     @Override
     public void newConnection(final Connection connection) {
@@ -94,8 +103,17 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void basicPublish(Channel channel) {
+    public void basicPublish(Channel channel, long deliveryTag) {
         try {
+            if (deliveryTag != 0) {
+                ChannelState channelState = channelState(channel);
+                channelState.lock.lock();
+                try {
+                    channelState(channel).unconfirmedMessageDeliveryTags.add(deliveryTag);
+                } finally {
+                    channelState.lock.unlock();
+                }
+            }
             markPublishedMessage();
         } catch(Exception e) {
             LOGGER.info("Error while computing metrics in basicPublish: " + e.getMessage());
@@ -113,26 +131,19 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
     @Override
     public void basicPublishAck(Channel channel, long deliveryTag, boolean multiple) {
-        if (multiple) {
-            // this is a naive approach, as it does not handle multiple nacks
-            return;
-        }
         try {
-            markMessagePublishAcknowledged();
-        } catch(Exception e) {
+            updateChannelStateAfterAckReject(channel, deliveryTag, multiple, GET_UNCONFIRMED_DTAGS, markMessagePublishAcknowledgedAction);
+        } catch (Exception e) {
+            e.printStackTrace();
             LOGGER.info("Error while computing metrics in basicPublishAck: " + e.getMessage());
         }
     }
 
     @Override
     public void basicPublishNack(Channel channel, long deliveryTag, boolean multiple) {
-        if (multiple) {
-            // this is a naive approach, as it does not handle multiple nacks
-            return;
-        }
         try {
-            markMessagePublishNotAcknowledged();
-        } catch(Exception e) {
+            updateChannelStateAfterAckReject(channel, deliveryTag, multiple, GET_UNCONFIRMED_DTAGS, markMessagePublishNotAcknowledgedAction);
+        } catch (Exception e) {
             LOGGER.info("Error while computing metrics in basicPublishNack: " + e.getMessage());
         }
     }
@@ -217,7 +228,7 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     @Override
     public void basicAck(Channel channel, long deliveryTag, boolean multiple) {
         try {
-            updateChannelStateAfterAckReject(channel, deliveryTag, multiple, markAcknowledgedMessageAction);
+            updateChannelStateAfterAckReject(channel, deliveryTag, multiple, GET_UNACKED_DTAGS, markAcknowledgedMessageAction);
         } catch(Exception e) {
             LOGGER.info("Error while computing metrics in basicAck: " + e.getMessage());
         }
@@ -226,7 +237,7 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     @Override
     public void basicNack(Channel channel, long deliveryTag) {
         try {
-            updateChannelStateAfterAckReject(channel, deliveryTag, true, markRejectedMessageAction);
+            updateChannelStateAfterAckReject(channel, deliveryTag, true, GET_UNACKED_DTAGS, markRejectedMessageAction);
         } catch(Exception e) {
             LOGGER.info("Error while computing metrics in basicNack: " + e.getMessage());
         }
@@ -235,18 +246,19 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     @Override
     public void basicReject(Channel channel, long deliveryTag) {
         try {
-            updateChannelStateAfterAckReject(channel, deliveryTag, false, markRejectedMessageAction);
+            updateChannelStateAfterAckReject(channel, deliveryTag, false, GET_UNACKED_DTAGS, markRejectedMessageAction);
         } catch(Exception e) {
             LOGGER.info("Error while computing metrics in basicReject: " + e.getMessage());
         }
     }
 
-    private void updateChannelStateAfterAckReject(Channel channel, long deliveryTag, boolean multiple, Runnable action) {
+    private void updateChannelStateAfterAckReject(Channel channel, long deliveryTag, boolean multiple,
+                                                  Function<ChannelState, Set<Long>> dtags, Runnable action) {
         ChannelState channelState = channelState(channel);
         channelState.lock.lock();
         try {
             if(multiple) {
-                Iterator<Long> iterator = channelState.unackedMessageDeliveryTags.iterator();
+                Iterator<Long> iterator = dtags.apply(channelState).iterator();
                 while(iterator.hasNext()) {
                     long messageDeliveryTag = iterator.next();
                     if(messageDeliveryTag <= deliveryTag) {
@@ -255,7 +267,7 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
                     }
                 }
             } else {
-                if (channelState.unackedMessageDeliveryTags.remove(deliveryTag)) {
+                if (dtags.apply(channelState).remove(deliveryTag)) {
                     action.run();
                 }
             }
@@ -329,6 +341,7 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
         final Set<Long> unackedMessageDeliveryTags = new HashSet<Long>();
         final Set<String> consumersWithManualAck = new HashSet<String>();
+        final Set<Long> unconfirmedMessageDeliveryTags = new HashSet<>();
 
         final Channel channel;
 
