@@ -66,7 +66,7 @@ public class NoOpMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void basicPublish(Channel channel) {
+    public void basicPublish(Channel channel, long deliveryTag) {
 
     }
 
