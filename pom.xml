@@ -61,10 +61,10 @@
     <httpclient.version>4.5.6</httpclient.version>
     <logback.version>1.2.3</logback.version>
     <junit.version>4.12</junit.version>
-    <awaitility.version>3.1.5</awaitility.version>
-    <mockito.version>2.23.4</mockito.version>
-    <bouncycastle.version>1.60</bouncycastle.version>
-    <assert4j.version>3.11.1</assert4j.version>
+    <awaitility.version>3.1.6</awaitility.version>
+    <mockito.version>2.25.1</mockito.version>
+    <bouncycastle.version>1.61</bouncycastle.version>
+    <assertj.version>3.12.2</assertj.version>
 
     <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
@@ -744,7 +744,7 @@
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
-      <version>${assert4j.version}</version>
+      <version>${assertj.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
