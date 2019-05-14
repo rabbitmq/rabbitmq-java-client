@@ -124,10 +124,15 @@ public class ClusteredTestBase extends BrokerTestCase {
     }
 
     protected void stopSecondary() throws IOException {
-        Host.invokeMakeTarget("stop-rabbit-on-node RABBITMQ_NODENAME=\'" + Host.nodenameB() + "\'");
+        Host.executeCommand(Host.rabbitmqctlCommand() +
+                " -n \'" + Host.nodenameB() + "\'" +
+                " stop_app");
     }
 
     protected void startSecondary() throws IOException {
-        Host.invokeMakeTarget("start-rabbit-on-node RABBITMQ_NODENAME=\'" + Host.nodenameB() + "\'");
+        Host.executeCommand(Host.rabbitmqctlCommand() +
+                " -n \'" + Host.nodenameB() + "\'" +
+                " start_app");
+        Host.tryConnectFor(10_000, Host.node_portB() == null ? 5673 : Integer.valueOf(Host.node_portB()));
     }
 }

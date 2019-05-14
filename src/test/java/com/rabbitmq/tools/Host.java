@@ -17,12 +17,10 @@
 package com.rabbitmq.tools;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.rabbitmq.client.Connection;
@@ -121,17 +119,6 @@ public class Host {
         rabbitmqctl("eval 'rabbit_alarm:clear_alarm({resource_limit, " + source + ", node()}).'");
     }
 
-    public static Process invokeMakeTarget(String command) throws IOException {
-        File rabbitmqctl = new File(rabbitmqctlCommand());
-        return executeCommand(makeCommand() +
-                              " -C \'" + rabbitmqDir() + "\'" +
-                              " RABBITMQCTL=\'" + rabbitmqctl.getAbsolutePath() + "\'" +
-                              " RABBITMQ_NODENAME=\'" + nodenameA() + "\'" +
-                              " RABBITMQ_NODE_PORT=" + node_portA() +
-                              " RABBITMQ_CONFIG_FILE=\'" + config_fileA() + "\'" +
-                              " " + command);
-    }
-
     public static void startRabbitOnNode() throws IOException {
         rabbitmqctl("start_app");
         tryConnectFor(10 * 1000);
@@ -142,6 +129,10 @@ public class Host {
     }
 
     public static void tryConnectFor(int timeoutInMs) throws IOException {
+        tryConnectFor(timeoutInMs, node_portA() == null ? 5672 : Integer.valueOf(node_portA()));
+    }
+
+    public static void tryConnectFor(int timeoutInMs, int port) throws IOException {
         int waitTime = 100;
         int totalWaitTime = 0;
         while (totalWaitTime <= timeoutInMs) {
@@ -152,6 +143,7 @@ public class Host {
             }
             totalWaitTime += waitTime;
             ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+            connectionFactory.setPort(port);
             Connection c = null;
             try {
                 c = connectionFactory.newConnection();
