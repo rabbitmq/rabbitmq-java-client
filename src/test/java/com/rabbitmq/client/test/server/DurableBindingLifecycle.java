@@ -26,7 +26,6 @@ import org.junit.Test;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.functional.BindingLifecycleBase;
-import com.rabbitmq.tools.Host;
 
 /**
  * This tests whether bindings are created and nuked properly.
@@ -47,13 +46,8 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
             alternateConnection = null;
             alternateChannel = null;
 
-            Host.invokeMakeTarget(
-              "stop-node" +
-              " start-background-broker" +
-              " RABBITMQ_NODENAME=\'" + Host.nodenameB() + "\'" +
-              " RABBITMQ_NODE_PORT=" + Host.node_portB() +
-              " RABBITMQ_CONFIG_FILE=\'" + Host.config_fileB() + "\'"
-            );
+            stopSecondary();
+            startSecondary();
         }
         restartPrimary();
     }
