@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.rabbitmq.client.Connection;
@@ -142,6 +141,10 @@ public class Host {
     }
 
     public static void tryConnectFor(int timeoutInMs) throws IOException {
+        tryConnectFor(timeoutInMs, node_portA() == null ? 5672 : Integer.valueOf(node_portA()));
+    }
+
+    public static void tryConnectFor(int timeoutInMs, int port) throws IOException {
         int waitTime = 100;
         int totalWaitTime = 0;
         while (totalWaitTime <= timeoutInMs) {
@@ -152,6 +155,7 @@ public class Host {
             }
             totalWaitTime += waitTime;
             ConnectionFactory connectionFactory = TestUtils.connectionFactory();
+            connectionFactory.setPort(port);
             try (Connection ignored = connectionFactory.newConnection()) {
                 return;
 
