@@ -18,11 +18,7 @@ package com.rabbitmq.client.test.server;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
 import com.rabbitmq.client.test.functional.ClusteredTestBase;
@@ -33,25 +29,19 @@ import com.rabbitmq.client.test.functional.ClusteredTestBase;
  */
 public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
     private final String[] queues = new String[QUEUES];
-    private Connection purgeConnection;
 
     @Override
-    protected void createResources() throws IOException, TimeoutException {
+    protected void createResources() throws IOException {
         for (int i = 0; i < queues.length ; i++) {
             queues[i] = alternateChannel.queueDeclare("", false, false, true, null).getQueue();
             alternateChannel.queueBind(queues[i], "amq.fanout", "");
         }
-        this.purgeConnection = TestUtils.connectionFactory().newConnection();
     }
 
     @Override
     protected void releaseResources() throws IOException {
-        try {
-            for (int i = 0; i < queues.length ; i++) {
-                alternateChannel.queueDelete(queues[i]);
-            }
-        } finally {
-            TestUtils.close(this.purgeConnection);
+        for (int i = 0; i < queues.length ; i++) {
+            alternateChannel.queueDelete(queues[i]);
         }
     }
 
@@ -62,15 +52,13 @@ public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
     private static final byte[] msg = "".getBytes();
 
     @Test public void effectVisibility() throws Exception {
-        Channel purgeChannel = this.purgeConnection.createChannel();
-        channel.confirmSelect();
+
         for (int i = 0; i < BATCHES; i++) {
             for (int j = 0; j < MESSAGES_PER_BATCH; j++) {
                 channel.basicPublish("amq.fanout", "", null, msg);
             }
-            channel.waitForConfirmsOrDie(10_000);
             for (int j = 0; j < queues.length ; j++) {
-                assertEquals(MESSAGES_PER_BATCH, purgeChannel.queuePurge(queues[j]).getMessageCount());
+                assertEquals(MESSAGES_PER_BATCH, channel.queuePurge(queues[j]).getMessageCount());
             }
         }
     }
