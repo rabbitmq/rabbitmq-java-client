@@ -26,7 +26,7 @@ import org.junit.runners.Suite;
 	Permissions.class,
     DurableBindingLifecycle.class,
     DeadLetterExchangeDurable.class,
-    //EffectVisibilityCrossNodeTest.class,
+    EffectVisibilityCrossNodeTest.class,
     ExclusiveQueueDurability.class,
     AbsentQueue.class,
     AlternateExchangeEquivalence.class,

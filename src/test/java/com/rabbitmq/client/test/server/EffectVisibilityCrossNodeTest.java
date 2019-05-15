@@ -18,6 +18,7 @@ package com.rabbitmq.client.test.server;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.util.concurrent.*;
 
 import org.junit.Test;
 
@@ -46,20 +47,30 @@ public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
     }
 
     private static final int QUEUES = 5;
-    private static final int BATCHES = 500;
-    private static final int MESSAGES_PER_BATCH = 10;
+    private static final int BATCHES = 100;
+    private static final int MESSAGES_PER_BATCH = 5;
 
     private static final byte[] msg = "".getBytes();
 
     @Test public void effectVisibility() throws Exception {
-
-        for (int i = 0; i < BATCHES; i++) {
-            for (int j = 0; j < MESSAGES_PER_BATCH; j++) {
-                channel.basicPublish("amq.fanout", "", null, msg);
-            }
-            for (int j = 0; j < queues.length ; j++) {
-                assertEquals(MESSAGES_PER_BATCH, channel.queuePurge(queues[j]).getMessageCount());
-            }
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            Future<Void> task = executorService.submit(() -> {
+                for (int i = 0; i < BATCHES; i++) {
+                    Thread.sleep(10); // to avoid flow control for the connection
+                    for (int j = 0; j < MESSAGES_PER_BATCH; j++) {
+                        channel.basicPublish("amq.fanout", "", null, msg);
+                    }
+                    for (int j = 0; j < queues.length; j++) {
+                        assertEquals(MESSAGES_PER_BATCH, channel.queuePurge(queues[j]).getMessageCount());
+                    }
+                }
+                return null;
+            });
+            task.get(1, TimeUnit.MINUTES);
+        } finally {
+            executorService.shutdownNow();
+            executorService.awaitTermination(1, TimeUnit.SECONDS);
         }
     }
 }
