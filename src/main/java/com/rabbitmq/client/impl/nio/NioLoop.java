@@ -115,7 +115,14 @@ public class NioLoop implements Runnable {
                     registration = registrationIterator.next();
                     registrationIterator.remove();
                     int operations = registration.operations;
-                    registration.state.getChannel().register(selector, operations, registration.state);
+                    try {
+                        if (registration.state.getChannel().isOpen()) {
+                            registration.state.getChannel().register(selector, operations, registration.state);
+                        }
+                    } catch (Exception e) {
+                        // can happen if the channel has been closed since the operation has been enqueued
+                        LOGGER.info("Error while registering socket channel for read: {}", e.getMessage());
+                    }
                 }
 
                 if (select > 0) {
