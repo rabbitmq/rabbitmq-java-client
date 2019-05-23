@@ -58,7 +58,7 @@
     <metrics.version>3.2.6</metrics.version>
     <micrometer.version>1.0.10</micrometer.version>
     <jackson.version>2.9.9</jackson.version>
-    <httpclient.version>4.5.6</httpclient.version>
+    <httpclient.version>4.5.8</httpclient.version>
     <logback.version>1.2.3</logback.version>
     <junit.version>4.12</junit.version>
     <awaitility.version>3.1.6</awaitility.version>
