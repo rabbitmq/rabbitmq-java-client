@@ -35,7 +35,7 @@ public class DeadLetterExchange extends BrokerTestCase {
     public static final String DLQ = "queue.dlq";
     private static final String DLQ2 = "queue.dlq2";
     public static final int MSG_COUNT = 10;
-    private static final int TTL = 1000;
+    private static final int TTL = 2000;
 
     @Override
     protected void createResources() throws IOException {
