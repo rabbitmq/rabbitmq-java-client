@@ -1347,7 +1347,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
     /**
      * Returns the number of messages in a queue ready to be delivered
      * to consumers. This method assumes the queue exists. If it doesn't,
-     * an exception will be closed with an exception.
+     * the channels will be closed with an exception.
      * @param queue the name of the queue
      * @return the number of messages in ready state
      * @throws IOException Problem transmitting method.
@@ -1357,7 +1357,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
     /**
      * Returns the number of consumers on a queue.
      * This method assumes the queue exists. If it doesn't,
-     * an exception will be closed with an exception.
+     * the channel will be closed with an exception.
      * @param queue the name of the queue
      * @return the number of consumers
      * @throws IOException Problem transmitting method.
