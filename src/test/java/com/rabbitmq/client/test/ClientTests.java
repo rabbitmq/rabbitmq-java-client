@@ -19,6 +19,9 @@ package com.rabbitmq.client.test;
 import com.rabbitmq.client.JacksonJsonRpcTest;
 import com.rabbitmq.client.DefaultJsonRpcTest;
 import com.rabbitmq.client.impl.ValueWriterTest;
+import com.rabbitmq.client.RefreshCredentialsTest;
+import com.rabbitmq.client.impl.DefaultCredentialsRefreshServiceTest;
+import com.rabbitmq.client.impl.OAuth2ClientCredentialsGrantCredentialsProviderTest;
 import com.rabbitmq.utility.IntAllocatorTests;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -73,7 +76,10 @@ import org.junit.runners.Suite;
     ConnectionTest.class,
     TlsUtilsTest.class,
     ChannelNTest.class,
-    ValueWriterTest.class
+    ValueWriterTest.class,
+    DefaultCredentialsRefreshServiceTest.class,
+    OAuth2ClientCredentialsGrantCredentialsProviderTest.class,
+    RefreshCredentialsTest.class
 })
 public class ClientTests {
 

@@ -15,15 +15,7 @@
 
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ConnectionParams;
-import com.rabbitmq.client.impl.CredentialsProvider;
-import com.rabbitmq.client.impl.DefaultCredentialsProvider;
-import com.rabbitmq.client.impl.DefaultExceptionHandler;
-import com.rabbitmq.client.impl.ErrorOnWriteListener;
-import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.FrameHandlerFactory;
-import com.rabbitmq.client.impl.SocketFrameHandlerFactory;
+import com.rabbitmq.client.impl.*;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.nio.SocketChannelFrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
@@ -208,6 +200,8 @@ public class ConnectionFactory implements Cloneable {
      * @since 5.5.0
      */
     private TrafficListener trafficListener = TrafficListener.NO_OP;
+
+    private CredentialsRefreshService credentialsRefreshService;
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -854,6 +848,10 @@ public class ConnectionFactory implements Cloneable {
         return metricsCollector;
     }
 
+    public void setCredentialsRefreshService(CredentialsRefreshService credentialsRefreshService) {
+        this.credentialsRefreshService = credentialsRefreshService;
+    }
+
     protected synchronized FrameHandlerFactory createFrameHandlerFactory() throws IOException {
         if(nio) {
             if(this.frameHandlerFactory == null) {
@@ -1161,6 +1159,7 @@ public class ConnectionFactory implements Cloneable {
         result.setConnectionRecoveryTriggeringCondition(connectionRecoveryTriggeringCondition);
         result.setTopologyRecoveryRetryHandler(topologyRecoveryRetryHandler);
         result.setTrafficListener(trafficListener);
+        result.setCredentialsRefreshService(credentialsRefreshService);
         return result;
     }
 
