@@ -142,6 +142,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final int channelRpcTimeout;
     private final boolean channelShouldCheckRpcResponseType;
     private final TrafficListener trafficListener;
+    private final CredentialsRefreshService credentialsRefreshService;
 
     /* State modified after start - all volatile */
 
@@ -239,6 +240,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.channelShouldCheckRpcResponseType = params.channelShouldCheckRpcResponseType();
 
         this.trafficListener = params.getTrafficListener() == null ? TrafficListener.NO_OP : params.getTrafficListener();
+
+        this.credentialsRefreshService = params.getCredentialsRefreshService();
+
         this._channel0 = new AMQChannel(this, 0) {
             @Override public boolean processAsync(Command c) throws IOException {
                 return getConnection().processControlCommand(c);
@@ -336,6 +340,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
             String username = credentialsProvider.getUsername();
             String password = credentialsProvider.getPassword();
+
+            if (credentialsProvider.getExpiration() != null) {
+                if (this.credentialsRefreshService.needRefresh(credentialsProvider.getExpiration())) {
+                    credentialsProvider.refresh();
+                    username = credentialsProvider.getUsername();
+                    password = credentialsProvider.getPassword();
+                }
+            }
+
             LongString challenge = null;
             LongString response = sm.handleChallenge(null, username, password);
 
@@ -408,6 +421,26 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             _heartbeatSender.shutdown();
             _frameHandler.close();
             throw AMQChannel.wrap(sse);
+        }
+
+        if (this.credentialsProvider.getExpiration() != null) {
+            String registrationId = this.credentialsRefreshService.register(credentialsProvider, () -> {
+                // return false if connection is closed, so refresh service can get rid of this registration
+                if (!isOpen()) {
+                    return false;
+                }
+                if (this._inConnectionNegotiation) {
+                    // this should not happen
+                    return true;
+                }
+                String refreshedPassword = credentialsProvider.getPassword();
+
+                // TODO send password to server with update-secret extension, using channel 0
+
+                return true;
+            });
+
+            addShutdownListener(sse -> this.credentialsRefreshService.unregister(this.credentialsProvider, registrationId));
         }
 
         // We can now respond to errors having finished tailoring the connection

@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -239,5 +240,13 @@ public class TestUtils {
         // the strings are equal or one string is a substring of the other
         // e.g. "1.2.3" = "1.2.3" or "1.2.3" < "1.2.3.4"
         return Integer.signum(vals1.length - vals2.length);
+    }
+
+    public static int randomNetworkPort() throws IOException {
+        ServerSocket socket = new ServerSocket();
+        socket.bind(null);
+        int port = socket.getLocalPort();
+        socket.close();
+        return port;
     }
 }

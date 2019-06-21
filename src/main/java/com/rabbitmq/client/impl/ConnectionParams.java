@@ -60,6 +60,8 @@ public class ConnectionParams {
 
     private TrafficListener trafficListener;
 
+    private CredentialsRefreshService credentialsRefreshService;
+
     public ConnectionParams() {}
 
     public CredentialsProvider getCredentialsProvider() {
@@ -276,5 +278,13 @@ public class ConnectionParams {
 
     public TrafficListener getTrafficListener() {
         return trafficListener;
+    }
+
+    public void setCredentialsRefreshService(CredentialsRefreshService credentialsRefreshService) {
+        this.credentialsRefreshService = credentialsRefreshService;
+    }
+
+    public CredentialsRefreshService getCredentialsRefreshService() {
+        return credentialsRefreshService;
     }
 }
