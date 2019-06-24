@@ -16,51 +16,60 @@
 package com.rabbitmq.client.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
-
-public class OAuth2ClientCredentialsGrantCredentialsProvider implements CredentialsProvider {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2ClientCredentialsGrantCredentialsProvider.class);
+/**
+ *
+ * @see RefreshProtectedCredentialsProvider
+ */
+public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProtectedCredentialsProvider<OAuth2ClientCredentialsGrantCredentialsProvider.Token> {
 
     private static final String UTF_8_CHARSET = "UTF-8";
-    private final String serverUri; // should be renamed to tokenEndpointUri?
+    private final String tokenEndpointUri;
     private final String clientId;
     private final String clientSecret;
     private final String grantType;
-    // UAA specific, to distinguish between different users
-    private final String username, password;
+
+    private final Map<String, String> parameters;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final String id;
 
-    private final AtomicReference<Token> token = new AtomicReference<>();
+    private final HostnameVerifier hostnameVerifier;
+    private final SSLSocketFactory sslSocketFactory;
 
-    private final Lock refreshLock = new ReentrantLock();
-    private final AtomicReference<CountDownLatch> latch = new AtomicReference<>();
-    private AtomicBoolean refreshInProcess = new AtomicBoolean(false);
+    public OAuth2ClientCredentialsGrantCredentialsProvider(String tokenEndpointUri, String clientId, String clientSecret, String grantType) {
+        this(tokenEndpointUri, clientId, clientSecret, grantType, new HashMap<>());
+    }
 
-    public OAuth2ClientCredentialsGrantCredentialsProvider(String serverUri, String clientId, String clientSecret, String grantType, String username, String password) {
-        this.serverUri = serverUri;
+    public OAuth2ClientCredentialsGrantCredentialsProvider(String tokenEndpointUri, String clientId, String clientSecret, String grantType,
+                                                           HostnameVerifier hostnameVerifier, SSLSocketFactory sslSocketFactory) {
+        this(tokenEndpointUri, clientId, clientSecret, grantType, new HashMap<>(), hostnameVerifier, sslSocketFactory);
+    }
+
+    public OAuth2ClientCredentialsGrantCredentialsProvider(String tokenEndpointUri, String clientId, String clientSecret, String grantType, Map<String, String> parameters) {
+        this(tokenEndpointUri, clientId, clientSecret, grantType, parameters, null, null);
+    }
+
+    public OAuth2ClientCredentialsGrantCredentialsProvider(String tokenEndpointUri, String clientId, String clientSecret, String grantType, Map<String, String> parameters,
+                                                           HostnameVerifier hostnameVerifier, SSLSocketFactory sslSocketFactory) {
+        this.tokenEndpointUri = tokenEndpointUri;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.grantType = grantType;
-        this.username = username;
-        this.password = password;
+        this.parameters = Collections.unmodifiableMap(new HashMap<>(parameters));
+        this.hostnameVerifier = hostnameVerifier;
+        this.sslSocketFactory = sslSocketFactory;
         this.id = UUID.randomUUID().toString();
     }
 
@@ -90,19 +99,8 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider implements Credenti
     }
 
     @Override
-    public String getPassword() {
-        if (token.get() == null) {
-            refresh();
-        }
-        return token.get().getAccess();
-    }
-
-    @Override
-    public Date getExpiration() {
-        if (token.get() == null) {
-            refresh();
-        }
-        return token.get().getExpiration();
+    protected String usernameFromToken(Token token) {
+        return "";
     }
 
     protected Token parseToken(String response) {
@@ -118,47 +116,21 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider implements Credenti
     }
 
     @Override
-    public void refresh() {
-        // refresh should happen at once. Other calls wait for the refresh to finish and move on.
-        if (refreshLock.tryLock()) {
-            LOGGER.debug("Refreshing token");
-            try {
-                latch.set(new CountDownLatch(1));
-                refreshInProcess.set(true);
-                token.set(retrieveToken());
-                LOGGER.debug("Token refreshed");
-            } finally {
-                latch.get().countDown();
-                refreshInProcess.set(false);
-                refreshLock.unlock();
-            }
-        } else {
-            try {
-                LOGGER.debug("Waiting for token refresh to be finished");
-                while (!refreshInProcess.get()) {
-                    Thread.sleep(10);
-                }
-                latch.get().await();
-                LOGGER.debug("Done waiting for token refresh");
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
     protected Token retrieveToken() {
-        // FIXME handle TLS specific settings
         try {
             StringBuilder urlParameters = new StringBuilder();
             encode(urlParameters, "grant_type", grantType);
-            encode(urlParameters, "username", username);
-            encode(urlParameters, "password", password);
+            for (Map.Entry<String, String> parameter : parameters.entrySet()) {
+                encode(urlParameters, parameter.getKey(), parameter.getValue());
+            }
             byte[] postData = urlParameters.toString().getBytes(StandardCharsets.UTF_8);
             int postDataLength = postData.length;
-            URL url = new URL(serverUri);
+            URL url = new URL(tokenEndpointUri);
+
             // FIXME close connection?
             // FIXME set timeout on request
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
             conn.setDoOutput(true);
             conn.setInstanceFollowRedirects(false);
             conn.setRequestMethod("POST");
@@ -168,6 +140,9 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider implements Credenti
             conn.setRequestProperty("accept", "application/json");
             conn.setRequestProperty("content-length", Integer.toString(postDataLength));
             conn.setUseCaches(false);
+
+            configureHttpConnection(conn);
+
             try (DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
                 wr.write(postData);
             }
@@ -193,6 +168,28 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider implements Credenti
             return parseToken(content.toString());
         } catch (IOException e) {
             throw new OAuthTokenManagementException("Error while retrieving OAuth 2 token", e);
+        }
+    }
+
+    @Override
+    protected String passwordFromToken(Token token) {
+        return token.getAccess();
+    }
+
+    @Override
+    protected Date expirationFromToken(Token token) {
+        return token.getExpiration();
+    }
+
+    protected void configureHttpConnection(HttpURLConnection connection) {
+        if (connection instanceof HttpsURLConnection) {
+            HttpsURLConnection securedConnection = (HttpsURLConnection) connection;
+            if (this.hostnameVerifier != null) {
+                securedConnection.setHostnameVerifier(this.hostnameVerifier);
+            }
+            if (this.sslSocketFactory != null) {
+                securedConnection.setSSLSocketFactory(this.sslSocketFactory);
+            }
         }
     }
 
@@ -229,5 +226,60 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider implements Credenti
         public String getAccess() {
             return access;
         }
+    }
+
+    public static class OAuth2ClientCredentialsGrantCredentialsProviderBuilder {
+
+        private final Map<String, String> parameters = new HashMap<>();
+        private String tokenEndpointUri;
+        private String clientId;
+        private String clientSecret;
+        private String grantType = "client_credentials";
+        private HostnameVerifier hostnameVerifier;
+
+        private SSLSocketFactory sslSocketFactory;
+
+        public OAuth2ClientCredentialsGrantCredentialsProviderBuilder tokenEndpointUri(String tokenEndpointUri) {
+            this.tokenEndpointUri = tokenEndpointUri;
+            return this;
+        }
+
+        public OAuth2ClientCredentialsGrantCredentialsProviderBuilder clientId(String clientId) {
+            this.clientId = clientId;
+            return this;
+        }
+
+        public OAuth2ClientCredentialsGrantCredentialsProviderBuilder clientSecret(String clientSecret) {
+            this.clientSecret = clientSecret;
+            return this;
+        }
+
+        public OAuth2ClientCredentialsGrantCredentialsProviderBuilder grantType(String grantType) {
+            this.grantType = grantType;
+            return this;
+        }
+
+        public OAuth2ClientCredentialsGrantCredentialsProviderBuilder parameter(String name, String value) {
+            this.parameters.put(name, value);
+            return this;
+        }
+
+        public OAuth2ClientCredentialsGrantCredentialsProviderBuilder setHostnameVerifier(HostnameVerifier hostnameVerifier) {
+            this.hostnameVerifier = hostnameVerifier;
+            return this;
+        }
+
+        public OAuth2ClientCredentialsGrantCredentialsProviderBuilder setSslSocketFactory(SSLSocketFactory sslSocketFactory) {
+            this.sslSocketFactory = sslSocketFactory;
+            return this;
+        }
+
+        public OAuth2ClientCredentialsGrantCredentialsProvider build() {
+            return new OAuth2ClientCredentialsGrantCredentialsProvider(
+                    tokenEndpointUri, clientId, clientSecret, grantType, parameters,
+                    hostnameVerifier, sslSocketFactory
+            );
+        }
+
     }
 }

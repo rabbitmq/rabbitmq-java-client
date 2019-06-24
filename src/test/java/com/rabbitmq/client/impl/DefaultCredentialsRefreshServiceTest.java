@@ -166,9 +166,7 @@ public class DefaultCredentialsRefreshServiceTest {
         state.add(new DefaultCredentialsRefreshService.Registration("1", refreshAction));
 
         int callsCountBeforeCancellation = 5;
-        IntStream.range(0, callsCountBeforeCancellation).forEach(i -> {
-            state.refresh();
-        });
+        IntStream.range(0, callsCountBeforeCancellation).forEach(i -> state.refresh());
 
         verify(credentialsProvider, times(callsCountBeforeCancellation)).refresh();
         verify(refreshAction, times(callsCountBeforeCancellation)).call();

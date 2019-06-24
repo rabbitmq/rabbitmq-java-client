@@ -64,6 +64,7 @@
     <mockito.version>2.25.1</mockito.version>
     <assertj.version>3.12.2</assertj.version>
     <jetty.version>9.4.19.v20190610</jetty.version>
+    <bouncycastle.version>1.61</bouncycastle.version>
 
     <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
@@ -749,6 +750,12 @@
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
       <version>${jetty.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+      <version>${bouncycastle.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

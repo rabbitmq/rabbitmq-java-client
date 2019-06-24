@@ -13,16 +13,19 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-package com.rabbitmq.client;
+package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.DefaultCredentialsRefreshService;
-import com.rabbitmq.client.impl.OAuth2ClientCredentialsGrantCredentialsProvider;
-import com.rabbitmq.client.test.TestUtils;
+import com.rabbitmq.client.impl.RefreshProtectedCredentialsProvider;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -43,26 +46,31 @@ public class RefreshCredentialsTest {
     public void connectionAndRefreshCredentials() throws Exception {
         ConnectionFactory cf = TestUtils.connectionFactory();
         CountDownLatch latch = new CountDownLatch(5);
-        // OAuth server is actually not used in this test, default RabbitMQ authentication backend is
-        OAuth2ClientCredentialsGrantCredentialsProvider provider = new OAuth2ClientCredentialsGrantCredentialsProvider(
-                "http://localhost:8080/uaa/oauth/token/",
-                "rabbit_client", "rabbit_secret",
-                "password", // UAA-specific, standard is client_credentials
-                "rabbit_super", "rabbit_super" // UAA-specific, to distinguish between RabbitMQ users
-        ) {
+        RefreshProtectedCredentialsProvider<TestToken> provider = new RefreshProtectedCredentialsProvider<TestToken>() {
             @Override
-            protected Token retrieveToken() {
+            protected TestToken retrieveToken() {
                 latch.countDown();
                 Calendar calendar = Calendar.getInstance();
                 calendar.add(Calendar.SECOND, 2);
-                return new Token("guest", calendar.getTime());
+                return new TestToken("guest", calendar.getTime());
             }
 
             @Override
-            public String getUsername() {
+            protected String usernameFromToken(TestToken token) {
                 return "guest";
             }
+
+            @Override
+            protected String passwordFromToken(TestToken token) {
+                return token.secret;
+            }
+
+            @Override
+            protected Date expirationFromToken(TestToken token) {
+                return token.expiration;
+            }
         };
+
         cf.setCredentialsProvider(provider);
         refreshService = new DefaultCredentialsRefreshService.DefaultCredentialsRefreshServiceBuilder()
                 .refreshDelayStrategy(DefaultCredentialsRefreshService.fixedDelayBeforeExpirationRefreshDelayStrategy(Duration.ofSeconds(1)))
@@ -75,6 +83,17 @@ public class RefreshCredentialsTest {
             String queue = ch.queueDeclare().getQueue();
             TestUtils.sendAndConsumeMessage("", queue, queue, c);
             assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+        }
+    }
+
+    private static class TestToken {
+
+        final String secret;
+        final Date expiration;
+
+        TestToken(String secret, Date expiration) {
+            this.secret = secret;
+            this.expiration = expiration;
         }
     }
 
