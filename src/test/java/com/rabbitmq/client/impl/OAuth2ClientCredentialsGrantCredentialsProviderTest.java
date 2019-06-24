@@ -42,9 +42,9 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -124,7 +124,7 @@ public class OAuth2ClientCredentialsGrantCredentialsProviderTest {
         String password = provider.getPassword();
 
         assertThat(password).isEqualTo(accessToken.get());
-        assertThat(provider.getExpiration()).isBetween(offsetNow(expiresIn - 10), offsetNow(expiresIn + 10));
+        assertThat(provider.getTimeBeforeExpiration()).isBetween(Duration.ofSeconds(expiresIn - 10), Duration.ofSeconds(expiresIn + 10));
 
         assertThat(httpMethod).hasValue("POST");
         assertThat(contentType).hasValue("application/x-www-form-urlencoded");
@@ -174,7 +174,7 @@ public class OAuth2ClientCredentialsGrantCredentialsProviderTest {
 
         String password = provider.getPassword();
         assertThat(password).isEqualTo(accessToken);
-        assertThat(provider.getExpiration()).isBetween(offsetNow(expiresIn - 10), offsetNow(expiresIn + 10));
+        assertThat(provider.getTimeBeforeExpiration()).isBetween(Duration.ofSeconds(expiresIn - 10), Duration.ofSeconds(expiresIn + 10));
     }
 
     @Test
@@ -191,13 +191,7 @@ public class OAuth2ClientCredentialsGrantCredentialsProviderTest {
 
         OAuth2ClientCredentialsGrantCredentialsProvider.Token token = provider.parseToken(response);
         assertThat(token.getAccess()).isEqualTo("18c1b1dfdda04382a8bcc14d077b71dd");
-        assertThat(token.getExpiration()).isBetween(offsetNow(expiresIn - 10), offsetNow(expiresIn + 1));
-    }
-
-    Date offsetNow(int seconds) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.SECOND, seconds);
-        return calendar.getTime();
+        assertThat(token.getTimeBeforeExpiration()).isBetween(Duration.ofSeconds(expiresIn - 10), Duration.ofSeconds(expiresIn + 1));
     }
 
     String sampleJsonToken(String accessToken, int expiresIn) {

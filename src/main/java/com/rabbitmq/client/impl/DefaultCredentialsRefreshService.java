@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
@@ -35,7 +34,7 @@ import java.util.function.Supplier;
  * <p>
  * This implementation keeps track of entities (typically AMQP connections) that need
  * to renew credentials. Token renewal is scheduled based on token expiration, using
- * a <code>Function<Date, Long> refreshDelayStrategy</code>. Once credentials
+ * a <code>Function<Duration, Long> refreshDelayStrategy</code>. Once credentials
  * for a {@link CredentialsProvider} have been renewed, the callback registered
  * by each entity/connection is performed. This callback typically propagates
  * the new credentials in the entity state, e.g. sending the new password to the
@@ -51,11 +50,11 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
 
     private final boolean privateScheduler;
 
-    private final Function<Date, Long> refreshDelayStrategy;
+    private final Function<Duration, Long> refreshDelayStrategy;
 
-    private final Function<Date, Boolean> needRefreshStrategy;
+    private final Function<Duration, Boolean> needRefreshStrategy;
 
-    public DefaultCredentialsRefreshService(ScheduledExecutorService scheduler, Function<Date, Long> refreshDelayStrategy, Function<Date, Boolean> needRefreshStrategy) {
+    public DefaultCredentialsRefreshService(ScheduledExecutorService scheduler, Function<Duration, Long> refreshDelayStrategy, Function<Duration, Boolean> needRefreshStrategy) {
         this.refreshDelayStrategy = refreshDelayStrategy;
         this.needRefreshStrategy = needRefreshStrategy;
         if (scheduler == null) {
@@ -76,7 +75,7 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
      * @param duration
      * @return
      */
-    public static Function<Date, Long> fixedDelayBeforeExpirationRefreshDelayStrategy(Duration duration) {
+    public static Function<Duration, Long> fixedDelayBeforeExpirationRefreshDelayStrategy(Duration duration) {
         return new FixedDelayBeforeExpirationRefreshDelayStrategy(duration.toMillis());
     }
 
@@ -86,20 +85,21 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
      * @param limitBeforeExpiration
      * @return
      */
-    public static Function<Date, Boolean> fixedTimeNeedRefreshStrategy(Duration limitBeforeExpiration) {
+    public static Function<Duration, Boolean> fixedTimeNeedRefreshStrategy(Duration limitBeforeExpiration) {
         return new FixedTimeNeedRefreshStrategy(limitBeforeExpiration.toMillis());
     }
 
     // TODO add a delay refresh strategy that bases the time on a percentage of the TTL, use it as default with 80% TTL
 
     private static Runnable refresh(ScheduledExecutorService scheduler, CredentialsProviderState credentialsProviderState,
-                                    Function<Date, Long> refreshDelayStrategy) {
+                                    Function<Duration, Long> refreshDelayStrategy) {
         return () -> {
             LOGGER.debug("Refreshing token");
             credentialsProviderState.refresh();
 
-            Date expirationAfterRefresh = credentialsProviderState.credentialsProvider.getExpiration();
-            long newDelay = refreshDelayStrategy.apply(expirationAfterRefresh);
+            Duration timeBeforeExpiration = credentialsProviderState.credentialsProvider.getTimeBeforeExpiration();
+
+            long newDelay = refreshDelayStrategy.apply(timeBeforeExpiration);
 
             LOGGER.debug("Scheduling refresh in {} milliseconds", newDelay);
 
@@ -122,8 +122,7 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
         credentialsProviderState.add(registration);
 
         credentialsProviderState.maybeSetRefreshTask(() -> {
-            Date expiration = credentialsProvider.getExpiration();
-            long delay = refreshDelayStrategy.apply(expiration);
+            long delay = refreshDelayStrategy.apply(credentialsProvider.getTimeBeforeExpiration());
             LOGGER.debug("Scheduling refresh in {} milliseconds", delay);
             return scheduler.schedule(refresh(scheduler, credentialsProviderState, refreshDelayStrategy), delay, TimeUnit.MILLISECONDS);
         });
@@ -140,8 +139,8 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
     }
 
     @Override
-    public boolean needRefresh(Date expiration) {
-        return this.needRefreshStrategy.apply(expiration);
+    public boolean needRefresh(Duration timeBeforeExpiration) {
+        return this.needRefreshStrategy.apply(timeBeforeExpiration);
     }
 
     public void close() {
@@ -150,7 +149,7 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
         }
     }
 
-    private static class FixedTimeNeedRefreshStrategy implements Function<Date, Boolean> {
+    private static class FixedTimeNeedRefreshStrategy implements Function<Duration, Boolean> {
 
         private final long limitBeforeExpiration;
 
@@ -159,13 +158,12 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
         }
 
         @Override
-        public Boolean apply(Date expiration) {
-            long ttl = expiration.getTime() - new Date().getTime();
-            return ttl <= limitBeforeExpiration;
+        public Boolean apply(Duration timeBeforeExpiration) {
+            return timeBeforeExpiration.toMillis() <= limitBeforeExpiration;
         }
     }
 
-    private static class FixedDelayBeforeExpirationRefreshDelayStrategy implements Function<Date, Long> {
+    private static class FixedDelayBeforeExpirationRefreshDelayStrategy implements Function<Duration, Long> {
 
         private final long delay;
 
@@ -174,11 +172,10 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
         }
 
         @Override
-        public Long apply(Date expiration) {
-            long ttl = expiration.getTime() - new Date().getTime();
-            long refreshTimeBeforeExpiration = ttl - delay;
+        public Long apply(Duration timeBeforeExpiration) {
+            long refreshTimeBeforeExpiration = timeBeforeExpiration.toMillis() - delay;
             if (refreshTimeBeforeExpiration < 0) {
-                return ttl;
+                return timeBeforeExpiration.toMillis();
             } else {
                 return refreshTimeBeforeExpiration;
             }
@@ -279,21 +276,21 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
 
         private ScheduledExecutorService scheduler;
 
-        private Function<Date, Long> refreshDelayStrategy = fixedDelayBeforeExpirationRefreshDelayStrategy(Duration.ofSeconds(60));
+        private Function<Duration, Long> refreshDelayStrategy = fixedDelayBeforeExpirationRefreshDelayStrategy(Duration.ofSeconds(60));
 
-        private Function<Date, Boolean> needRefreshStrategy = fixedTimeNeedRefreshStrategy(Duration.ofSeconds(60));
+        private Function<Duration, Boolean> needRefreshStrategy = fixedTimeNeedRefreshStrategy(Duration.ofSeconds(60));
 
         public DefaultCredentialsRefreshServiceBuilder scheduler(ScheduledThreadPoolExecutor scheduler) {
             this.scheduler = scheduler;
             return this;
         }
 
-        public DefaultCredentialsRefreshServiceBuilder refreshDelayStrategy(Function<Date, Long> refreshDelayStrategy) {
+        public DefaultCredentialsRefreshServiceBuilder refreshDelayStrategy(Function<Duration, Long> refreshDelayStrategy) {
             this.refreshDelayStrategy = refreshDelayStrategy;
             return this;
         }
 
-        public DefaultCredentialsRefreshServiceBuilder needRefreshStrategy(Function<Date, Boolean> needRefreshStrategy) {
+        public DefaultCredentialsRefreshServiceBuilder needRefreshStrategy(Function<Duration, Boolean> needRefreshStrategy) {
             this.needRefreshStrategy = needRefreshStrategy;
             return this;
         }

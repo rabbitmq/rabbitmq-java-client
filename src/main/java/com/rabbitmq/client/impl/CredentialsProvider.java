@@ -15,7 +15,7 @@
 
 package com.rabbitmq.client.impl;
 
-import java.util.Date;
+import java.time.Duration;
 
 /**
  * Provider interface for establishing credentials for connecting to the broker. Especially useful
@@ -42,16 +42,15 @@ public interface CredentialsProvider {
     String getPassword();
 
     /**
-     * The expiration date of the credentials, if any.
+     * The time before the credentials expire, if they do expire.
      * <p>
      * If credentials do not expire, must return null. Default
      * behavior is to return null, assuming credentials never
      * expire.
      *
-     * @return credentials expiration date
+     * @return time before expiration
      */
-    default Date getExpiration() {
-        // no expiration by default
+    default Duration getTimeBeforeExpiration() {
         return null;
     }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2007-2019 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -341,8 +341,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             String username = credentialsProvider.getUsername();
             String password = credentialsProvider.getPassword();
 
-            if (credentialsProvider.getExpiration() != null) {
-                if (this.credentialsRefreshService.needRefresh(credentialsProvider.getExpiration())) {
+            if (credentialsProvider.getTimeBeforeExpiration() != null) {
+                if (this.credentialsRefreshService.needRefresh(credentialsProvider.getTimeBeforeExpiration())) {
                     credentialsProvider.refresh();
                     username = credentialsProvider.getUsername();
                     password = credentialsProvider.getPassword();
@@ -423,7 +423,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             throw AMQChannel.wrap(sse);
         }
 
-        if (this.credentialsProvider.getExpiration() != null) {
+        if (this.credentialsProvider.getTimeBeforeExpiration() != null) {
             String registrationId = this.credentialsRefreshService.register(credentialsProvider, () -> {
                 // return false if connection is closed, so refresh service can get rid of this registration
                 if (!isOpen()) {
