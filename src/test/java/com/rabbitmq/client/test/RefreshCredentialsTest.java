@@ -24,8 +24,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -50,9 +50,7 @@ public class RefreshCredentialsTest {
             @Override
             protected TestToken retrieveToken() {
                 latch.countDown();
-                Calendar calendar = Calendar.getInstance();
-                calendar.add(Calendar.SECOND, 2);
-                return new TestToken("guest", calendar.getTime());
+                return new TestToken("guest", 2, Instant.now());
             }
 
             @Override
@@ -66,8 +64,8 @@ public class RefreshCredentialsTest {
             }
 
             @Override
-            protected Date expirationFromToken(TestToken token) {
-                return token.expiration;
+            protected Duration timeBeforeExpiration(TestToken token) {
+                return token.getTimeBeforeExpiration();
             }
         };
 
@@ -89,11 +87,19 @@ public class RefreshCredentialsTest {
     private static class TestToken {
 
         final String secret;
-        final Date expiration;
+        final int expiresIn;
+        final Instant receivedAt;
 
-        TestToken(String secret, Date expiration) {
+        TestToken(String secret, int expiresIn, Instant receivedAt) {
             this.secret = secret;
-            this.expiration = expiration;
+            this.expiresIn = expiresIn;
+            this.receivedAt = receivedAt;
+        }
+
+        public Duration getTimeBeforeExpiration() {
+            Instant now = Instant.now();
+            long age = receivedAt.until(now, ChronoUnit.SECONDS);
+            return Duration.ofSeconds(expiresIn - age);
         }
     }
 

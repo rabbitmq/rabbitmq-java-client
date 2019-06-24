@@ -23,8 +23,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import java.time.Duration;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -63,11 +61,7 @@ public class DefaultCredentialsRefreshServiceTest {
         AtomicInteger passwordSequence = new AtomicInteger(0);
         when(credentialsProvider.getPassword()).thenAnswer(
                 (Answer<String>) invocation -> "password-" + passwordSequence.get());
-        when(credentialsProvider.getExpiration()).thenAnswer((Answer<Date>) invocation -> {
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.SECOND, 5);
-            return calendar.getTime();
-        });
+        when(credentialsProvider.getTimeBeforeExpiration()).thenAnswer((Answer<Duration>) invocation -> Duration.ofSeconds(5));
         doAnswer(invocation -> {
             passwordSequence.incrementAndGet();
             return null;
@@ -88,11 +82,7 @@ public class DefaultCredentialsRefreshServiceTest {
         AtomicInteger passwordSequence2 = new AtomicInteger(0);
         CredentialsProvider credentialsProvider2 = mock(CredentialsProvider.class);
         when(credentialsProvider2.getPassword()).thenAnswer((Answer<String>) invocation -> "password2-" + passwordSequence2.get());
-        when(credentialsProvider2.getExpiration()).thenAnswer((Answer<Date>) invocation -> {
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.SECOND, 4);
-            return calendar.getTime();
-        });
+        when(credentialsProvider2.getTimeBeforeExpiration()).thenAnswer((Answer<Duration>) invocation -> Duration.ofSeconds(4));
         doAnswer(invocation -> {
             passwordSequence2.incrementAndGet();
             return null;

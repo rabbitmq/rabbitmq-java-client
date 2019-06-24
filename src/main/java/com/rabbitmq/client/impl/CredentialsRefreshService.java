@@ -15,7 +15,7 @@
 
 package com.rabbitmq.client.impl;
 
-import java.util.Date;
+import java.time.Duration;
 import java.util.concurrent.Callable;
 
 /**
@@ -65,9 +65,9 @@ public interface CredentialsRefreshService {
     /**
      * Provide a hint about whether credentials should be renewed.
      *
-     * @param expiration
+     * @param timeBeforeExpiration
      * @return true if credentials should be renewed, false otherwise
      */
-    boolean needRefresh(Date expiration);
+    boolean needRefresh(Duration timeBeforeExpiration);
 
 }

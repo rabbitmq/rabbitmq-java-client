@@ -25,6 +25,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 /**
@@ -107,9 +110,8 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
         try {
             Map<?, ?> map = objectMapper.readValue(response, Map.class);
             int expiresIn = ((Number) map.get("expires_in")).intValue();
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.SECOND, expiresIn);
-            return new Token(map.get("access_token").toString(), calendar.getTime());
+            Instant receivedAt = Instant.now();
+            return new Token(map.get("access_token").toString(), expiresIn, receivedAt);
         } catch (IOException e) {
             throw new OAuthTokenManagementException("Error while parsing OAuth 2 token", e);
         }
@@ -177,8 +179,8 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
     }
 
     @Override
-    protected Date expirationFromToken(Token token) {
-        return token.getExpiration();
+    protected Duration timeBeforeExpiration(Token token) {
+        return token.getTimeBeforeExpiration();
     }
 
     protected void configureHttpConnection(HttpURLConnection connection) {
@@ -212,19 +214,32 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
 
         private final String access;
 
-        private final Date expiration;
+        private final int expiresIn;
 
-        public Token(String access, Date expiration) {
+        private final Instant receivedAt;
+
+        public Token(String access, int expiresIn, Instant receivedAt) {
             this.access = access;
-            this.expiration = expiration;
-        }
-
-        public Date getExpiration() {
-            return expiration;
+            this.expiresIn = expiresIn;
+            this.receivedAt = receivedAt;
         }
 
         public String getAccess() {
             return access;
+        }
+
+        public int getExpiresIn() {
+            return expiresIn;
+        }
+
+        public Instant getReceivedAt() {
+            return receivedAt;
+        }
+
+        public Duration getTimeBeforeExpiration() {
+            Instant now = Instant.now();
+            long age = receivedAt.until(now, ChronoUnit.SECONDS);
+            return Duration.ofSeconds(expiresIn - age);
         }
     }
 

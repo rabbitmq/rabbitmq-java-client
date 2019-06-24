@@ -17,7 +17,7 @@ package com.rabbitmq.client.impl;
 
 import org.junit.Test;
 
-import java.util.Date;
+import java.time.Duration;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,7 +44,7 @@ public class RefreshProtectedCredentialsProviderTest {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                return new TestToken(UUID.randomUUID().toString(), new Date());
+                return new TestToken(UUID.randomUUID().toString());
             }
 
             @Override
@@ -58,8 +58,8 @@ public class RefreshProtectedCredentialsProviderTest {
             }
 
             @Override
-            protected Date expirationFromToken(TestToken token) {
-                return token.expiration;
+            protected Duration timeBeforeExpiration(TestToken token) {
+                return Duration.ofSeconds(1);
             }
         };
 
@@ -79,11 +79,9 @@ public class RefreshProtectedCredentialsProviderTest {
     private static class TestToken {
 
         final String secret;
-        final Date expiration;
 
-        TestToken(String secret, Date expiration) {
+        TestToken(String secret) {
             this.secret = secret;
-            this.expiration = expiration;
         }
     }
 

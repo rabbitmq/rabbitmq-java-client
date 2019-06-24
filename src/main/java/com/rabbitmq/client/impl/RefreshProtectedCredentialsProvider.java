@@ -18,7 +18,7 @@ package com.rabbitmq.client.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,8 +35,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * is already being renewed.
  * <p>
  * Subclasses need to provide the actual token retrieval (whether is a first retrieval or a renewal is
- * a implementation detail) and how to extract information (username, password, expiration date) from the retrieved
- * token.
+ * a implementation detail) and how to extract information (username, password, time before expiration)
+ * from the retrieved token.
  *
  * @param <T> the type of token (usually specified by the subclass)
  */
@@ -67,11 +67,11 @@ public abstract class RefreshProtectedCredentialsProvider<T> implements Credenti
     }
 
     @Override
-    public Date getExpiration() {
+    public Duration getTimeBeforeExpiration() {
         if (token.get() == null) {
             refresh();
         }
-        return expirationFromToken(token.get());
+        return timeBeforeExpiration(token.get());
     }
 
     @Override
@@ -109,5 +109,5 @@ public abstract class RefreshProtectedCredentialsProvider<T> implements Credenti
 
     protected abstract String passwordFromToken(T token);
 
-    protected abstract Date expirationFromToken(T token);
+    protected abstract Duration timeBeforeExpiration(T token);
 }
