@@ -26,10 +26,31 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
+ * A {@link CredentialsProvider} that performs an
+ * <a href="https://tools.ietf.org/html/rfc6749#section-4.4">OAuth 2 Client Credentials flow</a>
+ * to retrieve a token.
+ * <p>
+ * The provider has different parameters to set, e.g. the token endpoint URI of the OAuth server to
+ * request, the client ID, the client secret, the grant type, etc. The {@link OAuth2ClientCredentialsGrantCredentialsProviderBuilder}
+ * class is the preferred way to create an instance of the provider.
+ * <p>
+ * The implementation uses the JDK {@link HttpURLConnection} API to request the OAuth server. This can
+ * be easily changed by overriding the {@link #retrieveToken()} method.
+ * <p>
+ * This class expects a JSON document as a response and needs <a href="https://github.com/FasterXML/jackson">Jackson</a>
+ * to deserialize the response into a {@link Token}. This can be changed by overriding the {@link #parseToken(String)}
+ * method.
+ * <p>
+ * TLS is supported by providing a <code>HTTPS</code> URI and setting the {@link HostnameVerifier} and {@link SSLSocketFactory}.
+ * <p>
+ * If more customization is needed, a {@link #connectionConfigurator} callback can be provided to configure
+ * the connection.
  *
  * @see RefreshProtectedCredentialsProvider
+ * @see CredentialsRefreshService
  */
 public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProtectedCredentialsProvider<OAuth2ClientCredentialsGrantCredentialsProvider.Token> {
 
@@ -48,21 +69,34 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
     private final HostnameVerifier hostnameVerifier;
     private final SSLSocketFactory sslSocketFactory;
 
+    private final Consumer<HttpURLConnection> connectionConfigurator;
+
     public OAuth2ClientCredentialsGrantCredentialsProvider(String tokenEndpointUri, String clientId, String clientSecret, String grantType) {
         this(tokenEndpointUri, clientId, clientSecret, grantType, new HashMap<>());
     }
 
-    public OAuth2ClientCredentialsGrantCredentialsProvider(String tokenEndpointUri, String clientId, String clientSecret, String grantType,
-                                                           HostnameVerifier hostnameVerifier, SSLSocketFactory sslSocketFactory) {
-        this(tokenEndpointUri, clientId, clientSecret, grantType, new HashMap<>(), hostnameVerifier, sslSocketFactory);
+    public OAuth2ClientCredentialsGrantCredentialsProvider(String tokenEndpointUri, String clientId, String clientSecret, String grantType, Map<String, String> parameters) {
+        this(tokenEndpointUri, clientId, clientSecret, grantType, parameters, null, null, null);
     }
 
-    public OAuth2ClientCredentialsGrantCredentialsProvider(String tokenEndpointUri, String clientId, String clientSecret, String grantType, Map<String, String> parameters) {
-        this(tokenEndpointUri, clientId, clientSecret, grantType, parameters, null, null);
+    public OAuth2ClientCredentialsGrantCredentialsProvider(String tokenEndpointUri, String clientId, String clientSecret, String grantType, Map<String, String> parameters,
+                                                           Consumer<HttpURLConnection> connectionConfigurator) {
+        this(tokenEndpointUri, clientId, clientSecret, grantType, parameters, null, null, connectionConfigurator);
+    }
+
+    public OAuth2ClientCredentialsGrantCredentialsProvider(String tokenEndpointUri, String clientId, String clientSecret, String grantType,
+                                                           HostnameVerifier hostnameVerifier, SSLSocketFactory sslSocketFactory) {
+        this(tokenEndpointUri, clientId, clientSecret, grantType, new HashMap<>(), hostnameVerifier, sslSocketFactory, null);
     }
 
     public OAuth2ClientCredentialsGrantCredentialsProvider(String tokenEndpointUri, String clientId, String clientSecret, String grantType, Map<String, String> parameters,
                                                            HostnameVerifier hostnameVerifier, SSLSocketFactory sslSocketFactory) {
+        this(tokenEndpointUri, clientId, clientSecret, grantType, parameters, hostnameVerifier, sslSocketFactory, null);
+    }
+
+    public OAuth2ClientCredentialsGrantCredentialsProvider(String tokenEndpointUri, String clientId, String clientSecret, String grantType, Map<String, String> parameters,
+                                                           HostnameVerifier hostnameVerifier, SSLSocketFactory sslSocketFactory,
+                                                           Consumer<HttpURLConnection> connectionConfigurator) {
         this.tokenEndpointUri = tokenEndpointUri;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
@@ -70,6 +104,8 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
         this.parameters = Collections.unmodifiableMap(new HashMap<>(parameters));
         this.hostnameVerifier = hostnameVerifier;
         this.sslSocketFactory = sslSocketFactory;
+        this.connectionConfigurator = connectionConfigurator == null ? c -> {
+        } : connectionConfigurator;
         this.id = UUID.randomUUID().toString();
     }
 
@@ -127,8 +163,6 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
             int postDataLength = postData.length;
             URL url = new URL(tokenEndpointUri);
 
-            // FIXME close connection?
-            // FIXME set timeout on request
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
             conn.setDoOutput(true);
@@ -140,35 +174,50 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
             conn.setRequestProperty("accept", "application/json");
             conn.setRequestProperty("content-length", Integer.toString(postDataLength));
             conn.setUseCaches(false);
+            conn.setConnectTimeout(60_000);
+            conn.setReadTimeout(60_000);
 
-            configureHttpConnection(conn);
+            configureConnection(conn);
 
             try (DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
                 wr.write(postData);
             }
-            int responseCode = conn.getResponseCode();
-            if (responseCode != 200) {
-                throw new OAuthTokenManagementException(
-                        "HTTP request for token retrieval did not " +
-                                "return 200 response code: " + responseCode
-                );
-            }
 
-            StringBuffer content = new StringBuffer();
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    content.append(inputLine);
-                }
-            }
+            checkResponseCode(conn.getResponseCode());
+            checkContentType(conn.getHeaderField("content-type"));
 
-            // FIXME check result is json
-
-
-            return parseToken(content.toString());
+            return parseToken(extractResponseBody(conn.getInputStream()));
         } catch (IOException e) {
             throw new OAuthTokenManagementException("Error while retrieving OAuth 2 token", e);
         }
+    }
+
+    protected void checkContentType(String headerField) throws OAuthTokenManagementException {
+        if (headerField == null || !headerField.toLowerCase().contains("json")) {
+            throw new OAuthTokenManagementException(
+                    "HTTP request for token retrieval is not JSON: " + headerField
+            );
+        }
+    }
+
+    protected void checkResponseCode(int responseCode) throws OAuthTokenManagementException {
+        if (responseCode != 200) {
+            throw new OAuthTokenManagementException(
+                    "HTTP request for token retrieval did not " +
+                            "return 200 response code: " + responseCode
+            );
+        }
+    }
+
+    protected String extractResponseBody(InputStream inputStream) throws IOException {
+        StringBuffer content = new StringBuffer();
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(inputStream))) {
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) {
+                content.append(inputLine);
+            }
+        }
+        return content.toString();
     }
 
     @Override
@@ -181,7 +230,12 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
         return token.getExpiration();
     }
 
-    protected void configureHttpConnection(HttpURLConnection connection) {
+    protected void configureConnection(HttpURLConnection connection) {
+        this.connectionConfigurator.accept(connection);
+        this.configureConnectionForHttps(connection);
+    }
+
+    protected void configureConnectionForHttps(HttpURLConnection connection) {
         if (connection instanceof HttpsURLConnection) {
             HttpsURLConnection securedConnection = (HttpsURLConnection) connection;
             if (this.hostnameVerifier != null) {
@@ -239,6 +293,8 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
 
         private SSLSocketFactory sslSocketFactory;
 
+        private Consumer<HttpURLConnection> connectionConfigurator;
+
         public OAuth2ClientCredentialsGrantCredentialsProviderBuilder tokenEndpointUri(String tokenEndpointUri) {
             this.tokenEndpointUri = tokenEndpointUri;
             return this;
@@ -274,10 +330,16 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
             return this;
         }
 
+        public OAuth2ClientCredentialsGrantCredentialsProviderBuilder setConnectionConfigurator(Consumer<HttpURLConnection> connectionConfigurator) {
+            this.connectionConfigurator = connectionConfigurator;
+            return this;
+        }
+
         public OAuth2ClientCredentialsGrantCredentialsProvider build() {
             return new OAuth2ClientCredentialsGrantCredentialsProvider(
                     tokenEndpointUri, clientId, clientSecret, grantType, parameters,
-                    hostnameVerifier, sslSocketFactory
+                    hostnameVerifier, sslSocketFactory,
+                    connectionConfigurator
             );
         }
 
