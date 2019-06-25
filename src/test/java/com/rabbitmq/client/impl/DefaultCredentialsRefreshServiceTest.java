@@ -168,6 +168,63 @@ public class DefaultCredentialsRefreshServiceTest {
     }
 
     @Test
+    public void errorInRefreshShouldBeRetried() throws Exception {
+        DefaultCredentialsRefreshService.CredentialsProviderState state = new DefaultCredentialsRefreshService.CredentialsProviderState(
+                credentialsProvider
+        );
+        doThrow(RuntimeException.class).doThrow(RuntimeException.class)
+                .doNothing().when(credentialsProvider).refresh();
+
+        when(refreshAction.call()).thenReturn(true);
+
+        state.add(new DefaultCredentialsRefreshService.Registration("1", refreshAction));
+
+        state.refresh();
+
+        verify(credentialsProvider, times(3)).refresh();
+        verify(refreshAction, times(1)).call();
+    }
+
+    @Test
+    public void callbacksAreNotCalledWhenRetryOnRefreshIsExhausted() throws Exception {
+        DefaultCredentialsRefreshService.CredentialsProviderState state = new DefaultCredentialsRefreshService.CredentialsProviderState(
+                credentialsProvider
+        );
+        doThrow(RuntimeException.class).when(credentialsProvider).refresh();
+
+        state.add(new DefaultCredentialsRefreshService.Registration("1", refreshAction));
+
+        state.refresh();
+
+        verify(credentialsProvider, times(3)).refresh();
+        verify(refreshAction, times(0)).call();
+    }
+
+    @Test
+    public void refreshCanBeInterrupted() throws Exception {
+        DefaultCredentialsRefreshService.CredentialsProviderState state = new DefaultCredentialsRefreshService.CredentialsProviderState(
+                credentialsProvider
+        );
+
+        AtomicInteger callbackCount = new AtomicInteger(10);
+        when(refreshAction.call()).thenAnswer(invocation -> {
+            callbackCount.decrementAndGet();
+            Thread.sleep(1000L);
+            return true;
+        });
+
+        IntStream.range(0, callbackCount.get()).forEach(i -> state.add(new DefaultCredentialsRefreshService.Registration(i + "", refreshAction)));
+
+        Thread refreshThread = new Thread(() -> state.refresh());
+        refreshThread.start();
+        Thread.sleep(1000L);
+        refreshThread.interrupt();
+        refreshThread.join(5000);
+        assertThat(refreshThread.isAlive()).isFalse();
+        assertThat(callbackCount).hasValueGreaterThan(1); // not all the callbacks were called, because thread has been cancelled
+    }
+
+    @Test
     public void fixedDelayBeforeExpirationRefreshDelayStrategyTest() {
         Function<Duration, Duration> delayStrategy = fixedDelayBeforeExpirationRefreshDelayStrategy(ofSeconds(20));
         assertThat(delayStrategy.apply(ofSeconds(60))).as("refresh delay is TTL - fixed delay").isEqualTo(ofSeconds(40));
