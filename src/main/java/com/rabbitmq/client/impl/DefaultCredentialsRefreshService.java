@@ -275,13 +275,38 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
         }
 
         void refresh() {
-            // FIXME check whether thread has been cancelled or not before refresh() and refreshAction.call()
+            if (Thread.currentThread().isInterrupted()) {
+                return;
+            }
 
-            // FIXME protect this call, or at least log some error
-            this.credentialsProvider.refresh();
+            int attemptCount = 0;
+            boolean refreshSucceeded = false;
+            while (attemptCount < 3) {
+                LOGGER.debug("Refreshing token for credentials provider {}", credentialsProvider);
+                try {
+                    this.credentialsProvider.refresh();
+                    LOGGER.debug("Token refreshed for credentials provider {}", credentialsProvider);
+                    refreshSucceeded = true;
+                    break;
+                } catch (Exception e) {
+                    LOGGER.warn("Error while trying to refresh token: {}", e.getMessage());
+                }
+                attemptCount++;
+                try {
+                    Thread.sleep(1000L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+
+            if (!refreshSucceeded) {
+                LOGGER.warn("Token refresh failed after retry, aborting callbacks");
+                return;
+            }
 
             Iterator<Registration> iterator = registrations.values().iterator();
-            while (iterator.hasNext()) {
+            while (iterator.hasNext() && !Thread.currentThread().isInterrupted()) {
                 Registration registration = iterator.next();
                 // FIXME set a timeout on the call? (needs a separate thread)
                 try {
@@ -291,6 +316,8 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
                         iterator.remove();
                     }
                     registration.errorHistory.set(0);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 } catch (Exception e) {
                     LOGGER.warn("Error while trying to refresh a connection token", e);
                     registration.errorHistory.incrementAndGet();
