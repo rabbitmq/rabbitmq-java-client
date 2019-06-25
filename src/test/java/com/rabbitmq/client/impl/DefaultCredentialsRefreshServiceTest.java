@@ -29,8 +29,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
+import static com.rabbitmq.client.impl.DefaultCredentialsRefreshService.fixedDelayBeforeExpirationRefreshDelayStrategy;
+import static com.rabbitmq.client.impl.DefaultCredentialsRefreshService.fixedTimeNeedRefreshStrategy;
+import static java.time.Duration.ofSeconds;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -55,13 +59,13 @@ public class DefaultCredentialsRefreshServiceTest {
     @Test
     public void scheduling() throws Exception {
         refreshService = new DefaultCredentialsRefreshService.DefaultCredentialsRefreshServiceBuilder()
-                .refreshDelayStrategy(DefaultCredentialsRefreshService.fixedDelayBeforeExpirationRefreshDelayStrategy(Duration.ofSeconds(2)))
+                .refreshDelayStrategy(fixedDelayBeforeExpirationRefreshDelayStrategy(ofSeconds(2)))
                 .build();
 
         AtomicInteger passwordSequence = new AtomicInteger(0);
         when(credentialsProvider.getPassword()).thenAnswer(
                 (Answer<String>) invocation -> "password-" + passwordSequence.get());
-        when(credentialsProvider.getTimeBeforeExpiration()).thenAnswer((Answer<Duration>) invocation -> Duration.ofSeconds(5));
+        when(credentialsProvider.getTimeBeforeExpiration()).thenAnswer((Answer<Duration>) invocation -> ofSeconds(5));
         doAnswer(invocation -> {
             passwordSequence.incrementAndGet();
             return null;
@@ -82,12 +86,11 @@ public class DefaultCredentialsRefreshServiceTest {
         AtomicInteger passwordSequence2 = new AtomicInteger(0);
         CredentialsProvider credentialsProvider2 = mock(CredentialsProvider.class);
         when(credentialsProvider2.getPassword()).thenAnswer((Answer<String>) invocation -> "password2-" + passwordSequence2.get());
-        when(credentialsProvider2.getTimeBeforeExpiration()).thenAnswer((Answer<Duration>) invocation -> Duration.ofSeconds(4));
+        when(credentialsProvider2.getTimeBeforeExpiration()).thenAnswer((Answer<Duration>) invocation -> ofSeconds(4));
         doAnswer(invocation -> {
             passwordSequence2.incrementAndGet();
             return null;
         }).when(credentialsProvider2).refresh();
-
 
         List<String> passwords2 = new CopyOnWriteArrayList<>();
         CountDownLatch latch2 = new CountDownLatch(2 * 1);
@@ -104,8 +107,6 @@ public class DefaultCredentialsRefreshServiceTest {
                 "password2-1", "password2-2"
         );
         assertThat(passwords).hasSizeGreaterThan(4);
-
-
     }
 
     @Test
@@ -164,6 +165,33 @@ public class DefaultCredentialsRefreshServiceTest {
         state.refresh();
         verify(credentialsProvider, times(callsCountBeforeCancellation + 1)).refresh();
         verify(refreshAction, times(callsCountBeforeCancellation)).call();
+    }
+
+    @Test
+    public void fixedDelayBeforeExpirationRefreshDelayStrategyTest() {
+        Function<Duration, Duration> delayStrategy = fixedDelayBeforeExpirationRefreshDelayStrategy(ofSeconds(20));
+        assertThat(delayStrategy.apply(ofSeconds(60))).as("refresh delay is TTL - fixed delay").isEqualTo(ofSeconds(40));
+        assertThat(delayStrategy.apply(ofSeconds(10))).as("refresh delay is TTL if TTL < fixed delay").isEqualTo(ofSeconds(10));
+    }
+
+    @Test
+    public void fixedTimeNeedRefreshStrategyTest() {
+        Function<Duration, Boolean> refreshStrategy = fixedTimeNeedRefreshStrategy(ofSeconds(20));
+        assertThat(refreshStrategy.apply(ofSeconds(60))).isFalse();
+        assertThat(refreshStrategy.apply(ofSeconds(20))).isTrue();
+        assertThat(refreshStrategy.apply(ofSeconds(19))).isTrue();
+        assertThat(refreshStrategy.apply(ofSeconds(10))).isTrue();
+    }
+
+    @Test
+    public void ratioRefreshDelayStrategyTest() {
+        Function<Duration, Duration> delayStrategy = DefaultCredentialsRefreshService.ratioRefreshDelayStrategy(0.8);
+        assertThat(delayStrategy.apply(ofSeconds(60))).isEqualTo(ofSeconds(48));
+        assertThat(delayStrategy.apply(ofSeconds(30))).isEqualTo(ofSeconds(24));
+        assertThat(delayStrategy.apply(ofSeconds(10))).isEqualTo(ofSeconds(8));
+        assertThat(delayStrategy.apply(ofSeconds(5))).isEqualTo(ofSeconds(4));
+        assertThat(delayStrategy.apply(ofSeconds(2))).isEqualTo(ofSeconds(1));
+        assertThat(delayStrategy.apply(ofSeconds(1))).isEqualTo(ofSeconds(0));
     }
 
 }
