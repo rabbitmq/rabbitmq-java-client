@@ -7,18 +7,14 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayDeque;
-import java.util.Queue;
 
 public class ValueWriterTest {
     @Test(expected = IllegalArgumentException.class) public void writingOverlyLargeBigDecimalShouldFail()
         throws IOException {
-        Queue<Byte> queue = new ArrayDeque<>();
 
         OutputStream outputStream = new OutputStream() {
             @Override
             public void write(int b) {
-                queue.add((byte) b);
             }
         };
 
@@ -32,12 +28,10 @@ public class ValueWriterTest {
 
     @Test(expected = IllegalArgumentException.class) public void writingOverlyLargeScaleInBigDecimalShouldFail()
         throws IOException {
-        Queue<Byte> queue = new ArrayDeque<>();
 
         OutputStream outputStream = new OutputStream() {
             @Override
             public void write(int b) {
-                queue.add((byte) b);
             }
         };
 
