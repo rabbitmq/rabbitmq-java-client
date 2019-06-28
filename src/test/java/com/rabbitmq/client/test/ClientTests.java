@@ -18,7 +18,9 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.JacksonJsonRpcTest;
 import com.rabbitmq.client.DefaultJsonRpcTest;
+import com.rabbitmq.client.impl.ValueWriterTest;
 import com.rabbitmq.utility.IntAllocatorTests;
+
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -66,7 +68,8 @@ import org.junit.runners.Suite;
     GeneratedClassesTest.class,
     RpcTopologyRecordingTest.class,
     TlsUtilsTest.class,
-    ChannelNTest.class
+    ChannelNTest.class,
+    ValueWriterTest.class
 })
 public class ClientTests {
 
