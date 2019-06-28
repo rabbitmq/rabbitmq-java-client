@@ -145,7 +145,9 @@ public class ValueWriter
             BigDecimal decimal = (BigDecimal)value;
             writeOctet(decimal.scale());
             BigInteger unscaled = decimal.unscaledValue();
-            if(unscaled.bitLength() > 32) /*Integer.SIZE in Java 1.5*/
+            // We use 31 instead of 32 because bitLength ignores the sign bit,
+            // so e.g. new BigDecimal(Integer.MAX_VALUE) comes out to 31 bits.
+            if(unscaled.bitLength() > 31) /*Integer.SIZE in Java 1.5*/
                 throw new IllegalArgumentException
                     ("BigDecimal too large to be encoded");
             writeLong(decimal.unscaledValue().intValue());
