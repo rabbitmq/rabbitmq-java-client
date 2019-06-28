@@ -143,6 +143,12 @@ public class ValueWriter
         else if(value instanceof BigDecimal) {
             writeOctet('D');
             BigDecimal decimal = (BigDecimal)value;
+            // The scale must be an unsigned octet, therefore its values must
+            // be between 0 and 255
+            if(decimal.scale() > 255 || decimal.scale() < 0)
+                throw new IllegalArgumentException
+                    ("BigDecimal has too large of a scale to be encoded. " +
+                            "The scale was: " + decimal.scale());
             writeOctet(decimal.scale());
             BigInteger unscaled = decimal.unscaledValue();
             // We use 31 instead of 32 because bitLength ignores the sign bit,
