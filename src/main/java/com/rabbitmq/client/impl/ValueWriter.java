@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2007-2019 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -143,9 +143,17 @@ public class ValueWriter
         else if(value instanceof BigDecimal) {
             writeOctet('D');
             BigDecimal decimal = (BigDecimal)value;
+            // The scale must be an unsigned octet, therefore its values must
+            // be between 0 and 255
+            if(decimal.scale() > 255 || decimal.scale() < 0)
+                throw new IllegalArgumentException
+                    ("BigDecimal has too large of a scale to be encoded. " +
+                            "The scale was: " + decimal.scale());
             writeOctet(decimal.scale());
             BigInteger unscaled = decimal.unscaledValue();
-            if(unscaled.bitLength() > 32) /*Integer.SIZE in Java 1.5*/
+            // We use 31 instead of 32 (Integer.SIZE) because bitLength ignores the sign bit,
+            // so e.g. new BigDecimal(Integer.MAX_VALUE) comes out to 31 bits.
+            if(unscaled.bitLength() > 31)
                 throw new IllegalArgumentException
                     ("BigDecimal too large to be encoded");
             writeLong(decimal.unscaledValue().intValue());
