@@ -243,11 +243,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         this.credentialsRefreshService = params.getCredentialsRefreshService();
 
-        this._channel0 = new AMQChannel(this, 0) {
-            @Override public boolean processAsync(Command c) throws IOException {
-                return getConnection().processControlCommand(c);
-            }
-        };
+        this._channel0 = createChannel0();
 
         this._channelManager = null;
 
@@ -260,6 +256,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.errorOnWriteListener = params.getErrorOnWriteListener() != null ? params.getErrorOnWriteListener() :
             (connection, exception) -> { throw exception; }; // we just propagate the exception for non-recoverable connections
         this.workPoolTimeout = params.getWorkPoolTimeout();
+    }
+
+    AMQChannel createChannel0() {
+        return new AMQChannel(this, 0) {
+            @Override public boolean processAsync(Command c) throws IOException {
+                return getConnection().processControlCommand(c);
+            }
+        };
     }
 
     private void initializeConsumerWorkService() {
@@ -441,7 +445,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 AMQImpl.Connection.UpdateSecret updateSecret = new AMQImpl.Connection.UpdateSecret(
                         LongStringHelper.asLongString(refreshedPassword), "Refresh scheduled by client"
                 );
-                _channel0.rpc(updateSecret);
+                try {
+                    _channel0.rpc(updateSecret);
+                } catch (ShutdownSignalException e) {
+                    LOGGER.warn("Error while trying to update secret: {}. Connection has been closed.", e.getMessage());
+                    return false;
+                }
                 return true;
             });
 
