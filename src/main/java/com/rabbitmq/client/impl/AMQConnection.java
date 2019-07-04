@@ -438,8 +438,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 }
                 String refreshedPassword = credentialsProvider.getPassword();
 
-                // TODO send password to server with update-secret extension, using channel 0
-
+                AMQImpl.Connection.UpdateSecret updateSecret = new AMQImpl.Connection.UpdateSecret(
+                        LongStringHelper.asLongString(refreshedPassword), "Refresh scheduled by client"
+                );
+                _channel0.rpc(updateSecret);
                 return true;
             });
 

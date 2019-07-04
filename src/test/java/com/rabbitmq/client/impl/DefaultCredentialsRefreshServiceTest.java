@@ -15,6 +15,10 @@
 
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,6 +26,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -32,8 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static com.rabbitmq.client.impl.DefaultCredentialsRefreshService.fixedDelayBeforeExpirationRefreshDelayStrategy;
-import static com.rabbitmq.client.impl.DefaultCredentialsRefreshService.fixedTimeNeedRefreshStrategy;
+import static com.rabbitmq.client.impl.DefaultCredentialsRefreshService.*;
 import static java.time.Duration.ofSeconds;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -54,6 +58,55 @@ public class DefaultCredentialsRefreshServiceTest {
         if (refreshService != null) {
             refreshService.close();
         }
+    }
+
+    @Test public void renew() {
+        ConnectionFactory cf = new ConnectionFactory();
+        OAuth2ClientCredentialsGrantCredentialsProvider provider = new OAuth2ClientCredentialsGrantCredentialsProvider.OAuth2ClientCredentialsGrantCredentialsProviderBuilder()
+                .tokenEndpointUri("http://localhost:" + 8080 + "/uaa/oauth/token")
+                .clientId("rabbit_client").clientSecret("rabbit_secret")
+                .grantType("password")
+                .parameter("username", "rabbit_super")
+                .parameter("password", "rabbit_super")
+                .build();
+        cf.setCredentialsProvider(provider);
+
+
+    }
+
+    @Test public void connect() throws Exception {
+        ConnectionFactory cf = new ConnectionFactory();
+        OAuth2ClientCredentialsGrantCredentialsProvider provider = new OAuth2ClientCredentialsGrantCredentialsProvider.OAuth2ClientCredentialsGrantCredentialsProviderBuilder()
+                .tokenEndpointUri("http://localhost:" + 8080 + "/uaa/oauth/token")
+                .clientId("rabbit_client").clientSecret("rabbit_secret")
+                .grantType("password")
+                .parameter("username", "rabbit_super")
+                .parameter("password", "rabbit_super")
+                .build();
+        cf.setCredentialsProvider(provider);
+        refreshService = new DefaultCredentialsRefreshService.DefaultCredentialsRefreshServiceBuilder()
+//                .refreshDelayStrategy(ttl -> Duration.ofSeconds(60))
+                .refreshDelayStrategy(ratioRefreshDelayStrategy(0.8))
+                .needRefreshStrategy(expiration -> false)
+                .build();
+        cf.setCredentialsRefreshService(refreshService);
+        try (Connection c = cf.newConnection()) {
+
+            while (true) {
+                try {
+                    Channel ch = c.createChannel();
+                    String queue = ch.queueDeclare().getQueue();
+                    TestUtils.sendAndConsumeMessage("", queue, queue, c);
+                    System.out.println("Message sent and consumed");
+                    ch.close();
+                } catch (IOException e) {
+                    System.out.println(e.getCause().getMessage());
+                }
+                Thread.sleep(10_000L);
+            }
+        }
+
+
     }
 
     @Test

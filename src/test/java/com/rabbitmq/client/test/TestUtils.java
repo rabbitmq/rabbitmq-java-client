@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2007-2019 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -15,19 +15,14 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.Recoverable;
-import com.rabbitmq.client.RecoverableConnection;
-import com.rabbitmq.client.RecoveryListener;
-import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.tools.Host;
+import org.junit.AssumptionViolatedException;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
@@ -46,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 
 public class TestUtils {
 
-    public static final boolean USE_NIO = System.getProperty("use.nio") == null ? false : true;
+    public static final boolean USE_NIO = System.getProperty("use.nio") != null;
 
     public static ConnectionFactory connectionFactory() {
         ConnectionFactory connectionFactory = new ConnectionFactory();
@@ -79,7 +74,7 @@ public class TestUtils {
 
         // pick the first protocol available, preferring TLSv1.2, then TLSv1,
         // falling back to SSLv3 if running on an ancient/crippled JDK
-        for(String proto : Arrays.asList("TLSv1.2", "TLSv1", "SSLv3")) {
+        for (String proto : Arrays.asList("TLSv1.2", "TLSv1", "SSLv3")) {
             try {
                 c = SSLContext.getInstance(proto);
                 return c;
@@ -90,31 +85,49 @@ public class TestUtils {
         throw new NoSuchAlgorithmException();
     }
 
+    public static TestRule atLeast38() {
+        return new BrokerVersionTestRule("3.8.0");
+    }
+
     public static boolean isVersion37orLater(Connection connection) {
+        return atLeastVersion("3.7.0", connection);
+    }
+
+    public static boolean isVersion38orLater(Connection connection) {
+        return atLeastVersion("3.8.0", connection);
+    }
+
+    private static boolean atLeastVersion(String expectedVersion, Connection connection) {
         String currentVersion = null;
         try {
-            currentVersion = connection.getServerProperties().get("version").toString();
-            // versions built from source: 3.7.0+rc.1.4.gedc5d96
-            if (currentVersion.contains("+")) {
-                currentVersion = currentVersion.substring(0, currentVersion.indexOf("+"));
-            }
-            // alpha (snapshot) versions: 3.7.0~alpha.449-1
-            if (currentVersion.contains("~")) {
-                currentVersion = currentVersion.substring(0, currentVersion.indexOf("~"));
-            }
-            // alpha (snapshot) versions: 3.7.1-alpha.40
-            if (currentVersion.contains("-")) {
-                currentVersion = currentVersion.substring(0, currentVersion.indexOf("-"));
-            }
-            return "0.0.0".equals(currentVersion) || versionCompare(currentVersion, "3.7.0") >= 0;
+            currentVersion = currentVersion(
+                    connection.getServerProperties().get("version").toString()
+            );
+            return "0.0.0".equals(currentVersion) || versionCompare(currentVersion, expectedVersion) >= 0;
         } catch (RuntimeException e) {
             LoggerFactory.getLogger(TestUtils.class).warn("Unable to parse broker version {}", currentVersion, e);
             throw e;
         }
     }
 
+    private static String currentVersion(String currentVersion) {
+        // versions built from source: 3.7.0+rc.1.4.gedc5d96
+        if (currentVersion.contains("+")) {
+            currentVersion = currentVersion.substring(0, currentVersion.indexOf("+"));
+        }
+        // alpha (snapshot) versions: 3.7.0~alpha.449-1
+        if (currentVersion.contains("~")) {
+            currentVersion = currentVersion.substring(0, currentVersion.indexOf("~"));
+        }
+        // alpha (snapshot) versions: 3.7.1-alpha.40
+        if (currentVersion.contains("-")) {
+            currentVersion = currentVersion.substring(0, currentVersion.indexOf("-"));
+        }
+        return currentVersion;
+    }
+
     public static boolean sendAndConsumeMessage(String exchange, String routingKey, String queue, Connection c)
-        throws IOException, TimeoutException, InterruptedException {
+            throws IOException, TimeoutException, InterruptedException {
         Channel ch = c.createChannel();
         try {
             ch.confirmSelect();
@@ -248,5 +261,29 @@ public class TestUtils {
         int port = socket.getLocalPort();
         socket.close();
         return port;
+    }
+
+    private static class BrokerVersionTestRule implements TestRule {
+
+        private final String version;
+
+        public BrokerVersionTestRule(String version) {
+            this.version = version;
+        }
+
+        @Override
+        public Statement apply(Statement base, Description description) {
+            return new Statement() {
+                @Override
+                public void evaluate() throws Throwable {
+                    try (Connection c = TestUtils.connectionFactory().newConnection()) {
+                        if (!TestUtils.atLeastVersion(version, c)) {
+                            throw new AssumptionViolatedException("Broker version < " + version + ", skipping.");
+                        }
+                    }
+                    base.evaluate();
+                }
+            };
+        }
     }
 }
