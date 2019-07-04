@@ -21,7 +21,9 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.DefaultCredentialsRefreshService;
 import com.rabbitmq.client.impl.RefreshProtectedCredentialsProvider;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,6 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class RefreshCredentialsTest {
 
+    @ClassRule
+    public static TestRule brokerVersionTestRule = TestUtils.atLeast38();
     DefaultCredentialsRefreshService refreshService;
 
     @Before

@@ -43,4 +43,23 @@ public class TestUtilsTest {
         serverProperties.put("version", "3.7.1-alpha.40");
         assertThat(TestUtils.isVersion37orLater(connection), is(true));
     }
+
+    @Test
+    public void isVersion38orLater() {
+        Map<String, Object> serverProperties = new HashMap<>();
+        Connection connection = mock(Connection.class);
+        when(connection.getServerProperties()).thenReturn(serverProperties);
+
+        serverProperties.put("version", "3.7.0+rc.1.4.gedc5d96");
+        assertThat(TestUtils.isVersion38orLater(connection), is(false));
+
+        serverProperties.put("version", "3.7.0~alpha.449-1");
+        assertThat(TestUtils.isVersion38orLater(connection), is(false));
+
+        serverProperties.put("version", "3.7.1-alpha.40");
+        assertThat(TestUtils.isVersion38orLater(connection), is(false));
+
+        serverProperties.put("version", "3.8.0+beta.4.38.g33a7f97");
+        assertThat(TestUtils.isVersion38orLater(connection), is(true));
+    }
 }
