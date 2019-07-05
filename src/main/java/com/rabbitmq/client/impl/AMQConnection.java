@@ -346,6 +346,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             String password = credentialsProvider.getPassword();
 
             if (credentialsProvider.getTimeBeforeExpiration() != null) {
+                if (this.credentialsRefreshService == null) {
+                    throw new IllegalStateException("Credentials can expire, a credentials refresh service should be set");
+                }
                 if (this.credentialsRefreshService.needRefresh(credentialsProvider.getTimeBeforeExpiration())) {
                     credentialsProvider.refresh();
                     username = credentialsProvider.getUsername();
