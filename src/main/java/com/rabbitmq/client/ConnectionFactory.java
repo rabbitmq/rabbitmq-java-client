@@ -32,17 +32,8 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeoutException;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Predicate;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -848,6 +839,21 @@ public class ConnectionFactory implements Cloneable {
         return metricsCollector;
     }
 
+    /**
+     * Set a {@link CredentialsRefreshService} instance to handle credentials refresh if appropriate.
+     * <p>
+     * Each created connection will register to the refresh service to send an AMQP <code>update.secret</code>
+     * frame when credentials are about to expire. This is the refresh service responsibility to schedule
+     * credentials refresh and <code>udpate.secret</code> frame sending, based on the information provided
+     * by the {@link CredentialsProvider}.
+     * <p>
+     * Note the {@link CredentialsRefreshService} is used only when the {@link CredentialsProvider}
+     * signals credentials can expire, by returning a non-null value from {@link CredentialsProvider#getTimeBeforeExpiration()}.
+     *
+     * @param credentialsRefreshService the refresh service to use
+     * @see #setCredentialsProvider(CredentialsProvider)
+     * @see DefaultCredentialsRefreshService
+     */
     public void setCredentialsRefreshService(CredentialsRefreshService credentialsRefreshService) {
         this.credentialsRefreshService = credentialsRefreshService;
     }
