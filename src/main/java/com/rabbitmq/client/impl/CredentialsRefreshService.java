@@ -63,11 +63,15 @@ public interface CredentialsRefreshService {
     void unregister(CredentialsProvider credentialsProvider, String registrationId);
 
     /**
-     * Provide a hint about whether credentials should be renewed.
+     * Provide a hint about whether credentials should be renewed now or not before attempting to connect.
+     * <p>
+     * This can avoid a connection to use almost expired credentials if this connection
+     * is created just before credentials are refreshed in the background, but does not
+     * benefit from the refresh.
      *
      * @param timeBeforeExpiration
      * @return true if credentials should be renewed, false otherwise
      */
-    boolean needRefresh(Duration timeBeforeExpiration);
+    boolean isApproachingExpiration(Duration timeBeforeExpiration);
 
 }

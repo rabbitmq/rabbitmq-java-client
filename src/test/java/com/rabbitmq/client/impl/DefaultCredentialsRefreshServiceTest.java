@@ -33,7 +33,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.rabbitmq.client.impl.DefaultCredentialsRefreshService.fixedDelayBeforeExpirationRefreshDelayStrategy;
-import static com.rabbitmq.client.impl.DefaultCredentialsRefreshService.fixedTimeNeedRefreshStrategy;
+import static com.rabbitmq.client.impl.DefaultCredentialsRefreshService.fixedTimeApproachingExpirationStrategy;
 import static java.time.Duration.ofSeconds;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -232,8 +232,8 @@ public class DefaultCredentialsRefreshServiceTest {
     }
 
     @Test
-    public void fixedTimeNeedRefreshStrategyTest() {
-        Function<Duration, Boolean> refreshStrategy = fixedTimeNeedRefreshStrategy(ofSeconds(20));
+    public void fixedTimeApproachingExpirationStrategyTest() {
+        Function<Duration, Boolean> refreshStrategy = fixedTimeApproachingExpirationStrategy(ofSeconds(20));
         assertThat(refreshStrategy.apply(ofSeconds(60))).isFalse();
         assertThat(refreshStrategy.apply(ofSeconds(20))).isTrue();
         assertThat(refreshStrategy.apply(ofSeconds(19))).isTrue();

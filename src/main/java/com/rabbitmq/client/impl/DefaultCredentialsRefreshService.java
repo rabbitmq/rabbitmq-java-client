@@ -44,19 +44,57 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCredentialsRefreshService.class);
 
+    /**
+     * Scheduler used to schedule credentials refresh.
+     * <p>
+     * Default is a single-threaded scheduler, which should be enough for most scenarios, assuming
+     * that credentials expire after a few minutes or hours. This default scheduler
+     * is automatically disposed of when the {@link DefaultCredentialsRefreshService} is closed.
+     * <p>
+     * If an external scheduler is passed in, it is the developer's responsibility to
+     * close it.
+     */
     private final ScheduledExecutorService scheduler;
 
     private final ConcurrentMap<CredentialsProvider, CredentialsProviderState> credentialsProviderStates = new ConcurrentHashMap<>();
 
     private final boolean privateScheduler;
 
+    /**
+     * Strategy to schedule credentials refresh after credentials retrieval.
+     * <p>
+     * Typical strategies schedule refresh after a ratio of the time before expiration
+     * (e.g. 80 % of the time before expiration) or after a fixed time before
+     * expiration (e.g. 20 seconds before credentials expire).
+     *
+     * @see #ratioRefreshDelayStrategy(double)
+     * @see #fixedDelayBeforeExpirationRefreshDelayStrategy(Duration)
+     */
     private final Function<Duration, Duration> refreshDelayStrategy;
 
-    private final Function<Duration, Boolean> needRefreshStrategy;
+    /**
+     * Strategy to provide a hint about whether credentials should be renewed now or not before attempting to connect.
+     * <p>
+     * This can avoid a connection to use almost expired credentials if this connection
+     * is created just before credentials are refreshed in the background, but does not
+     * benefit from the refresh.
+     * <p>
+     * Note setting such a strategy may require knowledge of the credentials validity and must be consistent
+     * with the {@link #refreshDelayStrategy} chosen. For example, for a validity of 60 minutes and
+     * a {@link #refreshDelayStrategy} that instructs to refresh 10 minutes before credentials expire, this
+     * strategy could hint that credentials that expire in 11 minutes or less (1 minute before a refresh is actually
+     * scheduled) should be refreshed, which would trigger an early refresh.
+     * <p>
+     * The default strategy always return false.
+     */
+    private final Function<Duration, Boolean> approachingExpirationStrategy;
 
-    public DefaultCredentialsRefreshService(ScheduledExecutorService scheduler, Function<Duration, Duration> refreshDelayStrategy, Function<Duration, Boolean> needRefreshStrategy) {
+    public DefaultCredentialsRefreshService(ScheduledExecutorService scheduler, Function<Duration, Duration> refreshDelayStrategy, Function<Duration, Boolean> approachingExpirationStrategy) {
+        if (refreshDelayStrategy == null) {
+            throw new IllegalArgumentException("Refresh delay strategy can not be null");
+        }
         this.refreshDelayStrategy = refreshDelayStrategy;
-        this.needRefreshStrategy = needRefreshStrategy;
+        this.approachingExpirationStrategy = approachingExpirationStrategy == null ? duration -> false : approachingExpirationStrategy;
         if (scheduler == null) {
             this.scheduler = Executors.newScheduledThreadPool(1);
             privateScheduler = true;
@@ -69,8 +107,8 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
     /**
      * Delay before refresh is a ratio of the time before expiration.
      * <p>
-     * E.g. if time before expiration is 60 seconds and specified ratio is 0.8, refresh will
-     * be scheduled in 60 x 0.8 = 48 seconds.
+     * E.g. if time before expiration is 60 minutes and specified ratio is 0.8, refresh will
+     * be scheduled in 60 x 0.8 = 48 minutes.
      *
      * @param ratio
      * @return the delay before refreshing
@@ -82,8 +120,8 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
     /**
      * Delay before refresh is <code>time before expiration - specified duration</code>.
      * <p>
-     * E.g. if time before expiration is 60 seconds and specified duration is 20 seconds, refresh will
-     * be scheduled in 60 - 20 = 40 seconds.
+     * E.g. if time before expiration is 60 minutes and specified duration is 10 minutes, refresh will
+     * be scheduled in 60 - 10 = 50 minutes.
      *
      * @param duration
      * @return the delay before refreshing
@@ -98,8 +136,8 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
      * @param limitBeforeExpiration
      * @return true if credentials should be refreshed, false otherwise
      */
-    public static Function<Duration, Boolean> fixedTimeNeedRefreshStrategy(Duration limitBeforeExpiration) {
-        return new FixedTimeNeedRefreshStrategy(limitBeforeExpiration.toMillis());
+    public static Function<Duration, Boolean> fixedTimeApproachingExpirationStrategy(Duration limitBeforeExpiration) {
+        return new FixedTimeApproachingExpirationStrategy(limitBeforeExpiration.toMillis());
     }
 
     private static Runnable refresh(ScheduledExecutorService scheduler, CredentialsProviderState credentialsProviderState,
@@ -157,8 +195,8 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
     }
 
     @Override
-    public boolean needRefresh(Duration timeBeforeExpiration) {
-        return this.needRefreshStrategy.apply(timeBeforeExpiration);
+    public boolean isApproachingExpiration(Duration timeBeforeExpiration) {
+        return this.approachingExpirationStrategy.apply(timeBeforeExpiration);
     }
 
     public void close() {
@@ -167,11 +205,11 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
         }
     }
 
-    private static class FixedTimeNeedRefreshStrategy implements Function<Duration, Boolean> {
+    private static class FixedTimeApproachingExpirationStrategy implements Function<Duration, Boolean> {
 
         private final long limitBeforeExpiration;
 
-        private FixedTimeNeedRefreshStrategy(long limitBeforeExpiration) {
+        private FixedTimeApproachingExpirationStrategy(long limitBeforeExpiration) {
             this.limitBeforeExpiration = limitBeforeExpiration;
         }
 
@@ -340,7 +378,7 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
 
         private Function<Duration, Duration> refreshDelayStrategy = ratioRefreshDelayStrategy(0.8);
 
-        private Function<Duration, Boolean> needRefreshStrategy = ttl -> false;
+        private Function<Duration, Boolean> approachingExpirationStrategy = ttl -> false;
 
         public DefaultCredentialsRefreshServiceBuilder scheduler(ScheduledThreadPoolExecutor scheduler) {
             this.scheduler = scheduler;
@@ -352,13 +390,13 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
             return this;
         }
 
-        public DefaultCredentialsRefreshServiceBuilder needRefreshStrategy(Function<Duration, Boolean> needRefreshStrategy) {
-            this.needRefreshStrategy = needRefreshStrategy;
+        public DefaultCredentialsRefreshServiceBuilder approachingExpirationStrategy(Function<Duration, Boolean> approachingExpirationStrategy) {
+            this.approachingExpirationStrategy = approachingExpirationStrategy;
             return this;
         }
 
         public DefaultCredentialsRefreshService build() {
-            return new DefaultCredentialsRefreshService(scheduler, refreshDelayStrategy, needRefreshStrategy);
+            return new DefaultCredentialsRefreshService(scheduler, refreshDelayStrategy, approachingExpirationStrategy);
         }
 
     }
