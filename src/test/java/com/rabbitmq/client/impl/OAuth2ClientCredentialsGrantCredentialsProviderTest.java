@@ -169,7 +169,7 @@ public class OAuth2ClientCredentialsGrantCredentialsProviderTest {
         OAuth2ClientCredentialsGrantCredentialsProvider provider = new OAuth2ClientCredentialsGrantCredentialsProvider.OAuth2ClientCredentialsGrantCredentialsProviderBuilder()
                 .tokenEndpointUri("https://localhost:" + port + "/uaa/oauth/token/")
                 .clientId("rabbit_client").clientSecret("rabbit_secret")
-                .setSslSocketFactory(sslContext.getSocketFactory())
+                .tls().sslContext(sslContext).builder()
                 .build();
 
         String password = provider.getPassword();
