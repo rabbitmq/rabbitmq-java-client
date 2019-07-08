@@ -39,6 +39,8 @@ import java.util.function.Supplier;
  * by each entity/connection is performed. This callback typically propagates
  * the new credentials in the entity state, e.g. sending the new password to the
  * broker for AMQP connections.
+ * <p>
+ * Instances are preferably created with {@link DefaultCredentialsRefreshServiceBuilder}.
  */
 public class DefaultCredentialsRefreshService implements CredentialsRefreshService {
 
@@ -89,6 +91,13 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
      */
     private final Function<Duration, Boolean> approachingExpirationStrategy;
 
+    /**
+     * Constructor. Consider using {@link DefaultCredentialsRefreshServiceBuilder} to create instances.
+     *
+     * @param scheduler
+     * @param refreshDelayStrategy
+     * @param approachingExpirationStrategy
+     */
     public DefaultCredentialsRefreshService(ScheduledExecutorService scheduler, Function<Duration, Duration> refreshDelayStrategy, Function<Duration, Boolean> approachingExpirationStrategy) {
         if (refreshDelayStrategy == null) {
             throw new IllegalArgumentException("Refresh delay strategy can not be null");
@@ -371,6 +380,9 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
         }
     }
 
+    /**
+     * Builder to create instances of {@link DefaultCredentialsRefreshServiceBuilder}.
+     */
     public static class DefaultCredentialsRefreshServiceBuilder {
 
 
@@ -385,16 +397,43 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
             return this;
         }
 
+        /**
+         * Set the strategy to schedule credentials refresh after credentials retrieval.
+         * <p>
+         * Default is a 80 % ratio-based strategy (refresh is scheduled after 80 % of the time
+         * before expiration, e.g. 48 minutes for a token with a validity of 60 minutes, that
+         * is refresh will be scheduled 12 minutes before the token actually expires).
+         *
+         * @param refreshDelayStrategy
+         * @return this builder instance
+         * @see DefaultCredentialsRefreshService#refreshDelayStrategy
+         * @see DefaultCredentialsRefreshService#ratioRefreshDelayStrategy(double)
+         */
         public DefaultCredentialsRefreshServiceBuilder refreshDelayStrategy(Function<Duration, Duration> refreshDelayStrategy) {
             this.refreshDelayStrategy = refreshDelayStrategy;
             return this;
         }
 
+        /**
+         * Set the strategy to trigger an early refresh before attempting to connect.
+         * <p>
+         * Default is to never advise to refresh before connecting.
+         *
+         * @param approachingExpirationStrategy
+         * @return this builder instances
+         * @see DefaultCredentialsRefreshService#approachingExpirationStrategy
+         * @see CredentialsRefreshService#isApproachingExpiration(Duration)
+         */
         public DefaultCredentialsRefreshServiceBuilder approachingExpirationStrategy(Function<Duration, Boolean> approachingExpirationStrategy) {
             this.approachingExpirationStrategy = approachingExpirationStrategy;
             return this;
         }
 
+        /**
+         * Create the {@link DefaultCredentialsRefreshService} instance.
+         *
+         * @return
+         */
         public DefaultCredentialsRefreshService build() {
             return new DefaultCredentialsRefreshService(scheduler, refreshDelayStrategy, approachingExpirationStrategy);
         }
