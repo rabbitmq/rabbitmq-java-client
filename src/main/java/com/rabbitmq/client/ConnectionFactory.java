@@ -15,15 +15,7 @@
 
 package com.rabbitmq.client;
 
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ConnectionParams;
-import com.rabbitmq.client.impl.CredentialsProvider;
-import com.rabbitmq.client.impl.DefaultCredentialsProvider;
-import com.rabbitmq.client.impl.DefaultExceptionHandler;
-import com.rabbitmq.client.impl.ErrorOnWriteListener;
-import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.FrameHandlerFactory;
-import com.rabbitmq.client.impl.SocketFrameHandlerFactory;
+import com.rabbitmq.client.impl.*;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.nio.SocketChannelFrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
@@ -40,17 +32,8 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeoutException;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Predicate;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -208,6 +191,8 @@ public class ConnectionFactory implements Cloneable {
      * @since 5.5.0
      */
     private TrafficListener trafficListener = TrafficListener.NO_OP;
+
+    private CredentialsRefreshService credentialsRefreshService;
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -854,6 +839,25 @@ public class ConnectionFactory implements Cloneable {
         return metricsCollector;
     }
 
+    /**
+     * Set a {@link CredentialsRefreshService} instance to handle credentials refresh if appropriate.
+     * <p>
+     * Each created connection will register to the refresh service to send an AMQP <code>update.secret</code>
+     * frame when credentials are about to expire. This is the refresh service responsibility to schedule
+     * credentials refresh and <code>udpate.secret</code> frame sending, based on the information provided
+     * by the {@link CredentialsProvider}.
+     * <p>
+     * Note the {@link CredentialsRefreshService} is used only when the {@link CredentialsProvider}
+     * signals credentials can expire, by returning a non-null value from {@link CredentialsProvider#getTimeBeforeExpiration()}.
+     *
+     * @param credentialsRefreshService the refresh service to use
+     * @see #setCredentialsProvider(CredentialsProvider)
+     * @see DefaultCredentialsRefreshService
+     */
+    public void setCredentialsRefreshService(CredentialsRefreshService credentialsRefreshService) {
+        this.credentialsRefreshService = credentialsRefreshService;
+    }
+
     protected synchronized FrameHandlerFactory createFrameHandlerFactory() throws IOException {
         if(nio) {
             if(this.frameHandlerFactory == null) {
@@ -1161,6 +1165,7 @@ public class ConnectionFactory implements Cloneable {
         result.setConnectionRecoveryTriggeringCondition(connectionRecoveryTriggeringCondition);
         result.setTopologyRecoveryRetryHandler(topologyRecoveryRetryHandler);
         result.setTrafficListener(trafficListener);
+        result.setCredentialsRefreshService(credentialsRefreshService);
         return result;
     }
 

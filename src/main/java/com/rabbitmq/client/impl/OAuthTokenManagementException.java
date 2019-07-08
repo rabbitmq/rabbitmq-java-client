@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2019 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -15,30 +15,13 @@
 
 package com.rabbitmq.client.impl;
 
-/**
- * Default implementation of a CredentialsProvider which simply holds a static
- * username and password.
- *
- * @since 4.5.0
- */
-public class DefaultCredentialsProvider implements CredentialsProvider {
+public class OAuthTokenManagementException extends RuntimeException {
 
-    private final String username;
-    private final String password;
-
-    public DefaultCredentialsProvider(String username, String password) {
-        this.username = username;
-        this.password = password;
+    public OAuthTokenManagementException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    @Override
-    public String getUsername() {
-        return username;
+    public OAuthTokenManagementException(String message) {
+        super(message);
     }
-
-    @Override
-    public String getPassword() {
-        return password;
-    }
-    
 }

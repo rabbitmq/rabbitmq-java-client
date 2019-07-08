@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2007-2019 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -142,6 +142,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final int channelRpcTimeout;
     private final boolean channelShouldCheckRpcResponseType;
     private final TrafficListener trafficListener;
+    private final CredentialsRefreshService credentialsRefreshService;
 
     /* State modified after start - all volatile */
 
@@ -239,11 +240,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.channelShouldCheckRpcResponseType = params.channelShouldCheckRpcResponseType();
 
         this.trafficListener = params.getTrafficListener() == null ? TrafficListener.NO_OP : params.getTrafficListener();
-        this._channel0 = new AMQChannel(this, 0) {
-            @Override public boolean processAsync(Command c) throws IOException {
-                return getConnection().processControlCommand(c);
-            }
-        };
+
+        this.credentialsRefreshService = params.getCredentialsRefreshService();
+
+        this._channel0 = createChannel0();
 
         this._channelManager = null;
 
@@ -256,6 +256,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.errorOnWriteListener = params.getErrorOnWriteListener() != null ? params.getErrorOnWriteListener() :
             (connection, exception) -> { throw exception; }; // we just propagate the exception for non-recoverable connections
         this.workPoolTimeout = params.getWorkPoolTimeout();
+    }
+
+    AMQChannel createChannel0() {
+        return new AMQChannel(this, 0) {
+            @Override public boolean processAsync(Command c) throws IOException {
+                return getConnection().processControlCommand(c);
+            }
+        };
     }
 
     private void initializeConsumerWorkService() {
@@ -336,6 +344,18 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
             String username = credentialsProvider.getUsername();
             String password = credentialsProvider.getPassword();
+
+            if (credentialsProvider.getTimeBeforeExpiration() != null) {
+                if (this.credentialsRefreshService == null) {
+                    throw new IllegalStateException("Credentials can expire, a credentials refresh service should be set");
+                }
+                if (this.credentialsRefreshService.needRefresh(credentialsProvider.getTimeBeforeExpiration())) {
+                    credentialsProvider.refresh();
+                    username = credentialsProvider.getUsername();
+                    password = credentialsProvider.getPassword();
+                }
+            }
+
             LongString challenge = null;
             LongString response = sm.handleChallenge(null, username, password);
 
@@ -408,6 +428,33 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             _heartbeatSender.shutdown();
             _frameHandler.close();
             throw AMQChannel.wrap(sse);
+        }
+
+        if (this.credentialsProvider.getTimeBeforeExpiration() != null) {
+            String registrationId = this.credentialsRefreshService.register(credentialsProvider, () -> {
+                // return false if connection is closed, so refresh service can get rid of this registration
+                if (!isOpen()) {
+                    return false;
+                }
+                if (this._inConnectionNegotiation) {
+                    // this should not happen
+                    return true;
+                }
+                String refreshedPassword = credentialsProvider.getPassword();
+
+                AMQImpl.Connection.UpdateSecret updateSecret = new AMQImpl.Connection.UpdateSecret(
+                        LongStringHelper.asLongString(refreshedPassword), "Refresh scheduled by client"
+                );
+                try {
+                    _channel0.rpc(updateSecret);
+                } catch (ShutdownSignalException e) {
+                    LOGGER.warn("Error while trying to update secret: {}. Connection has been closed.", e.getMessage());
+                    return false;
+                }
+                return true;
+            });
+
+            addShutdownListener(sse -> this.credentialsRefreshService.unregister(this.credentialsProvider, registrationId));
         }
 
         // We can now respond to errors having finished tailoring the connection
