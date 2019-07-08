@@ -76,7 +76,7 @@ public class RefreshCredentialsTest {
         cf.setCredentialsProvider(provider);
         refreshService = new DefaultCredentialsRefreshService.DefaultCredentialsRefreshServiceBuilder()
                 .refreshDelayStrategy(DefaultCredentialsRefreshService.fixedDelayBeforeExpirationRefreshDelayStrategy(Duration.ofSeconds(1)))
-                .needRefreshStrategy(expiration -> false)
+                .approachingExpirationStrategy(expiration -> false)
                 .build();
         cf.setCredentialsRefreshService(refreshService);
 
