@@ -5,10 +5,6 @@
         </encoder>
     </appender>
 
-    <logger name="com.rabbitmq.client.impl.DefaultCredentialsRefreshService" level="DEBUG" />
-    <logger name="com.rabbitmq.client.impl.OAuth2ClientCredentialsGrantCredentialsProvider" level="DEBUG" />
-<!--    <logger name="org.eclipse.jetty" level="DEBUG" />-->
-
     <root level="info">
         <appender-ref ref="STDOUT" />
     </root>
