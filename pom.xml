@@ -61,7 +61,7 @@
     <logback.version>1.2.3</logback.version>
     <junit.version>4.12</junit.version>
     <awaitility.version>3.1.6</awaitility.version>
-    <mockito.version>2.28.2</mockito.version>
+    <mockito.version>3.0.0</mockito.version>
     <assertj.version>3.12.2</assertj.version>
     <jetty.version>9.4.19.v20190610</jetty.version>
     <bouncycastle.version>1.61</bouncycastle.version>
