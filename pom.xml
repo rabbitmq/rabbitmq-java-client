@@ -63,7 +63,7 @@
     <junit.version>4.12</junit.version>
     <awaitility.version>3.1.6</awaitility.version>
     <bouncycastle.version>1.62</bouncycastle.version>
-    <mockito.version>2.28.2</mockito.version>
+    <mockito.version>3.0.0</mockito.version>
     <assertj.version>3.12.2</assertj.version>
 
     <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
