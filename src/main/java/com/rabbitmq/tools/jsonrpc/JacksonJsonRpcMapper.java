@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2018-2019 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -15,11 +15,7 @@
 
 package com.rabbitmq.tools.jsonrpc;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ValueNode;
@@ -34,7 +30,14 @@ import java.util.Map;
 
 /**
  * {@link JsonRpcMapper} based on Jackson.
- * Uses the streaming and databind modules.
+ * <p>
+ * Uses the streaming and databind modules. You need to add the appropriate dependency
+ * to the classpath if you want to use this class, as the RabbitMQ Java client
+ * library does not pull Jackson automatically when using a dependency management
+ * tool like Maven or Gradle.
+ * <p>
+ * Make sure to use the latest version of the Jackson library, as the version used in the
+ * RabbitMQ Java client can be a little bit behind.
  *
  * @see JsonRpcMapper
  * @since 4.8.0
