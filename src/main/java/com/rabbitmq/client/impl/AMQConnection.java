@@ -689,10 +689,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private void readFrame(Frame frame) throws IOException {
         if (frame != null) {
             _missedHeartbeats = 0;
-            if (frame.type == AMQP.FRAME_HEARTBEAT) {
+            if (frame.getType() == AMQP.FRAME_HEARTBEAT) {
                 // Ignore it: we've already just reset the heartbeat counter.
             } else {
-                if (frame.channel == 0) { // the special channel
+                if (frame.getChannel() == 0) { // the special channel
                     _channel0.handleFrame(frame);
                 } else {
                     if (isOpen()) {
@@ -705,7 +705,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                         if (cm != null) {
                             ChannelN channel;
                             try {
-                                channel = cm.getChannel(frame.channel);
+                                channel = cm.getChannel(frame.getChannel());
                             } catch(UnknownChannelException e) {
                                 // this can happen if channel has been closed,
                                 // but there was e.g. an in-flight delivery.

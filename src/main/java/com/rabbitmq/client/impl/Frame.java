@@ -29,14 +29,13 @@ import java.util.Map;
 
 /**
  * Represents an AMQP wire-protocol frame, with frame type, channel number, and payload bytes.
- * TODO: make state private
  */
 public class Frame {
     /** Frame type code */
-    public final int type;
+    private final int type;
 
     /** Frame channel number, 0-65535 */
-    public final int channel;
+    private final int channel;
 
     /** Frame payload bytes (for inbound frames) */
     private final byte[] payload;
@@ -344,5 +343,13 @@ public class Frame {
         throws UnsupportedEncodingException
     {
         return str.getBytes("utf-8").length + 1;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public int getChannel() {
+        return channel;
     }
 }

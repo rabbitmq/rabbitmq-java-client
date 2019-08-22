@@ -59,7 +59,7 @@ public class FrameBuilder {
 
     /**
      * Read a frame from the network.
-     * This method returns null f a frame could not have been fully built from
+     * This method returns null if a frame could not have been fully built from
      * the network. The client must then retry later (typically
      * when the channel notifies it has something to read).
      *
