@@ -62,7 +62,7 @@ public class BrokenFramesTest {
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
-            assertEquals(AMQP.FRAME_HEADER, unexpectedFrameError.getReceivedFrame().type);
+            assertEquals(AMQP.FRAME_HEADER, unexpectedFrameError.getReceivedFrame().getType());
             assertEquals(AMQP.FRAME_METHOD, unexpectedFrameError.getExpectedFrameType());
             return;
         }
@@ -88,7 +88,7 @@ public class BrokenFramesTest {
         } catch (IOException e) {
             UnexpectedFrameError unexpectedFrameError = findUnexpectedFrameError(e);
             assertNotNull(unexpectedFrameError);
-            assertEquals(AMQP.FRAME_BODY, unexpectedFrameError.getReceivedFrame().type);
+            assertEquals(AMQP.FRAME_BODY, unexpectedFrameError.getReceivedFrame().getType());
             assertEquals(AMQP.FRAME_HEADER, unexpectedFrameError.getExpectedFrameType());
             return;
         }
