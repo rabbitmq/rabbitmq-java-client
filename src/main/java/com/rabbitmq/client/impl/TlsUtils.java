@@ -104,8 +104,8 @@ public class TlsUtils {
         try {
             return String.format("%s subject: %s, subject alternative names: %s, " +
                             "issuer: %s, not valid after: %s, X.509 usage extensions: %s",
-                    prefix, c.getSubjectDN().getName(), sans(c, ","), c.getIssuerDN().getName(),
-                    c.getNotAfter(), extensions(c));
+                    stripCRLF(prefix), stripCRLF(c.getSubjectDN().getName()), stripCRLF(sans(c, ",")), stripCRLF(c.getIssuerDN().getName()),
+                    c.getNotAfter(), stripCRLF(extensions(c)));
         } catch (Exception e) {
             return "Error while retrieving " + prefix + " certificate information";
         }
@@ -143,6 +143,14 @@ public class TlsUtils {
         } catch (Exception e) {
             return oid + " = " + PARSING_ERROR;
         }
+    }
+
+    /**
+     * Strips carriage return (CR) and line feed (LF) characters to mitigate CWE-117.
+     * @return sanitised string value
+     */
+    public static String stripCRLF(String value) {
+        return value.replaceAll("\r", "").replaceAll("\n", "");
     }
 
     private static String extensions(X509Certificate certificate) {
