@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2007-2019 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -30,13 +30,13 @@ import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
-import org.awaitility.Duration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -637,7 +637,7 @@ public class Metrics extends BrokerTestCase {
     }
 
     private Duration timeout() {
-        return new Duration(10, TimeUnit.SECONDS);
+        return Duration.ofSeconds(10);
     }
 
     private static class MultipleAckConsumer extends DefaultConsumer {

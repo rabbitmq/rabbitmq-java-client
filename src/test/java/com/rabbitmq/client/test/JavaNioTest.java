@@ -4,6 +4,7 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.nio.BlockingQueueNioQueue;
 import com.rabbitmq.client.impl.nio.DefaultByteBufferFactory;
 import com.rabbitmq.client.impl.nio.NioParams;
+import org.assertj.core.api.Condition;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,10 +15,8 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.isOneOf;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -125,19 +124,21 @@ public class JavaNioTest {
     public void nioLoopCleaning() throws Exception {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.useNio();
-        for(int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
             Connection connection = connectionFactory.newConnection();
             connection.abort();
         }
     }
 
-    @Test public void messageSize() throws Exception {
+    @Test
+    public void messageSize() throws Exception {
         for (int i = 0; i < 50; i++) {
             sendAndVerifyMessage(testConnection, 76390);
         }
     }
 
-    @Test public void byteBufferFactory() throws Exception {
+    @Test
+    public void byteBufferFactory() throws Exception {
         ConnectionFactory cf = new ConnectionFactory();
         cf.useNio();
         int baseCapacity = 32768;
@@ -155,12 +156,15 @@ public class JavaNioTest {
             sendAndVerifyMessage(c, 100);
         }
 
-        assertThat(byteBuffers, hasSize(2));
-        assertThat(byteBuffers.get(0).capacity(), isOneOf(nioParams.getReadByteBufferSize(), nioParams.getWriteByteBufferSize()));
-        assertThat(byteBuffers.get(1).capacity(), isOneOf(nioParams.getReadByteBufferSize(), nioParams.getWriteByteBufferSize()));
+        assertThat(byteBuffers).hasSize(2);
+        Condition<Integer> condition = new Condition<>(c -> c == nioParams.getReadByteBufferSize() ||
+                c == nioParams.getWriteByteBufferSize(), "capacity set by factory");
+        assertThat(byteBuffers.get(0).capacity()).is(condition);
+        assertThat(byteBuffers.get(1).capacity()).is(condition);
     }
 
-    @Test public void directByteBuffers() throws Exception {
+    @Test
+    public void directByteBuffers() throws Exception {
         ConnectionFactory cf = new ConnectionFactory();
         cf.useNio();
         cf.setNioParams(new NioParams().setByteBufferFactory(new DefaultByteBufferFactory(capacity -> ByteBuffer.allocateDirect(capacity))));
@@ -169,15 +173,16 @@ public class JavaNioTest {
         }
     }
 
-    @Test public void customWriteQueue() throws Exception {
+    @Test
+    public void customWriteQueue() throws Exception {
         ConnectionFactory cf = new ConnectionFactory();
         cf.useNio();
         AtomicInteger count = new AtomicInteger(0);
         cf.setNioParams(new NioParams().setWriteQueueFactory(ctx -> {
             count.incrementAndGet();
             return new BlockingQueueNioQueue(
-                new LinkedBlockingQueue<>(ctx.getNioParams().getWriteQueueCapacity()),
-                ctx.getNioParams().getWriteEnqueuingTimeoutInMs()
+                    new LinkedBlockingQueue<>(ctx.getNioParams().getWriteQueueCapacity()),
+                    ctx.getNioParams().getWriteEnqueuingTimeoutInMs()
             );
         }));
         try (Connection c = cf.newConnection()) {
@@ -193,7 +198,7 @@ public class JavaNioTest {
     }
 
     private Connection basicGetBasicConsume(ConnectionFactory connectionFactory, String queue, final CountDownLatch latch)
-        throws IOException, TimeoutException {
+            throws IOException, TimeoutException {
         Connection connection = connectionFactory.newConnection();
         Channel channel = connection.createChannel();
         channel.queueDeclare(queue, false, false, false, null);
@@ -213,7 +218,7 @@ public class JavaNioTest {
     }
 
     private boolean basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch, int msgSize)
-        throws Exception {
+            throws Exception {
         Channel channel = connection.createChannel();
         channel.queueDeclare(queue, false, false, false, null);
         channel.queuePurge(queue);

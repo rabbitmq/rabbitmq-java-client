@@ -1,4 +1,4 @@
-// Copyright (c) 2017-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2017-2019 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -24,13 +24,12 @@ import com.rabbitmq.client.impl.recovery.RecordedExchange;
 import com.rabbitmq.client.impl.recovery.RecordedQueue;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 import com.rabbitmq.tools.Host;
-import org.awaitility.Awaitility;
-import org.awaitility.Duration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -301,7 +300,7 @@ public class RpcTest {
 
         serverThread.interrupt();
 
-        waitAtMost(Duration.ONE_SECOND).until(() -> !serverThread.isAlive()) ;
+        waitAtMost(Duration.ofSeconds(1)).until(() -> !serverThread.isAlive()) ;
 
         client.close();
     }
