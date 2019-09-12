@@ -61,12 +61,12 @@
     <httpclient.version>4.5.10</httpclient.version>
     <logback.version>1.2.3</logback.version>
     <junit.version>4.12</junit.version>
-    <awaitility.version>3.1.6</awaitility.version>
-    <bouncycastle.version>1.62</bouncycastle.version>
+    <awaitility.version>4.0.1</awaitility.version>
+    <bouncycastle.version>1.63</bouncycastle.version>
     <mockito.version>3.0.0</mockito.version>
-    <assertj.version>3.12.2</assertj.version>
+    <assertj.version>3.13.2</assertj.version>
 
-    <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
+    <maven.javadoc.plugin.version>3.1.1</maven.javadoc.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
     <versions.maven.plugin.version>2.3</versions.maven.plugin.version>
     <maven.resources.plugin.version>3.0.1</maven.resources.plugin.version>
@@ -75,9 +75,9 @@
     <groovy.all.version>2.4.8</groovy.all.version>
     <keytool.maven.plugin.version>1.5</keytool.maven.plugin.version>
     <build.helper.maven-plugin.version>1.12</build.helper.maven-plugin.version>
-    <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
-    <maven.surefire.plugin.version>2.22.1</maven.surefire.plugin.version>
-    <maven.failsafe.plugin.version>2.22.1</maven.failsafe.plugin.version>
+    <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
+    <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
+    <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
     <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
     <maven.jar.plugin.version>3.0.2</maven.jar.plugin.version>
     <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>

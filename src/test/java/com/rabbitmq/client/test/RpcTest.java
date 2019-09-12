@@ -34,13 +34,12 @@ import com.rabbitmq.client.impl.recovery.RecordedExchange;
 import com.rabbitmq.client.impl.recovery.RecordedQueue;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 import com.rabbitmq.tools.Host;
-import org.awaitility.Awaitility;
-import org.awaitility.Duration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -335,7 +334,7 @@ public class RpcTest {
 
         serverThread.interrupt();
 
-        waitAtMost(Duration.ONE_SECOND).until(() -> !serverThread.isAlive()) ;
+        waitAtMost(Duration.ofSeconds(1)).until(() -> !serverThread.isAlive()) ;
 
         client.close();
     }
