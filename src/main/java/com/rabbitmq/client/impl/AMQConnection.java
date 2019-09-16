@@ -445,7 +445,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                 }
                 String refreshedPassword = credentialsProvider.getPassword();
 
-                AMQImpl.Connection.UpdateSecret updateSecret = new AMQImpl.Connection.UpdateSecret(
+                UpdateSecretExtension.UpdateSecret updateSecret = new UpdateSecretExtension.UpdateSecret(
                         LongStringHelper.asLongString(refreshedPassword), "Refresh scheduled by client"
                 );
                 try {
