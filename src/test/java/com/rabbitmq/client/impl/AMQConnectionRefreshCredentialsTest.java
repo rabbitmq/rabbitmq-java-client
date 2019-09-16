@@ -66,9 +66,9 @@ public class AMQConnectionRefreshCredentialsTest {
 
                             @Override
                             public AMQCommand rpc(Method m) throws IOException, ShutdownSignalException {
-                                if (m instanceof AMQImpl.Connection.UpdateSecret) {
+                                if (m instanceof UpdateSecretExtension.UpdateSecret) {
                                     super.rpc(m);
-                                    return super.rpc(new AMQImpl.Connection.UpdateSecret(LongStringHelper.asLongString(""), "Refresh scheduled by client") {
+                                    return super.rpc(new UpdateSecretExtension.UpdateSecret(LongStringHelper.asLongString(""), "Refresh scheduled by client") {
                                         @Override
                                         public int protocolMethodId() {
                                             return 255;
