@@ -66,6 +66,12 @@ public class Confirm extends BrokerTestCase
                           "confirm-multiple-queues");
     }
 
+    @Override
+    protected void releaseResources() throws IOException {
+        super.releaseResources();
+        channel.queueDelete("confirm-durable-nonexclusive");
+    }
+
     @Test public void persistentMandatoryCombinations()
         throws IOException, InterruptedException, TimeoutException {
         boolean b[] = { false, true };
