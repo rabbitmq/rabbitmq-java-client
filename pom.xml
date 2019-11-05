@@ -57,7 +57,7 @@
     <slf4j.version>1.7.28</slf4j.version>
     <metrics.version>4.1.0</metrics.version>
     <micrometer.version>1.2.1</micrometer.version>
-    <jackson.version>2.9.10.1</jackson.version>
+    <jackson.version>2.10.0</jackson.version>
     <logback.version>1.2.3</logback.version>
     <junit.version>4.12</junit.version>
     <awaitility.version>4.0.1</awaitility.version>
