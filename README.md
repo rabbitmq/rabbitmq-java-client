@@ -57,6 +57,9 @@ compile 'com.rabbitmq:amqp-client:4.11.3'
 
 See [Contributing](./CONTRIBUTING.md) and [How to Run Tests](./RUNNING_TESTS.md).
 
+## Versioning
+
+This library uses [semantic versioning](https://semver.org/).
 
 ## License
 
