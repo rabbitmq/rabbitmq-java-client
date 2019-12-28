@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2007-2020 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -35,7 +35,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 final class Copyright {
-    final static String COPYRIGHT="Copyright (c) 2007-2019 Pivotal Software, Inc.";
+    final static String COPYRIGHT="Copyright (c) 2007-2020 Pivotal Software, Inc.";
     final static String LICENSE="Licensed under the MPL. See https://www.rabbitmq.com/";
 }
 
