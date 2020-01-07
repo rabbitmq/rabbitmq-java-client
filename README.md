@@ -61,6 +61,11 @@ See [Contributing](./CONTRIBUTING.md) and [How to Run Tests](./RUNNING_TESTS.md)
 
 This library uses [semantic versioning](https://semver.org/).
 
+## Support
+
+See the [RabbitMQ Java libraries support page](https://www.rabbitmq.com/java-versions.html)
+for the support timeline of this library.
+
 ## License
 
 This package, the RabbitMQ Java client library, is [triple-licensed](https://www.rabbitmq.com/api-guide.html#license) under
