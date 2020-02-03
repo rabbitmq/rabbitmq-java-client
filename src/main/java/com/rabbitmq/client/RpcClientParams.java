@@ -52,6 +52,8 @@ public class RpcClientParams {
      */
     private RpcClient.RpcClientReplyHandler replyHandler = RpcClient.DEFAULT_REPLY_HANDLER;
 
+    private Supplier<String> correlationIdGenerator = RpcClient.DEFAULT_CORRELATION_ID_GENERATOR;
+
     /**
      * Set the channel to use for communication.
      *
@@ -170,6 +172,15 @@ public class RpcClientParams {
 
     public RpcClient.RpcClientReplyHandler getReplyHandler() {
         return replyHandler;
+    }
+
+    public RpcClientParams correlationIdGenerator(Supplier<String> correlationIdGenerator) {
+        this.correlationIdGenerator = correlationIdGenerator;
+        return this;
+    }
+
+    public Supplier<String> getCorrelationIdGenerator() {
+        return correlationIdGenerator;
     }
 
     /**

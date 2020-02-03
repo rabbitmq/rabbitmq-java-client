@@ -34,6 +34,7 @@ import com.rabbitmq.client.impl.recovery.RecordedExchange;
 import com.rabbitmq.client.impl.recovery.RecordedQueue;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 import com.rabbitmq.tools.Host;
+import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,9 +50,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.awaitility.Awaitility.waitAtMost;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class RpcTest {
 
@@ -159,6 +158,25 @@ public class RpcTest {
     }
 
     @Test
+    public void rpcCustomCorrelatorId() throws Exception {
+        rpcServer = new TestRpcServer(serverChannel, queue);
+        new Thread(() -> {
+            try {
+                rpcServer.mainloop();
+            } catch (Exception e) {
+                // safe to ignore when loops ends/server is canceled
+            }
+        }).start();
+        RpcClient client = new RpcClient(new RpcClientParams()
+                .channel(clientChannel).exchange("").routingKey(queue).timeout(1000)
+                .correlationIdGenerator(new IncrementingCorrelationIdGenerator("myPrefix-"))
+        );
+        RpcClient.Response response = client.doCall(null, "hello".getBytes());
+        assertThat(response.getProperties().getCorrelationId(), CoreMatchers.equalTo("myPrefix-0"));
+        client.close();
+    }
+
+    @Test
     public void rpcCustomReplyHandler() throws Exception {
         rpcServer = new TestRpcServer(serverChannel, queue);
         new Thread(new Runnable() {
@@ -182,7 +200,6 @@ public class RpcTest {
                     }
                 })
         );
-        assertEquals(0, replyHandlerCalls.get());
         RpcClient.Response response = client.doCall(null, "hello".getBytes());
         assertEquals(1, replyHandlerCalls.get());
         assertEquals("*** hello ***", new String(response.getBody()));
