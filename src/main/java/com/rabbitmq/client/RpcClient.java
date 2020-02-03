@@ -81,7 +81,11 @@ public class RpcClient {
         }
     };
 
+<<<<<<< HEAD
     private final RpcClientReplyHandler _replyHandler;
+=======
+    private final Function<Object, Response> _replyHandler;
+>>>>>>> 102cbbde1... 637: Default generator should not be static
 
     /** Map from request correlation ID to continuation BlockingCell */
     private final Map<String, BlockingCell<Object>> _continuationMap = new HashMap<String, BlockingCell<Object>>();
