@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.rabbitmq.client.impl.MethodArgumentReader;
 import com.rabbitmq.client.impl.MethodArgumentWriter;
@@ -79,12 +80,14 @@ public class RpcClient {
         }
     };
 
+    public static Supplier<String> DEFAULT_CORRELATION_ID_GENERATOR = new IncrementingCorrelationIdGenerator("");
+
     private final Function<Object, Response> _replyHandler;
 
     /** Map from request correlation ID to continuation BlockingCell */
     private final Map<String, BlockingCell<Object>> _continuationMap = new HashMap<String, BlockingCell<Object>>();
     /** Contains the most recently-used request correlation ID */
-    private int _correlationId;
+    private final Supplier<String> _correlationIdGenerator;
 
     /** Consumer attached to our reply queue */
     private DefaultConsumer _consumer;
@@ -109,7 +112,7 @@ public class RpcClient {
         _timeout = params.getTimeout();
         _useMandatory = params.shouldUseMandatory();
         _replyHandler = params.getReplyHandler();
-        _correlationId = 0;
+        _correlationIdGenerator = params.getCorrelationIdGenerator();
 
         _consumer = setupConsumer();
         if (_useMandatory) {
@@ -208,8 +211,7 @@ public class RpcClient {
         BlockingCell<Object> k = new BlockingCell<Object>();
         String replyId;
         synchronized (_continuationMap) {
-            _correlationId++;
-            replyId = "" + _correlationId;
+            replyId = _correlationIdGenerator.get();
             props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
                 .correlationId(replyId).replyTo(_replyTo).build();
             _continuationMap.put(replyId, k);
@@ -387,14 +389,6 @@ public class RpcClient {
      */
     public Map<String, BlockingCell<Object>> getContinuationMap() {
         return _continuationMap;
-    }
-
-    /**
-     * Retrieve the correlation id.
-     * @return the most recently used correlation id
-     */
-    public int getCorrelationId() {
-        return _correlationId;
     }
 
     /**
