@@ -80,8 +80,6 @@ public class RpcClient {
         }
     };
 
-    public static Supplier<String> DEFAULT_CORRELATION_ID_GENERATOR = new IncrementingCorrelationIdGenerator("");
-
     private final Function<Object, Response> _replyHandler;
 
     /** Map from request correlation ID to continuation BlockingCell */
