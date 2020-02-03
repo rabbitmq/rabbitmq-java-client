@@ -55,7 +55,7 @@ public class RpcClientParams {
      */
     private Function<Object, RpcClient.Response> replyHandler = RpcClient.DEFAULT_REPLY_HANDLER;
 
-    private Supplier<String> correlationIdGenerator = RpcClient.DEFAULT_CORRELATION_ID_GENERATOR;
+    private Supplier<String> correlationIdGenerator = new IncrementingCorrelationIdGenerator("");
 
     /**
      * Set the channel to use for communication.
