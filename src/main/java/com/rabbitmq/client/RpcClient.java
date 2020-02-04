@@ -482,6 +482,19 @@ public class RpcClient {
     }
 
     /**
+     * Retrieve the correlation id.
+     * @return the most recently used correlation id
+     * @deprecated Only works for {@link IncrementingCorrelationIdGenerator}
+     */
+    public int getCorrelationId() {
+        if (_correlationIdGenerator instanceof IncrementingCorrelationIdGenerator) {
+            return ((IncrementingCorrelationIdGenerator) _correlationIdGenerator).getCorrelationId();
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
      * Retrieve the consumer.
      * @return an interface to the client's consumer object
      */
