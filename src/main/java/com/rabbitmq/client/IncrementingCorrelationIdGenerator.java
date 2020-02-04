@@ -15,4 +15,8 @@ public class IncrementingCorrelationIdGenerator implements Supplier<String> {
     public String get() {
         return _prefix + _correlationId++;
     }
+
+    public int getCorrelationId() {
+        return _correlationId;
+    }
 }
