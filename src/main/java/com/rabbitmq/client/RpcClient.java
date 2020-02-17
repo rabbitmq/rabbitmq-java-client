@@ -90,7 +90,7 @@ public class RpcClient {
      *
      * @since 5.9.0
      */
-    private final Supplier<String> _correlationIdGenerator;
+    private final Supplier<String> _correlationIdSupplier;
 
     private String lastCorrelationId = "0";
 
@@ -117,7 +117,7 @@ public class RpcClient {
         _timeout = params.getTimeout();
         _useMandatory = params.shouldUseMandatory();
         _replyHandler = params.getReplyHandler();
-        _correlationIdGenerator = params.getCorrelationIdSupplier();
+        _correlationIdSupplier = params.getCorrelationIdSupplier();
 
         _consumer = setupConsumer();
         if (_useMandatory) {
@@ -301,7 +301,7 @@ public class RpcClient {
         BlockingCell<Object> k = new BlockingCell<Object>();
         String replyId;
         synchronized (_continuationMap) {
-            replyId = _correlationIdGenerator.get();
+            replyId = _correlationIdSupplier.get();
             lastCorrelationId = replyId;
             props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
                 .correlationId(replyId).replyTo(_replyTo).build();
