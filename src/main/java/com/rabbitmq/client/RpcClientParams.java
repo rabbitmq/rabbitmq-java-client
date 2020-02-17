@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2007-2020 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -52,7 +52,10 @@ public class RpcClientParams {
      */
     private RpcClient.RpcClientReplyHandler replyHandler = RpcClient.DEFAULT_REPLY_HANDLER;
 
-    private Supplier<String> correlationIdGenerator = new IncrementingCorrelationIdGenerator("");
+    /**
+     * Logic to generate correlation IDs.
+     */
+    private Supplier<String> correlationIdSupplier = RpcClient.incrementingCorrelationIdSupplier();
 
     /**
      * Set the channel to use for communication.
@@ -146,7 +149,7 @@ public class RpcClientParams {
      *
      * @param useMandatory
      * @return
-     * @see #replyHandler(RpcClient.RpcClientReplyHandler)
+     * @see #replyHandler(Function)
      */
     public RpcClientParams useMandatory(boolean useMandatory) {
         this.useMandatory = useMandatory;
@@ -170,17 +173,13 @@ public class RpcClientParams {
         return useMandatory;
     }
 
-    public RpcClient.RpcClientReplyHandler getReplyHandler() {
-        return replyHandler;
-    }
-
-    public RpcClientParams correlationIdGenerator(Supplier<String> correlationIdGenerator) {
-        this.correlationIdGenerator = correlationIdGenerator;
+    public RpcClientParams correlationIdSupplier(Supplier<String> correlationIdGenerator) {
+        this.correlationIdSupplier = correlationIdGenerator;
         return this;
     }
 
-    public Supplier<String> getCorrelationIdGenerator() {
-        return correlationIdGenerator;
+    public Supplier<String> getCorrelationIdSupplier() {
+        return correlationIdSupplier;
     }
 
     /**
@@ -198,5 +197,9 @@ public class RpcClientParams {
     public RpcClientParams replyHandler(RpcClient.RpcClientReplyHandler replyHandler) {
         this.replyHandler = replyHandler;
         return this;
+    }
+
+    public RpcClient.RpcClientReplyHandler getReplyHandler() {
+        return replyHandler;
     }
 }
