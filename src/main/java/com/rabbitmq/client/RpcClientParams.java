@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2007-2020 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -55,7 +55,10 @@ public class RpcClientParams {
      */
     private Function<Object, RpcClient.Response> replyHandler = RpcClient.DEFAULT_REPLY_HANDLER;
 
-    private Supplier<String> correlationIdGenerator = new IncrementingCorrelationIdGenerator("");
+    /**
+     * Logic to generate correlation IDs.
+     */
+    private Supplier<String> correlationIdSupplier = RpcClient.incrementingCorrelationIdSupplier();
 
     /**
      * Set the channel to use for communication.
@@ -149,7 +152,7 @@ public class RpcClientParams {
      *
      * @param useMandatory
      * @return
-     * @see #replyHandler(RpcClient.RpcClientReplyHandler)
+     * @see #replyHandler(Function)
      */
     public RpcClientParams useMandatory(boolean useMandatory) {
         this.useMandatory = useMandatory;
@@ -173,13 +176,20 @@ public class RpcClientParams {
         return useMandatory;
     }
 
-    public RpcClientParams correlationIdGenerator(Supplier<String> correlationIdGenerator) {
-        this.correlationIdGenerator = correlationIdGenerator;
+    /**
+     * Logic to generate correlation IDs.
+     *
+     * @param correlationIdGenerator
+     * @return
+     * @since 5.9.0
+     */
+    public RpcClientParams correlationIdSupplier(Supplier<String> correlationIdGenerator) {
+        this.correlationIdSupplier = correlationIdGenerator;
         return this;
     }
 
-    public Supplier<String> getCorrelationIdGenerator() {
-        return correlationIdGenerator;
+    public Supplier<String> getCorrelationIdSupplier() {
+        return correlationIdSupplier;
     }
 
     public Function<Object, RpcClient.Response> getReplyHandler() {

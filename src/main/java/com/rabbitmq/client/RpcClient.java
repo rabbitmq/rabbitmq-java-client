@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2007-2020 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -84,8 +84,15 @@ public class RpcClient {
 
     /** Map from request correlation ID to continuation BlockingCell */
     private final Map<String, BlockingCell<Object>> _continuationMap = new HashMap<String, BlockingCell<Object>>();
-    /** Contains the most recently-used request correlation ID */
+
+    /**
+     * Generates correlation ID for each request.
+     *
+     * @since 5.9.0
+     */
     private final Supplier<String> _correlationIdGenerator;
+
+    private String lastCorrelationId = "0";
 
     /** Consumer attached to our reply queue */
     private DefaultConsumer _consumer;
@@ -110,7 +117,7 @@ public class RpcClient {
         _timeout = params.getTimeout();
         _useMandatory = params.shouldUseMandatory();
         _replyHandler = params.getReplyHandler();
-        _correlationIdGenerator = params.getCorrelationIdGenerator();
+        _correlationIdGenerator = params.getCorrelationIdSupplier();
 
         _consumer = setupConsumer();
         if (_useMandatory) {
@@ -210,6 +217,7 @@ public class RpcClient {
         String replyId;
         synchronized (_continuationMap) {
             replyId = _correlationIdGenerator.get();
+            lastCorrelationId = replyId;
             props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
                 .correlationId(replyId).replyTo(_replyTo).build();
             _continuationMap.put(replyId, k);
@@ -390,16 +398,21 @@ public class RpcClient {
     }
 
     /**
-     * Retrieve the correlation id.
+     * Retrieve the last correlation id used.
+     * <p>
+     * Note as of 5.9.0, correlation IDs may not always be integers
+     * (by default, they are).
+     * This method will try to parse the last correlation ID string
+     * as an integer, so this may result in {@link NumberFormatException}
+     * if the correlation ID supplier provided by
+     * {@link RpcClientParams#correlationIdSupplier(Supplier)}
+     * does not generate appropriate IDs.
+     *
      * @return the most recently used correlation id
-     * @deprecated Only works for {@link IncrementingCorrelationIdGenerator}
+     * @see RpcClientParams#correlationIdSupplier(Supplier)
      */
     public int getCorrelationId() {
-        if (_correlationIdGenerator instanceof IncrementingCorrelationIdGenerator) {
-            return ((IncrementingCorrelationIdGenerator) _correlationIdGenerator).getCorrelationId();
-        } else {
-            throw new UnsupportedOperationException();
-        }
+        return Integer.valueOf(this.lastCorrelationId);
     }
 
     /**
@@ -446,6 +459,48 @@ public class RpcClient {
         public byte[] getBody() {
             return body;
         }
+    }
+
+    /**
+     * Creates generation IDs as a sequence of integers.
+     *
+     * @return
+     * @see RpcClientParams#correlationIdSupplier(Supplier)
+     * @since 5.9.0
+     */
+    public static Supplier<String> incrementingCorrelationIdSupplier() {
+        return incrementingCorrelationIdSupplier("");
+    }
+
+    /**
+     * Creates generation IDs as a sequence of integers, with the provided prefix.
+     *
+     * @param prefix
+     * @return
+     * @see RpcClientParams#correlationIdSupplier(Supplier)
+     * @since 5.9.0
+     */
+    public static Supplier<String> incrementingCorrelationIdSupplier(String prefix) {
+        return new IncrementingCorrelationIdSupplier(prefix);
+    }
+
+    /**
+     * @since 5.9.0
+     */
+    private static class IncrementingCorrelationIdSupplier implements Supplier<String> {
+
+        private final String prefix;
+        private int correlationId;
+
+        public IncrementingCorrelationIdSupplier(String prefix) {
+            this.prefix = prefix;
+        }
+
+        @Override
+        public String get() {
+            return prefix + ++correlationId;
+        }
+
     }
 }
 
