@@ -89,9 +89,9 @@ public class RpcClient {
     /**
      * Generates correlation ID for each request.
      *
-     * @since 5.9.0
+     * @since 4.12.0
      */
-    private final Supplier<String> _correlationIdGenerator;
+    private final CorrelationIdSupplier _correlationIdSupplier;
 
     private String lastCorrelationId = "0";
 
@@ -118,7 +118,7 @@ public class RpcClient {
         _timeout = params.getTimeout();
         _useMandatory = params.shouldUseMandatory();
         _replyHandler = params.getReplyHandler();
-        _correlationIdGenerator = params.getCorrelationIdSupplier();
+        _correlationIdSupplier = params.getCorrelationIdSupplier();
 
         _consumer = setupConsumer();
         if (_useMandatory) {
@@ -304,7 +304,7 @@ public class RpcClient {
         BlockingCell<Object> k = new BlockingCell<Object>();
         String replyId;
         synchronized (_continuationMap) {
-            replyId = _correlationIdGenerator.get();
+            replyId = _correlationIdSupplier.get();
             lastCorrelationId = replyId;
             props = ((props==null) ? new AMQP.BasicProperties.Builder() : props.builder())
                 .correlationId(replyId).replyTo(_replyTo).build();
@@ -488,16 +488,16 @@ public class RpcClient {
     /**
      * Retrieve the last correlation id used.
      * <p>
-     * Note as of 5.9.0, correlation IDs may not always be integers
+     * Note as of 4.12.0, correlation IDs may not always be integers
      * (by default, they are).
      * This method will try to parse the last correlation ID string
      * as an integer, so this may result in {@link NumberFormatException}
      * if the correlation ID supplier provided by
-     * {@link RpcClientParams#correlationIdSupplier(Supplier)}
+     * {@link RpcClientParams#correlationIdSupplier(CorrelationIdSupplier)}
      * does not generate appropriate IDs.
      *
      * @return the most recently used correlation id
-     * @see RpcClientParams#correlationIdSupplier(Supplier)
+     * @see RpcClientParams#correlationIdSupplier(CorrelationIdSupplier) 
      */
     public int getCorrelationId() {
         return Integer.valueOf(this.lastCorrelationId);
@@ -570,13 +570,24 @@ public class RpcClient {
     }
 
     /**
+     * Contract to generate correlation IDs.
+     *
+     * @since 4.12.0
+     */
+    public interface CorrelationIdSupplier {
+
+        String get();
+
+    }
+
+    /**
      * Creates generation IDs as a sequence of integers.
      *
      * @return
-     * @see RpcClientParams#correlationIdSupplier(Supplier)
-     * @since 5.9.0
+     * @see RpcClientParams#correlationIdSupplier(CorrelationIdSupplier)
+     * @since 4.12.0
      */
-    public static Supplier<String> incrementingCorrelationIdSupplier() {
+    public static CorrelationIdSupplier incrementingCorrelationIdSupplier() {
         return incrementingCorrelationIdSupplier("");
     }
 
@@ -585,17 +596,17 @@ public class RpcClient {
      *
      * @param prefix
      * @return
-     * @see RpcClientParams#correlationIdSupplier(Supplier)
-     * @since 5.9.0
+     * @see RpcClientParams#correlationIdSupplier(CorrelationIdSupplier)
+     * @since 4.12.0
      */
-    public static Supplier<String> incrementingCorrelationIdSupplier(String prefix) {
+    public static CorrelationIdSupplier incrementingCorrelationIdSupplier(String prefix) {
         return new IncrementingCorrelationIdSupplier(prefix);
     }
 
     /**
-     * @since 5.9.0
+     * @since 4.12.0
      */
-    private static class IncrementingCorrelationIdSupplier implements Supplier<String> {
+    private static class IncrementingCorrelationIdSupplier implements CorrelationIdSupplier {
 
         private final String prefix;
         private int correlationId;

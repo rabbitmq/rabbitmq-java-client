@@ -55,7 +55,7 @@ public class RpcClientParams {
     /**
      * Logic to generate correlation IDs.
      */
-    private Supplier<String> correlationIdSupplier = RpcClient.incrementingCorrelationIdSupplier();
+    private RpcClient.CorrelationIdSupplier correlationIdSupplier = RpcClient.incrementingCorrelationIdSupplier();
 
     /**
      * Set the channel to use for communication.
@@ -149,7 +149,7 @@ public class RpcClientParams {
      *
      * @param useMandatory
      * @return
-     * @see #replyHandler(Function)
+     * @see #replyHandler(RpcClient.RpcClientReplyHandler)
      */
     public RpcClientParams useMandatory(boolean useMandatory) {
         this.useMandatory = useMandatory;
@@ -173,12 +173,19 @@ public class RpcClientParams {
         return useMandatory;
     }
 
-    public RpcClientParams correlationIdSupplier(Supplier<String> correlationIdGenerator) {
+    /**
+     * Logic to generate correlation IDs.
+     *
+     * @param correlationIdGenerator
+     * @return
+     * @since 4.12.0
+     */
+    public RpcClientParams correlationIdSupplier(RpcClient.CorrelationIdSupplier correlationIdGenerator) {
         this.correlationIdSupplier = correlationIdGenerator;
         return this;
     }
 
-    public Supplier<String> getCorrelationIdSupplier() {
+    public RpcClient.CorrelationIdSupplier getCorrelationIdSupplier() {
         return correlationIdSupplier;
     }
 
