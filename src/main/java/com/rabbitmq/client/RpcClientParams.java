@@ -16,6 +16,7 @@
 package com.rabbitmq.client;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Holder class to configure a {@link RpcClient}.
@@ -53,6 +54,8 @@ public class RpcClientParams {
      * Behavior to handle reply messages.
      */
     private Function<Object, RpcClient.Response> replyHandler = RpcClient.DEFAULT_REPLY_HANDLER;
+
+    private Supplier<String> correlationIdGenerator = new IncrementingCorrelationIdGenerator("");
 
     /**
      * Set the channel to use for communication.
@@ -168,6 +171,15 @@ public class RpcClientParams {
 
     public boolean shouldUseMandatory() {
         return useMandatory;
+    }
+
+    public RpcClientParams correlationIdGenerator(Supplier<String> correlationIdGenerator) {
+        this.correlationIdGenerator = correlationIdGenerator;
+        return this;
+    }
+
+    public Supplier<String> getCorrelationIdGenerator() {
+        return correlationIdGenerator;
     }
 
     public Function<Object, RpcClient.Response> getReplyHandler() {
