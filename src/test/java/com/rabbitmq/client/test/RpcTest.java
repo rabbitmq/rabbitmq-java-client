@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2017-2020 Pivotal Software, Inc.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -24,7 +24,7 @@ import com.rabbitmq.client.impl.recovery.RecordedExchange;
 import com.rabbitmq.client.impl.recovery.RecordedQueue;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 import com.rabbitmq.tools.Host;
-import org.hamcrest.CoreMatchers;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -86,6 +86,9 @@ public class RpcTest {
         assertEquals("*** hello ***", new String(response.getBody()));
         assertEquals("pre-hello", response.getProperties().getHeaders().get("pre").toString());
         assertEquals("post-hello", response.getProperties().getHeaders().get("post").toString());
+
+        Assertions.assertThat(client.getCorrelationId()).isEqualTo(Integer.valueOf(response.getProperties().getCorrelationId()));
+
         client.close();
     }
 
@@ -138,7 +141,7 @@ public class RpcTest {
     }
 
     @Test
-    public void rpcCustomCorrelatorId() throws Exception {
+    public void rpcCustomCorrelationId() throws Exception {
         rpcServer = new TestRpcServer(serverChannel, queue);
         new Thread(() -> {
             try {
@@ -149,10 +152,10 @@ public class RpcTest {
         }).start();
         RpcClient client = new RpcClient(new RpcClientParams()
                 .channel(clientChannel).exchange("").routingKey(queue).timeout(1000)
-                .correlationIdGenerator(new IncrementingCorrelationIdGenerator("myPrefix-"))
+                .correlationIdSupplier(RpcClient.incrementingCorrelationIdSupplier("myPrefix-"))
         );
         RpcClient.Response response = client.doCall(null, "hello".getBytes());
-        assertThat(response.getProperties().getCorrelationId(), CoreMatchers.equalTo("myPrefix-0"));
+        Assertions.assertThat(response.getProperties().getCorrelationId()).isEqualTo("myPrefix-1");
         client.close();
     }
 
