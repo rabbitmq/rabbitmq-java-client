@@ -14,7 +14,7 @@
 // info@rabbitmq.com.
 
 /*
- * Modifications Copyright 2015 Pivotal Software, Inc and licenced as per
+ * Modifications Copyright 2015-2020 VMware, Inc. or its affiliates. and licenced as per
  * the rest of the RabbitMQ Java client.
  */
 
