@@ -15,12 +15,7 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.Address;
-import com.rabbitmq.client.AddressResolver;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ListAddressResolver;
-import com.rabbitmq.client.MetricsCollector;
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.CredentialsProvider;
@@ -133,7 +128,7 @@ public class ConnectionFactoryTest {
 
         doNothing().when(connection).start();
         connectionFactory.newConnection();
-        assertThat(addressResolver.get()).isNotNull().isInstanceOf(ListAddressResolver.class);
+        assertThat(addressResolver.get()).isNotNull().isInstanceOf(DnsRecordIpAddressResolver.class);
     }
 
     @Test
